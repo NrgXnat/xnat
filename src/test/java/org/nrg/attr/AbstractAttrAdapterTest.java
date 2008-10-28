@@ -6,7 +6,6 @@ package org.nrg.attr;
 
 import static org.junit.Assert.*;
 
-import java.io.IOException;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -30,7 +29,7 @@ public class AbstractAttrAdapterTest {
     }
     
     protected Collection<Map<S,V>> getUniqueCombinationsGivenValues(Map<S,V> given,
-	Collection<S> attrs) throws IOException,ConversionFailureException {
+	Collection<S> attrs) throws ExtAttrException {
       final Set<Map<S,V>> matching = new HashSet<Map<S,V>>();
       FILES: for (final Map<S,V> data : vals.values()) {
 	for (Map.Entry<S,V> e : given.entrySet()) {

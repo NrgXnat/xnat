@@ -13,7 +13,7 @@ import java.util.Arrays;
  * @author Kevin A. Archie <karchie@npg.wustl.edu>
  * @version $Revision: 1.1 $
  */
-public class NoUniqueValueException extends Exception {
+public class NoUniqueValueException extends ExtAttrException {
   static final long serialVersionUID = 0x0de1L;
   private final String attribute;
   private final String[] values;

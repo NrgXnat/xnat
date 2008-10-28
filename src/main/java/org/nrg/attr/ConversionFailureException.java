@@ -14,7 +14,7 @@ import java.util.Set;
  * @author Kevin A. Archie <karchie@npg.wustl.edu>
  * @version $Revision: 1.4 $
  */
-public class ConversionFailureException extends Exception {
+public class ConversionFailureException extends ExtAttrException {
   private static final long serialVersionUID = 0xfe1fL;
   private final Object attr;
   private final Object val;

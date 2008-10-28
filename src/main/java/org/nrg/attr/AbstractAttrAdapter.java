@@ -4,8 +4,6 @@
  */
 package org.nrg.attr;
 
-import java.io.IOException;
-
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashSet;
@@ -35,7 +33,7 @@ public abstract class AbstractAttrAdapter<S,V> {
   }
   
   protected abstract Collection<Map<S,V>> getUniqueCombinationsGivenValues(Map<S,V> given, Collection<S> attrs)
-  throws IOException,ConversionFailureException;
+  throws ExtAttrException;
   
   protected final AttrDefSet<S,V> getDefs() { return attrDefs; }
   
@@ -83,12 +81,12 @@ public abstract class AbstractAttrAdapter<S,V> {
    *   an attribute, or if no value was found for an attribute.
    */
   public final List<ExtAttrValue> getValues()
-  throws IOException,NoUniqueValueException,ConversionFailureException {
+  throws ExtAttrException {
     return getValuesGiven(new HashMap<S,V>());
   }
   
   public final List<ExtAttrValue> getValuesGiven(final Map<S,V> given)
-  throws IOException,NoUniqueValueException,ConversionFailureException {
+  throws ExtAttrException {
     return singFromMultiple(getMultipleValuesGiven(given));
   }
   
@@ -122,7 +120,7 @@ public abstract class AbstractAttrAdapter<S,V> {
   }
   
   public final List<Set<ExtAttrValue>> getMultipleValuesGiven(Map<S,V> given)
-  throws IOException,ConversionFailureException {
+  throws ExtAttrException {
     final List<Set<ExtAttrValue>> values = new LinkedList<Set<ExtAttrValue>>();
     
     try {

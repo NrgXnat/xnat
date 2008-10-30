@@ -5,6 +5,8 @@
 package org.nrg.attr;
 
 import java.util.Arrays;
+import java.util.Collection;
+import java.util.Iterator;
 
 /**
  * Indicates that an attribute that was expected to have a unique value
@@ -40,6 +42,16 @@ public class NoUniqueValueException extends ExtAttrException {
     super("Attribute " + attr + " does not have a unique value (" + Arrays.asList(vals) + ")");
     this.attribute = attr;
     this.values = vals;
+  }
+  
+  public NoUniqueValueException(final String attr, Collection<?> vals) {
+    super("Attribute " + attr + " does not have a unique value (" + vals + ")");
+    this.attribute = attr;
+    this.values = new String[vals.size()];
+    final Iterator<?> vi = vals.iterator();
+    for (int i = 0; vi.hasNext(); i++) {
+      this.values[i] = vi.next().toString();
+    }
   }
 
   public NoUniqueValueException(final String attr, final ExtAttrValue[] vals) {

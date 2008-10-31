@@ -23,7 +23,7 @@ import java.util.Set;
  * @author Kevin A. Archie <karchie@npg.wustl.edu>
  *
  */
-public abstract class AbstractAttrAdapter<S,V> {
+public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
   private final AttrDefSet<S,V> attrDefs;
   
   public AbstractAttrAdapter(final AttrDefSet<S,V> ad,

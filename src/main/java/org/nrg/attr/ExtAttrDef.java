@@ -69,7 +69,7 @@ public interface ExtAttrDef<S,V> {
       return new LinkedList<S>(attrs);
     }
 
-    @SuppressWarnings("unchecked")
+
     public Abstract(final String name, final S...attrs) {
       this(name, Arrays.asList(attrs));
     }

@@ -70,7 +70,22 @@ public final class Utils {
     return getUnique(parent, name, null);
   }
   
+  
+  /**
+   * Returns the canonical path for the given file if available,
+   * or the absolute path otherwise.
+   * @param f
+   * @return full path for the given file
+   */
+  public static String getFullPath(final File f) {
+    try {
+      return f.getCanonicalPath();
+    } catch (IOException e) {
+      return f.getAbsolutePath();
+    }
+  }
 
+  
   public static String getRelativeURI(final File root, final File file) throws IOException,NotRootDir {
     final char URI_SEPARATOR_CHAR = '/';
     final String filePath = file.getCanonicalPath();

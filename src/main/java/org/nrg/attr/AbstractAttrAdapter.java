@@ -1,6 +1,5 @@
 /**
- * $Id: AbstractAttrAdapter.java,v 1.7 2008/04/29 21:05:00 karchie Exp $
- * Copyright (c) 2006-2008 Washington University
+ * Copyright (c) 2006-2009 Washington University
  */
 package org.nrg.attr;
 
@@ -106,7 +105,7 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
 	if (ead.isRequired()) {
 	  throw new NoUniqueValueException(ead.getName());	  
 	} else {
-	  break;	// attribute isn't required, empty value is okay.
+	  continue;	// attribute isn't required, empty value is okay.
 	}
       }
       final ExtAttrValue val = vali.next();

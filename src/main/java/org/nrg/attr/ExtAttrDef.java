@@ -117,6 +117,11 @@ public interface ExtAttrDef<S,V> {
       result = 37*result + attrs.hashCode();
       return result;
     }
+    
+    @Override
+    public String toString() { 
+      return new StringBuilder(super.toString()).append(" ").append(name).toString();
+    }
   }
   
   public static class Labeled<S,V> implements ExtAttrDef<S,V> {

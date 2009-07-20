@@ -1,17 +1,15 @@
 /**
- * $Id: AttrDefSet.java,v 1.7 2008/03/12 21:37:06 karchie Exp $
- * Copyright (c) 2006-2008 Washington University
+ * Copyright (c) 2006-2009 Washington University
  */
 package org.nrg.attr;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Collection;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.LinkedHashMap;
 import java.util.Set;
-import java.util.LinkedHashSet;
 import java.util.TreeSet;
 
 
@@ -23,25 +21,43 @@ import java.util.TreeSet;
 public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
   final private Map<String,ExtAttrDef<S,V>> extAttrs = new LinkedHashMap<String,ExtAttrDef<S,V>>();
   final private Set<S> nativeAttrs = new TreeSet<S>();
- 
+
   public AttrDefSet() {}
-  
+
   @SuppressWarnings("unchecked")
   public AttrDefSet(final ReadableAttrDefSet<S,V> base, final ExtAttrDef<S,V>...adds) {
     this.add(base);
     this.addAll(Arrays.asList(adds));
   }
-  
+
+  private static final String LINE_SEPARATOR = System.getProperty("line.separator");
+
+  /*
+   * (non-Javadoc)
+   * @see java.lang.Object#toString()
+   */
+  public String toString() {
+    final StringBuilder sb = new StringBuilder(super.toString());
+    sb.append(LINE_SEPARATOR);
+    for (final ExtAttrDef<S,V> ead : extAttrs.values()) {
+      sb.append("  ").append(ead).append(LINE_SEPARATOR);
+    }
+    return sb.toString();
+  }
+
   /**
    * Adds a new external attribute to this set.
    * @param a external attribute specification
    */
   public ExtAttrDef<S,V> add(ExtAttrDef<S,V> a) {
     final String name = a.getName();
-    if (extAttrs.containsKey(name))
+    if (extAttrs.containsKey(name)) {
       throw new IllegalArgumentException("Redefined external attribute " + name);
-    extAttrs.put(name, a);
-    nativeAttrs.addAll(a.getAttrs());
+    }
+    synchronized (this) {
+      extAttrs.put(name, a);
+      nativeAttrs.addAll(a.getAttrs());
+    }
     return a;
   }
 
@@ -50,11 +66,12 @@ public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
    * @param Collection of external attribute specifications
    */
   public AttrDefSet<S,V> addAll(Collection<? extends ExtAttrDef<S,V>> as) {
-    for (final ExtAttrDef<S,V> a : as)
+    for (final ExtAttrDef<S,V> a : as) {
       this.add(a);
+    }
     return this;
   }
-  
+
   /**
    * Defines a new placeholder external attribute:
    * no value is assigned from the native information
@@ -63,7 +80,7 @@ public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
   public ExtAttrDef<S,V> add(String name) {
     return add(new ExtAttrDef.Empty<S,V>(name));
   }
-  
+
   /**
    * Defines a new external attribute with a fixed value
    * @param name
@@ -116,7 +133,7 @@ public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
     return (null == extAttrs.remove(name)) ? 0 : 1;
   }
 
-  
+
   /**
    * Removes any external attributes using the indicated native attribute from this set.
    * @param attr native attribute to be removed
@@ -124,18 +141,22 @@ public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
    */
   public int remove(final S attr) {
     int count = 0;
-    for (Iterator<Map.Entry<String,ExtAttrDef<S,V>>> i = extAttrs.entrySet().iterator(); i.hasNext(); ) {
-      final Map.Entry<String,ExtAttrDef<S,V>> e = i.next();
-      if (e.getValue().getAttrs().contains(attr)) {
-        i.remove();
-        count++;
+    
+    synchronized (this) {
+      for (Iterator<Map.Entry<String,ExtAttrDef<S,V>>> i = extAttrs.entrySet().iterator(); i.hasNext(); ) {
+        final Map.Entry<String,ExtAttrDef<S,V>> e = i.next();
+        if (e.getValue().getAttrs().contains(attr)) {
+          i.remove();
+          count++;
+        }
+      }
+
+      // Rebuild the native attributes set
+      nativeAttrs.clear();
+      for (ExtAttrDef<S,V> ea : this) {
+        nativeAttrs.addAll(ea.getAttrs());
       }
     }
- 
-    // Rebuild the native attributes set
-    nativeAttrs.clear();
-    for (ExtAttrDef<S,V> ea : this)
-      nativeAttrs.addAll(ea.getAttrs());
 
     return count;
   }
@@ -145,24 +166,24 @@ public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
    * same order they were defined.
    */
   public Iterator<ExtAttrDef<S,V>> iterator() {
-    return new LinkedList<ExtAttrDef<S,V>>(extAttrs.values()).iterator();
+    return Collections.unmodifiableCollection(extAttrs.values()).iterator();
   }
 
 
   /**
-    * @param name name of an external attribute defined in this set
+   * @param name name of an external attribute defined in this set
    * @return attribute definition object
    */
   public ExtAttrDef<S,V> getExtAttrDef(final String name) {
     return extAttrs.get(name);
   }
-  
+
 
   /**
    * Gets the tag values for all native attributes used in this set.
    * @return Set of native tag values
    */
-  public Collection<S> getNativeAttrs() {
-    return new LinkedHashSet<S>(nativeAttrs);
+  public Set<S> getNativeAttrs() {
+    return Collections.unmodifiableSet(nativeAttrs);
   }
 }

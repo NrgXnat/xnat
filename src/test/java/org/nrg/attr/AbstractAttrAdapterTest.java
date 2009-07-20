@@ -1,6 +1,5 @@
 /**
- * $Id: AbstractAttrAdapterTest.java,v 1.2 2008/01/09 16:03:33 karchie Exp $
- * Copyright (c) 2007 Washington University
+ * Copyright (c) 2007,2009 Washington University
  */
 package org.nrg.attr;
 
@@ -23,47 +22,49 @@ import org.junit.Test;
 public class AbstractAttrAdapterTest {
   public final class AttrAdapter<S,V> extends AbstractAttrAdapter<S,V> {
     final Map<String,Map<S,V>> vals = new HashMap<String,Map<S,V>>();
-    
+
     public AttrAdapter(final AttrDefSet<S,V> ad, final ReadableAttrDefSet<S,V>...attrs) {
       super(ad, attrs);
     }
-    
-    protected Collection<Map<S,V>> getUniqueCombinationsGivenValues(Map<S,V> given,
-	Collection<S> attrs) throws ExtAttrException {
+
+    protected Collection<Map<S,V>> getUniqueCombinationsGivenValues(final Map<S,V> given,
+        final Collection<S> attrs, final Map<S,ConversionFailureException> failures)
+        throws ExtAttrException {
       final Set<Map<S,V>> matching = new HashSet<Map<S,V>>();
       FILES: for (final Map<S,V> data : vals.values()) {
-	for (Map.Entry<S,V> e : given.entrySet()) {
-	  if (!e.getValue().equals(data.get(e.getKey()))) {
-	    continue FILES;
-	  }
-	}
-	matching.add(data);
+        for (Map.Entry<S,V> e : given.entrySet()) {
+          if (!e.getValue().equals(data.get(e.getKey()))) {
+            continue FILES;
+          }
+        }
+        matching.add(data);
       }
-      
+
       final Set<Map<S,V>> combs = new HashSet<Map<S,V>>();
       for (final Map<S,V> match : matching) {
-	final Map<S,V> vals = new HashMap<S,V>();
-	for (final S s : attrs) {
-	  if (match.containsKey(s))
-	    vals.put(s, match.get(s));
-	}
-	if (!vals.isEmpty())
-	  combs.add(vals);
+        final Map<S,V> vals = new HashMap<S,V>();
+        for (final S s : attrs) {
+          if (match.containsKey(s))
+            vals.put(s, match.get(s));
+        }
+        if (!vals.isEmpty()) {
+          combs.add(vals);
+        }
       }
-      
+
       return combs;
     }
-    
+
     public AttrAdapter<S,V> put(final String file, final S s, final V v) {
       if (!vals.containsKey(file))
-	vals.put(file, new HashMap<S,V>());
+        vals.put(file, new HashMap<S,V>());
       if (vals.get(file).containsKey(s))
-	throw new IllegalArgumentException("data " + file + " already contains value for " + s);
+        throw new IllegalArgumentException("data " + file + " already contains value for " + s);
       vals.get(file).put(s,v);
       return this;
     }
   }
-  
+
   /**
    * Test method for {@link org.nrg.attr.AbstractAttrAdapter#AbstractAttrAdapter(org.nrg.attr.AttrDefSet, org.nrg.attr.ReadableAttrDefSet<S,V>[])}.
    */
@@ -136,7 +137,7 @@ public class AbstractAttrAdapterTest {
     aa.remove(new NativeAttr[]{NativeAttr.A});
     assertNull(aa.getDefs().getExtAttrDef("ext-A"));
     assertTrue(aa.getDefs().getNativeAttrs().isEmpty());
-    
+
     aa.add(NativeAttr.frads);
     assertEquals(NativeAttr.fextA, aa.getDefs().getExtAttrDef("ext-A"));
     assertEquals(NativeAttr.fextC_BA, aa.getDefs().getExtAttrDef("ext-C"));
@@ -152,7 +153,7 @@ public class AbstractAttrAdapterTest {
   public final void testGetValues() {
     final String f1 = "file1";
     final String f2 = "file2";
-    
+
     final AttrAdapter<NativeAttr,Float> aa = new AttrAdapter<NativeAttr,Float>(new AttrDefSet<NativeAttr,Float>(), NativeAttr.frads);
     aa.put(f1, NativeAttr.A, 0.0f);
     aa.put(f2, NativeAttr.A, 0.0f);
@@ -161,9 +162,12 @@ public class AbstractAttrAdapterTest {
     aa.put(f1, NativeAttr.C, 2.0f);
     aa.put(f2, NativeAttr.C, 2.0f);
 
+    final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures =
+      new HashMap<ExtAttrDef<NativeAttr,Float>,Exception>();
     final Collection<ExtAttrValue> vals;
     try {
-      vals = aa.getValues();
+      vals = aa.getValues(failures);
+      assertTrue(failures.isEmpty());
     } catch (Exception e) {
       fail(e.getMessage());
       return;
@@ -172,20 +176,24 @@ public class AbstractAttrAdapterTest {
     final ExtAttrValue c2_b1a0 = new ExtAttrValue("ext-C", Float.toString(2.0f));
     c2_b1a0.addAttr("B", Float.toString(1.0f));
     c2_b1a0.addAttr("A", Float.toString(0.0f));
-    
+
     Iterator<ExtAttrValue> i = vals.iterator();
     assertEquals(a0, i.next());
     assertEquals(c2_b1a0, i.next());
     assertFalse(i.hasNext());
-    
+
     final String f3 = "file3";
     aa.put(f3, NativeAttr.A, 0.0f);
     aa.put(f3, NativeAttr.B, 1.0f);
     aa.put(f3, NativeAttr.C, 2.1f);
-    
+
     try {
-      aa.getValues();
-      fail("Missed expected NoUniqueValueException");
+      aa.getValues(failures);
+      assertEquals(1, failures.size());
+      final Iterator<Map.Entry<ExtAttrDef<NativeAttr,Float>,Exception>> mei = failures.entrySet().iterator();
+      final ExtAttrDef<NativeAttr,Float> failed = mei.next().getKey();
+      assertEquals("ext-C", failed.getName());
+      assertFalse(mei.hasNext());
     } catch (NoUniqueValueException e) {
       // expected: 2 values for attribute ext-C
       assertEquals("ext-C", e.getAttribute());
@@ -216,11 +224,14 @@ public class AbstractAttrAdapterTest {
     aa.put(f2, NativeAttr.C, 2.0f);
     aa.put(f3, NativeAttr.C, 2.1f);
 
+    final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures =
+      new HashMap<ExtAttrDef<NativeAttr,Float>,Exception>();
     final Map<NativeAttr,Float> given = new HashMap<NativeAttr,Float>();
     given.put(NativeAttr.C, 2.0f);
     final Collection<ExtAttrValue> vals;
     try {
-      vals = aa.getValuesGiven(given);
+      vals = aa.getValuesGiven(given, failures);
+      assertTrue(failures.isEmpty());
     } catch (Exception e) {
       fail(e.getMessage());
       return;
@@ -257,11 +268,14 @@ public class AbstractAttrAdapterTest {
     aa.put(f2, NativeAttr.C, 2.0f);
     aa.put(f3, NativeAttr.C, 2.1f);
 
+    final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures =
+      new HashMap<ExtAttrDef<NativeAttr,Float>,Exception>();
     final Map<NativeAttr,Float> given = new HashMap<NativeAttr,Float>();
     given.put(NativeAttr.C, 2.0f);
     final List<Set<ExtAttrValue>> vals;
     try {
-      vals = aa.getMultipleValuesGiven(new HashMap<NativeAttr,Float>());
+      vals = aa.getMultipleValuesGiven(new HashMap<NativeAttr,Float>(), failures);
+      assertTrue(failures.isEmpty());
     } catch (Exception e) {
       fail(e.getMessage());
       return;

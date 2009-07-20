@@ -16,7 +16,7 @@
   <groupId>org.nrg</groupId>
   <artifactId>ExtAttr</artifactId>
   <packaging>jar</packaging>
-  <version>1.4</version>
+  <version>1.5-SNAPSHOT</version>
   <name>External Attribute library</name>
   <url>http://nrg.wustl.edu</url>
   <dependencies>
@@ -25,11 +25,6 @@
       <artifactId>junit</artifactId>
       <version>4.0</version>
       <scope>test</scope>
-    </dependency>
-    <dependency>
-      <groupId>log4j</groupId>
-      <artifactId>log4j</artifactId>
-      <version>1.2.15</version>
     </dependency>
   </dependencies>
 </project>

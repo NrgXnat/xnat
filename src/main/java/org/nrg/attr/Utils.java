@@ -6,7 +6,9 @@ package org.nrg.attr;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Collection;
 import java.util.Comparator;
+import java.util.Map;
 
 
 /**
@@ -124,5 +126,17 @@ public final class Utils {
     public boolean equals(final Object o) {
       return o instanceof MaybeNumericStringComparator;
     }
+  }
+  
+  public final static <K,V> Map<K,V> put(final Map<K,V> m, final K[] ks, final V[] vs) {
+    for (int i = 0; i < ks.length; i++) {
+      m.put(ks[i], vs[i]);
+    }
+    return m;
+  }
+  
+  public final static <V> Collection<V> add(final Collection<V> vs, final V v) {
+    vs.add(v);
+    return vs;
   }
 }

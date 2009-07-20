@@ -6,6 +6,7 @@ package org.nrg.attr;
 
 import java.util.Arrays;
 import java.util.Collection;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -25,19 +26,21 @@ import java.util.Set;
  * @author Kevin A. Archie <karchie@npg.wustl.edu>
  */
 public interface ExtAttrDef<S,V> {
-  ExtAttrValue convert(final Map<S,V> vals) throws ConversionFailureException;
-  String convertText(final Map<S,V> vals) throws ConversionFailureException;
+  ExtAttrValue convert(Map<S,V> vals) throws ConversionFailureException;
+  String convertText(Map<S,V> vals) throws ConversionFailureException;
   String getName();
   List<S> getAttrs();
-  
-  boolean isRequired();
-  ExtAttrDef<S,V> require();
-  ExtAttrDef<S,V> makeOptional();
-  
-  boolean isRequired(final S na);
-  ExtAttrDef<S,V> require(final S...nas);
-  ExtAttrDef<S,V> makeOptional(final S...nas);
-  
+
+  boolean requires(S s);
+  void require(S...ss);
+  void makeOptional(S...ss);
+
+  public static interface Optional { }
+
+  public static interface MultiValue {
+    String getValueSeparator();
+  }
+
   /**
    * Provides a partial implementation used by many subclasses of ExtAttrDef
    * @author Kevin A. Archie <karchie@npg.wustl.edu>
@@ -45,8 +48,7 @@ public interface ExtAttrDef<S,V> {
   public static abstract class Abstract<S,V> implements ExtAttrDef<S,V> {
     private final List<S> attrs;
     private final String name;
-    private boolean isRequired = true;
-    private final Set<S> required;
+    private final Set<S> optional;
 
     /**
      * Converts from native attributes to the full representation of
@@ -73,39 +75,31 @@ public interface ExtAttrDef<S,V> {
     public Abstract(final String name, final S...attrs) {
       this(name, Arrays.asList(attrs));
     }
-    
+
     public Abstract(final String name, final Collection<S> attrs) {
       this.name = name;
       this.attrs = new LinkedList<S>(attrs);
-      this.required = new HashSet<S>();
+      this.optional = new HashSet<S>();
     }
 
-    public final boolean isRequired() { return isRequired; }
-    
-    public final Abstract<S,V> require() { isRequired = true; return this; }
-    
-    public final Abstract<S,V> makeOptional() { isRequired = false; return this; }
-    
-    public final boolean isRequired(final S na) {
-      return required.contains(na);
+    public final boolean requires(final S s) {
+      return !optional.contains(s);
     }
-    
-    public final ExtAttrDef<S,V> require(final S...nas) {
-      for (final S na : nas)
-	required.add(na);
-      return this;
+
+    public final void require(final S...ss) {
+      optional.removeAll(Arrays.asList(ss));
     }
-    
-    public final ExtAttrDef<S,V> makeOptional(final S...nas) {
-      for (final S na : nas)
-	required.remove(na);
-      return this;
+
+    public final void makeOptional(final S...ss) {
+      optional.addAll(Arrays.asList(ss));
     }
 
     @SuppressWarnings("unchecked")
     @Override
     public boolean equals(Object o) {
-      if (o == null || !this.getClass().equals(o.getClass())) return false;
+      if (o == null || !this.getClass().equals(o.getClass())) {
+        return false;
+      }
       final ExtAttrDef<S,V> oad = (ExtAttrDef<S,V>) o;
       return (name.equals(oad.getName()) && attrs.equals(oad.getAttrs()));
     }
@@ -117,37 +111,36 @@ public interface ExtAttrDef<S,V> {
       result = 37*result + attrs.hashCode();
       return result;
     }
-    
+
     @Override
     public String toString() { 
       return new StringBuilder(super.toString()).append(" ").append(name).toString();
     }
   }
-  
+
   public static class Labeled<S,V> implements ExtAttrDef<S,V> {
     private final ExtAttrDef<S,V> base;
     private final Map<String,String> labels;
-    
+    private final Set<S> optional;
+
     public Labeled(final ExtAttrDef<S,V> base, final Map<String,String> labels) {
       this.base = base;
       this.labels = new LinkedHashMap<String, String>(labels);
+      this.optional = new HashSet<S>();
     }
-    
+
     public Labeled(final ExtAttrDef<S,V> base, final String[] names, final String[] values) {
-      this.base = base;
-      this.labels = new LinkedHashMap<String,String>();
-      for (int i = 0; i < names.length; i++)
-	labels.put(names[i], values[i]);
+      this(base, Utils.put(new LinkedHashMap<String,String>(), names, values));
     }
-    
+
     public Labeled(final ExtAttrDef<S,V> base, final String name, final String value) {
       this(base, new String[]{name}, new String[]{value});
     }
-    
+
     public final String convertText(final Map<S,V> vals) throws ConversionFailureException {
       return base.convertText(vals);
     }
-    
+
     public final ExtAttrValue convert(final Map<S,V> vals) throws ConversionFailureException {
       final ExtAttrValue eav = base.convert(vals);
       for (Map.Entry<String,String> e : labels.entrySet()) {
@@ -155,17 +148,28 @@ public interface ExtAttrDef<S,V> {
       }
       return eav;
     }
-    
+
     public final String getName() { return base.getName(); }
+
     public final List<S> getAttrs() { return base.getAttrs(); }
-    public final boolean isRequired() { return base.isRequired(); }
-    public final ExtAttrDef<S,V> require() { base.require(); return this; }
-    public final ExtAttrDef<S,V> makeOptional() { base.makeOptional(); return this; }
-    public final boolean isRequired(final S na) { return base.isRequired(na); }
-    public final ExtAttrDef<S,V> require(final S...nas) { return base.require(nas); }
-    public final ExtAttrDef<S,V> makeOptional(final S...nas) { return base.makeOptional(nas); }
+
+    public final boolean requires(final S s) {
+      return !optional.contains(s);
+    }
+
+    public final void require(final S...ss) {
+      optional.removeAll(Arrays.asList(ss));
+    }
+
+    public final void makeOptional(final S...ss) {
+      optional.addAll(Arrays.asList(ss));
+    }
+    
+    public String toString() {
+      return base + "+" + labels;
+    }
   }
-  
+
   /**
    * Defines an external attribute with fixed value
    */
@@ -177,14 +181,14 @@ public interface ExtAttrDef<S,V> {
       super(name); this.value = value;
     }
   }
-  
+
   /**
    * Defines an empty, placeholder external attribute
    */
   public static class Empty<S,V> extends Constant<S,V> {
     public Empty(final String name) { super(name, null); }
   }
-  
+
   /**
    * Defines a trivial translation from one native attribute to
    * one external, optionally with an applied String format.  Uses
@@ -193,66 +197,80 @@ public interface ExtAttrDef<S,V> {
   public static class Text<S,V> extends Abstract<S,V> {
     private static final String NO_FORMAT = "%1$s";
     private final String format;
-    
+
     @Override
     public String convertText(Map<S,V> vals) throws ConversionFailureException {
       assert getAttrs().size() == 1 : "Text must derive from exactly one attribute";
       final S attr = getAttrs().get(0);
       final boolean defined = vals.containsKey(attr);
-      if (!defined && isRequired(attr))
+      if (!defined && requires(attr)) {
         throw new ConversionFailureException(attr, null, "no value defined");
+      }
       return String.format(format, vals.get(attr));
     }
-    
+
     @SuppressWarnings("unchecked")
     public Text(final String name, final S attr, final String format) {
       super(name, attr);
       this.format = format;
     }
-    
+
     public Text(final String name, final S attr) { this(name, attr, NO_FORMAT); }
   }
+
+  public static abstract class AbstractWrapper<S,V> implements ExtAttrDef<S,V> {
+    private final ExtAttrDef<S,V> attr;
+
+    public AbstractWrapper(final ExtAttrDef<S,V> attr) {
+      this.attr = attr;
+    }
+
+    public ExtAttrValue convert(final Map<S,V> vals) throws ConversionFailureException {
+      return attr.convert(vals);
+    }
+
+    public String convertText(final Map<S,V> vals) throws ConversionFailureException {
+      return attr.convertText(vals);
+    }
+
+    public String getName() { return attr.getName(); }
+
+    public List<S> getAttrs() { return attr.getAttrs(); }
+
+    public boolean requires(final S s) { return attr.requires(s); }
+
+    public void require(final S...ss) { attr.require(ss); }
+
+    public void makeOptional(final S...ss) { attr.makeOptional(ss); }
+    
+    public String toString() { return attr.toString(); }
+  }
   
-  public final static class MapUnion<K,V> extends LinkedHashMap<K,V>{
-    private final static long serialVersionUID = 1L;
-    
-    public MapUnion(Map<K,V> m) {
-      super(m);
+  public static class OptionalWrapper<S,V>
+  extends AbstractWrapper<S,V>
+  implements ExtAttrDef<S,V>,Optional {
+    public OptionalWrapper(final ExtAttrDef<S,V> attr) {
+      super(attr);
     }
     
-    public MapUnion(K[] ks, V[] vs) {
-      assert ks.length == vs.length;
-      for (int i = 0; i < ks.length; i++)
-	put(ks[i], vs[i]);
-    }
-    
-    public MapUnion(Map<K,V> m, K k, V v) {
-      super(m);
-      put(k, v);
-    }
-    
-    public MapUnion(K k, V v, Map<K,V> m) {
-      super();
-      put(k, v);
-      putAll(m);
-    }
-    
-    public MapUnion(K k, V v, K[] ks, V[] vs) {
-      super();
-      put(k, v);
-      assert ks.length == vs.length;
-      for (int i = 0; i < ks.length; i++)
-	put(ks[i], vs[i]);
-    }
-    
-    public MapUnion(K[] ks, V[] vs, K k, V v) {
-      super();
-      assert ks.length == vs.length;
-      for (int i = 0; i < ks.length; i++)
-	put(ks[i], vs[i]);
-      put(k, v);
+    public String toString() {
+      return super.toString() + " [optional]";
     }
   }
+
+  public static class MultiValueWrapper<S,V> 
+  extends AbstractWrapper<S,V>
+  implements ExtAttrDef<S,V>,MultiValue {
+    private final String separator;
+
+    public MultiValueWrapper(final ExtAttrDef<S,V> attr, final String separator) {
+      super(attr);
+      this.separator = separator;
+    }
+
+    public String getValueSeparator() { return separator; }
+  }
+
 
   /**
    * Defines an external attribute for which the text and each child
@@ -262,74 +280,71 @@ public interface ExtAttrDef<S,V> {
   public static class TextWithAttributes<S,V> extends Abstract<S,V> {
     private final S na;
     private final Map<String,S> attrdefs;
-    
+
     @Override
     public int hashCode() {
       return super.hashCode() + 37*attrdefs.hashCode();
     }
-    
+
     @SuppressWarnings("unchecked")
-		@Override
+    @Override
     public boolean equals(final Object o) {
       return super.equals(o) && attrdefs.equals(((TextWithAttributes)o).attrdefs);
     }
-    
+
     @Override
     public String convertText(final Map<S,V> vals) throws ConversionFailureException {
       if (null == na)
-	return null;
+        return null;
       final V val = vals.get(na);
-      if (null == val && isRequired(na))
+      if (null == val && requires(na))
         throw new ConversionFailureException(na, null, "no value defined");
       return (null == val) ? null : val.toString();
     }
-    
+
     public ExtAttrValue convert(final Map<S,V> vals) throws ConversionFailureException {
       final String name = getName();
       final ExtAttrValue val = new ExtAttrValue(name, convertText(vals));
-      
+
       final Set<String> attrs = new LinkedHashSet<String>(attrdefs.keySet());
       attrs.remove(name);
       for (final String attr : attrs) {
-	final S na = attrdefs.get(attr);
-	final boolean defined = vals.containsKey(na);
-	if (!defined && isRequired(na))
-	  throw new ConversionFailureException(attr, null, "no value defined");
-        final V attrval = vals.get(na);
+        final S s = attrdefs.get(attr);
+        final boolean defined = vals.containsKey(s);
+        if (!defined && requires(s)) {
+          throw new ConversionFailureException(attr, null, "no value defined");
+        }
+        final V attrval = vals.get(s);
         final String strval = (attrval == null) ? null : attrval.toString();
         val.addAttr(attr, strval);
       }
 
       return val;
     }
-    
-    private TextWithAttributes(final String name, final S na, MapUnion<String,S> m) {
-      super(name, m.values());
-      this.na = na;
+
+    private TextWithAttributes(final String name, final S s, Map<String,S> m) {
+      super(name, Utils.add(new LinkedHashSet<S>(m.values()), s));
+      this.na = s;
       this.attrdefs = m;
     }
 
-    public TextWithAttributes(final String name, final S na, final Map<String,S> attrdefs) {
-      this(name, na, new MapUnion<String,S>(name, na, attrdefs));
-    }
-    
-    public TextWithAttributes(final String name, final S na, final String[] attrs, final S[] nattrs) {
-      this(name, na, new MapUnion<String,S>(name, na, attrs, nattrs));
+    public TextWithAttributes(final String name, final S s, final String[] attrs, final S[] nattrs) {
+      this(name, s, Utils.put(new HashMap<String,S>(), attrs, nattrs));
     }
   }
-  
-  
+
+
   /**
    * Defines an external attribute for which the value will have no text,
    * only child attributes, each defined by a single native attribute.
    */
   public static class AttributesOnly<S,V> extends TextWithAttributes<S,V> {
     public AttributesOnly(final String name, final Map<String,S> attrdefs) {
-      super(name, null, new MapUnion<String,S>(attrdefs));
+      super(name, null, attrdefs);
     }
-    
+
     public AttributesOnly(final String name, final String[] attrs, final S[] nattrs) {
-      super(name, null, new MapUnion<String,S>(attrs, nattrs));
+      super(name, null, attrs, nattrs);
     }
   }
 }

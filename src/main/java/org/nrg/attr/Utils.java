@@ -6,8 +6,12 @@ package org.nrg.attr;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Comparator;
+import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 
@@ -138,5 +142,38 @@ public final class Utils {
   public final static <V> Collection<V> add(final Collection<V> vs, final V v) {
     vs.add(v);
     return vs;
+  }
+  
+  public final static <K,V> Map<K,V> merge(final Iterable<Map<K,V>> ms) {
+    final Iterator<Map<K,V>> i = ms.iterator();
+    if (i.hasNext()) {
+      final Map<K,V> merged = new LinkedHashMap<K,V>(i.next());
+      while (i.hasNext()) {
+        merged.putAll(i.next());
+      }
+      return merged;
+    } else {
+      return Collections.emptyMap();
+    }
+  }
+  
+  public final static <K,V> Map<K,V> merge(final Map<K,V>...ms) {
+    return merge(Arrays.asList(ms));
+  }
+ 
+  
+  public final static StringBuilder join(final StringBuilder sb, final String separator, final Iterable<?> i) {
+    final Iterator<?> ii = i.iterator();
+    if (ii.hasNext()) {
+      sb.append(ii.next());
+      while (ii.hasNext()) {
+        sb.append(separator).append(ii.next());
+      }
+    }
+    return sb;
+  }
+  
+  public final static String join(final String separator, final Iterable<?> i) {
+    return join(new StringBuilder(), separator, i).toString();
   }
 }

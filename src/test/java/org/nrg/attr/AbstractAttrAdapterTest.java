@@ -9,6 +9,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -172,10 +173,10 @@ public class AbstractAttrAdapterTest {
       fail(e.getMessage());
       return;
     }
-    final ExtAttrValue a0 = new ExtAttrValue("ext-A", Float.toString(0.0f));
-    final ExtAttrValue c2_b1a0 = new ExtAttrValue("ext-C", Float.toString(2.0f));
-    c2_b1a0.addAttr("B", Float.toString(1.0f));
-    c2_b1a0.addAttr("A", Float.toString(0.0f));
+    final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
+    final ExtAttrValue c2_b1a0 = new BasicExtAttrValue("ext-C", Float.toString(2.0f),
+        Utils.put(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
+            new String[]{Float.toString(1.0f), Float.toString(0.0f)}));
 
     Iterator<ExtAttrValue> i = vals.iterator();
     assertEquals(a0, i.next());
@@ -236,11 +237,11 @@ public class AbstractAttrAdapterTest {
       fail(e.getMessage());
       return;
     }
-    final ExtAttrValue a0 = new ExtAttrValue("ext-A", Float.toString(0.0f));
-    final ExtAttrValue c2_b1a0 = new ExtAttrValue("ext-C", Float.toString(2.0f));
-    c2_b1a0.addAttr("B", Float.toString(1.0f));
-    c2_b1a0.addAttr("A", Float.toString(0.0f));
-
+    final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
+    final ExtAttrValue c2_b1a0 = new BasicExtAttrValue("ext-C", Float.toString(2.0f),
+        Utils.put(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
+            new String[]{Float.toString(1.0f), Float.toString(0.0f)}));
+ 
     Iterator<ExtAttrValue> i = vals.iterator();
     assertEquals(a0, i.next());
     assertEquals(c2_b1a0, i.next());
@@ -280,11 +281,11 @@ public class AbstractAttrAdapterTest {
       fail(e.getMessage());
       return;
     }
-    final ExtAttrValue a0 = new ExtAttrValue("ext-A", Float.toString(0.0f));
-    final ExtAttrValue c2_b1a0 = new ExtAttrValue("ext-C", Float.toString(2.0f));
-    c2_b1a0.addAttr("B", Float.toString(1.0f));
-    c2_b1a0.addAttr("A", Float.toString(0.0f));
-
+    final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
+    final ExtAttrValue c2_b1a0 = new BasicExtAttrValue("ext-C", Float.toString(2.0f),
+        Utils.put(new LinkedHashMap<String,String>(),
+            new String[]{"B", "A"}, new String[]{Float.toString(1.0f), Float.toString(0.0f)}));
+ 
     final Iterator<Set<ExtAttrValue>> i = vals.iterator();
     final Set<ExtAttrValue> a0_vals = i.next();
     assertEquals(1, a0_vals.size());

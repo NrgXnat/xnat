@@ -93,33 +93,18 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
     while (valsi.hasNext()) {
       final Set<ExtAttrValue> vals = valsi.next();
       final ExtAttrDef<S,V> ead = eai.next();
-      final Iterator<ExtAttrValue> vali = vals.iterator();
-      if (!vali.hasNext()) {
-        // no value may be okay, if this is an optional attribute
+      if (vals.isEmpty()) {
         if (!(ead instanceof Optional)) {
           failed.put(ead, new NoUniqueValueException(ead.getName()));
         }
+      } else if (1 == vals.size()) {
+        values.add(vals.iterator().next());
       } else {
-        final ExtAttrValue val = vali.next();
-        if (vali.hasNext()) {
-          if (ead instanceof MultiValue) {
-            // TODO: merge values
-            throw new UnsupportedOperationException();
-          } else {
-            failed.put(ead, new NoUniqueValueException(ead.getName(), vals));
-          }
+        if (ead instanceof MultiValue) {
+          // TODO: value merge.  this may be tricky.
         } else {
-          // always accept a single unique value
-          values.add(val);
+          failed.put(ead, new NoUniqueValueException(ead.getName(), vals));
         }
-      }
-      if (vals.isEmpty()) {
-        if (ead instanceof Optional) {
-          continue;
-        } else {
-
-        }
-
       }
     }
 

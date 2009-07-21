@@ -43,8 +43,8 @@ public class ExtAttrDefTest {
       fail(e.getMessage());
       return;
     }
-    assertEquals(A_VALUE, val.getAttrValue("A"));
-    assertNull(val.getAttrValue("B"));
+    assertEquals(A_VALUE, val.getAttrs().get("A"));
+    assertNull(val.getAttrs().get("B"));
   }
 
   /**
@@ -63,9 +63,9 @@ public class ExtAttrDefTest {
       return;
     }
     assertEquals(A_VALUE, val.getText());
-    assertEquals(B_VALUE, val.getAttrValue("B"));
-    assertEquals(C_VALUE, val.getAttrValue("C"));
-    assertNull(val.getAttrValue("D"));
+    assertEquals(B_VALUE, val.getAttrs().get("B"));
+    assertEquals(C_VALUE, val.getAttrs().get("C"));
+    assertNull(val.getAttrs().get("D"));
   }
 
 
@@ -86,10 +86,10 @@ public class ExtAttrDefTest {
       return;
     }
     assertEquals(A_VALUE, val.getText());
-    assertEquals("A", val.getAttrValue("main"));
-    assertEquals(B_VALUE, val.getAttrValue("B"));
-    assertEquals(C_VALUE, val.getAttrValue("C"));
-    assertNull(val.getAttrValue("D"));
+    assertEquals("A", val.getAttrs().get("main"));
+    assertEquals(B_VALUE, val.getAttrs().get("B"));
+    assertEquals(C_VALUE, val.getAttrs().get("C"));
+    assertNull(val.getAttrs().get("D"));
   }
 
 

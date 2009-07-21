@@ -7,6 +7,7 @@ package org.nrg.attr;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Iterator;
+import java.util.Map;
 
 /**
  * Indicates that an attribute that was expected to have a unique value
@@ -25,8 +26,9 @@ public class NoUniqueValueException extends ExtAttrException {
     for (int i = 0; i < vals.length; i++) {
       StringBuilder sb = new StringBuilder();
       sb.append(vals[i].getText());
-      for (String attr : vals[i].getAttrNames())
-        sb.append(" " + attr + "=" + vals[i].getAttrValue(attr));
+      for (final Map.Entry<String,String> me : vals[i].getAttrs().entrySet()) {
+        sb.append(" ").append(me.getKey()).append("=").append(me.getValue());
+      }
       values[i] = sb.toString();
     }
     return values;

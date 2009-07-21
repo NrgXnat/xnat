@@ -60,7 +60,7 @@ public interface ExtAttrDef<S,V> {
      * @return Value structure include text and attribute components
      */
     public ExtAttrValue convert(final Map<S,V> vals) throws ConversionFailureException {
-      return new ExtAttrValue(getName(), convertText(vals));
+      return new BasicExtAttrValue(getName(), convertText(vals));
     }
 
     public abstract String convertText(final Map<S,V> vals) throws ConversionFailureException;
@@ -142,11 +142,7 @@ public interface ExtAttrDef<S,V> {
     }
 
     public final ExtAttrValue convert(final Map<S,V> vals) throws ConversionFailureException {
-      final ExtAttrValue eav = base.convert(vals);
-      for (Map.Entry<String,String> e : labels.entrySet()) {
-        eav.addAttr(e.getKey(), e.getValue());
-      }
-      return eav;
+      return new BasicExtAttrValue(base.convert(vals), labels);
     }
 
     public final String getName() { return base.getName(); }
@@ -304,22 +300,22 @@ public interface ExtAttrDef<S,V> {
 
     public ExtAttrValue convert(final Map<S,V> vals) throws ConversionFailureException {
       final String name = getName();
-      final ExtAttrValue val = new ExtAttrValue(name, convertText(vals));
-
-      final Set<String> attrs = new LinkedHashSet<String>(attrdefs.keySet());
-      attrs.remove(name);
-      for (final String attr : attrs) {
+      final Map<String,String> attrVals = new LinkedHashMap<String,String>();
+      for (final String attr : attrdefs.keySet()) {
+        if (name.equals(attr)) {
+          continue;
+        }
         final S s = attrdefs.get(attr);
         final boolean defined = vals.containsKey(s);
         if (!defined && requires(s)) {
           throw new ConversionFailureException(attr, null, "no value defined");
         }
         final V attrval = vals.get(s);
-        final String strval = (attrval == null) ? null : attrval.toString();
-        val.addAttr(attr, strval);
+        
+        attrVals.put(attr, attrval == null ? null : attrval.toString());
       }
-
-      return val;
+      
+      return new BasicExtAttrValue(name, convertText(vals), attrVals);
     }
 
     private TextWithAttributes(final String name, final S s, Map<String,S> m) {

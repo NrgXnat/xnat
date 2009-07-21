@@ -319,7 +319,7 @@ public interface ExtAttrDef<S,V> {
     }
 
     private TextWithAttributes(final String name, final S s, Map<String,S> m) {
-      super(name, Utils.add(new LinkedHashSet<S>(m.values()), s));
+      super(name, null == s ? m.values() : Utils.add(new LinkedHashSet<S>(m.values()), s));
       this.na = s;
       this.attrdefs = m;
     }

@@ -45,8 +45,9 @@ public class AbstractAttrAdapterTest {
       for (final Map<S,V> match : matching) {
         final Map<S,V> vals = new HashMap<S,V>();
         for (final S s : attrs) {
-          if (match.containsKey(s))
+          if (match.containsKey(s)) {
             vals.put(s, match.get(s));
+          }
         }
         if (!vals.isEmpty()) {
           combs.add(vals);
@@ -57,10 +58,12 @@ public class AbstractAttrAdapterTest {
     }
 
     public AttrAdapter<S,V> put(final String file, final S s, final V v) {
-      if (!vals.containsKey(file))
+      if (!vals.containsKey(file)) {
         vals.put(file, new HashMap<S,V>());
-      if (vals.get(file).containsKey(s))
+      }
+      if (vals.get(file).containsKey(s)) {
         throw new IllegalArgumentException("data " + file + " already contains value for " + s);
+      }
       vals.get(file).put(s,v);
       return this;
     }
@@ -178,7 +181,7 @@ public class AbstractAttrAdapterTest {
         Utils.put(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
             new String[]{Float.toString(1.0f), Float.toString(0.0f)}));
 
-    Iterator<ExtAttrValue> i = vals.iterator();
+    final Iterator<ExtAttrValue> i = vals.iterator();
     assertEquals(a0, i.next());
     assertEquals(c2_b1a0, i.next());
     assertFalse(i.hasNext());
@@ -242,7 +245,7 @@ public class AbstractAttrAdapterTest {
         Utils.put(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
             new String[]{Float.toString(1.0f), Float.toString(0.0f)}));
  
-    Iterator<ExtAttrValue> i = vals.iterator();
+    final Iterator<ExtAttrValue> i = vals.iterator();
     assertEquals(a0, i.next());
     assertEquals(c2_b1a0, i.next());
     assertFalse(i.hasNext());
@@ -282,9 +285,6 @@ public class AbstractAttrAdapterTest {
       return;
     }
     final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
-    final ExtAttrValue c2_b1a0 = new BasicExtAttrValue("ext-C", Float.toString(2.0f),
-        Utils.put(new LinkedHashMap<String,String>(),
-            new String[]{"B", "A"}, new String[]{Float.toString(1.0f), Float.toString(0.0f)}));
  
     final Iterator<Set<ExtAttrValue>> i = vals.iterator();
     final Set<ExtAttrValue> a0_vals = i.next();
@@ -294,5 +294,4 @@ public class AbstractAttrAdapterTest {
     assertEquals(2, c2_b1a0_vals.size());
     assertFalse(i.hasNext());
   }
-
 }

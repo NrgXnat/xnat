@@ -139,6 +139,11 @@ public final class Utils {
     return m;
   }
   
+  public final static <K,V> Map<K,V> newMap(final K[] ks, final V[] vs) {
+    return put(new LinkedHashMap<K,V>(), ks, vs);
+  }
+  
+  
   public final static <V> Collection<V> add(final Collection<V> vs, final V v) {
     vs.add(v);
     return vs;

@@ -139,7 +139,7 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
       }
 
       // Dummy attributes need special handling.
-      if (attrVals.isEmpty() && (ea instanceof ExtAttrDef.Constant)) {
+      if (attrVals.isEmpty() && (ea instanceof ExtAttrDef.Constant<?,?>)) {
         try {
           attrVals.add(ea.convert(null));
         } catch (ConversionFailureException e) {

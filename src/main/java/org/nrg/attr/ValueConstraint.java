@@ -25,7 +25,7 @@ public class ValueConstraint<S,V> implements Map.Entry<S,V>{
   public V setValue(V v) { throw new UnsupportedOperationException(); }
   
   public final boolean equals(final Object o) {
-    if (!(o instanceof ValueConstraint)) { return false; }
+    if (!(o instanceof ValueConstraint<?,?>)) { return false; }
     final ValueConstraint<?,?> vc = (ValueConstraint<?,?>)o;
     return s.equals(vc.s) && (v == vc.v || (null != v && v.equals(vc.v)));
   }

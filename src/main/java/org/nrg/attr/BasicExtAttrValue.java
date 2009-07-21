@@ -85,7 +85,7 @@ public final class BasicExtAttrValue implements ExtAttrValue {
     this.name = name;
     textValue = value;
     if (null != attrValues) {
-      attrValues.putAll(attrValues);
+      this.attrValues.putAll(attrValues);
     }
   }
    

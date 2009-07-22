@@ -101,7 +101,8 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
         values.add(vals.iterator().next());
       } else {
         if (ead instanceof MultiValue) {
-          // TODO: value merge.  this may be tricky.
+          // Merge the values together into one
+          values.add(new BasicExtAttrValue(vals));
         } else {
           failed.put(ead, new NoUniqueValueException(ead.getName(), vals));
         }

@@ -76,9 +76,9 @@ public final class BasicExtAttrValue implements ExtAttrValue {
     }
     return sb.toString();
   }
- 
 
-   public BasicExtAttrValue(final String name, final String value, final Map<String,String> attrValues) {
+
+  public BasicExtAttrValue(final String name, final String value, final Map<String,String> attrValues) {
     if (null == name) {
       throw new IllegalArgumentException("ExtAttrValue name must be non-null");
     }
@@ -88,80 +88,81 @@ public final class BasicExtAttrValue implements ExtAttrValue {
       this.attrValues.putAll(attrValues);
     }
   }
-   
-   public BasicExtAttrValue(final String name, final String value) {
-     this(name, value, null);
-   }
-   
-   public BasicExtAttrValue(final Collection<ExtAttrValue> toMerge) {
-     this(extractMergedName(toMerge.iterator()),
-         mergeText(",", toMerge.iterator()),
-         mergeAttrs(",", toMerge.iterator()));
-   }
-   
-   @SuppressWarnings("unchecked")
+
+  public BasicExtAttrValue(final String name, final String value) {
+    this(name, value, null);
+  }
+
+  public BasicExtAttrValue(final Collection<ExtAttrValue> toMerge) {
+    this(extractMergedName(toMerge.iterator()),
+        mergeText(",", toMerge.iterator()),
+        mergeAttrs(",", toMerge.iterator()));
+    System.out.println("Merged: " + toMerge + " to " + this);
+  }
+
+  @SuppressWarnings("unchecked")
   public BasicExtAttrValue(final ExtAttrValue base, final Map<String,String> attrValues) {
-     this(base.getName(), base.getText(), Utils.merge(base.getAttrs(), attrValues));
-   }
-   
-   private final static String extractMergedName(final Iterator<ExtAttrValue> vi) {
-     final Set<String> names = new LinkedHashSet<String>();
-     while (vi.hasNext()) {
-       names.add(vi.next().getName());
-     }
-     if (1 == names.size()) {
-       return names.iterator().next();
-     } else {
-       throw new IllegalArgumentException("values have no or multiple names: " + names);
-     }
-   }
-   
-   private final static boolean isEmptyText(final String s) {
-     return null == s || "".equals(s);
-   }
-   
-   private final static String mergeText(final String separator, final Iterator<ExtAttrValue> vi) {
-     final Set<String> textvs = new LinkedHashSet<String>();
-     while (vi.hasNext()) {
-       textvs.add(vi.next().getText());
-     }
-     final StringBuilder sb = new StringBuilder();
-     boolean isEmpty = true;
-     while (vi.hasNext()) {
-       final String text = vi.next().getText();
-       if (!isEmptyText(text)) {
-         if (!isEmpty) {
-           sb.append(separator);
-         }
-         sb.append(text);
-         isEmpty = false;
-       }
-     }
-     return sb.toString();
-   }
+    this(base.getName(), base.getText(), Utils.merge(base.getAttrs(), attrValues));
+  }
 
-   private final static Map<String,String> mergeAttrs(final String separator, final Iterator<ExtAttrValue> vi) {
-     final Map<String,Set<String>> vals = new LinkedHashMap<String,Set<String>>();
-     while (vi.hasNext()) {
-       final ExtAttrValue v = vi.next();
-       for (final Map.Entry<String,String> me : v.getAttrs().entrySet()) {
-         final String name = me.getKey();
-         if (!vals.containsKey(name)) {
-           vals.put(name, new LinkedHashSet<String>());
-         }
-         vals.get(name).add(me.getValue());
-       }
-     }
-     
-     final Map<String,String> merged = new LinkedHashMap<String,String>();
-     for (final Map.Entry<String,Set<String>> vme : vals.entrySet()) {
-       merged.put(vme.getKey(), Utils.join(separator, vme.getValue()));
-     }
-     return merged;
-   }
-   
+  private final static String extractMergedName(final Iterator<ExtAttrValue> vi) {
+    final Set<String> names = new LinkedHashSet<String>();
+    while (vi.hasNext()) {
+      names.add(vi.next().getName());
+    }
+    if (1 == names.size()) {
+      return names.iterator().next();
+    } else {
+      throw new IllegalArgumentException("values have no or multiple names: " + names);
+    }
+  }
 
-  
+  private final static boolean isEmptyText(final String s) {
+    return null == s || "".equals(s);
+  }
+
+  private final static String mergeText(final String separator, final Iterator<ExtAttrValue> vi) {
+    final Set<String> textvs = new LinkedHashSet<String>();
+    while (vi.hasNext()) {
+      final String text = vi.next().getText();
+      if (!isEmptyText(text)) {
+        textvs.add(text);
+      }
+    }
+    final StringBuilder sb = new StringBuilder();
+    boolean isEmpty = true;
+    for (final String text : textvs) {
+      if (!isEmpty) {
+        sb.append(separator);
+      }
+      sb.append(text);
+      isEmpty = false;
+    }
+    return sb.toString();
+  }
+
+  private final static Map<String,String> mergeAttrs(final String separator, final Iterator<ExtAttrValue> vi) {
+    final Map<String,Set<String>> vals = new LinkedHashMap<String,Set<String>>();
+    while (vi.hasNext()) {
+      final ExtAttrValue v = vi.next();
+      for (final Map.Entry<String,String> me : v.getAttrs().entrySet()) {
+        final String name = me.getKey();
+        if (!vals.containsKey(name)) {
+          vals.put(name, new LinkedHashSet<String>());
+        }
+        vals.get(name).add(me.getValue());
+      }
+    }
+
+    final Map<String,String> merged = new LinkedHashMap<String,String>();
+    for (final Map.Entry<String,Set<String>> vme : vals.entrySet()) {
+      merged.put(vme.getKey(), Utils.join(separator, vme.getValue()));
+    }
+    return merged;
+  }
+
+
+
   /**
    * Adds an attribute to the value element.
    * @param name attribute name
@@ -180,7 +181,7 @@ public final class BasicExtAttrValue implements ExtAttrValue {
   public String getName() {
     return name;
   }
-  
+
   /**
    * Returns the element text for this value.
    */
@@ -195,14 +196,14 @@ public final class BasicExtAttrValue implements ExtAttrValue {
   public Map<String,String> getAttrs() {
     return Collections.unmodifiableMap(attrValues);
   }
-  
+
   /**
    * Returns the names of all attributes in this value.
    */
   public Set<String> getAttrNames() {
     return Collections.unmodifiableSet(attrValues.keySet());
   }
- 
+
   /**
    * Returns the value of a specific attribute, given the attribute name.
    * @param name name of the attribute

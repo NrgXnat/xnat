@@ -88,7 +88,7 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
       throws ExtAttrException {
     final List<ExtAttrValue> values = new ArrayList<ExtAttrValue>();
     final Iterator<Set<ExtAttrValue>> valsi = getMultipleValuesGiven(given, failed).iterator();
-    final Iterator<ExtAttrDef<S,V>> eai = attrDefs.iterator();
+    final Iterator<? extends ExtAttrDef<S,V>> eai = attrDefs.iterator();
 
     while (valsi.hasNext()) {
       final Set<ExtAttrValue> vals = valsi.next();

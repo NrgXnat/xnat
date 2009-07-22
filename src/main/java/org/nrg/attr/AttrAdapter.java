@@ -40,9 +40,9 @@ public interface AttrAdapter<S,V> {
    * @throws NoUniqueValueException if different datasets have different values for
    *   an attribute, or if no value was found for an attribute.
    */
-  List<ExtAttrValue> getValues(Map<? extends ExtAttrDef<S,V>,Exception> failed) throws ExtAttrException;
+  List<ExtAttrValue> getValues(Map<ExtAttrDef<S,V>,Exception> failed) throws ExtAttrException;
   
-  List<ExtAttrValue> getValuesGiven(Map<S,V> given, Map<? extends ExtAttrDef<S,V>,Exception> failed) throws ExtAttrException;
+  List<ExtAttrValue> getValuesGiven(Map<S,V> given, Map<ExtAttrDef<S,V>,Exception> failed) throws ExtAttrException;
   
   List<Set<ExtAttrValue>> getMultipleValuesGiven(Map<S,V> given, Map<ExtAttrDef<S,V>,Exception> failed) throws ExtAttrException;
 }

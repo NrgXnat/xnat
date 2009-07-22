@@ -97,7 +97,6 @@ public final class BasicExtAttrValue implements ExtAttrValue {
     this(extractMergedName(toMerge.iterator()),
         mergeText(",", toMerge.iterator()),
         mergeAttrs(",", toMerge.iterator()));
-    System.out.println("Merged: " + toMerge + " to " + this);
   }
 
   @SuppressWarnings("unchecked")

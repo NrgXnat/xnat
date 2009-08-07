@@ -36,6 +36,11 @@ public class NativeAttr implements Comparable<NativeAttr> {
   public int compareTo(NativeAttr other) {
     return comparisons.get(this).get(other);
   }
+  
+  @Override
+  public boolean equals(final Object o) {
+    return o instanceof NativeAttr && 0 == comparisons.get(this).get(o);
+  }
 
   public static final NativeAttr A = new NativeAttr("NativeAttr A");
   public static final NativeAttr B = new NativeAttr("NativeAttr B");

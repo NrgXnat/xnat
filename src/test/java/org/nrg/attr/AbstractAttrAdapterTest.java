@@ -21,7 +21,7 @@ import org.junit.Test;
  *
  */
 public class AbstractAttrAdapterTest {
-  public final class AttrAdapter<S,V> extends AbstractAttrAdapter<S,V> {
+  public static final class AttrAdapter<S,V> extends AbstractAttrAdapter<S,V> {
     final Map<String,Map<S,V>> vals = new HashMap<String,Map<S,V>>();
 
     public AttrAdapter(final AttrDefSet<S,V> ad, final ReadableAttrDefSet<S,V>...attrs) {

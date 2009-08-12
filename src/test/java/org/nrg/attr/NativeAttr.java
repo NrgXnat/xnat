@@ -1,6 +1,5 @@
 /**
- * $Id: NativeAttr.java,v 1.2 2007/08/10 18:48:15 karchie Exp $
- * Copyright (c) 2007 Washington University
+ * Copyright (c) 2007,2009 Washington University
  */
 package org.nrg.attr;
 
@@ -113,6 +112,6 @@ public class NativeAttr implements Comparable<NativeAttr> {
     compareD.put(B, 2);
     compareD.put(C, 1);
     compareD.put(D, 0);
-    comparisons.put(D, compareA);
+    comparisons.put(D, compareD);
   }
 }

@@ -1,6 +1,31 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
   xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
+  <issueManagement>
+  	<system>FogBugz</system>
+  	<url>http://nrg.wustl.edu/fogbugz</url>
+  </issueManagement>
+  <ciManagement>
+  	<system>hudson</system>
+  	<url>http://nrg.wustl.edu/hudson</url>
+  </ciManagement>
+  <developers>
+  	<developer>
+  		<id>karchie</id>
+  		<name>Kevin A. Archie</name>
+  		<email>karchie@npg.wustl.edu</email>
+  		<timezone>-6</timezone>
+  	</developer>
+  </developers>
+  <scm>
+  	<connection>http://nrg.wustl.edu/svn/dicom/ExtAttr</connection>
+  	<developerConnection>svn+ssh://nrg.wustl.edu/opt/svn/dicom/ExtAttr</developerConnection>
+  	<url>http://nrg.wustl.edu/svn/dicom/ExtAttr</url>
+  </scm>
+  <organization>
+  	<name>Washington University Neuroinformatics Research Group</name>
+  	<url>http://nrg.wustl.edu</url>
+  </organization>
   <build>
     <plugins>
       <plugin>
@@ -18,6 +43,7 @@
   <packaging>jar</packaging>
   <version>1.5-SNAPSHOT</version>
   <name>External Attribute library</name>
+  <description>Library for converting native image metadata formats (e.g., DICOM, ECAT) into a unified external format (XNAT).</description>
   <url>http://nrg.wustl.edu</url>
   <dependencies>
     <dependency>

@@ -5,8 +5,11 @@ package org.nrg.attr;
 
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -84,6 +87,39 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
     return getValuesGiven(new HashMap<S,V>(), failed);
   }
 
+  /**
+   * Demultiplexes the values into multiple attributes
+   * @param ead Multiplex ExtAttrDef
+   * @param given constraints that produce multiple values for the attribute/s
+   * @return List of demultiplexed attributes; empty if a failure blocks demultiplexing
+   * @throws ExtAttrException
+   */
+  @SuppressWarnings("unchecked")
+  private final List<ExtAttrValue> demultiplex(final ExtAttrDef<S,V> ead, final Map<S,V> given)
+      throws ExtAttrException {
+    final Map<S,V> demultGiven = new HashMap<S,V>(given);
+    final Collection<S> toGet = new LinkedHashSet<S>(ead.getAttrs());
+    final Multiplex<S,V> mead = (Multiplex<S,V>)ead;
+    toGet.add(mead.getIndexAttribute());
+    final Map<S,ConversionFailureException> sfailed = new LinkedHashMap<S,ConversionFailureException>();
+    final Collection<Map<S,V>> dmvs = getUniqueCombinationsGivenValues(demultGiven, toGet, sfailed);
+    if (sfailed.isEmpty()) {
+      final List<ExtAttrValue> values = new ArrayList<ExtAttrValue>();
+      for (final Map<S,V> m : dmvs) {
+        values.add(mead.demultiplex(m));
+      }
+      return values;
+    } else {
+      return Collections.emptyList();
+    }
+  }
+  
+  
+  /*
+   * (non-Javadoc)
+   * @see org.nrg.attr.AttrAdapter#getValuesGiven(java.util.Map, java.util.Map)
+   */
+  @SuppressWarnings("unchecked")
   public final List<ExtAttrValue> getValuesGiven(final Map<S,V> given,
       final Map<ExtAttrDef<S,V>,Exception> failed)
       throws ExtAttrException {
@@ -105,8 +141,12 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
           // Merge the values together into one
           values.add(new BasicExtAttrValue(vals));
         } else if (ead instanceof Multiplex) {
-          // Split the values into multiple fields
-          values.addAll(((Multiplex)ead).extract(vals));
+          final List<ExtAttrValue> dmvals = demultiplex(ead, given);
+          if (dmvals.isEmpty()) {
+            failed.put(ead, new NoUniqueValueException(ead.getName(), vals));
+          } else {
+            values.addAll(dmvals);
+          }
         } else {
           failed.put(ead, new NoUniqueValueException(ead.getName(), vals));
         }
@@ -117,14 +157,23 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
     //    return singFromMultiple(getMultipleValuesGiven(given));
   }
 
-
-  public final List<Set<ExtAttrValue>>
-  getMultipleValuesGiven(final Map<S,V> given, final Map<ExtAttrDef<S,V>,Exception> failures)
-  throws ExtAttrException {
+  
+  /**
+   * Implements {@link AttrAdapter#getMultipleValuesGiven(Map, Map)}
+   * @param given
+   * @param defs
+   * @param failures
+   * @return
+   * @throws ExtAttrException
+   */
+  private final List<Set<ExtAttrValue>>
+  getMultipleValuesGiven(final Map<S,V> given, final Iterable<ExtAttrDef<S,V>> defs,
+      final Map<ExtAttrDef<S,V>,Exception> failures)
+      throws ExtAttrException {
     final List<Set<ExtAttrValue>> values = new ArrayList<Set<ExtAttrValue>>();
     final Map<S,ConversionFailureException> failedS = new HashMap<S,ConversionFailureException>();
 
-    for (final ExtAttrDef<S,V> ea : attrDefs) {
+    for (final ExtAttrDef<S,V> ea : defs) {
       final Set<ExtAttrValue> attrVals = new HashSet<ExtAttrValue>();
       values.add(attrVals);
 
@@ -134,7 +183,7 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
       VALUES: for (final Map<S,V> value: getUniqueCombinationsGivenValues(given, ea.getAttrs(), failedS)) {
         for (final S attr : ea.getAttrs())
           if (!value.containsKey(attr) && !(ea instanceof Optional)) {
-            continue VALUES;	// missing required value; move on to next attribute
+            continue VALUES;    // missing required value; move on to next attribute
           }
         try {
           attrVals.add(ea.convert(value));
@@ -154,5 +203,15 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
     }
 
     return values;
+  }
+
+  /*
+   * (non-Javadoc)
+   * @see org.nrg.attr.AttrAdapter#getMultipleValuesGiven(java.util.Map, java.util.Map)
+   */
+  public final List<Set<ExtAttrValue>>
+  getMultipleValuesGiven(final Map<S,V> given, final Map<ExtAttrDef<S,V>,Exception> failures)
+  throws ExtAttrException {
+    return getMultipleValuesGiven(given, attrDefs, failures);
   }
 }

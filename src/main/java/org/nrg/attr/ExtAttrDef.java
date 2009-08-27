@@ -35,21 +35,44 @@ public interface ExtAttrDef<S,V> {
   void require(S...ss);
   void makeOptional(S...ss);
 
-  public static interface Optional { }
+  public interface Optional { }
 
-  public static interface MultiValue {
+  public interface MultiValue {
     String getValueSeparator();
   }
   
-  public static interface Multiplex {
-    Collection<ExtAttrValue> extract(Iterable<ExtAttrValue> vals);
+  
+  /**
+   * Represents an attribute that, if the native attribute values are unique,
+   * will be a single attribute; or, if the native attributes have multiple value
+   * combinations, will generate multiple external attributes.
+   * @author Kevin A. Archie <karchie@npg.wustl.edu>
+   *
+   * @param <S> native attribute identifier type
+   * @param <V> native attribute value type
+   */
+  public interface Multiplex<S,V> {
+    /**
+     * Returns the identifier of the native attribute used to index demultiplexing.
+     * @return demultiplexing index attribute identifier
+     */
+    S getIndexAttribute();
+    
+    /**
+     * Returns a demultiplexed value of this attribute.
+     * @param vals Map containing values both of the required attributes
+     * and the demultiplexing index attribute.
+     * @return demultiplexed value
+     */
+    ExtAttrValue demultiplex(Map<S,V> vals) throws ConversionFailureException;
   }
 
+  
   /**
    * Provides a partial implementation used by many subclasses of ExtAttrDef
    * @author Kevin A. Archie <karchie@npg.wustl.edu>
    */
-  public static abstract class Abstract<S,V> implements ExtAttrDef<S,V> {
+  public abstract class Abstract<S,V> implements ExtAttrDef<S,V> {
     private final List<S> attrs;
     private final String name;
     private final Set<S> optional;
@@ -122,7 +145,7 @@ public interface ExtAttrDef<S,V> {
     }
   }
 
-  public static class Labeled<S,V> implements ExtAttrDef<S,V> {
+  public class Labeled<S,V> implements ExtAttrDef<S,V> {
     private final ExtAttrDef<S,V> base;
     private final Map<String,String> labels;
     private final Set<S> optional;
@@ -173,7 +196,7 @@ public interface ExtAttrDef<S,V> {
   /**
    * Defines an external attribute with fixed value
    */
-  public static class Constant<S,V> extends Abstract<S,V> {
+  public class Constant<S,V> extends Abstract<S,V> {
     private final String value;
     @Override
     public String convertText(Map<S,V> vals) { return value; }
@@ -185,7 +208,7 @@ public interface ExtAttrDef<S,V> {
   /**
    * Defines an empty, placeholder external attribute
    */
-  public static class Empty<S,V> extends Constant<S,V> {
+  public class Empty<S,V> extends Constant<S,V> {
     public Empty(final String name) { super(name, null); }
   }
 
@@ -194,7 +217,7 @@ public interface ExtAttrDef<S,V> {
    * one external, optionally with an applied String format.  Uses
    * V.toString() as the text value.
    */
-  public static class Text<S,V> extends Abstract<S,V> {
+  public class Text<S,V> extends Abstract<S,V> {
     private static final String NO_FORMAT = "%1$s";
     private final String format;
 
@@ -218,7 +241,7 @@ public interface ExtAttrDef<S,V> {
     public Text(final String name, final S attr) { this(name, attr, NO_FORMAT); }
   }
 
-  public static abstract class AbstractWrapper<S,V> implements ExtAttrDef<S,V> {
+  public abstract class AbstractWrapper<S,V> implements ExtAttrDef<S,V> {
     private final ExtAttrDef<S,V> attr;
 
     public AbstractWrapper(final ExtAttrDef<S,V> attr) {
@@ -246,7 +269,7 @@ public interface ExtAttrDef<S,V> {
     public String toString() { return attr.toString(); }
   }
   
-  public static class OptionalWrapper<S,V>
+  public class OptionalWrapper<S,V>
   extends AbstractWrapper<S,V>
   implements ExtAttrDef<S,V>,Optional {
     public OptionalWrapper(final ExtAttrDef<S,V> attr) {
@@ -258,7 +281,7 @@ public interface ExtAttrDef<S,V> {
     }
   }
 
-  public static class MultiValueWrapper<S,V> 
+  public class MultiValueWrapper<S,V> 
   extends AbstractWrapper<S,V>
   implements ExtAttrDef<S,V>,MultiValue {
     private final String separator;
@@ -277,7 +300,7 @@ public interface ExtAttrDef<S,V> {
    * attribute are simple translations of a single native attribute.
    * Conversion from native to child attributes is via toString().
    */
-  public static class TextWithAttributes<S,V> extends Abstract<S,V> {
+  public class TextWithAttributes<S,V> extends Abstract<S,V> {
     private final S na;
     private final Map<String,S> attrdefs;
 
@@ -338,7 +361,7 @@ public interface ExtAttrDef<S,V> {
    * Defines an external attribute for which the value will have no text,
    * only child attributes, each defined by a single native attribute.
    */
-  public static class AttributesOnly<S,V> extends TextWithAttributes<S,V> {
+  public class AttributesOnly<S,V> extends TextWithAttributes<S,V> {
     public AttributesOnly(final String name, final Map<String,S> attrdefs) {
       super(name, null, attrdefs);
     }

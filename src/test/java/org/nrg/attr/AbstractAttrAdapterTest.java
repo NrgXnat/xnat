@@ -5,7 +5,6 @@ package org.nrg.attr;
 
 import static org.junit.Assert.*;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -14,6 +13,8 @@ import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.junit.Test;
 
@@ -71,22 +72,29 @@ public class AbstractAttrAdapterTest {
   }
   
   private final static class BasicMultiplexedAttrDef<S,V>
-  extends ExtAttrDef.Text<S,V>
-  implements ExtAttrDef.Multiplex {
-    private final String root;
-    private int index = 0;
+  extends ExtAttrDef.Text<S,V> implements ExtAttrDef.Multiplex<S,V> {
+    private final S dmIdx;
+    private final String format;
     
-    BasicMultiplexedAttrDef(final S attr, final String name, final String multiRoot) {
+    BasicMultiplexedAttrDef(final S attr, final S dmIdx, final String name, final String format) {
       super(name, attr);
-      root = multiRoot;
+      this.dmIdx = dmIdx;
+      this.format = format;
     }
     
-    public Collection<ExtAttrValue> extract(final Iterable<ExtAttrValue> vals) {
-      final ArrayList<ExtAttrValue> out = new ArrayList<ExtAttrValue>();
-      for (final ExtAttrValue val : vals) {
-        out.add(new BasicExtAttrValue(root + (++index), val.getText()));
-      }
-      return out;
+    /*
+     * (non-Javadoc)
+     * @see org.nrg.attr.ExtAttrDef.Multiplex#getIndexAttribute()
+     */
+    public S getIndexAttribute() { return dmIdx; }
+    
+    /*
+     * (non-Javadoc)
+     * @see org.nrg.attr.ExtAttrDef.Multiplex#demultiplex(java.util.Map)
+     */
+    public ExtAttrValue demultiplex(final Map<S,V> vals) throws ConversionFailureException {
+      assert vals.containsKey(dmIdx);
+      return new BasicExtAttrValue(String.format(format, vals.get(dmIdx)), convertText(vals));
     }
   }
 
@@ -232,10 +240,15 @@ public class AbstractAttrAdapterTest {
     aam.put(f2, NativeAttr.A, 0.0f);
     aam.put(f1, NativeAttr.B, 1.0f);
     aam.put(f2, NativeAttr.B, 1.5f);
-    aam.put(f1, NativeAttr.C, 2.0f);
+    aam.put(f1, NativeAttr.C, 1.0f);
     aam.put(f2, NativeAttr.C, 2.0f);
 
-    final ExtAttrDef<NativeAttr,Float> extB = new BasicMultiplexedAttrDef(NativeAttr.B, "extB_mp", "MultiB-");
+    // This definition actually gives us funny-looking attribute names with floating point
+    // detritus in.  The definition of multiplexed attr def for a particular native attribute
+    // type will need to be made carefully.
+    final ExtAttrDef<NativeAttr,Float> extB = new BasicMultiplexedAttrDef(NativeAttr.B,
+        NativeAttr.C, "extB_mp", "MultiB_%f");
+    final Pattern pattern = Pattern.compile("MultiB_(.*)");
     aam.add(extB);
     
     failures.clear();
@@ -243,7 +256,18 @@ public class AbstractAttrAdapterTest {
       final List<ExtAttrValue> mvals = aam.getValues(failures);
       assertEquals(2, mvals.size());
       for (final ExtAttrValue val : mvals) {
-        assertTrue(val.getName().startsWith("MultiB"));
+        final Matcher m = pattern.matcher(val.getName());
+        assertTrue(m.matches());
+        final Float f = Float.valueOf(m.group(1));
+        boolean foundIndex = false;
+        for (final Map<NativeAttr,Float> fm : aam.vals.values()) {
+          if (fm.get(NativeAttr.C).equals(f)) {
+            assertEquals(Float.valueOf(val.getText()), fm.get(NativeAttr.B));
+            // System.out.println(fm.get(NativeAttr.B) + " <- " + f);
+            foundIndex = true;
+          }
+        }
+        assertTrue(foundIndex);
       }
     } catch (ExtAttrException e) {
       fail(e.getMessage());

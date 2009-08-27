@@ -13,6 +13,7 @@ import java.util.HashMap;
 import java.util.Set;
 
 import org.nrg.attr.ExtAttrDef.MultiValue;
+import org.nrg.attr.ExtAttrDef.Multiplex;
 import org.nrg.attr.ExtAttrDef.Optional;
 
 
@@ -103,6 +104,9 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
         if (ead instanceof MultiValue) {
           // Merge the values together into one
           values.add(new BasicExtAttrValue(vals));
+        } else if (ead instanceof Multiplex) {
+          // Split the values into multiple fields
+          values.addAll(((Multiplex)ead).extract(vals));
         } else {
           failed.put(ead, new NoUniqueValueException(ead.getName(), vals));
         }

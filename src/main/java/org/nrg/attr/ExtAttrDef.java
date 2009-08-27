@@ -40,6 +40,10 @@ public interface ExtAttrDef<S,V> {
   public static interface MultiValue {
     String getValueSeparator();
   }
+  
+  public static interface Multiplex {
+    Collection<ExtAttrValue> extract(Iterable<ExtAttrValue> vals);
+  }
 
   /**
    * Provides a partial implementation used by many subclasses of ExtAttrDef

@@ -5,6 +5,7 @@ package org.nrg.attr;
 
 import static org.junit.Assert.*;
 
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -66,6 +67,26 @@ public class AbstractAttrAdapterTest {
       }
       vals.get(file).put(s,v);
       return this;
+    }
+  }
+  
+  private final static class BasicMultiplexedAttrDef<S,V>
+  extends ExtAttrDef.Text<S,V>
+  implements ExtAttrDef.Multiplex {
+    private final String root;
+    private int index = 0;
+    
+    BasicMultiplexedAttrDef(final S attr, final String name, final String multiRoot) {
+      super(name, attr);
+      root = multiRoot;
+    }
+    
+    public Collection<ExtAttrValue> extract(final Iterable<ExtAttrValue> vals) {
+      final ArrayList<ExtAttrValue> out = new ArrayList<ExtAttrValue>();
+      for (final ExtAttrValue val : vals) {
+        out.add(new BasicExtAttrValue(root + (++index), val.getText()));
+      }
+      return out;
     }
   }
 
@@ -203,6 +224,28 @@ public class AbstractAttrAdapterTest {
       assertEquals("ext-C", e.getAttribute());
       assertEquals(2, e.getValues().length);
     } catch (Exception e) {
+      fail(e.getMessage());
+    }
+ 
+    final AttrAdapter<NativeAttr,Float> aam = new AttrAdapter<NativeAttr,Float>(new AttrDefSet<NativeAttr,Float>());
+    aam.put(f1, NativeAttr.A, 0.0f);
+    aam.put(f2, NativeAttr.A, 0.0f);
+    aam.put(f1, NativeAttr.B, 1.0f);
+    aam.put(f2, NativeAttr.B, 1.5f);
+    aam.put(f1, NativeAttr.C, 2.0f);
+    aam.put(f2, NativeAttr.C, 2.0f);
+
+    final ExtAttrDef<NativeAttr,Float> extB = new BasicMultiplexedAttrDef(NativeAttr.B, "extB_mp", "MultiB-");
+    aam.add(extB);
+    
+    failures.clear();
+    try {
+      final List<ExtAttrValue> mvals = aam.getValues(failures);
+      assertEquals(2, mvals.size());
+      for (final ExtAttrValue val : mvals) {
+        assertTrue(val.getName().startsWith("MultiB"));
+      }
+    } catch (ExtAttrException e) {
       fail(e.getMessage());
     }
   }

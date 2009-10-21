@@ -106,7 +106,9 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
     if (sfailed.isEmpty()) {
       final List<ExtAttrValue> values = new ArrayList<ExtAttrValue>();
       for (final Map<S,V> m : dmvs) {
-        values.add(mead.demultiplex(m));
+        try {
+          values.add(mead.demultiplex(m));
+        } catch (ConversionFailureException skip) {}
       }
       return values;
     } else {
@@ -128,7 +130,8 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
     final Iterator<? extends ExtAttrDef<S,V>> eai = attrDefs.iterator();
 
     while (valsi.hasNext()) {
-      final Set<ExtAttrValue> vals = valsi.next();
+      final Set<ExtAttrValue> vals = new LinkedHashSet(valsi.next());
+      vals.remove(null);
       final ExtAttrDef<S,V> ead = eai.next();
       if (vals.isEmpty()) {
         if (!(ead instanceof Optional)) {

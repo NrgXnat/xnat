@@ -41,7 +41,7 @@
   <groupId>org.nrg</groupId>
   <artifactId>ExtAttr</artifactId>
   <packaging>jar</packaging>
-  <version>1.5-SNAPSHOT</version>
+  <version>1.5</version>
   <name>External Attribute library</name>
   <description>Library for converting native image metadata formats (e.g., DICOM, ECAT) into a unified external format (XNAT).</description>
   <url>http://nrg.wustl.edu</url>

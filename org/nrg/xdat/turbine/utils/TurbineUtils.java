@@ -1,0 +1,966 @@
+//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+/* 
+ * XDAT – Extensible Data Archive Toolkit
+ * Copyright (C) 2005 Washington University
+ */
+/*
+ * Created on Jan 17, 2005
+ *
+ */
+package org.nrg.xdat.turbine.utils;
+
+import java.io.IOException;
+import java.io.StringReader;
+import java.net.URLDecoder;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.Hashtable;
+
+import javax.servlet.http.HttpServletRequest;
+
+import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.log4j.Logger;
+import org.apache.turbine.Turbine;
+import org.apache.turbine.services.intake.model.Group;
+import org.apache.turbine.util.RunData;
+import org.apache.turbine.util.parser.ParameterParser;
+import org.apache.velocity.app.Velocity;
+import org.apache.velocity.context.Context;
+import org.nrg.xdat.om.XdatSecurity;
+import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.schema.SchemaField;
+import org.nrg.xdat.search.DisplaySearch;
+import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.XFT;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
+import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.search.SearchCriteria;
+import org.nrg.xft.utils.StringUtils;
+import org.xml.sax.InputSource;
+import org.xml.sax.SAXException;
+/**
+ * @author Tim
+ *
+ */
+public class TurbineUtils {
+	static Logger logger = Logger.getLogger(TurbineUtils.class);
+	private XdatSecurity _security = null;
+	
+	private static TurbineUtils INSTANCE = null;
+	
+	private TurbineUtils()
+	{
+	    init();
+	}
+	
+	private void init(){
+	    
+	}
+	
+	public static TurbineUtils GetInstance()
+	{
+	    if (INSTANCE == null)
+	    {
+	        INSTANCE = new TurbineUtils();
+	    }
+	    
+	    return INSTANCE;
+	}
+	
+	private XdatSecurity getSecurityObject()
+	{
+	    if (_security==null)
+	    {
+	       ArrayList al =XdatSecurity.getAllXdatSecuritys(null,false);
+	       if (al.size()>0)
+	       {
+	           _security=(XdatSecurity)al.get(0);
+	       }
+	    }
+	    
+	    return _security;
+	}
+	
+	public Integer getSecurityID(){
+	    XdatSecurity sec = this.getSecurityObject();
+		if (sec!=null)
+		{
+			try {
+                return sec.getIntegerProperty("xdat:security.xdat_security_id");
+            } catch (FieldNotFoundException e) {
+                logger.error("",e);
+                return null;
+            } catch (ElementNotFoundException e) {
+                logger.error("",e);
+                return null;
+            }
+		}else{
+		    return null;
+		}
+	}
+	
+	public static Integer GetSystemID(){
+	    return TurbineUtils.GetInstance().getSecurityID();
+	}
+	
+	public static String GetSystemName()
+	{
+		String site_id= XFT.GetSiteID();
+		if(site_id==null || org.apache.commons.lang.StringUtils.isEmpty(site_id)){
+			return "XNAT";
+		}else{
+			return site_id;
+		}
+	}
+	
+	public boolean loginRequired()
+	{
+		return XFT.GetRequireLogin();
+	}
+	
+	public static boolean LoginRequired()
+	{
+        return XFT.GetRequireLogin();
+	}
+	
+	public static ItemI GetItemBySearch(RunData data, boolean preLoad) throws Exception
+	{
+		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
+		String searchField = data.getParameters().getString("search_field");
+		Object searchValue = data.getParameters().getObject("search_value");
+		if (searchField != null && searchValue != null)
+		{
+		    ItemSearch search = new ItemSearch();
+		    search.setUser(TurbineUtils.getUser(data));
+		    
+		    String elementName = StringUtils.GetRootElementName(searchField);
+		    
+		    SchemaElementI gwe = SchemaElement.GetElement(elementName);
+		    search.setElement(elementName);
+		    search.addCriteria(searchField,searchValue);
+		    search.setAllowMultiples(preLoad);
+		    
+			ItemCollection items = search.exec();
+			if (items.size() > 0)
+			{
+				ItemI o = items.getFirst();
+				//o.extend();
+				return o;
+			}else{
+				return null;
+			}
+		}else
+		{
+			return null;
+		}
+	}
+	
+	public static SchemaElementI GetSchemaElementBySearch(RunData data)
+	{
+		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
+		String searchField = data.getParameters().getString("search_field");
+		String searchElement = data.getParameters().getString("search_element");
+		if (searchElement!=null)
+		{
+		    try {
+                return GenericWrapperElement.GetElement(searchElement);
+            } catch (XFTInitException e) {
+            } catch (ElementNotFoundException e) {
+            }
+		}
+		
+		if (searchField !=null)
+		{
+			try {
+                return StringUtils.GetRootElement(searchField);
+            } catch (ElementNotFoundException e) {
+            }
+		}
+		
+		return null;
+	}
+	
+	public static XFTItem GetItemBySearch(RunData data) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
+	{
+		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
+		String searchField = data.getParameters().getString("search_field");
+		Object searchValue = data.getParameters().getObject("search_value");
+		if (searchField != null && searchValue != null)
+		{
+		    ItemSearch search = new ItemSearch();
+		    search.setUser(TurbineUtils.getUser(data));
+		    
+		    String elementName = StringUtils.GetRootElementName(searchField);
+		    
+		    SchemaElementI gwe = SchemaElement.GetElement(elementName);
+		    search.setElement(elementName);
+		    search.addCriteria(searchField,searchValue);
+		    
+		    search.setAllowMultiples(gwe.isPreLoad());
+		    
+			ItemCollection items = search.exec();
+			if (items.size() > 0)
+			{
+				ItemI o = items.getFirst();
+				//o.extend();
+				return (XFTItem)o;
+			}else{
+				return null;
+			}
+		}else
+		{
+			return null;
+		}
+	}
+	
+	public static ItemI GetItemBySearch(RunData data,Boolean preload) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
+	{
+		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
+		String searchField = data.getParameters().getString("search_field");
+		Object searchValue = data.getParameters().getObject("search_value");
+		if (searchField != null && searchValue != null)
+		{
+		    ItemSearch search = new ItemSearch();
+		    search.setUser(TurbineUtils.getUser(data));
+		    
+		    String elementName = StringUtils.GetRootElementName(searchField);
+		    
+		    SchemaElementI gwe = SchemaElement.GetElement(elementName);
+		    search.setElement(elementName);
+		    search.addCriteria(searchField,searchValue);
+		    
+		    boolean b = false;
+		    if (preload==null)
+		    {
+		        b= gwe.isPreLoad();
+		    }else{
+		        b = preload.booleanValue();
+		    }
+		    search.setAllowMultiples(b);
+		    
+			ItemCollection items = search.exec();
+			if (items.size() > 0)
+			{
+				ItemI o = items.getFirst();
+				//o.extend();
+				return o;
+			}else{
+				return null;
+			}
+		}else
+		{
+			return null;
+		}
+	}
+    
+	
+	public static void SetEditItem(ItemI item,RunData data)
+	{
+	    data.getSession().setAttribute("edit_item",item);
+	}
+	
+	public static ItemI GetEditItem(RunData data)
+	{
+	    ItemI edit_item = (ItemI)data.getSession().getAttribute("edit_item");
+	    data.getSession().removeAttribute("edit_item");
+	    return edit_item;
+	}
+	
+	public static void SetParticipantItem(ItemI item,RunData data)
+	{
+	    data.getSession().setAttribute("participant",item);
+	}
+	
+	public static ItemI GetParticipantItem(RunData data)
+	{
+	    ItemI edit_item = (ItemI)data.getSession().getAttribute("participant");
+	    if (edit_item==null)
+	    {
+	       String s = data.getParameters().getString("part_id");
+	       if (s != null)
+	       {
+		       try {
+                ItemCollection items = ItemSearch.GetItems("xnat:subjectData.ID",s,TurbineUtils.getUser(data),false);
+	               if (items.size()>0)
+	               {
+	                   return items.getFirst();
+	               }
+            } catch (Exception e) {
+                logger.error("",e);
+            }
+	       }else{
+	           s = data.getParameters().getString("search_field");
+	           if (s != null)
+	           {
+	               if (s.equalsIgnoreCase("xnat:subjectData.ID"))
+	               {
+	                   try {
+                        ItemI part = TurbineUtils.GetItemBySearch(data);
+                        return part;
+                    } catch (Exception e) {
+                        logger.error("",e);
+                    }
+	               }
+	           }
+	       }
+	    }
+	    if (edit_item!=null)
+	    {
+	    	data.getSession().removeAttribute("participant");
+	    }
+	    return edit_item;
+	}
+	
+	public static String GetSearchElement(RunData data)
+	{
+		String s =  data.getParameters().getString("search_element");
+		if (s==null)
+		{
+			s = data.getParameters().getString("element");
+		}
+		return s;
+	}
+
+    
+    /**
+     * Returns server & context as specified in the Turbine object model (taken from the first login url).
+     * @return
+     */
+	public static String GetFullServerPath()
+	{
+		if (XFT.GetSiteURL()==null|| XFT.GetSiteURL().equals("")){
+			String s = "";
+			s = Turbine.getServerScheme() + "://" + Turbine.getServerName();
+			if(!Turbine.getServerPort().equals("80"))
+				s+= ":" + Turbine.getServerPort();
+			s+=Turbine.getContextPath();
+			return s;
+		}else{
+			return XFT.GetSiteURL();
+		}
+	}
+    
+    /**
+     * Returns server & context as specified in user request object.
+     * @param data
+     * @return
+     */
+    public static String GetRelativeServerPath(RunData data)
+    {
+    	return GetRelativePath(data.getRequest());
+    }
+    
+    public static String GetRelativePath(HttpServletRequest req){
+        if (req.getContextPath()!=null && !req.getContextPath().equals(""))
+        {
+            return req.getContextPath();
+        }else{
+        	return "";
+        }
+    }
+    
+    /**
+     * Returns server & context as specified in user request object.
+     * @param data
+     * @return
+     */
+    public static String GetFullServerPath(HttpServletRequest req){
+    	if (XFT.GetSiteURL()==null|| XFT.GetSiteURL().equals("")){
+            String s = null;
+            s= req.getRequestURL().toString();
+            String server = null;
+            
+            String pathinfo=req.getPathInfo();
+            String servletpath=req.getServletPath();
+            String servername=req.getServerName();
+            
+            if (req.getContextPath()!=null && !req.getContextPath().equals(""))
+            {
+                String path = req.getContextPath() +"/";
+                if (s.indexOf(path)!=-1)
+                {
+                    int breakIndex = s.indexOf(path) + (path.length());
+                    server = s.substring(0,breakIndex);
+                }
+            }
+            
+            if (server==null){
+                if (s.indexOf((new Integer(req.getServerPort())).toString())!=-1)
+                {
+                    int breakIndex = s.indexOf((new Integer(req.getServerPort())).toString()) + (new Integer(req.getServerPort())).toString().length();
+                    server = s.substring(0,breakIndex);
+                }
+            }
+            
+            if (server==null){
+                server = req.getScheme() + "://" + req.getServerName();
+            }
+            
+            return server;
+		}else{
+			return XFT.GetSiteURL();
+		}
+    }
+        
+    public static String GetContext()
+    {
+        String s = "";
+
+        s = Turbine.getContextPath();
+
+        return s;
+    }
+	
+	public static XDATUser getUser(RunData data)
+	{
+		return (XDATUser)data.getSession().getAttribute("user");
+	}
+	
+	public static void setUser(RunData data, XDATUser user)
+	{
+		data.getSession().setAttribute("user",user);
+	}
+	
+	/**
+	 * @param data
+	 * @return
+	 */
+	public static DisplaySearch getSearch(RunData data)
+	{
+        if (data.getParameters().get("search_xml")!=null || data.getParameters().get("search_id") !=null){
+            return TurbineUtils.getDSFromSearchXML(data);
+        }else{
+            DisplaySearch ds =  (DisplaySearch)data.getSession().getAttribute("search");
+            if (ds == null)
+            {
+                String displayElement = data.getParameters().getString("search_element");
+                if (displayElement == null)
+                {
+                    displayElement = data.getParameters().getString("element");
+                }
+                
+                if (displayElement == null)
+                {
+                    return null;
+                }
+                
+                try {
+                    ds = TurbineUtils.getUser(data).getSearch(displayElement,"listing");
+                    
+                    String searchField = data.getParameters().getString("search_field");
+                    Object searchValue = data.getParameters().getObject("search_value");
+                    if (searchField!= null && searchValue != null)
+                    {
+                        SearchCriteria criteria = new SearchCriteria();
+                        criteria.setFieldWXMLPath(searchField);
+                        criteria.setValue(searchValue);
+                        ds.addCriteria(criteria);
+                    }
+                } catch (Exception e) {
+                    e.printStackTrace();
+                    return null;
+                }
+            }
+            return ds;
+        }
+	}
+	
+	public static void setSearch(RunData data, DisplaySearch search)
+	{
+		data.getSession().setAttribute("search",search);
+	}
+    
+    public static DisplaySearch getDSFromSearchXML(RunData data){
+    	XDATUser user = TurbineUtils.getUser(data);
+        
+        if (user!=null){
+	        if (data.getParameters().get("search_xml") !=null)
+	        {
+	            try {
+	                String search_xml = data.getParameters().getString("search_xml");
+	                search_xml=URLDecoder.decode(search_xml,"UTF-8");
+	                search_xml=StringUtils.ReplaceStr(search_xml, ".close.", "/");
+	                
+	                    StringReader sr = new StringReader(search_xml);
+	                    InputSource is = new InputSource(sr);
+	                    SAXReader reader = new SAXReader(user);
+	                        XFTItem item = reader.parse(is);
+	                        XdatStoredSearch search = new XdatStoredSearch(item);
+	                        if (search!=null){
+	                            DisplaySearch ds=search.getCSVDisplaySearch(user);
+	                            data.getParameters().remove("search_xml");
+	                            return ds;
+	                        }
+	                
+	            } catch (IOException e) {
+	                logger.error("",e);
+	            } catch (SAXException e) {
+	                logger.error("",e);
+	            } catch (XFTInitException e) {
+	                logger.error("",e);
+	            } catch (ElementNotFoundException e) {
+	                logger.error("",e);
+	            } catch (FieldNotFoundException e) {
+	                logger.error("",e);
+	            } catch (Throwable e) {
+	                logger.error("",e);
+	            }
+	        }else if (data.getParameters().get("search_id") !=null)
+	        {
+	            try {
+	                String search_id = data.getParameters().get("search_id");
+	                    
+	                    String search_xml = PoolDBUtils.RetrieveLoggedCustomSearch(user.getLogin(), user.getDBName(), search_id);
+	                    
+	                    if (search_xml!=null){
+	                        StringReader sr = new StringReader(search_xml);
+	                        InputSource is = new InputSource(sr);
+	                        SAXReader reader = new SAXReader(user);
+	                        XFTItem item = reader.parse(is);
+	                        XdatStoredSearch search = new XdatStoredSearch(item);
+	                        if (search!=null){
+	                            DisplaySearch ds=search.getDisplaySearch(user);
+	                            data.getParameters().remove("search_id");
+	                            return ds;
+	                        }
+	                    }
+	            } catch (IOException e) {
+	                logger.error("",e);
+	            } catch (SAXException e) {
+	                logger.error("",e);
+	            } catch (XFTInitException e) {
+	                logger.error("",e);
+	            } catch (ElementNotFoundException e) {
+	                logger.error("",e);
+	            } catch (FieldNotFoundException e) {
+	                logger.error("",e);
+	            } catch (Throwable e) {
+	                logger.error("",e);
+	            }
+	        }else if (data.getRequest().getAttribute("xss") !=null)
+	        {
+	            try {
+	                XdatStoredSearch search = (XdatStoredSearch)data.getRequest().getAttribute("xss");
+                    if (search!=null){
+                        DisplaySearch ds=search.getDisplaySearch(user);
+                        data.getParameters().remove("search_id");
+                        return ds;
+                    }
+	            } catch (IOException e) {
+	                logger.error("",e);
+	            } catch (SAXException e) {
+	                logger.error("",e);
+	            } catch (XFTInitException e) {
+	                logger.error("",e);
+	            } catch (ElementNotFoundException e) {
+	                logger.error("",e);
+	            } catch (FieldNotFoundException e) {
+	                logger.error("",e);
+	            } catch (Throwable e) {
+	                logger.error("",e);
+	            }
+	        }
+        }
+        return null;
+    }
+	
+	public static RunData SetSearchProperties(RunData data, ItemI item)
+	{
+		data.getParameters().setString("search_element",item.getXSIType());
+		try {
+			SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
+			SchemaField sf = (SchemaField)se.getAllPrimaryKeys().get(0);
+			data.getParameters().setString("search_field",StringUtils.ReplaceStr(StringUtils.ReplaceStr(sf.getXMLPathString(se.getFullXMLName()),"/","."),"@","."));
+			Object o = item.getProperty(sf.getId());
+			data.getParameters().setString("search_value",o.toString());
+		} catch (Exception e) {
+			logger.error("",e);
+		}
+		return data;
+	}
+    
+    public static void SetSearchProperties(Context context, ItemI item)
+    {
+        context.put("search_element",item.getXSIType());
+        try {
+            SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
+            SchemaField sf = (SchemaField)se.getAllPrimaryKeys().get(0);
+            context.put("search_field",StringUtils.ReplaceStr(StringUtils.ReplaceStr(sf.getXMLPathString(se.getFullXMLName()),"/","."),"@","."));
+            Object o = item.getProperty(sf.getId());
+            context.put("search_value",o.toString());
+        } catch (Exception e) {
+            logger.error("",e);
+        }
+    }
+	
+	public static ItemI getDataItem(RunData data)
+	{
+		ItemI item = (ItemI)data.getSession().getAttribute("data_item");
+		data.getSession().removeAttribute("data_item");
+		return item;
+	}
+	
+	public static RunData setDataItem(RunData data, ItemI item)
+	{
+		data.getSession().setAttribute("data_item",item);
+		return data;
+	}
+	
+	public static String getStoredElementName(RunData data)
+	{
+		String s= (String)data.getSession().getAttribute("stored_element");
+		data.getSession().removeAttribute("stored_element");
+		return s;
+	}
+	
+	public static void setStoredElementName(RunData data, String elementName)
+	{
+		data.getSession().setAttribute("stored_element",elementName);
+	}
+	
+	public static void OutputDataParameters(RunData data)
+	{
+		if (data!= null)
+		{
+			logger.debug("\n\nData Parameters");
+			ArrayList al = GetDataParameterList(data);
+			for(int i=0; i < al.size(); i++)
+			{
+				logger.debug("KEY: "+ al.get(i).toString() + " VALUE: " + data.getParameters().get(al.get(i).toString().toLowerCase()));
+			}
+		}
+	}
+	
+		public static ArrayList GetDataParameterList(RunData data)
+		{
+			ArrayList al = new ArrayList();
+			for(int i=0; i < data.getParameters().getKeys().length; i++)
+			{
+				al.add(data.getParameters().getKeys()[i].toString());
+			}
+			Collections.sort(al);
+			return al;
+		}
+
+        @SuppressWarnings("deprecation")
+		public static Hashtable<String,Object> GetDataParameterHash(RunData data)
+		{
+		    //TurbineUtils.OutputDataParameters(data);
+			Hashtable<String,Object> hash = new Hashtable<String,Object>();
+            ParameterParser pp = data.getParameters();
+            Enumeration penum = pp.keys();
+            while (penum.hasMoreElements()){
+                String key = penum.nextElement().toString();
+                Object value = data.getParameters().get(key);
+                if (value!=null && !value.equals(""))
+                    hash.put(key,value.toString());
+            }
+			return hash;
+		}
+		
+		public static Hashtable GetContextParameterHash(Context context)
+		{
+			Hashtable hash = new Hashtable();
+            Object[] keys = context.getKeys();
+            for (int i =0;i<keys.length;i++){
+                String key = (String)keys[i];
+                Object value = context.get(key);
+                if (value!=null && !value.equals(""))
+                    hash.put(key,value.toString());
+            }
+			return hash;
+		}
+		
+		public static Hashtable GetTurbineParameters(RunData data, Context context)
+		{
+			Hashtable hash = new Hashtable();
+			if (data != null){
+				hash = GetDataParameterHash(data);
+			}
+			if (context != null)
+			{
+				hash.putAll(GetContextParameterHash(context));
+			}
+			return hash;
+		}
+	
+		/**
+		 * Debugging method used in actions to display all fields in an Intake Group.
+		 * @param group
+		 */
+		public static void OutputGroupFields(Group group)
+		{
+			logger.debug("\n\nGroup Parameters");
+			for(int i=0; i < group.getFieldNames().length; i++)
+			{
+				try{
+					logger.debug("FIELD: "+ group.getFieldNames()[i] + " VALUE: " + group.get(group.getFieldNames()[i]).getValue() + " DISPLAY NAME: " + group.get(group.getFieldNames()[i]).getDisplayName() + " KEY: " + group.get(group.getFieldNames()[i]).getKey() + " Initial: " + group.get(group.getFieldNames()[i]).getInitialValue() + " DEFAULT: " + group.get(group.getFieldNames()[i]).getDefaultValue() + " TEST: " + group.get(group.getFieldNames()[i]).getTestValue());
+				}catch(Exception ex)
+				{
+				}
+			}
+		}
+	
+		/**
+		 * Debugging method used in actions to display all parameters in the Context object
+		 * @param context
+		 */
+		public static void OutputContextParameters(Context context)
+		{
+			if (context != null)
+			{
+				logger.debug("\n\nContext Parameters");
+				for(int i=0; i < context.getKeys().length; i++)
+				{
+					logger.debug("KEY: "+ context.getKeys()[i].toString() + " VALUE: " + context.get(context.getKeys()[i].toString()));
+				}
+			}
+		}
+		
+		public static void OutputSessionParameters(RunData data)
+		{
+			if (data != null)
+			{
+				logger.debug("\n\nSession Parameters");
+				Enumeration enumer = data.getSession().getAttributeNames();
+				while (enumer.hasMoreElements())
+				{
+				    String key = (String)enumer.nextElement();
+				    Object o = data.getSession().getAttribute(key);
+				    logger.debug("KEY: "+ key + " VALUE: " + o.getClass());
+				}
+			}
+		}
+	
+	public static void OutputPassedParameters(RunData data,Context context, String name)
+	{
+		logger.debug("\n\n" + name);
+		TurbineUtils.OutputDataParameters(data);
+		TurbineUtils.OutputContextParameters(context);
+		TurbineUtils.OutputSessionParameters(data);
+	}
+	
+	
+	public static boolean HasPassedParameter(String s, RunData data)
+	{
+	    if (data.getParameters().get(s.toLowerCase())!=null)
+	    {
+	        Object o = data.getParameters().get(s.toLowerCase());
+	        if(o.toString().equalsIgnoreCase(""))
+	        {
+	            return false;
+	        }else{
+		        return true;
+	        }
+	    }else{
+	        return false;
+	    }
+	}
+	
+	public static Object GetPassedParameter(String s, RunData data)
+	{
+	    return GetPassedParameter(s.toLowerCase(),data,null);
+	}
+	
+	public static Object GetPassedParameter(String s, RunData data, Object defualt)
+	{
+	    if (data.getParameters().get(s.toLowerCase())!=null)
+	    {
+	        Object o = data.getParameters().get(s.toLowerCase());
+	        if(o.toString().equalsIgnoreCase(""))
+	        {
+	            return defualt;
+	        }else{
+		        return o;
+	        }
+	    }else{
+	        return defualt;
+	    }
+	}
+	
+	
+	public static void InstanciatePassedItemForScreenUse(RunData data, Context context)
+	{
+	    try {
+            ItemI o = TurbineUtils.GetItemBySearch(data);
+            
+            if (o != null)
+            {
+            	TurbineUtils.setDataItem(data,o);
+            	
+            	SchemaElementI se = SchemaElement.GetElement(o.getXSIType());
+            	
+            	context.put("item",o);
+            	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(o.getXSIType()));
+            	context.put("search_element",data.getParameters().getString("search_element"));
+            	context.put("search_field",data.getParameters().getString("search_field"));
+            	context.put("search_value",data.getParameters().getString("search_value"));
+            	
+            }else{
+            	logger.error("No Item Found.");
+            	data.setScreenTemplate("DefaultReport.vm");
+            }
+        } catch (Exception e) {
+            logger.error("",e);
+            data.setMessage(e.getMessage());
+        	data.setScreenTemplate("DefaultReport.vm");
+        }
+	}
+    
+    public String formatDate(Date d, String pattern){
+        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);
+        return formatter.format(d);
+    }
+    
+    public boolean templateExists(String screen){
+    	return Velocity.templateExists(screen);
+    }
+    
+    public String validateTemplate(String screen, String project){
+    	if(screen.endsWith(".vm")){
+    		screen=screen.substring(0,screen.length()-3);
+    	}
+    	
+    	if(project!=null && Velocity.templateExists(screen+"_" + project + ".vm")){
+    		return screen + "_" + project + ".vm";
+    	}else{
+    		if(Velocity.templateExists(screen + ".vm")){
+        		return screen + ".vm";
+        	}else{
+        		return null;
+        	}
+    	}
+    }
+    
+    public String validateTemplate(String[] screens, String project){
+    	for(String screen : screens){
+    		String s = validateTemplate(screen,project);
+    		if(s!=null){
+    			return s;
+    		}
+    	}
+    	
+    	return null;
+    }
+    
+    public String getTemplateName(String module,String dataType,String project){
+    	try {
+			GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
+			String temp = validateTemplate("/screens/"+ root.getSQLName()+ "/" + root.getSQLName() + module,project);
+			if (temp!=null){
+				return temp;
+			}
+			
+			temp = validateTemplate("/screens/"+ root.getSQLName()+ "/" + module,project);
+			if (temp!=null){
+				return temp;
+			}
+			
+			for(ArrayList primary: root.getExtendedElements()){
+				GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
+				temp = validateTemplate("/screens/"+ p.getSQLName()+ "/" + p.getSQLName() + module,project);
+				if (temp!=null){
+					return temp;
+				}
+				
+				temp = validateTemplate("/screens/"+ p.getSQLName()+ "/" + module,project);
+				if (temp!=null){
+					return temp;
+				}
+			}
+		} catch (XFTInitException e) {
+            logger.error("",e);
+		} catch (ElementNotFoundException e) {
+            logger.error("",e);
+		}
+    	
+    	return null;
+    }
+    
+    public String getTemplateName(String module,String dataType,String project,String subFolder){
+    	try {
+			GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
+			String temp = validateTemplate("/screens/"+ root.getSQLName()+ "/" + subFolder + "/" + root.getSQLName() + module,project);
+			if (temp!=null){
+				return temp;
+			}
+			
+			temp = validateTemplate("/screens/"+ root.getSQLName()+ "/" + subFolder + "/" + module,project);
+			if (temp!=null){
+				return temp;
+			}
+			
+			for(ArrayList primary: root.getExtendedElements()){
+				GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
+				temp = validateTemplate("/screens/"+ p.getSQLName()+ "/" + subFolder + "/" + p.getSQLName() + module,project);
+				if (temp!=null){
+					return temp;
+				}
+				
+				temp = validateTemplate("/screens/"+ p.getSQLName()+ "/" + subFolder + "/" + module,project);
+				if (temp!=null){
+					return temp;
+				}
+			}
+		} catch (XFTInitException e) {
+            logger.error("",e);
+		} catch (ElementNotFoundException e) {
+            logger.error("",e);
+		}
+    	
+    	return null;
+    }
+    
+    public String formatDate(long d, String pattern){
+        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);
+        return formatter.format(new Date(d));
+    }
+    
+    public String formatNumber(Object o, int roundTo){
+        NumberFormat formatter = java.text.NumberFormat.getInstance();
+        if (o==null){
+            return "";
+        }
+        if (o instanceof String){
+            try {
+                o = formatter.parse((String)o);
+            } catch (ParseException e) {
+                logger.error("",e);
+                return o.toString();
+            }
+        }
+        
+        if (o instanceof Number){
+            Number n = (Number)o;
+            formatter.setGroupingUsed(false);
+            formatter.setMaximumFractionDigits(roundTo);
+            formatter.setMinimumFractionDigits(roundTo);
+            return formatter.format(n);
+        }else{
+            return o.toString();
+        }
+    }
+    
+    public Object getArrayIndex(Object[] array, int index){
+        return array[index];
+    }
+    
+    public String escapeHTML(String o){
+    	return StringEscapeUtils.escapeHtml(o);
+    }
+}
+

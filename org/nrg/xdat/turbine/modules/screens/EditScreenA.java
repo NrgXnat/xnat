@@ -1,0 +1,160 @@
+//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+/* 
+ * XDAT – Extensible Data Archive Toolkit
+ * Copyright (C) 2005 Washington University
+ */
+/*
+ * Created on Mar 4, 2005
+ *
+ */
+package org.nrg.xdat.turbine.modules.screens;
+
+import org.apache.turbine.util.RunData;
+import org.apache.velocity.context.Context;
+import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.XFT;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.utils.StringUtils;
+
+
+/**
+ * @author Tim
+ *
+ */
+public abstract class EditScreenA extends SecureScreen {
+	protected ItemI item = null;
+	/**
+	 * ArrayList of Object[3] {xmlPath,option,(Possible Values)ArrayList of ArrayList(2){value,display},defaultVALUE}
+	 * @return
+	 */
+	public abstract String getElementName();
+	public abstract void finalProcessing(RunData data, Context context);
+	
+	public ItemI getEmptyItem(RunData data) throws Exception
+	{
+	    String s = getElementName();
+		return XFTItem.NewItem(s,TurbineUtils.getUser(data));
+	}
+    
+    public String getStringIdentifierForPassedItem(RunData data){
+        if(TurbineUtils.HasPassedParameter("tag", data)){
+            return (String)TurbineUtils.GetPassedParameter("tag", data);
+        }else{
+            return "edit_item";
+        }
+    }
+	
+	public void doBuildTemplate(RunData data, Context context)
+	{
+		try {
+            if (TurbineUtils.HasPassedParameter("destination", data)){
+                context.put("destination", TurbineUtils.GetPassedParameter("destination", data));
+            }
+		    context.put("edit_screen",data.getScreen());
+
+            if (TurbineUtils.HasPassedParameter("tag", data)){
+                context.put("tag", TurbineUtils.GetPassedParameter("tag", data));
+            }
+			
+			if (data.getParameters().getString("source") != null)
+			{
+				context.put("source", data.getParameters().getString("source"));
+			}
+			
+			item = null;
+
+            if (!getStringIdentifierForPassedItem(data).equals("edit_item")){
+                item = (ItemI)data.getSession().getAttribute(getStringIdentifierForPassedItem(data));
+                if (item !=null){
+                    data.getSession().removeAttribute(getStringIdentifierForPassedItem(data));
+                }else{
+                    item = TurbineUtils.GetEditItem(data);
+                }
+                
+            }else{
+                item = TurbineUtils.GetEditItem(data);
+            }
+            
+            if (item !=null)
+            {
+                if((!item.getXSIType().equals(getElementName())) && (!(item.getItem()).getGenericSchemaElement().isExtensionOf(GenericWrapperElement.GetElement(getElementName())))){
+                    item = null;
+                }
+            }
+			
+			if (item== null)
+			{
+				if(XFT.VERBOSE) System.out.println("No edit item passed... looking for item passed by variables");
+				try {
+					ItemI temp = TurbineUtils.GetItemBySearch(data);
+                    if (temp !=null){
+                        if (temp.getXSIType().equalsIgnoreCase(getElementName()))
+                        {
+                            item = temp;
+                        }
+                    }
+				} catch (Exception e1) {
+				}
+			}
+			context.put("edit_screen",StringUtils.getLocalClassName(this.getClass()) + ".vm");
+			if (item == null)
+			{
+				try {
+				    String s = getElementName();
+					item = getEmptyItem(data);
+					
+					
+					if(XFT.VERBOSE)  System.out.println("No passed item found.\nCreated New Item (" + item.getXSIType() +  ")");
+					SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
+
+					context.put("item",item);
+					context.put("element",se);
+					context.put("search_element",s);
+
+	            	context.put("om",BaseElement.GetGeneratedItem(item));
+					finalProcessing(data,context);
+				} catch (Exception e) {
+					e.printStackTrace();
+					data.setMessage("Invalid Search Parameters: Error creating item.");
+					data.setScreen("Index");
+					TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
+				}
+			}else{
+				try {
+					SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
+					if (context.get("source") == null)
+					{
+						context.put("source","XDATScreen_report_" + se.getFormattedName() + ".vm");
+					}
+					context.put("item",item);
+					context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
+					context.put("search_element",data.getParameters().getString("search_element"));
+					context.put("search_field",data.getParameters().getString("search_field"));
+					context.put("search_value",data.getParameters().getString("search_value"));
+
+	            	context.put("om",BaseElement.GetGeneratedItem(item));
+					finalProcessing(data,context);
+				} catch (Exception e) {
+					e.printStackTrace();
+					data.setMessage("Invalid Search Parameters: No Data Item Found.");
+					data.setScreen("Index");
+					TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
+				}
+				
+			}
+		} catch (Exception e) {
+			e.printStackTrace();
+			data.setMessage("Invalid Search Parameters: No Data Item Found.");
+			data.setScreen("Index");
+			TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
+		}
+
+        this.preserveVariables(data, context);
+	}
+}
+

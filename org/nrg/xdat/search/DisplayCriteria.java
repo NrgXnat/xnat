@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -22,7 +22,6 @@ import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.utils.StringUtils;
 
-import sun.misc.Cleaner;
 /**
  * @author Tim
  *

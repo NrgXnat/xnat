@@ -1,0 +1,1 @@
+mvn install:install-file -Dfile=lib/xnatsrb-1.jar -DgroupId=org.nrg.xnat -DartifactId=xnatsrb -Dversion=1 -Dpackaging=jar

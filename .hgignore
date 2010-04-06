@@ -1,5 +1,4 @@
 syntax: glob
-*.class
-classes/*
+target/
 .classpath
 .project

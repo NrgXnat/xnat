@@ -13,15 +13,10 @@
   	<developer>
   		<id>karchie</id>
   		<name>Kevin A. Archie</name>
-  		<email>karchie@npg.wustl.edu</email>
+  		<email>karchie@wustl.edu</email>
   		<timezone>-6</timezone>
   	</developer>
   </developers>
-  <scm>
-  	<connection>http://nrg.wustl.edu/svn/dicom/ExtAttr</connection>
-  	<developerConnection>svn+ssh://nrg.wustl.edu/opt/svn/dicom/ExtAttr</developerConnection>
-  	<url>http://nrg.wustl.edu/svn/dicom/ExtAttr</url>
-  </scm>
   <organization>
   	<name>Washington University Neuroinformatics Research Group</name>
   	<url>http://nrg.wustl.edu</url>

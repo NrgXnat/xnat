@@ -1,5 +1,4 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.nrg.xdat</groupId>
 	<artifactId>xdat_core</artifactId>
@@ -7,7 +6,6 @@
 	<version>1.1-SNAPSHOT</version>
 	<name>xdat_core</name>
 	<url>http://bitbucket.org/nrg/xdat_core/</url>
-
 	<scm>
 		<url>http://bitbucket.org/nrg/xdat_core</url>
 	</scm>
@@ -26,8 +24,6 @@
 			</plugin>
 		</plugins>
 	</build>
-
-
 	<!--
 		Use the Sun hosted javamail
 		http://maven.apache.org/guides/mini/guide-coping-with-sun-jars.html
@@ -40,7 +36,6 @@
 			<layout>default</layout>
 		</repository>
 	</repositories>
-
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -86,7 +81,6 @@
 			<artifactId>jul-to-slf4j</artifactId>
 			<version>1.5.8</version>
 		</dependency>
-
 		<dependency>
 			<groupId>javax.servlet</groupId>
 			<artifactId>servlet-api</artifactId>
@@ -151,7 +145,6 @@
 					<groupId>resources</groupId>
 					<artifactId>resources</artifactId>
 				</exclusion>
-
 				<exclusion>
 					<groupId>javax.sql</groupId>
 					<artifactId>jdbc-stdext</artifactId>
@@ -170,18 +163,6 @@
 			</exclusions>
 		</dependency>
 		<dependency>
-			<groupId>jdbc</groupId>
-			<artifactId>jdbc</artifactId>
-			<version>2.0</version>
-			<exclusions>
-				<exclusion>
-					<groupId>javax.sql</groupId>
-					<artifactId>jdbc-stdext</artifactId>
-				</exclusion>
-			</exclusions>
-		</dependency>
-
-		<dependency>
 			<groupId>com.lowagie</groupId>
 			<artifactId>itext</artifactId>
 			<version>1.1.4</version>
@@ -196,7 +177,6 @@
 			<artifactId>avalon-framework</artifactId>
 			<version>4.1.4</version>
 		</dependency>
-
 		<dependency>
 			<groupId>org.nrg.xnat</groupId>
 			<artifactId>xnatsrb</artifactId>

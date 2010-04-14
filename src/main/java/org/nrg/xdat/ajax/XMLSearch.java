@@ -7,10 +7,7 @@ package org.nrg.xdat.ajax;
 
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
-import java.io.OutputStream;
-import java.io.PrintWriter;
 import java.io.StringReader;
-import java.io.StringWriter;
 import java.util.Iterator;
 
 import javax.servlet.ServletConfig;

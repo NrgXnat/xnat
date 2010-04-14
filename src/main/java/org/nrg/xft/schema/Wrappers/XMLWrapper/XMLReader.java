@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -15,19 +15,6 @@ package org.nrg.xft.schema.Wrappers.XMLWrapper;
 //import javax.xml.transform.TransformerException;
 
 import org.apache.log4j.Logger;
-//import org.nrg.xft.ItemI;
-//import org.nrg.xft.XFTItem;
-//import org.nrg.xft.exception.ElementNotFoundException;
-//import org.nrg.xft.exception.FieldNotFoundException;
-//import org.nrg.xft.schema.XMLType;
-//import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-//import org.nrg.xft.security.UserI;
-//import org.nrg.xft.utils.NodeUtils;
-//import org.w3c.dom.Document;
-//import org.w3c.dom.Element;
-//import org.w3c.dom.NamedNodeMap;
-//import org.w3c.dom.Node;
-//import org.w3c.dom.NodeList;
 
 /**
  * Class used to translate an XML DOM document to an XFTItem.

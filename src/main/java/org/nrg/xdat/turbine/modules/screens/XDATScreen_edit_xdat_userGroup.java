@@ -6,10 +6,10 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import java.util.List;
+
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatUsergroup;
-import org.nrg.xdat.security.PermissionItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;

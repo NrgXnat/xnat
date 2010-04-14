@@ -5,19 +5,7 @@
  */
 package org.nrg.xdat.security;
 
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-
 import org.apache.log4j.Logger;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
-import org.nrg.xft.XFT;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 
 /**
  * @author timo

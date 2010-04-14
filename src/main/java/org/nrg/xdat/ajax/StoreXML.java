@@ -5,28 +5,21 @@
  */
 package org.nrg.xdat.ajax;
 
-import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.StringReader;
-import java.util.Iterator;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
-import org.nrg.xft.search.ItemSearch;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 

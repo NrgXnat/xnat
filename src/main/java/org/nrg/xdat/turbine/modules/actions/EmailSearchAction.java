@@ -13,8 +13,8 @@ import java.util.Iterator;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.om.XdatStoredSearch;
+import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 

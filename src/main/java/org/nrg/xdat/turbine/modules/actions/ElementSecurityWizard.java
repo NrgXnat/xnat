@@ -6,20 +6,14 @@
 package org.nrg.xdat.turbine.modules.actions; 
 
 import java.util.ArrayList;
-import java.util.Hashtable;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.ElementAccessManager;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.PermissionCriteria;
-import org.nrg.xdat.security.PermissionItem;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;

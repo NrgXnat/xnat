@@ -10,11 +10,8 @@ import java.util.ArrayList;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.utils.FieldMapping;
 

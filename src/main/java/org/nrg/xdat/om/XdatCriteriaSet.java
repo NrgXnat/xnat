@@ -5,15 +5,13 @@
  *
  */
 package org.nrg.xdat.om;
-import org.nrg.xft.*;
-import org.nrg.xdat.om.base.*;
-import org.nrg.xdat.search.DisplayCriteria;
-import org.nrg.xdat.search.ElementCriteria;
-import org.nrg.xft.search.SQLClause;
-import org.nrg.xft.search.SearchCriteria;
-import org.nrg.xft.security.UserI;
+import java.util.Hashtable;
+import java.util.Iterator;
 
-import java.util.*;
+import org.nrg.xdat.om.base.BaseXdatCriteriaSet;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.search.SQLClause;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author XDAT

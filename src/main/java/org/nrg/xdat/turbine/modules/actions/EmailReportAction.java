@@ -9,10 +9,6 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.AddressException;
-
-import org.apache.commons.mail.EmailException;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;

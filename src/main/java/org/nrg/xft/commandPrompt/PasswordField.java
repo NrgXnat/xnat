@@ -4,8 +4,10 @@
  *
  */
 package org.nrg.xft.commandPrompt;
-import java.io.*;
-import java.util.*;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.PushbackInputStream;
+import java.util.Arrays;
 
 /**
  * This class prompts the user for a password and attempts to mask input with "*"

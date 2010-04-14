@@ -11,12 +11,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 
-import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 
-import org.apache.commons.mail.HtmlEmail;
 import org.apache.log4j.Logger;
-import org.apache.turbine.Turbine;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.Velocity;

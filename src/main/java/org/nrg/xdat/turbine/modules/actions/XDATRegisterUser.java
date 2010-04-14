@@ -21,9 +21,6 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
 
 public class XDATRegisterUser extends VelocitySecureAction {

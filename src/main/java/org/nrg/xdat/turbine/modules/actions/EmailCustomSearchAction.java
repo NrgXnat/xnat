@@ -7,13 +7,9 @@ package org.nrg.xdat.turbine.modules.actions;
 
 import java.net.URLEncoder;
 import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.Hashtable;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.om.XdatStoredSearch;
-import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;

@@ -18,7 +18,6 @@ import javax.mail.internet.AddressException;
 import javax.mail.internet.InternetAddress;
 
 import org.apache.commons.mail.EmailException;
-import org.apache.commons.mail.SimpleEmail;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;

@@ -5,11 +5,7 @@
  *
  */
 package org.nrg.xdat.om;
-import org.nrg.xft.*;
-import org.nrg.xft.security.UserI;
-import org.nrg.xdat.om.*;
-
-import java.util.*;
+import org.nrg.xft.ItemI;
 
 /**
  * @author XDAT

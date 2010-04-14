@@ -10,7 +10,6 @@ import javax.mail.internet.InternetAddress;
 
 import org.apache.commons.mail.EmailException;
 import org.apache.log4j.Logger;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.cl.ExtensibleClassLoader;
 
 public class EmailUtils {

@@ -5,11 +5,12 @@
  *
  */
 package org.nrg.xdat.om;
-import org.nrg.xft.*;
-import org.nrg.xdat.om.base.*;
-import org.nrg.xft.security.UserI;
+import java.util.Comparator;
+import java.util.Hashtable;
 
-import java.util.*;
+import org.nrg.xdat.om.base.BaseXdatSearchField;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author XDAT

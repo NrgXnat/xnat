@@ -2,7 +2,6 @@
 package org.nrg.xft.event;
 
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFTItem;
 
 public class Event extends Object {
 	public final static String CREATE="C";

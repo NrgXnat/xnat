@@ -8,13 +8,13 @@ import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
+
 import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.UserCache;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;

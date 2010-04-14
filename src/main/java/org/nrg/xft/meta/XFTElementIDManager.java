@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -8,7 +8,7 @@
  *
  */
 package org.nrg.xft.meta;
-import java.util.*;
+import java.util.Hashtable;
 
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;

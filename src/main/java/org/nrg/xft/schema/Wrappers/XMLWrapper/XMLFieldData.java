@@ -1,16 +1,16 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
  * Created on Nov 30, 2004
  */
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
-import org.nrg.xft.schema.*;
-import org.nrg.xft.schema.design.XFTFieldWrapper;
+import java.util.ArrayList;
 
-import java.util.*;
+import org.nrg.xft.schema.XMLType;
+import org.nrg.xft.schema.design.XFTFieldWrapper;
 /**
  * Data field used to summarize information for XML display.
  * 

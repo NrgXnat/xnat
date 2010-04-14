@@ -5,13 +5,8 @@
  */
 package org.nrg.xdat.turbine.modules.screens;
 
-import java.util.ArrayList;
-import java.util.Iterator;
-
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;

@@ -4,7 +4,6 @@ package org.nrg.xft.utils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.security.UserI;
 

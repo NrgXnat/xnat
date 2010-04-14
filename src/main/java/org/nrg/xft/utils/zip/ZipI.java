@@ -14,8 +14,6 @@ import java.util.ArrayList;
 
 import org.nrg.xnat.srb.XNATDirectory;
 
-import edu.sdsc.grid.io.srb.SRBFile;
-
 /**
  * @author timo
  *

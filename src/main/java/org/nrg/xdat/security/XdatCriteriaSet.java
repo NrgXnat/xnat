@@ -8,12 +8,7 @@ package org.nrg.xdat.security;
 import java.util.Hashtable;
 import java.util.Iterator;
 
-import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
-import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.om.XdatCriteria;
-import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.search.DisplayCriteria;
-import org.nrg.xdat.search.ElementCriteria;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -21,7 +16,6 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
 
 /**
  * @author XDAT

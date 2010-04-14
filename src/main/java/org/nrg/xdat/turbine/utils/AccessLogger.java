@@ -10,8 +10,6 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 
-import javax.servlet.http.HttpSession;
-
 import org.apache.axis.AxisEngine;
 import org.apache.axis.MessageContext;
 import org.apache.axis.session.Session;
@@ -20,7 +18,6 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.session.TurbineSession;
 import org.apache.turbine.util.RunData;
-import org.nrg.xdat.turbine.modules.screens.XDATScreen_active_sessions.LongDateUtil;
 import org.nrg.xft.utils.FileUtils;
 
 /**

@@ -10,7 +10,6 @@ import java.sql.SQLException;
 import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.UserCache;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.FailedLoginException;
 import org.nrg.xft.XFT;

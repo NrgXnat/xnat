@@ -19,7 +19,6 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.UserCache;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;

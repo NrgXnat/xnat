@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -9,7 +9,8 @@
 package org.nrg.xft.schema;
 import java.io.File;
 
-import org.nrg.xft.exception.*;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.utils.XMLUtils;
 /**
  * This class specifies data about a particular XFTSchema and contains a reference to the XFTSchema.

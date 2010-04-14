@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -9,7 +9,8 @@
 package org.nrg.xft.references;
 
 import org.nrg.xft.schema.XMLType;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.*;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 
 /**
  * Specification of a column in a XFTManyToManyReference and its reference to a foreign

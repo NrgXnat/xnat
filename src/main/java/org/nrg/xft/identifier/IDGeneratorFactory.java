@@ -2,7 +2,6 @@
 package org.nrg.xft.identifier;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.base.BaseElement;
 
 public class IDGeneratorFactory {
 	static org.apache.log4j.Logger logger = Logger.getLogger(IDGeneratorFactory.class);

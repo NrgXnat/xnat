@@ -9,7 +9,6 @@
  */
 package org.nrg.xdat;
 
-import java.io.File;
 import java.util.Iterator;
 
 import org.apache.commons.configuration.Configuration;

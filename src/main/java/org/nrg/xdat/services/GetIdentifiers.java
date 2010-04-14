@@ -8,10 +8,10 @@ import java.rmi.RemoteException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
+
 import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.UserCache;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;

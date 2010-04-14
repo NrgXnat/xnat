@@ -6,18 +6,11 @@
 package org.nrg.xdat.services;
 
 import java.rmi.RemoteException;
-import java.sql.SQLException;
 
 import org.apache.axis.AxisEngine;
 import org.apache.axis.MessageContext;
 import org.apache.log4j.Logger;
-import org.nrg.xdat.security.UserCache;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 
 public class CloseServiceSession {
     static org.apache.log4j.Logger logger = Logger.getLogger(CloseServiceSession.class);

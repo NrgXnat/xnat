@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -8,12 +8,16 @@
  *
  */
 package org.nrg.xft.schema;
+import java.io.File;
+import java.util.Hashtable;
+
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
-import org.w3c.dom.*;
-import java.util.*;
-import java.io.*;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
 
 /**
  * The purpose of this class is to organize and maintain

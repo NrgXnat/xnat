@@ -21,7 +21,6 @@ import javax.servlet.http.HttpServlet;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
-
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 /**

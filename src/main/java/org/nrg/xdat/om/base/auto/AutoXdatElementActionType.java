@@ -5,13 +5,14 @@
  *
  */
 package org.nrg.xdat.om.base.auto;
-import org.nrg.xft.*;
-import org.nrg.xft.security.UserI;
-import org.nrg.xdat.om.*;
-import org.nrg.xft.utils.ResourceFile;
-import org.nrg.xft.exception.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
 
-import java.util.*;
+import org.nrg.xdat.om.XdatElementActionType;
+import org.nrg.xdat.om.XdatElementActionTypeI;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.ResourceFile;
 
 /**
  * @author XDAT

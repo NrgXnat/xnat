@@ -1,17 +1,15 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
  * Created on Oct 21, 2004
  */
 package org.nrg.xft;
-import java.io.BufferedOutputStream;
 import java.io.BufferedWriter;
 import java.io.IOException;
 import java.io.OutputStream;
-import java.io.OutputStreamWriter;
 import java.io.PrintStream;
 import java.io.Writer;
 import java.sql.SQLException;
@@ -28,7 +26,6 @@ import java.util.Map;
 import org.apache.log4j.Logger;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.utils.StringUtils;
 /**
  * Generic table structure used to hold tabular data and populate XFTItems.

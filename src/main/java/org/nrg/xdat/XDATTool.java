@@ -34,7 +34,7 @@ import org.nrg.xft.exception.ValidationException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.references.XFTReferenceManager;
-import org.nrg.xft.schema.XFTManager; 
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.search.ItemSearch;

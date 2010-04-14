@@ -19,7 +19,6 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.identifier.Identifier;
 import org.nrg.xft.sequence.SequentialObject;
-import org.nrg.xft.utils.StringUtils;
 
 /**
  * @author Tim

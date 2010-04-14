@@ -15,7 +15,6 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;

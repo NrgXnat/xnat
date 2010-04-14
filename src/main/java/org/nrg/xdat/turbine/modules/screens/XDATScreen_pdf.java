@@ -30,7 +30,6 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 
 /**

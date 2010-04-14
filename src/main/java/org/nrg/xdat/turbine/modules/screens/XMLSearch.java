@@ -13,11 +13,9 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
-import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.UserCache;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;

@@ -6,8 +6,8 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import java.util.ArrayList;
-import java.util.List;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;

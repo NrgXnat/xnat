@@ -5,13 +5,25 @@
  *
  */
 package org.nrg.xdat.om.base.auto;
-import org.nrg.xft.*;
-import org.nrg.xft.security.UserI;
-import org.nrg.xdat.om.*;
-import org.nrg.xft.utils.ResourceFile;
-import org.nrg.xft.exception.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
 
-import java.util.*;
+import org.nrg.xdat.om.XdatActionType;
+import org.nrg.xdat.om.XdatElementSecurity;
+import org.nrg.xdat.om.XdatInfoentry;
+import org.nrg.xdat.om.XdatInfoentryI;
+import org.nrg.xdat.om.XdatNewsentry;
+import org.nrg.xdat.om.XdatNewsentryI;
+import org.nrg.xdat.om.XdatRoleType;
+import org.nrg.xdat.om.XdatSecurity;
+import org.nrg.xdat.om.XdatSecurityI;
+import org.nrg.xdat.om.XdatUser;
+import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.ResourceFile;
 
 /**
  * @author XDAT

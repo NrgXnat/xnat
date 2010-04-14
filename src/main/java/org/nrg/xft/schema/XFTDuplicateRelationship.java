@@ -5,7 +5,9 @@
  */
 package org.nrg.xft.schema;
 
-import java.util.*;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
 
 import org.nrg.xft.utils.NodeUtils;
 import org.w3c.dom.Document;

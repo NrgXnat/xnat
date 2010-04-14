@@ -15,13 +15,11 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatRoleType;
 import org.nrg.xdat.om.XdatUserGroupid;
-import org.nrg.xdat.security.UserCache;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
-import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.search.ItemSearch;
 

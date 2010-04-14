@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -9,7 +9,7 @@
 package org.nrg.xft.utils;
 import java.io.File;
 
-import org.nrg.xft.*;
+import org.nrg.xft.XFT;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.TorqueSchemaGenerator;
 /**

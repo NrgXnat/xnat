@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -13,11 +13,6 @@ import java.util.ArrayList;
 
 import org.apache.log4j.Logger;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.ItemWrapper;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.MetaDataException;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.utils.StringUtils;
 /**

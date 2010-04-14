@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -21,7 +21,6 @@ import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.ItemWrapper.FieldEmptyException;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.exception.ElementNotFoundException;

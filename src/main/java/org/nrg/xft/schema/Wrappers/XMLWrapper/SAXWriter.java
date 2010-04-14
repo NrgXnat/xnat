@@ -33,8 +33,6 @@ import org.nrg.xft.references.XFTPseudonymManager;
 import org.nrg.xft.references.XFTReferenceI;
 import org.nrg.xft.references.XFTRelationSpecification;
 import org.nrg.xft.references.XFTSuperiorReference;
-import org.nrg.xft.schema.XFTDataField;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFieldWrapper;

@@ -5,10 +5,11 @@
  */
 package org.nrg.xdat.turbine.modules.screens;
 
+import java.util.ArrayList;
+
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.ElementSecurity;
-import java.util.*;
 
 /**
  * @author Tim

@@ -12,7 +12,6 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatSearchField;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;

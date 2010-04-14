@@ -5,7 +5,6 @@ import java.util.Hashtable;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.nrg.xft.email.EmailerImpl;
 
 public class ExtensibleClassLoader implements ExtensibleClassLoaderI{
 	public static final String EMAIL_IMPL = "EMAIL_IMPL";

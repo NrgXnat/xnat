@@ -6,7 +6,6 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 
 import javax.servlet.ServletOutputStream;
@@ -15,7 +14,6 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.turbine.modules.screens.RawScreen;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.utils.FieldMapping;
 
 public class CreateCSVTemplate extends RawScreen {

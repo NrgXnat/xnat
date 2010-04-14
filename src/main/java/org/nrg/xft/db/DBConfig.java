@@ -1,14 +1,16 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
  * Created on Oct 28, 2004
  */
 package org.nrg.xft.db;
-import java.sql.*;
-import org.apache.commons.dbcp.*;
+import java.sql.Connection;
+import java.sql.SQLException;
+
+import org.apache.commons.dbcp.BasicDataSource;
 /**
  * Class used to store information about one of the databases used in the application and used to
  * create a connection from the connection pool DataSource.

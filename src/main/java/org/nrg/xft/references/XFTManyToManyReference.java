@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -8,11 +8,14 @@
  */
 package org.nrg.xft.references;
 
-import org.nrg.xft.schema.XFTReferenceField;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.*;
-import org.nrg.xft.utils.StringUtils;
+import java.util.ArrayList;
+import java.util.Iterator;
 
-import java.util.*;
+import org.nrg.xft.schema.XFTReferenceField;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.utils.StringUtils;
 /**
  * Class used to indentify a many-to-many reference within the schema.
  * 

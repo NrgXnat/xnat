@@ -6,7 +6,6 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;

@@ -14,7 +14,6 @@ import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.search.ElementCriteria;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;

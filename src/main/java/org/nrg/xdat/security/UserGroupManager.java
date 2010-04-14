@@ -5,15 +5,9 @@
  */
 package org.nrg.xdat.security;
 
-import java.util.Hashtable;
-import java.util.Map;
-
 import org.apache.log4j.Logger;
 import org.nrg.xdat.om.XdatUsergroup;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.cache.CacheManager;
-import org.nrg.xft.event.Event;
-import org.nrg.xft.event.EventManager;
 
 public class UserGroupManager{
     static Logger logger = Logger.getLogger(UserGroupManager.class);

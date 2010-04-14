@@ -5,20 +5,24 @@
  *
  */
 package org.nrg.xdat.om;
-import org.nrg.xft.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Hashtable;
+import java.util.Iterator;
+
 import org.nrg.xdat.collections.DisplayFieldCollection;
 import org.nrg.xdat.display.DisplayField;
-import org.nrg.xdat.om.base.*;
+import org.nrg.xdat.om.base.BaseXdatStoredSearch;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatCriteriaSet;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
-
-import java.util.*;
 
 /**
  * @author XDAT

@@ -10,7 +10,6 @@
 package org.nrg.xdat.search;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayManager;

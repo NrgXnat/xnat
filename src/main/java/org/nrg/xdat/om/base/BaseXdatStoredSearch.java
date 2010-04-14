@@ -5,17 +5,11 @@
  *
  */
 package org.nrg.xdat.om.base;
-import org.nrg.xdat.om.base.auto.*;
-import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XdatCriteriaSet;
-import org.nrg.xft.*;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.search.ItemSearch;
-import org.nrg.xft.security.UserI;
+import java.util.Hashtable;
 
-import java.util.*;
+import org.nrg.xdat.om.base.auto.AutoXdatStoredSearch;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author XDAT

@@ -2557,7 +2557,7 @@ public class DBAction {
 				}else{
 					String s=baos.toString();
 					String upper=s.toUpperCase();
-					if(s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || upper.contains("IMG") || upper.contains("IMAGE"))){
+					if(s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))){
 						if(!allowInvalidValues){
 							AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", s);
 							throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");
@@ -2572,7 +2572,7 @@ public class DBAction {
 				}else{
 					String s=o.toString();
 					String upper=s.toUpperCase();
-					if(s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || upper.contains("IMG") || upper.contains("IMAGE"))){
+					if(s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))){
 						if(!allowInvalidValues){
 							AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", s);
 							throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");						
@@ -2826,7 +2826,7 @@ public class DBAction {
 			return o.toString();
 		}
 	}
-	
+		
 	/**
 	 * @param item
 	 * @param toRemove

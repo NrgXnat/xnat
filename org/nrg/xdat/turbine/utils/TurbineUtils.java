@@ -960,7 +960,11 @@ public class TurbineUtils {
     }
     
     public String escapeHTML(String o){
-    	return StringEscapeUtils.escapeHtml(o);
+    	return (o==null)?null:StringEscapeUtils.escapeHtml(o);
+    }
+    
+    public String escapeJS(String o){
+    	return (o==null)?null:StringEscapeUtils.escapeJavaScript(o);
     }
 }
 

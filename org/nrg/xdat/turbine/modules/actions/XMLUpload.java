@@ -58,7 +58,7 @@ public class XMLUpload extends SecureAction {
                 if(!handler.assertValid()){
                 	throw handler.getErrors().get(0);
                 }
-                
+
                 //Document doc = XMLUtils.GetDOM(fi.getInputStream());
                 //item = XMLReader.TranslateDomToItem(doc,TurbineUtils.getUser(data));
                 SAXReader reader = new SAXReader(TurbineUtils.getUser(data));
@@ -66,35 +66,35 @@ public class XMLUpload extends SecureAction {
                 if (XFT.VERBOSE)
                     System.out.println("Loaded XML Item:" + item.getProperName());
                 logger.info("Loaded XML Item:" + item.getProperName());
-                
+
                 ValidationResults vr = XFTValidator.Validate(item);
                 if (vr.isValid())
                 {
                     if (XFT.VERBOSE)
                         System.out.println("Validation: PASSED");
                     logger.info("Validation: PASSED");
-                	
+
                 	boolean q;
                 	boolean override;
                 	q = item.getGenericSchemaElement().isQuarantine();
                 	override = false;
-                	   
+
                 	if (allowDeletion.equalsIgnoreCase("true"))
                 	{
                     	SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,true);
                 	}else{
                     	SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,false);
                 	}
-                	
+
                 	if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
-                    logger.info("Item Successfully Stored.");	
-                    
+                    logger.info("Item Successfully Stored.");
+
                     DisplayItemAction dia = new DisplayItemAction();
                 	data = TurbineUtils.SetSearchProperties(data,item);
                 	dia.doPerform(data,context);
-                	
+
                 	postProcessing(item,data,context);
-                	
+
                 	return;
                 }else
                 {
@@ -125,9 +125,12 @@ public class XMLUpload extends SecureAction {
 				    logger.error("",e);
                     data.setScreenTemplate("Error.vm");
                     String message = "Permissions Exception.<BR><BR>" + e.getMessage();
-                    SchemaElement se = SchemaElement.GetElement(item.getXSIType());
-                    message += "<BR><BR>Please review the security field (" + se.getElementSecurity().getSecurityFields() + ") for this data type.";
-                    message += " Verify that the data reflects a currently stored value and the user has relevant permissions for this data.";
+                    final SchemaElement se = SchemaElement.GetElement(item.getXSIType());
+                    final ElementSecurity es=se.getElementSecurity();
+                    if(es!=null && es.getSecurityFields()!=null){
+                    	message += "<BR><BR>Please review the security field (" + se.getElementSecurity().getSecurityFields() + ") for this data type.";
+                    	message += " Verify that the data reflects a currently stored value and the user has relevant permissions for this data.";
+                    }
                     data.setMessage(message);
 				}else{
 	                logger.error("",e);
@@ -137,6 +140,7 @@ public class XMLUpload extends SecureAction {
             }
         }
     }
+
     public void postProcessing(XFTItem item,RunData data, Context context) throws Exception{
         SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
         if (se.getGenericXFTElement().getType().getLocalPrefix().equalsIgnoreCase("xdat"))

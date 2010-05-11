@@ -45,6 +45,7 @@ public class DBConfig {
 			ds.setPassword(pass);
 			ds.setUrl(url);
 			ds.setMaxActive(maxConnections);
+			ds.setValidationQuery("SELECT NOW();");
 			dataSource = ds;
 		}
 		return dataSource.getConnection();

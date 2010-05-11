@@ -27,6 +27,7 @@ import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.postgresql.util.PSQLException;
 /**
  * @author Tim
  *
@@ -95,7 +96,7 @@ public class XDATLoginUser extends VelocityAction{
 			HttpSession session = data.getSession();
 			session.setAttribute("user",user);
             session.setAttribute("loggedin",true);
-            
+
             try{
             	doRedirect(data,context,user);
             }catch(Exception e){
@@ -105,7 +106,7 @@ public class XDATLoginUser extends VelocityAction{
 		catch (Exception e)
 		{
             log.error("",e);
-            
+
             if(username.toLowerCase().contains("script"))
             {
             	e= new Exception("Illegal username &lt;script&gt; usage.");
@@ -115,9 +116,13 @@ public class XDATLoginUser extends VelocityAction{
                 data.getParameters().setString("exception", e.toString());
                 return;
             }
-            
+
 				// Set Error Message and clean out the user.
+            if(e instanceof PSQLException){
+				data.setMessage("An error has occurred.  Please contact a site administrator for assistance.");
+            }else{
 				data.setMessage(e.getMessage());
+            }
 				String loginTemplate =  org.apache.turbine.Turbine.getConfiguration().getString("template.login");
 
 				if (StringUtils.isNotEmpty(loginTemplate))
@@ -131,7 +136,7 @@ public class XDATLoginUser extends VelocityAction{
 				}
 		}
 	}
-	
+
 	public void doRedirect(RunData data, Context context,XDATUser user) throws Exception{
 		String nextPage = data.getParameters().getString("nextPage","");
 		String nextAction = data.getParameters().getString("nextAction","");

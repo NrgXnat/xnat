@@ -63,7 +63,7 @@ public class PoolDBUtils {
 		try {
 			if (sequence != null && !sequence.equalsIgnoreCase(""))
 			{
-				st = getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				st = getStatement(db);
 				logger.debug("QUERY:" + query);
 				st.execute(query);
 				String newQuery = "SELECT currval('"+ sequence + "') AS " + pk;
@@ -113,7 +113,7 @@ public class PoolDBUtils {
 					}
 				}
 			}else{
-				st = getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				st = getStatement(db);
 				st.execute(query);
 				String newQuery = "SELECT currval('"+ table + "_" + pk + "_seq') AS " + pk;
 				try {
@@ -158,7 +158,7 @@ public class PoolDBUtils {
 		try {
 			if (sequence != null && !sequence.equalsIgnoreCase(""))
 			{
-				st = getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				st = getStatement(db);
 				String newQuery = "SELECT nextval('"+ sequence + "') AS " + pk;
 				try {
 					rs = st.executeQuery(newQuery);
@@ -206,7 +206,7 @@ public class PoolDBUtils {
 					}
 				}
 			}else{
-				st = getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+				st = getStatement(db);
 				String newQuery = "SELECT nextval('"+ table + "_" + pk + "_seq') AS " + pk;
 				try {
 					rs = st.executeQuery(newQuery);
@@ -239,46 +239,8 @@ public class PoolDBUtils {
 
 		return o;
 	}
-	
-	public void sendFunctionBatch(ArrayList<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
-		if(db==null)db=PoolDBUtils.getDefaultDBName();
-	    Date start = Calendar.getInstance().getTime();
-	    try {
-            con = getConnection(db);
-            try {
-            	con.setAutoCommit(false);
 
-            	st = con.prepareCall(statements.get(0), resultSetType, resultSetConcurrency);
-            	st.clearBatch();
-            	for (String stmt:statements)
-            	{
-            	    st.addBatch(stmt);
-            	}
-
-            	st.executeBatch();
-            	
-            	logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr("BATCH","\n"," "));
-
-            	st.clearBatch();
-
-            	con.commit();
-            }catch (SQLException e) {
-                con.rollback();
-                logger.error(statements.toString());
-                logger.error(e.getMessage());
-               throw e.getNextException();
-			}finally{
-			    con.setAutoCommit(true);
-			}
-        } catch (DBPoolException e) {
-            logger.error("",e);
-            throw e;
-        }finally{
-		    closeConnection(null);
-		}
-	}
-	
-	public void sendBatch(ArrayList<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
+	private void sendBatchExec(ArrayList<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
 		if(db==null)db=PoolDBUtils.getDefaultDBName();
 	    Date start = Calendar.getInstance().getTime();
 	    try {
@@ -315,7 +277,7 @@ public class PoolDBUtils {
 		    closeConnection(null);
 		}
 	}
-	
+
 
 	public void sendBatch(DBItemCache cache,String db,String userName) throws SQLException, Exception
 	{
@@ -356,22 +318,8 @@ public class PoolDBUtils {
 	 */
 	public void executeNonSelectQuery(String query,String db, String userName) throws SQLException,Exception
 	{
-	    Date start = Calendar.getInstance().getTime();
-	    if(db==null)db=PoolDBUtils.getDefaultDBName();
 		try {
-			st = getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			try {
-				st.execute(query);
-			} catch (SQLException e) {
-				if(e.getMessage().indexOf("Connection reset")>-1){
-					resetConnections();
-					st.execute(query);
-				}else{
-					throw e;
-				}
-			}
-			logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
-
+			execute(db, query, userName);
 		}catch (SQLException e) {
 		    logger.error(query);
 		   throw e;
@@ -397,49 +345,28 @@ public class PoolDBUtils {
 	public static void ExecuteNonSelectQuery(String query,String db, String userName) throws SQLException,Exception
 	{
 		PoolDBUtils con = new PoolDBUtils();
-		
+
 		con.executeNonSelectQuery(query,db,userName);
 	}
 
 	public static void ExecuteBatch(ArrayList<String> queries,String db, String userName) throws SQLException,Exception
 	{
 		PoolDBUtils con = new PoolDBUtils();
-		
+
 		con.sendBatch(queries,db,userName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-	}
-
-
-	public static void ExecuteFunctionBatch(ArrayList<String> queries,String db, String userName) throws SQLException,Exception
-	{
-		PoolDBUtils con = new PoolDBUtils();
-		
-		con.sendFunctionBatch(queries,db,userName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 	}
 
 	public Object returnStatisticQuery(String query,String column,String db, String userName) throws SQLException,Exception
 	{
 		Object o = null;
 		ResultSet rs = null;
-		Date start = Calendar.getInstance().getTime();
 		try {
-			st = getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			try {
-				rs = st.executeQuery(query);
-			} catch (SQLException e) {
-				if(e.getMessage().indexOf("Connection reset")>-1){
-					resetConnections();
-					rs = st.executeQuery(query);
-				}else{
-					throw e;
-				}
-			}
+			rs=executeQuery(db, query, userName);
 
 			if (rs.first())
 			{
 				o = rs.getObject(column);
 			}
-
-			logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
 
 		} catch (SQLException e) {
 			logger.error(query);
@@ -460,7 +387,7 @@ public class PoolDBUtils {
 		return con.returnStatisticQuery(query,column,db,userName);
 	}
 
-	public void resetConnections(){
+	private void resetConnections(){
 		System.out.println("WARNING: DB CONNECTION FAILURE: Resetting all DB connections!!!!!!");
 		this.con=null;
 		DBPool.GetPool().resetConnections();
@@ -480,25 +407,10 @@ public class PoolDBUtils {
 		ResultSet rs = null;
 		XFTTable results = new XFTTable();
 
-	    if(db==null)db=PoolDBUtils.getDefaultDBName();
 		try {
-			st = getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-			Date start = Calendar.getInstance().getTime();
+		    rs=executeQuery(db, query, userName);
 
-			try {
-				rs = st.executeQuery(query);
-			} catch (SQLException e) {
-				if(e.getMessage().indexOf("Connection reset")>-1){
-					resetConnections();
-					rs = st.executeQuery(query);
-				}else{
-					throw e;
-				}
-			}
-
-			logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
-
-			String[] columns = new String[rs.getMetaData().getColumnCount()];
+			final String[] columns = new String[rs.getMetaData().getColumnCount()];
 			for (int i=1;i<=columns.length;i++)
 			{
 				columns[i-1]= rs.getMetaData().getColumnName(i);
@@ -542,15 +454,20 @@ public class PoolDBUtils {
 		{
 			try {
 				rs.close();
-			} catch (SQLException e) {
+			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 		}
+		closeConnection();
+	}
+
+	private void closeConnection()
+	{
 		if (st != null)
 		{
 			try {
 				st.close();
-			} catch (SQLException e) {
+			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 		}
@@ -558,7 +475,7 @@ public class PoolDBUtils {
 		{
 			try {
 				con.close();
-			} catch (SQLException e) {
+			} catch (Throwable e) {
 				e.printStackTrace();
 			}
 		}
@@ -677,7 +594,7 @@ public class PoolDBUtils {
             logger.error("",e);
         }
     }
-    
+
     public static String getDefaultDBName(){
     	DBConfig config=DBPool.GetDBConfig((String)DBPool.GetPool().getDS().keySet().toArray()[0]);
     	return config.getDbIdentifier();
@@ -699,7 +616,6 @@ public class PoolDBUtils {
 
                 CreateCache(e.getDbName(),login);
 
-                long localTime = Calendar.getInstance().getTimeInMillis();
                 itemString =(String)PoolDBUtils.ReturnStatisticQuery("SELECT contents FROM xs_item_cache WHERE elementName='" + rootElement + "' AND ids='" + ids + "';","contents",e.getDbName(),login);
                 if (itemString==null){
                     itemString =(String)PoolDBUtils.ReturnStatisticQuery(functionQuery,functionName,e.getDbName(),login);
@@ -743,7 +659,6 @@ public class PoolDBUtils {
             String ids = "";
             ArrayList keys = item.getGenericSchemaElement().getAllPrimaryKeys();
             Iterator keyIter = keys.iterator();
-            String pk = null;
             while (keyIter.hasNext())
             {
                 GenericWrapperField sf = (GenericWrapperField)keyIter.next();
@@ -892,7 +807,7 @@ public class PoolDBUtils {
         mv.setTable_name(tablename);
         mv.setSearch_sql(query);
         mv.save();
-        
+
         return mv.getSize();
     }
 
@@ -904,8 +819,8 @@ public class PoolDBUtils {
         	return mv.getData(null, offset, rowsPerPage);
         }
     }
-    
-    public static boolean HackCheck(String value) 
+
+    public static boolean HackCheck(String value)
     {
     	value=value.toUpperCase();
     	if(value.matches("<*SCRIPT"))return true;
@@ -916,10 +831,10 @@ public class PoolDBUtils {
     	if(StringContains(value,"DROP")) return true;
     	if(StringContains(value,"ALTER")) return true;
     	if(StringContains(value,"CREATE")) return true;
-    	
+
     	return false;
     }
-    
+
     public static boolean StringContains(String value, String s){
     	if(value.contains(s+' ')){
     		if(value.startsWith(s +' ')) return true;
@@ -932,5 +847,67 @@ public class PoolDBUtils {
     	}
     		return false;
     }
+
+    private Statement getStatement(String db) throws DBPoolException,SQLException{
+    	return getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+    }
+
+    private ResultSet executeQuery(String db, String query, String userName) throws SQLException, DBPoolException{
+    	ResultSet rs;
+
+    	if(db==null)db=PoolDBUtils.getDefaultDBName();
+
+		st = getStatement(db);
+		final Date start = Calendar.getInstance().getTime();
+
+		try {
+			rs = st.executeQuery(query);
+		} catch (SQLException e) {
+			if(e.getMessage().contains("Connection reset")){
+				closeConnection();
+				resetConnections();
+				st = getStatement(db);
+				rs = st.executeQuery(query);
+			}else{
+				throw e;
+			}
+		}
+
+		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
+
+		return rs;
+    }
+
+    private void execute(String db, String query, String userName) throws SQLException, DBPoolException{
+    	if(db==null)db=PoolDBUtils.getDefaultDBName();
+
+		st = getStatement(db);
+		final Date start = Calendar.getInstance().getTime();
+
+		try {
+			st.execute(query);
+		} catch (SQLException e) {
+			if(e.getMessage().contains("Connection reset")){
+				closeConnection();
+				resetConnections();
+				st = getStatement(db);
+				st.execute(query);
+			}else{
+				throw e;
+			}
+		}
+
+		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
+    }
+
+	public void sendBatch(ArrayList<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
+		try{
+			sendBatchExec(statements,db,userName,resultSetType,resultSetConcurrency);
+		}catch(SQLException e){
+			if(e.getMessage().contains("Connection reset")){
+				sendBatchExec(statements,db,userName,resultSetType,resultSetConcurrency);
+			}
+		}
+	}
 }
 

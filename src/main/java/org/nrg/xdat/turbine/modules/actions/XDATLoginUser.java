@@ -9,6 +9,8 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 
+import java.sql.SQLException;
+
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -27,7 +29,6 @@ import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.postgresql.util.PSQLException;
 /**
  * @author Tim
  *
@@ -118,22 +119,23 @@ public class XDATLoginUser extends VelocityAction{
             }
 
 				// Set Error Message and clean out the user.
-            if(e instanceof PSQLException){
+            if(e instanceof SQLException){
 				data.setMessage("An error has occurred.  Please contact a site administrator for assistance.");
             }else{
 				data.setMessage(e.getMessage());
             }
-				String loginTemplate =  org.apache.turbine.Turbine.getConfiguration().getString("template.login");
+            
+			String loginTemplate =  org.apache.turbine.Turbine.getConfiguration().getString("template.login");
 
-				if (StringUtils.isNotEmpty(loginTemplate))
-				{
-					// We're running in a templating solution
-					data.setScreenTemplate(loginTemplate);
-				}
-				else
-				{
-					data.setScreen(org.apache.turbine.Turbine.getConfiguration().getString("screen.login"));
-				}
+			if (StringUtils.isNotEmpty(loginTemplate))
+			{
+				// We're running in a templating solution
+				data.setScreenTemplate(loginTemplate);
+			}
+			else
+			{
+				data.setScreen(org.apache.turbine.Turbine.getConfiguration().getString("screen.login"));
+			}
 		}
 	}
 

@@ -14,6 +14,12 @@
 		<url>http://nrg.wustl.edu</url>
 	</organization>
 	<build>
+		<!-- 
+			Force the jar's name to be compliant with xdat_release's expectation (xdat-1.jar).  
+			Eventually this should be removed once xdat_release moves to maven 2 
+		-->
+		<finalName>xdat-1</finalName>
+
 		<plugins>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>

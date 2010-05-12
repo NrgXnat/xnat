@@ -193,10 +193,10 @@
 			<artifactId>xnatsrb</artifactId>
 			<version>1</version>
 			<!-- 
-	            Until we have our own Maven repository, we need to store any non-public 
-	            jars in the project. Remove the scope, systemPath, and jar once xnatsrb is
-	            publicly available.
-	        -->
+				Until we have our own Maven repository, we need to store any non-public 
+				jars in the project. Remove the scope, systemPath, and jar once xnatsrb is
+				publicly available.
+			-->
 			<scope>system</scope>
 			<systemPath>${basedir}/lib/xnatsrb-1.jar</systemPath>
 		</dependency>

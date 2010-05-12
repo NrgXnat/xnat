@@ -25,7 +25,7 @@ public class SaveItemHelper {
 		}
 
 		if(i.getItem().getGenericSchemaElement().getType().getForeignPrefix().equals(XFT.PREFIX)){
-        	if (!((XDATUser)user).checkRole("Administrator"))
+        	if (user!=null && !((XDATUser)user).checkRole("Administrator"))
             {
         		throw new InvalidPermissionException("Only site administrators can store core documents.");
             }
@@ -45,7 +45,7 @@ public class SaveItemHelper {
 		}
 
 		if(i.getItem().getGenericSchemaElement().getType().getForeignPrefix().equals(XFT.PREFIX)){
-        	if (!((XDATUser)user).checkRole("Administrator"))
+        	if (user!=null && !((XDATUser)user).checkRole("Administrator"))
             {
         		throw new InvalidPermissionException("Only site administrators can store core documents.");
             }

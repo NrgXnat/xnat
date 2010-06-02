@@ -125,8 +125,10 @@ public class XDAT implements Initializable,Configurable{
 	    sb.append("-- Generated SQL File for updating an existing XNAT database.\n");
 	    sb.append("-- This script is created by the update XNAT feature, which reviews an existing database and only specifies create statements for missing TABLES and COLUMNS.  It will also drop and recreate any necessary functions or views.\n");
 	    
-	    sb.append("-- If you are running from pgAdmin, remove the following line to stop on errors (pgAdmin does not recognize the statement)");
-	    sb.append("\n\\set ON_ERROR_STOP 1;");
+	    sb.append("-- If you are running from pgAdmin, remove the following line to stop on errors (pgAdmin does not recognize the statement)\n");
+	    sb.append("\\set ON_ERROR_STOP on;\n");
+	    sb.append("\n-- start transaction (if an error occurs, the database will be rolled back to its state before this file was executed)\n");
+	    sb.append("BEGIN;\n");
 	    
 	    Iterator iter = SQLUpdateGenerator.GetSQLCreate().iterator();
 	    while (iter.hasNext())
@@ -141,6 +143,8 @@ public class XDAT implements Initializable,Configurable{
 	    {
 	        sb.append(iter.next() +"\n--BR\n");
 	    }
+	    sb.append("\n-- commit transaction\n");
+	    sb.append("COMMIT;");
 		FileUtils.OutputToFile(sb.toString(),file);
 		
 		logger.info("File Created: " + file);
@@ -151,8 +155,10 @@ public class XDAT implements Initializable,Configurable{
 	    StringBuffer sb =new StringBuffer();
 	    sb.append("-- Generated SQL File for creating an XNAT database from scratch.\n");
 	    
-	    sb.append("-- If you are running from pgAdmin, remove the following line to stop on errors (pgAdmin does not recognize the statement)");
-	    sb.append("\n\\set ON_ERROR_STOP 1;");
+	    sb.append("-- If you are running from pgAdmin, remove the following line to stop on errors (pgAdmin does not recognize the statement)\n");
+	    sb.append("\\set ON_ERROR_STOP on;\n");
+	    sb.append("\n-- start transaction (if an error occurs, the database will be rolled back to its state before this file was executed)\n");
+	    sb.append("BEGIN;\n");
 	    
 	    Iterator iter = SQLCreateGenerator.GetSQLCreate().iterator();
 	    while (iter.hasNext())
@@ -165,6 +171,8 @@ public class XDAT implements Initializable,Configurable{
 	    {
 	        sb.append(iter.next() +"\n--BR\n");
 	    }
+	    sb.append("\n-- commit transaction\n");
+	    sb.append("COMMIT;");
 		FileUtils.OutputToFile(sb.toString(),file);
 		
 		ViewManager.OutputFieldNames();

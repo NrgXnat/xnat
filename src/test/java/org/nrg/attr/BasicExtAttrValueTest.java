@@ -31,7 +31,7 @@ public class BasicExtAttrValueTest {
     assertTrue(val1.hashCode() == val1a.hashCode());
 
     final ExtAttrValue val3 = new BasicExtAttrValue("foo", "value",
-        Utils.newMap(new String[]{"attr1", "attr2"},
+        Utils.zipmap(new String[]{"attr1", "attr2"},
             new String[]{"foo", "bar"}));
     assertFalse(val1.hashCode() == val3.hashCode());
     
@@ -73,7 +73,7 @@ public class BasicExtAttrValueTest {
     assertEquals(val1a, val1);
 
     final ExtAttrValue val3 = new BasicExtAttrValue("foo", "value",
-        Utils.newMap(new String[]{"attr1", "attr2"},
+        Utils.zipmap(new String[]{"attr1", "attr2"},
             new String[]{"foo", "bar"}));
     assertFalse(val1.equals(val3));
     assertFalse(val3.equals(val1));
@@ -123,7 +123,7 @@ public class BasicExtAttrValueTest {
     assertTrue(val2.getAttrs().containsValue("bar"));
     
     final ExtAttrValue val3 = new BasicExtAttrValue("foo", null,
-        Utils.newMap(new String[]{"bar", "baz"},
+        Utils.zipmap(new String[]{"bar", "baz"},
             new String[]{"foo", "bar"}));
     assertEquals(2, val3.getAttrs().size());
     assertEquals("foo", val3.getAttrs().get("bar"));
@@ -139,7 +139,7 @@ public class BasicExtAttrValueTest {
     
     assertEquals("<foo bar=\"baz\" baz=\"bar\"/>",
         new BasicExtAttrValue("foo", null,
-            Utils.newMap(new String[]{"bar", "baz"}, new String[]{"baz", "bar"})
+            Utils.zipmap(new String[]{"bar", "baz"}, new String[]{"baz", "bar"})
         ).toString()
     );
     
@@ -151,7 +151,7 @@ public class BasicExtAttrValueTest {
 
     assertEquals("<ack baz=\"bar\" boing=\"boing\">thpthpppt</ack>",
         new BasicExtAttrValue("ack", "thpthpppt",
-            Utils.newMap(new String[]{"baz", "boing"}, new String[]{"bar", "boing"})
+            Utils.zipmap(new String[]{"baz", "boing"}, new String[]{"bar", "boing"})
         ).toString());
   }
 }

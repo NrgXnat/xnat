@@ -1,19 +1,20 @@
 /**
- * $Id: ExtAttrDef.java,v 1.8 2008/04/29 19:23:08 karchie Exp $
- * Copyright (c) 2006-2008 Washington University
+ * Copyright (c) 2006-2010 Washington University
  */
 package org.nrg.attr;
 
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.HashMap;
-import java.util.HashSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.LinkedList;
 import java.util.Map;
 import java.util.Set;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 
 /**
@@ -23,7 +24,7 @@ import java.util.Set;
  * attributes.  The native attributes are represented by objects of type
  * S, and have values of type V.  The default V conversion in Text simply
  * uses V.toString(), but more complex conversions can be defined.
- * @author Kevin A. Archie <karchie@npg.wustl.edu>
+ * @author Kevin A. Archie <karchie@wustl.edu>
  */
 public interface ExtAttrDef<S,V> {
   ExtAttrValue convert(Map<S,V> vals) throws ConversionFailureException;
@@ -46,7 +47,7 @@ public interface ExtAttrDef<S,V> {
    * Represents an attribute that, if the native attribute values are unique,
    * will be a single attribute; or, if the native attributes have multiple value
    * combinations, will generate multiple external attributes.
-   * @author Kevin A. Archie <karchie@npg.wustl.edu>
+   * @author Kevin A. Archie <karchie@wustl.edu>
    *
    * @param <S> native attribute identifier type
    * @param <V> native attribute value type
@@ -70,7 +71,7 @@ public interface ExtAttrDef<S,V> {
   
   /**
    * Provides a partial implementation used by many subclasses of ExtAttrDef
-   * @author Kevin A. Archie <karchie@npg.wustl.edu>
+   * @author Kevin A. Archie <karchie@wustl.edu>
    */
   public abstract class Abstract<S,V> implements ExtAttrDef<S,V> {
     private final List<S> attrs;
@@ -95,7 +96,7 @@ public interface ExtAttrDef<S,V> {
     final public String getName() { return name; }
 
     final public List<S> getAttrs() {
-      return new LinkedList<S>(attrs);
+      return Lists.newLinkedList(attrs);
     }
 
 
@@ -105,8 +106,8 @@ public interface ExtAttrDef<S,V> {
 
     public Abstract(final String name, final Collection<S> attrs) {
       this.name = name;
-      this.attrs = new LinkedList<S>(attrs);
-      this.optional = new HashSet<S>();
+      this.attrs = Lists.newLinkedList(attrs);
+      this.optional = Sets.newHashSet();
     }
 
     public final boolean requires(final S s) {
@@ -152,12 +153,12 @@ public interface ExtAttrDef<S,V> {
 
     public Labeled(final ExtAttrDef<S,V> base, final Map<String,String> labels) {
       this.base = base;
-      this.labels = new LinkedHashMap<String, String>(labels);
-      this.optional = new HashSet<S>();
+      this.labels = Maps.newLinkedHashMap(labels);
+      this.optional = Sets.newHashSet();
     }
 
     public Labeled(final ExtAttrDef<S,V> base, final String[] names, final String[] values) {
-      this(base, Utils.put(new LinkedHashMap<String,String>(), names, values));
+      this(base, Utils.zipmap(new LinkedHashMap<String,String>(), names, values));
     }
 
     public Labeled(final ExtAttrDef<S,V> base, final String name, final String value) {
@@ -327,7 +328,7 @@ public interface ExtAttrDef<S,V> {
 
     public ExtAttrValue convert(final Map<S,V> vals) throws ConversionFailureException {
       final String name = getName();
-      final Map<String,String> attrVals = new LinkedHashMap<String,String>();
+      final Map<String,String> attrVals = Maps.newLinkedHashMap();
       for (final String attr : attrdefs.keySet()) {
         if (name.equals(attr)) {
           continue;
@@ -346,13 +347,13 @@ public interface ExtAttrDef<S,V> {
     }
 
     private TextWithAttributes(final String name, final S s, Map<String,S> m) {
-      super(name, null == s ? m.values() : Utils.add(new LinkedHashSet<S>(m.values()), s));
+      super(name, null == s ? m.values() : Utils.addTo(new LinkedHashSet<S>(m.values()), s));
       this.na = s;
       this.attrdefs = m;
     }
 
     public TextWithAttributes(final String name, final S s, final String[] attrs, final S[] nattrs) {
-      this(name, s, Utils.put(new HashMap<String,S>(), attrs, nattrs));
+      this(name, s, Utils.zipmap(new HashMap<String,S>(), attrs, nattrs));
     }
   }
 

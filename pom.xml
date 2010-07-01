@@ -6,8 +6,6 @@
   	<url>http://nrg.wustl.edu/fogbugz</url>
   </issueManagement>
   <ciManagement>
-  	<system>hudson</system>
-  	<url>http://nrg.wustl.edu/hudson</url>
   </ciManagement>
   <developers>
   	<developer>
@@ -36,7 +34,7 @@
   <groupId>org.nrg</groupId>
   <artifactId>ExtAttr</artifactId>
   <packaging>jar</packaging>
-  <version>1.5</version>
+  <version>1.5.1-SNAPSHOT</version>
   <name>External Attribute library</name>
   <description>Library for converting native image metadata formats (e.g., DICOM, ECAT) into a unified external format (XNAT).</description>
   <url>http://nrg.wustl.edu</url>
@@ -46,6 +44,11 @@
       <artifactId>junit</artifactId>
       <version>4.0</version>
       <scope>test</scope>
+    </dependency>
+    <dependency>
+    	<groupId>com.google.guava</groupId>
+    	<artifactId>guava</artifactId>
+    	<version>r05</version>
     </dependency>
   </dependencies>
 </project>

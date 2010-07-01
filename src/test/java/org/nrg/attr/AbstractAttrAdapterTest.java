@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007,2009 Washington University
+ * Copyright (c) 2007,2009-2010 Washington University
  */
 package org.nrg.attr;
 
@@ -19,7 +19,7 @@ import java.util.regex.Pattern;
 import org.junit.Test;
 
 /**
- * @author Kevin A. Archie <karchie@npg.wustl.edu>
+ * @author Kevin A. Archie <karchie@wustl.edu>
  *
  */
 public class AbstractAttrAdapterTest {
@@ -207,7 +207,7 @@ public class AbstractAttrAdapterTest {
     }
     final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
     final ExtAttrValue c2_b1a0 = new BasicExtAttrValue("ext-C", Float.toString(2.0f),
-        Utils.put(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
+        Utils.zipmap(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
             new String[]{Float.toString(1.0f), Float.toString(0.0f)}));
 
     final Iterator<ExtAttrValue> i = vals.iterator();
@@ -309,7 +309,7 @@ public class AbstractAttrAdapterTest {
     }
     final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
     final ExtAttrValue c2_b1a0 = new BasicExtAttrValue("ext-C", Float.toString(2.0f),
-        Utils.put(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
+        Utils.zipmap(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
             new String[]{Float.toString(1.0f), Float.toString(0.0f)}));
  
     final Iterator<ExtAttrValue> i = vals.iterator();

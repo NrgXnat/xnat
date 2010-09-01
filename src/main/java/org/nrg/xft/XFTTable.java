@@ -27,6 +27,8 @@ import org.apache.log4j.Logger;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.utils.StringUtils;
+import org.json.JSONException;
+import org.json.JSONObject;
 /**
  * Generic table structure used to hold tabular data and populate XFTItems.
  * 
@@ -1077,14 +1079,9 @@ public class XFTTable implements XFTTableI {
 		toJSON(writer,null);
 	}
     
-	/**
-	 * Outputs table headers and contents into an JSON Table
-	 * @param delimiter
-	 * @return
-	 */
-	public void toJSON(Writer writer, Map<String,Map<String,String>> cp) throws IOException
-	{
-		ArrayList<ArrayList> columnsWType=new ArrayList<ArrayList>();
+	public void toJSON (Writer writer, Map<String,Map<String,String>> cp) throws IOException{
+		org.json.JSONArray array = new org.json.JSONArray();
+		ArrayList<ArrayList<String>> columnsWType=new ArrayList<ArrayList<String>>();
 		for (int i=0;i<this.numCols;i++)
 		{
 			ArrayList col= new ArrayList();
@@ -1098,53 +1095,27 @@ public class XFTTable implements XFTTableI {
 			columnsWType.add(col);
 		}
 		
-	    writer.write("[");
-		for (int j=0;j<rows.size();j++)
-		{
-			if (j!=0) 
-			{
-				writer.write(",");
-			}
-			writer.write("{");
-			
+		for (int j = 0; j<rows.size();j++){
 			Object[] row = rows.get(j);
-			for (int i=0;i<this.numCols;i++)
-			{
-				if (i!=0) 
-				{
-					writer.write(",");
+			org.json.JSONObject json = new org.json.JSONObject();
+			for (int i = 0; i <this.numCols;i++){
+				ArrayList<String> columnSpec=columnsWType.get(i);
+				try {
+					json.put(columnSpec.get(0), ValueParser(row[i]));
+				} catch (JSONException e) {
+					// TODO Auto-generated catch block
+					e.printStackTrace();
+			}
 				}
-				
-				ArrayList columnSpec=columnsWType.get(i);
-				
-				writer.write("\""+ columnSpec.get(0) + "\":");
-				
-				boolean isNumeric=false;
-				
-				if(columnSpec.size()>1){
-					if(columnSpec.get(1).equals("integer") || columnSpec.get(1).equals("float"))
-					{
-						if(row[i]!=null && !row[i].toString().equals("")){
+			array.put(json);
+		}
 							try{
-								Float.parseFloat(row[i].toString());
-								isNumeric=true;
-							}catch(NumberFormatException e){
-								
+			array.write(writer);
+		} catch (JSONException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
 							}
 						}
-					}
-				}
-				
-				if(!isNumeric)writer.write("\"");
-				writer.write(org.apache.commons.lang.StringUtils.replace(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "),"\"","\\\""));
-				if(!isNumeric)writer.write("\"");
-
-			}
-			writer.write("}");
-		}
-	    writer.write("]");
-		writer.flush();
-	}
 
 	/**
 	 * Outputs table headers and contents into an HTML Table

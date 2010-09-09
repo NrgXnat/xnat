@@ -15,6 +15,9 @@
   		<timezone>-6</timezone>
   	</developer>
   </developers>
+  <scm>
+  	<url>http://hg.xnat.org/extattr</url>
+  </scm>
   <organization>
   	<name>Washington University Neuroinformatics Research Group</name>
   	<url>http://nrg.wustl.edu</url>
@@ -34,7 +37,7 @@
   <groupId>org.nrg</groupId>
   <artifactId>ExtAttr</artifactId>
   <packaging>jar</packaging>
-  <version>1.5.1-SNAPSHOT</version>
+  <version>1.5.1</version>
   <name>External Attribute library</name>
   <description>Library for converting native image metadata formats (e.g., DICOM, ECAT) into a unified external format (XNAT).</description>
   <url>http://nrg.wustl.edu</url>

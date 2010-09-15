@@ -9,6 +9,7 @@ import java.io.File;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
+import java.util.List;
 
 import org.apache.axis.AxisEngine;
 import org.apache.axis.MessageContext;
@@ -33,7 +34,7 @@ public class AccessLogger {
         if(TRACKING_SESSIONS==null){
             TRACKING_SESSIONS=Boolean.FALSE;
             try {
-                Collection col = TurbineSession.getActiveSessions();
+                Collection<?> col = TurbineSession.getActiveSessions();
                 if(col.size()>0)
                     TRACKING_SESSIONS=Boolean.TRUE;
             } catch (Throwable e) {
@@ -43,6 +44,7 @@ public class AccessLogger {
         return TRACKING_SESSIONS.booleanValue();
     }
     
+    @SuppressWarnings("unchecked")
     public static void LogScreenAccess(RunData data)
 	{
         if (!data.getScreen().equalsIgnoreCase(""))
@@ -60,16 +62,17 @@ public class AccessLogger {
             try {
                 if(data.getSession().getAttribute(REQUEST_HISTORY)==null)
                 {
-                    data.getSession().setAttribute(REQUEST_HISTORY, new ArrayList());
+                    data.getSession().setAttribute(REQUEST_HISTORY, new ArrayList<String>());
                 }
                 
-                ((ArrayList)data.getSession().getAttribute(REQUEST_HISTORY)).add(data.getRequest().getRequestURI());
+                ((List<String>)data.getSession().getAttribute(REQUEST_HISTORY)).add(data.getRequest().getRequestURI());
             } catch (Throwable e) {
                 logger.error("",e);
             }
         }
 	}
     
+    @SuppressWarnings("unchecked")
     public static void LogActionAccess(RunData data)
 	{
         if (!data.getAction().equalsIgnoreCase(""))
@@ -87,15 +90,16 @@ public class AccessLogger {
             try {
                 if(data.getSession().getAttribute(REQUEST_HISTORY)==null)
                 {
-                    data.getSession().setAttribute(REQUEST_HISTORY, new ArrayList());
+                    data.getSession().setAttribute(REQUEST_HISTORY, new ArrayList<String>());
                 }
                 
-                ((ArrayList)data.getSession().getAttribute(REQUEST_HISTORY)).add(data.getRequest().getRequestURI());
+                ((List<String>)data.getSession().getAttribute(REQUEST_HISTORY)).add(data.getRequest().getRequestURI());
             } catch (Throwable e) {
                 logger.error("",e);
             }
         }
 	}
+    @SuppressWarnings("unchecked")
     public static void LogScreenAccess(RunData data,String message)
 	{
         if (!data.getScreen().equalsIgnoreCase(""))
@@ -113,16 +117,17 @@ public class AccessLogger {
             try {
                 if(data.getSession().getAttribute(REQUEST_HISTORY)==null)
                 {
-                    data.getSession().setAttribute(REQUEST_HISTORY, new ArrayList());
+                    data.getSession().setAttribute(REQUEST_HISTORY, new ArrayList<String>());
                 }
                 
-                ((ArrayList)data.getSession().getAttribute(REQUEST_HISTORY)).add(data.getRequest().getRequestURI());
+                ((List<String>)data.getSession().getAttribute(REQUEST_HISTORY)).add(data.getRequest().getRequestURI());
             } catch (Throwable e) {
                 logger.error("",e);
             }
         }
 	}
     
+    @SuppressWarnings("unchecked")
     public static void LogActionAccess(RunData data,String message)
 	{
         if (!data.getAction().equalsIgnoreCase(""))
@@ -140,10 +145,10 @@ public class AccessLogger {
             try {
                 if(data.getSession().getAttribute(REQUEST_HISTORY)==null)
                 {
-                    data.getSession().setAttribute(REQUEST_HISTORY, new ArrayList());
+                    data.getSession().setAttribute(REQUEST_HISTORY, new ArrayList<String>());
                 }
                 
-                ((ArrayList)data.getSession().getAttribute(REQUEST_HISTORY)).add(data.getRequest().getRequestURI());
+                ((List<String>)data.getSession().getAttribute(REQUEST_HISTORY)).add(data.getRequest().getRequestURI());
             } catch (Throwable e) {
                 logger.error("",e);
             }
@@ -166,10 +171,10 @@ public class AccessLogger {
                 Session session =mc.getSession();
                 
                 if(session.get(REQUEST_HISTORY)==null){
-                    session.set(REQUEST_HISTORY, new ArrayList());
+                    session.set(REQUEST_HISTORY, new ArrayList<String>());
                 }
                 
-                ((ArrayList)session.get(REQUEST_HISTORY)).add(service + " " + message);
+                ((List<String>)session.get(REQUEST_HISTORY)).add(service + " " + message);
             } catch (Throwable e) {
                 logger.error("",e);
             }
@@ -178,7 +183,7 @@ public class AccessLogger {
     
     public static String getAccessLogDirectory(){
         String dir = "";
-        Enumeration e2 = logger.getAllAppenders();
+        Enumeration<?> e2 = logger.getAllAppenders();
         while (e2.hasMoreElements())
         {
             Appender a = (Appender)e2.nextElement();

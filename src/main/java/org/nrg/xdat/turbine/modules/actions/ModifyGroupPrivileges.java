@@ -4,10 +4,8 @@
  *
  */
 package org.nrg.xdat.turbine.modules.actions;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
@@ -15,7 +13,6 @@ import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatUsergroup;
-import org.nrg.xdat.security.ElementAccessManager;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.PermissionCriteria;
 import org.nrg.xdat.security.PermissionItem;
@@ -29,7 +26,7 @@ public class ModifyGroupPrivileges extends SecureAction {
 	static Logger logger = Logger.getLogger(ModifyUserPrivileges.class);
 	public void doPerform(RunData data, Context context) throws Exception
 	{
-		XdatUsergroup tempUser = storeChanges(data, context);
+		final XdatUsergroup tempUser = storeChanges(data, context);
 		TurbineUtils.setDataItem(data, tempUser.getItem());
 		data.getParameters().setString("search_element",
 				org.nrg.xft.XFT.PREFIX + ":userGroup");
@@ -54,25 +51,21 @@ public class ModifyGroupPrivileges extends SecureAction {
 	 * 
 	 */
 	public static XdatUsergroup SetGroupProperties(XdatUsergroup tempUser,
-			Hashtable props, String userName) throws Exception
+			Map<String,? extends Object> props, String userName) throws Exception
 	{
-		ArrayList elements = ElementSecurity.GetSecureElements();
-		Iterator iter = elements.iterator();
+		final List<ElementSecurity> elements = ElementSecurity.GetSecureElements();
 		
-		UserGroup ug = new UserGroup(tempUser.getId());
+		final UserGroup ug = new UserGroup(tempUser.getId());
 		ug.init(tempUser);
-		while (iter.hasNext())
+		for (ElementSecurity es:elements)
 		{
-			ArrayList criteria = new ArrayList();
-			ElementSecurity es = (ElementSecurity) iter.next();
-			ElementAccessManager eam = ug.getAccessManagers().get(es.getElementName());
-			List<PermissionItem> permissionItems = es.getPermissionItems(userName);
+			final List<PermissionItem> permissionItems = es.getPermissionItems(userName);
 			for (PermissionItem pi:permissionItems)
 			{
-				PermissionCriteria pc = new PermissionCriteria();
+				final PermissionCriteria pc = new PermissionCriteria();
 				pc.setField(pi.getFullFieldName());
 				pc.setFieldValue(pi.getValue());
-				String s = es.getElementName() + "_" + pi.getFullFieldName()
+				final String s = es.getElementName() + "_" + pi.getFullFieldName()
 						+ "_" + pi.getValue();
 				if (props.get(s.toLowerCase() + "_r") != null)
 				{
@@ -126,7 +119,7 @@ public class ModifyGroupPrivileges extends SecureAction {
 		// parameter specifying elementAliass and elementNames
 		PopulateItem populater = PopulateItem.Populate(data, "xdat:userGroup",
 				true);
-		ItemI found = populater.getItem();
+		final ItemI found = populater.getItem();
 		XdatUsergroup tempGroup = new XdatUsergroup(found);
 		try {
 			tempGroup.getItem().save(TurbineUtils.getUser(data), false, false);
@@ -135,11 +128,10 @@ public class ModifyGroupPrivileges extends SecureAction {
 		}
 		tempGroup = new XdatUsergroup(found.getCurrentDBVersion());
 		// logger.error("3\n"+tempUser.getItem().toString());
-		Hashtable props = TurbineUtils.GetDataParameterHash(data);
+		final Map<String,String> props = TurbineUtils.GetDataParameterHash(data);
 		tempGroup = SetGroupProperties(tempGroup, props, TurbineUtils.getUser(
 				data).getLogin());
 		// logger.error("4\n"+tempUser.getItem().toString());
-		ItemI temp = tempGroup.getItem();
 		try {
 			tempGroup.getItem().save(TurbineUtils.getUser(data), true, false);
 			// temp = tempUser.getItem().getCurrentDBVersion();

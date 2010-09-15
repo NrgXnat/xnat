@@ -14,6 +14,7 @@ import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldCollection;
@@ -817,10 +818,9 @@ public class DisplayManager {
 		QueryOrganizer rootQuery = new QueryOrganizer(root,user,ViewManager.DEFAULT_LEVEL);
 		QueryOrganizer foreignQuery = new QueryOrganizer(foreign,user,ViewManager.DEFAULT_LEVEL);
 		
-		Enumeration keys = arcD.getCommonFields().keys();
-		while (keys.hasMoreElements())
+		for (Map.Entry<String,String> cf: arcD.getCommonFields().entrySet())
 		{
-			String id = (String)keys.nextElement();
+			String id = cf.getKey();
 			
 			String rootField = (String)rootArc.getCommonFields().get(id);
 			String foreignField = (String)foreignArc.getCommonFields().get(id);
@@ -838,11 +838,11 @@ public class DisplayManager {
 		join.append("(" + rootString + ") ").append(root.getGenericXFTElement().getSQLName());
 		join.append(" LEFT JOIN ").append("(" + foreignString + ") ").append(foreign.getGenericXFTElement().getSQLName());
 		
-		keys = arcD.getCommonFields().keys();
 		int counter = 0;
-		while (keys.hasMoreElements())
+
+		for (Map.Entry<String,String> cf: arcD.getCommonFields().entrySet())
 		{
-			String id = (String)keys.nextElement();
+			String id = cf.getKey();
 			
 			if (counter++ != 0)
 			{

@@ -35,7 +35,7 @@ public class PopulateItem {
      * @throws ElementNotFoundException
      * @throws FieldNotFoundException
      */
-    public PopulateItem(Map hash,XDATUser user, String element,boolean throwException) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
+    public PopulateItem(Map<String,? extends Object> hash,XDATUser user, String element,boolean throwException) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
     {
         item = XFTItem.NewItem(element,user);
 		try {
@@ -55,7 +55,7 @@ public class PopulateItem {
      * @throws ElementNotFoundException
      * @throws FieldNotFoundException
      */
-    public PopulateItem(Map hash,XDATUser user, String element,boolean throwException,XFTItem newItem) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
+    public PopulateItem(Map<String,? extends Object> hash,XDATUser user, String element,boolean throwException,XFTItem newItem) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
     {
         item = newItem;
 		try {
@@ -76,7 +76,7 @@ public class PopulateItem {
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public static PopulateItem Populate(Map hash,XDATUser user, String element,boolean throwException) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
+	public static PopulateItem Populate(Map<String,? extends Object> hash,XDATUser user, String element,boolean throwException) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
 	{
 		return new PopulateItem(hash,user,element,throwException);
 	}
@@ -92,7 +92,7 @@ public class PopulateItem {
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public static PopulateItem Populate(Map hash,XDATUser user, String element,boolean throwException,XFTItem newItem) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
+	public static PopulateItem Populate(Map<String,? extends Object> hash,XDATUser user, String element,boolean throwException,XFTItem newItem) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
 	{
 		return new PopulateItem(hash,user,element,throwException,newItem);
 	}
@@ -109,7 +109,7 @@ public class PopulateItem {
 	 */
 	public static PopulateItem Populate(RunData data, String element,boolean throwException) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
 	{
-		Map<String,Object> hash = TurbineUtils.GetDataParameterHash(data);
+		Map<String,String> hash = TurbineUtils.GetDataParameterHash(data);
 		return new PopulateItem(hash,TurbineUtils.getUser(data),element,throwException);
 	}
     
@@ -126,7 +126,7 @@ public class PopulateItem {
 	 */
 	public static PopulateItem Populate(RunData data, String element,boolean throwException,XFTItem newItem) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
 	{
-		Map<String,Object> hash = TurbineUtils.GetDataParameterHash(data);
+		Map<String,String> hash = TurbineUtils.GetDataParameterHash(data);
 		return new PopulateItem(hash,TurbineUtils.getUser(data),element,throwException,newItem);
 	}
 	

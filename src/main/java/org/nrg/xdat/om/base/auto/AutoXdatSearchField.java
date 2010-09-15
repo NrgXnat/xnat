@@ -18,6 +18,7 @@ import org.nrg.xft.utils.ResourceFile;
  * @author XDAT
  *
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatSearchField extends org.nrg.xdat.base.BaseElement implements XdatSearchFieldI{
 	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatSearchField.class);
 	public static String SCHEMA_ELEMENT_NAME="xdat:search_field";

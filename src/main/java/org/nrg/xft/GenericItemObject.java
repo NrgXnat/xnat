@@ -299,7 +299,7 @@ public abstract class GenericItemObject implements ItemI {
 	 * @throws InvalidValueException
      * @return ArrayList of Exceptions (if throwException = false)
 	 */
-	public ArrayList<Throwable> setProperties(final Map<String,Object> hash,final boolean throwException) throws ElementNotFoundException,FieldNotFoundException,InvalidValueException
+	public ArrayList<Throwable> setProperties(final Map<String,? extends Object> hash,final boolean throwException) throws ElementNotFoundException,FieldNotFoundException,InvalidValueException
 	{
 		sv=null;
 		final ArrayList<Throwable> exceptions = new ArrayList<Throwable>();

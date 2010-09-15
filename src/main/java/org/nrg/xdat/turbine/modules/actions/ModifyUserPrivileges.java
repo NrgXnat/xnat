@@ -9,16 +9,14 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.security.ElementAccessManager;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.PermissionCriteria;
 import org.nrg.xdat.security.PermissionItem;
@@ -44,7 +42,7 @@ public class ModifyUserPrivileges extends SecureAction {
 
 	public void doEmail(RunData data, Context context) throws Exception
 	{
-		XDATUser tempUser = storeChanges(data,context);
+		final XDATUser tempUser = storeChanges(data,context);
 	
 		if (tempUser.needsActivation())
 		{
@@ -63,14 +61,14 @@ public class ModifyUserPrivileges extends SecureAction {
 	
 	public void doPerform(RunData data, Context context) throws Exception
 	{
-		XDATUser tempUser = storeChanges(data,context);
+		final XDATUser tempUser = storeChanges(data,context);
 		
 		TurbineUtils.setDataItem(data,tempUser.getItem());
 		data.getParameters().setString("search_element",org.nrg.xft.XFT.PREFIX + ":user");
 		data.getParameters().setString("search_field",org.nrg.xft.XFT.PREFIX + ":user.login");
 		data.getParameters().setString("search_value",tempUser.getUsername());
 		data.setAction("DisplayItemAction");
-		VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance("DisplayItemAction");
+		final VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance("DisplayItemAction");
 		action.doPerform(data, context);
 		ElementSecurity.refresh();
 	}	
@@ -81,21 +79,19 @@ public class ModifyUserPrivileges extends SecureAction {
 	 * @return
 	 * @throws Exception
 	 */
-	public static XDATUser SetUserProperties(XDATUser tempUser,Hashtable props, String userName) throws Exception
+	public static XDATUser SetUserProperties(XDATUser tempUser,Map<String,? extends Object> props, String userName) throws Exception
 	{
 	    final ArrayList<ElementSecurity> elements = ElementSecurity.GetSecureElements();
 		for (ElementSecurity es:elements)
 		{
-			final ElementAccessManager eam = tempUser.getAccessManager(es.getElementName());
-	
-			List<PermissionItem> permissionItems = es.getPermissionItems(userName);
-			for (PermissionItem pi:permissionItems)
+			final List<PermissionItem> permissionItems = es.getPermissionItems(userName);
+			for (final PermissionItem pi:permissionItems)
 			{
-				PermissionCriteria pc = new PermissionCriteria();
+				final PermissionCriteria pc = new PermissionCriteria();
 
 				pc.setField(pi.getFullFieldName());
 				pc.setFieldValue(pi.getValue());
-				String s = es.getElementName()+ "_" + pi.getFullFieldName() + "_" + pi.getValue();
+				final String s = es.getElementName()+ "_" + pi.getFullFieldName() + "_" + pi.getValue();
 				if (props.get(s.toLowerCase() + "_r") != null)
 				{
 			    	pc.setRead(true);
@@ -148,12 +144,12 @@ public class ModifyUserPrivileges extends SecureAction {
 //	  TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		//parameter specifying elementAliass and elementNames
 		
-	    PopulateItem populater = PopulateItem.Populate(data,"xdat:user",true);
-	    ItemI found = populater.getItem();
+		final PopulateItem populater = PopulateItem.Populate(data,"xdat:user",true);
+		final ItemI found = populater.getItem();
 	    
 	    XDATUser tempUser = new XDATUser(found);
 	    
-	    String login = tempUser.getUsername();
+		final String login = tempUser.getUsername();
 	    		
 	    
 	    
@@ -163,21 +159,17 @@ public class ModifyUserPrivileges extends SecureAction {
 			logger.error("Error Storing User",e);
 		}
 		
-		ItemCollection items = ItemSearch.GetItems("xdat:user.login",login,TurbineUtils.getUser(data),false);
+		final ItemCollection items = ItemSearch.GetItems("xdat:user.login",login,TurbineUtils.getUser(data),false);
 	    if (items.size()>0)
 	    {
-	        XFTItem item = (XFTItem)items.getFirst();
-	        ArrayList newItems = found.getChildItems("xdat:user.assigned_roles.assigned_role");
-	        ArrayList oldItems = item.getChildItems("xdat:user.assigned_roles.assigned_role");
-	        Iterator oldItemsIter= oldItems.iterator();
-            while (oldItemsIter.hasNext())
+	    	final XFTItem item = (XFTItem)items.getFirst();
+	    	final ArrayList<XFTItem> newItems = found.getChildItems("xdat:user.assigned_roles.assigned_role");
+	    	final ArrayList<XFTItem> oldItems = item.getChildItems("xdat:user.assigned_roles.assigned_role");
+	        for (XFTItem oldChild: oldItems)
             {
-                XFTItem oldChild = (XFTItem)oldItemsIter.next();
                 boolean foundChild = false;
-                Iterator newItemsIter = newItems.iterator();
-                while (newItemsIter.hasNext())
+                for (XFTItem newChild:newItems)
                 {
-                    XFTItem newChild = (XFTItem)newItemsIter.next();
                     if (XFTItem.CompareItemsByPKs(newChild,oldChild))
                     {
                         foundChild = true;
@@ -195,12 +187,11 @@ public class ModifyUserPrivileges extends SecureAction {
 		tempUser = new XDATUser(found.getCurrentDBVersion());
 
 		//logger.error("3\n"+tempUser.getItem().toString());
-		Hashtable props = TurbineUtils.GetDataParameterHash(data);
+		final Map<String,String> props = TurbineUtils.GetDataParameterHash(data);
 		
 		tempUser = SetUserProperties(tempUser,props,TurbineUtils.getUser(data).getLogin());
 
 		//logger.error("4\n"+tempUser.getItem().toString());
-		ItemI temp = tempUser.getItem();
 		try {
 			tempUser.getItem().save(TurbineUtils.getUser(data),false,false);
 			//temp = tempUser.getItem().getCurrentDBVersion();
@@ -210,19 +201,19 @@ public class ModifyUserPrivileges extends SecureAction {
 		}
 		
 		//UPDATE BUNDLES
-		XFTTable presetBundles = TableSearch.Execute("SELECT xdat_stored_search_id, login, xdat_stored_search_id,xdat_stored_search_allowed_user_id FROM xdat_stored_search_allowed_user WHERE login='"+ tempUser.getProperty("login") + "';",tempUser.getDBName(),TurbineUtils.getUser(data).getLogin());
+		final XFTTable presetBundles = TableSearch.Execute("SELECT xdat_stored_search_id, login, xdat_stored_search_id,xdat_stored_search_allowed_user_id FROM xdat_stored_search_allowed_user WHERE login='"+ tempUser.getProperty("login") + "';",tempUser.getDBName(),TurbineUtils.getUser(data).getLogin());
 		
-		XFTTable allbundles = TableSearch.Execute("SELECT id FROM xdat_stored_search WHERE tag IS NULL;",tempUser.getDBName(),TurbineUtils.getUser(data).getLogin());
+		final XFTTable allbundles = TableSearch.Execute("SELECT id FROM xdat_stored_search WHERE tag IS NULL;",tempUser.getDBName(),TurbineUtils.getUser(data).getLogin());
 				
 		boolean bundleChange = false;
 		allbundles.resetRowCursor();
 		while (allbundles.hasMoreRows());
 		{
-			Hashtable nextRow = allbundles.nextRowHash();
+			final Map<Object,Object> nextRow = allbundles.nextRowHash();
 		    String bundleID=(String)nextRow.get("id");
 		    if (data.getParameters().get("bundle_" + bundleID.toLowerCase()) !=null)
 		    {
-		        Hashtable rowHash = presetBundles.getRowHash("xdat_stored_search_id",bundleID);
+		    	final Map<Object,Object> rowHash = presetBundles.getRowHash("xdat_stored_search_id",bundleID);
 		        if (rowHash == null)
 		        {
 		            //REMOVE USER-BUNDLE LINK
@@ -230,7 +221,7 @@ public class ModifyUserPrivileges extends SecureAction {
 		            bundleChange = true;
 		        }
 		    }else{
-		        Hashtable rowHash = presetBundles.getRowHash("xdat_stored_search_id",bundleID);
+		    	final Map<Object,Object> rowHash = presetBundles.getRowHash("xdat_stored_search_id",bundleID);
 		        if (rowHash != null)
 		        {
 		            //REMOVE USER-BUNDLE LINK
@@ -255,7 +246,7 @@ public class ModifyUserPrivileges extends SecureAction {
 	   throws Exception
 	{
 		if(XFT.VERBOSE)System.out.println("ModifyUserPriviledges doPrint()"); 
-		XDATUser tempUser = storeChanges(data,context);
+		final XDATUser tempUser = storeChanges(data,context);
 		ElementSecurity.refresh();
 		
 		TurbineUtils.setDataItem(data,tempUser.getItem());

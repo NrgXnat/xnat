@@ -18,6 +18,7 @@ import org.nrg.xft.utils.ResourceFile;
  * @author XDAT
  *
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatAccessLog extends org.nrg.xdat.base.BaseElement implements XdatAccessLogI{
 	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatAccessLog.class);
 	public static String SCHEMA_ELEMENT_NAME="xdat:access_log";

@@ -12,6 +12,8 @@ package org.nrg.xdat.display;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 /**
  * @author Tim
  *
@@ -20,20 +22,20 @@ public class ArcDefinition {
 	private String name = null;
 	private String bridgeElement = "";
 	private String bridgeField = "";
-	private ArrayList filters = new ArrayList();//String[]filterField,filterType
-	private Hashtable commonFields = new Hashtable();//fieldID,fieldType
-	private ArrayList members = new ArrayList();
+	private List<String[]> filters = new ArrayList<String[]>();//String[]filterField,filterType
+	private Map<String,String> commonFields = new Hashtable<String,String>();//fieldID,fieldType
+	private List<String> members = new ArrayList<String>();
 	/**
 	 * @return
 	 */
-	public Hashtable getCommonFields() {
+	public Map<String,String> getCommonFields() {
 		return commonFields;
 	}
 
 	/**
 	 * @return ArrayList of String[]fieldID,filterType
 	 */
-	public ArrayList getFilters() {
+	public List<String[]> getFilters() {
 		return filters;
 	}
 
@@ -54,7 +56,7 @@ public class ArcDefinition {
 	/**
 	 * @param hashtable
 	 */
-	public void setCommonFields(Hashtable hashtable) {
+	public void setCommonFields(Map<String,String> hashtable) {
 		commonFields = hashtable;
 	}
 	
@@ -66,7 +68,7 @@ public class ArcDefinition {
 	/**
 	 * @param list
 	 */
-	public void setFilters(ArrayList list) {
+	public void setFilters(List<String[]> list) {
 		filters = list;
 	}
 	
@@ -93,7 +95,7 @@ public class ArcDefinition {
 	 * Iterator of ArrayList of ElementNames (String)
 	 * @return
 	 */
-	public Iterator getMembers() {
+	public Iterator<String> getMembers() {
 		return members.iterator();
 	}
 	
@@ -124,10 +126,10 @@ public class ArcDefinition {
 	public String getDistinctField()
 	{
 		String field = null;
-		Iterator iter = this.filters.iterator();
+		Iterator<String[]> iter = this.filters.iterator();
 		while (iter.hasNext())
 		{
-			String[] filter = (String[])iter.next();
+			String[] filter = iter.next();
 			if (filter[1].equalsIgnoreCase("distinct"))
 			{
 				field= filter[0];
@@ -140,10 +142,10 @@ public class ArcDefinition {
 	public String getEqualsField()
 	{
 		String field = null;
-		Iterator iter = this.filters.iterator();
+		Iterator<String[]> iter = this.filters.iterator();
 		while (iter.hasNext())
 		{
-			String[] filter = (String[])iter.next();
+			String[] filter = iter.next();
 			if (filter[1].equalsIgnoreCase("equals"))
 			{
 				field= filter[0];
@@ -156,10 +158,10 @@ public class ArcDefinition {
 	public String getClosestField()
 	{
 		String field = null;
-		Iterator iter = this.filters.iterator();
+		Iterator<String[]> iter = this.filters.iterator();
 		while (iter.hasNext())
 		{
-			String[] filter = (String[])iter.next();
+			String[] filter = iter.next();
 			if (filter[1].equalsIgnoreCase("closest"))
 			{
 				field= filter[0];

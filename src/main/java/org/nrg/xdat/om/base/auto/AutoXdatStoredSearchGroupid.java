@@ -18,6 +18,7 @@ import org.nrg.xft.utils.ResourceFile;
  * @author XDAT
  *
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatStoredSearchGroupid extends org.nrg.xdat.base.BaseElement implements XdatStoredSearchGroupidI{
 	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatStoredSearchGroupid.class);
 	public static String SCHEMA_ELEMENT_NAME="xdat:stored_search_groupID";

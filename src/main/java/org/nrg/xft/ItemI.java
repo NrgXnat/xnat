@@ -273,7 +273,7 @@ public interface ItemI extends Externalizable{
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public ArrayList getChildItems(String xmlPath)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	public ArrayList<XFTItem> getChildItems(String xmlPath)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 
 	public UserI getUser();
 	

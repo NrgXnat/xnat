@@ -54,6 +54,7 @@ import org.w3c.dom.Document;
  * @author Tim
  *
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class BaseElement extends ItemWrapper implements ItemI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(BaseElement.class);
 	private SchemaElement schemaElement=null;

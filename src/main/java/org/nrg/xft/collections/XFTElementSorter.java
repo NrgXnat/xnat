@@ -23,7 +23,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
  */
 public class XFTElementSorter {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTElementSorter.class);
-	private Vector elements = new Vector();
+	private Vector<GenericWrapperElement> elements = new Vector();
 	
 	private Vector unOrderedElements = new Vector();
 	

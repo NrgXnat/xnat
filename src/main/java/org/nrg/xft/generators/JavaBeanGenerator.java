@@ -63,6 +63,8 @@ public class JavaBeanGenerator {
             extensionName = getSQLClassName(ext);
         }
         
+        sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
+        
         sb.append("\npublic class ").append(getSQLClassName(e)).append(" extends " + extensionName + " implements java.io.Serializable {");
         sb.append("\n\tpublic static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("+getSQLClassName(e)+".class);");
         sb.append("\n\tpublic static String SCHEMA_ELEMENT_NAME=\"").append(e.getFullXMLName()).append("\";");

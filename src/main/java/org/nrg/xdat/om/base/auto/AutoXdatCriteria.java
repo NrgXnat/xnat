@@ -18,6 +18,7 @@ import org.nrg.xft.utils.ResourceFile;
  * @author XDAT
  *
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatCriteria extends org.nrg.xdat.base.BaseElement implements XdatCriteriaI{
 	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatCriteria.class);
 	public static String SCHEMA_ELEMENT_NAME="xdat:criteria";

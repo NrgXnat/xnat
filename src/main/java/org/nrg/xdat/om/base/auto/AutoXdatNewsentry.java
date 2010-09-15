@@ -18,6 +18,7 @@ import org.nrg.xft.utils.ResourceFile;
  * @author XDAT
  *
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatNewsentry extends org.nrg.xdat.base.BaseElement implements XdatNewsentryI{
 	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatNewsentry.class);
 	public static String SCHEMA_ELEMENT_NAME="xdat:newsEntry";

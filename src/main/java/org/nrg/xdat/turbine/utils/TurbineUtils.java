@@ -19,6 +19,8 @@ import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -85,10 +87,10 @@ public class TurbineUtils {
 	{
 	    if (_security==null)
 	    {
-	       ArrayList al =XdatSecurity.getAllXdatSecuritys(null,false);
+	       final List<XdatSecurity> al =XdatSecurity.getAllXdatSecuritys(null,false);
 	       if (al.size()>0)
 	       {
-	           _security=(XdatSecurity)al.get(0);
+	           _security=al.get(0);
 	       }
 	    }
 	    
@@ -96,7 +98,7 @@ public class TurbineUtils {
 	}
 	
 	public Integer getSecurityID(){
-	    XdatSecurity sec = this.getSecurityObject();
+	    final XdatSecurity sec = this.getSecurityObject();
 		if (sec!=null)
 		{
 			try {
@@ -119,7 +121,7 @@ public class TurbineUtils {
 	
 	public static String GetSystemName()
 	{
-		String site_id= XFT.GetSiteID();
+		final String site_id= XFT.GetSiteID();
 		if(site_id==null || org.apache.commons.lang.StringUtils.isEmpty(site_id)){
 			return "XNAT";
 		}else{
@@ -140,21 +142,20 @@ public class TurbineUtils {
 	public static ItemI GetItemBySearch(RunData data, boolean preLoad) throws Exception
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		String searchField = data.getParameters().getString("search_field");
-		Object searchValue = data.getParameters().getObject("search_value");
+		final String searchField = data.getParameters().getString("search_field");
+		final Object searchValue = data.getParameters().getObject("search_value");
 		if (searchField != null && searchValue != null)
 		{
-		    ItemSearch search = new ItemSearch();
+			final ItemSearch search = new ItemSearch();
 		    search.setUser(TurbineUtils.getUser(data));
 		    
-		    String elementName = StringUtils.GetRootElementName(searchField);
+		    final String elementName = StringUtils.GetRootElementName(searchField);
 		    
-		    SchemaElementI gwe = SchemaElement.GetElement(elementName);
 		    search.setElement(elementName);
 		    search.addCriteria(searchField,searchValue);
 		    search.setAllowMultiples(preLoad);
 		    
-			ItemCollection items = search.exec();
+		    final ItemCollection items = search.exec();
 			if (items.size() > 0)
 			{
 				ItemI o = items.getFirst();
@@ -172,8 +173,8 @@ public class TurbineUtils {
 	public static SchemaElementI GetSchemaElementBySearch(RunData data)
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		String searchField = data.getParameters().getString("search_field");
-		String searchElement = data.getParameters().getString("search_element");
+		final String searchField = data.getParameters().getString("search_field");
+		final String searchElement = data.getParameters().getString("search_element");
 		if (searchElement!=null)
 		{
 		    try {
@@ -197,22 +198,22 @@ public class TurbineUtils {
 	public static XFTItem GetItemBySearch(RunData data) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		String searchField = data.getParameters().getString("search_field");
-		Object searchValue = data.getParameters().getObject("search_value");
+		final String searchField = data.getParameters().getString("search_field");
+		final Object searchValue = data.getParameters().getObject("search_value");
 		if (searchField != null && searchValue != null)
 		{
-		    ItemSearch search = new ItemSearch();
+			final ItemSearch search = new ItemSearch();
 		    search.setUser(TurbineUtils.getUser(data));
 		    
-		    String elementName = StringUtils.GetRootElementName(searchField);
+		    final String elementName = StringUtils.GetRootElementName(searchField);
 		    
-		    SchemaElementI gwe = SchemaElement.GetElement(elementName);
+		    final SchemaElementI gwe = SchemaElement.GetElement(elementName);
 		    search.setElement(elementName);
 		    search.addCriteria(searchField,searchValue);
 		    
 		    search.setAllowMultiples(gwe.isPreLoad());
 		    
-			ItemCollection items = search.exec();
+		    final ItemCollection items = search.exec();
 			if (items.size() > 0)
 			{
 				ItemI o = items.getFirst();
@@ -230,16 +231,16 @@ public class TurbineUtils {
 	public static ItemI GetItemBySearch(RunData data,Boolean preload) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		String searchField = data.getParameters().getString("search_field");
-		Object searchValue = data.getParameters().getObject("search_value");
+		final String searchField = data.getParameters().getString("search_field");
+		final Object searchValue = data.getParameters().getObject("search_value");
 		if (searchField != null && searchValue != null)
 		{
-		    ItemSearch search = new ItemSearch();
+			final ItemSearch search = new ItemSearch();
 		    search.setUser(TurbineUtils.getUser(data));
 		    
-		    String elementName = StringUtils.GetRootElementName(searchField);
+		    final String elementName = StringUtils.GetRootElementName(searchField);
 		    
-		    SchemaElementI gwe = SchemaElement.GetElement(elementName);
+		    final SchemaElementI gwe = SchemaElement.GetElement(elementName);
 		    search.setElement(elementName);
 		    search.addCriteria(searchField,searchValue);
 		    
@@ -252,7 +253,7 @@ public class TurbineUtils {
 		    }
 		    search.setAllowMultiples(b);
 		    
-			ItemCollection items = search.exec();
+		    final ItemCollection items = search.exec();
 			if (items.size() > 0)
 			{
 				ItemI o = items.getFirst();
@@ -275,7 +276,7 @@ public class TurbineUtils {
 	
 	public static ItemI GetEditItem(RunData data)
 	{
-	    ItemI edit_item = (ItemI)data.getSession().getAttribute("edit_item");
+		final ItemI edit_item = (ItemI)data.getSession().getAttribute("edit_item");
 	    data.getSession().removeAttribute("edit_item");
 	    return edit_item;
 	}
@@ -287,14 +288,14 @@ public class TurbineUtils {
 	
 	public static ItemI GetParticipantItem(RunData data)
 	{
-	    ItemI edit_item = (ItemI)data.getSession().getAttribute("participant");
+		final ItemI edit_item = (ItemI)data.getSession().getAttribute("participant");
 	    if (edit_item==null)
 	    {
 	       String s = data.getParameters().getString("part_id");
 	       if (s != null)
 	       {
 		       try {
-                ItemCollection items = ItemSearch.GetItems("xnat:subjectData.ID",s,TurbineUtils.getUser(data),false);
+		    	   final ItemCollection items = ItemSearch.GetItems("xnat:subjectData.ID",s,TurbineUtils.getUser(data),false);
 	               if (items.size()>0)
 	               {
 	                   return items.getFirst();
@@ -309,7 +310,7 @@ public class TurbineUtils {
 	               if (s.equalsIgnoreCase("xnat:subjectData.ID"))
 	               {
 	                   try {
-                        ItemI part = TurbineUtils.GetItemBySearch(data);
+	                	   final ItemI part = TurbineUtils.GetItemBySearch(data);
                         return part;
                     } catch (Exception e) {
                         logger.error("",e);
@@ -384,16 +385,12 @@ public class TurbineUtils {
             s= req.getRequestURL().toString();
             String server = null;
             
-            String pathinfo=req.getPathInfo();
-            String servletpath=req.getServletPath();
-            String servername=req.getServerName();
-            
             if (req.getContextPath()!=null && !req.getContextPath().equals(""))
             {
-                String path = req.getContextPath() +"/";
+            	final String path = req.getContextPath() +"/";
                 if (s.indexOf(path)!=-1)
                 {
-                    int breakIndex = s.indexOf(path) + (path.length());
+                	final int breakIndex = s.indexOf(path) + (path.length());
                     server = s.substring(0,breakIndex);
                 }
             }
@@ -401,7 +398,7 @@ public class TurbineUtils {
             if (server==null){
                 if (s.indexOf((new Integer(req.getServerPort())).toString())!=-1)
                 {
-                    int breakIndex = s.indexOf((new Integer(req.getServerPort())).toString()) + (new Integer(req.getServerPort())).toString().length();
+                	final int breakIndex = s.indexOf((new Integer(req.getServerPort())).toString()) + (new Integer(req.getServerPort())).toString().length();
                     server = s.substring(0,breakIndex);
                 }
             }
@@ -418,9 +415,7 @@ public class TurbineUtils {
         
     public static String GetContext()
     {
-        String s = "";
-
-        s = Turbine.getContextPath();
+        final String s = Turbine.getContextPath();
 
         return s;
     }
@@ -461,8 +456,8 @@ public class TurbineUtils {
                 try {
                     ds = TurbineUtils.getUser(data).getSearch(displayElement,"listing");
                     
-                    String searchField = data.getParameters().getString("search_field");
-                    Object searchValue = data.getParameters().getObject("search_value");
+                    final String searchField = data.getParameters().getString("search_field");
+                    final Object searchValue = data.getParameters().getObject("search_value");
                     if (searchField!= null && searchValue != null)
                     {
                         SearchCriteria criteria = new SearchCriteria();
@@ -485,7 +480,7 @@ public class TurbineUtils {
 	}
     
     public static DisplaySearch getDSFromSearchXML(RunData data){
-    	XDATUser user = TurbineUtils.getUser(data);
+    	final XDATUser user = TurbineUtils.getUser(data);
         
         if (user!=null){
 	        if (data.getParameters().get("search_xml") !=null)
@@ -495,13 +490,13 @@ public class TurbineUtils {
 	                search_xml=URLDecoder.decode(search_xml,"UTF-8");
 	                search_xml=StringUtils.ReplaceStr(search_xml, ".close.", "/");
 	                
-	                    StringReader sr = new StringReader(search_xml);
-	                    InputSource is = new InputSource(sr);
-	                    SAXReader reader = new SAXReader(user);
-	                        XFTItem item = reader.parse(is);
-	                        XdatStoredSearch search = new XdatStoredSearch(item);
+	                final StringReader sr = new StringReader(search_xml);
+	                final InputSource is = new InputSource(sr);
+	                final SAXReader reader = new SAXReader(user);
+	                final XFTItem item = reader.parse(is);
+	                final XdatStoredSearch search = new XdatStoredSearch(item);
 	                        if (search!=null){
-	                            DisplaySearch ds=search.getCSVDisplaySearch(user);
+	                        	final DisplaySearch ds=search.getCSVDisplaySearch(user);
 	                            data.getParameters().remove("search_xml");
 	                            return ds;
 	                        }
@@ -522,18 +517,18 @@ public class TurbineUtils {
 	        }else if (data.getParameters().get("search_id") !=null)
 	        {
 	            try {
-	                String search_id = data.getParameters().get("search_id");
+	            	final String search_id = data.getParameters().get("search_id");
 	                    
-	                    String search_xml = PoolDBUtils.RetrieveLoggedCustomSearch(user.getLogin(), user.getDBName(), search_id);
+	            	final String search_xml = PoolDBUtils.RetrieveLoggedCustomSearch(user.getLogin(), user.getDBName(), search_id);
 	                    
 	                    if (search_xml!=null){
-	                        StringReader sr = new StringReader(search_xml);
-	                        InputSource is = new InputSource(sr);
-	                        SAXReader reader = new SAXReader(user);
-	                        XFTItem item = reader.parse(is);
-	                        XdatStoredSearch search = new XdatStoredSearch(item);
+	                    	final StringReader sr = new StringReader(search_xml);
+	                    	final InputSource is = new InputSource(sr);
+	                    	final SAXReader reader = new SAXReader(user);
+	                    	final XFTItem item = reader.parse(is);
+	                    	final XdatStoredSearch search = new XdatStoredSearch(item);
 	                        if (search!=null){
-	                            DisplaySearch ds=search.getDisplaySearch(user);
+	                        	final DisplaySearch ds=search.getDisplaySearch(user);
 	                            data.getParameters().remove("search_id");
 	                            return ds;
 	                        }
@@ -554,9 +549,9 @@ public class TurbineUtils {
 	        }else if (data.getRequest().getAttribute("xss") !=null)
 	        {
 	            try {
-	                XdatStoredSearch search = (XdatStoredSearch)data.getRequest().getAttribute("xss");
+	            	final XdatStoredSearch search = (XdatStoredSearch)data.getRequest().getAttribute("xss");
                     if (search!=null){
-                        DisplaySearch ds=search.getDisplaySearch(user);
+                    	final DisplaySearch ds=search.getDisplaySearch(user);
                         data.getParameters().remove("search_id");
                         return ds;
                     }
@@ -582,10 +577,10 @@ public class TurbineUtils {
 	{
 		data.getParameters().setString("search_element",item.getXSIType());
 		try {
-			SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
-			SchemaField sf = (SchemaField)se.getAllPrimaryKeys().get(0);
+			final SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
+			final SchemaField sf = (SchemaField)se.getAllPrimaryKeys().get(0);
 			data.getParameters().setString("search_field",StringUtils.ReplaceStr(StringUtils.ReplaceStr(sf.getXMLPathString(se.getFullXMLName()),"/","."),"@","."));
-			Object o = item.getProperty(sf.getId());
+			final Object o = item.getProperty(sf.getId());
 			data.getParameters().setString("search_value",o.toString());
 		} catch (Exception e) {
 			logger.error("",e);
@@ -597,10 +592,10 @@ public class TurbineUtils {
     {
         context.put("search_element",item.getXSIType());
         try {
-            SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
-            SchemaField sf = (SchemaField)se.getAllPrimaryKeys().get(0);
+        	final SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
+        	final SchemaField sf = (SchemaField)se.getAllPrimaryKeys().get(0);
             context.put("search_field",StringUtils.ReplaceStr(StringUtils.ReplaceStr(sf.getXMLPathString(se.getFullXMLName()),"/","."),"@","."));
-            Object o = item.getProperty(sf.getId());
+            final Object o = item.getProperty(sf.getId());
             context.put("search_value",o.toString());
         } catch (Exception e) {
             logger.error("",e);
@@ -609,7 +604,7 @@ public class TurbineUtils {
 	
 	public static ItemI getDataItem(RunData data)
 	{
-		ItemI item = (ItemI)data.getSession().getAttribute("data_item");
+		final ItemI item = (ItemI)data.getSession().getAttribute("data_item");
 		data.getSession().removeAttribute("data_item");
 		return item;
 	}
@@ -622,7 +617,7 @@ public class TurbineUtils {
 	
 	public static String getStoredElementName(RunData data)
 	{
-		String s= (String)data.getSession().getAttribute("stored_element");
+		final String s= (String)data.getSession().getAttribute("stored_element");
 		data.getSession().removeAttribute("stored_element");
 		return s;
 	}
@@ -637,7 +632,7 @@ public class TurbineUtils {
 		if (data!= null)
 		{
 			logger.debug("\n\nData Parameters");
-			ArrayList al = GetDataParameterList(data);
+			final List<String> al = GetDataParameterList(data);
 			for(int i=0; i < al.size(); i++)
 			{
 				logger.debug("KEY: "+ al.get(i).toString() + " VALUE: " + data.getParameters().get(al.get(i).toString().toLowerCase()));
@@ -645,9 +640,9 @@ public class TurbineUtils {
 		}
 	}
 	
-		public static ArrayList GetDataParameterList(RunData data)
+		public static List<String> GetDataParameterList(RunData data)
 		{
-			ArrayList al = new ArrayList();
+			final List<String> al = new ArrayList<String>();
 			for(int i=0; i < data.getParameters().getKeys().length; i++)
 			{
 				al.add(data.getParameters().getKeys()[i].toString());
@@ -656,40 +651,42 @@ public class TurbineUtils {
 			return al;
 		}
 
-        @SuppressWarnings("deprecation")
-		public static Hashtable<String,Object> GetDataParameterHash(RunData data)
+        @SuppressWarnings({ "deprecation", "unchecked" })
+		public static Map<String,String> GetDataParameterHash(RunData data)
 		{
 		    //TurbineUtils.OutputDataParameters(data);
-			Hashtable<String,Object> hash = new Hashtable<String,Object>();
+        	final Map<String,String> hash = new Hashtable<String,String>();
             ParameterParser pp = data.getParameters();
-            Enumeration penum = pp.keys();
+            Enumeration<Object> penum = pp.keys();
             while (penum.hasMoreElements()){
-                String key = penum.nextElement().toString();
-                Object value = data.getParameters().get(key);
+            	final String key = penum.nextElement().toString();
+            	final  Object value = data.getParameters().get(key);
                 if (value!=null && !value.equals(""))
                     hash.put(key,value.toString());
             }
 			return hash;
 		}
 		
-		public static Hashtable GetContextParameterHash(Context context)
+		public static Map<String,String> GetContextParameterHash(Context context)
 		{
-			Hashtable hash = new Hashtable();
-            Object[] keys = context.getKeys();
+			final Map<String,String> hash = new Hashtable<String,String>();
+			final Object[] keys = context.getKeys();
             for (int i =0;i<keys.length;i++){
-                String key = (String)keys[i];
-                Object value = context.get(key);
+            	final String key = (String)keys[i];
+            	final Object value = context.get(key);
                 if (value!=null && !value.equals(""))
                     hash.put(key,value.toString());
             }
 			return hash;
 		}
 		
-		public static Hashtable GetTurbineParameters(RunData data, Context context)
+		public static Map<String,String> GetTurbineParameters(RunData data, Context context)
 		{
-			Hashtable hash = new Hashtable();
+			final Map<String,String> hash;
 			if (data != null){
 				hash = GetDataParameterHash(data);
+			}else{
+				hash=new Hashtable<String,String>();
 			}
 			if (context != null)
 			{
@@ -731,16 +728,17 @@ public class TurbineUtils {
 			}
 		}
 		
+		@SuppressWarnings("unchecked")
 		public static void OutputSessionParameters(RunData data)
 		{
 			if (data != null)
 			{
 				logger.debug("\n\nSession Parameters");
-				Enumeration enumer = data.getSession().getAttributeNames();
+				final Enumeration<Object> enumer = data.getSession().getAttributeNames();
 				while (enumer.hasMoreElements())
 				{
-				    String key = (String)enumer.nextElement();
-				    Object o = data.getSession().getAttribute(key);
+					final String key = (String)enumer.nextElement();
+					final Object o = data.getSession().getAttribute(key);
 				    logger.debug("KEY: "+ key + " VALUE: " + o.getClass());
 				}
 			}
@@ -759,7 +757,7 @@ public class TurbineUtils {
 	{
 	    if (data.getParameters().get(s.toLowerCase())!=null)
 	    {
-	        Object o = data.getParameters().get(s.toLowerCase());
+	    	final Object o = data.getParameters().get(s.toLowerCase());
 	        if(o.toString().equalsIgnoreCase(""))
 	        {
 	            return false;
@@ -780,7 +778,7 @@ public class TurbineUtils {
 	{
 	    if (data.getParameters().get(s.toLowerCase())!=null)
 	    {
-	        Object o = data.getParameters().get(s.toLowerCase());
+	    	final Object o = data.getParameters().get(s.toLowerCase());
 	        if(o.toString().equalsIgnoreCase(""))
 	        {
 	            return defualt;
@@ -796,13 +794,11 @@ public class TurbineUtils {
 	public static void InstanciatePassedItemForScreenUse(RunData data, Context context)
 	{
 	    try {
-            ItemI o = TurbineUtils.GetItemBySearch(data);
+	    	final ItemI o = TurbineUtils.GetItemBySearch(data);
             
             if (o != null)
             {
             	TurbineUtils.setDataItem(data,o);
-            	
-            	SchemaElementI se = SchemaElement.GetElement(o.getXSIType());
             	
             	context.put("item",o);
             	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(o.getXSIType()));
@@ -822,7 +818,7 @@ public class TurbineUtils {
 	}
     
     public String formatDate(Date d, String pattern){
-        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);
+    	final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);
         return formatter.format(d);
     }
     
@@ -847,8 +843,8 @@ public class TurbineUtils {
     }
     
     public String validateTemplate(String[] screens, String project){
-    	for(String screen : screens){
-    		String s = validateTemplate(screen,project);
+    	for(final String screen : screens){
+    		final String s = validateTemplate(screen,project);
     		if(s!=null){
     			return s;
     		}
@@ -859,7 +855,7 @@ public class TurbineUtils {
     
     public String getTemplateName(String module,String dataType,String project){
     	try {
-			GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
+    		final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
 			String temp = validateTemplate("/screens/"+ root.getSQLName()+ "/" + root.getSQLName() + module,project);
 			if (temp!=null){
 				return temp;
@@ -870,7 +866,7 @@ public class TurbineUtils {
 				return temp;
 			}
 			
-			for(ArrayList primary: root.getExtendedElements()){
+			for(List<Object> primary: root.getExtendedElements()){
 				GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
 				temp = validateTemplate("/screens/"+ p.getSQLName()+ "/" + p.getSQLName() + module,project);
 				if (temp!=null){
@@ -893,7 +889,7 @@ public class TurbineUtils {
     
     public String getTemplateName(String module,String dataType,String project,String subFolder){
     	try {
-			GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
+    		final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
 			String temp = validateTemplate("/screens/"+ root.getSQLName()+ "/" + subFolder + "/" + root.getSQLName() + module,project);
 			if (temp!=null){
 				return temp;
@@ -904,8 +900,8 @@ public class TurbineUtils {
 				return temp;
 			}
 			
-			for(ArrayList primary: root.getExtendedElements()){
-				GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
+			for(List<Object> primary: root.getExtendedElements()){
+				final GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
 				temp = validateTemplate("/screens/"+ p.getSQLName()+ "/" + subFolder + "/" + p.getSQLName() + module,project);
 				if (temp!=null){
 					return temp;
@@ -926,12 +922,11 @@ public class TurbineUtils {
     }
     
     public String formatDate(long d, String pattern){
-        java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);
-        return formatter.format(new Date(d));
+    	return formatDate(new Date(d),pattern);
     }
     
     public String formatNumber(Object o, int roundTo){
-        NumberFormat formatter = java.text.NumberFormat.getInstance();
+    	final NumberFormat formatter = java.text.NumberFormat.getInstance();
         if (o==null){
             return "";
         }
@@ -945,7 +940,7 @@ public class TurbineUtils {
         }
         
         if (o instanceof Number){
-            Number n = (Number)o;
+        	final Number n = (Number)o;
             formatter.setGroupingUsed(false);
             formatter.setMaximumFractionDigits(roundTo);
             formatter.setMinimumFractionDigits(roundTo);

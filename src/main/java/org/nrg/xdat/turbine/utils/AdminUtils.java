@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
 
 import javax.mail.internet.InternetAddress;
 
@@ -287,10 +288,10 @@ public class AdminUtils {
 		
 		//BUILD ADDRESS ARRAY
 		ArrayList<InternetAddress> al = new ArrayList<InternetAddress>();
-		Iterator iter = StringUtils.CommaDelimitedStringToArrayList(getAuthorizerEmailId()).iterator();
+		Iterator<String> iter = StringUtils.CommaDelimitedStringToArrayList(getAuthorizerEmailId()).iterator();
 		while (iter.hasNext())
 		{
-		    String s = (String)iter.next();
+		    String s = iter.next();
 		    InternetAddress ia = new InternetAddress();
 			ia.setAddress(s);
 			al.add(ia);
@@ -336,7 +337,7 @@ public class AdminUtils {
             	EmailerI sm = EmailUtils.getEmailer();
 				sm.setFrom(getAdminEmailId());
 				InternetAddress ia = new InternetAddress(user.getEmail());
-				ArrayList al = new ArrayList();
+				List<InternetAddress> al = new ArrayList<InternetAddress>();
 				al.add(ia);
 				sm.setTo(al);
 				sm.setSubject(TurbineUtils.GetSystemName() + ": Authorization Complete");

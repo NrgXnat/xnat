@@ -21,6 +21,7 @@ import org.nrg.xft.utils.ResourceFile;
  * @author XDAT
  *
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatRoleType extends org.nrg.xdat.base.BaseElement implements XdatRoleTypeI{
 	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatRoleType.class);
 	public static String SCHEMA_ELEMENT_NAME="xdat:role_type";

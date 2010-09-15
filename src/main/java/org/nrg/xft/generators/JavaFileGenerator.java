@@ -91,8 +91,7 @@ public class JavaFileGenerator {
         }else{
             sbI.append(" extends " + interfaceExtensionName + " {");
         }
-        
-        sb.append("\n@SuppressWarnings(\"serial\")\npublic abstract class ").append(getClassName(e)).append(" extends " + extensionName + " implements " + interfaceName +"{");
+        sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})\npublic abstract class ").append(getClassName(e)).append(" extends " + extensionName + " implements " + interfaceName +"{");
         sb.append("\n\tpublic static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("+getClassName(e)+".class);");
         sb.append("\n\tpublic static String SCHEMA_ELEMENT_NAME=\"").append(e.getFullXMLName()).append("\";");
         //ADD CONSTRUCTORS
@@ -937,7 +936,10 @@ public class JavaFileGenerator {
                 sb.append("\n\n/**\n * @author XDAT\n *\n */");
                 
                 //CLASS
-                sb.append("\n@SuppressWarnings(\"serial\")\npublic abstract class ").append(getBaseClassName(e)).append(" extends ").append(getClassName(e)).append(" {");
+
+                sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
+                
+                sb.append("\npublic abstract class ").append(getBaseClassName(e)).append(" extends ").append(getClassName(e)).append(" {");
                 //ADD CONSTRUCTORS
                 sb.append("\n\n");
                 sb.append("\tpublic ").append(getBaseClassName(e)).append("(ItemI item)\n\t{\n\t\tsuper(item);\n\t}");
@@ -980,12 +982,15 @@ public class JavaFileGenerator {
                 //CLASS COMMENTS
                 sb.append("\n\n/**\n * @author XDAT\n *\n */");
                 
+
+                sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
+                
                 if (e.isAbstract()){
                     //CLASS
-                    sb.append("\n@SuppressWarnings(\"serial\")\npublic abstract class ").append(getSQLClassName(e)).append(" extends ").append(getBaseClassName(e)).append(" {");
+                    sb.append("\npublic abstract class ").append(getSQLClassName(e)).append(" extends ").append(getBaseClassName(e)).append(" {");
                 }else{
                     //CLASS
-                    sb.append("\n@SuppressWarnings(\"serial\")\npublic class ").append(getSQLClassName(e)).append(" extends ").append(getBaseClassName(e)).append(" {");
+                    sb.append("\npublic class ").append(getSQLClassName(e)).append(" extends ").append(getBaseClassName(e)).append(" {");
                 }
                 //ADD CONSTRUCTORS
                 sb.append("\n\n");

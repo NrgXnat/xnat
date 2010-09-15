@@ -5,11 +5,13 @@
  */
 package org.nrg.xft.layeredSequence;
 import java.util.ArrayList;
+
+import org.nrg.xft.ItemI;
 /**
  * @author Tim
  *
  */
-public interface LayeredSequenceObjectI  {
+public interface LayeredSequenceObjectI extends ItemI  {
     public String getLayeredsequence();
     public void setLayeredsequence(String sequence) throws Exception;
     

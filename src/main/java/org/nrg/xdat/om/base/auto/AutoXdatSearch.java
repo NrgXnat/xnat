@@ -22,6 +22,7 @@ import org.nrg.xft.utils.ResourceFile;
  * @author XDAT
  *
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatSearch extends XdatStoredSearch implements XdatSearchI{
 	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatSearch.class);
 	public static String SCHEMA_ELEMENT_NAME="xdat:Search";

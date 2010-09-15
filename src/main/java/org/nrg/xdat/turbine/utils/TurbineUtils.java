@@ -487,6 +487,7 @@ public class TurbineUtils {
 	        {
 	            try {
 	                String search_xml = data.getParameters().getString("search_xml");
+	                search_xml = search_xml.replaceAll("%", "%25");
 	                search_xml=URLDecoder.decode(search_xml,"UTF-8");
 	                search_xml=StringUtils.ReplaceStr(search_xml, ".close.", "/");
 	                

@@ -3,3 +3,4 @@ syntax: glob
 classes/*
 .classpath
 .project
+glob:xdat_1.jardesc

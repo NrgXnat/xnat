@@ -450,8 +450,10 @@ public abstract class SearchA extends SecureAction {
 
 
             int counter = 0;
-            while (TurbineUtils.HasPassedParameter(ed.getElementName() + ".COMBO" +counter,data))
+            while (data.getParameters().getString(ed.getElementName() + ".COMBO" + counter) != null)
             {
+                if(data.getParameters().getString(ed.getElementName() + ".COMBO" + counter).length() == 0){counter++;continue;}
+
                 final CriteriaCollection cc = new CriteriaCollection("OR");
                 final String value = data.getParameters().getString(ed.getElementName() + ".COMBO" + counter);
                 final String keys = data.getParameters().getString(ed.getElementName() + ".COMBO" + counter + "_FIELDS");

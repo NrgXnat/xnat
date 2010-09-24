@@ -1,2 +1,3 @@
 syntax: glob
 target/
+glob:xdat_1.jardesc

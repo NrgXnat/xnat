@@ -3,13 +3,9 @@
  */
 package org.nrg.attr;
 
-import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
-import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.HashMap;
@@ -18,6 +14,10 @@ import java.util.Set;
 import org.nrg.attr.ExtAttrDef.MultiValue;
 import org.nrg.attr.ExtAttrDef.Multiplex;
 import org.nrg.attr.ExtAttrDef.Optional;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 
 /**
@@ -29,10 +29,10 @@ import org.nrg.attr.ExtAttrDef.Optional;
  *
  */
 public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
-  private final AttrDefSet<S,V> attrDefs;
+  private final MutableAttrDefs<S,V> attrDefs;
 
-  public AbstractAttrAdapter(final AttrDefSet<S,V> ad,
-      final ReadableAttrDefSet<S,V>...attrs) {
+  public AbstractAttrAdapter(final MutableAttrDefs<S,V> ad,
+      final AttrDefs<S,V>...attrs) {
     this.attrDefs = ad;
     add(attrs);
   }
@@ -41,13 +41,13 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
   getUniqueCombinationsGivenValues(Map<S,V> given, Collection<S> attrs, Map<S,ConversionFailureException> failed)
   throws ExtAttrException;
 
-  protected final AttrDefSet<S,V> getDefs() { return attrDefs; }
+  protected final MutableAttrDefs<S,V> getDefs() { return attrDefs; }
 
   /*
    * (non-Javadoc)
    * @see org.nrg.attr.AttrAdapter#add(org.nrg.attr.ReadableAttrDefSet<S,V>[])
    */
-  public final void add(final ReadableAttrDefSet<S,V>...attrs) {
+  public final void add(final AttrDefs<S,V>...attrs) {
     attrDefs.add(attrs);
   }
 
@@ -64,23 +64,23 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
    * (non-Javadoc)
    * @see org.nrg.attr.AttrAdapter#remove(java.lang.String[])
    */
-  public final int remove(final String...attrNames) {
-    int removed = 0;
-    for (final String name : attrNames)
-      removed += attrDefs.remove(name);
-    return removed;
-  }
+//  public final int remove(final String...attrNames) {
+//    int removed = 0;
+//    for (final String name : attrNames)
+//      removed += attrDefs.remove(name);
+//    return removed;
+//  }
 
   /*
    * (non-Javadoc)
    * @see org.nrg.attr.AttrAdapter#remove(S[])
    */
-  public final int remove(final S...nativeAttrs) {
-    int removed = 0;
-    for (final S attr : nativeAttrs)
-      removed += attrDefs.remove(attr);
-    return removed;
-  }
+//  public final int remove(final S...nativeAttrs) {
+//    int removed = 0;
+//    for (final S attr : nativeAttrs)
+//      removed += attrDefs.remove(attr);
+//    return removed;
+//  }
 
   public final List<ExtAttrValue> getValues(final Map<ExtAttrDef<S,V>,Exception> failed)
   throws ExtAttrException {
@@ -97,14 +97,14 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
   @SuppressWarnings("unchecked")
   private final List<ExtAttrValue> demultiplex(final ExtAttrDef<S,V> ead, final Map<S,V> given)
       throws ExtAttrException {
-    final Map<S,V> demultGiven = new HashMap<S,V>(given);
-    final Collection<S> toGet = new LinkedHashSet<S>(ead.getAttrs());
+    final Map<S,V> demultGiven = Maps.newHashMap(given);
+    final Collection<S> toGet = Sets.newLinkedHashSet(ead.getAttrs());
     final Multiplex<S,V> mead = (Multiplex<S,V>)ead;
     toGet.add(mead.getIndexAttribute());
-    final Map<S,ConversionFailureException> sfailed = new LinkedHashMap<S,ConversionFailureException>();
+    final Map<S,ConversionFailureException> sfailed = Maps.newLinkedHashMap();
     final Collection<Map<S,V>> dmvs = getUniqueCombinationsGivenValues(demultGiven, toGet, sfailed);
     if (sfailed.isEmpty()) {
-      final List<ExtAttrValue> values = new ArrayList<ExtAttrValue>();
+      final List<ExtAttrValue> values = Lists.newArrayList();
       for (final Map<S,V> m : dmvs) {
         try {
           values.add(mead.demultiplex(m));
@@ -121,16 +121,15 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
    * (non-Javadoc)
    * @see org.nrg.attr.AttrAdapter#getValuesGiven(java.util.Map, java.util.Map)
    */
-  @SuppressWarnings("unchecked")
   public final List<ExtAttrValue> getValuesGiven(final Map<S,V> given,
       final Map<ExtAttrDef<S,V>,Exception> failed)
       throws ExtAttrException {
-    final List<ExtAttrValue> values = new ArrayList<ExtAttrValue>();
+    final List<ExtAttrValue> values = Lists.newArrayList();
     final Iterator<Set<ExtAttrValue>> valsi = getMultipleValuesGiven(given, failed).iterator();
     final Iterator<? extends ExtAttrDef<S,V>> eai = attrDefs.iterator();
 
     while (valsi.hasNext()) {
-      final Set<ExtAttrValue> vals = new LinkedHashSet(valsi.next());
+      final Set<ExtAttrValue> vals = Sets.newLinkedHashSet(valsi.next());
       vals.remove(null);
       final ExtAttrDef<S,V> ead = eai.next();
       if (vals.isEmpty()) {
@@ -173,11 +172,11 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
   getMultipleValuesGiven(final Map<S,V> given, final Iterable<ExtAttrDef<S,V>> defs,
       final Map<ExtAttrDef<S,V>,Exception> failures)
       throws ExtAttrException {
-    final List<Set<ExtAttrValue>> values = new ArrayList<Set<ExtAttrValue>>();
-    final Map<S,ConversionFailureException> failedS = new HashMap<S,ConversionFailureException>();
+    final List<Set<ExtAttrValue>> values = Lists.newArrayList();
+    final Map<S,ConversionFailureException> failedS = Maps.newHashMap();
 
     for (final ExtAttrDef<S,V> ea : defs) {
-      final Set<ExtAttrValue> attrVals = new HashSet<ExtAttrValue>();
+      final Set<ExtAttrValue> attrVals = Sets.newHashSet();
       values.add(attrVals);
 
       // More than one combination of native values might map to a single value

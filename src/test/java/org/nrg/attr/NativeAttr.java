@@ -1,9 +1,8 @@
 /**
- * Copyright (c) 2007,2009 Washington University
+ * Copyright (c) 2007,2009,2010 Washington University
  */
 package org.nrg.attr;
 
-import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -14,7 +13,7 @@ import java.util.Set;
 
 /**
  * Mock native attribute type used for unit tests
- * @author Kevin A. Archie <karchie@npg.wustl.edu>
+ * @author Kevin A. Archie <karchie@wustl.edu>
  */
 @SuppressWarnings("unchecked")
 public class NativeAttr implements Comparable<NativeAttr> {
@@ -46,11 +45,11 @@ public class NativeAttr implements Comparable<NativeAttr> {
   public static final NativeAttr C = new NativeAttr("NativeAttr C");
   public static final NativeAttr D = new NativeAttr("NativeAttr D");
 
-  public interface RWAttrDefSet<S,V> extends ReadableAttrDefSet<S,V> {
+  public interface RWAttrDefSet<S,V> extends AttrDefs<S,V> {
     public RWAttrDefSet<S,V> addExtAttrDef(ExtAttrDef<S,V> ead);
   }
 
-  public static final class SampleAttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
+  public static final class SampleAttrDefSet<S,V> implements AttrDefs<S,V> {
     private Set<S> nas = new HashSet<S>();
     private Map<String,ExtAttrDef<S,V>> defs =
       new LinkedHashMap<String,ExtAttrDef<S,V>>();
@@ -60,7 +59,7 @@ public class NativeAttr implements Comparable<NativeAttr> {
 	addExtAttrDef(ead);
     }
     
-    public Collection<S> getNativeAttrs() {
+    public Set<S> getNativeAttrs() {
       return new HashSet<S>(nas);
     }
 

@@ -311,9 +311,9 @@ public interface ExtAttrDef<S,V> {
     }
 
     @SuppressWarnings("unchecked")
-    @Override
+	@Override
     public boolean equals(final Object o) {
-      return super.equals(o) && attrdefs.equals(((TextWithAttributes)o).attrdefs);
+      return super.equals(o) && attrdefs.equals(((TextWithAttributes<S,V>)o).attrdefs);
     }
 
     @Override

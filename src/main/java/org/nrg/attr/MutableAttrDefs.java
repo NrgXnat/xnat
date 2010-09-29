@@ -7,11 +7,12 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Collection;
 import java.util.Map;
-import java.util.LinkedHashMap;
 import java.util.Set;
 import java.util.TreeSet;
+
+import com.google.common.collect.Iterables;
+import com.google.common.collect.Maps;
 
 
 /**
@@ -19,27 +20,27 @@ import java.util.TreeSet;
  * @author Kevin A. Archie <karchie@wustl.edu>
  *
  */
-public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
-	final private Map<String,ExtAttrDef<S,V>> extAttrs = new LinkedHashMap<String,ExtAttrDef<S,V>>();
+public class MutableAttrDefs<S,V> implements AttrDefs<S,V> {
+	private final Map<String,ExtAttrDef<S,V>> extAttrs = Maps.newLinkedHashMap();
 	final private Set<S> nativeAttrs;
 
-	public AttrDefSet(final Comparator<S> comparator) {
+	public MutableAttrDefs(final Comparator<S> comparator) {
 		nativeAttrs = new TreeSet<S>(comparator);
 	}
 
-	public AttrDefSet() {
+	public MutableAttrDefs() {
 		this(null);
 	}
 
 	@SuppressWarnings("unchecked")
-	public AttrDefSet(final Comparator<S> comparator,
-			final ReadableAttrDefSet<S,V> base, final ExtAttrDef<S,V>...adds) {
+	public MutableAttrDefs(final Comparator<S> comparator,
+			final AttrDefs<S,V> base, final ExtAttrDef<S,V>...adds) {
 		this(comparator);
 		this.add(base);
 		this.addAll(Arrays.asList(adds));
 	}
 
-	public AttrDefSet(final ReadableAttrDefSet<S,V> base, final ExtAttrDef<S,V>...adds) {
+	public MutableAttrDefs(final AttrDefs<S,V> base, final ExtAttrDef<S,V>...adds) {
 		this(null, base, adds);
 	}
 
@@ -63,11 +64,11 @@ public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
 	 * @param a external attribute specification
 	 */
 	public ExtAttrDef<S,V> add(ExtAttrDef<S,V> a) {
-		final String name = a.getName();
-		if (extAttrs.containsKey(name)) {
-			throw new IllegalArgumentException("Redefined external attribute " + name);
-		}
 		synchronized (this) {
+			final String name = a.getName();
+			if (extAttrs.containsKey(name)) {
+				throw new IllegalArgumentException("Attribute " + name + " already defined");
+			}
 			extAttrs.put(name, a);
 			nativeAttrs.addAll(a.getAttrs());
 		}
@@ -78,7 +79,7 @@ public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
 	 * Adds multiple external attributes to this set.
 	 * @param Collection of external attribute specifications
 	 */
-	public AttrDefSet<S,V> addAll(Collection<? extends ExtAttrDef<S,V>> as) {
+	public MutableAttrDefs<S,V> addAll(Iterable<? extends ExtAttrDef<S,V>> as) {
 		for (final ExtAttrDef<S,V> a : as) {
 			this.add(a);
 		}
@@ -114,15 +115,11 @@ public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
 
 	/**
 	 * Copies all the attributes from another set to this one.
-	 * There should be no overlapping attribute definitions.
 	 * @param other AttrDefSet from which attributes are to be copied.
 	 */
-	public AttrDefSet<S,V> add(ReadableAttrDefSet<S,V>...others) {
-		for (ReadableAttrDefSet<S,V> other : others) {
-			for (final ExtAttrDef<S,V> ea : other) {
-				assert !extAttrs.containsKey(ea.getName());
-				add(ea);
-			}
+	public MutableAttrDefs<S,V> add(AttrDefs<S,V>...others) {
+		for (AttrDefs<S,V> other : others) {
+			addAll(other);
 
 			// All of the native attributes from the old set should
 			// have been implicitly transferred.
@@ -137,60 +134,14 @@ public class AttrDefSet<S,V> implements ReadableAttrDefSet<S,V> {
 		return this;
 	}
 
-	/**
-	 * Removes the named attribute from this set.
-	 * @param attr name of the external attribute
-	 * @return The number of attributes removed (1 if present, 0 otherwise)
-	 */
-	public int remove(String name) {
-		return (null == extAttrs.remove(name)) ? 0 : 1;
-	}
-
-
-	/**
-	 * Removes any external attributes using the indicated native attribute from this set.
-	 * @param attr native attribute to be removed
-	 * @return The number of external attributes removed
-	 */
-	public int remove(final S attr) {
-		int count = 0;
-
-		synchronized (this) {
-			for (Iterator<Map.Entry<String,ExtAttrDef<S,V>>> i = extAttrs.entrySet().iterator(); i.hasNext(); ) {
-				final Map.Entry<String,ExtAttrDef<S,V>> e = i.next();
-				if (e.getValue().getAttrs().contains(attr)) {
-					i.remove();
-					count++;
-				}
-			}
-
-			// Rebuild the native attributes set
-			nativeAttrs.clear();
-			for (ExtAttrDef<S,V> ea : this) {
-				nativeAttrs.addAll(ea.getAttrs());
-			}
-		}
-
-		return count;
-	}
 
 	/**
 	 * Specifies an iteration over the attribute definitions in the
 	 * same order they were defined.
 	 */
 	public Iterator<ExtAttrDef<S,V>> iterator() {
-		return Collections.unmodifiableCollection(extAttrs.values()).iterator();
+		return Iterables.unmodifiableIterable(extAttrs.values()).iterator();
 	}
-
-
-	/**
-	 * @param name name of an external attribute defined in this set
-	 * @return attribute definition object
-	 */
-	public ExtAttrDef<S,V> getExtAttrDef(final String name) {
-		return extAttrs.get(name);
-	}
-
 
 	/**
 	 * Gets the tag values for all native attributes used in this set.

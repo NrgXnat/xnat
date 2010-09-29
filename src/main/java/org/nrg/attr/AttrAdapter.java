@@ -16,7 +16,7 @@ public interface AttrAdapter<S,V> {
    * Adds sets of attributes to the adapter
    * @param attrs AttributeSets for conversion
    */
-  void add(ReadableAttrDefSet<S,V>...attrs);
+  void add(AttrDefs<S,V>...attrs);
   
   /**
    * Adds single attributes to the adapter
@@ -29,9 +29,9 @@ public interface AttrAdapter<S,V> {
    * @param attrNames names of attributes to remove
    * @return number of external attributes removed
    */
-  int remove(String...attrNames);
-  
-  int remove(S...nativeAttrs);
+//  int remove(String...attrNames);
+//  
+//  int remove(S...nativeAttrs);
   
   /**
    * Get the single value for each external attribute that has been defined

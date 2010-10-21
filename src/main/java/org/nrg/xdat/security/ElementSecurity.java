@@ -1019,7 +1019,7 @@ public class ElementSecurity extends ItemWrapper{
                         if (f.getBaseElement()==null || f.getBaseElement()==""){
                             GenericWrapperElement parent = f.getParentElement().getGenericXFTElement();
                             String xmlPath = null;
-                            if (se.getGenericXFTElement().getPrimaryElements().indexOf(parent.getFullXMLName()) != -1)
+                            if (se.getGenericXFTElement().instanceOf(parent.getFullXMLName()))
                             {
                                 xmlPath = f.getXMLPathString(se.getFullXMLName());
                             }else{

@@ -748,8 +748,7 @@ public class JavaFileGenerator {
         sb.append("\n\t\treturn wrapItems(items.getItems());");
         sb.append("\n\t}");
         
-        String tables = e.getPrimaryElements();
-        if (tables.indexOf("xnat:mrAssessorData")!=-1)
+        if (e.instanceOf("xnat:mrAssessorData"))
         {
             //MR ASSESSOR
             sb.append("\n\n\tpublic org.w3c.dom.Document toJoinedXML() throws Exception");
@@ -763,7 +762,7 @@ public class JavaFileGenerator {
             sb.append("\n\t\tal.trimToSize();");
             sb.append("\n\t\treturn org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter.ItemListToDOM(al);");
             sb.append("\n\t}");
-        }else if (tables.indexOf("xnat:subjectAssessorData")!=-1)
+        }else if (e.instanceOf("xnat:subjectAssessorData"))
         {
             //SUBJECT ASSESSOR
             sb.append("\n\n\tpublic org.w3c.dom.Document toJoinedXML() throws Exception");
@@ -1173,13 +1172,12 @@ public class JavaFileGenerator {
             //CLASS COMMENTS
             sb.append("\n\n/**\n * @author XDAT\n *\n */");
 
-            String tables = e.getPrimaryElements();
             //CLASS
             sb.append("\npublic class XDATScreen_edit_").append(e.getFormattedName());
 
-            if (tables.indexOf("xnat:subjectAssessorData")!=-1){
+            if (e.instanceOf("xnat:subjectAssessorData")){
                 sb.append(" extends org.nrg.xnat.turbine.modules.screens.EditSubjectAssessorScreen {");
-            }else if (tables.indexOf("xnat:imageAssessorData")!=-1){
+            }else if (e.instanceOf("xnat:imageAssessorData")){
                 sb.append(" extends org.nrg.xnat.turbine.modules.screens.EditImageAssessorScreen {");
             }else{
                 sb.append(" extends org.nrg.xdat.turbine.modules.screens.EditScreenA {");
@@ -1202,7 +1200,7 @@ public class JavaFileGenerator {
             sb.append("\n\t * @see org.nrg.xdat.turbine.modules.screens.SecureReport#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)");
             sb.append("\n\t */");
             sb.append("\n\tpublic void finalProcessing(RunData data, Context context) {");
-            if (tables.indexOf("xnat:subjectAssessorData")!=-1){
+            if (e.instanceOf("xnat:subjectAssessorData")){
                 sb.append("\n\t\tsuper.finalProcessing(data,context);");
             }
             sb.append("\n\t}");
@@ -1273,8 +1271,7 @@ public class JavaFileGenerator {
             sb.append("\n\t */");
             sb.append("\n\tpublic void finalProcessing(RunData data, Context context) {");
             
-            String tables = e.getPrimaryElements();
-            if (tables.indexOf("xnat:mrAssessorData")!=-1)
+            if (e.instanceOf("xnat:mrAssessorData"))
             {
                 //MR ASSESSOR
                 sb.append("\n\t\ttry{");
@@ -1288,7 +1285,7 @@ public class JavaFileGenerator {
                 sb.append("\n\t\t\tcontext.put(\"subject\",mr.getSubjectData());");
                 sb.append("\n\t\t\tSystem.out.println(\"Loaded subject object (org.nrg.xdat.om.XnatSubjectdata) as context parameter 'subject'.\");");
                 sb.append("\n\t\t} catch(Exception e){}");
-            }else if (tables.indexOf("xnat:subjectAssessorData")!=-1)
+            }else if (e.instanceOf("xnat:subjectAssessorData"))
             {
                 //SUBJECT ASSESSOR
                 sb.append("\n\t\ttry{");
@@ -1369,11 +1366,10 @@ public class JavaFileGenerator {
         sb.append(getChildFieldsReport(e,new ArrayList(),"\n\t\t\t",e.getFullXMLName(),true));
         template = StringUtils.ReplaceStr(template,"@CONTENT@",sb.toString());
 
-        String tables = e.getPrimaryElements();
-        if (tables.indexOf("xnat:mrAssessorData")!=-1)
+        if (e.instanceOf("xnat:mrAssessorData"))
         {
             template +="<BR>#parse(\"/screens/ReportProjectSpecificFields.vm\")";
-        }else if (tables.indexOf("xnat:subjectAssessorData")!=-1)
+        }else if (e.instanceOf("xnat:subjectAssessorData"))
         {
             template +="<BR>#parse(\"/screens/ReportProjectSpecificFields.vm\")";
         }else{
@@ -1487,8 +1483,7 @@ public class JavaFileGenerator {
         StringBuffer sb = new StringBuffer();
         sb.append(header).append("<TABLE>");
 
-        String tables = e.getPrimaryElements();
-        if (tables.indexOf("xnat:subjectAssessorData")!=-1){
+        if (e.instanceOf("xnat:subjectAssessorData")){
             template = StringUtils.ReplaceStr(template, "ModifyItem", "ModifySubjectAssessorData");
             
             ignoreXMLPaths.add("xnat:experimentData/project");
@@ -1514,7 +1509,7 @@ public class JavaFileGenerator {
             validateForm.append("\n}");
             validateForm.append("\n</script>");
             
-        }else if(tables.indexOf("xnat:experimentData")!=-1){
+        }else if(e.instanceOf("xnat:experimentData")){
             ignoreXMLPaths.add("xnat:experimentData/project");
             ignoreXMLPaths.add("xnat:experimentData/ID");
             ignoreXMLPaths.add("xnat:experimentData/sharing/share");
@@ -1615,8 +1610,7 @@ public class JavaFileGenerator {
             sb.append(header).append("<Displays xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"../../xdat/display.xsd\" schema-element=\"");
             sb.append(e.getFullXMLName()).append("\" full-description=\"").append(e.getProperName()).append("\" brief-description=\"").append(e.getProperName()).append("\">");
 
-            String tables = e.getPrimaryElements();
-            if (tables.indexOf("xnat:mrAssessorData")!=-1)
+            if (e.instanceOf("xnat:mrAssessorData"))
             {
                 //MR ASSESSOR
                 sb.append(header).append("\t<Arc name=\"ASSESSOR\">");
@@ -1847,7 +1841,7 @@ public class JavaFileGenerator {
                 if (XFT.VERBOSE)
         	        System.out.println("Generating File " + location+ e.getFormattedName() +"_display.xml");
                 FileUtils.OutputToFile(sb.toString(),location+ e.getFormattedName() +"_display.xml");
-            }else if (tables.indexOf("xnat:subjectAssessorData")!=-1)
+            }else if (e.instanceOf("xnat:subjectAssessorData"))
             {
                 //SUBJECT ASSESSOR
                 sb.append(header).append("\t<Arc name=\"PARTICIPANT_EXPERIMENT\">");
@@ -2057,7 +2051,7 @@ public class JavaFileGenerator {
                 if (XFT.VERBOSE)
         	        System.out.println("Generating File " + location+ e.getFormattedName() +"_display.xml");
                 FileUtils.OutputToFile(sb.toString(),location+ e.getFormattedName() +"_display.xml");
-            }else if (tables.indexOf("xnat:experimentData")!=-1)
+            }else if (e.instanceOf("xnat:experimentData"))
             {                
                 sb.append(header).append("\t<DisplayField id=\"EXPT_ID\" header=\"ID\" visible=\"true\" searchable=\"true\">");
                 sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");

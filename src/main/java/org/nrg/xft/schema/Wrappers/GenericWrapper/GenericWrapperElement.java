@@ -489,7 +489,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * Returns period-delimited string of data types which this element extends.
 	 * @return
 	 */
-	public String getPrimaryElements()
+	private String getPrimaryElements()
 	{
 	    try {
             ArrayList al = getAllPrimaryKeys();
@@ -784,16 +784,14 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
     
     public boolean instanceOf(String xsiType){
-        String extensions = this.getPrimaryElements();
-        int index = extensions.indexOf(xsiType);
-        if(index >-1){
+        if(this.getPrimaryElements().indexOf(xsiType)>-1){
             return true;
         }else{
             return false;
         }
     }
     
-    public String[] getExtensionElementNames(){
+    private String[] getExtensionElementNames(){
 		String primaries=this.getPrimaryElements();
 		return primaries.split(".");
     }

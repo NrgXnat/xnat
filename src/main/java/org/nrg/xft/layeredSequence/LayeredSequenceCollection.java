@@ -73,13 +73,13 @@ public class LayeredSequenceCollection extends ItemCollection {
     
     public static int Compare(String value1, String value2)
     {
-        if (value1 == "" && value2 == "")
+        if (org.apache.commons.lang.StringUtils.isEmpty(value1) && org.apache.commons.lang.StringUtils.isEmpty(value2))
   		{
   		    return 0;
-  		}else if(value1 == "")
+  		}else if(org.apache.commons.lang.StringUtils.isEmpty(value1))
   		{
   		    return -1;
-  		}else if (value2 == "")
+  		}else if (org.apache.commons.lang.StringUtils.isEmpty(value2))
   		{
   		    return 1;
   		}else{

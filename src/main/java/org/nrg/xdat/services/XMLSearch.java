@@ -36,11 +36,6 @@ public class XMLSearch {
         AccessLogger.LogServiceAccess(_username,"","XMLSearch",_field + " " +  _comparison + " " + _value);
         ArrayList al = new ArrayList();
         try {
-            
-            if (limited ==null)
-            {
-                limited = Boolean.FALSE;
-            }
             SearchService search = new SearchService();
             search.setUsername(_username);
             search.setPassword(_password);

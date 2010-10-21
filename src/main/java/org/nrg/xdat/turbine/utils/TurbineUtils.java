@@ -475,6 +475,14 @@ public class TurbineUtils {
         }
 	}
 	
+	
+	/**
+	 * Findbugs says DisplaySearch should be serializable.  That is a good idea, but this code is only used 
+	 * in legacy code and should be remove at some point.  Unable to suppress warnings to support 1.5. 
+	 * 
+	 * @param data
+	 * @param search
+	 */
 	public static void setSearch(RunData data, DisplaySearch search)
 	{
 		data.getSession().setAttribute("search",search);

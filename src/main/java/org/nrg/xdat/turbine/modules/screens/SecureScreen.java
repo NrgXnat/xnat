@@ -32,7 +32,7 @@ import org.nrg.xft.search.ItemSearch;
  */
 public abstract class SecureScreen extends VelocitySecureScreen
 {
-	public static Logger logger = Logger.getLogger(SecureScreen.class);
+	public final static Logger logger = Logger.getLogger(SecureScreen.class);
 
 
     protected void error(Exception e,RunData data){

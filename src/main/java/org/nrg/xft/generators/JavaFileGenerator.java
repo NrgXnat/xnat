@@ -15,11 +15,15 @@ import java.util.Calendar;
 import java.util.Hashtable;
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.services.XMLSearch;
 import org.nrg.xft.XFT;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.references.XFTRelationSpecification;
@@ -35,12 +39,18 @@ import org.nrg.xft.utils.StringUtils;
  *
  */
 public class JavaFileGenerator {
+	static org.apache.log4j.Logger logger = Logger.getLogger(JavaFileGenerator.class);
     private String prefix="Base";
     
     private static int item_counter = 0;
     
     public JavaFileGenerator(){}
 
+
+    public static void ResetItemCounter(){
+        item_counter = 0;
+    }
+    
     /**
      * @param e
      * @param location
@@ -1155,8 +1165,6 @@ public class JavaFileGenerator {
             dir.mkdir();
         }
         
-        File file = new File(location +"XDATScreen_edit_"+ e.getFormattedName() +".java");
-
             // GENERATE JAVA REPORT
             StringBuffer sb = new StringBuffer();
             
@@ -1247,8 +1255,6 @@ public class JavaFileGenerator {
             dir.mkdir();
         }
         
-        File file = new File(location +"XDATScreen_report_"+ e.getFormattedName() +".java");
-
             // GENERATE JAVA REPORT
             StringBuffer sb = new StringBuffer();
             
@@ -1313,7 +1319,7 @@ public class JavaFileGenerator {
 
     public void generateVMReportFile(GenericWrapperElement e, String location) throws Exception
     {
-        item_counter = 0;
+        ResetItemCounter();
         if (!location.endsWith(File.separator))
         {
             location += File.separator;
@@ -1325,8 +1331,6 @@ public class JavaFileGenerator {
             dir.mkdir();
         }
         
-        File file = new File(location +"XDATScreen_report_"+ e.getFormattedName() +".vm");
-
         // GENERATE VM REPORT
         String template = getReportTemplate();
 
@@ -1387,7 +1391,7 @@ public class JavaFileGenerator {
 
     public void generateVMSearchFile(GenericWrapperElement e, String location) throws Exception
     {
-        item_counter = 0;
+        ResetItemCounter();
         if (!location.endsWith(File.separator))
         {
             location += File.separator;
@@ -1399,8 +1403,6 @@ public class JavaFileGenerator {
             dir.mkdir();
         }
         
-        File file = new File(location+ e.getFormattedName() +"_search.vm");
-
            // GENERATE VM REPORT
 
            String properName = XFTReferenceManager.GetProperName(e.getFullXMLName());
@@ -1450,7 +1452,8 @@ public class JavaFileGenerator {
 
     public void generateVMEditFile(GenericWrapperElement e, String location) throws Exception
     {
-        item_counter = 0;
+        ResetItemCounter();
+    	
         if (!location.endsWith(File.separator))
         {
             location += File.separator;
@@ -1462,8 +1465,6 @@ public class JavaFileGenerator {
             dir.mkdir();
         }
         
-        File file = new File(location +"XDATScreen_edit_"+ e.getFormattedName() +".vm");
-
         // GENERATE VM REPORT
         String template = getEditTemplate();
 
@@ -1582,7 +1583,7 @@ public class JavaFileGenerator {
 
     public void generateDisplayFile(GenericWrapperElement e) throws Exception
     {
-        item_counter = 0;
+    	ResetItemCounter();
         
         String location =e.getSchema().getDataModel().getFileLocation();
 
@@ -2617,7 +2618,6 @@ public class JavaFileGenerator {
     private StringBuffer getLocalFieldsEdit(GenericWrapperElement e, String header, String xmlPathHeader,ArrayList<String> ignoreXMLPaths)
     {
         StringBuffer sb = new StringBuffer();
-        ArrayList localFields = new ArrayList();
         Iterator fields = e.getAllFields(true,true).iterator();
         while (fields.hasNext())
         {
@@ -2865,7 +2865,12 @@ public class JavaFileGenerator {
                                 }
                             }
                         }
-                    } catch (Exception e1) {
+						} catch (ClassCastException e1) {
+	                    	logger.error("",e1);
+						} catch (XFTInitException e1) {
+	                    	logger.error("",e1);
+						} catch (ElementNotFoundException e1) {
+	                    	logger.error("",e1);
                     }
                 }
             }
@@ -2876,7 +2881,6 @@ public class JavaFileGenerator {
     private StringBuffer getLocalFieldsReport(GenericWrapperElement e, String header, String xmlPathHeader)
     {
         StringBuffer sb = new StringBuffer();
-        ArrayList localFields = new ArrayList();
         Iterator fields = e.getAllFields(true,true).iterator();
         while (fields.hasNext())
         {
@@ -3030,7 +3034,10 @@ public class JavaFileGenerator {
                                 }
                             }
                         }
-                    } catch (Exception e1) {
+						} catch (XFTInitException e1) {
+	                    	logger.error("",e1);
+						} catch (ElementNotFoundException e1) {
+	                    	logger.error("",e1);
                     }
                 }
             }

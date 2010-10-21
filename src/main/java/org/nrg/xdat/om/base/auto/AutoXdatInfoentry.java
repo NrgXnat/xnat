@@ -20,8 +20,8 @@ import org.nrg.xft.utils.ResourceFile;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatInfoentry extends org.nrg.xdat.base.BaseElement implements XdatInfoentryI{
-	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatInfoentry.class);
-	public static String SCHEMA_ELEMENT_NAME="xdat:infoEntry";
+	public final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatInfoentry.class);
+	public final static String SCHEMA_ELEMENT_NAME="xdat:infoEntry";
 
 	public AutoXdatInfoentry(ItemI item)
 	{

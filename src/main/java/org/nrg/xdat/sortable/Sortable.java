@@ -30,7 +30,7 @@ public abstract class Sortable {
 		sortOrder = i;
 	}
 	
-	public static Comparator SequenceComparator = new Comparator() {
+	public final static Comparator SequenceComparator = new Comparator() {
 	  public int compare(Object mr1, Object mr2) throws ClassCastException {
 		  try{
 			int value1 = ((Sortable)mr1).getSortOrder();

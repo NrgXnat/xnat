@@ -31,8 +31,8 @@ import org.nrg.xft.utils.ResourceFile;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatSecurity extends org.nrg.xdat.base.BaseElement implements XdatSecurityI{
-	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatSecurity.class);
-	public static String SCHEMA_ELEMENT_NAME="xdat:security";
+	public final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatSecurity.class);
+	public final static String SCHEMA_ELEMENT_NAME="xdat:security";
 
 	public AutoXdatSecurity(ItemI item)
 	{

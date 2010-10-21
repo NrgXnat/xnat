@@ -23,8 +23,8 @@ import org.nrg.xft.utils.ResourceFile;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatFieldMappingSet extends org.nrg.xdat.base.BaseElement implements XdatFieldMappingSetI{
-	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatFieldMappingSet.class);
-	public static String SCHEMA_ELEMENT_NAME="xdat:field_mapping_set";
+	public final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatFieldMappingSet.class);
+	public final static String SCHEMA_ELEMENT_NAME="xdat:field_mapping_set";
 
 	public AutoXdatFieldMappingSet(ItemI item)
 	{

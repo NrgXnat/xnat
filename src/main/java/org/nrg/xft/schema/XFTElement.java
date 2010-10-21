@@ -82,7 +82,7 @@ public class XFTElement extends XFTNode{
 	private static final String XDAT_DESCRIPTION = "xdat:description";
 	private static final String NAME = "name";
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTElement.class);
-	public static String XML_TAG_PREFIX="xdat";
+	public final static String XML_TAG_PREFIX="xdat";
 	private XFTMetaElement metaElement = null;
 	private String name = "";
 	private String code = "";
@@ -652,7 +652,7 @@ public class XFTElement extends XFTNode{
 		return temp;
 	}
 
-	public static Comparator SequenceComparator = new Comparator() {
+	public final static Comparator SequenceComparator = new Comparator() {
 	  public int compare(Object mr1, Object mr2) throws ClassCastException {
 		  try{
 			int value1 = ((XFTElement)mr1).getSequence();

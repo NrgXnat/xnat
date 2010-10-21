@@ -791,28 +791,6 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
         }
     }
     
-    private String[] getExtensionElementNames(){
-		String primaries=this.getPrimaryElements();
-		return primaries.split(".");
-    }
-    
-    ArrayList<GenericWrapperElement> primaryElementObjects=null;
-    public synchronized ArrayList<GenericWrapperElement> getExtensionElements(){
-    	if(primaryElementObjects==null){
-	    	primaryElementObjects=new ArrayList<GenericWrapperElement>();
-	    	for(String primary: this.getExtensionElementNames()){
-	    		try {
-					primaryElementObjects.add(GenericWrapperElement.GetElement(primary));
-				} catch (XFTInitException e) {
-					logger.error("",e);
-				} catch (ElementNotFoundException e) {
-					logger.error("",e);
-				}
-	    	}
-    	}
-    	return primaryElementObjects;
-    }
-    
     /**
      * Get GenericWrapperField (of any fields inluding AddIns) where the name 
      * matches the xmlName, sqlName, xmlType local type, or xmlType full foreign type.
@@ -3936,9 +3914,17 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
         }
 	}
 	
-	public boolean equals(GenericWrapperElement e)
+	public boolean equals(Object e)
 	{
-	    return e.getFullXMLName().equals(this.getFullXMLName());	        
+	    if(e instanceof GenericWrapperElement){
+	    	return ((GenericWrapperElement)e).getFullXMLName().equals(this.getFullXMLName());	   
+	    }else{
+	    	return false;
+	    }
+	}
+	
+	public int hashCode(){
+		return this.getFullXMLName().hashCode();
 	}
 	
 	public boolean canBeRootWithBase()

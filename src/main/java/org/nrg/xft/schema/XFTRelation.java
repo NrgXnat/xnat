@@ -21,7 +21,7 @@ import org.w3c.dom.Node;
  * @author Tim
  */
 public class XFTRelation {
-    public static String DEFAULT_RELATION_TYPE = "single";
+    public final static String DEFAULT_RELATION_TYPE = "single";
 	private String foreignKeyName = "";
 	private String foreignKeyTable = "";
 	private String foreignCol = "";

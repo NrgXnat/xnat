@@ -35,14 +35,14 @@ import org.nrg.xft.utils.StringUtils;
  */
 public class ViewManager {
 	static org.apache.log4j.Logger logger = Logger.getLogger(ViewManager.class);
-	public static Hashtable FIELD_MAPS = new Hashtable();
-	public static Hashtable<String,ArrayList<String>> FIELD_NAMES = new Hashtable<String,ArrayList<String>>();
+	public final static Hashtable FIELD_MAPS = new Hashtable();
+	public final static Hashtable<String,ArrayList<String>> FIELD_NAMES = new Hashtable<String,ArrayList<String>>();
 	public static final String ACTIVE = "active";
 	public static final String ALL = "all";
 	public static final String QUARANTINE = "quarantine";
 	public static final String DELETED = "deleted";
-	public static String DEFAULT_LEVEL = QUARANTINE;
-	public static boolean DEFAULT_MULTI = true;
+	public final static String DEFAULT_LEVEL = QUARANTINE;
+	public final static boolean DEFAULT_MULTI = true;
 	
 	public static boolean PRE_LOAD_HISTORY = false;
 	/**

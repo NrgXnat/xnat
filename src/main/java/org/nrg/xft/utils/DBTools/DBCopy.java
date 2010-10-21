@@ -157,19 +157,19 @@ logger.info("Copying " + table + " ...");
 			}
 			
 		} catch (ClassNotFoundException e) {
-			e.printStackTrace();
+			logger.error("",e);
 		} catch (SQLException e) {
-			e.printStackTrace();
+			logger.error("",e);
 		} catch (org.nrg.xft.exception.XFTInitException e) {
-			e.printStackTrace();
+			logger.error("",e);
 		} catch (Exception e) {
-			e.printStackTrace();
+			logger.error("",e);
 		}finally
 		{
 			try {
-				con.close();
+				if(con!=null)con.close();
 			} catch (SQLException e1) {
-				e1.printStackTrace();
+				logger.error("",e1);
 			}
 		}
 	}

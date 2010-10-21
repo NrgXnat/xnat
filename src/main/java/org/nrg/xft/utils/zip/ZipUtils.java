@@ -373,7 +373,6 @@ public class ZipUtils implements ZipI {
     }
 
     public static void Unzip(File f) throws IOException {
-        InputStream in = new BufferedInputStream(new FileInputStream(f));
         String s = f.getAbsolutePath();
         int index = s.lastIndexOf('/');
         if (index == -1){

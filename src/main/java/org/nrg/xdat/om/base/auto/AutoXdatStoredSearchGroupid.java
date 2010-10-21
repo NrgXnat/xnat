@@ -20,8 +20,8 @@ import org.nrg.xft.utils.ResourceFile;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatStoredSearchGroupid extends org.nrg.xdat.base.BaseElement implements XdatStoredSearchGroupidI{
-	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatStoredSearchGroupid.class);
-	public static String SCHEMA_ELEMENT_NAME="xdat:stored_search_groupID";
+	public final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatStoredSearchGroupid.class);
+	public final static String SCHEMA_ELEMENT_NAME="xdat:stored_search_groupID";
 
 	public AutoXdatStoredSearchGroupid(ItemI item)
 	{

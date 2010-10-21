@@ -25,8 +25,8 @@ import org.nrg.xft.utils.ResourceFile;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement implements XdatUserI{
-	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatUser.class);
-	public static String SCHEMA_ELEMENT_NAME="xdat:user";
+	public final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatUser.class);
+	public final static String SCHEMA_ELEMENT_NAME="xdat:user";
 
 	public AutoXdatUser(ItemI item)
 	{

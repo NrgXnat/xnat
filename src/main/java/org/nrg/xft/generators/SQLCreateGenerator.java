@@ -58,11 +58,8 @@ public class SQLCreateGenerator {
 	{
 	    ArrayList creates = new ArrayList();
 	    ArrayList alters = new ArrayList();
-		ArrayList views = new ArrayList();
-		ArrayList views2 = new ArrayList();
 		ArrayList delete = new ArrayList();
 		ArrayList drops2 = new ArrayList();
-		StringBuffer tableInserts = new StringBuffer();
 
 		XFTManager manager = XFTManager.GetInstance();
 		String defaultDBType = "";

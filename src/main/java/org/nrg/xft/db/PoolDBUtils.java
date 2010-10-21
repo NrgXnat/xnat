@@ -63,12 +63,12 @@ public class PoolDBUtils {
 		try {
 			if (sequence != null && !sequence.equalsIgnoreCase(""))
 			{
-				st = getStatement(db);
 				logger.debug("QUERY:" + query);
+				executeQuery(db, query, "");
 				st.execute(query);
 				String newQuery = "SELECT currval('"+ sequence + "') AS " + pk;
 				try {
-					rs = st.executeQuery(newQuery);
+					rs = executeQuery(db, newQuery, "");
 					if (rs.first())
 					{
 						o = rs.getObject(pk);
@@ -76,7 +76,7 @@ public class PoolDBUtils {
 				} catch (SQLException e1) {
 					newQuery = "SELECT currval('"+ table + "_" + pk + "_seq') AS " + pk;
 					try {
-						rs = st.executeQuery(newQuery);
+						rs = executeQuery(db, newQuery, "");
 						if (rs.first())
 						{
 							o = rs.getObject(pk);
@@ -84,7 +84,7 @@ public class PoolDBUtils {
 					} catch (SQLException e2) {
 						newQuery = "SELECT currval('"+ table + "_" + table + "_seq') AS " + pk;
 						try {
-							rs = st.executeQuery(newQuery);
+							rs = executeQuery(db, newQuery, "");
 							if (rs.first())
 							{
 								o = rs.getObject(pk);
@@ -92,12 +92,12 @@ public class PoolDBUtils {
 						} catch (SQLException e3) {
 						    newQuery = "SELECT pg_get_serial_sequence('"+ table + "','"+ pk + "') AS col_name";
 						    try {
-								rs = st.executeQuery(newQuery);
+								rs = executeQuery(db, newQuery, "");
 								if (rs.first())
 								{
 									String colName = rs.getObject("col_name").toString();
 									newQuery = "SELECT currval('"+ colName + "') AS " + pk;
-									rs = st.executeQuery(newQuery);
+									rs = executeQuery(db, newQuery, "");
 									if (rs.first())
 									{
 										o = rs.getObject(pk);
@@ -113,11 +113,10 @@ public class PoolDBUtils {
 					}
 				}
 			}else{
-				st = getStatement(db);
-				st.execute(query);
+				rs= executeQuery(db, query, "");
 				String newQuery = "SELECT currval('"+ table + "_" + pk + "_seq') AS " + pk;
 				try {
-					rs = st.executeQuery(newQuery);
+					rs= executeQuery(db, newQuery, "");
 					if (rs.first())
 					{
 						o = rs.getObject(pk);
@@ -125,7 +124,7 @@ public class PoolDBUtils {
 				} catch (SQLException e1) {
 					newQuery = "SELECT currval('"+ table + "_" + table + "_seq') AS " + pk;
 					try {
-						rs = st.executeQuery(newQuery);
+						rs= executeQuery(db, newQuery, "");
 						if (rs.first())
 						{
 							o = rs.getObject(pk);
@@ -158,10 +157,9 @@ public class PoolDBUtils {
 		try {
 			if (sequence != null && !sequence.equalsIgnoreCase(""))
 			{
-				st = getStatement(db);
 				String newQuery = "SELECT nextval('"+ sequence + "') AS " + pk;
 				try {
-					rs = st.executeQuery(newQuery);
+					rs= executeQuery(db, newQuery, "");
 					if (rs.first())
 					{
 						o = rs.getObject(pk);
@@ -169,7 +167,7 @@ public class PoolDBUtils {
 				} catch (SQLException e1) {
 					newQuery = "SELECT nextval('"+ table + "_" + pk + "_seq') AS " + pk;
 					try {
-						rs = st.executeQuery(newQuery);
+						rs= executeQuery(db, newQuery, "");
 						if (rs.first())
 						{
 							o = rs.getObject(pk);
@@ -177,7 +175,7 @@ public class PoolDBUtils {
 					} catch (SQLException e2) {
 						newQuery = "SELECT nextval('"+ table + "_" + table + "_seq') AS " + pk;
 						try {
-							rs = st.executeQuery(newQuery);
+							rs= executeQuery(db, newQuery, "");
 							if (rs.first())
 							{
 								o = rs.getObject(pk);
@@ -185,12 +183,12 @@ public class PoolDBUtils {
 						} catch (SQLException e3) {
 						    newQuery = "SELECT nextval('"+ table + "','"+ pk + "') AS col_name";
 						    try {
-								rs = st.executeQuery(newQuery);
+								rs= executeQuery(db, newQuery, "");
 								if (rs.first())
 								{
 									String colName = rs.getObject("col_name").toString();
 									newQuery = "SELECT nextval('"+ colName + "') AS " + pk;
-									rs = st.executeQuery(newQuery);
+									rs= executeQuery(db, newQuery, "");
 									if (rs.first())
 									{
 										o = rs.getObject(pk);
@@ -206,10 +204,9 @@ public class PoolDBUtils {
 					}
 				}
 			}else{
-				st = getStatement(db);
 				String newQuery = "SELECT nextval('"+ table + "_" + pk + "_seq') AS " + pk;
 				try {
-					rs = st.executeQuery(newQuery);
+					rs= executeQuery(db, newQuery, "");
 					if (rs.first())
 					{
 						o = rs.getObject(pk);
@@ -217,7 +214,7 @@ public class PoolDBUtils {
 				} catch (SQLException e1) {
 					newQuery = "SELECT nextval('"+ table + "_" + table + "_seq') AS " + pk;
 					try {
-						rs = st.executeQuery(newQuery);
+						rs= executeQuery(db, newQuery, "");
 						if (rs.first())
 						{
 							o = rs.getObject(pk);

@@ -19,6 +19,8 @@ import org.nrg.xft.ItemWrapper;
  */
 @SuppressWarnings("serial")
 public class XDATAction extends ItemWrapper {
+	public XDATAction(){}
+	
 	public XDATAction(ItemI i)
 	{
 		setItem(i);

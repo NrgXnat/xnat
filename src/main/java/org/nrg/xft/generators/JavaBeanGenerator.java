@@ -35,6 +35,11 @@ public class JavaBeanGenerator {
     private enum TYPE {data,single_reference,multi_reference,inline_repeater,LONG_DATA,NO_CHILD}
     public static boolean VERSION5=true;
     private String header ="\t";
+    
+    public static void SetVersion5(final boolean ve){
+    	VERSION5=ve;
+    }
+    
     /**
      * @param e
      * @param location
@@ -1121,7 +1126,6 @@ public class JavaBeanGenerator {
                     
                 if (xmlField.getChildren().size() > 0)
                 {          
-                    StringBuffer childCode = new StringBuffer();
                     Iterator childElements2 = xmlField.getChildren().iterator();
                     while(childElements2.hasNext())
                     {

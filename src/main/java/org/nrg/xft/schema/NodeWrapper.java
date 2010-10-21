@@ -48,7 +48,7 @@ public class NodeWrapper {
 	 * static Hashtable which maintains a collection of all of the loaded NodeWrappers.  It uses
 	 * the elements full local xml type (local prefix + type) as the key.
 	 */
-	public static Hashtable ALL_NODES = new Hashtable();
+	public final static Hashtable ALL_NODES = new Hashtable();
 	
 	/**
 	 * Adds a new NodeWrapper to the ALL_NODES collection of loaded nodes

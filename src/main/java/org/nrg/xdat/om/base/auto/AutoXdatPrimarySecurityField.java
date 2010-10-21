@@ -20,8 +20,8 @@ import org.nrg.xft.utils.ResourceFile;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatPrimarySecurityField extends org.nrg.xdat.base.BaseElement implements XdatPrimarySecurityFieldI{
-	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatPrimarySecurityField.class);
-	public static String SCHEMA_ELEMENT_NAME="xdat:primary_security_field";
+	public final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatPrimarySecurityField.class);
+	public final static String SCHEMA_ELEMENT_NAME="xdat:primary_security_field";
 
 	public AutoXdatPrimarySecurityField(ItemI item)
 	{

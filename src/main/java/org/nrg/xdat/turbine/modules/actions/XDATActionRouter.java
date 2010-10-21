@@ -13,6 +13,8 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
 /**
  * @author Tim
@@ -67,7 +69,9 @@ public class XDATActionRouter extends SecureAction
 							}
 						}
 					}
-				} catch (Exception e) {
+					} catch (XFTInitException e) {
+						data.setScreenTemplate("XDATScreen_" + action + ".vm");
+					} catch (ElementNotFoundException e) {
 					data.setScreenTemplate("XDATScreen_" + action + ".vm");
 				}
    			}else{

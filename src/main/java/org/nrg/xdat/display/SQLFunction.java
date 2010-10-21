@@ -59,7 +59,7 @@ public class SQLFunction {
 		sortOrder = i;
 	}
 
-	public static Comparator SequenceComparator = new Comparator() {
+	public final static Comparator SequenceComparator = new Comparator() {
 	  public int compare(Object mr1, Object mr2) throws ClassCastException {
 		  try{
 			int value1 = ((SQLFunction)mr1).getSortOrder();

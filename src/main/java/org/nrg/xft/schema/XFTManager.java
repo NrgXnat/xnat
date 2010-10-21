@@ -679,7 +679,6 @@ public class XFTManager {
 	{
 		ArrayList al = new ArrayList();
 		Iterator schemas =  GetSchemas().iterator();
-		XFTElementSorter sorter = new XFTElementSorter();
 		while (schemas.hasNext())
 		{
 			XFTSchema schema = (XFTSchema)schemas.next();

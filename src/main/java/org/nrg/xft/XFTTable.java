@@ -1154,7 +1154,7 @@ public class XFTTable implements XFTTableI {
 		for(Object[] row: rows)
 		{
 			writer.write("<tr class=\"x_rs_tr_data");
-			if(rowC++%2==1)writer.write(" even");
+			if(rowC++% 2 != 0)writer.write(" even");
 			else writer.write(" odd");
 			writer.write("\">");
 			for (int i=0;i<this.numCols;i++)

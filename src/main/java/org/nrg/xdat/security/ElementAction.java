@@ -21,6 +21,9 @@ import org.nrg.xft.exception.XFTInitException;
  */
 @SuppressWarnings("serial")
 public class ElementAction extends ItemWrapper {
+	public ElementAction()
+	{
+	}
 
 	public ElementAction(ItemI item)
 	{

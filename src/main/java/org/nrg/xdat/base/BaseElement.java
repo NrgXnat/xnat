@@ -79,17 +79,17 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
 
 	public BaseElement(UserI user)
 	{
-		try{setItem(XFTItem.NewItem(getSchemaElementName(),user));}catch(Exception e){}
+		try{setItem(XFTItem.NewItem(getSchemaElementName(),user));}catch(Exception e){logger.error("",e);}
 	}
 
 	public BaseElement(Map properties, UserI user)
 	{
-		try{setItem(XFTItem.NewItem(getSchemaElementName(),properties,false,user));}catch(Exception e){}
+		try{setItem(XFTItem.NewItem(getSchemaElementName(),properties,false,user));}catch(Exception e){logger.error("",e);}
 	}
 
 	public SchemaElement getSchemaElement(){
 		if(schemaElement==null)
-			try{schemaElement=SchemaElement.GetElement(getSchemaElementName());}catch(Exception e){}
+			try{schemaElement=SchemaElement.GetElement(getSchemaElementName());}catch(Exception e){logger.error("",e);}
 		return schemaElement;
 	}
 

@@ -1164,7 +1164,6 @@ public class JavaScriptGenerator {
                     
                 if (xmlField.getChildren().size() > 0)
                 {          
-                    StringBuffer childCode = new StringBuffer();
                     Iterator childElements2 = xmlField.getChildren().iterator();
                     while(childElements2.hasNext())
                     {

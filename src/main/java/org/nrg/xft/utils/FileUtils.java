@@ -444,7 +444,6 @@ public  class FileUtils
 
 	    FileInputStream in = new FileInputStream(f);
         DataInputStream dis = new DataInputStream(in);
-        StringBuffer sb = new StringBuffer();
         while (dis.available() !=0)
 		{
 			al.add(dis.readLine());

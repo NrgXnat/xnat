@@ -165,7 +165,7 @@ public class XFTMetaItem {
             Object meta_data_id = null;
             
             try {
-                if (smallItem == null)
+                if (smallItem != null)
                 {
                     meta_data_id = smallItem.getProperty("meta_data_id");
                 }

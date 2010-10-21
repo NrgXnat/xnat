@@ -42,7 +42,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
     private XFTItem template=null;
     private SAXReaderObject current = null;
     private String tempValue = null;
-    private UserI user = null;
+    private final UserI user;
 	Hashtable uriToPrefixMapping = new Hashtable();
 	String xsi = null;
     boolean stopRecording = false;
@@ -55,8 +55,8 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
     /**
      * 
      */
-    public SAXReader(UserI u) {
-        u = user;
+    public SAXReader(final UserI u) {
+        user=u;
     }
     
     public XFTItem getItem()

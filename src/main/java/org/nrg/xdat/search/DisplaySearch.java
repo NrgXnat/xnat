@@ -14,11 +14,12 @@ import java.util.Calendar;
 import java.util.Collection;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.collections.DisplayFieldWrapperCollection;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
+import org.nrg.xdat.collections.DisplayFieldWrapperCollection;
 import org.nrg.xdat.display.ArcDefinition;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayFieldElement;
@@ -2041,11 +2042,11 @@ public class DisplaySearch implements TableSearchI{
 
 
 
-	public ArrayList<DisplayFieldReferenceI> getAllFields(String versionExtension) throws ElementNotFoundException, XFTInitException
+	public List<DisplayFieldReferenceI> getAllFields(String versionExtension) throws ElementNotFoundException, XFTInitException
 	{
-		ElementDisplay ed = DisplayManager.GetElementDisplay(getRootElement().getFullXMLName());
-	    DisplayVersion dv = null;
-		ArrayList<DisplayFieldReferenceI> fields=new ArrayList<DisplayFieldReferenceI>();
+		final ElementDisplay ed = DisplayManager.GetElementDisplay(getRootElement().getFullXMLName());
+	    final DisplayVersion dv;
+		List<DisplayFieldReferenceI> allfields=new ArrayList<DisplayFieldReferenceI>();
 		if (this.useVersions())
 		{
 			if (! versionExtension.equalsIgnoreCase(""))
@@ -2054,7 +2055,7 @@ public class DisplaySearch implements TableSearchI{
 			}else{
 				dv = ed.getVersion(getDisplay(),"default");
 			}
-			fields = dv.getAllFields();
+			allfields = dv.getAllFields();
 
 			if (getAdditionalViews() != null && getAdditionalViews().size() > 0)
 			{
@@ -2075,14 +2076,14 @@ public class DisplaySearch implements TableSearchI{
 						foreignDV = foreignEd.getVersion(version,"default");
 					}
 
-					fields.addAll(foreignDV.getAllFields());
+					allfields.addAll(foreignDV.getAllFields());
 				}
 			}
 		}else{
-		    fields = this.getFields().getSortedFields();
+			allfields = this.getFields().getSortedFields();
 		}
 
-		return fields;
+		return allfields;
 	}
 
 	public ArrayList<DisplayFieldReferenceI> getVisibleFields(String versionExtension) throws ElementNotFoundException, XFTInitException

@@ -107,7 +107,7 @@ import org.w3c.dom.Node;
  * @author Tim
  */
 @SuppressWarnings({"serial","unchecked"})
-public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
+public final class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	private static final String EQUALS = "=";
 	private static final String COLON = ":";
 	private static final String STATUS_STRING = "status";
@@ -125,10 +125,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTItem.class);
 	private static Hashtable PRE_FORMATTED_ITEMS = new Hashtable();
 	public static Comparator COMPARATOR= null;
-	public static String EXTENDED_FIELD_NAME = "extension";
-	public static String EXTENDED_ITEM = "extension_item";
+	public final static String EXTENDED_FIELD_NAME = "extension";
+	public final static String EXTENDED_ITEM = "extension_item";
 
-	public static TypeConverter JAVA_CONVERTER= new TypeConverter(new JavaMapping("xs"));
+	public final static TypeConverter JAVA_CONVERTER= new TypeConverter(new JavaMapping("xs"));
 
 	private String xmlType = "";
 	private GenericWrapperElement element = null;
@@ -1928,16 +1928,6 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     }
 
 	/**
-	 * Compares all properties including primary keys
-	 * @param item2 Item to compare
-	 * @return
-	 */
-	public boolean equals(XFTItem item2) throws org.nrg.xft.exception.XFTInitException
-	{
-		return this.equals(item2,false);
-	}
-
-	/**
 	 * returns the names of the possible fields for this item.
 	 * <BR>0: sql name
 	 * <BR>1: type
@@ -2802,7 +2792,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         {
             if (field.isMultiple())
             {
-                if (xsiType==null || xsiType=="")
+                if (org.apache.commons.lang.StringUtils.isEmpty(xsiType))
                 {
                     setField(field.getId() + index,value);
                     value.setParent(this);
@@ -3012,7 +3002,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
         if (matched)
 		{
-			if ((newI == null && !oldI.hasProperties()) || (oldI==null && newI.hasProperties()))
+			if ((newI.hasProperties() && !oldI.hasProperties()) || (!newI.hasProperties() && oldI.hasProperties()))
 			{
 				return true;
 			}
@@ -3103,9 +3093,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
         if (matched)
         {
-            if ((newI == null && !oldI.hasProperties()) || (oldI==null && newI.hasProperties()))
-            {
-                return false;
+        	if ((newI.hasProperties() && !oldI.hasProperties()) || (!newI.hasProperties() && oldI.hasProperties()))
+			{
+				return true;
             }
 
             Iterator iter = newI.getGenericSchemaElement().getUniqueFields().iterator();
@@ -3531,15 +3521,16 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 */
 	public Object clone()
 	{
+		XFTItem item = null;
+		
 		try {
-            XFTItem item = XFTItem.NewItem(getXSIType(),user);
+            item = XFTItem.NewItem(getXSIType(),user);
 
-            Enumeration enumer = props.keys();
-            while (enumer.hasMoreElements())
+            for (Map.Entry<String,Object> entry: props.entrySet())
             {
-            	Object key = enumer.nextElement();
+            	final Object key = entry.getKey();
             	try {
-            	    Object o = props.get(key);
+            	    final Object o = props.get(key);
             	    if (o instanceof XFTItem)
             	    {
             	        item.getProps().put(key,((XFTItem)o).clone());
@@ -3550,14 +3541,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     throw e1;
                 }
             }
-            return item;
         } catch (XFTInitException e) {
             logger.error("",e);
         } catch (ElementNotFoundException e) {
             logger.error("",e);
         }
-
-		return null;
+        
+            return item;
 	}
 
 	/**
@@ -5627,7 +5617,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     private java.util.ArrayList getChildItems(XFTFieldWrapper field, boolean allowDBAccess,boolean allowChildMultiples,String xsiType,UserI user)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
     {
         ArrayList all= getChildItems(field,allowDBAccess,allowChildMultiples,user);
-        if (xsiType==null || xsiType=="")
+        if (org.apache.commons.lang.StringUtils.isEmpty(xsiType))
         {
             return all;
         }

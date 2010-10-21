@@ -20,8 +20,8 @@ import org.nrg.xft.utils.ResourceFile;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatUserGroupid extends org.nrg.xdat.base.BaseElement implements XdatUserGroupidI{
-	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatUserGroupid.class);
-	public static String SCHEMA_ELEMENT_NAME="xdat:user_groupID";
+	public final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatUserGroupid.class);
+	public final static String SCHEMA_ELEMENT_NAME="xdat:user_groupID";
 
 	public AutoXdatUserGroupid(ItemI item)
 	{

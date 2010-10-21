@@ -468,7 +468,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 		return temp;
 	}
 
-	public static Comparator SequenceComparator = new Comparator() {
+	public final static Comparator SequenceComparator = new Comparator() {
 	  public int compare(Object mr1, Object mr2) throws ClassCastException {
 		  try{
 			int value1 = ((XFTField)mr1).getSequence();

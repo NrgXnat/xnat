@@ -20,8 +20,8 @@ import org.nrg.xft.utils.ResourceFile;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatActionType extends org.nrg.xdat.base.BaseElement implements XdatActionTypeI{
-	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatActionType.class);
-	public static String SCHEMA_ELEMENT_NAME="xdat:action_type";
+	public final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatActionType.class);
+	public final static String SCHEMA_ELEMENT_NAME="xdat:action_type";
 
 	public AutoXdatActionType(ItemI item)
 	{

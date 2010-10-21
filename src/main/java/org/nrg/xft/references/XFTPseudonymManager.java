@@ -316,7 +316,6 @@ public class XFTPseudonymManager {
 	{
 		try {
 			StringBuffer p = new StringBuffer();
-			StringBuffer e = new StringBuffer();
 			Enumeration enumer = Pseudonyms.keys();
 			while(enumer.hasMoreElements())
 			{

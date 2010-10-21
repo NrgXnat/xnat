@@ -13,10 +13,11 @@ public class CacheManager extends Object implements EventListener {
 	
 	private static CacheManager cm=null;
 	
-	public static CacheManager GetInstance(){
+	public synchronized static CacheManager GetInstance(){
 		if(cm==null){
-			cm=new CacheManager();
-			EventManager.AddListener(cm);
+			CacheManager temp=new CacheManager();
+			EventManager.AddListener(temp);
+			cm=temp;
 		}
 		
 		return cm;

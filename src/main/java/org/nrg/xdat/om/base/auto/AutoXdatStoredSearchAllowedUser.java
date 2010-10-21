@@ -20,8 +20,8 @@ import org.nrg.xft.utils.ResourceFile;
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public abstract class AutoXdatStoredSearchAllowedUser extends org.nrg.xdat.base.BaseElement implements XdatStoredSearchAllowedUserI{
-	public static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatStoredSearchAllowedUser.class);
-	public static String SCHEMA_ELEMENT_NAME="xdat:stored_search_allowed_user";
+	public final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(AutoXdatStoredSearchAllowedUser.class);
+	public final static String SCHEMA_ELEMENT_NAME="xdat:stored_search_allowed_user";
 
 	public AutoXdatStoredSearchAllowedUser(ItemI item)
 	{

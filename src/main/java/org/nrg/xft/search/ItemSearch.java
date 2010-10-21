@@ -485,15 +485,10 @@ public class ItemSearch implements SearchI {
 		    value = temp;
 		}
 		c.setValue(value);
-		c.setComparison_type(comparison);
-		comparison = comparison.trim();
-//		if (comparison.equals("=") || comparison.equals("<") || comparison.equals("<=") || comparison.equals(">=") || comparison.equals(">"))
-//		{
-//		    c.setOverrideFormatting(false);
-//		}else{
-//		    c.setOverrideFormatting(true);
-//		    
-//		}
+		
+		c.setComparison_type(comparison.trim());
+		
+
 		add(c);
 	}
 

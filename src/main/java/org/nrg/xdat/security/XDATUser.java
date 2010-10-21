@@ -201,16 +201,9 @@ public class XDATUser extends XdatUser implements UserI{
 
 	public synchronized void init() throws Exception
 	{
-        final Map<String,ElementAccessManager> guestManagers;
-        
         final long startTime = Calendar.getInstance().getTimeInMillis();
 		accessManagers = new Hashtable<String,ElementAccessManager>();
 		final Iterator items = this.getChildItems(USER_ELEMENT + ".element_access").iterator();
-
-        if (!this.getLogin().equals("guest"))
-            guestManagers=getGuestManagers();
-        else
-        	guestManagers = new Hashtable<String,ElementAccessManager>();
 
 		while (items.hasNext())
 		{

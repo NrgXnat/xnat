@@ -40,6 +40,11 @@ import org.nrg.xft.utils.StringUtils;
 /**
  * @author Tim
  *
+ * FindBugs says this class should be renamed to something other than QueryOrganizer.  I agree.  However,
+ * this code is used in alot of places and is due for a big refactoring.  I vote for putting off this fix
+ * until the search is refactored.  Unable to suppress warnings to support 1.5. 
+ * 
+ * 
  */
 public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements QueryOrganizerI{
 	static org.apache.log4j.Logger logger = Logger.getLogger(QueryOrganizer.class);

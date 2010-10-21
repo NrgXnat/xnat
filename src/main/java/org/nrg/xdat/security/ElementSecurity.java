@@ -89,6 +89,9 @@ public class ElementSecurity extends ItemWrapper{
 	private ArrayList<XdatElementSecurityListingAction> listingActions = new ArrayList<XdatElementSecurityListingAction>();
 	
 	private static Object lock=new Object();
+	
+	public ElementSecurity(){}
+	
 	/**
 	 * @return
 	 * @throws Exception
@@ -1227,7 +1230,7 @@ public class ElementSecurity extends ItemWrapper{
                                 }
                             }
                             
-                            if (o!=null && o.toString()!="")
+                            if (o!=null && org.apache.commons.lang.StringUtils.isNotEmpty(o.toString()))
                             {
                             	if(valueString=="")
                             	{

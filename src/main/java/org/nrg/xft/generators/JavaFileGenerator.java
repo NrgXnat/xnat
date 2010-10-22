@@ -59,7 +59,6 @@ public class JavaFileGenerator {
     public void generateJavaFile(GenericWrapperElement e, String location) throws Exception
     {
         StringBuffer sb = new StringBuffer();
-        StringBuffer sbI = new StringBuffer();
         
         String packageName = "org.nrg.xdat.om.base.auto";
         
@@ -74,34 +73,17 @@ public class JavaFileGenerator {
         sb.append("\n\nimport java.util.*;");
         sb.append("\n\n/**\n * @author XDAT\n *\n */");
         
-        sbI.append("/*\n * GENERATED FILE\n * Created on " + Calendar.getInstance().getTime() + "\n *\n */");
-        sbI.append("\npackage org.nrg.xdat.om;");
-        //IMPORTS
-        sbI.append("\nimport org.nrg.xft.*;");
-        sbI.append("\nimport org.nrg.xft.security.UserI;");
-        sbI.append("\nimport org.nrg.xdat.om.*;");
-        sbI.append("\n\nimport java.util.*;");
-        sbI.append("\n\n/**\n * @author XDAT\n *\n */");
-        
         //CLASS
         String extensionName = "org.nrg.xdat.base.BaseElement";
-        String interfaceExtensionName = null;
         if (e.isExtension())
         {
            GenericWrapperElement ext = GenericWrapperElement.GetElement(e.getExtensionType());
             extensionName = getSQLClassName(ext);
-            interfaceExtensionName = extensionName + "I";
         }
         
-        String interfaceName = getSQLClassName(e) +"I";
-        sbI.append("\npublic interface ").append(interfaceName);
-        if (interfaceExtensionName==null)
-        {
-            sbI.append(" {");
-        }else{
-            sbI.append(" extends " + interfaceExtensionName + " {");
-        }
-        sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})\npublic abstract class ").append(getClassName(e)).append(" extends " + extensionName + " implements " + interfaceName +"{");
+
+        sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
+        sb.append("\npublic abstract class ").append(getClassName(e)).append(" extends " + extensionName + " implements "+JavaBeanGenerator.INTERFACE_PACKAGE + "." + JavaBeanGenerator.getFormattedInterface(e) +" {");
         sb.append("\n\tpublic static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("+getClassName(e)+".class);");
         sb.append("\n\tpublic static String SCHEMA_ELEMENT_NAME=\"").append(e.getFullXMLName()).append("\";");
         //ADD CONSTRUCTORS
@@ -128,11 +110,6 @@ public class JavaFileGenerator {
         sb.append("\n\t\t").append("return \"").append(e.getFullXMLName()).append("\";");
         sb.append("\n\t}");
         
-        sbI.append("\n\n");
-        sbI.append("\t").append("public String getSchemaElementName();");
-        
-        
-        
         Iterator fields = e.getAllFields(true,true).iterator();
         while (fields.hasNext())
         {
@@ -149,7 +126,8 @@ public class JavaFileGenerator {
                 
                 if (foreign.getGenericXFTElement().getAddin().equals(""))
                 {
-                    String foreignClassName = getSQLClassName(foreign.getGenericXFTElement());
+                    final String foreignClassName = getSQLClassName(foreign.getGenericXFTElement());
+                    final String forieignInterface=JavaBeanGenerator.getFormattedInterface(foreign.getGenericXFTElement());
                     
                     if (f.isMultiple())
                     {
@@ -157,16 +135,14 @@ public class JavaFileGenerator {
                         sb.append("\n");
                         sb.append("\n\t/**");
                         sb.append("\n\t * " + xmlPath);
-                       	sb.append("\n\t * @return Returns an ArrayList of org.nrg.xdat.om.").append(foreignClassName).append("\n\t */");
-                        sb.append("\n\t").append("public ArrayList<org.nrg.xdat.om.").append(foreignClassName).append("> get").append(formatted).append("() {");
+                       	sb.append("\n\t * @return Returns an List of org.nrg.xdat.om.").append(foreignClassName).append("\n\t */");
+                        sb.append("\n\t").append("public <A extends " +JavaBeanGenerator.INTERFACE_PACKAGE +".").append(forieignInterface).append("> List<A> get").append(formatted).append("() {");
                         sb.append("\n\t\t").append("try{");
                         sb.append("\n\t\t\t").append("if (_" + formatted + "==null){");
                         sb.append("\n\t\t\t\t_").append(formatted + "=org.nrg.xdat.base.BaseElement.WrapItems(getChildItems(\"").append(xmlPath).append("\"));");
-                        sb.append("\n\t\t\t\t").append("return _" + formatted +";");
-                        sb.append("\n\t\t\t").append("}else {");
-                        sb.append("\n\t\t\t\t").append("return _" + formatted +";");
                         sb.append("\n\t\t\t").append("}");
-                        sb.append("\n\t\t").append("} catch (Exception e1) {return new ArrayList<org.nrg.xdat.om.").append(foreignClassName).append(">();}");
+                        sb.append("\n\t\t\t").append("return (List<A>) _" + formatted +";");
+                        sb.append("\n\t\t").append("} catch (Exception e1) {return (List<A>) new ArrayList<org.nrg.xdat.om.").append(foreignClassName).append(">();}");
                         sb.append("\n\t}");
                         
                         sb.append("\n\n");
@@ -194,25 +170,16 @@ public class JavaFileGenerator {
                         sb.append("\n\t}");
                         
 
-                        sbI.append("\n");
-                        sbI.append("\n\t/**");
-                        sbI.append("\n\t * " + xmlPath);
-                        sbI.append("\n\t * @return Returns an ArrayList of org.nrg.xdat.om.").append(foreignClassName).append("I\n\t */");
-                        sbI.append("\n\t").append("public ArrayList<org.nrg.xdat.om.").append(foreignClassName).append("> get").append(formatted).append("();");
-                        
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sbI.append("\n\t").append("public void set").append(formatted).append("(ItemI v) throws Exception;");
                     }else{
-                        sb.append("\n\t private org.nrg.xdat.om." + foreignClassName +"I _" + formatted + " =null;");
+                        sb.append("\n\t private org.nrg.xdat.om." + foreignClassName +" _" + formatted + " =null;");
                         sb.append("\n");
                         sb.append("\n\t/**");
                         sb.append("\n\t * " + xmlPath);
-                       	sb.append("\n\t * @return org.nrg.xdat.om.").append(foreignClassName).append("I\n\t */");
-                        sb.append("\n\t").append("public org.nrg.xdat.om." + foreignClassName +"I get").append(formatted).append("() {");
+                       	sb.append("\n\t * @return org.nrg.xdat.om.").append(foreignClassName).append("\n\t */");
+                        sb.append("\n\t").append("public org.nrg.xdat.om." + foreignClassName +" get").append(formatted).append("() {");
                         sb.append("\n\t\t").append("try{");
                         sb.append("\n\t\t\t").append("if (_" + formatted + "==null){");
-                        sb.append("\n\t\t\t\t_").append(formatted + "=(("+ foreignClassName + "I)org.nrg.xdat.base.BaseElement.GetGeneratedItem((XFTItem)getProperty(\"").append(xmlPath).append("\")));");
+                        sb.append("\n\t\t\t\t_").append(formatted + "=(("+ foreignClassName + ")org.nrg.xdat.base.BaseElement.GetGeneratedItem((XFTItem)getProperty(\"").append(xmlPath).append("\")));");
                         sb.append("\n\t\t\t\t").append("return _" + formatted +";");
                         sb.append("\n\t\t\t").append("}else {");
                         sb.append("\n\t\t\t\t").append("return _" + formatted +";");
@@ -244,16 +211,6 @@ public class JavaFileGenerator {
                         sb.append("\n\t\t").append("catch (java.lang.IndexOutOfBoundsException e1) {logger.error(e1);}");
                         sb.append("\n\t}");
                         
-                        sbI.append("\n");
-                        sbI.append("\n\t/**");
-                        sbI.append("\n\t * " + xmlPath);
-                        sbI.append("\n\t * @return org.nrg.xdat.om.").append(foreignClassName).append("I\n\t */");
-                        sbI.append("\n\t").append("public org.nrg.xdat.om." + foreignClassName +"I get").append(formatted).append("();");
-                        
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sbI.append("\n\t").append("public void set").append(formatted).append("(ItemI v) throws Exception;");
-
                         if(!f.getName().equalsIgnoreCase(e.getExtensionFieldName())){
                             XFTSuperiorReference ref = (XFTSuperiorReference)f.getXFTReference();
                             Iterator iter=ref.getKeyRelations().iterator();
@@ -299,15 +256,6 @@ public class JavaFileGenerator {
                                     sb.append("\n\t}");
                                     
 
-                                    //STANDARD GET METHOD
-                                    sbI.append("\n\n");
-                                    sbI.append("\t/**\n\t * @return Returns the ").append(e.getXSIType() + "/" + temp).append(".\n\t */");
-                                    sbI.append("\n\t").append("public Integer get").append(reformatted).append("();");
-                                    
-                                    //STANDARD SET METHOD
-                                    sbI.append("\n\n");
-                                    sbI.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + temp).append(".\n\t * @param v Value to Set.\n\t */");
-                                    sbI.append("\n\t").append("public void set").append(reformatted).append("(Integer v);");
                                 }else if (type.equalsIgnoreCase("string"))
                                 {
                                     String reformatted = formatted + "_" +formatFieldName(temp);
@@ -340,15 +288,6 @@ public class JavaFileGenerator {
                                     sb.append("\n\t}");
                                     
 
-                                    //STANDARD GET METHOD
-                                    sbI.append("\n\n");
-                                    sbI.append("\t/**\n\t * @return Returns the ").append(e.getXSIType() + "/" + temp).append(".\n\t */");
-                                    sbI.append("\n\t").append("public String get").append(reformatted).append("();");
-                                    
-                                    //STANDARD SET METHOD
-                                    sbI.append("\n\n");
-                                    sbI.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + temp).append(".\n\t * @param v Value to Set.\n\t */");
-                                    sbI.append("\n\t").append("public void set").append(reformatted).append("(String v);");
                                 }else{
                                     String reformatted = formatted + "_" +formatFieldName(temp);
                                     sb.append("\n\n\t").append("//FIELD");
@@ -380,15 +319,6 @@ public class JavaFileGenerator {
                                     sb.append("\n\t}");
                                     
 
-                                    //STANDARD GET METHOD
-                                    sbI.append("\n\n");
-                                    sbI.append("\t/**\n\t * @return Returns the ").append(e.getXSIType() + "/" + temp).append(".\n\t */");
-                                    sbI.append("\n\t").append("public Object get").append(reformatted).append("();");
-                                    
-                                    //STANDARD SET METHOD
-                                    sbI.append("\n\n");
-                                    sbI.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + temp).append(".\n\t * @param v Value to Set.\n\t */");
-                                    sbI.append("\n\t").append("public void set").append(reformatted).append("(Object v) ;");
                                 }
                             }
                         }
@@ -437,14 +367,6 @@ public class JavaFileGenerator {
                         
 
 //                      STANDARD GET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
-                        sbI.append("\n\t").append("public Boolean get").append(formatted).append("();");
-
-                        //STANDARD SET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sbI.append("\n\t").append("public void set").append(formatted).append("(Object v);");
                     }else if (type.equalsIgnoreCase("integer"))
                     {
                         sb.append("\n\n\t").append("//FIELD");
@@ -476,15 +398,6 @@ public class JavaFileGenerator {
                         sb.append("\n\t}");
 
                         
-                        //STANDARD GET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
-                        sbI.append("\n\t").append("public Integer get").append(formatted).append("();");
-
-                        //STANDARD SET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sbI.append("\n\t").append("public void set").append(formatted).append("(Integer v);");
                     }else if(type.equalsIgnoreCase("double") || type.equalsIgnoreCase("float")){
                         sb.append("\n\n\t").append("//FIELD");
                         sb.append("\n\n\t").append("private Double _").append(formatted);
@@ -513,17 +426,6 @@ public class JavaFileGenerator {
                         sb.append("\n\t\t_").append(formatted +"=null;");
                         sb.append("\n\t\t").append("} catch (Exception e1) {logger.error(e1);}");
                         sb.append("\n\t}");
-                        
-
-                        //STANDARD GET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
-                        sbI.append("\n\t").append("public Double get").append(formatted).append("();");
-                        
-                        //STANDARD SET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sbI.append("\n\t").append("public void set").append(formatted).append("(Double v);");
                     }else if (type.equalsIgnoreCase("string"))
                     {
                         sb.append("\n\n\t").append("//FIELD");
@@ -553,17 +455,6 @@ public class JavaFileGenerator {
                         sb.append("\n\t\t_").append(formatted +"=null;");
                         sb.append("\n\t\t").append("} catch (Exception e1) {logger.error(e1);}");
                         sb.append("\n\t}");
-                        
-
-                        //STANDARD GET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
-                        sbI.append("\n\t").append("public String get").append(formatted).append("();");
-
-                        //STANDARD SET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sbI.append("\n\t").append("public void set").append(formatted).append("(String v);");
                     }else{
                         sb.append("\n\n\t").append("//FIELD");
                         sb.append("\n\n\t").append("private Object _").append(formatted);
@@ -592,17 +483,6 @@ public class JavaFileGenerator {
                         sb.append("\n\t\t_").append(formatted +"=null;");
                         sb.append("\n\t\t").append("} catch (Exception e1) {logger.error(e1);}");
                         sb.append("\n\t}");
-                        
-
-                        //STANDARD GET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
-                        sbI.append("\n\t").append("public Object get").append(formatted).append("();");
-                        
-                        //STANDARD SET METHOD
-                        sbI.append("\n\n");
-                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sbI.append("\n\t").append("public void set").append(formatted).append("(Object v);");
                     }
                 }
             }
@@ -644,16 +524,6 @@ public class JavaFileGenerator {
             sb.append("\n\t\t").append("} catch (Exception e1) {logger.error(e1);}");
             sb.append("\n\t}");
 
-            
-            //STANDARD GET METHOD
-            sbI.append("\n\n");
-            sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
-            sbI.append("\n\t").append("public Integer get").append(formatted).append("();");
-
-            //STANDARD SET METHOD
-            sbI.append("\n\n");
-            sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-            sbI.append("\n\t").append("public void set").append(formatted).append("(Integer v);");
         }
         
 //      ADD ITEM LOADERS
@@ -825,8 +695,9 @@ public class JavaFileGenerator {
                 {
                     formatted = "userProperty";
                 }
-                SchemaElementI foreign = gwf.getReferenceElement();
-                String foreignClassName = getSQLClassName(foreign.getGenericXFTElement());
+                final SchemaElementI foreign = gwf.getReferenceElement();
+                final String foreignClassName = getSQLClassName(foreign.getGenericXFTElement());
+                final String foreignInterface = JavaBeanGenerator.getFormattedInterface(foreign.getGenericXFTElement());
                 
     
                     if (foreign.getGenericXFTElement().getAddin().equals(""))
@@ -834,15 +705,15 @@ public class JavaFileGenerator {
                         if (foreign.getGenericXFTElement().instanceOf("xnat:abstractResource")){
                             sb.append("\n\t").append("        //" + xmlPath);
                             if (gwf.isMultiple())
-                                sb.append("\n\t").append("        for(XnatAbstractresource child" + formatted + " : this.get" +formatted + "()){");
+                                sb.append("\n\t").append("        for(" + JavaBeanGenerator.INTERFACE_PACKAGE + ".XnatAbstractresourceI child" + formatted + " : this.get" +formatted + "()){");
                             else
-                                sb.append("\n\t").append("        XnatAbstractresource child" + formatted + " = (" + foreignClassName + ")this.get" +formatted + "();");
+                                sb.append("\n\t").append("        " + JavaBeanGenerator.INTERFACE_PACKAGE + ".XnatAbstractresourceI child" + formatted + " = (" + foreignClassName + ")this.get" +formatted + "();");
                             sb.append("\n\t").append("            if (child" + formatted + "!=null){");
                             sb.append("\n\t").append("              int counter" + formatted + "=0;");
-                            sb.append("\n\t").append("              for(java.io.File f: child" + formatted + ".getCorrespondingFiles(rootPath)){");
+                            sb.append("\n\t").append("              for(java.io.File f: ((XnatAbstractresource)child" + formatted + ").getCorrespondingFiles(rootPath)){");
                             sb.append("\n\t").append("                 ResourceFile rf = new ResourceFile(f);");
-                            sb.append("\n\t").append("                 rf.setXpath(\"" + xmlPath+ "[xnat_abstractresource_id=\" + child" + formatted + ".getXnatAbstractresourceId() + \"]/file/\" + counter" + formatted + " +\"\");");
-                            sb.append("\n\t").append("                 rf.setXdatPath(\"" + xmlPath+ "/\" + child" + formatted + ".getXnatAbstractresourceId() + \"/\" + counter" + formatted + "++);");
+                            sb.append("\n\t").append("                 rf.setXpath(\"" + xmlPath+ "[xnat_abstractresource_id=\" + ((XnatAbstractresource)child" + formatted + ").getXnatAbstractresourceId() + \"]/file/\" + counter" + formatted + " +\"\");");
+                            sb.append("\n\t").append("                 rf.setXdatPath(\"" + xmlPath+ "/\" + ((XnatAbstractresource)child" + formatted + ").getXnatAbstractresourceId() + \"/\" + counter" + formatted + "++);");
                             sb.append("\n\t").append("                 rf.setSize(f.length());");
                             sb.append("\n\t").append("                 rf.setAbsolutePath(f.getAbsolutePath());");
                             sb.append("\n\t").append("                 _return.add(rf);");
@@ -854,13 +725,13 @@ public class JavaFileGenerator {
                         }else{
                             sb.append("\n\t").append("        //" + xmlPath);
                             if (gwf.isMultiple())
-                                sb.append("\n\t").append("        for(" + foreignClassName + " child" + formatted + " : this.get" +formatted + "()){");
+                                sb.append("\n\t").append("        for(" + JavaBeanGenerator.INTERFACE_PACKAGE+"."+foreignInterface + " child" + formatted + " : this.get" +formatted + "()){");
                             else
                                 sb.append("\n\t").append("        " + foreignClassName + " child" + formatted + " = (" + foreignClassName + ")this.get" +formatted + "();");
                             sb.append("\n\t").append("            if (child" + formatted + "!=null){");
-                            sb.append("\n\t").append("              for(ResourceFile rf: child" + formatted + ".getFileResources(rootPath, localLoop)) {");
-                            sb.append("\n\t").append("                 rf.setXpath(\"" + xmlPath+ "[\" + child" + formatted + ".getItem().getPKString() + \"]/\" + rf.getXpath());");
-                            sb.append("\n\t").append("                 rf.setXdatPath(\"" + xmlPath+ "/\" + child" + formatted + ".getItem().getPKString() + \"/\" + rf.getXpath());");
+                            sb.append("\n\t").append("              for(ResourceFile rf: ((" + foreignClassName + ")child" + formatted + ").getFileResources(rootPath, localLoop)) {");
+                            sb.append("\n\t").append("                 rf.setXpath(\"" + xmlPath+ "[\" + ((" + foreignClassName + ")child" + formatted + ").getItem().getPKString() + \"]/\" + rf.getXpath());");
+                            sb.append("\n\t").append("                 rf.setXdatPath(\"" + xmlPath+ "/\" + ((" + foreignClassName + ")child" + formatted + ").getItem().getPKString() + \"/\" + rf.getXpath());");
                             sb.append("\n\t").append("                 _return.add(rf);");
                             sb.append("\n\t").append("              }");
                             sb.append("\n\t").append("            }");
@@ -1025,13 +896,12 @@ public class JavaFileGenerator {
                 FileUtils.OutputToFile(sb.toString(),location + getSQLClassName(e)+".java");
             }
             
-
-            //INTERFACE
-                sbI.append("\n}");
-
-                if (XFT.VERBOSE)
-        	        System.out.println("Generating File " + location +getSQLClassName(e) +"I.java...");
-                FileUtils.OutputToFile(sbI.toString(),location + getSQLClassName(e)+"I.java");
+       }
+        
+        final File interfaceF= new File(location + getSQLClassName(e)+"I.java");
+        if(interfaceF.exists()){  if (XFT.VERBOSE)
+	        System.out.println("Deleting Deprecated File " + location +getSQLClassName(e) +"I.java...");
+           	interfaceF.delete();
         }
     }
     

@@ -6,11 +6,13 @@
 package org.nrg.xft.generators;
 
 import java.io.File;
+import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -31,6 +33,7 @@ import org.nrg.xft.utils.StringUtils;
 
 
 public class JavaBeanGenerator {
+    public static final String INTERFACE_PACKAGE = "org.nrg.xdat.model";
     private String project = "";
     private enum TYPE {data,single_reference,multi_reference,inline_repeater,LONG_DATA,NO_CHILD}
     public static boolean VERSION5=true;
@@ -65,13 +68,13 @@ public class JavaBeanGenerator {
         {
            GenericWrapperElement ext = GenericWrapperElement.GetElement(e.getExtensionType());
            if (!ext.getXSIType().equals(e.getXSIType()))
-            extensionName = getSQLClassName(ext);
+            extensionName = getFormattedBean(ext);
         }
         
         sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
         
-        sb.append("\npublic class ").append(getSQLClassName(e)).append(" extends " + extensionName + " implements java.io.Serializable {");
-        sb.append("\n\tpublic static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("+getSQLClassName(e)+".class);");
+        sb.append("\npublic class ").append(getFormattedBean(e)).append(" extends " + extensionName + " implements java.io.Serializable, "+INTERFACE_PACKAGE + "." + this.getFormattedInterface(e) +" {");
+        sb.append("\n\tpublic static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger("+getFormattedBean(e)+".class);");
         sb.append("\n\tpublic static String SCHEMA_ELEMENT_NAME=\"").append(e.getFullXMLName()).append("\";");
         //ADD CONSTRUCTORS
 
@@ -109,7 +112,8 @@ public class JavaBeanGenerator {
                 
                 if (foreign.getGenericXFTElement().getAddin().equals(""))
                 {
-                    String foreignClassName = getSQLClassName(foreign.getGenericXFTElement());
+                    final String foreignClassName = getFormattedBean(foreign.getGenericXFTElement());
+                    final String foreignInterface=getFormattedInterface(foreign.getGenericXFTElement());
                     
                     if (f.isMultiple())
                     {
@@ -126,7 +130,7 @@ public class JavaBeanGenerator {
                         gets.add("get" +formatted);
                         foreignElements.add(foreign.getGenericXFTElement().getSchemaTargetNamespaceURI() + ":" + foreign.getGenericXFTElement().getLocalXMLName());
                         
-                        sb.append("\n\t private ArrayList");
+                        sb.append("\n\t private List");
                         if (VERSION5)sb.append("<"+ project + ".bean.").append(foreignClassName).append(">");
                         sb.append(" _" + formatted + " =new ArrayList");
                         if (VERSION5)sb.append("<"+ project + ".bean.").append(foreignClassName).append(">");
@@ -134,11 +138,14 @@ public class JavaBeanGenerator {
                         sb.append("\n");
                         sb.append("\n\t/**");
                         sb.append("\n\t * " + xmlPath);
-                         sb.append("\n\t * @return Returns an ArrayList of "+ project + ".bean.").append(foreignClassName).append("\n\t */");
-                        sb.append("\n\t").append("public ArrayList");
-                        if (VERSION5)sb.append("<"+ project + ".bean.").append(foreignClassName).append(">");
+                         sb.append("\n\t * @return Returns an List of "+ project + ".bean.").append(foreignClassName).append("\n\t */");
+                        sb.append("\n\t").append("public ");
+                        if (VERSION5)
+                        	sb.append("<A extends " +INTERFACE_PACKAGE +".").append(foreignInterface).append("> List<A>");
+                        else
+                        	sb.append ("List");
                         sb.append(" get").append(formatted).append("() {");
-                        sb.append("\n\t\treturn _" + formatted + ";");
+                        sb.append("\n\t\treturn (List<A>) _" + formatted + ";");
                         sb.append("\n\t}");
                         
                         sb.append("\n\n");
@@ -954,7 +961,7 @@ public class JavaBeanGenerator {
                 {
                     try {
                         XMLWrapperElement foreign = (XMLWrapperElement)xmlField.getReferenceElement();
-                        String foreignClassName = getSQLClassName(foreign.getGenericXFTElement());
+                        String foreignClassName = getFormattedBean(foreign.getGenericXFTElement());
                         if (xmlField.isMultiple())
                         { 
                             sb.append("\n\t\t").append("if(_" + formatted + ".size()>0) return true;");
@@ -1076,8 +1083,8 @@ public class JavaBeanGenerator {
         }
 
         if (XFT.VERBOSE)
-             System.out.println("Generating File " + location +getSQLClassName(e) +".java...");
-        FileUtils.OutputToFile(sb.toString(),location +getSQLClassName(e) + ".java");
+             System.out.println("Generating File " + location +getFormattedBean(e) +".java...");
+        FileUtils.OutputToFile(sb.toString(),location +getFormattedBean(e) + ".java");
         
     }
     
@@ -1165,7 +1172,7 @@ public class JavaBeanGenerator {
                 sb.append("\n\t\t").append("//REFERENCE FROM " + e.getXMLName() + " -> " + xmlField.getXMLPathString());
                 try {
                     XMLWrapperElement foreign = (XMLWrapperElement)xmlField.getReferenceElement();
-                    String foreignClassName = getSQLClassName(foreign.getGenericXFTElement());
+                    String foreignClassName = getFormattedBean(foreign.getGenericXFTElement());
                     if (xmlField.isMultiple())
                     { 
                         if (xmlField.isInLineRepeaterElement())
@@ -1414,9 +1421,14 @@ public class JavaBeanGenerator {
     }
 
     
-    public String getSQLClassName(GenericWrapperElement e)
+    public static String getFormattedBean(GenericWrapperElement e)
     {
         return StringUtils.FormatStringToClassName(e.getFormattedName()) + "Bean";
+    }
+    
+    public static String getFormattedInterface(GenericWrapperElement e)
+    {
+        return StringUtils.FormatStringToClassName(e.getFormattedName())+"I";
     }
     /**
      * @param e
@@ -1502,14 +1514,15 @@ public class JavaBeanGenerator {
             GenericWrapperElement e = GenericWrapperElement.GetElement(s);
             if (e.getAddin().equalsIgnoreCase(""))
             {
-                elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getLocalXMLName(), packag + ".bean." +generator.getSQLClassName(e));
+                elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getLocalXMLName(), packag + ".bean." +generator.getFormattedBean(e));
                 if (!e.getProperName().equals(e.getFullXMLName()))
                 {
-                    elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getProperName(), packag + ".bean." +generator.getSQLClassName(e));
+                    elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getProperName(), packag + ".bean." +generator.getFormattedBean(e));
                 }
                 if ((!skipXDAT) || (!e.getSchemaTargetNamespacePrefix().equalsIgnoreCase("xdat")))
                 {
                     generator.generateJavaBeanFile(e,javalocation);
+                    generator.generateJavaInterface(e,javalocation);
                 }
             }
         }
@@ -1833,5 +1846,226 @@ public class JavaBeanGenerator {
 
         
         return sb.toString();
+    }
+    
+    /**
+     * @param e
+     * @param location
+     * @throws Exception
+     */
+    public void generateJavaInterface(GenericWrapperElement e, String location) throws Exception
+    {
+        StringBuffer sbI = new StringBuffer();
+        
+        String packageName = INTERFACE_PACKAGE;
+        
+        sbI.append("/*\n * GENERATED FILE\n * Created on " + Calendar.getInstance().getTime() + "\n *\n */");
+        sbI.append("\npackage " + INTERFACE_PACKAGE + ";");
+        //IMPORTS
+        sbI.append("\n\nimport java.util.List;");
+        sbI.append("\n\n/**\n * @author XDAT\n *\n */");
+        
+        //INTERFACE
+        String interfaceExtensionName = null;
+        if (e.isExtension())
+        {
+           GenericWrapperElement ext = GenericWrapperElement.GetElement(e.getExtensionType());
+           interfaceExtensionName = getFormattedInterface(ext);
+}
+        
+        String interfaceName = getFormattedInterface(e);
+        sbI.append("\npublic interface ").append(interfaceName);
+        if (interfaceExtensionName==null)
+        {
+            sbI.append(" {");
+        }else{
+            sbI.append(" extends " + interfaceExtensionName + " {");
+        }
+                
+        sbI.append("\n\n");
+        sbI.append("\t").append("public String getXSIType();");
+        sbI.append("\n\n");
+        sbI.append("\t").append("public void toXML(java.io.Writer writer) throws java.lang.Exception;");
+        
+        
+        
+        Iterator fields = e.getAllFields(true,true).iterator();
+        while (fields.hasNext())
+        {
+            GenericWrapperField f= (GenericWrapperField)fields.next();
+            if (f.isReference())
+            {
+                String xmlPath = f.getXMLPathString();
+                String formatted = formatFieldName(xmlPath);
+                if (formatted.equalsIgnoreCase("USER"))
+                {
+                    formatted = "userProperty";
+                }
+                SchemaElementI foreign = f.getReferenceElement();
+                
+                if (foreign.getGenericXFTElement().getAddin().equals(""))
+                {
+                    String foreignClassName = getFormattedInterface(foreign.getGenericXFTElement());
+                    
+                    if (f.isMultiple())
+                    {               
+                        sbI.append("\n");
+                        sbI.append("\n\t/**");
+                        sbI.append("\n\t * " + xmlPath);
+                        sbI.append("\n\t * @return Returns an List of org.nrg.xdat.model.").append(foreignClassName).append("\n\t */");
+                        sbI.append("\n\t").append("public <A extends ").append(INTERFACE_PACKAGE +".").append(foreignClassName).append("> List<A> get").append(formatted).append("();");                        
+                    }else{
+                        
+                        if(!f.getName().equalsIgnoreCase(e.getExtensionFieldName())){
+                        	sbI.append("\n");
+                            sbI.append("\n\t/**");
+                            sbI.append("\n\t * " + xmlPath);
+                            sbI.append("\n\t * @return ").append(INTERFACE_PACKAGE +".").append(foreignClassName).append("\n\t */");
+                            sbI.append("\n\t").append("public ").append(INTERFACE_PACKAGE +".").append(foreignClassName).append(" get").append(formatted).append("();");
+                            
+                            XFTSuperiorReference ref = (XFTSuperiorReference)f.getXFTReference();
+                            Iterator iter=ref.getKeyRelations().iterator();
+                            while (iter.hasNext())
+                            {
+                                XFTRelationSpecification spec = (XFTRelationSpecification) iter.next();
+                                String temp = spec.getLocalCol();
+
+                                String type = spec.getSchemaType().getLocalType();
+                                if (type==null){
+                                    type = "";
+                                }
+                                
+                                else if (type.equalsIgnoreCase("integer"))
+                                {
+                                    String reformatted = formatted + "FK";                                    
+
+                                    //STANDARD GET METHOD
+                                    sbI.append("\n\n");
+                                    sbI.append("\t/**\n\t * @return Returns the ").append(e.getXSIType() + "/" + temp).append(".\n\t */");
+                                    sbI.append("\n\t").append("public Integer get").append(reformatted).append("();");
+                                    
+                                }else if (type.equalsIgnoreCase("string"))
+                                {
+                                    String reformatted = formatted + "_" +formatFieldName(temp);                                    
+
+                                    //STANDARD GET METHOD
+                                    sbI.append("\n\n");
+                                    sbI.append("\t/**\n\t * @return Returns the ").append(e.getXSIType() + "/" + temp).append(".\n\t */");
+                                    sbI.append("\n\t").append("public String get").append(reformatted).append("();");
+                                    
+                                }else{
+                                    String reformatted = formatted + "_" +formatFieldName(temp);                                    
+
+                                    //STANDARD GET METHOD
+                                    sbI.append("\n\n");
+                                    sbI.append("\t/**\n\t * @return Returns the ").append(e.getXSIType() + "/" + temp).append(".\n\t */");
+                                    sbI.append("\n\t").append("public Object get").append(reformatted).append("();");
+                                    
+                                }
+                            }
+                        }
+                    }
+                }
+            }else{
+                String type = f.getXMLType().getLocalType();
+                if (type != null)
+                {
+                    String xmlPath = f.getXMLPathString();
+                    String formatted = formatFieldName(xmlPath);
+                    if (formatted.equalsIgnoreCase("USER"))
+                    {
+                        formatted = "userProperty";
+                    }
+                                        
+                    if (type.equalsIgnoreCase("boolean"))
+                    {                    
+//                      STANDARD GET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+                        sbI.append("\n\t").append("public Boolean get").append(formatted).append("();");
+
+                    }else if (type.equalsIgnoreCase("integer"))
+                    {                        
+                        //STANDARD GET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+                        sbI.append("\n\t").append("public Integer get").append(formatted).append("();");
+
+                   }else if(type.equalsIgnoreCase("double") || type.equalsIgnoreCase("float")){   
+                        //STANDARD GET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+                        sbI.append("\n\t").append("public Double get").append(formatted).append("();");
+                        
+                    }else if (type.equalsIgnoreCase("string"))
+                    {
+                        //STANDARD GET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+                        sbI.append("\n\t").append("public String get").append(formatted).append("();");
+
+                    }else{
+                        //STANDARD GET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+                        sbI.append("\n\t").append("public Object get").append(formatted).append("();");
+                        
+                    }
+                }
+            }
+        }
+        
+        if (!e.containsStatedKey()){
+            GenericWrapperField f = (GenericWrapperField)e.getDefaultKey();
+            String xmlPath = f.getXMLPathString();
+            String formatted = formatFieldName(xmlPath);
+            if (formatted.equalsIgnoreCase("USER"))
+            {
+                formatted = "userProperty";
+            }
+            
+            //STANDARD GET METHOD
+            sbI.append("\n\n");
+            sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+            sbI.append("\n\t").append("public Integer get").append(formatted).append("();");
+        }
+        sbI.append("\n");
+        sbI.append("}");
+        
+        if (!location.endsWith(File.separator))
+        {
+            location += File.separator;
+        }
+        
+        File dir = new File(location);
+        if (!dir.exists())
+        {
+            dir.mkdir();
+        }
+        
+        String dirStucture = packageName;
+        while (dirStucture.indexOf(".")!=-1)
+        {
+            String folder = dirStucture.substring(0,dirStucture.indexOf("."));
+            dirStucture = dirStucture.substring(dirStucture.indexOf(".")+1);
+            
+            location = location + folder + File.separator;
+            dir = new File(location);
+            if (!dir.exists())
+            {
+                dir.mkdir();
+            }
+        }
+        
+        location = location + dirStucture + File.separator;
+        dir = new File(location);
+        if (!dir.exists())
+        {
+            dir.mkdir();
+        }
+
+        if (XFT.VERBOSE)
+             System.out.println("Generating File " + location +getFormattedInterface(e) +".java...");
+        FileUtils.OutputToFile(sbI.toString(),location +getFormattedInterface(e) + ".java");
     }
 }

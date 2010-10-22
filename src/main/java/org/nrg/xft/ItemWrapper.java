@@ -41,6 +41,8 @@ public abstract class ItemWrapper implements ItemI {
 	static Logger logger = Logger.getLogger(ItemWrapper.class);
 	private ItemI item = null;
 	
+	public boolean allowXMLDBAccess=false;//for use with the toXML(Writer) method.  Needed to allow preset to satisfy interface.
+	
 	public ItemWrapper(){}
 	public ItemWrapper(ItemI i){item=i;}
 	
@@ -439,6 +441,10 @@ public abstract class ItemWrapper implements ItemI {
      */
     public void toXML(Writer out,boolean allowDBAccess) throws java.lang.IllegalArgumentException, org.xml.sax.SAXException {
         this.getItem().toXML(out,allowDBAccess);
+    }
+    
+    public void toXML(Writer out) throws java.lang.Exception{
+    	this.toXML(out,allowXMLDBAccess);
     }
     
     /* (non-Javadoc)

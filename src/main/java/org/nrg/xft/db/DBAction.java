@@ -2213,7 +2213,7 @@ public class DBAction {
 			}
 			history.setDirectProperty("change_date",Calendar.getInstance().getTime());
 			
-			Hashtable pkHash = oldI.getPkValues();
+			Hashtable pkHash = (Hashtable)oldI.getPkValues();
 			Enumeration pks = pkHash.keys();
 			while (pks.hasMoreElements())
 			{
@@ -3602,7 +3602,7 @@ public class DBAction {
 		
 		query += element.getSQLName() + " WHERE ";
 		
-		Hashtable props = item.getPkValues();
+		Hashtable props = (Hashtable)item.getPkValues();
 		Enumeration enumer = props.keys();
 		int counter = 0;
 		while (enumer.hasMoreElements())

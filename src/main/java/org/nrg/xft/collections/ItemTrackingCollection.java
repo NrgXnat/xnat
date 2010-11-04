@@ -38,7 +38,7 @@ public class ItemTrackingCollection {
 	{
 		boolean match = false;
 		try {
-            Hashtable pks = x.getPkValues();
+            Hashtable pks = (Hashtable)x.getPkValues();
 
             Iterator iter = items.iterator();
             while (iter.hasNext())

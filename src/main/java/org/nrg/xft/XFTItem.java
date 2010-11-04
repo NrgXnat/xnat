@@ -44,6 +44,9 @@ import org.nrg.xft.TypeConverter.TypeConverter;
 import org.nrg.xft.cache.CacheManager;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.collections.ItemTrackingCollection;
+import org.nrg.xft.compare.ItemEqualityI;
+import org.nrg.xft.compare.ItemPKEquality;
+import org.nrg.xft.compare.ItemUniqueEquality;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.DBItemCache;
 import org.nrg.xft.db.PoolDBUtils;
@@ -107,7 +110,7 @@ import org.w3c.dom.Node;
  * @author Tim
  */
 @SuppressWarnings({"serial","unchecked"})
-public final class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
+public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	private static final String EQUALS = "=";
 	private static final String COLON = ":";
 	private static final String STATUS_STRING = "status";
@@ -1555,10 +1558,13 @@ public final class XFTItem extends GenericItemObject implements ItemI,Cloneable 
 	/**
 	 * Hashtable of primaryKeyName/value pairs
 	 * @return
+	 * @throws XFTInitException 
+	 * @throws FieldNotFoundException 
+	 * @throws ElementNotFoundException 
 	 */
-	public Hashtable<String,Object> getPkValues() throws Exception
+	public Map<String,Object> getPkValues() throws XFTInitException, ElementNotFoundException, FieldNotFoundException
 	{
-		Hashtable<String,Object> hash = new Hashtable<String,Object>();
+		Map<String,Object> hash = new Hashtable<String,Object>();
 		Iterator iter = getPkNames().iterator();
 		while (iter.hasNext())
 		{
@@ -1604,7 +1610,7 @@ public final class XFTItem extends GenericItemObject implements ItemI,Cloneable 
 	    try {
 	        if (this.hasProperties())
 	        {
-	            Hashtable pks = getPkValues();
+	            Map pks = getPkValues();
 	            if (pks.size()>0)
 	            {
 	               return pks.values().toArray()[0];
@@ -2059,7 +2065,7 @@ public final class XFTItem extends GenericItemObject implements ItemI,Cloneable 
 	public void importPK(XFTItem temp)
 	{
 	    try {
-	        Hashtable pkHASH = temp.getPkValues();
+	        Hashtable pkHASH = (Hashtable)temp.getPkValues();
             Enumeration keys= pkHASH.keys();
             while (keys.hasMoreElements())
             {
@@ -2959,21 +2965,7 @@ public final class XFTItem extends GenericItemObject implements ItemI,Cloneable 
 	 */
 	public static boolean CompareItemsByPKs(XFTItem newI,XFTItem oldI) throws Exception
 	{
-		return CompareItemsByPKs(newI,oldI,false);
-	}
-
-    /**
-     * Returns true if all pk values in the two items match.
-     * @param item1
-     * @param item2
-     * @return
-     * @throws ElementNotFoundException
-     * @throws XFTInitException
-     * @throws InvalidReference
-     */
-    public static boolean CompareItemsByPKs(XFTItem newI,XFTItem oldI,boolean allowNewNull) throws Exception
-    {
-        return CompareItemsByPKs(newI,oldI,allowNewNull,true);
+		return CompareItemsByPKs(newI,oldI,false,true);
     }
 
 	/**
@@ -2986,74 +2978,8 @@ public final class XFTItem extends GenericItemObject implements ItemI,Cloneable 
 	 */
 	public static boolean CompareItemsByPKs(XFTItem newI,XFTItem oldI,boolean allowNewNull,boolean checkExtensions) throws Exception
 	{
-        boolean matched = false;
-        if (newI.getXSIType().equalsIgnoreCase(oldI.getXSIType()))
-        {
-            matched =true;
-        }
-
-        if (!matched && checkExtensions)
-        {
-            if (newI.matchXSIType(oldI.getXSIType()) || oldI.matchXSIType(newI.getXSIType()))
-            {
-                matched = true;
-            }
-        }
-
-        if (matched)
-		{
-			if ((newI.hasProperties() && !oldI.hasProperties()) || (!newI.hasProperties() && oldI.hasProperties()))
-			{
-				return true;
-			}
-			Hashtable pks = newI.getPkValues();
-			if (pks.size() > 0)
-			{
-				Enumeration enumer = pks.keys();
-				boolean match = true;
-				while (enumer.hasMoreElements())
-				{
-					String key = (String)enumer.nextElement();
-					Object newItemKey = newI.getProperty(newI.getXSIType() + XFT.PATH_SEPERATOR + key);
-					Object oldItemKey = oldI.getProperty(oldI.getXSIType() + XFT.PATH_SEPERATOR + key);
-					if (oldItemKey == null)
-					{
-					    throw new Exception("NULL PRIMARY KEY");
-					}else if (allowNewNull)
-					{
-						if (newItemKey== null)
-						{
-							match = true;
-						}else{
-							if (oldItemKey.equals(newItemKey))
-							{
-								match = true;
-							}else
-							{
-								match = false;
-								break;
-							}
-						}
-					}else{
-						if (oldItemKey.equals(newItemKey))
-						{
-							match = true;
-						}else
-						{
-							match = false;
-							break;
-						}
-					}
-
-				}
-				return match;
-			}else
-			{
-				return false;
-			}
-		}else{
-			return false;
-		}
+        final ItemEqualityI checker=new ItemPKEquality(allowNewNull, checkExtensions);
+        return checker.isEqualTo(newI, oldI);
 	}
     /**
      * @param newI
@@ -3077,166 +3003,8 @@ public final class XFTItem extends GenericItemObject implements ItemI,Cloneable 
      */
     public static boolean CompareItemsByUniques(XFTItem newI,XFTItem oldI,boolean checkExtensions) throws Exception
     {
-        boolean matched = false;
-        if (newI.getXSIType().equalsIgnoreCase(oldI.getXSIType()))
-        {
-            matched =true;
-        }
-
-        if (!matched && checkExtensions)
-        {
-            if (newI.matchXSIType(oldI.getXSIType()) || oldI.matchXSIType(newI.getXSIType()))
-            {
-                matched = true;
-            }
-        }
-
-        if (matched)
-        {
-        	if ((newI.hasProperties() && !oldI.hasProperties()) || (!newI.hasProperties() && oldI.hasProperties()))
-			{
-				return true;
-            }
-
-            Iterator iter = newI.getGenericSchemaElement().getUniqueFields().iterator();
-            while (iter.hasNext())
-            {
-                GenericWrapperField key = (GenericWrapperField)iter.next();
-                try {
-                    Object o = newI.getProperty(key.getXMLPathString(newI.getGenericSchemaElement().getFullXMLName()));
-                    if (o!= null)
-                    {
-                        Object o2 = oldI.getProperty(key.getXMLPathString(oldI.getGenericSchemaElement().getFullXMLName()));
-                        if (o2!= null)
-                        {
-                            Object format1 = DBAction.ValueParser(o,key,true);
-                            Object format2 = DBAction.ValueParser(o2,key,true);
-                            
-                            if (format1.equals(format2))
-                            {
-                                return true;
-                            }
-                        }
-                    }
-                } catch (XFTInitException e) {
-                    logger.error("",e);
-                } catch (ElementNotFoundException e) {
-                    logger.error("",e);
-                } catch (FieldNotFoundException e) {
-                    logger.error("",e);
-                }
-            }
-
-            Hashtable uHash = newI.getGenericSchemaElement().getUniqueCompositeFields();
-            if (uHash.size() > 0)
-            {
-                Enumeration uHashEnum = uHash.keys();
-                while (uHashEnum.hasMoreElements())
-                {
-                    String s = (String)uHashEnum.nextElement();
-                    ArrayList uniqueComposites = (ArrayList)uHash.get(s);
-
-                    boolean matchAll = true;
-                    Iterator uCs = uniqueComposites.iterator();
-                    while (uCs.hasNext())
-                    {
-                        GenericWrapperField key = (GenericWrapperField)uCs.next();
-                        if (key.isReference())
-                        {
-                            Iterator fields = key.getLocalRefNames().iterator();
-                            while (fields.hasNext())
-                            {
-                                ArrayList field = (ArrayList)fields.next();
-
-                                try {
-                                    Object o = newI.getProperty(newI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPERATOR + (String)field.get(0));
-
-                                    if (o!= null)
-                                    {
-                                        Object o2 = oldI.getProperty(oldI.getGenericSchemaElement().getFullXMLName() + XFT.PATH_SEPERATOR + (String)field.get(0));
-                                        if (o2!= null)
-                                        {
-                                            Object format1 = DBAction.ValueParser(o,((GenericWrapperField)field.get(1)).getXMLType().getLocalType(),true);
-                                            Object format2 = DBAction.ValueParser(o2,((GenericWrapperField)field.get(1)).getXMLType().getLocalType(),true);
-                                            if (! format1.equals(format2))
-                                            {
-                                                matchAll = false;
-                                                break;
-                                            }
-                                        }else{
-                                            matchAll = false;
-                                            break;
-                                        }
-                                    }else{
-                                        matchAll = false;
-                                        break;
-                                    }
-                                } catch (XFTInitException e) {
-                                    logger.error("",e);
-                                } catch (ElementNotFoundException e) {
-                                    logger.error("",e);
-                                } catch (FieldNotFoundException e) {
-                                    logger.error("",e);
-                                }
-                            }
-                        }else{
-                            try {
-                                Object o = newI.getProperty(key.getXMLPathString(newI.getGenericSchemaElement().getFullXMLName()));
-
-                                if (o!= null)
-                                {
-                                    Object o2 = oldI.getProperty(key.getXMLPathString(oldI.getGenericSchemaElement().getFullXMLName()));
-                                    if (o2!= null)
-                                    {
-                                        Object format1 = DBAction.ValueParser(o,key.getXMLPathString(newI.getGenericSchemaElement().getFullXMLName()),true);
-                                        Object format2 = DBAction.ValueParser(o2,key.getXMLPathString(oldI.getGenericSchemaElement().getFullXMLName()),true);
-                                        if (! format1.equals(format2))
-                                        {
-                                            matchAll = false;
-                                            break;
-                                        }
-                                    }else{
-                                        matchAll = false;
-                                        break;
-                                    }
-                                }else{
-                                    matchAll = false;
-                                    break;
-                                }
-                            } catch (XFTInitException e) {
-                                logger.error("",e);
-                            } catch (ElementNotFoundException e) {
-                                logger.error("",e);
-                            } catch (FieldNotFoundException e) {
-                                logger.error("",e);
-                            }
-                        }
-                    }
-
-
-                    if (matchAll)
-                    {
-                        return true;
-                    }
-                }
-            }
-
-            if (checkExtensions){
-                //CHECK EXTENDED ITEM
-                //ADDED 9/26 when adding support for multiple references to 'no field' elements (abstract)
-                if (newI.getGenericSchemaElement().isExtension()){
-                    XFTItem child1 = newI.getExtensionItem();
-                    XFTItem child2 = oldI.getExtensionItem();
-                    if (child1!=null && child2!=null){
-                        if (child1.hasUniques() && child2.hasUniques()){
-                            return CompareItemsByUniques(child1, child2);
-                        }
-                    }
-                }
-            }
-        }
-
-        return false;
+        final ItemEqualityI checker=new ItemUniqueEquality(false, checkExtensions);
+        return checker.isEqualTo(newI, oldI);
 
     }
 
@@ -6233,7 +6001,7 @@ public final class XFTItem extends GenericItemObject implements ItemI,Cloneable 
 	        GenericWrapperElement e = GenericWrapperElement.GetElement(this.getGenericSchemaElement().getFullXMLName() + "_history");
 
 	        try {
-                Hashtable hash = this.getPkValues();
+                Hashtable hash = (Hashtable)this.getPkValues();
 
                 Object o= null;
                 String key = null;
@@ -8027,7 +7795,7 @@ public final class XFTItem extends GenericItemObject implements ItemI,Cloneable 
     public String getPKString(){
         StringBuffer sb = new StringBuffer();
         try {
-            Hashtable<String,Object> hash = this.getPkValues();
+            Hashtable<String,Object> hash = (Hashtable<String,Object>)this.getPkValues();
             for (String key: hash.keySet()){
                 sb.append(key).append(EQUALS).append(hash.get(key));
             }
@@ -8039,7 +7807,7 @@ public final class XFTItem extends GenericItemObject implements ItemI,Cloneable 
     public String getPKValueString(){
         StringBuffer sb = new StringBuffer();
         try {
-            Hashtable<String,Object> hash = this.getPkValues();
+            Hashtable<String,Object> hash = (Hashtable<String,Object>)this.getPkValues();
             int count =0;
             for (String key: hash.keySet()){
                 if (count++>0)

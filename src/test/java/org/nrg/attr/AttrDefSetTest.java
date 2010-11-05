@@ -16,11 +16,11 @@ import org.junit.Test;
  */
 public class AttrDefSetTest {
   /**
-   * Test method for {@link org.nrg.attr.AttrDefSet#add(org.nrg.attr.ExtAttrDef)}.
+   * Test method for {@link org.nrg.attr.MutableAttrDefs#add(org.nrg.attr.ExtAttrDef)}.
    */
   @Test
   public void testAddExtAttrDefOfSV() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     Iterator<ExtAttrDef<NativeAttr,Float>> i = ads.iterator();
     assertFalse(i.hasNext());
 
@@ -33,11 +33,11 @@ public class AttrDefSetTest {
   }
 
   /**
-   * Test method for {@link org.nrg.attr.AttrDefSet#add(java.lang.String)}.
+   * Test method for {@link org.nrg.attr.MutableAttrDefs#add(java.lang.String)}.
    */
   @Test
   public void testAddString() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     Iterator<ExtAttrDef<NativeAttr,Float>> i = ads.iterator();
     assertFalse(i.hasNext());
 
@@ -49,11 +49,11 @@ public class AttrDefSetTest {
   }
 
   /**
-   * Test method for {@link org.nrg.attr.AttrDefSet#add(java.lang.String, java.lang.String)}.
+   * Test method for {@link org.nrg.attr.MutableAttrDefs#add(java.lang.String, java.lang.String)}.
    */
   @Test
   public void testAddStringString() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     Iterator<ExtAttrDef<NativeAttr,Float>> i = ads.iterator();
     assertFalse(i.hasNext());
 
@@ -65,11 +65,11 @@ public class AttrDefSetTest {
   }
 
   /**
-   * Test method for {@link org.nrg.attr.AttrDefSet#add(java.lang.String, java.lang.Object)}.
+   * Test method for {@link org.nrg.attr.MutableAttrDefs#add(java.lang.String, java.lang.Object)}.
    */
   @Test
   public void testAddStringS() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     Iterator<ExtAttrDef<NativeAttr,Float>> i = ads.iterator();
     assertFalse(i.hasNext());
 
@@ -86,7 +86,7 @@ public class AttrDefSetTest {
   @SuppressWarnings("unchecked")
   @Test
   public void testAddReadableAttrDefSetOfSVArray() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     Iterator<ExtAttrDef<NativeAttr,Float>> i = ads.iterator();
     assertFalse(i.hasNext());
     
@@ -98,12 +98,12 @@ public class AttrDefSetTest {
   }
 
   /**
-   * Test method for {@link org.nrg.attr.AttrDefSet#remove(java.lang.String)}.
+   * Test method for {@link org.nrg.attr.MutableAttrDefs#remove(java.lang.String)}.
    */
   @SuppressWarnings("unchecked")
   @Test
   public void testRemoveString() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     Iterator<ExtAttrDef<NativeAttr,Float>> i = ads.iterator();
     assertFalse(i.hasNext());
     
@@ -121,12 +121,12 @@ public class AttrDefSetTest {
   }
 
   /**
-   * Test method for {@link org.nrg.attr.AttrDefSet#remove(java.lang.Object)}.
+   * Test method for {@link org.nrg.attr.MutableAttrDefs#remove(java.lang.Object)}.
    */
   @SuppressWarnings("unchecked")
   @Test
   public void testRemoveS() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     Iterator<ExtAttrDef<NativeAttr,Float>> i = ads.iterator();
     assertFalse(i.hasNext());
     
@@ -154,11 +154,11 @@ public class AttrDefSetTest {
   }
 
   /**
-   * Test method for {@link org.nrg.attr.AttrDefSet#iterator()}.
+   * Test method for {@link org.nrg.attr.MutableAttrDefs#iterator()}.
    */
   @Test
   public void testIterator() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     Iterator<ExtAttrDef<NativeAttr,Float>> i = ads.iterator();
     assertFalse(i.hasNext());
 
@@ -169,12 +169,12 @@ public class AttrDefSetTest {
   }
 
   /**
-   * Test method for {@link org.nrg.attr.AttrDefSet#getExtAttrDef(java.lang.String)}.
+   * Test method for {@link org.nrg.attr.MutableAttrDefs#getExtAttrDef(java.lang.String)}.
    */
   @SuppressWarnings("unchecked")
   @Test
   public void testGetExtAttrDef() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     
     assertNull(ads.getExtAttrDef("ext-A"));
     
@@ -185,12 +185,12 @@ public class AttrDefSetTest {
   }
 
   /**
-   * Test method for {@link org.nrg.attr.AttrDefSet#getNativeAttrs()}.
+   * Test method for {@link org.nrg.attr.MutableAttrDefs#getNativeAttrs()}.
    */
   @SuppressWarnings("unchecked")
   @Test
   public void testGetNativeAttrs() {
-    final AttrDefSet<NativeAttr,Float> ads = new AttrDefSet<NativeAttr,Float>();
+    final MutableAttrDefs<NativeAttr,Float> ads = new MutableAttrDefs<NativeAttr,Float>();
     Iterator<NativeAttr> i = ads.getNativeAttrs().iterator();
     assertFalse(i.hasNext());
     

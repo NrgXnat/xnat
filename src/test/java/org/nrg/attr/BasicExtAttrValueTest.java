@@ -1,20 +1,19 @@
 package org.nrg.attr;
 
+import java.util.Arrays;
 import java.util.Collections;
+import java.util.Map;
+import java.util.regex.Pattern;
 
 import static org.junit.Assert.*;
 
-import org.junit.Before;
 import org.junit.Test;
 
 import org.nrg.attr.ExtAttrValue;
 
+import com.google.common.collect.ImmutableMap;
+
 public class BasicExtAttrValueTest {
-
-  @Before
-  public void setUp() throws Exception {
-  }
-
   @Test
   public final void testHashCode() {
     ExtAttrValue val1 = new BasicExtAttrValue("foo", "value");
@@ -107,11 +106,6 @@ public class BasicExtAttrValueTest {
   }
 
   @Test
-  public final void testGetText() {
-    testExtAttrValueString();
-  }
-
-  @Test
   public final void testGetAttrs() {
     final ExtAttrValue val1 = new BasicExtAttrValue("foo", null);
     assert(val1.getAttrs().isEmpty());
@@ -153,5 +147,31 @@ public class BasicExtAttrValueTest {
         new BasicExtAttrValue("ack", "thpthpppt",
             Utils.zipmap(new String[]{"baz", "boing"}, new String[]{"bar", "boing"})
         ).toString());
+  }
+  
+  @Test
+  public final void testAttributeMerge() {
+      final ExtAttrValue a = new BasicExtAttrValue("var", "A");
+      final ExtAttrValue b = new BasicExtAttrValue("var", "B",
+              ImmutableMap.of("attr1", "foo", "attr2", "bar"));
+      final ExtAttrValue c = new BasicExtAttrValue("var", "C",
+              ImmutableMap.of("attr2", "baz", "attr3", "moo"));
+      final ExtAttrValue merged = new BasicExtAttrValue(Arrays.asList(a, b, c));
+      assertEquals("var", merged.getName());
+      assertEquals("A,B,C", merged.getText());
+      final Map<String,String> attrs = merged.getAttrs();
+      assertEquals("foo", attrs.get("attr1"));
+      assertEquals("moo", attrs.get("attr3"));
+      final String attr2 = attrs.get("attr2");
+      assertTrue(Pattern.matches("\\w\\w\\w,\\w\\w\\w", attr2));
+      assertTrue(attr2.contains("bar"));
+      assertTrue(attr2.contains("baz"));
+  }
+  
+  @Test(expected=IllegalArgumentException.class)
+  public final void testAttributeMergeFail() {
+      final ExtAttrValue a = new BasicExtAttrValue("a", "A");
+      final ExtAttrValue b = new BasicExtAttrValue("b", "B");
+      new BasicExtAttrValue(Arrays.asList(a, b));
   }
 }

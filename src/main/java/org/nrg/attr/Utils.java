@@ -5,6 +5,7 @@ package org.nrg.attr;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -114,8 +115,15 @@ public final class Utils {
 	}
 
 
-	public final static class MaybeNumericStringComparator implements Comparator<String> {
-		public int compare(final String o1, final String o2) {
+	public final static class MaybeNumericStringComparator
+	implements Comparator<String>,Serializable {
+        private static final long serialVersionUID = 7748262008072773193L;
+
+        /*
+         * (non-Javadoc)
+         * @see java.util.Comparator#compare(java.lang.Object, java.lang.Object)
+         */
+        public int compare(final String o1, final String o2) {
 			try {
 				final int i1 = Integer.parseInt(o1);
 				final int i2 = Integer.parseInt(o2);
@@ -125,10 +133,21 @@ public final class Utils {
 			}
 		}
 
+        /*
+         * (non-Javadoc)
+         * @see java.lang.Object#equals(java.lang.Object)
+         */
 		@Override
 		public boolean equals(final Object o) {
 			return o instanceof MaybeNumericStringComparator;
 		}
+		
+		/*
+		 * (non-Javadoc)
+		 * @see java.lang.Object#hashCode()
+		 */
+		@Override
+		public int hashCode() { return 0; }
 	}
 
 	public final static <K,V> Map<K,V> zipmap(final Map<K,V> m, final K[] ks, final V[] vs) {

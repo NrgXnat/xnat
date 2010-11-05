@@ -16,7 +16,7 @@
   	</developer>
   </developers>
   <scm>
-  	<url>http://hg.xnat.org/extattr</url>
+  	<url>http://hg.xnat.org/extattr-mf</url>
   </scm>
   <organization>
   	<name>Washington University Neuroinformatics Research Group</name>
@@ -37,21 +37,21 @@
   <groupId>org.nrg</groupId>
   <artifactId>ExtAttr</artifactId>
   <packaging>jar</packaging>
-  <version>1.5.1</version>
   <name>External Attribute library</name>
+  <version>2.0.0b1</version>
   <description>Library for converting native image metadata formats (e.g., DICOM, ECAT) into a unified external format (XNAT).</description>
   <url>http://nrg.wustl.edu</url>
   <dependencies>
     <dependency>
       <groupId>junit</groupId>
       <artifactId>junit</artifactId>
-      <version>4.0</version>
+      <version>4.8.2</version>
       <scope>test</scope>
     </dependency>
     <dependency>
     	<groupId>com.google.guava</groupId>
     	<artifactId>guava</artifactId>
-    	<version>r06</version>
+    	<version>r07</version>
     </dependency>
   </dependencies>
 </project>

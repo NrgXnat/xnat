@@ -10,6 +10,7 @@
 package org.nrg.xdat.security;
 
 import java.io.File;
+import java.io.Serializable;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -64,8 +65,9 @@ import org.nrg.xft.utils.StringUtils;
  * @author Tim
  *
  */
-@SuppressWarnings({"serial","unchecked"})
-public class XDATUser extends XdatUser implements UserI{
+@SuppressWarnings({"unchecked"})
+public class XDATUser extends XdatUser implements UserI, Serializable{
+	private static final long serialVersionUID = -8144623503683531831L;
 	static Logger logger = Logger.getLogger(XDATUser.class);
 	public static final String USER_ELEMENT ="xdat:user";
 	private boolean loggedIn = false;
@@ -2227,7 +2229,7 @@ public class XDATUser extends XdatUser implements UserI{
      * @param rootElement
      * @return
      */
-    public ArrayList getQueryResults(String xmlPaths, String rootElement){
+    public List<List> getQueryResults(String xmlPaths, String rootElement){ 
         ArrayList results = new ArrayList();
         try {
 

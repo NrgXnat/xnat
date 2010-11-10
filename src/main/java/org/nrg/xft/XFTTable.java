@@ -1185,5 +1185,39 @@ public class XFTTable implements XFTTableI {
 		writer.write("</tbody>\n</table>");
 		writer.flush();
 	}
+	
+	public void sort(final List<String> sortColumns){
+		final List<Integer> indexes=new ArrayList<Integer>();
+		
+		for(final String col:sortColumns){
+			final Integer i=this.getColumnIndex(col);
+			if(i!=null){
+				indexes.add(i);
+			}
+}
+
+		Collections.sort(rows,new Comparator<Object[]>(){
+			public int compare(Object[] o1, Object[] o2) {
+				for(final Integer i:indexes){
+					try {
+						@SuppressWarnings({ "unchecked", "rawtypes" })
+						//contents could be String, Number or Date
+						int c=((Comparable)o1[i]).compareTo(((Comparable)o2[i]));
+						if(c!=0){
+							return c;
+						}
+					} catch (ClassCastException e) {
+						//ignore non comparables for now.
+						logger.error("",e);
+					}
+				}
+				
+				return 0;
+			}});		
+	}
+	
+	public void reverse(){
+		Collections.reverse(rows);
+	}
 }
 

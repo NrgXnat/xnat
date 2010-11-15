@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007,2009 Washington University
+ * Copyright (c) 2007,2009,2010 Washington University
  */
 package org.nrg.attr;
 

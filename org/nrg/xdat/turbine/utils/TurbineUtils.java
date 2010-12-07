@@ -15,6 +15,7 @@ import java.net.URLDecoder;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Enumeration;
@@ -965,6 +966,10 @@ public class TurbineUtils {
     
     public String escapeJS(String o){
     	return (o==null)?null:StringEscapeUtils.escapeJavaScript(o);
+    }
+    
+    public int getYear(){
+    	return Calendar.getInstance().get(Calendar.YEAR);
     }
 }
 

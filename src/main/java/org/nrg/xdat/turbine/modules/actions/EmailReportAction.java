@@ -33,7 +33,7 @@ public class EmailReportAction extends EmailAction {
         if (!toAddress.equals("") || !ccAddress.equals("") || !bccAddress.equals("")) {	
         	try {
 				EmailerI sm=EmailUtils.getEmailer();
-				sm.setFrom(TurbineUtils.getUser(data).getEmail());
+				sm.setFrom(AdminUtils.getAdminEmailId());
 				
 				if (!toAddress.equals("")){ 
 				    ArrayList al = StringUtils.CommaDelimitedStringToArrayList(toAddress.substring(0,toAddress.lastIndexOf(",")));

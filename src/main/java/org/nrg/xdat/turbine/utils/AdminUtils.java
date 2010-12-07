@@ -64,12 +64,10 @@ public class AdminUtils {
     }
     
 	/** 
-	 * Gets the Web App URL. Invoked to send emails
+	 * Gets the Admin's Email Address.
 	 * 
-	 * @return web app URL
+	 * @return admin email address
 	 */
-	 
-
 	 public static String getAdminEmailId() {
 	 	return XFT.GetAdminEmail();
 	 }

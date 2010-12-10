@@ -150,6 +150,35 @@ public class DBAction {
 	   
 	}
 	
+	public static void executeCache(final DBItemCache cache, final UserI user, final String db, final String logFileName) throws Exception{
+		 	XFT.LogInsert(cache.getSQL(),logFileName);
+		   
+		    PoolDBUtils con = null;
+			try {
+				String username = null;
+				Integer xdat_user_id = null;
+				if (user != null)
+				{
+				    username = user.getUsername();
+				    xdat_user_id=user.getID();
+				}
+
+                if(cache.getRemoved().size()>0){
+                	PerformUpdateTriggers(cache,username,xdat_user_id,false);
+                }
+                
+                con = new PoolDBUtils();				
+				con.sendBatch(cache,db,username);
+				
+				PerformUpdateTriggers(cache,username,xdat_user_id,false);
+                
+			} catch (SQLException e) {
+				throw e;
+			} catch (Exception e) {
+				throw e;
+			}
+	}
+	
 	/**
 	 * This method is used to insert/update an item into the database.
 	 * 

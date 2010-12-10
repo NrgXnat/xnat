@@ -24,6 +24,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.spi.LoggerRepository;
 import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.references.XFTPseudonymManager;
@@ -237,6 +238,45 @@ public class XFT {
 	public static void LogError(Object message, Throwable e)
 	{
 		logger.error(message,e);
+	}
+	
+	public static String buildLogFileName(ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException{
+        String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
+        if(!(new File(s)).exists())
+        {
+            (new File(s)).mkdir();
+        }
+        
+        s += "inserts/";
+        if(!(new File(s)).exists())
+        {
+            (new File(s)).mkdir();
+        }
+        
+        String fileName = item.getItem().getProperName();
+        
+	    Iterator iter = item.getItem().getGenericSchemaElement().getAllPrimaryKeys().iterator();
+	    while (iter.hasNext())
+	    {
+	        SchemaFieldI sf = (SchemaFieldI)iter.next();
+	        Object pk = item.getProperty(sf.getXMLPathString(item.getXSIType()));
+	        
+	        fileName += "_" + pk;
+	    }
+	    
+	    if ((new File(s + fileName + ".sql")).exists())
+	    {
+	        int counter = 0;
+	        while ((new File(s + fileName + "_" + counter + ".sql")).exists())
+	        {
+	            counter ++;
+	        }
+	        fileName = fileName+ "_" + counter;
+	    }
+	    
+	    fileName += ".sql";
+	    
+	    return fileName;
 	}
 	
 	public static void LogInsert(String message, String fileName)

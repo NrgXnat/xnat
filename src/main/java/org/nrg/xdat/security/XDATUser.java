@@ -83,6 +83,11 @@ public class XDATUser extends XdatUser implements UserI{
 
 	private String bundleHTMLMenu = null;
 
+	/**
+	 * DO NOT USE THIS.  IT is only for use in unit testings.  Use XDATUser(login).
+	 */
+	public XDATUser(){}
+	
 	public XDATUser(String login) throws XFTInitException, ElementNotFoundException, DBPoolException, java.sql.SQLException,FieldNotFoundException,UserNotFoundException,Exception
 	{
 	    super((UserI)null);

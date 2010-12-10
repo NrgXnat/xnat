@@ -17,7 +17,9 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Calendar;
 import java.util.Iterator;
 import java.util.Properties;
 import java.util.zip.GZIPInputStream;
@@ -880,6 +882,15 @@ public  class FileUtils
         }
     }
     
+	public static String renameWTimestamp(final String n){
+		return n + "_" + getTimestamp();
+	}
+	
+	public static String getTimestamp(){
+		final SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss");
+		return sdf.format(Calendar.getInstance().getTime());
+	}
+    
     public static void MoveToCache(File f) throws FileNotFoundException, IOException{
 		String cache = XFT.GetCachePath();
 		if(cache.equals(""))
@@ -887,6 +898,8 @@ public  class FileUtils
 		    cache="/cache/";
 		}
 		cache=AppendSlash(cache)+"DELETED";
+		
+		cache=AppendSlash(cache)+getTimestamp();		
 		
 		String path=f.getAbsolutePath();
 			

@@ -11,7 +11,7 @@ import java.util.Iterator;
 import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.UserCache;
+import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -71,10 +71,15 @@ public class GetIdentifiers {
 			}
 			Object o = _value;
 			XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
+            
+            Authorizer.getInstance().authorizeRead(gwe, user);
             if (user == null)
             {
                 throw new Exception("Invalid User.");
             }
+            
+            Authorizer.getInstance().authorizeRead(gwe, user);
+            
 			al =  FieldValues.GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,null);
 			if(al.size()==0 && _field.endsWith(".ID")){
 				_field= _field.substring(0,_field.length()-2) + "label";
@@ -154,6 +159,9 @@ public class GetIdentifiers {
             {
                 throw new Exception("Invalid User.");
             }
+            
+            Authorizer.getInstance().authorizeRead(gwe, user);
+            
 			al =  FieldValues.GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,null);
 	
 			if(al.size()==0 && _field.endsWith(".ID")){

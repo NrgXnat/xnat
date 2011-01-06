@@ -11,12 +11,9 @@ import java.util.Calendar;
 import java.util.Date;
 import java.util.Iterator;
 
-import javax.mail.MessagingException;
 import javax.mail.internet.InternetAddress;
 
-import org.apache.commons.mail.HtmlEmail;
 import org.apache.log4j.Logger;
-import org.apache.turbine.Turbine;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.Velocity;
@@ -31,6 +28,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
 /**
@@ -418,7 +416,7 @@ public class AdminUtils {
                 }   
         }
         
-        public static void sendAdminEmail(XDATUser user, String subject, String message){
+        public static void sendAdminEmail(UserI user, String subject, String message){
                 try {
                 	EmailerI sm = EmailUtils.getEmailer();
                     sm.setFrom(getAdminEmailId());
@@ -430,7 +428,7 @@ public class AdminUtils {
                     
                     StringBuffer sb = new StringBuffer();
                     sb.append("HOST: ").append(TurbineUtils.GetFullServerPath()).append("<BR>");
-                    if(user!=null)sb.append("USER: ").append(user.getLogin()).append("(").append(user.getFirstname()).append(" ").append(user.getLastname()).append(")").append("<BR>");
+                    if(user!=null)sb.append("USER: ").append(user.getUsername()).append("(").append(user.getFirstname()).append(" ").append(user.getLastname()).append(")").append("<BR>");
                     sb.append("TIME: ").append(java.util.Calendar.getInstance().getTime()).append("<BR>");
                     sb.append("MESSAGE: ").append(message).append("<BR>");
                     

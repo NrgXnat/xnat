@@ -3,6 +3,7 @@ package org.nrg.xft.utils;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
@@ -21,12 +22,7 @@ public class SaveItemHelper {
 			throw new NullPointerException();
 		}
 
-		if(i.getItem().getGenericSchemaElement().getType().getForeignPrefix().equals(XFT.PREFIX)){
-        	if (user!=null && !((XDATUser)user).checkRole("Administrator"))
-            {
-        		throw new InvalidPermissionException("Only site administrators can store core documents.");
-            }
-        }
+		Authorizer.getInstance().authorizeSave(i.getItem().getGenericSchemaElement(), user);
 
 		if(i instanceof XFTItem){
 			ItemI temp=BaseElement.GetGeneratedItem(i);
@@ -41,12 +37,7 @@ public class SaveItemHelper {
 			throw new NullPointerException();
 		}
 
-		if(i.getItem().getGenericSchemaElement().getType().getForeignPrefix().equals(XFT.PREFIX)){
-        	if (user!=null && !((XDATUser)user).checkRole("Administrator"))
-            {
-        		throw new InvalidPermissionException("Only site administrators can store core documents.");
-            }
-        }
+		Authorizer.getInstance().authorizeSave(i.getItem().getGenericSchemaElement(), user);
 
 		if(i instanceof XFTItem){
 			ItemI temp=BaseElement.GetGeneratedItem(i);

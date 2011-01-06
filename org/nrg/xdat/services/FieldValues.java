@@ -14,6 +14,7 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xdat.security.Authenticator;
+import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.UserCache;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.FailedLoginException;
@@ -25,6 +26,7 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 /**
@@ -79,6 +81,9 @@ public class FieldValues {
             {
                 throw new Exception("Invalid User.");
             }
+            
+            Authorizer.getInstance().authorizeRead(GenericWrapperElement.GetElement(elementName), user);
+            
 			al =  GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,_order);
 	
 			if(al.size()==0 && _field.endsWith(".ID")){
@@ -177,6 +182,8 @@ public class FieldValues {
             {
                 throw new Exception("Invalid User.");
             }
+            Authorizer.getInstance().authorizeRead(GenericWrapperElement.GetElement(elementName), user);
+            
 			al =  GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,_order);
 			if(al.size()==0 && _field.endsWith(".ID")){
 				_field= _field.substring(0,_field.length()-2) + "label";

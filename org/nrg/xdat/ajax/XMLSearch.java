@@ -20,6 +20,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFTItem;
@@ -57,6 +58,9 @@ public class XMLSearch {
                 
                 XdatStoredSearch xss = new XdatStoredSearch(item);
                 ItemSearch search= xss.getItemSearch(user);
+                
+                Authorizer.getInstance().authorizeRead(search.getElement(), user);
+                
                 ItemCollection items =search.exec(allowChildren);
                 if (items.size()>1 || items.size()==0){
                     response.getWriter().write("<matchingResults xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">");

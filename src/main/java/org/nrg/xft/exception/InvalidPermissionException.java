@@ -14,7 +14,7 @@ package org.nrg.xft.exception;
 public class InvalidPermissionException extends Exception {
 
     public InvalidPermissionException(String error) {
-    	super("This user has insufficient create privileges for the data type '" +error + "'.");	
+    	super("This user has insufficient privileges for the data type '" +error + "'.");	
     }
 
 }

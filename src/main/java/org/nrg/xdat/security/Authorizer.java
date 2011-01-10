@@ -23,7 +23,6 @@ public class Authorizer implements AuthorizerI{
 		return new Authorizer();
 	}
 	
-	@Override
 	public void authorizeRead(final GenericWrapperElement e, final UserI user) throws Exception {
 		if(protectedNamespace.get(READ).contains(e.getType().getForeignPrefix())){
         	if (user!=null && !((XDATUser)user).checkRole("Administrator"))
@@ -40,7 +39,6 @@ public class Authorizer implements AuthorizerI{
 			put(SAVE,Arrays.asList(new String[]{XFT.PREFIX,"arc"}));
 		}};
 	
-	@Override
 	public void authorizeSave(final GenericWrapperElement e, final UserI user) throws Exception{
 		if(protectedNamespace.get(SAVE).contains(e.getType().getForeignPrefix())){
         	if (user!=null && !((XDATUser)user).checkRole("Administrator"))

@@ -131,7 +131,9 @@ public class XFTTable implements XFTTableI {
 		    String header = (String)cIter.next();
 		    columns[counter++]=header;
 		}
-		rows = newRows;
+		// Clone passed instance so this reference is different from that in the calling class
+		rows = (ArrayList)newRows.clone();
+		numRows+=rows.size();
 	}
 	
 	/**

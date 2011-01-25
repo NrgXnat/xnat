@@ -11,6 +11,8 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Objects;
+import com.google.common.base.Strings;
 import com.google.common.collect.LinkedHashMultimap;
 import com.google.common.collect.Maps;
 import com.google.common.collect.SetMultimap;
@@ -45,27 +47,18 @@ public final class BasicExtAttrValue implements ExtAttrValue {
 
 	@Override
 	public int hashCode() {
-		int code = 17;      // generate a good hashCode a la Bloch
-		assert name != null;
-		code = 37*code + name.hashCode();
-		if (textValue != null) {
-			code = 37*code + textValue.hashCode();
-		}
-		if (attrValues != null) {
-			code = 37*code + attrValues.hashCode();
-		}
-		return code;
+		return Objects.hashCode(name, textValue, attrValues);
 	}
 
 	@Override
 	public String toString() {
 		final StringBuilder sb = new StringBuilder("<");
 		sb.append(name);
-		for (final String attrName : attrValues.keySet()) {
+		for (final Map.Entry<String,String> me : attrValues.entrySet()) {
 			sb.append(" ");
-			sb.append(attrName);
+			sb.append(me.getKey());
 			sb.append("=\"");
-			sb.append(attrValues.get(attrName));
+			sb.append(me.getValue());
 			sb.append("\"");
 		}
 		if (null == textValue) {
@@ -96,7 +89,7 @@ public final class BasicExtAttrValue implements ExtAttrValue {
 		this(name, value, null);
 	}
 
-	public BasicExtAttrValue(final Collection<ExtAttrValue> toMerge) {
+	public BasicExtAttrValue(final Iterable<ExtAttrValue> toMerge) {
 		this(extractMergedName(toMerge.iterator()),
 				mergeText(",", toMerge.iterator()),
 				mergeAttrs(",", toMerge.iterator()));
@@ -119,28 +112,15 @@ public final class BasicExtAttrValue implements ExtAttrValue {
 		}
 	}
 
-	private final static boolean isEmptyText(final String s) {
-		return null == s || "".equals(s);
-	}
-
 	private final static String mergeText(final String separator, final Iterator<ExtAttrValue> vi) {
 		final Set<String> textvs = Sets.newLinkedHashSet();
 		while (vi.hasNext()) {
 			final String text = vi.next().getText();
-			if (!isEmptyText(text)) {
+			if (!Strings.isNullOrEmpty(text)) {
 				textvs.add(text);
 			}
 		}
-		final StringBuilder sb = new StringBuilder();
-		boolean isEmpty = true;
-		for (final String text : textvs) {
-			if (!isEmpty) {
-				sb.append(separator);
-			}
-			sb.append(text);
-			isEmpty = false;
-		}
-		return sb.toString();
+		return Joiner.on(separator).join(textvs);
 	}
 
 	private final static Map<String,String> mergeAttrs(final String separator, final Iterator<ExtAttrValue> vi) {
@@ -152,7 +132,7 @@ public final class BasicExtAttrValue implements ExtAttrValue {
 			}
 		}
 
-		final Joiner joiner = Joiner.on(separator);
+		final Joiner joiner = Joiner.on(separator).skipNulls();
 		final Map<String,String> merged = Maps.newLinkedHashMap();
 		for (final Map.Entry<String,Collection<String>> vme : vals.asMap().entrySet()) {
 			merged.put(vme.getKey(), joiner.join(vme.getValue()));

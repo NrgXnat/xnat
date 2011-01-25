@@ -1,21 +1,16 @@
 /**
- * Copyright (c) 2009 Washington University
+ * Copyright (c) 2009,2011 Washington University
  */
 package org.nrg.attr;
 
 import java.util.Map;
-import java.util.Set;
 
 /**
- * @author Kevin A. Archie <karchie@npg.wustl.edu>
+ * @author Kevin A. Archie <karchie@wustl.edu>
  *
  */
 public interface ExtAttrValue {
-  Map<String,String> getAttrs();
-  @Deprecated
-  Set<String> getAttrNames();
-  @Deprecated
-  String getAttrValue(String name);
-  String getName();
-  String getText();
+	Map<String,String> getAttrs();
+	String getName();
+	String getText();
 }

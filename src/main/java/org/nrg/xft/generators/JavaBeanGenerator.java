@@ -165,7 +165,7 @@ public class JavaBeanGenerator {
                         sb.append("\n\t * " + xmlPath);
                         sb.append("\n\t * Adds org.nrg.xdat.model.").append(foreignInterface).append("\n\t */");
                         sb.append("\n\t").append("public <A extends ").append(INTERFACE_PACKAGE +".").append(foreignInterface).append("> void add").append(formatted).append("(A item) throws Exception{"); 
-                        sb.append("\n\t").append("add").append(formatted).append("(item);"); 
+                        sb.append("\n\t_" + formatted).append(".add").append("(("+project + ".bean.").append(foreignClassName+")item);"); 
                         sb.append("\n\t}");
                         
                         sb.append("\n\n");

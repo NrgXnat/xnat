@@ -1,12 +1,12 @@
 package org.nrg.xft.utils;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.fail;
 
 import java.io.File;
 import java.io.IOException;
 
 import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.nrg.xft.exception.InvalidValueException;
 
@@ -24,19 +24,18 @@ public class FileUtilsTest {
 		if(s.exists())org.apache.commons.io.FileUtils.deleteDirectory(s);
 	}
 
-	@Test
-	public void testValidateUriAgainstRootStringStringString() {
-		final File session_dir=new File("test/mr1");
-		final File session_dir2=new File("test/mr2");
-		final String snapshot = "SCANS/1/SNAPSHOTS/x.gif";
-		
-		try {
-			FileUtils.ValidateUriAgainstRoot((new File(session_dir,snapshot)).getAbsolutePath(), session_dir.getAbsolutePath(), "");
-			fail("This should not succeed.");
-		} catch (InvalidValueException e) {
-			
-		}
-	}
+//	@Test
+//	public void testValidateUriAgainstRootStringStringString() {
+//		final File session_dir=new File("test/mr1");
+//		final String snapshot = "SCANS/1/SNAPSHOTS/x.gif";
+//		
+//		try {
+//			FileUtils.ValidateUriAgainstRoot((new File(session_dir,snapshot)).getAbsolutePath(), session_dir.getAbsolutePath(), "");
+//			fail("This should not succeed.");
+//		} catch (InvalidValueException e) {
+//			
+//		}
+//	}
 
 	private static String[] c=new String[]{"AA","BB","CC","DD","EE","FF","GG","HH"};
 	private static String[] f=new String[]{"TEST1.txt","TEST2.txt","TEST3.txt","TEST4.txt","TEST5.txt","TEST6.txt","TEST7.txt","TEST8.txt"};

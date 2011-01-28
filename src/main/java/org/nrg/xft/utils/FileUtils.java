@@ -570,7 +570,7 @@ public  class FileUtils
 	        {
 	        	final File match=FindFirstMatch(f,dF,filter);
 	        	if(match!=null)return match;
-	        }else if(filter==null || filter.accept(src)){
+	        }else if(filter==null || filter.accept(f)){
 	            if(dF.exists()){
 	            	return dF;
 	            }

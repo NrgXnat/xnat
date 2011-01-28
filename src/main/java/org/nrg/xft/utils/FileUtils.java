@@ -8,9 +8,11 @@ package org.nrg.xft.utils;
 
 import java.io.DataInputStream;
 import java.io.File;
+import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -21,6 +23,7 @@ import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Properties;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
@@ -41,7 +44,6 @@ import org.nrg.xft.exception.XFTInitException;
 public  class FileUtils
 {
 	static org.apache.log4j.Logger logger = Logger.getLogger(FileUtils.class);
-	private static FileUtils _fileUtils = null;
 
 	public static final int LARGE_DOWNLOAD=1000*1024;
 	public static final int SMALL_DOWNLOAD=8*1024;
@@ -524,69 +526,119 @@ public  class FileUtils
 		}
 	}
 
-	public static void CopyDir(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
-	    if (!dest.exists())
-	    {
-		    dest.mkdir();
-	    }
-
-	    File[] files = src.listFiles();
-	    for (int i=0;i<files.length;i++){
-	        File f = files[i];
-	        String file_name = f.getName();
-            String destPath = dest.getAbsolutePath();
-            if (!destPath.endsWith(File.separator)){
-                destPath += File.separator;
-            }
+	/**
+	 * Return a List of duplicate Files
+	 * 
+	 * @param src
+	 * @param dest
+	 * @param filter
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public static List<File> CompareDirectories(File src, File dest, FileFilter filter) throws FileNotFoundException,IOException{
+	    final List<File> match=new ArrayList<File>();
+		for (final File f: src.listFiles()){
+			final File dF=(new File(dest,f.getName()));
 	        if (f.isDirectory())
 	        {
-	            CopyDir(f,new File(destPath + file_name),overwrite);
+	        	match.addAll(CompareDirectories(f,dF,filter));
+	        }else if(filter==null || filter.accept(src)){
+	            if(dF.exists()){
+	            	match.add(dF);
+	            }
+	        }
+	    }
+		return match;
+	}
+
+
+	/**
+	 * Return a List of duplicate Files
+	 * 
+	 * @param src
+	 * @param dest
+	 * @param filter
+	 * @return
+	 * @throws FileNotFoundException
+	 * @throws IOException
+	 */
+	public static File FindFirstMatch(File src, File dest, FileFilter filter) throws FileNotFoundException,IOException{
+	    for (final File f: src.listFiles()){
+	    	final File dF=(new File(dest,f.getName()));
+	        if (f.isDirectory())
+	        {
+	        	final File match=FindFirstMatch(f,dF,filter);
+	        	if(match!=null)return match;
+	        }else if(filter==null || filter.accept(src)){
+	            if(dF.exists()){
+	            	return dF;
+	            }
+	        }
+	    }
+	    
+	    return null;
+	}
+	
+	public static void CopyDir(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
+		CopyDir(src,dest,overwrite,null);
+	}
+	
+	public static void CopyDir(File src, File dest,boolean overwrite, FileFilter filter) throws FileNotFoundException,IOException{
+		if(!overwrite){
+			final File match=FindFirstMatch(src, dest, filter);
+			if(match!=null){
+				throw new IOException(match.getName() + " already exists.");
+			}
+		}
+		
+		CopyDirImpl(src,dest,overwrite,filter);
+	}
+	
+	private static void CopyDirImpl(File src, File dest,boolean overwrite, FileFilter filter) throws FileNotFoundException,IOException{
+	    if (!dest.exists())
+	    {
+		    dest.mkdirs();
+	    }
+
+	    for (final File f: src.listFiles()){
+	    	final File dChild=new File(dest,f.getName());
+	    	if(filter==null || filter.accept(dChild)){
+	        if (f.isDirectory())
+	        {
+		        	CopyDirImpl(f,dChild,overwrite,filter);
 	        }else{
-	            CopyFile(f,new File(destPath + file_name),overwrite);
+		            CopyFile(f,dChild,overwrite);
+		        }
 	        }
 	    }
 	}
 
 	public static void CopyFile(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
-        InputStream in = new FileInputStream(src);
-
-        try{
-	        if (dest.exists() && dest.isFile() && overwrite) {
-	            dest.delete();
+        if (dest.exists() && !overwrite){
+            return;
 	        }
 	
-	        if (!dest.exists())
-	        {
-	    	    try {
-	                dest.createNewFile();
-	            } catch (java.io.IOException e) {
-	                logger.error("Unable to create file: " + dest.getAbsolutePath());
-	                throw e;
-	            }
-	        }else if (!overwrite){
-	            return;
-	        }
-	        OutputStream out = new FileOutputStream(dest);
-	
-	        try{
-		        // Transfer bytes from in to out
-		        byte[] buf = new byte[FileUtils.SMALL_DOWNLOAD];
-		        int len;
-		        while ((len = in.read(buf)) > 0) {
-		            out.write(buf, 0, len);
-		        }
-		        out.flush();
-	        }finally{
-	            try{out.close();}catch(Exception e){}
-	        }
-        }finally{
-            try{in.close();}catch(Exception e){}
-        }
+        org.apache.commons.io.FileUtils.copyFile(src, dest);
     }
 
 
 	public static void MoveDir(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
+		MoveDir(src,dest,overwrite,null);
+	}
 
+	public static void MoveDir(File src, File dest,boolean overwrite, FileFilter filter) throws FileNotFoundException,IOException{
+		if(!overwrite){
+			final File match=FindFirstMatch(src, dest, filter);
+			if(match!=null){
+				throw new IOException(match.getName() + " already exists.");
+			}
+		}
+		
+		MoveDirImpl(src,dest,overwrite,filter);
+	}
+	
+	private static void MoveDirImpl(File src, File dest,boolean overwrite, FileFilter filter) throws FileNotFoundException,IOException{
         boolean moved = false;
 
         if (!dest.exists()){
@@ -599,32 +651,31 @@ public  class FileUtils
 
         if (!moved)
         {
-            System.out.println("Rename failed: " + dest.getAbsolutePath() +"... moving.");
             if (!dest.exists())
             {
                 dest.mkdirs();
             }
             if (src!=null && src.exists()){
-                File[] files = src.listFiles();
-                for (int i=0;i<files.length;i++){
-                    File f = files[i];
-                    String file_name = f.getName();
+                for (final File f: src.listFiles()){
+                	final File dChild=new File(dest,f.getName());
+        	    	if(filter==null || filter.accept(dChild)){
                     if (f.isDirectory())
                     {
-                        MoveDir(f,new File(dest.getAbsolutePath() + File.separator + file_name),overwrite);
+	                    	MoveDirImpl(f,dChild,overwrite,filter);
                     }else{
                     	try{
-                          MoveFile(f,new File(dest.getAbsolutePath() + File.separator + file_name),overwrite);
+	                          MoveFile(f,dChild,overwrite);
                     	}catch(FileNotFoundException e){
                     		logger.warn("", e);
                     	}
                     }
                 }
+                }
 
+                if(src.listFiles()==null || src.listFiles().length==0){
                 src.delete();
             }
-        }else{
-            System.out.println("Rename successful: " + dest.getAbsolutePath());
+            }
         }
 	}
 	
@@ -639,48 +690,15 @@ public  class FileUtils
                 } catch (Throwable e) {
                     logger.error("",e);
                 }
+            }else if (!overwrite){
+                return;
+            }else{
+            	dest.delete();
             }
     
             if (!moved)
             {
-                System.out.println("Rename failed: " + dest.getAbsolutePath() +"... moving.");
-                InputStream in =null;
-        	    OutputStream out=null;
-                try{
-	                in = new FileInputStream(src);
-	    
-	                if (!dest.exists())
-	                {
-	                    dest.getParentFile().mkdirs();
-	                    dest.createNewFile();
-	                }else if (!overwrite){
-	                    return;
-	                }
-	                out = new FileOutputStream(dest);
-	    
-	                // Transfer bytes from in to out
-	                byte[] buf = new byte[FileUtils.SMALL_DOWNLOAD];
-	                int len;
-	                while ((len = in.read(buf)) > 0) {
-	                    out.write(buf, 0, len);
-	                }
-	                
-	    
-	                src.delete();
-                }catch(IOException t){
-                	throw t;
-                }finally{
-                	try {
-	                    if(in!=null)in.close();
-	                } catch (IOException e) {
-	                }
-                	try {
-	                    if(out!=null)out.close();
-	                } catch (IOException e) {
-	                }
-                }
-            }else{
-                System.out.println("Rename successful: " + dest.getAbsolutePath());
+            	org.apache.commons.io.FileUtils.moveFile(src,dest);
             }
             
             if(deleteDIR){
@@ -966,5 +984,15 @@ public  class FileUtils
 			}
 		}
     }
+	public static void deleteQuietly(File src){
+		if(src.exists())org.apache.commons.io.FileUtils.deleteQuietly(src);
+	}
+	public static void deleteDirQuietly(File s){
+		if(s.exists())
+			try {
+				org.apache.commons.io.FileUtils.deleteDirectory(s);
+			} catch (IOException e) {
+			}
+	}
 }
 

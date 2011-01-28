@@ -6,13 +6,11 @@
 package org.nrg.xft.generators;
 
 import java.io.File;
-import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -162,13 +160,21 @@ public class JavaBeanGenerator {
                         sb.append("\n\t\t_" + formatted + ".add(v);");
                         sb.append("\n\t}");
                         
+                        sb.append("\n");
+                        sb.append("\n\t/**");
+                        sb.append("\n\t * " + xmlPath);
+                        sb.append("\n\t * Adds org.nrg.xdat.model.").append(foreignInterface).append("\n\t */");
+                        sb.append("\n\t").append("public <A extends ").append(INTERFACE_PACKAGE +".").append(foreignInterface).append("> void add").append(formatted).append("(A item) throws Exception{"); 
+                        sb.append("\n\t").append("add").append(formatted).append("(item);"); 
+                        sb.append("\n\t}");
+                        
                         sb.append("\n\n");
                         sb.append("\t/**\n\t * Adds the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sb.append("\n\t").append("public void add").append(formatted).append("(Object v) throws BaseElement.FormatException{");
+                        sb.append("\n\t").append("public void add").append(formatted).append("(Object v){");
                         sb.append("\n\t\tif (v instanceof "+ project + ".bean.").append(foreignClassName).append(")");
                         sb.append("\n\t\t\t_" + formatted + ".add(("+ project + ".bean.").append(foreignClassName).append(")v);");
                         sb.append("\n\t\telse");
-                        sb.append("\n\t\t\tthrow new BaseElement.FormatException(\"Must be a valid "+ project + ".bean.").append(foreignClassName).append("\");");
+                        sb.append("\n\t\t\tthrow new IllegalArgumentException(\"Must be a valid "+ project + ".bean.").append(foreignClassName).append("\");");
                         sb.append("\n\t}");
                        
 
@@ -203,11 +209,19 @@ public class JavaBeanGenerator {
                             
                             sb.append("\n\n");
                             sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                            sb.append("\n\t").append("public void set").append(formatted).append("(Object v) throws BaseElement.FormatException{");
+                            sb.append("\n\t").append("public void set").append(formatted).append("(Object v) {");
                             sb.append("\n\t\tif (v instanceof "+ project + ".bean.").append(foreignClassName).append(")");
                             sb.append("\n\t\t\t_").append(formatted + " =("+ project + ".bean.").append(foreignClassName).append(")v;");
                             sb.append("\n\t\telse");
-                            sb.append("\n\t\t\tthrow new BaseElement.FormatException(\"Must be a valid "+ project + ".bean.").append(foreignClassName).append("\");");
+                            sb.append("\n\t\t\tthrow new IllegalArgumentException(\"Must be a valid "+ project + ".bean.").append(foreignClassName).append("\");");
+                            sb.append("\n\t}");
+
+                            sb.append("\n");
+                            sb.append("\n\t/**");
+                            sb.append("\n\t * " + xmlPath);
+                            sb.append("\n\t * @return ").append(INTERFACE_PACKAGE +".").append(foreignInterface).append("\n\t */");
+                            sb.append("\n\t").append("public <A extends ").append(INTERFACE_PACKAGE +".").append(foreignInterface).append("> void set").append(formatted).append("(A item) throws Exception{");
+                            sb.append("\n\t").append("set").append(formatted).append("(("+ project + ".bean." + foreignClassName +")item);");
                             sb.append("\n\t}");
 
                         
@@ -352,21 +366,34 @@ public class JavaBeanGenerator {
                         sb.append("\n\t\treturn _" + formatted +";");
                         sb.append("\n\t}");
 
+//                        //STANDARD SET METHOD
+//                        sb.append("\n\n");
+//                        sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+//                        sb.append("\n\t").append("public void set").append(formatted).append("(Boolean v){");
+//                        sb.append("\n\t\t_").append(formatted +"=v;");
+//                        sb.append("\n\t}");
+
                         //STANDARD SET METHOD
                         sb.append("\n\n");
                         sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sb.append("\n\t").append("public void set").append(formatted).append("(Boolean v){");
-                        sb.append("\n\t\t_").append(formatted +"=v;");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(Object v){");
+                        sb.append("\n\t\tif(v instanceof Boolean){");
+                        sb.append("\n\t\t\t_").append(formatted +"=(Boolean)v;");
+                        sb.append("\n\t\t}else if(v instanceof String){");
+                        sb.append("\n\t\t\t_").append(formatted +"=formatBoolean((String)v);");
+                        sb.append("\n\t\t}else if(v!=null){");
+                        sb.append("\n\t\t\tthrow new IllegalArgumentException();");
+                        sb.append("\n\t\t}");
                         sb.append("\n\t}");
                         
 
 
-                        //XML SET METHOD
-                        sb.append("\n\n");
-                        sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sb.append("\n\t").append("public void set").append(formatted).append("(String v) throws BaseElement.FormatException{");
-                        sb.append("\n\t\t_").append(formatted +"=formatBoolean(v);");
-                        sb.append("\n\t}");
+//                        //XML SET METHOD
+//                        sb.append("\n\n");
+//                        sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+//                        sb.append("\n\t").append("public void set").append(formatted).append("(String v) {");
+//                        sb.append("\n\t\t_").append(formatted +"=formatBoolean(v);");
+//                        sb.append("\n\t}");
                      }else if (type.equalsIgnoreCase("integer"))
                     {
                         sb.append("\n\n\t").append("//FIELD");
@@ -391,7 +418,7 @@ public class JavaBeanGenerator {
                         //STANDARD SET METHOD
                         sb.append("\n\n");
                         sb.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sb.append("\n\t").append("public void set").append(formatted).append("(String v) throws BaseElement.FormatException {");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(String v)  {");
                         sb.append("\n\t\t_").append(formatted +"=formatInteger(v);");
                         sb.append("\n\t}");
                      }else if(type.equalsIgnoreCase("double") || type.equalsIgnoreCase("float")){
@@ -416,7 +443,7 @@ public class JavaBeanGenerator {
                         //STANDARD SET METHOD
                         sb.append("\n\n");
                         sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                        sb.append("\n\t").append("public void set").append(formatted).append("(String v) throws BaseElement.FormatException {");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(String v)  {");
                         sb.append("\n\t\t_").append(formatted +"=formatDouble(v);");
                         sb.append("\n\t}");
                     }else if (type.equalsIgnoreCase("string"))
@@ -458,28 +485,34 @@ public class JavaBeanGenerator {
                         sb.append("\n\t\t_").append(formatted +"=v;");
                         sb.append("\n\t}");
                         
+                        sb.append("\n\n");
+                        sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sb.append("\n\t").append("public void set").append(formatted).append("(Object v){");
+                        sb.append("\n\t\tthrow new IllegalArgumentException();");
+                        sb.append("\n\t}");
+                        
                         if(type.equalsIgnoreCase("date")){
                             sb.append("\n\n");
                             sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                            sb.append("\n\t").append("public void set").append(formatted).append("(String v) throws BaseElement.FormatException {");
+                            sb.append("\n\t").append("public void set").append(formatted).append("(String v)  {");
                             sb.append("\n\t\t_").append(formatted +"=formatDate(v);");
                             sb.append("\n\t}");
                         }else if(type.equalsIgnoreCase("dateTime")){
                             sb.append("\n\n");
                             sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                            sb.append("\n\t").append("public void set").append(formatted).append("(String v) throws BaseElement.FormatException {");
+                            sb.append("\n\t").append("public void set").append(formatted).append("(String v)  {");
                             sb.append("\n\t\t_").append(formatted +"=formatDateTime(v);");
                             sb.append("\n\t}");
                         }else if(type.equalsIgnoreCase("time")){
                             sb.append("\n\n");
                             sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                            sb.append("\n\t").append("public void set").append(formatted).append("(String v) throws BaseElement.FormatException {");
+                            sb.append("\n\t").append("public void set").append(formatted).append("(String v)  {");
                             sb.append("\n\t\t_").append(formatted +"=formatTime(v);");
                             sb.append("\n\t}");
                         }else if(type.equalsIgnoreCase("timestamp")){
                             sb.append("\n\n");
                             sb.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
-                            sb.append("\n\t").append("public void set").append(formatted).append("(String v) throws BaseElement.FormatException {");
+                            sb.append("\n\t").append("public void set").append(formatted).append("(String v)  {");
                             sb.append("\n\t\t_").append(formatted +"=formatDateTime(v);");
                             sb.append("\n\t}");
                         }
@@ -537,7 +570,7 @@ public class JavaBeanGenerator {
         //SET DATA FIELD
             sb.append("\n\n");
             sb.append("\t/**\n\t * Sets the value for a field via the XMLPATH.\n\t * @param v Value to Set.\n\t */");
-            sb.append("\n\t").append("public void setDataField(String xmlPath,String v) throws BaseElement.FormatException,BaseElement.UnknownFieldException{");
+            sb.append("\n\t").append("public void setDataField(String xmlPath,String v) throws BaseElement.UnknownFieldException{");
 
             if (xmlPaths.size()>0)
             {
@@ -581,7 +614,7 @@ public class JavaBeanGenerator {
             //SET REFERENCE FIELD
             sb.append("\n\n");
             sb.append("\t/**\n\t * Sets the value for a field via the XMLPATH.\n\t * @param v Value to Set.\n\t */");
-            sb.append("\n\t").append("public void setReferenceField(String xmlPath,BaseElement v) throws BaseElement.FormatException,BaseElement.UnknownFieldException{");
+            sb.append("\n\t").append("public void setReferenceField(String xmlPath,BaseElement v) throws BaseElement.UnknownFieldException{");
 
             if (xmlPaths.size()>0)
             {
@@ -1603,43 +1636,43 @@ public class JavaBeanGenerator {
         sb.append("\n").append("public final static String field_inline_repeater=\"INLINE\";");
         sb.append("\n").append("public final static String field_LONG_DATA=\"LONG_DATA\";");
         sb.append("\n").append("public final static String field_NO_CHILD=\"NO_CHILD\";");
-        sb.append("\n").append("    public Date formatDate(String s) throws FormatException{");
+        sb.append("\n").append("    public Date formatDate(String s) {");
         sb.append("\n").append("        try {");
         sb.append("\n").append("            return parseDate(s);");
         sb.append("\n").append("        } catch (ParseException e) {");
-        sb.append("\n").append("            throw new FormatException(e);");
+        sb.append("\n").append("            throw new IllegalArgumentException(e);");
         sb.append("\n").append("        }");
         sb.append("\n").append("    }");
-        sb.append("\n").append("    public Date formatDateTime(String s) throws FormatException{");
+        sb.append("\n").append("    public Date formatDateTime(String s) {");
         sb.append("\n").append("        try {");
         sb.append("\n").append("            return parseDateTime(s);");
         sb.append("\n").append("        } catch (ParseException e) {");
-        sb.append("\n").append("            throw new FormatException(e);");
+        sb.append("\n").append("            throw new IllegalArgumentException(e);");
         sb.append("\n").append("        }");
         sb.append("\n").append("    }");
-        sb.append("\n").append("    public Date formatTime(String s) throws FormatException{");
+        sb.append("\n").append("    public Date formatTime(String s) {");
         sb.append("\n").append("        try {");
         sb.append("\n").append("            return parseTime(s);");
         sb.append("\n").append("        } catch (ParseException e) {");
-        sb.append("\n").append("            throw new FormatException(e);");
+        sb.append("\n").append("            throw new IllegalArgumentException(e);");
         sb.append("\n").append("        }");
         sb.append("\n").append("    }");
-        sb.append("\n").append("    public Double formatDouble(String s) throws FormatException{");
+        sb.append("\n").append("    public Double formatDouble(String s) {");
         sb.append("\n").append("       try {");
         sb.append("\n").append("            return Double.valueOf(s);");
         sb.append("\n").append("        } catch (NumberFormatException e) {");
-        sb.append("\n").append("            throw new FormatException(e);");
+        sb.append("\n").append("            throw new IllegalArgumentException(e);");
         sb.append("\n").append("        }");
         sb.append("\n").append("    }");
-        sb.append("\n").append("    public Integer formatInteger(String s) throws FormatException{");
+        sb.append("\n").append("    public Integer formatInteger(String s) {");
         sb.append("\n").append("        try {");
         sb.append("\n").append("            return Integer.valueOf(s);");
         sb.append("\n").append("        } catch (NumberFormatException e) {");
-        sb.append("\n").append("            throw new FormatException(e);");
+        sb.append("\n").append("            throw new IllegalArgumentException(e);");
         sb.append("\n").append("        }");
         sb.append("\n").append("    }");
         sb.append("\n").append("    ");
-        sb.append("\n").append("    public Boolean formatBoolean(String s) throws FormatException{");
+        sb.append("\n").append("    public Boolean formatBoolean(String s) {");
         sb.append("\n").append("        if (s.equals(\"0\") || s.equalsIgnoreCase(\"false\")|| s.equalsIgnoreCase(\"f\"))");
         sb.append("\n").append("        {");
         sb.append("\n").append("            return Boolean.FALSE;");
@@ -1647,21 +1680,7 @@ public class JavaBeanGenerator {
         sb.append("\n").append("       {");
         sb.append("\n").append("            return Boolean.TRUE;");
         sb.append("\n").append("        }");
-        sb.append("\n").append("        throw new FormatException(\"Unable to translate '\" + s + \"' to a boolean value.\");");
-        sb.append("\n").append("    }");
-        sb.append("\n").append("    public class FormatException extends Exception{");
-        sb.append("\n").append("        public FormatException(String s)");
-        sb.append("\n").append("        {");
-        sb.append("\n").append("            super(s);");
-        sb.append("\n").append("        }");
-        sb.append("\n").append("        public FormatException(Exception s)");
-        sb.append("\n").append("        {");
-        sb.append("\n").append("            super(s);");
-        sb.append("\n").append("        }");
-        sb.append("\n").append("        public FormatException(String s,Exception e)");
-        sb.append("\n").append("        {");
-        sb.append("\n").append("            super(s,e);");
-        sb.append("\n").append("       }");
+        sb.append("\n").append("        throw new IllegalArgumentException(\"Unable to translate '\" + s + \"' to a boolean value.\");");
         sb.append("\n").append("    }");
         sb.append("\n").append("    public class UnknownFieldException extends Exception{");
         sb.append("\n").append("        public UnknownFieldException(String s)");
@@ -1830,11 +1849,11 @@ public class JavaBeanGenerator {
         sb.append("\n").append("            }");
         sb.append("\n").append("        }");
         sb.append("\n").append("    }");
-        sb.append("\n").append("    public void setDataField(String xmlPath,String s) throws FormatException,UnknownFieldException");
+        sb.append("\n").append("    public void setDataField(String xmlPath,String s) throws UnknownFieldException");
         sb.append("\n").append("    {");
         sb.append("\n").append("        throw new UnknownFieldException(xmlPath);");
         sb.append("\n").append("    }");
-        sb.append("\n").append("    public void setReferenceField(String xmlPath,BaseElement s) throws FormatException,UnknownFieldException");
+        sb.append("\n").append("    public void setReferenceField(String xmlPath,BaseElement s) throws UnknownFieldException");
         sb.append("\n").append("    {");
         sb.append("\n").append("        throw new UnknownFieldException(xmlPath);");
         sb.append("\n").append("    }");
@@ -1914,6 +1933,12 @@ public class JavaBeanGenerator {
                         sbI.append("\n\t * " + xmlPath);
                         sbI.append("\n\t * @return Returns an List of org.nrg.xdat.model.").append(foreignClassName).append("\n\t */");
                         sbI.append("\n\t").append("public <A extends ").append(INTERFACE_PACKAGE +".").append(foreignClassName).append("> List<A> get").append(formatted).append("();");                        
+
+                        sbI.append("\n");
+                        sbI.append("\n\t/**");
+                        sbI.append("\n\t * " + xmlPath);
+                        sbI.append("\n\t * @return Returns an List of org.nrg.xdat.model.").append(foreignClassName).append("\n\t */");
+                        sbI.append("\n\t").append("public <A extends ").append(INTERFACE_PACKAGE +".").append(foreignClassName).append("> void add").append(formatted).append("(A item) throws Exception;"); 
                     }else{
                         
                         if(!f.getName().equalsIgnoreCase(e.getExtensionFieldName())){
@@ -1922,6 +1947,12 @@ public class JavaBeanGenerator {
                             sbI.append("\n\t * " + xmlPath);
                             sbI.append("\n\t * @return ").append(INTERFACE_PACKAGE +".").append(foreignClassName).append("\n\t */");
                             sbI.append("\n\t").append("public ").append(INTERFACE_PACKAGE +".").append(foreignClassName).append(" get").append(formatted).append("();");
+                            
+                        	sbI.append("\n");
+                            sbI.append("\n\t/**");
+                            sbI.append("\n\t * " + xmlPath);
+                            sbI.append("\n\t * @return ").append(INTERFACE_PACKAGE +".").append(foreignClassName).append("\n\t */");
+                            sbI.append("\n\t").append("public <A extends ").append(INTERFACE_PACKAGE +".").append(foreignClassName).append("> void set").append(formatted).append("(A item) throws Exception;");
                             
                             XFTSuperiorReference ref = (XFTSuperiorReference)f.getXFTReference();
                             Iterator iter=ref.getKeyRelations().iterator();
@@ -1984,6 +2015,11 @@ public class JavaBeanGenerator {
                         sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
                         sbI.append("\n\t").append("public Boolean get").append(formatted).append("();");
 
+
+                        //STANDARD SET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sbI.append("\n\t").append("public void set").append(formatted).append("(Object v);");
                     }else if (type.equalsIgnoreCase("integer"))
                     {                        
                         //STANDARD GET METHOD
@@ -1991,11 +2027,20 @@ public class JavaBeanGenerator {
                         sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
                         sbI.append("\n\t").append("public Integer get").append(formatted).append("();");
 
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * Sets the value for ").append(e.getXSIType() + "/" + xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sbI.append("\n\t").append("public void set").append(formatted).append("(Integer v) ;");
+
                    }else if(type.equalsIgnoreCase("double") || type.equalsIgnoreCase("float")){   
                         //STANDARD GET METHOD
                         sbI.append("\n\n");
                         sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
                         sbI.append("\n\t").append("public Double get").append(formatted).append("();");
+                        
+                        //STANDARD SET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sbI.append("\n\t").append("public void set").append(formatted).append("(Double v);");
                         
                     }else if (type.equalsIgnoreCase("string"))
                     {
@@ -2004,11 +2049,32 @@ public class JavaBeanGenerator {
                         sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
                         sbI.append("\n\t").append("public String get").append(formatted).append("();");
 
+                        //STANDARD SET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sbI.append("\n\t").append("public void set").append(formatted).append("(String v);");
+
+                    }else if (type.equalsIgnoreCase("date") || type.equalsIgnoreCase("dateTime")){                        
+                        //STANDARD GET METHOD
+                    	sbI.append("\n\n");
+                    	sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
+                        sbI.append("\n\t").append("public Object get").append(formatted).append("();");
+
+                        //STANDARD SET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sbI.append("\n\t").append("public void set").append(formatted).append("(Object v);");
+
                     }else{
                         //STANDARD GET METHOD
                         sbI.append("\n\n");
                         sbI.append("\t/**\n\t * @return Returns the ").append(xmlPath).append(".\n\t */");
                         sbI.append("\n\t").append("public Object get").append(formatted).append("();");
+                        
+                        //STANDARD SET METHOD
+                        sbI.append("\n\n");
+                        sbI.append("\t/**\n\t * Sets the value for ").append(xmlPath).append(".\n\t * @param v Value to Set.\n\t */");
+                        sbI.append("\n\t").append("public void set").append(formatted).append("(Object v);");
                         
                     }
                 }

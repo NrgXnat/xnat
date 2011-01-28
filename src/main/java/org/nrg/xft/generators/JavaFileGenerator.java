@@ -159,6 +159,13 @@ public class JavaFileGenerator {
                         sb.append("\n\t\t").append("} catch (Exception e1) {logger.error(e1);throw e1;}");
                         sb.append("\n\t}");
 
+                        sb.append("\n");
+                        sb.append("\n\t/**");
+                        sb.append("\n\t * " + xmlPath);
+                        sb.append("\n\t * Adds org.nrg.xdat.model.").append(forieignInterface).append("\n\t */");
+                        sb.append("\n\t").append("public <A extends ").append(JavaBeanGenerator.INTERFACE_PACKAGE +".").append(forieignInterface).append("> void add").append(formatted).append("(A item) throws Exception{"); 
+                        sb.append("\n\t").append("set").append(formatted).append("((ItemI)item);"); 
+                        sb.append("\n\t}");
                         
                         sb.append("\n\n");
                         sb.append("\t/**\n\t * Removes the ").append(xmlPath).append(" of the given index.\n\t * @param index Index of child to remove.\n\t */");
@@ -199,6 +206,14 @@ public class JavaFileGenerator {
                         sb.append("\n\t\t\t\t").append("getItem().setChild(SCHEMA_ELEMENT_NAME + \"/").append(xmlPath).append("\",v.getItem(),true);");
                         sb.append("\n\t\t\t").append("}");
                         sb.append("\n\t\t").append("} catch (Exception e1) {logger.error(e1);throw e1;}");
+                        sb.append("\n\t}");
+
+                        sb.append("\n");
+                        sb.append("\n\t/**");
+                        sb.append("\n\t * " + xmlPath);
+                        sb.append("\n\t * set ").append(JavaBeanGenerator.INTERFACE_PACKAGE +".").append(forieignInterface).append("\n\t */");
+                        sb.append("\n\t").append("public <A extends ").append(JavaBeanGenerator.INTERFACE_PACKAGE +".").append(forieignInterface).append("> void set").append(formatted).append("(A item) throws Exception{");
+                        sb.append("\n\t").append("set").append(formatted).append("((ItemI)item);");
                         sb.append("\n\t}");
 
                         sb.append("\n\n");

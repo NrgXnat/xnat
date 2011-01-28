@@ -59,25 +59,18 @@ public class XDATScreen_edit_xdat_stored_search extends AdminEditScreenA {
 				users_h.put(login, user);
 				users.add(user);
 			} catch (UserNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (XFTInitException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (ElementNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (DBPoolException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (SQLException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (FieldNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}

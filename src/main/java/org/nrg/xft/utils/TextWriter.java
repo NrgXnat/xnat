@@ -16,7 +16,6 @@ public class TextWriter {
      */
     public TextWriter() {
         super();
-        // TODO Auto-generated constructor stub
     }
 
 }

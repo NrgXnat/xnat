@@ -25,7 +25,6 @@ public class GeneratorUtils {
 			SQLCreateGenerator.generateDoc(sourceDir + File.separator + "createDB.sql");
 			TorqueSchemaGenerator.generateDoc(sourceDir + File.separator + "base-schema.xml");
 		} catch (Exception e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 		}
 	}

@@ -1103,7 +1103,6 @@ public class XFTTable implements XFTTableI {
 				try {
 					json.put(columnSpec.get(0), ValueParser(row[i]));
 				} catch (JSONException e) {
-					// TODO Auto-generated catch block
 					e.printStackTrace();
 			}
 				}
@@ -1112,7 +1111,6 @@ public class XFTTable implements XFTTableI {
 							try{
 			array.write(writer);
 		} catch (JSONException e) {
-			// TODO Auto-generated catch block
 			e.printStackTrace();
 							}
 						}

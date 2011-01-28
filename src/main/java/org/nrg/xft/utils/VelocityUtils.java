@@ -18,7 +18,6 @@ public class VelocityUtils {
      */
     public VelocityUtils() {
         super();
-        // TODO Auto-generated constructor stub
     }
     
     public static void init() throws Exception

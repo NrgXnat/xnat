@@ -377,10 +377,8 @@ public class TorqueSchemaGenerator {
 				XFT.init(args[0],true);
 				TorqueSchemaGenerator.generateDoc(args[1]);
 			} catch (ElementNotFoundException e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}else

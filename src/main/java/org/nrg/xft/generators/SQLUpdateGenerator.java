@@ -571,7 +571,6 @@ public class SQLUpdateGenerator {
 				XFT.init(args[0],true);
 				SQLUpdateGenerator.generateDoc(args[1]);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}else

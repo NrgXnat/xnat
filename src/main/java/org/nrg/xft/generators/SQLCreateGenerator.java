@@ -140,7 +140,6 @@ public class SQLCreateGenerator {
 				XFT.init(args[0],true);
 				SQLCreateGenerator.generateDoc(args[1]);
 			} catch (Exception e) {
-				// TODO Auto-generated catch block
 				e.printStackTrace();
 			}
 		}else

@@ -19,7 +19,6 @@ public class SearchHelp extends SecureScreen {
      */
     protected void doBuildTemplate(RunData data, Context context)
             throws Exception {
-        // TODO Auto-generated method stub
 
     }
 

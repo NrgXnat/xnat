@@ -10,6 +10,7 @@ import java.sql.SQLException;
 import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
+import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.FailedLoginException;
 import org.nrg.xft.XFT;
@@ -98,6 +99,8 @@ public class SearchService {
             ItemSearch search = ItemSearch.GetItemSearch(elementName,user);
             search.setAllowMultiples(false);
             search.addCriteria(xmlPath,getValue(),getComparison());
+            
+            Authorizer.getInstance().authorizeRead(search.getElement(), user);
             
             ItemCollection items= search.exec(false);
             

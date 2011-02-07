@@ -1,20 +1,20 @@
 /**
- * Copyright (c) 2007,2009,2010 Washington University
+ * Copyright (c) 2007,2009-2011 Washington University
  */
 package org.nrg.attr;
 
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 
 /**
- * Mock native attribute type used for unit tests
+ * Stub native attribute type used for unit tests
  * @author Kevin A. Archie <karchie@wustl.edu>
  */
 @SuppressWarnings("unchecked")
@@ -25,6 +25,10 @@ public class NativeAttr implements Comparable<NativeAttr> {
 
     private NativeAttr(final String name) {
         this.name = name;
+    }
+
+    public final String getName() { 
+        return name; 
     }
 
     @Override
@@ -64,9 +68,8 @@ public class NativeAttr implements Comparable<NativeAttr> {
     }
 
     public static final class SampleAttrDefSet<S,V> implements AttrDefs<S,V> {
-        private Set<S> nas = new HashSet<S>();
-        private Map<String,ExtAttrDef<S,V>> defs =
-            new LinkedHashMap<String,ExtAttrDef<S,V>>();
+        private Set<S> nas = Sets.newHashSet();
+        private Map<String,ExtAttrDef<S,V>> defs = Maps.newLinkedHashMap();
 
         public SampleAttrDefSet(ExtAttrDef<S,V>...eads) {
             for (final ExtAttrDef<S,V> ead : eads)
@@ -82,7 +85,7 @@ public class NativeAttr implements Comparable<NativeAttr> {
         }
 
         public Iterator<ExtAttrDef<S,V>> iterator() {
-            return new LinkedHashSet<ExtAttrDef<S,V>>(defs.values()).iterator();
+            return Iterators.unmodifiableIterator(defs.values().iterator());
         }
 
         public SampleAttrDefSet<S,V> addExtAttrDef(final ExtAttrDef<S,V> ead) {

@@ -3,7 +3,7 @@
   <modelVersion>4.0.0</modelVersion>
   <issueManagement>
   	<system>FogBugz</system>
-  	<url>http://nrg.wustl.edu/fogbugz</url>
+  	<url>http://bugs.nrg.wustl.edu</url>
   </issueManagement>
   <ciManagement>
   </ciManagement>
@@ -16,7 +16,7 @@
   	</developer>
   </developers>
   <scm>
-  	<url>http://hg.xnat.org/extattr-mf</url>
+  	<url>http://hg.xnat.org/extattr</url>
   </scm>
   <organization>
   	<name>Washington University Neuroinformatics Research Group</name>
@@ -51,7 +51,7 @@
     <dependency>
     	<groupId>com.google.guava</groupId>
     	<artifactId>guava</artifactId>
-    	<version>r07</version>
+    	<version>r08</version>
     </dependency>
   </dependencies>
 </project>

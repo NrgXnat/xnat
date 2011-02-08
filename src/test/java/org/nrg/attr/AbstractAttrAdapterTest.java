@@ -286,7 +286,6 @@ public class AbstractAttrAdapterTest {
                 for (final Map<NativeAttr,Float> fm : aam.vals.values()) {
                     if (fm.get(NativeAttr.C).equals(f)) {
                         assertEquals(Float.valueOf(val.getText()), fm.get(NativeAttr.B));
-                        // System.out.println(fm.get(NativeAttr.B) + " <- " + f);
                         foundIndex = true;
                     }
                 }
@@ -427,7 +426,6 @@ public class AbstractAttrAdapterTest {
         final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
         final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
         for (final Set<ExtAttrValue> vs : vals) {
-            System.out.println("obtained value: " + vs);
             assertTrue(vs.isEmpty());
         }
         assertTrue(failures.containsKey(concat));
@@ -449,7 +447,6 @@ public class AbstractAttrAdapterTest {
         final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
         final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
         for (final Set<ExtAttrValue> vs : vals) {
-            System.out.println("obtained value: " + vs);
             assertTrue(vs.isEmpty());
         }
         assertFalse(failures.containsKey(concat));

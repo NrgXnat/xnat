@@ -188,7 +188,6 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
             // external attribute value once only.
             for (final Map<S,V> value: getUniqueCombinationsGivenValues(given, ea.getAttrs(), failedS)) {
                 for (final S attr : ea.getAttrs()) {
-                    System.out.println("checking " + attr + " against " + value);
                     if (!value.containsKey(attr) && ea.requires(attr)) {
                         if (ea instanceof Optional) {
                             continue ATTRS; // can't build this optional attribute; move on to the next one.

@@ -9,6 +9,7 @@
 package org.nrg.xft.db;
 import java.sql.CallableStatement;
 import java.sql.Connection;
+import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
@@ -458,7 +459,7 @@ public class PoolDBUtils {
 		closeConnection();
 	}
 
-	private void closeConnection()
+	public void closeConnection()
 	{
 		if (st != null)
 		{
@@ -848,8 +849,13 @@ public class PoolDBUtils {
     private Statement getStatement(String db) throws DBPoolException,SQLException{
     	return getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
     }
+    
+    public PreparedStatement getPreparedStatement(String db, String sql) throws SQLException, DBPoolException {
+    	if(db==null)db=PoolDBUtils.getDefaultDBName();
+    	return getConnection(db).prepareStatement(sql);
+    }
 
-    private ResultSet executeQuery(String db, String query, String userName) throws SQLException, DBPoolException{
+    public ResultSet executeQuery(String db, String query, String userName) throws SQLException, DBPoolException{
     	ResultSet rs;
 
     	if(db==null)db=PoolDBUtils.getDefaultDBName();

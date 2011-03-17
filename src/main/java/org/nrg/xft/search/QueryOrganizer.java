@@ -430,7 +430,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         return joins.toString();
     }
 
-    public String buildQuery() throws IllegalAccessException,Exception
+    public String buildQuery() throws org.nrg.xdat.exceptions.IllegalAccessException,Exception
     {
         StringBuffer sb = new StringBuffer();
 
@@ -464,7 +464,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 //					    addField(s);
 //					}
 			    }else{
-			        throw new IllegalAccessException("No defined read privileges for " + rootElement.getFullXMLName());
+			        throw new org.nrg.xdat.exceptions.IllegalAccessException("No defined read privileges for " + rootElement.getFullXMLName());
 			    }
 			}
 		}

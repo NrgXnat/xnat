@@ -366,12 +366,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 		loggedIn = b;
 	}
 
-	public CriteriaCollection getCriteriaForDisplayRead(SchemaElementI rootElement) throws org.nrg.xdat.exceptions.IllegalAccessException,Exception
+	public CriteriaCollection getCriteriaForDisplayRead(SchemaElementI rootElement) throws IllegalAccessException,Exception
 	{
 	    return getCriteriaForDisplayRead(new SchemaElement(rootElement.getGenericXFTElement()));
 	}
 
-	public CriteriaCollection getCriteriaForDisplayRead(SchemaElement rootElement) throws org.nrg.xdat.exceptions.IllegalAccessException,Exception
+	public CriteriaCollection getCriteriaForDisplayRead(SchemaElement rootElement) throws IllegalAccessException,Exception
 	{
 	    if (!ElementSecurity.IsSecureElement(rootElement.getFullXMLName(),SecurityManager.READ))
 		{
@@ -419,7 +419,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
             {
                 if (ElementSecurity.IsSecureElement(rootElement.getFullXMLName(),SecurityManager.READ))
                 {
-                    throw new org.nrg.xdat.exceptions.IllegalAccessException("Invalid read privileges for " + rootElement.getFullXMLName());
+                    throw new IllegalAccessException("Invalid read privileges for " + rootElement.getFullXMLName());
 
                 }else{
                     return null;
@@ -484,7 +484,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
             {
                 if (ElementSecurity.IsSecureElement(rootElement.getFullXMLName(),SecurityManager.READ))
                 {
-                    throw new org.nrg.xdat.exceptions.IllegalAccessException("Invalid read privileges for " + rootElement.getFullXMLName());
+                    throw new IllegalAccessException("Invalid read privileges for " + rootElement.getFullXMLName());
 
                 }else{
                     return null;
@@ -803,7 +803,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 		{
 			if (! root.isInSecure())
 			{
-				throw new org.nrg.xdat.exceptions.IllegalAccessException("Illegal join to " + root.getFullXMLName());
+				throw new IllegalAccessException("Illegal join to " + root.getFullXMLName());
 			}
 		}
 
@@ -1321,7 +1321,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
                 {
                     if (!item.isActive()){
                         isOK = false;
-                        throw new org.nrg.xdat.exceptions.IllegalAccessException("Access Denied: This data is in quarantine.");
+                        throw new IllegalAccessException("Access Denied: This data is in quarantine.");
                     }
                 }
             }
@@ -1355,7 +1355,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
             	    }
             	}
             }else{
-                throw new org.nrg.xdat.exceptions.IllegalAccessException("Access Denied: Current user does not have permission to read this data.");
+                throw new IllegalAccessException("Access Denied: Current user does not have permission to read this data.");
             }
         } catch (InvalidItemException e) {
             logger.error("",e);

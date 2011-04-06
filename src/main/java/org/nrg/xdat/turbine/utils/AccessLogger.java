@@ -50,7 +50,13 @@ public class AccessLogger {
         if (!data.getScreen().equalsIgnoreCase(""))
         {
     	    String text= TurbineUtils.getUser(data).getUsername() + " " + data.getRemoteAddr() + " SCREEN: " + data.getScreen();
-    	    
+
+		    if(TurbineUtils.HasPassedParameter("search_element", data)){
+		    	text+=" "+TurbineUtils.GetPassedParameter("search_element", data);
+		    }
+		    if(TurbineUtils.HasPassedParameter("search_value", data)){
+		    	text+=" "+TurbineUtils.GetPassedParameter("search_value", data);
+		    }
     		try {
     		    logger.error(text);
     		} catch (Exception e) {
@@ -78,7 +84,17 @@ public class AccessLogger {
         if (!data.getAction().equalsIgnoreCase(""))
         {
 		    String text= TurbineUtils.getUser(data).getUsername() + " " + data.getRemoteAddr() + " ACTION: " + data.getAction();
+
+		    if(TurbineUtils.HasPassedParameter("xdataction", data)){
+		    	text+=" "+TurbineUtils.GetPassedParameter("xdataction", data);
+		    }
 		    
+		    if(TurbineUtils.HasPassedParameter("search_element", data)){
+		    	text+=" "+TurbineUtils.GetPassedParameter("search_element", data);
+		    }
+		    if(TurbineUtils.HasPassedParameter("search_value", data)){
+		    	text+=" "+TurbineUtils.GetPassedParameter("search_value", data);
+		    }
 			try {
 			    logger.error(text);
 			} catch (Exception e) {

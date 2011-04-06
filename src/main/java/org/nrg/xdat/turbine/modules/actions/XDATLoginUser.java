@@ -25,6 +25,7 @@ import org.apache.turbine.util.security.TurbineSecurityException;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
@@ -35,7 +36,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
  */
 public class XDATLoginUser extends VelocityAction{
 
-    static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperElement.class);
+    static org.apache.log4j.Logger logger = Logger.getLogger(XDATLoginUser.class);
 /**
  * This is where we authenticate the user logging into the system
  * against a user in the database. If the user exists in the database
@@ -98,6 +99,7 @@ public class XDATLoginUser extends VelocityAction{
 			session.setAttribute("user",user);
             session.setAttribute("loggedin",true);
 
+            AccessLogger.LogActionAccess(data, "Valid Login:"+user.getLogin());
             try{
             	doRedirect(data,context,user);
             }catch(Exception e){
@@ -108,6 +110,8 @@ public class XDATLoginUser extends VelocityAction{
 		{
             log.error("",e);
 
+            AccessLogger.LogActionAccess(data, "Failed Login by '" + username +"': " +e.getMessage());
+            
             if(username.toLowerCase().contains("script"))
             {
             	e= new Exception("Illegal username &lt;script&gt; usage.");

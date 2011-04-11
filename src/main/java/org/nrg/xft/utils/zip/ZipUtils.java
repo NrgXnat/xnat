@@ -37,6 +37,8 @@ import edu.sdsc.grid.io.srb.SRBFileInputStream;
  *
  */
 public class ZipUtils implements ZipI {
+	public final static int DEFAULT_COMPRESSION=ZipOutputStream.STORED;
+	
     final static boolean DEBUG = false;
     byte[] buf = new byte[FileUtils.LARGE_DOWNLOAD];
     ZipOutputStream out = null;

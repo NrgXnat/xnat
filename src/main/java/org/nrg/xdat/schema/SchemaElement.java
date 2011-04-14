@@ -11,6 +11,8 @@ package org.nrg.xdat.schema;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldCollection;
@@ -266,6 +268,13 @@ public class SchemaElement implements SchemaElementI {
 		return null;
 	}
 
+	/**
+	 * @param s
+	 * @return
+	 * @throws XFTInitException
+	 * @throws ElementNotFoundException
+	 * @throws Exception
+	 */
 	public DisplayField getDisplayFieldForXMLPath(String s) throws XFTInitException,ElementNotFoundException,Exception
 	{
 		DisplayField temp = null;
@@ -441,7 +450,7 @@ public class SchemaElement implements SchemaElementI {
 	    String psf = null;
 	    int dotCount = 100;
 
-	    ArrayList al = getDefinedFields(true);
+	    List al = getDefinedFields(true);
 	    if (al.size()>0)
 	    {
 		    Iterator iter = al.iterator();
@@ -465,25 +474,53 @@ public class SchemaElement implements SchemaElementI {
 	    }
 	}
 
-	private ArrayList<String> _alldefinedfields=null;
-	public ArrayList<String> getAllDefinedFields()
+	//this wasn't cached properly because the SchemaElement is being created new each time.  This should be pushed to a static representation to manage the persistence of the list... and use intern() too. Done...04/14/11 TO
+	public List<String> getAllDefinedFields()
 	{
-		if(_alldefinedfields==null){
-			_alldefinedfields =new ArrayList<String>();
-		    Iterator iter = getDefinedFields(false).iterator();
-		    while (iter.hasNext())
-		    {
-		        String s = (String)iter.next();
-		        _alldefinedfields.add(this.getFullXMLName() + "/" + s);
-		    }
-		}
+		return getDefinedFieldManager().getDefinedFields(this);
+	}
+	
+	public List<String> buildDefinedFields()
+	{
+		final List<String> _alldefinedfields =new ArrayList<String>();
+	    for (final String s:getDefinedFields(false))
+	    {
+	        _alldefinedfields.add((this.getFullXMLName() + "/" + s).intern());
+	    }
 	    return _alldefinedfields;
+	}
+		
+	
+	private static DefinedFieldManager dfm;
+	private synchronized static DefinedFieldManager getDefinedFieldManager(){
+		if(dfm==null){
+			dfm=new DefinedFieldManager();
+		}
+		return dfm;
+	}
+	
+	private static class DefinedFieldManager{
+		private Map<String,List<String>> map=new Hashtable<String,List<String>>();
+		
+		public synchronized List<String> getDefinedFields(final SchemaElement se){
+			final String xsiType=se.getFullXMLName();
+			if(map.containsKey(xsiType)){
+				return map.get(xsiType);
+			}else{
+				return map.put(xsiType,se.buildDefinedFields());
+			}
+		}
 	}
 
 	
-	public ArrayList getDefinedFields(boolean onlyDisplayValueOption)
+	/**
+	 * @param onlyDisplayValueOption
+	 * @return
+	 */
+	//TODO: this method (and class) needs some refactoring.
+	private List<String> getDefinedFields(boolean onlyDisplayValueOption)
 	{
-        ArrayList al = new ArrayList();
+		List<String> al = new ArrayList<String>();
 	    try {
             GenericWrapperElement gwe = this.getGenericXFTElement();
             ArrayList fields = ViewManager.GetFieldNames(gwe,ViewManager.QUARANTINE,true,true);
@@ -578,8 +615,6 @@ public class SchemaElement implements SchemaElementI {
                     }
                 }
             }
-
-            al.trimToSize();
         } catch (XFTInitException e) {
             logger.error("",e);
         } catch (ElementNotFoundException e) {
@@ -605,7 +640,7 @@ public class SchemaElement implements SchemaElementI {
 
     public boolean hasField(String field){
         try {
-            ArrayList al = this.getAllDefinedFields();
+        	List al = this.getAllDefinedFields();
 
             return al.contains(field);
         } catch (Exception e) {

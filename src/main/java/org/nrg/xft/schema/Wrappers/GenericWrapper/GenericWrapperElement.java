@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT  Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -551,7 +551,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	
 	private Map<String,GenericWrapperField> _returnedDirectFields=new Hashtable<String,GenericWrapperField>();
 	
-	public GenericWrapperField getDirectField(String name)
+	public synchronized GenericWrapperField getDirectField(String name)
 		throws FieldNotFoundException, ElementNotFoundException, XFTInitException {
 		
 		GenericWrapperField gwf=_returnedDirectFields.get(name);

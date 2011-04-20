@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -182,11 +182,7 @@ public abstract class ItemWrapper implements ItemI {
 	 */
 	public java.util.ArrayList getChildItems(String xmlPath)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
-	    try {
-            return item.getChildItems(xmlPath);
-        } catch (FieldNotFoundException e) {
-            throw new FieldNotFoundException(xmlPath);
-        }
+	    return item.getChildItems(xmlPath);
 	}
 
 	/**
@@ -199,11 +195,7 @@ public abstract class ItemWrapper implements ItemI {
 	 */
 	public ItemCollection getChildItemCollection(String xmlPath)throws XFTInitException,ElementNotFoundException,FieldNotFoundException,Exception
 	{
-		try {
-            return new ItemCollection(item.getChildItems(xmlPath));
-        } catch (FieldNotFoundException e) {
-            throw new FieldNotFoundException(xmlPath);
-        }
+	    return new ItemCollection(item.getChildItems(xmlPath));
 	}
 	
 	public ItemI getParent()

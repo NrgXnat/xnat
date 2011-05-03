@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
+ * XDAT Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -10,6 +10,7 @@
 package org.nrg.xdat.security;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
@@ -21,6 +22,7 @@ import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.ItemWrapper.FieldEmptyException;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -34,9 +36,8 @@ import org.nrg.xft.utils.StringUtils;
  * @author Tim
  *
  */
-@SuppressWarnings("serial")
 public class ElementAccessManager {
-	static Logger logger = Logger.getLogger(ElementAccessManager.class);
+	private static final Logger logger = Logger.getLogger(ElementAccessManager.class);
 	private List<PermissionSet> sets = null;
 	SchemaElement se = null;
 	ElementDisplay ed = null;
@@ -50,7 +51,7 @@ public class ElementAccessManager {
 
 		sets = new ArrayList<PermissionSet>();
 		
-		Iterator subs = i.getChildItems(org.nrg.xft.XFT.PREFIX + ":element_access.permissions.allow_set").iterator();
+		Iterator<XFTItem> subs = i.getChildItems(org.nrg.xft.XFT.PREFIX + ":element_access.permissions.allow_set").iterator();
 		while (subs.hasNext())
 		{
 			ItemI sub = (ItemI)subs.next();
@@ -89,13 +90,6 @@ public class ElementAccessManager {
 	 */
 	public List<PermissionSet> getPermissionSets() {
 		return sets;
-	}
-
-	/**
-	 * @return ArrayList of PermissionSets
-	 */
-	private void addPermissionSet(PermissionSet ps) {
-		sets.add(ps);
 	}
 
     public List<PermissionCriteria> getRootPermissions() throws Exception
@@ -190,7 +184,6 @@ public class ElementAccessManager {
         }
 
 	    try {
-            Iterator iter= getPermissionSets().iterator();
             for (PermissionSet ps:getPermissionSets())
             {
                 if (ps.canCreateAny())
@@ -221,7 +214,6 @@ public class ElementAccessManager {
         }
 
 	    try {
-	    	Iterator iter= getPermissionSets().iterator();
             for (PermissionSet ps:getPermissionSets())
             {
                 if (ps.canEditAny())
@@ -266,59 +258,60 @@ public class ElementAccessManager {
 	    return false;
 	}
 
-   final Map<String,CriteriaCollection> xftCriteria=new Hashtable<String,CriteriaCollection>();
-   
-    public CriteriaCollection getXFTCriteria(String action){
-        if (!xftCriteria.containsKey(action))
-        {
-            try {
-                final CriteriaCollection coll = new CriteriaCollection("OR");
-                final List<PermissionSet> al = getPermissionSets();
-                if (al.size() > 0)
-                {
-                    for (PermissionSet ps:al)
-                    {
-                        final CriteriaCollection sub = ps.getXFTCriteria(action);
-                        coll.addClause(sub);
-                    }
+	private final Map<String,CriteriaCollection> xftCriteria=new HashMap<String,CriteriaCollection>();
 
-                    xftCriteria.put(action,coll);
-                }else{
-                    return null;
-                }
-            } catch (XFTInitException e) {
-                logger.error("",e);
-            } catch (FieldNotFoundException e) {
-                logger.error("",e);
-            } catch (ElementNotFoundException e) {
-                logger.error("",e);
-            } catch (Exception e) {
-                logger.error("",e);
-            }
-        }
+	public CriteriaCollection getXFTCriteria(final String action){
+	    synchronized (xftCriteria) {
+	        if (!xftCriteria.containsKey(action))
+	        {
+	            try {
+	                final CriteriaCollection coll = new CriteriaCollection("OR");
+	                final List<PermissionSet> al = getPermissionSets();
+	                if (al.isEmpty()) {
+	                    return null;
+	                } else {
+	                    for (final PermissionSet ps:al)
+	                    {
+	                        final CriteriaCollection sub = ps.getXFTCriteria(action);
+	                        coll.addClause(sub);
+	                    }
 
-        return xftCriteria.get(action);
-    }
+	                    xftCriteria.put(action,coll);
+	                }
+	            } catch (XFTInitException e) {
+	                logger.error("",e);
+	            } catch (FieldNotFoundException e) {
+	                logger.error("",e);
+	            } catch (ElementNotFoundException e) {
+	                logger.error("",e);
+	            } catch (Exception e) {
+	                logger.error("",e);
+	            }
+	        }
 
-    final Map<String,CriteriaCollection> xdatCriteria=new Hashtable<String,CriteriaCollection>();
+	        return xftCriteria.get(action);
+	    }
+	}
+
+    private final Map<String,CriteriaCollection> xdatCriteria=new HashMap<String,CriteriaCollection>();
     
-    public CriteriaCollection getXDATCriteria(String action){
+    public CriteriaCollection getXDATCriteria(final String action){
+        synchronized (xdatCriteria) {
         if (!xdatCriteria.containsKey(action))
         {
             try {
                 final CriteriaCollection coll = new CriteriaCollection("OR");
                 final List<PermissionSet> al = getPermissionSets();
-                if (al.size() > 0)
-                {
-                	for (PermissionSet ps:al)
+                if (al.isEmpty()) {
+                    return null;
+                } else {
+                	for (final PermissionSet ps:al)
                     {
                         final CriteriaCollection sub = ps.getXDATCriteria(this.getSchemaElement(),action);
                         coll.addClause(sub);
                     }
 
                     xdatCriteria.put(action,coll);
-                }else{
-                    return null;
                 }
             } catch (FieldEmptyException e) {
                 logger.error("",e);
@@ -334,6 +327,7 @@ public class ElementAccessManager {
         }
 
         return xdatCriteria.get(action);
+        }
     }
 
     public static Map<String,ElementAccessManager> GetGuestManagers(){

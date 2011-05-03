@@ -19,6 +19,7 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.session.TurbineSession;
 import org.apache.turbine.util.RunData;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.utils.FileUtils;
 
 /**
@@ -148,7 +149,8 @@ public class AccessLogger {
 	{
         if (!data.getAction().equalsIgnoreCase(""))
         {
-		    String text= TurbineUtils.getUser(data).getUsername() + " " + data.getRemoteAddr() + " ACTION: " + data.getAction() + " " + message;
+		    XDATUser user=TurbineUtils.getUser(data);
+        	String text= ((user!=null)?user.getUsername():"NULL") + " " + data.getRemoteAddr() + " ACTION: " + data.getAction() + " " + message;
 		    
 			try {
 			    logger.error(text);

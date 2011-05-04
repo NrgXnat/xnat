@@ -909,6 +909,8 @@ public class PoolDBUtils {
 		}catch(SQLException e){
 			if(e.getMessage().contains("Connection reset")){
 				sendBatchExec(statements,db,userName,resultSetType,resultSetConcurrency);
+			}else{
+				throw e;
 			}
 		}
 	}

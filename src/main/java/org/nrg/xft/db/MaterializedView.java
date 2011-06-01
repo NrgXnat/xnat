@@ -217,9 +217,9 @@ public class MaterializedView {
 		
 		if(table_name==null){
 			if(search_id!=null)
-				table_name=DisplaySearch.cleanColumnName(search_id)+"_"+DisplaySearch.cleanColumnName(user.getLogin()) + "_" + Calendar.getInstance().getTimeInMillis();
+				table_name= "_" + DisplaySearch.cleanColumnName(search_id)+"_"+DisplaySearch.cleanColumnName(user.getLogin()) + "_" + Calendar.getInstance().getTimeInMillis();
 			else
-				table_name=DisplaySearch.cleanColumnName(user.getLogin()) + "_" + Calendar.getInstance().getTimeInMillis();
+				table_name= "_" + DisplaySearch.cleanColumnName(user.getLogin()) + "_" + Calendar.getInstance().getTimeInMillis();
 		}
 		String select="SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('"+table_name+"');";
 		Object o=PoolDBUtils.ReturnStatisticQuery(select, "relname", user.getDBName(), user.getLogin());

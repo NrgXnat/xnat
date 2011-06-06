@@ -499,16 +499,16 @@ public class SchemaElement implements SchemaElementI {
 		return dfm;
 	}
 	
+	//Refactored 06/06/11 TO. Old code was returning directly from map.put (which returns the preexisting object).  Bad, bad, bad.
 	private static class DefinedFieldManager{
 		private Map<String,List<String>> map=new Hashtable<String,List<String>>();
 		
 		public synchronized List<String> getDefinedFields(final SchemaElement se){
 			final String xsiType=se.getFullXMLName();
-			if(map.containsKey(xsiType)){
-				return map.get(xsiType);
-			}else{
-				return map.put(xsiType,se.buildDefinedFields());
+			if(!map.containsKey(xsiType)){
+				map.put(xsiType,se.buildDefinedFields());
 			}
+			return map.get(xsiType);
 		}
 	}
 

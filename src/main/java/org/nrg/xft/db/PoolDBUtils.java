@@ -618,7 +618,8 @@ public class PoolDBUtils {
                 if (itemString==null){
                     itemString =(String)PoolDBUtils.ReturnStatisticQuery(functionQuery,functionName,e.getDbName(),login);
                     if(itemString!=null){
-                        String query = "INSERT INTO xs_item_cache (elementName,ids,contents) VALUES ('" + rootElement + "','" + ids + "','" + itemString + "');";
+                    	// itemString.replaceAll("\\\\", "\\\\\\\\") is to escape backslashes in Windows paths.
+                        String query = "INSERT INTO xs_item_cache (elementName,ids,contents) VALUES ('" + rootElement + "','" + ids + "','" + itemString.replaceAll("\\\\", "\\\\\\\\") + "');";
                         PoolDBUtils.ExecuteNonSelectQuery(query, e.getDbName(), login);
                     }
                 }

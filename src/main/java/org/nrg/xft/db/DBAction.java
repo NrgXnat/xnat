@@ -2510,7 +2510,7 @@ public class DBAction {
 			String type = field.getXMLType().getLocalType();
 			if (type.equalsIgnoreCase(""))
 			{
-				if (o.getClass().getName().equalsIgnoreCase("java.lang.String"))
+				if (o instanceof String)
 				{
 				    if (o.toString().equalsIgnoreCase("NULL"))
 				    {
@@ -2534,7 +2534,7 @@ public class DBAction {
 			}
 		}else
 		{
-			if (o.getClass().getName().equalsIgnoreCase("java.lang.String"))
+			if (o instanceof String)
 			{
 			    if (o.toString().equalsIgnoreCase("NULL"))
 			    {

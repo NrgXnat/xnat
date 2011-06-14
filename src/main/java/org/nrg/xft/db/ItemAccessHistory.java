@@ -32,6 +32,7 @@ public class ItemAccessHistory {
 	}
 	
 	public void setMethod(String method) {
+		PoolDBUtils.CheckSpecialSQLChars(method);
 		this.method = method;
 	}
 
@@ -40,6 +41,7 @@ public class ItemAccessHistory {
 	}
 
 	public void setSearch_element(String search_element) {
+		PoolDBUtils.CheckSpecialSQLChars(search_element);
 		this.search_element = search_element;
 	}
 

@@ -60,6 +60,7 @@ public class MaterializedView {
 	}
 
 	public void setSearch_id(String search_id) {
+		PoolDBUtils.CheckSpecialSQLChars(search_id);
 		this.search_id = search_id;
 	}
 
@@ -84,6 +85,8 @@ public class MaterializedView {
 	}
 
 	public void setTable_name(String table_name) {
+		PoolDBUtils.CheckSpecialSQLChars(table_name);
+		
 		this.table_name = table_name;
 	}
 

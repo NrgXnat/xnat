@@ -24,6 +24,7 @@ public class FavEntries {
 	}
 
 	public void setDataType(String dataType) {
+		PoolDBUtils.CheckSpecialSQLChars(dataType);
 		this.dataType = dataType;
 	}
 

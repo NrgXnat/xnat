@@ -846,6 +846,14 @@ public class PoolDBUtils {
     	}
     		return false;
     }
+    
+    public static void CheckSpecialSQLChars(final String s){
+    	if(s==null)return;
+    	
+		if(s.contains("'")){
+			throw new IllegalArgumentException(s);
+		}
+    }
 
     private Statement getStatement(String db) throws DBPoolException,SQLException{
     	return getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);

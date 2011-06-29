@@ -62,6 +62,10 @@ public class TarUtils implements ZipI {
 
     
     public ArrayList extract(InputStream is, String dir) throws IOException{
+    	return extract(is,dir,true);
+    }
+    
+    public ArrayList extract(InputStream is, String dir,boolean overwrite) throws IOException{
         ArrayList extractedFiles = new ArrayList();
         if (_compressionMethod==ZipOutputStream.DEFLATED)
         {
@@ -83,6 +87,10 @@ public class TarUtils implements ZipI {
                 destPath.mkdirs();
             }else
             {
+                if(destPath.exists() && !overwrite){
+                	throw new IOException("File already exists"+destPath.getCanonicalPath());
+                }
+                
             	destPath.getParentFile().mkdirs();
                 //System.out.println("Writing: " + te.getName());
                 FileOutputStream fout = new FileOutputStream(destPath); 

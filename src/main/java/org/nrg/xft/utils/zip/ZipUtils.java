@@ -327,7 +327,11 @@ public class ZipUtils implements ZipI {
             f.deleteOnExit();
     }
     
-    public ArrayList extract(InputStream is, String destination) throws IOException{;
+    public ArrayList extract(InputStream is, String dir) throws IOException{
+    	return extract(is,dir,true);
+    }
+    
+    public ArrayList extract(InputStream is, String destination,boolean overwrite) throws IOException{;
          ArrayList extractedFiles = new ArrayList();       
         //  Create a ZipInputStream to read the zip file
         BufferedOutputStream dest = null;
@@ -345,9 +349,11 @@ public class ZipUtils implements ZipI {
         {
           if( !entry.isDirectory() )
           {            
-            String destFN = destination + File.separator + entry.getName();
-    
-            File f = new File(destFN);
+            final File f = new File(destination,entry.getName());
+            
+            if(f.exists() && !overwrite){
+            	throw new IOException("File already exists"+f.getCanonicalPath());
+            }
             f.getParentFile().mkdirs();
             // Write the file to the file system
             FileOutputStream fos = new FileOutputStream(f);
@@ -358,7 +364,7 @@ public class ZipUtils implements ZipI {
             }
             dest.flush();
             dest.close();
-            extractedFiles.add(new File(destFN));
+            extractedFiles.add(new File(f.getAbsolutePath()));
           }else{
               df = new File(destination,entry.getName());
               if (!df.exists()){

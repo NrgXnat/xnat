@@ -1067,11 +1067,9 @@ public class DisplayManager {
 			if (arcDefine.getBridgeElement().equalsIgnoreCase(root.getFullXMLName()))
 			{
 				al.add(arcDefine);
-				break;
 			}else if (arcDefine.isMember(root.getFullXMLName()))
 			{
 			    al.add(arcDefine);
-				break;
 			}
 		}
 		

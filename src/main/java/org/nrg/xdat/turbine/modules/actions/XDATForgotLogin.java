@@ -120,7 +120,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     if (newUser.getBooleanProperty("primary_password.encrypt",true))
                     {
                         String tempPass = newUser.getStringProperty("primary_password");
-                        newUser.setProperty("primary_password",XDATUser.EncryptString(newPassword));
+                        newUser.setProperty("primary_password",XDATUser.EncryptString(newPassword,"SHA-256"));
                     }
                     newUser.save(null, true, false);
                     try {

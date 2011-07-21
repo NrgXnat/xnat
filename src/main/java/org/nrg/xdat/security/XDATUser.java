@@ -21,6 +21,8 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+import java.security.MessageDigest;
+import java.security.NoSuchAlgorithmException;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -177,11 +179,16 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 			// encryption
 			if(password.equals(pass)){
 				loggedIn = true;
-			}else if (EncryptString(password).equals(pass))
+			}
+			else if (EncryptString(password, "SHA-256").equals(pass)){
+				loggedIn = true;
+			}
+			else if (EncryptString(password, "obfuscate").equals(pass))
 			{
 				loggedIn = true;
 			}
-		}else
+		}
+		else
 		{
 			if (pass.equals(password))
 			{
@@ -224,18 +231,40 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
         if(XFT.VERBOSE)System.out.println("User Init(" + this.getUsername() + "): " + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
 	}
 
-	public static String EncryptString(String s)
+	public static String EncryptString(String stringToEncrypt, String algorithm)
 	{
-	    int prime = 373;
-		int g = 2;
-		String ans = "";
-		char[] as = s.toCharArray();
-		for (int i=0;i<s.length();i++)
-		{
-			int encrypt_digit = g^(char)(as[i])	% prime;
-			ans=ans+(char)(encrypt_digit);
+		if(algorithm.equals("obfuscate")){
+			int prime = 373;
+			int g = 2;
+			String ans = "";
+			char[] as = stringToEncrypt.toCharArray();
+			for (int i=0;i<stringToEncrypt.length();i++)
+			{
+				int encrypt_digit = g^(char)(as[i])	% prime;
+				ans=ans+(char)(encrypt_digit);
+			}
+			return(ans);
 		}
-		return(ans);
+		else if (algorithm.equals("SHA-256")){
+			try{
+				String encryptedString = "";
+				MessageDigest digest = MessageDigest.getInstance("SHA-256");
+				digest.update(stringToEncrypt.getBytes());
+				byte bytes[] = digest.digest();
+				StringBuffer sb = new StringBuffer();
+		        for (byte b:bytes) {
+		        	sb.append(Integer.toString((bytes[b] & 0xff) + 0x100, 16).substring(1));
+		        }
+				return sb.toString();
+			}
+			catch(NoSuchAlgorithmException e){
+				e.printStackTrace();
+				return null;
+			}
+		}
+		else{
+			return null;
+		}
 	}
 
 	public static class UserNotFoundException extends FailedLoginException

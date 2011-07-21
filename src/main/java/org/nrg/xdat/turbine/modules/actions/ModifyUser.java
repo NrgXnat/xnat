@@ -72,7 +72,7 @@ public class ModifyUser extends SecureAction {
 							.getStringProperty("primary_password");
 					if (!StringUtils.isEmpty(tempPass))
 						found.setProperty("primary_password", XDATUser
-								.EncryptString(tempPass));
+								.EncryptString(tempPass,"SHA-256"));
 				}
 				found.setProperty(
 						"xdat:user.assigned_roles.assigned_role[0].role_name",
@@ -99,10 +99,10 @@ public class ModifyUser extends SecureAction {
 						{
 							if (!tempPass.equals(savedPass))
 								found.setProperty("primary_password", XDATUser
-										.EncryptString(tempPass));
+										.EncryptString(tempPass,"SHA-256"));
 						} else {
 							found.setProperty("primary_password", XDATUser
-									.EncryptString(tempPass));
+									.EncryptString(tempPass,"SHA-256"));
 						}
 					}
 				}

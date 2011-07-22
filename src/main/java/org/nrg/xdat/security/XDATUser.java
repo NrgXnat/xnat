@@ -253,7 +253,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 				byte bytes[] = digest.digest();
 				StringBuffer sb = new StringBuffer();
 		        for (byte b:bytes) {
-		        	sb.append(Integer.toString((bytes[b] & 0xff) + 0x100, 16).substring(1));
+		        	sb.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
 		        }
 				return sb.toString();
 			}

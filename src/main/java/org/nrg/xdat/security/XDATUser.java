@@ -169,33 +169,24 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 		    throw new ActivationException(this.getUsername());
 		}
 		
-		Integer encrypt = (Integer)getIntegerProperty("primary_password_encrypt");
 		String pass = (String)this.getStringProperty("primary_password");
 		
 		if(StringUtils.IsEmpty(pass))throw new PasswordAuthenticationException(getUsername());
 		
-		if (encrypt.intValue()==1)
-		{
-			// encryption
-			if(password.equals(pass)){
-				loggedIn = true;
-			}
-			else if (EncryptString(password, "SHA-256").equals(pass)){
-				loggedIn = true;
-			}
-			else if (EncryptString(password, "obfuscate").equals(pass))
-			{
-				loggedIn = true;
-			}
+		// encryption
+		if (EncryptString(password, "SHA-256").equals(pass)){
+			loggedIn = true;
 		}
-		else
-		{
-			if (pass.equals(password))
-			{
-				loggedIn = true;
-			}
+		else if (EncryptString( EncryptString(password, "obfuscate"), "SHA-256" ).equals(pass)){
+			loggedIn = true;
 		}
-
+		else if(EncryptString(password, "obfuscate").equals(pass)){
+			loggedIn = true;
+		}
+		else if(password.equals(pass)){
+			loggedIn = true;
+		}
+		
 		if (! loggedIn)
 		{
 			throw new PasswordAuthenticationException(getUsername());
@@ -233,21 +224,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 
 	public static String EncryptString(String stringToEncrypt, String algorithm)
 	{
-		if(algorithm.equals("obfuscate")){
-			int prime = 373;
-			int g = 2;
-			String ans = "";
-			char[] as = stringToEncrypt.toCharArray();
-			for (int i=0;i<stringToEncrypt.length();i++)
-			{
-				int encrypt_digit = g^(char)(as[i])	% prime;
-				ans=ans+(char)(encrypt_digit);
-			}
-			return(ans);
-		}
-		else if (algorithm.equals("SHA-256")){
+		if (algorithm.equals("SHA-256")){
 			try{
-				String encryptedString = "";
 				MessageDigest digest = MessageDigest.getInstance("SHA-256");
 				digest.update(stringToEncrypt.getBytes());
 				byte bytes[] = digest.digest();
@@ -261,6 +239,18 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 				e.printStackTrace();
 				return null;
 			}
+		}
+		else if(algorithm.equals("obfuscate")){
+			int prime = 373;
+			int g = 2;
+			String ans = "";
+			char[] as = stringToEncrypt.toCharArray();
+			for (int i=0;i<stringToEncrypt.length();i++)
+			{
+				int encrypt_digit = g^(char)(as[i])	% prime;
+				ans=ans+(char)(encrypt_digit);
+			}
+			return(ans);
 		}
 		else{
 			return null;

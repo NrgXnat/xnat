@@ -66,14 +66,12 @@ public class ModifyUser extends SecureAction {
 			if (temp == null)
 			{
 				// NEW USER
-				if (found.getBooleanProperty("primary_password.encrypt", true))
-				{
-					String tempPass = found
-							.getStringProperty("primary_password");
-					if (!StringUtils.isEmpty(tempPass))
-						found.setProperty("primary_password", XDATUser
-								.EncryptString(tempPass,"SHA-256"));
-				}
+				String tempPass = found
+						.getStringProperty("primary_password");
+				if (!StringUtils.isEmpty(tempPass))
+					found.setProperty("primary_password", XDATUser
+							.EncryptString(tempPass,"SHA-256"));
+
 				found.setProperty(
 						"xdat:user.assigned_roles.assigned_role[0].role_name",
 						"SiteUser");
@@ -91,20 +89,9 @@ public class ModifyUser extends SecureAction {
 				} else if (StringUtils.isEmpty(tempPass)) {
 					found.setProperty("primary_password", "NULL");
 				} else {
-					if (found.getBooleanProperty("primary_password.encrypt",
-							true))
-					{
-						if (temp.getBooleanProperty("primary_password.encrypt",
-								true))
-						{
-							if (!tempPass.equals(savedPass))
-								found.setProperty("primary_password", XDATUser
-										.EncryptString(tempPass,"SHA-256"));
-						} else {
+					if (!tempPass.equals(savedPass))
 							found.setProperty("primary_password", XDATUser
 									.EncryptString(tempPass,"SHA-256"));
-						}
-					}
 				}
 				found.save(TurbineUtils.getUser(data), false, false);
 			}

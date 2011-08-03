@@ -109,12 +109,9 @@ public class ModifyPassword extends SecureAction {
 			while (iter.hasNext())
 			{
 				ItemI found = (ItemI)iter.next();
-				
-				if (found.getBooleanProperty("primary_password.encrypt",true))
-				{
-					String tempPass = found.getStringProperty("primary_password");
-					found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
-				}
+			
+				String tempPass = found.getStringProperty("primary_password");
+				found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
 				
 				try {
 					found.save(TurbineUtils.getUser(data),false,false);

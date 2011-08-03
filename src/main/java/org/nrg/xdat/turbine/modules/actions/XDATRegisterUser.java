@@ -53,11 +53,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
                 if (temp==null)
                 {
                 	// NEW USER
-	                if (found.getBooleanProperty("primary_password.encrypt",true))
-	                {
-	                    String tempPass = found.getStringProperty("primary_password");
-	                    found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
-	                }
+                    String tempPass = found.getStringProperty("primary_password");
+                    found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
 
 	                boolean autoApproval=autoApproval(data,context);	       
 	                

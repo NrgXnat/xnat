@@ -236,7 +236,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 				return sb.toString();
 			}
 			catch(NoSuchAlgorithmException e){
-				e.printStackTrace();
+				logger.error("",e);
 				return null;
 			}
 		}
@@ -322,10 +322,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 		try {
 			return (String)getProperty("login");
 		}catch (ElementNotFoundException e) {
-			e.printStackTrace();
+			logger.error("",e);
 			return null;
 		} catch (FieldNotFoundException e) {
-			e.printStackTrace();
+			logger.error("",e);
 			return null;
 		}
 	}
@@ -2508,11 +2508,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 					System.out.println("USER:" + this.getUsername() + " doesn't have access to any project data.");
 				}
 			} catch (SQLException e) {
-				e.printStackTrace();
+				logger.error("",e);
 			} catch (DBPoolException e) {
-				e.printStackTrace();
+				logger.error("",e);
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error("",e);
 			}
     	}
     	
@@ -2535,11 +2535,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 				
 				total_counts.putAll(t.convertToHashtable("element_name", "count"));
 			} catch (SQLException e) {
-				e.printStackTrace();
+				logger.error("",e);
 			} catch (DBPoolException e) {
-				e.printStackTrace();
+				logger.error("",e);
 			} catch (Exception e) {
-				e.printStackTrace();
+				logger.error("",e);
 			}
     	}
     	
@@ -2612,9 +2612,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 		try {
 			fe = FavEntries.GetFavoriteEntries(elementName, id, this);
 		} catch (DBPoolException e) {
-			e.printStackTrace();
+			logger.error("",e);
 		} catch (SQLException e) {
-			e.printStackTrace();
+			logger.error("",e);
 		}
     	if(fe==null){
     		return false;

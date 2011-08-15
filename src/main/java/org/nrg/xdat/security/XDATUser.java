@@ -24,6 +24,7 @@ import java.util.Map;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 
+import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
 import org.nrg.xdat.base.BaseElement;
@@ -225,20 +226,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 	public static String EncryptString(String stringToEncrypt, String algorithm)
 	{
 		if (algorithm.equals("SHA-256")){
-			try{
-				MessageDigest digest = MessageDigest.getInstance("SHA-256");
-				digest.update(stringToEncrypt.getBytes());
-				byte bytes[] = digest.digest();
-				StringBuffer sb = new StringBuffer();
-		        for (byte b:bytes) {
-		        	sb.append(Integer.toString((b & 0xff) + 0x100, 16).substring(1));
-		        }
-				return sb.toString();
-			}
-			catch(NoSuchAlgorithmException e){
-				logger.error("",e);
-				return null;
-			}
+			return DigestUtils.sha256Hex(stringToEncrypt);
 		}
 		else if(algorithm.equals("obfuscate")){
 			int prime = 373;

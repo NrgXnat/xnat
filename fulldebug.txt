@@ -1,0 +1,911 @@
+Apache Maven 3.0.3 (r1075438; 2011-02-28 11:31:09-0600)
+Maven home: /usr/local/maven
+Java version: 1.6.0_26, vendor: Apple Inc.
+Java home: /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home
+Default locale: en_US, platform encoding: MacRoman
+OS name: "mac os x", version: "10.6.8", arch: "x86_64", family: "mac"
+[INFO] Error stacktraces are turned on.
+[DEBUG] Reading global settings from /usr/local/maven/conf/settings.xml
+[DEBUG] Reading user settings from /Users/rherrick/.m2/settings.xml
+[DEBUG] Using local repository at /Users/rherrick/.m2/repository
+[DEBUG] Using manager EnhancedLocalRepositoryManager with priority 10 for /Users/rherrick/.m2/repository
+[INFO] Scanning for projects...
+[DEBUG] Extension realms for project org.nrg.xdat:notifications:jar:1.0.0-SNAPSHOT: (none)
+[DEBUG] Looking up lifecyle mappings for packaging jar from ClassRealm[plexus.core, parent: null]
+[DEBUG] === REACTOR BUILD PLAN ================================================
+[DEBUG] Project: org.nrg.xdat:notifications:jar:1.0.0-SNAPSHOT
+[DEBUG] Tasks:   [clean, package]
+[DEBUG] Style:   Regular
+[DEBUG] =======================================================================
+[INFO]                                                                         
+[INFO] ------------------------------------------------------------------------
+[INFO] Building XNAT notification service 1.0.0-SNAPSHOT
+[INFO] ------------------------------------------------------------------------
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]
+[DEBUG] Lifecycle default -> [validate, initialize, generate-sources, process-sources, generate-resources, process-resources, compile, process-classes, generate-test-sources, process-test-sources, generate-test-resources, process-test-resources, test-compile, process-test-classes, test, prepare-package, package, pre-integration-test, integration-test, post-integration-test, verify, install, deploy]
+[DEBUG] Lifecycle clean -> [pre-clean, clean, post-clean]
+[DEBUG] Lifecycle site -> [pre-site, site, post-site, site-deploy]
+[DEBUG] === PROJECT BUILD PLAN ================================================
+[DEBUG] Project:       org.nrg.xdat:notifications:1.0.0-SNAPSHOT
+[DEBUG] Dependencies (collect): []
+[DEBUG] Dependencies (resolve): [compile, runtime, test]
+[DEBUG] Repositories (dependencies): [com.springsource.repository.bundles.release (http://repository.springsource.com/maven/bundles/release, releases+snapshots), com.springsource.repository.bundles.external (http://repository.springsource.com/maven/bundles/external, releases+snapshots), maven2-repository.dev.java.net (http://download.java.net/maven/2/, releases+snapshots), maven2.repo2.maven.org (http://repo2.maven.org/maven2/, releases+snapshots), dev.java.net (http://download.java.net/maven/2/, releases), jboss-public-repository-group (https://repository.jboss.org/nexus/content/groups/public-jboss/, releases+snapshots), codehaus-release-repo (http://repository.codehaus.org, releases+snapshots), dcm4che (http://www.dcm4che.org/maven2, releases+snapshots), ibiblio (http://ibiblio.org/maven2, releases+snapshots), central (http://repo1.maven.org/maven2, releases)]
+[DEBUG] Repositories (plugins)     : [Codehaus (http://repository.codehaus.org/, releases), com.springsource.repository.bundles.release (http://repository.springsource.com/maven/bundles/release, releases+snapshots), com.springsource.repository.bundles.external (http://repository.springsource.com/maven/bundles/external, releases+snapshots), central (http://repo1.maven.org/maven2, releases)]
+[DEBUG] -----------------------------------------------------------------------
+[DEBUG] Goal:          org.apache.maven.plugins:maven-clean-plugin:2.4.1:clean (default-clean)
+[DEBUG] Style:         Regular
+[DEBUG] Configuration: <?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <directory default-value="${project.build.directory}"/>
+  <excludeDefaultDirectories default-value="false">${clean.excludeDefaultDirectories}</excludeDefaultDirectories>
+  <failOnError default-value="true">${maven.clean.failOnError}</failOnError>
+  <followSymLinks default-value="false">${clean.followSymLinks}</followSymLinks>
+  <outputDirectory default-value="${project.build.outputDirectory}"/>
+  <reportDirectory default-value="${project.reporting.outputDirectory}"/>
+  <skip default-value="false">${clean.skip}</skip>
+  <testOutputDirectory default-value="${project.build.testOutputDirectory}"/>
+  <verbose>${clean.verbose}</verbose>
+</configuration>
+[DEBUG] -----------------------------------------------------------------------
+[DEBUG] Goal:          org.apache.maven.plugins:maven-resources-plugin:2.4.3:resources (default-resources)
+[DEBUG] Style:         Regular
+[DEBUG] Configuration: <?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <buildFilters default-value="${project.build.filters}"/>
+  <encoding default-value="${project.build.sourceEncoding}">${encoding}</encoding>
+  <escapeString default-value="${maven.resources.escapeString}"/>
+  <escapeWindowsPaths default-value="true">${maven.resources.escapeWindowsPaths}</escapeWindowsPaths>
+  <includeEmptyDirs default-value="false">${maven.resources.includeEmptyDirs}</includeEmptyDirs>
+  <outputDirectory default-value="${project.build.outputDirectory}"/>
+  <overwrite default-value="false">${maven.resources.overwrite}</overwrite>
+  <project default-value="${project}"/>
+  <resources default-value="${project.resources}"/>
+  <session default-value="${session}"/>
+  <useBuildFilters default-value="true"/>
+  <useDefaultDelimiters default-value="true"/>
+</configuration>
+[DEBUG] -----------------------------------------------------------------------
+[DEBUG] Goal:          org.apache.maven.plugins:maven-compiler-plugin:2.3.2:compile (default-compile)
+[DEBUG] Style:         Regular
+[DEBUG] Configuration: <?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <basedir default-value="${basedir}"/>
+  <buildDirectory default-value="${project.build.directory}"/>
+  <classpathElements default-value="${project.compileClasspathElements}"/>
+  <compileSourceRoots default-value="${project.compileSourceRoots}"/>
+  <compilerId default-value="javac">${maven.compiler.compilerId}</compilerId>
+  <compilerVersion>${maven.compiler.compilerVersion}</compilerVersion>
+  <debug default-value="true">${maven.compiler.debug}</debug>
+  <debuglevel>${maven.compiler.debuglevel}</debuglevel>
+  <encoding default-value="${project.build.sourceEncoding}">${encoding}</encoding>
+  <executable>${maven.compiler.executable}</executable>
+  <failOnError default-value="true">${maven.compiler.failOnError}</failOnError>
+  <fork default-value="false">${maven.compiler.fork}</fork>
+  <generatedSourcesDirectory default-value="${project.build.directory}/generated-sources/annotations"/>
+  <maxmem>${maven.compiler.maxmem}</maxmem>
+  <meminitial>${maven.compiler.meminitial}</meminitial>
+  <optimize default-value="false">${maven.compiler.optimize}</optimize>
+  <outputDirectory default-value="${project.build.outputDirectory}"/>
+  <outputFileName>${project.build.finalName}</outputFileName>
+  <projectArtifact default-value="${project.artifact}"/>
+  <session default-value="${session}"/>
+  <showDeprecation default-value="false">${maven.compiler.showDeprecation}</showDeprecation>
+  <showWarnings default-value="false">${maven.compiler.showWarnings}</showWarnings>
+  <source default-value="1.5">1.6</source>
+  <staleMillis default-value="0">${lastModGranularityMs}</staleMillis>
+  <target default-value="1.5">1.6</target>
+  <verbose default-value="false">${maven.compiler.verbose}</verbose>
+</configuration>
+[DEBUG] -----------------------------------------------------------------------
+[DEBUG] Goal:          org.apache.maven.plugins:maven-resources-plugin:2.4.3:testResources (default-testResources)
+[DEBUG] Style:         Regular
+[DEBUG] Configuration: <?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <buildFilters default-value="${project.build.filters}"/>
+  <encoding default-value="${project.build.sourceEncoding}">${encoding}</encoding>
+  <escapeString default-value="${maven.resources.escapeString}"/>
+  <escapeWindowsPaths default-value="true">${maven.resources.escapeWindowsPaths}</escapeWindowsPaths>
+  <includeEmptyDirs default-value="false">${maven.resources.includeEmptyDirs}</includeEmptyDirs>
+  <outputDirectory>${project.build.testOutputDirectory}</outputDirectory>
+  <overwrite default-value="false">${maven.resources.overwrite}</overwrite>
+  <project default-value="${project}"/>
+  <resources>${project.testResources}</resources>
+  <session default-value="${session}"/>
+  <useBuildFilters default-value="true"/>
+  <useDefaultDelimiters default-value="true"/>
+</configuration>
+[DEBUG] -----------------------------------------------------------------------
+[DEBUG] Goal:          org.apache.maven.plugins:maven-compiler-plugin:2.3.2:testCompile (default-testCompile)
+[DEBUG] Style:         Regular
+[DEBUG] Configuration: <?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <basedir default-value="${basedir}"/>
+  <buildDirectory default-value="${project.build.directory}"/>
+  <classpathElements default-value="${project.testClasspathElements}"/>
+  <compileSourceRoots default-value="${project.testCompileSourceRoots}"/>
+  <compilerId default-value="javac">${maven.compiler.compilerId}</compilerId>
+  <compilerVersion>${maven.compiler.compilerVersion}</compilerVersion>
+  <debug default-value="true">${maven.compiler.debug}</debug>
+  <debuglevel>${maven.compiler.debuglevel}</debuglevel>
+  <encoding default-value="${project.build.sourceEncoding}">${encoding}</encoding>
+  <executable>${maven.compiler.executable}</executable>
+  <failOnError default-value="true">${maven.compiler.failOnError}</failOnError>
+  <fork default-value="false">${maven.compiler.fork}</fork>
+  <generatedTestSourcesDirectory default-value="${project.build.directory}/generated-sources/test-annotations"/>
+  <maxmem>${maven.compiler.maxmem}</maxmem>
+  <meminitial>${maven.compiler.meminitial}</meminitial>
+  <optimize default-value="false">${maven.compiler.optimize}</optimize>
+  <outputDirectory default-value="${project.build.testOutputDirectory}"/>
+  <outputFileName>${project.build.finalName}</outputFileName>
+  <session default-value="${session}"/>
+  <showDeprecation default-value="false">${maven.compiler.showDeprecation}</showDeprecation>
+  <showWarnings default-value="false">${maven.compiler.showWarnings}</showWarnings>
+  <skip>${maven.test.skip}</skip>
+  <source default-value="1.5">1.6</source>
+  <staleMillis default-value="0">${lastModGranularityMs}</staleMillis>
+  <target default-value="1.5">1.6</target>
+  <testSource>${maven.compiler.testSource}</testSource>
+  <testTarget>${maven.compiler.testTarget}</testTarget>
+  <verbose default-value="false">${maven.compiler.verbose}</verbose>
+</configuration>
+[DEBUG] -----------------------------------------------------------------------
+[DEBUG] Goal:          org.apache.maven.plugins:maven-surefire-plugin:2.9:test (default-test)
+[DEBUG] Style:         Regular
+[DEBUG] Configuration: <?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <argLine>${argLine}</argLine>
+  <basedir default-value="${basedir}"/>
+  <childDelegation default-value="false">${childDelegation}</childDelegation>
+  <classesDirectory default-value="${project.build.outputDirectory}"/>
+  <debugForkedProcess>${maven.surefire.debug}</debugForkedProcess>
+  <disableXmlReport default-value="false">${disableXmlReport}</disableXmlReport>
+  <enableAssertions default-value="true">${enableAssertions}</enableAssertions>
+  <excludedGroups>${excludedGroups}</excludedGroups>
+  <excludes>
+    <exclude>**/Abstract*.java</exclude>
+  </excludes>
+  <failIfNoTests>${failIfNoTests}</failIfNoTests>
+  <forkMode default-value="once">${forkMode}</forkMode>
+  <forkedProcessTimeoutInSeconds>${surefire.timeout}</forkedProcessTimeoutInSeconds>
+  <groups>${groups}</groups>
+  <includes>
+    <include>**/*Tests.java</include>
+  </includes>
+  <junitArtifactName default-value="junit:junit">${junitArtifactName}</junitArtifactName>
+  <jvm>${jvm}</jvm>
+  <localRepository>${localRepository}</localRepository>
+  <objectFactory>${objectFactory}</objectFactory>
+  <parallel>${parallel}</parallel>
+  <parallelMavenExecution default-value="${session.parallel}"/>
+  <perCoreThreadCount default-value="true">${perCoreThreadCount}</perCoreThreadCount>
+  <pluginArtifactMap>${plugin.artifactMap}</pluginArtifactMap>
+  <printSummary default-value="true">${surefire.printSummary}</printSummary>
+  <project default-value="${project}"/>
+  <projectArtifactMap>${project.artifactMap}</projectArtifactMap>
+  <redirectTestOutputToFile default-value="false">${maven.test.redirectTestOutputToFile}</redirectTestOutputToFile>
+  <remoteRepositories>${project.pluginArtifactRepositories}</remoteRepositories>
+  <reportFormat default-value="brief">${surefire.reportFormat}</reportFormat>
+  <reportsDirectory default-value="${project.build.directory}/surefire-reports"/>
+  <runOrder default-value="filesystem"/>
+  <session>${session}</session>
+  <skip default-value="false">${maven.test.skip}</skip>
+  <skipExec>${maven.test.skip.exec}</skipExec>
+  <skipTests default-value="false">${skipTests}</skipTests>
+  <test>${test}</test>
+  <testClassesDirectory default-value="${project.build.testOutputDirectory}"/>
+  <testFailureIgnore default-value="false">${maven.test.failure.ignore}</testFailureIgnore>
+  <testNGArtifactName default-value="org.testng:testng">${testNGArtifactName}</testNGArtifactName>
+  <testSourceDirectory default-value="${project.build.testSourceDirectory}"/>
+  <threadCount>${threadCount}</threadCount>
+  <trimStackTrace default-value="true">${trimStackTrace}</trimStackTrace>
+  <useFile default-value="true">${surefire.useFile}</useFile>
+  <useManifestOnlyJar default-value="true">${surefire.useManifestOnlyJar}</useManifestOnlyJar>
+  <useSystemClassLoader default-value="true">${surefire.useSystemClassLoader}</useSystemClassLoader>
+  <useUnlimitedThreads default-value="false">${useUnlimitedThreads}</useUnlimitedThreads>
+  <workingDirectory>${basedir}</workingDirectory>
+</configuration>
+[DEBUG] -----------------------------------------------------------------------
+[DEBUG] Goal:          org.apache.maven.plugins:maven-jar-plugin:2.3.1:jar (default-jar)
+[DEBUG] Style:         Regular
+[DEBUG] Configuration: <?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+  <classesDirectory>${project.build.outputDirectory}</classesDirectory>
+  <defaultManifestFile>${project.build.outputDirectory}/META-INF/MANIFEST.MF</defaultManifestFile>
+  <finalName default-value="${project.build.finalName}">${jar.finalName}</finalName>
+  <forceCreation default-value="false">${jar.forceCreation}</forceCreation>
+  <outputDirectory>${project.build.directory}</outputDirectory>
+  <project>${project}</project>
+  <useDefaultManifestFile default-value="false">${jar.useDefaultManifestFile}</useDefaultManifestFile>
+</configuration>
+[DEBUG] =======================================================================
+[DEBUG] org.nrg.xdat:notifications:jar:1.0.0-SNAPSHOT
+[DEBUG]    org.springframework:org.springframework.context:jar:3.0.5.RELEASE:compile
+[DEBUG]       org.springframework:org.springframework.asm:jar:3.0.5.RELEASE:compile
+[DEBUG]       org.springframework:org.springframework.aop:jar:3.0.5.RELEASE:compile
+[DEBUG]          org.aopalliance:com.springsource.org.aopalliance:jar:1.0.0:compile
+[DEBUG]       org.springframework:org.springframework.beans:jar:3.0.5.RELEASE:compile
+[DEBUG]       org.springframework:org.springframework.core:jar:3.0.5.RELEASE:compile
+[DEBUG]       org.springframework:org.springframework.expression:jar:3.0.5.RELEASE:compile
+[DEBUG]    org.apache.commons:com.springsource.org.apache.commons.logging:jar:1.1.1:compile
+[DEBUG]    org.apache.log4j:com.springsource.org.apache.log4j:jar:1.2.16:compile
+[DEBUG]    org.junit:com.springsource.org.junit:jar:4.8.2:test
+[DEBUG]    org.springframework:org.springframework.test:jar:3.0.5.RELEASE:test
+[INFO] 
+[INFO] --- maven-clean-plugin:2.4.1:clean (default-clean) @ notifications ---
+[DEBUG] Created new class realm maven.api
+[DEBUG] Importing foreign packages into class realm maven.api
+[DEBUG]   Imported: org.apache.maven.wagon.events < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.transfer < plexus.core
+[DEBUG]   Imported: org.apache.maven.exception < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.metadata < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.util.xml.Xpp3Dom < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.collection < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.version < plexus.core
+[DEBUG]   Imported: org.apache.maven.monitor < plexus.core
+[DEBUG]   Imported: org.apache.maven.wagon.repository < plexus.core
+[DEBUG]   Imported: org.apache.maven.repository < plexus.core
+[DEBUG]   Imported: org.apache.maven.wagon.resource < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.logging < plexus.core
+[DEBUG]   Imported: org.apache.maven.profiles < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.repository < plexus.core
+[DEBUG]   Imported: org.apache.maven.classrealm < plexus.core
+[DEBUG]   Imported: org.apache.maven.execution < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.artifact < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.spi < plexus.core
+[DEBUG]   Imported: org.apache.maven.reporting < plexus.core
+[DEBUG]   Imported: org.apache.maven.usability < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.container < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.component < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.util.xml.pull.XmlSerializer < plexus.core
+[DEBUG]   Imported: org.apache.maven.wagon.authentication < plexus.core
+[DEBUG]   Imported: org.apache.maven.lifecycle < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.classworlds < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.graph < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.* < plexus.core
+[DEBUG]   Imported: org.apache.maven.settings < plexus.core
+[DEBUG]   Imported: org.codehaus.classworlds < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.impl < plexus.core
+[DEBUG]   Imported: org.apache.maven.wagon.* < plexus.core
+[DEBUG]   Imported: org.apache.maven.toolchain < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.deployment < plexus.core
+[DEBUG]   Imported: org.apache.maven.wagon.observers < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.util.xml.pull.XmlPullParserException < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.util.xml.pull.XmlPullParser < plexus.core
+[DEBUG]   Imported: org.apache.maven.configuration < plexus.core
+[DEBUG]   Imported: org.apache.maven.cli < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.installation < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.context < plexus.core
+[DEBUG]   Imported: org.apache.maven.wagon.authorization < plexus.core
+[DEBUG]   Imported: org.apache.maven.project < plexus.core
+[DEBUG]   Imported: org.apache.maven.rtinfo < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.lifecycle < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.configuration < plexus.core
+[DEBUG]   Imported: org.apache.maven.artifact < plexus.core
+[DEBUG]   Imported: org.apache.maven.model < plexus.core
+[DEBUG]   Imported: org.apache.maven.* < plexus.core
+[DEBUG]   Imported: org.apache.maven.wagon.proxy < plexus.core
+[DEBUG]   Imported: org.sonatype.aether.resolution < plexus.core
+[DEBUG]   Imported: org.apache.maven.plugin < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.* < plexus.core
+[DEBUG]   Imported: org.codehaus.plexus.personality < plexus.core
+[DEBUG] Populating class realm maven.api
+[DEBUG] org.apache.maven.plugins:maven-clean-plugin:jar:2.4.1:
+[DEBUG]    org.apache.maven:maven-plugin-api:jar:2.0.6:compile
+[DEBUG]    org.codehaus.plexus:plexus-utils:jar:2.0.5:compile
+[DEBUG] Created new class realm plugin>org.apache.maven.plugins:maven-clean-plugin:2.4.1
+[DEBUG] Importing foreign packages into class realm plugin>org.apache.maven.plugins:maven-clean-plugin:2.4.1
+[DEBUG]   Imported:  < maven.api
+[DEBUG] Populating class realm plugin>org.apache.maven.plugins:maven-clean-plugin:2.4.1
+[DEBUG]   Included: org.apache.maven.plugins:maven-clean-plugin:jar:2.4.1
+[DEBUG]   Included: org.codehaus.plexus:plexus-utils:jar:2.0.5
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-api:jar:2.0.6
+[DEBUG] Configuring mojo org.apache.maven.plugins:maven-clean-plugin:2.4.1:clean from plugin realm ClassRealm[plugin>org.apache.maven.plugins:maven-clean-plugin:2.4.1, parent: sun.misc.Launcher$AppClassLoader@558fe7c3]
+[DEBUG] Configuring mojo 'org.apache.maven.plugins:maven-clean-plugin:2.4.1:clean' with basic configurator -->
+[DEBUG]   (f) directory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target
+[DEBUG]   (f) excludeDefaultDirectories = false
+[DEBUG]   (f) failOnError = true
+[DEBUG]   (f) followSymLinks = false
+[DEBUG]   (f) outputDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG]   (f) reportDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/site
+[DEBUG]   (f) skip = false
+[DEBUG]   (f) testOutputDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[DEBUG] -- end configuration --
+[INFO] Deleting /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/org/nrg/xdat/notifications/services/impl/DefaultNotificationServiceImplTests.class
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/org/nrg/xdat/notifications/services/impl/DefaultNotificationServiceImplTests-context.xml
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/org/nrg/xdat/notifications/services/impl
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/org/nrg/xdat/notifications/services
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/org/nrg/xdat/notifications
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/org/nrg/xdat
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/org/nrg
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/org
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/log4j.properties
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire-reports/TEST-org.nrg.xdat.notifications.services.impl.DefaultNotificationServiceImplTests.xml
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire-reports/org.nrg.xdat.notifications.services.impl.DefaultNotificationServiceImplTests.txt
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire-reports
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire/surefirebooter4750281443695989142.jar
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire/surefire6740867970082632933tmp
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire/surefire515460979747920653tmp
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/notifications-1.0.0-SNAPSHOT.jar
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/maven-archiver/pom.properties
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/maven-archiver
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/generated-sources/test-annotations
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/generated-sources/annotations
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/generated-sources
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/services/NotificationService.class
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/services/NotificationDispatcherService.class
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/services/impl/DefaultNotificationServiceImpl.class
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/services/impl/DefaultNotificationDispatcherServiceImpl.class
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/services/impl
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/services
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/beans/Vector.class
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/beans/Subscription.class
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/beans/Subscriber.class
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/beans/Notification.class
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/beans/Definition.class
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/beans/Category.class
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications/beans
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat/notifications
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg/xdat
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org/nrg
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/org
+[INFO] Deleting file /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/META-INF/spring/app-context.xml
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/META-INF/spring
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/META-INF
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[INFO] Deleting directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target
+[DEBUG] Skipping non-existing directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG] Skipping non-existing directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[DEBUG] Skipping non-existing directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/site
+[INFO] 
+[INFO] --- maven-resources-plugin:2.4.3:resources (default-resources) @ notifications ---
+[DEBUG] org.apache.maven.plugins:maven-resources-plugin:jar:2.4.3:
+[DEBUG]    org.apache.maven:maven-plugin-api:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-project:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-profile:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-artifact-manager:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-plugin-registry:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-core:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-plugin-parameter-documenter:jar:2.0.6:compile
+[DEBUG]       org.apache.maven.reporting:maven-reporting-api:jar:2.0.6:compile
+[DEBUG]          org.apache.maven.doxia:doxia-sink-api:jar:1.0-alpha-7:compile
+[DEBUG]       org.apache.maven:maven-repository-metadata:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-error-diagnostics:jar:2.0.6:compile
+[DEBUG]       commons-cli:commons-cli:jar:1.0:compile
+[DEBUG]       org.apache.maven:maven-plugin-descriptor:jar:2.0.6:compile
+[DEBUG]       org.codehaus.plexus:plexus-interactivity-api:jar:1.0-alpha-4:compile
+[DEBUG]       classworlds:classworlds:jar:1.1:compile
+[DEBUG]    org.apache.maven:maven-artifact:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-settings:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-model:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-monitor:jar:2.0.6:compile
+[DEBUG]    org.codehaus.plexus:plexus-container-default:jar:1.0-alpha-9-stable-1:compile
+[DEBUG]       junit:junit:jar:3.8.1:compile
+[DEBUG]    org.codehaus.plexus:plexus-utils:jar:2.0.5:compile
+[DEBUG]    org.apache.maven.shared:maven-filtering:jar:1.0-beta-4:compile
+[DEBUG]       org.sonatype.plexus:plexus-build-api:jar:0.0.4:compile
+[DEBUG]    org.codehaus.plexus:plexus-interpolation:jar:1.13:compile
+[DEBUG] Created new class realm plugin>org.apache.maven.plugins:maven-resources-plugin:2.4.3
+[DEBUG] Importing foreign packages into class realm plugin>org.apache.maven.plugins:maven-resources-plugin:2.4.3
+[DEBUG]   Imported:  < maven.api
+[DEBUG] Populating class realm plugin>org.apache.maven.plugins:maven-resources-plugin:2.4.3
+[DEBUG]   Included: org.apache.maven.plugins:maven-resources-plugin:jar:2.4.3
+[DEBUG]   Included: org.apache.maven.reporting:maven-reporting-api:jar:2.0.6
+[DEBUG]   Included: org.apache.maven.doxia:doxia-sink-api:jar:1.0-alpha-7
+[DEBUG]   Included: commons-cli:commons-cli:jar:1.0
+[DEBUG]   Included: org.codehaus.plexus:plexus-interactivity-api:jar:1.0-alpha-4
+[DEBUG]   Included: junit:junit:jar:3.8.1
+[DEBUG]   Included: org.codehaus.plexus:plexus-utils:jar:2.0.5
+[DEBUG]   Included: org.apache.maven.shared:maven-filtering:jar:1.0-beta-4
+[DEBUG]   Included: org.sonatype.plexus:plexus-build-api:jar:0.0.4
+[DEBUG]   Included: org.codehaus.plexus:plexus-interpolation:jar:1.13
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-api:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-project:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-profile:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-artifact-manager:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-registry:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-core:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-parameter-documenter:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-repository-metadata:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-error-diagnostics:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-descriptor:jar:2.0.6
+[DEBUG]   Excluded: classworlds:classworlds:jar:1.1
+[DEBUG]   Excluded: org.apache.maven:maven-artifact:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-settings:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-model:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-monitor:jar:2.0.6
+[DEBUG]   Excluded: org.codehaus.plexus:plexus-container-default:jar:1.0-alpha-9-stable-1
+[DEBUG] Configuring mojo org.apache.maven.plugins:maven-resources-plugin:2.4.3:resources from plugin realm ClassRealm[plugin>org.apache.maven.plugins:maven-resources-plugin:2.4.3, parent: sun.misc.Launcher$AppClassLoader@558fe7c3]
+[DEBUG] Configuring mojo 'org.apache.maven.plugins:maven-resources-plugin:2.4.3:resources' with basic configurator -->
+[DEBUG]   (f) buildFilters = []
+[DEBUG]   (f) encoding = UTF-8
+[DEBUG]   (f) escapeWindowsPaths = true
+[DEBUG]   (s) includeEmptyDirs = false
+[DEBUG]   (s) outputDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG]   (s) overwrite = false
+[DEBUG]   (f) project = MavenProject: org.nrg.xdat:notifications:1.0.0-SNAPSHOT @ /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/pom.xml
+[DEBUG]   (s) resources = [Resource {targetPath: null, filtering: false, FileSet {directory: /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/resources, PatternSet [includes: {}, excludes: {}]}}]
+[DEBUG]   (f) session = org.apache.maven.execution.MavenSession@192425a
+[DEBUG]   (f) useBuildFilters = true
+[DEBUG]   (s) useDefaultDelimiters = true
+[DEBUG] -- end configuration --
+[DEBUG] properties used {java.vendor=Apple Inc., sun.java.launcher=SUN_STANDARD, sun.management.compiler=HotSpot 64-Bit Tiered Compilers, os.name=Mac OS X, sun.boot.class.path=/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jsfd.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/classes.jar:/System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Resources/Java/JavaRuntimeSupport.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/ui.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/laf.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/sunrsasign.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jsse.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jce.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/charsets.jar, env.TMPDIR=/var/folders/Zv/ZvujOsQmE+yyEuQ6uw9I5U+++TI/-Tmp-/, env.PWD=/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer, env.MKL_NUM_THREADS=1, env.LANG=en_US.UTF-8, java.vm.specification.vendor=Sun Microsystems Inc., java.runtime.version=1.6.0_26-b03-384-10M3425, env.DAZSTUDIO=/Users/rherrick/Documents/DAZ 3D/Studio/My Library, env.Apple_PubSub_Socket_Render=/tmp/launch-RsarDe/Render, project.build.sourceEncoding=UTF-8, env.DISPLAY=/tmp/launch-vQU2lp/org.x:0, user.name=rherrick, env.USER=rherrick, env.SHELL=/bin/bash, env.__CF_USER_TEXT_ENCODING=0x1F5:0:0, awt.nativeDoubleBuffering=true, env.PATH=/Library/Frameworks/EPD64.framework/Versions/Current/bin:/usr/local/bin:/usr/local/ant/bin:/usr/local/ivy/bin:/usr/local/groovy/bin:/usr/local/gradle/bin:/usr/local/maven/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/ant/bin:/usr/local/git/bin:/usr/local/groovy/bin:/usr/local/ivy/bin:/usr/local/maven/bin/:/usr/X11/bin:/opt/local/bin, user.language=en, env.DAZSTUDIO_4=/Applications/DAZ 3D/DAZStudio4, sun.boot.library.path=/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Libraries, classworlds.conf=/usr/local/maven/bin/m2.conf, java.version=1.6.0_26, user.timezone=America/Chicago, sun.arch.data.model=64, http.nonProxyHosts=local|*.local|169.254/16|*.169.254/16, java.endorsed.dirs=/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/lib/endorsed, sun.cpu.isalist=, sun.jnu.encoding=MacRoman, file.encoding.pkg=sun.io, env.SHLVL=1, spring.framework.version=3.0.5.RELEASE, file.separator=/, java.specification.name=Java Platform API Specification, java.class.version=50.0, user.country=US, java.home=/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home, java.vm.info=mixed mode, env.LOGNAME=rherrick, os.version=10.6.8, env.HGEDITOR=mvim -f -c "au VimLeave * !open -a Terminal", env.TERM_PROGRAM_VERSION=273.1, project.reporting.outputEncoding=UTF-8, env.JAVA_MAIN_CLASS_12874=org.codehaus.plexus.classworlds.launcher.Launcher, path.separator=:, java.vm.version=20.1-b02-384, env.JAVA_HOME=/Library/Java/Home, java.awt.printerjob=apple.awt.CPrinterJob, env.TERM=xterm-color, sun.io.unicode.encoding=UnicodeLittle, awt.toolkit=apple.awt.CToolkit, socksNonProxyHosts=local|*.local|169.254/16|*.169.254/16, env.DAZBRYCE_7=/Applications/DAZ 3D/Bryce7, ftp.nonProxyHosts=local|*.local|169.254/16|*.169.254/16, user.home=/Users/rherrick, env.OLDPWD=/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer, java.specification.vendor=Sun Microsystems Inc., env.TERM_PROGRAM=Apple_Terminal, java.library.path=.:/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java, java.vendor.url=http://www.apple.com/, java.vm.vendor=Apple Inc., gopherProxySet=false, maven.home=/usr/local/maven, java.runtime.name=Java(TM) SE Runtime Environment, sun.java.command=org.codehaus.plexus.classworlds.launcher.Launcher -X clean package, java.class.path=/usr/local/maven/boot/plexus-classworlds-2.4.jar, env.com.apple.java.jvmMode=client, java.vm.specification.name=Java Virtual Machine Specification, java.vm.specification.version=1.0, sun.cpu.endian=little, sun.os.patch.level=unknown, env.HOME=/Users/rherrick, java.io.tmpdir=/var/folders/Zv/ZvujOsQmE+yyEuQ6uw9I5U+++TI/-Tmp-/, java.vendor.url.bug=http://bugreport.apple.com/, env.SSH_AUTH_SOCK=/tmp/launch-G0TikT/Listeners, env.COMMAND_MODE=unix2003, env.DAZSTUDIOVERSION_4=67109207, mrj.build=10M3425, os.arch=x86_64, java.awt.graphicsenv=apple.awt.CGraphicsEnvironment, java.ext.dirs=/Library/Java/Extensions:/System/Library/Java/Extensions:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/lib/ext, mrj.version=1060.1.6.0_26-384, env.com.apple.java.jvmTask=CommandLine_Manual.java, user.dir=/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer, env.MONO_MWF_MAC_FORCE_X11=1 mono app.exe, log4j.version=1.2.16, line.separator=
+, java.vm.name=Java HotSpot(TM) 64-Bit Server VM, maven.test.failure.ignore=true, file.encoding=MacRoman, java.specification.version=1.6, junit.version=4.8.2}
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[DEBUG] resource with targetPath null
+directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/resources
+excludes []
+includes []
+[DEBUG] ignoreDelta true
+[INFO] Copying 1 resource
+[DEBUG] file app-context.xml has a filtered file extension
+[DEBUG] copy /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/resources/META-INF/spring/app-context.xml to /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/META-INF/spring/app-context.xml
+[INFO] 
+[INFO] --- maven-compiler-plugin:2.3.2:compile (default-compile) @ notifications ---
+[DEBUG] org.apache.maven.plugins:maven-compiler-plugin:jar:2.3.2:
+[DEBUG]    org.apache.maven:maven-plugin-api:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-artifact:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-core:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-settings:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-plugin-parameter-documenter:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-profile:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-model:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-repository-metadata:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-error-diagnostics:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-project:jar:2.0.6:compile
+[DEBUG]          org.apache.maven:maven-plugin-registry:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-plugin-descriptor:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-artifact-manager:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-monitor:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-toolchain:jar:1.0:compile
+[DEBUG]    org.codehaus.plexus:plexus-utils:jar:2.0.5:compile
+[DEBUG]    org.codehaus.plexus:plexus-compiler-api:jar:1.8.1:compile
+[DEBUG]    org.codehaus.plexus:plexus-compiler-manager:jar:1.8.1:compile
+[DEBUG]    org.codehaus.plexus:plexus-compiler-javac:jar:1.8.1:runtime
+[DEBUG] Created new class realm plugin>org.apache.maven.plugins:maven-compiler-plugin:2.3.2
+[DEBUG] Importing foreign packages into class realm plugin>org.apache.maven.plugins:maven-compiler-plugin:2.3.2
+[DEBUG]   Imported:  < maven.api
+[DEBUG] Populating class realm plugin>org.apache.maven.plugins:maven-compiler-plugin:2.3.2
+[DEBUG]   Included: org.apache.maven.plugins:maven-compiler-plugin:jar:2.3.2
+[DEBUG]   Included: org.codehaus.plexus:plexus-utils:jar:2.0.5
+[DEBUG]   Included: org.codehaus.plexus:plexus-compiler-api:jar:1.8.1
+[DEBUG]   Included: org.codehaus.plexus:plexus-compiler-manager:jar:1.8.1
+[DEBUG]   Included: org.codehaus.plexus:plexus-compiler-javac:jar:1.8.1
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-api:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-artifact:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-core:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-settings:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-parameter-documenter:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-profile:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-model:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-repository-metadata:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-error-diagnostics:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-project:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-registry:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-descriptor:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-artifact-manager:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-monitor:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-toolchain:jar:1.0
+[DEBUG] Configuring mojo org.apache.maven.plugins:maven-compiler-plugin:2.3.2:compile from plugin realm ClassRealm[plugin>org.apache.maven.plugins:maven-compiler-plugin:2.3.2, parent: sun.misc.Launcher$AppClassLoader@558fe7c3]
+[DEBUG] Configuring mojo 'org.apache.maven.plugins:maven-compiler-plugin:2.3.2:compile' with basic configurator -->
+[DEBUG]   (f) basedir = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer
+[DEBUG]   (f) buildDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target
+[DEBUG]   (f) classpathElements = [/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes, /Users/rherrick/.m2/repository/org/springframework/org.springframework.context/3.0.5.RELEASE/org.springframework.context-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.asm/3.0.5.RELEASE/org.springframework.asm-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.aop/3.0.5.RELEASE/org.springframework.aop-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/aopalliance/com.springsource.org.aopalliance/1.0.0/com.springsource.org.aopalliance-1.0.0.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.beans/3.0.5.RELEASE/org.springframework.beans-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.core/3.0.5.RELEASE/org.springframework.core-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.expression/3.0.5.RELEASE/org.springframework.expression-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1/com.springsource.org.apache.commons.logging-1.1.1.jar, /Users/rherrick/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar]
+[DEBUG]   (f) compileSourceRoots = [/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java]
+[DEBUG]   (f) compilerId = javac
+[DEBUG]   (f) debug = true
+[DEBUG]   (f) encoding = UTF-8
+[DEBUG]   (f) failOnError = true
+[DEBUG]   (f) fork = false
+[DEBUG]   (f) generatedSourcesDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/generated-sources/annotations
+[DEBUG]   (f) optimize = false
+[DEBUG]   (f) outputDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG]   (f) outputFileName = notifications-1.0.0-SNAPSHOT
+[DEBUG]   (f) projectArtifact = org.nrg.xdat:notifications:jar:1.0.0-SNAPSHOT
+[DEBUG]   (f) session = org.apache.maven.execution.MavenSession@192425a
+[DEBUG]   (f) showDeprecation = false
+[DEBUG]   (f) showWarnings = false
+[DEBUG]   (f) source = 1.6
+[DEBUG]   (f) staleMillis = 0
+[DEBUG]   (f) target = 1.6
+[DEBUG]   (f) verbose = false
+[DEBUG] -- end configuration --
+[DEBUG] Using compiler 'javac'.
+[DEBUG] Source directories: [/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java]
+[DEBUG] Classpath: [/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.context/3.0.5.RELEASE/org.springframework.context-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.asm/3.0.5.RELEASE/org.springframework.asm-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.aop/3.0.5.RELEASE/org.springframework.aop-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/aopalliance/com.springsource.org.aopalliance/1.0.0/com.springsource.org.aopalliance-1.0.0.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.beans/3.0.5.RELEASE/org.springframework.beans-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.core/3.0.5.RELEASE/org.springframework.core-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.expression/3.0.5.RELEASE/org.springframework.expression-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1/com.springsource.org.apache.commons.logging-1.1.1.jar
+ /Users/rherrick/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar]
+[DEBUG] Output directory: /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG] Classpath:
+[DEBUG]  /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.context/3.0.5.RELEASE/org.springframework.context-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.asm/3.0.5.RELEASE/org.springframework.asm-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.aop/3.0.5.RELEASE/org.springframework.aop-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/aopalliance/com.springsource.org.aopalliance/1.0.0/com.springsource.org.aopalliance-1.0.0.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.beans/3.0.5.RELEASE/org.springframework.beans-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.core/3.0.5.RELEASE/org.springframework.core-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.expression/3.0.5.RELEASE/org.springframework.expression-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1/com.springsource.org.apache.commons.logging-1.1.1.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar
+[DEBUG] Source roots:
+[DEBUG]  /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java
+[DEBUG] Command line options:
+[DEBUG] -d /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes -classpath /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes:/Users/rherrick/.m2/repository/org/springframework/org.springframework.context/3.0.5.RELEASE/org.springframework.context-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.asm/3.0.5.RELEASE/org.springframework.asm-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.aop/3.0.5.RELEASE/org.springframework.aop-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/aopalliance/com.springsource.org.aopalliance/1.0.0/com.springsource.org.aopalliance-1.0.0.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.beans/3.0.5.RELEASE/org.springframework.beans-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.core/3.0.5.RELEASE/org.springframework.core-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.expression/3.0.5.RELEASE/org.springframework.expression-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1/com.springsource.org.apache.commons.logging-1.1.1.jar:/Users/rherrick/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar: -sourcepath /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java: /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/services/impl/DefaultNotificationDispatcherServiceImpl.java /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/beans/Notification.java /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/services/NotificationService.java /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/beans/Definition.java /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/beans/Category.java /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/beans/Vector.java /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/services/impl/DefaultNotificationServiceImpl.java /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/beans/Subscription.java /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/beans/Subscriber.java /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/main/java/org/nrg/xdat/notifications/services/NotificationDispatcherService.java -s /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/generated-sources/annotations -g -nowarn -target 1.6 -source 1.6 -encoding UTF-8
+[INFO] Compiling 10 source files to /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[INFO] 
+[INFO] --- maven-resources-plugin:2.4.3:testResources (default-testResources) @ notifications ---
+[DEBUG] Configuring mojo org.apache.maven.plugins:maven-resources-plugin:2.4.3:testResources from plugin realm ClassRealm[plugin>org.apache.maven.plugins:maven-resources-plugin:2.4.3, parent: sun.misc.Launcher$AppClassLoader@558fe7c3]
+[DEBUG] Configuring mojo 'org.apache.maven.plugins:maven-resources-plugin:2.4.3:testResources' with basic configurator -->
+[DEBUG]   (f) buildFilters = []
+[DEBUG]   (f) encoding = UTF-8
+[DEBUG]   (f) escapeWindowsPaths = true
+[DEBUG]   (s) includeEmptyDirs = false
+[DEBUG]   (s) outputDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[DEBUG]   (s) overwrite = false
+[DEBUG]   (f) project = MavenProject: org.nrg.xdat:notifications:1.0.0-SNAPSHOT @ /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/pom.xml
+[DEBUG]   (s) resources = [Resource {targetPath: null, filtering: false, FileSet {directory: /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/resources, PatternSet [includes: {}, excludes: {}]}}]
+[DEBUG]   (f) session = org.apache.maven.execution.MavenSession@192425a
+[DEBUG]   (f) useBuildFilters = true
+[DEBUG]   (s) useDefaultDelimiters = true
+[DEBUG] -- end configuration --
+[DEBUG] properties used {java.vendor=Apple Inc., sun.java.launcher=SUN_STANDARD, sun.management.compiler=HotSpot 64-Bit Tiered Compilers, os.name=Mac OS X, sun.boot.class.path=/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jsfd.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/classes.jar:/System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Resources/Java/JavaRuntimeSupport.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/ui.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/laf.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/sunrsasign.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jsse.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/jce.jar:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Classes/charsets.jar, env.TMPDIR=/var/folders/Zv/ZvujOsQmE+yyEuQ6uw9I5U+++TI/-Tmp-/, env.PWD=/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer, env.MKL_NUM_THREADS=1, env.LANG=en_US.UTF-8, java.vm.specification.vendor=Sun Microsystems Inc., java.runtime.version=1.6.0_26-b03-384-10M3425, env.DAZSTUDIO=/Users/rherrick/Documents/DAZ 3D/Studio/My Library, env.Apple_PubSub_Socket_Render=/tmp/launch-RsarDe/Render, project.build.sourceEncoding=UTF-8, env.DISPLAY=/tmp/launch-vQU2lp/org.x:0, user.name=rherrick, env.USER=rherrick, env.SHELL=/bin/bash, env.__CF_USER_TEXT_ENCODING=0x1F5:0:0, awt.nativeDoubleBuffering=true, env.PATH=/Library/Frameworks/EPD64.framework/Versions/Current/bin:/usr/local/bin:/usr/local/ant/bin:/usr/local/ivy/bin:/usr/local/groovy/bin:/usr/local/gradle/bin:/usr/local/maven/bin:/usr/bin:/bin:/usr/sbin:/sbin:/usr/local/bin:/usr/local/ant/bin:/usr/local/git/bin:/usr/local/groovy/bin:/usr/local/ivy/bin:/usr/local/maven/bin/:/usr/X11/bin:/opt/local/bin, user.language=en, env.DAZSTUDIO_4=/Applications/DAZ 3D/DAZStudio4, sun.boot.library.path=/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Libraries, classworlds.conf=/usr/local/maven/bin/m2.conf, java.version=1.6.0_26, user.timezone=America/Chicago, sun.arch.data.model=64, http.nonProxyHosts=local|*.local|169.254/16|*.169.254/16, java.endorsed.dirs=/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/lib/endorsed, sun.cpu.isalist=, sun.jnu.encoding=MacRoman, file.encoding.pkg=sun.io, env.SHLVL=1, spring.framework.version=3.0.5.RELEASE, file.separator=/, java.specification.name=Java Platform API Specification, java.class.version=50.0, user.country=US, java.home=/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home, java.vm.info=mixed mode, env.LOGNAME=rherrick, os.version=10.6.8, env.HGEDITOR=mvim -f -c "au VimLeave * !open -a Terminal", env.TERM_PROGRAM_VERSION=273.1, project.reporting.outputEncoding=UTF-8, env.JAVA_MAIN_CLASS_12874=org.codehaus.plexus.classworlds.launcher.Launcher, path.separator=:, java.vm.version=20.1-b02-384, env.JAVA_HOME=/Library/Java/Home, java.awt.printerjob=apple.awt.CPrinterJob, env.TERM=xterm-color, sun.io.unicode.encoding=UnicodeLittle, awt.toolkit=apple.awt.CToolkit, socksNonProxyHosts=local|*.local|169.254/16|*.169.254/16, env.DAZBRYCE_7=/Applications/DAZ 3D/Bryce7, ftp.nonProxyHosts=local|*.local|169.254/16|*.169.254/16, user.home=/Users/rherrick, env.OLDPWD=/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer, java.specification.vendor=Sun Microsystems Inc., env.TERM_PROGRAM=Apple_Terminal, java.library.path=.:/Library/Java/Extensions:/System/Library/Java/Extensions:/usr/lib/java, java.vendor.url=http://www.apple.com/, java.vm.vendor=Apple Inc., gopherProxySet=false, maven.home=/usr/local/maven, java.runtime.name=Java(TM) SE Runtime Environment, sun.java.command=org.codehaus.plexus.classworlds.launcher.Launcher -X clean package, java.class.path=/usr/local/maven/boot/plexus-classworlds-2.4.jar, env.com.apple.java.jvmMode=client, java.vm.specification.name=Java Virtual Machine Specification, java.vm.specification.version=1.0, sun.cpu.endian=little, sun.os.patch.level=unknown, env.HOME=/Users/rherrick, java.io.tmpdir=/var/folders/Zv/ZvujOsQmE+yyEuQ6uw9I5U+++TI/-Tmp-/, java.vendor.url.bug=http://bugreport.apple.com/, env.SSH_AUTH_SOCK=/tmp/launch-G0TikT/Listeners, env.COMMAND_MODE=unix2003, env.DAZSTUDIOVERSION_4=67109207, mrj.build=10M3425, os.arch=x86_64, java.awt.graphicsenv=apple.awt.CGraphicsEnvironment, java.ext.dirs=/Library/Java/Extensions:/System/Library/Java/Extensions:/System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/lib/ext, mrj.version=1060.1.6.0_26-384, env.com.apple.java.jvmTask=CommandLine_Manual.java, user.dir=/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer, env.MONO_MWF_MAC_FORCE_X11=1 mono app.exe, log4j.version=1.2.16, line.separator=
+, java.vm.name=Java HotSpot(TM) 64-Bit Server VM, maven.test.failure.ignore=true, file.encoding=MacRoman, java.specification.version=1.6, junit.version=4.8.2}
+[INFO] Using 'UTF-8' encoding to copy filtered resources.
+[DEBUG] resource with targetPath null
+directory /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/resources
+excludes []
+includes []
+[DEBUG] ignoreDelta true
+[INFO] Copying 2 resources
+[DEBUG] file log4j.properties has a filtered file extension
+[DEBUG] copy /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/resources/log4j.properties to /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/log4j.properties
+[DEBUG] file DefaultNotificationServiceImplTests-context.xml has a filtered file extension
+[DEBUG] copy /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/resources/org/nrg/xdat/notifications/services/impl/DefaultNotificationServiceImplTests-context.xml to /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes/org/nrg/xdat/notifications/services/impl/DefaultNotificationServiceImplTests-context.xml
+[INFO] 
+[INFO] --- maven-compiler-plugin:2.3.2:testCompile (default-testCompile) @ notifications ---
+[DEBUG] Configuring mojo org.apache.maven.plugins:maven-compiler-plugin:2.3.2:testCompile from plugin realm ClassRealm[plugin>org.apache.maven.plugins:maven-compiler-plugin:2.3.2, parent: sun.misc.Launcher$AppClassLoader@558fe7c3]
+[DEBUG] Configuring mojo 'org.apache.maven.plugins:maven-compiler-plugin:2.3.2:testCompile' with basic configurator -->
+[DEBUG]   (f) basedir = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer
+[DEBUG]   (f) buildDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target
+[DEBUG]   (f) classpathElements = [/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes, /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes, /Users/rherrick/.m2/repository/org/springframework/org.springframework.context/3.0.5.RELEASE/org.springframework.context-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.asm/3.0.5.RELEASE/org.springframework.asm-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.aop/3.0.5.RELEASE/org.springframework.aop-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/aopalliance/com.springsource.org.aopalliance/1.0.0/com.springsource.org.aopalliance-1.0.0.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.beans/3.0.5.RELEASE/org.springframework.beans-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.core/3.0.5.RELEASE/org.springframework.core-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.expression/3.0.5.RELEASE/org.springframework.expression-3.0.5.RELEASE.jar, /Users/rherrick/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1/com.springsource.org.apache.commons.logging-1.1.1.jar, /Users/rherrick/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar, /Users/rherrick/.m2/repository/org/junit/com.springsource.org.junit/4.8.2/com.springsource.org.junit-4.8.2.jar, /Users/rherrick/.m2/repository/org/springframework/org.springframework.test/3.0.5.RELEASE/org.springframework.test-3.0.5.RELEASE.jar]
+[DEBUG]   (f) compileSourceRoots = [/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/java]
+[DEBUG]   (f) compilerId = javac
+[DEBUG]   (f) debug = true
+[DEBUG]   (f) encoding = UTF-8
+[DEBUG]   (f) failOnError = true
+[DEBUG]   (f) fork = false
+[DEBUG]   (f) generatedTestSourcesDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/generated-sources/test-annotations
+[DEBUG]   (f) optimize = false
+[DEBUG]   (f) outputDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[DEBUG]   (f) outputFileName = notifications-1.0.0-SNAPSHOT
+[DEBUG]   (f) session = org.apache.maven.execution.MavenSession@192425a
+[DEBUG]   (f) showDeprecation = false
+[DEBUG]   (f) showWarnings = false
+[DEBUG]   (f) source = 1.6
+[DEBUG]   (f) staleMillis = 0
+[DEBUG]   (f) target = 1.6
+[DEBUG]   (f) verbose = false
+[DEBUG] -- end configuration --
+[DEBUG] Using compiler 'javac'.
+[DEBUG] Source directories: [/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/java]
+[DEBUG] Classpath: [/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+ /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.context/3.0.5.RELEASE/org.springframework.context-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.asm/3.0.5.RELEASE/org.springframework.asm-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.aop/3.0.5.RELEASE/org.springframework.aop-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/aopalliance/com.springsource.org.aopalliance/1.0.0/com.springsource.org.aopalliance-1.0.0.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.beans/3.0.5.RELEASE/org.springframework.beans-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.core/3.0.5.RELEASE/org.springframework.core-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.expression/3.0.5.RELEASE/org.springframework.expression-3.0.5.RELEASE.jar
+ /Users/rherrick/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1/com.springsource.org.apache.commons.logging-1.1.1.jar
+ /Users/rherrick/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar
+ /Users/rherrick/.m2/repository/org/junit/com.springsource.org.junit/4.8.2/com.springsource.org.junit-4.8.2.jar
+ /Users/rherrick/.m2/repository/org/springframework/org.springframework.test/3.0.5.RELEASE/org.springframework.test-3.0.5.RELEASE.jar]
+[DEBUG] Output directory: /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[DEBUG] Classpath:
+[DEBUG]  /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[DEBUG]  /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.context/3.0.5.RELEASE/org.springframework.context-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.asm/3.0.5.RELEASE/org.springframework.asm-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.aop/3.0.5.RELEASE/org.springframework.aop-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/aopalliance/com.springsource.org.aopalliance/1.0.0/com.springsource.org.aopalliance-1.0.0.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.beans/3.0.5.RELEASE/org.springframework.beans-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.core/3.0.5.RELEASE/org.springframework.core-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.expression/3.0.5.RELEASE/org.springframework.expression-3.0.5.RELEASE.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1/com.springsource.org.apache.commons.logging-1.1.1.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/junit/com.springsource.org.junit/4.8.2/com.springsource.org.junit-4.8.2.jar
+[DEBUG]  /Users/rherrick/.m2/repository/org/springframework/org.springframework.test/3.0.5.RELEASE/org.springframework.test-3.0.5.RELEASE.jar
+[DEBUG] Source roots:
+[DEBUG]  /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/java
+[DEBUG] Command line options:
+[DEBUG] -d /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes -classpath /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes:/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes:/Users/rherrick/.m2/repository/org/springframework/org.springframework.context/3.0.5.RELEASE/org.springframework.context-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.asm/3.0.5.RELEASE/org.springframework.asm-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.aop/3.0.5.RELEASE/org.springframework.aop-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/aopalliance/com.springsource.org.aopalliance/1.0.0/com.springsource.org.aopalliance-1.0.0.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.beans/3.0.5.RELEASE/org.springframework.beans-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.core/3.0.5.RELEASE/org.springframework.core-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.expression/3.0.5.RELEASE/org.springframework.expression-3.0.5.RELEASE.jar:/Users/rherrick/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1/com.springsource.org.apache.commons.logging-1.1.1.jar:/Users/rherrick/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar:/Users/rherrick/.m2/repository/org/junit/com.springsource.org.junit/4.8.2/com.springsource.org.junit-4.8.2.jar:/Users/rherrick/.m2/repository/org/springframework/org.springframework.test/3.0.5.RELEASE/org.springframework.test-3.0.5.RELEASE.jar: -sourcepath /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/java: /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/java/org/nrg/xdat/notifications/services/impl/DefaultNotificationServiceImplTests.java -s /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/generated-sources/test-annotations -g -nowarn -target 1.6 -source 1.6 -encoding UTF-8
+[INFO] Compiling 1 source file to /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[INFO] 
+[INFO] --- maven-surefire-plugin:2.9:test (default-test) @ notifications ---
+[DEBUG] org.apache.maven.plugins:maven-surefire-plugin:jar:2.9:
+[DEBUG]    org.junit:com.springsource.org.junit:jar:4.8.2:runtime
+[DEBUG]    org.apache.maven:maven-plugin-api:jar:2.0.9:compile
+[DEBUG]    org.apache.maven.surefire:surefire-booter:jar:2.9:compile
+[DEBUG]       org.apache.maven.surefire:surefire-api:jar:2.9:compile
+[DEBUG]    org.apache.maven.surefire:maven-surefire-common:jar:2.9:compile
+[DEBUG]       org.apache.maven.shared:maven-common-artifact-filters:jar:1.3:compile
+[DEBUG]    org.codehaus.plexus:plexus-utils:jar:2.1:compile
+[DEBUG]    org.apache.maven:maven-artifact:jar:2.0.9:compile
+[DEBUG]    org.apache.maven:maven-project:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-settings:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-profile:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-model:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-artifact-manager:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-plugin-registry:jar:2.0.9:compile
+[DEBUG]       org.codehaus.plexus:plexus-container-default:jar:1.0-alpha-9-stable-1:compile
+[DEBUG]          junit:junit:jar:3.8.1:test (scope managed from compile)
+[DEBUG]    org.apache.maven:maven-core:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-plugin-parameter-documenter:jar:2.0.9:compile
+[DEBUG]       org.apache.maven.reporting:maven-reporting-api:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-repository-metadata:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-error-diagnostics:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-plugin-descriptor:jar:2.0.9:compile
+[DEBUG]       org.apache.maven:maven-monitor:jar:2.0.9:compile
+[DEBUG]       classworlds:classworlds:jar:1.1:compile
+[DEBUG]    org.apache.maven:maven-toolchain:jar:2.0.9:compile
+[DEBUG] Created new class realm plugin>org.apache.maven.plugins:maven-surefire-plugin:2.9
+[DEBUG] Importing foreign packages into class realm plugin>org.apache.maven.plugins:maven-surefire-plugin:2.9
+[DEBUG]   Imported:  < maven.api
+[DEBUG] Populating class realm plugin>org.apache.maven.plugins:maven-surefire-plugin:2.9
+[DEBUG]   Included: org.apache.maven.plugins:maven-surefire-plugin:jar:2.9
+[DEBUG]   Included: org.junit:com.springsource.org.junit:jar:4.8.2
+[DEBUG]   Included: org.apache.maven.surefire:surefire-booter:jar:2.9
+[DEBUG]   Included: org.apache.maven.surefire:surefire-api:jar:2.9
+[DEBUG]   Included: org.apache.maven.surefire:maven-surefire-common:jar:2.9
+[DEBUG]   Included: org.apache.maven.shared:maven-common-artifact-filters:jar:1.3
+[DEBUG]   Included: org.codehaus.plexus:plexus-utils:jar:2.1
+[DEBUG]   Included: org.apache.maven.reporting:maven-reporting-api:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-api:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-artifact:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-project:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-settings:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-profile:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-model:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-artifact-manager:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-registry:jar:2.0.9
+[DEBUG]   Excluded: org.codehaus.plexus:plexus-container-default:jar:1.0-alpha-9-stable-1
+[DEBUG]   Excluded: junit:junit:jar:3.8.1
+[DEBUG]   Excluded: org.apache.maven:maven-core:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-parameter-documenter:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-repository-metadata:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-error-diagnostics:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-descriptor:jar:2.0.9
+[DEBUG]   Excluded: org.apache.maven:maven-monitor:jar:2.0.9
+[DEBUG]   Excluded: classworlds:classworlds:jar:1.1
+[DEBUG]   Excluded: org.apache.maven:maven-toolchain:jar:2.0.9
+[DEBUG] Configuring mojo org.apache.maven.plugins:maven-surefire-plugin:2.9:test from plugin realm ClassRealm[plugin>org.apache.maven.plugins:maven-surefire-plugin:2.9, parent: sun.misc.Launcher$AppClassLoader@558fe7c3]
+[DEBUG] Configuring mojo 'org.apache.maven.plugins:maven-surefire-plugin:2.9:test' with basic configurator -->
+[DEBUG]   (s) basedir = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer
+[DEBUG]   (s) childDelegation = false
+[DEBUG]   (s) classesDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG]   (s) disableXmlReport = false
+[DEBUG]   (s) enableAssertions = true
+[DEBUG]   (s) excludes = [**/Abstract*.java]
+[DEBUG]   (s) forkMode = once
+[DEBUG]   (s) includes = [**/*Tests.java]
+[DEBUG]   (s) junitArtifactName = junit:junit
+[DEBUG]   (s) localRepository =        id: local
+      url: file:///Users/rherrick/.m2/repository/
+   layout: none
+
+[DEBUG]   (f) parallelMavenExecution = false
+[DEBUG]   (s) perCoreThreadCount = true
+[DEBUG]   (s) pluginArtifactMap = {org.apache.maven.plugins:maven-surefire-plugin=org.apache.maven.plugins:maven-surefire-plugin:maven-plugin:2.9:, org.junit:com.springsource.org.junit=org.junit:com.springsource.org.junit:jar:4.8.2:runtime, org.apache.maven.surefire:surefire-booter=org.apache.maven.surefire:surefire-booter:jar:2.9:compile, org.apache.maven.surefire:surefire-api=org.apache.maven.surefire:surefire-api:jar:2.9:compile, org.apache.maven.surefire:maven-surefire-common=org.apache.maven.surefire:maven-surefire-common:jar:2.9:compile, org.apache.maven.shared:maven-common-artifact-filters=org.apache.maven.shared:maven-common-artifact-filters:jar:1.3:compile, org.codehaus.plexus:plexus-utils=org.codehaus.plexus:plexus-utils:jar:2.1:compile, org.apache.maven.reporting:maven-reporting-api=org.apache.maven.reporting:maven-reporting-api:jar:2.0.9:compile}
+[DEBUG]   (s) printSummary = true
+[DEBUG]   (s) project = MavenProject: org.nrg.xdat:notifications:1.0.0-SNAPSHOT @ /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/pom.xml
+[DEBUG]   (s) projectArtifactMap = {org.springframework:org.springframework.context=org.springframework:org.springframework.context:jar:3.0.5.RELEASE:compile, org.springframework:org.springframework.asm=org.springframework:org.springframework.asm:jar:3.0.5.RELEASE:compile, org.springframework:org.springframework.aop=org.springframework:org.springframework.aop:jar:3.0.5.RELEASE:compile, org.aopalliance:com.springsource.org.aopalliance=org.aopalliance:com.springsource.org.aopalliance:jar:1.0.0:compile, org.springframework:org.springframework.beans=org.springframework:org.springframework.beans:jar:3.0.5.RELEASE:compile, org.springframework:org.springframework.core=org.springframework:org.springframework.core:jar:3.0.5.RELEASE:compile, org.springframework:org.springframework.expression=org.springframework:org.springframework.expression:jar:3.0.5.RELEASE:compile, org.apache.commons:com.springsource.org.apache.commons.logging=org.apache.commons:com.springsource.org.apache.commons.logging:jar:1.1.1:compile, org.apache.log4j:com.springsource.org.apache.log4j=org.apache.log4j:com.springsource.org.apache.log4j:jar:1.2.16:compile, org.junit:com.springsource.org.junit=org.junit:com.springsource.org.junit:jar:4.8.2:test, org.springframework:org.springframework.test=org.springframework:org.springframework.test:jar:3.0.5.RELEASE:test}
+[DEBUG]   (s) redirectTestOutputToFile = false
+[DEBUG]   (s) remoteRepositories = [       id: Codehaus
+      url: http://repository.codehaus.org/
+   layout: default
+snapshots: [enabled => false, update => daily]
+ releases: [enabled => true, update => daily]
+,        id: com.springsource.repository.bundles.release
+      url: http://repository.springsource.com/maven/bundles/release
+   layout: default
+snapshots: [enabled => true, update => daily]
+ releases: [enabled => true, update => daily]
+,        id: com.springsource.repository.bundles.external
+      url: http://repository.springsource.com/maven/bundles/external
+   layout: default
+snapshots: [enabled => true, update => daily]
+ releases: [enabled => true, update => daily]
+,        id: central
+      url: http://repo1.maven.org/maven2
+   layout: default
+snapshots: [enabled => false, update => daily]
+ releases: [enabled => true, update => never]
+]
+[DEBUG]   (s) reportFormat = brief
+[DEBUG]   (s) reportsDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire-reports
+[DEBUG]   (s) runOrder = filesystem
+[DEBUG]   (s) session = org.apache.maven.execution.MavenSession@192425a
+[DEBUG]   (s) skip = false
+[DEBUG]   (s) skipTests = false
+[DEBUG]   (s) testClassesDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[DEBUG]   (s) testFailureIgnore = true
+[DEBUG]   (s) testNGArtifactName = org.testng:testng
+[DEBUG]   (s) testSourceDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/src/test/java
+[DEBUG]   (s) trimStackTrace = true
+[DEBUG]   (s) useFile = true
+[DEBUG]   (s) useManifestOnlyJar = true
+[DEBUG]   (s) useSystemClassLoader = true
+[DEBUG]   (s) useUnlimitedThreads = false
+[DEBUG]   (s) workingDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer
+[DEBUG] -- end configuration --
+[INFO] Surefire report directory: /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire-reports
+[DEBUG] dummy:dummy:jar:1.0 (selected for null)
+[DEBUG]   org.apache.maven.surefire:surefire-booter:jar:2.9:compile (selected for compile)
+[DEBUG]     org.apache.maven.surefire:surefire-api:jar:2.9:compile (selected for compile)
+[DEBUG] Adding to surefire booter test classpath: /Users/rherrick/.m2/repository/org/apache/maven/surefire/surefire-booter/2.9/surefire-booter-2.9.jar Scope: compile
+[DEBUG] Adding to surefire booter test classpath: /Users/rherrick/.m2/repository/org/apache/maven/surefire/surefire-api/2.9/surefire-api-2.9.jar Scope: compile
+[DEBUG] Setting system property [user.dir]=[/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer]
+[DEBUG] Setting system property [localRepository]=[/Users/rherrick/.m2/repository]
+[DEBUG] Setting system property [basedir]=[/Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer]
+[DEBUG] Using JVM: /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java
+[DEBUG] dummy:dummy:jar:1.0 (selected for null)
+[DEBUG]   org.apache.maven.surefire:surefire-junit3:jar:2.9:test (selected for test)
+[DEBUG]     org.apache.maven.surefire:surefire-api:jar:2.9:test (selected for test)
+[DEBUG] Adding to surefire test classpath: /Users/rherrick/.m2/repository/org/apache/maven/surefire/surefire-junit3/2.9/surefire-junit3-2.9.jar Scope: test
+[DEBUG] Adding to surefire test classpath: /Users/rherrick/.m2/repository/org/apache/maven/surefire/surefire-api/2.9/surefire-api-2.9.jar Scope: test
+[DEBUG] test classpath classpath:
+[DEBUG]   /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/test-classes
+[DEBUG]   /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG]   /Users/rherrick/.m2/repository/org/springframework/org.springframework.context/3.0.5.RELEASE/org.springframework.context-3.0.5.RELEASE.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/springframework/org.springframework.asm/3.0.5.RELEASE/org.springframework.asm-3.0.5.RELEASE.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/springframework/org.springframework.aop/3.0.5.RELEASE/org.springframework.aop-3.0.5.RELEASE.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/aopalliance/com.springsource.org.aopalliance/1.0.0/com.springsource.org.aopalliance-1.0.0.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/springframework/org.springframework.beans/3.0.5.RELEASE/org.springframework.beans-3.0.5.RELEASE.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/springframework/org.springframework.core/3.0.5.RELEASE/org.springframework.core-3.0.5.RELEASE.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/springframework/org.springframework.expression/3.0.5.RELEASE/org.springframework.expression-3.0.5.RELEASE.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.logging/1.1.1/com.springsource.org.apache.commons.logging-1.1.1.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/junit/com.springsource.org.junit/4.8.2/com.springsource.org.junit-4.8.2.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/springframework/org.springframework.test/3.0.5.RELEASE/org.springframework.test-3.0.5.RELEASE.jar
+[DEBUG] provider classpath classpath:
+[DEBUG]   /Users/rherrick/.m2/repository/org/apache/maven/surefire/surefire-junit3/2.9/surefire-junit3-2.9.jar
+[DEBUG]   /Users/rherrick/.m2/repository/org/apache/maven/surefire/surefire-api/2.9/surefire-api-2.9.jar
+
+-------------------------------------------------------
+ T E S T S
+-------------------------------------------------------
+Forking command line: /bin/sh -c cd /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer && /System/Library/Java/JavaVirtualMachines/1.6.0.jdk/Contents/Home/bin/java -jar /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire/surefirebooter3687580616774433184.jar /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire/surefire7654521304427891029tmp /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire/surefire823166297174082214tmp
+Running org.nrg.xdat.notifications.services.impl.DefaultNotificationServiceImplTests
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0, Time elapsed: 0.012 sec <<< FAILURE!
+
+Results :
+
+Failed tests:   org.nrg.xdat.notifications.services.impl.DefaultNotificationServiceImplTests.testCreateCategory()
+
+Tests run: 1, Failures: 1, Errors: 0, Skipped: 0
+
+[ERROR] There are test failures.
+
+Please refer to /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/surefire-reports for the individual test results.
+[INFO] 
+[INFO] --- maven-jar-plugin:2.3.1:jar (default-jar) @ notifications ---
+[DEBUG] org.apache.maven.plugins:maven-jar-plugin:jar:2.3.1:
+[DEBUG]    org.apache.maven:maven-plugin-api:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-project:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-settings:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-profile:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-artifact-manager:jar:2.0.6:compile
+[DEBUG]          org.apache.maven:maven-repository-metadata:jar:2.0.6:compile
+[DEBUG]       org.apache.maven:maven-plugin-registry:jar:2.0.6:compile
+[DEBUG]       org.codehaus.plexus:plexus-container-default:jar:1.0-alpha-9-stable-1:compile
+[DEBUG]          junit:junit:jar:3.8.1:compile
+[DEBUG]          classworlds:classworlds:jar:1.1-alpha-2:compile
+[DEBUG]    org.apache.maven:maven-model:jar:2.0.6:runtime
+[DEBUG]    org.apache.maven:maven-artifact:jar:2.0.6:compile
+[DEBUG]    org.apache.maven:maven-archiver:jar:2.4.1:compile
+[DEBUG]       org.codehaus.plexus:plexus-interpolation:jar:1.13:compile
+[DEBUG]    org.codehaus.plexus:plexus-archiver:jar:1.0:compile
+[DEBUG]       org.codehaus.plexus:plexus-io:jar:1.0:compile
+[DEBUG]    commons-lang:commons-lang:jar:2.1:compile
+[DEBUG]    org.codehaus.plexus:plexus-utils:jar:2.0.5:compile
+[DEBUG] Created new class realm plugin>org.apache.maven.plugins:maven-jar-plugin:2.3.1
+[DEBUG] Importing foreign packages into class realm plugin>org.apache.maven.plugins:maven-jar-plugin:2.3.1
+[DEBUG]   Imported:  < maven.api
+[DEBUG] Populating class realm plugin>org.apache.maven.plugins:maven-jar-plugin:2.3.1
+[DEBUG]   Included: org.apache.maven.plugins:maven-jar-plugin:jar:2.3.1
+[DEBUG]   Included: junit:junit:jar:3.8.1
+[DEBUG]   Included: org.apache.maven:maven-archiver:jar:2.4.1
+[DEBUG]   Included: org.codehaus.plexus:plexus-interpolation:jar:1.13
+[DEBUG]   Included: org.codehaus.plexus:plexus-archiver:jar:1.0
+[DEBUG]   Included: org.codehaus.plexus:plexus-io:jar:1.0
+[DEBUG]   Included: commons-lang:commons-lang:jar:2.1
+[DEBUG]   Included: org.codehaus.plexus:plexus-utils:jar:2.0.5
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-api:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-project:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-settings:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-profile:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-artifact-manager:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-repository-metadata:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-plugin-registry:jar:2.0.6
+[DEBUG]   Excluded: org.codehaus.plexus:plexus-container-default:jar:1.0-alpha-9-stable-1
+[DEBUG]   Excluded: classworlds:classworlds:jar:1.1-alpha-2
+[DEBUG]   Excluded: org.apache.maven:maven-model:jar:2.0.6
+[DEBUG]   Excluded: org.apache.maven:maven-artifact:jar:2.0.6
+[DEBUG] Configuring mojo org.apache.maven.plugins:maven-jar-plugin:2.3.1:jar from plugin realm ClassRealm[plugin>org.apache.maven.plugins:maven-jar-plugin:2.3.1, parent: sun.misc.Launcher$AppClassLoader@558fe7c3]
+[DEBUG] Configuring mojo 'org.apache.maven.plugins:maven-jar-plugin:2.3.1:jar' with basic configurator -->
+[DEBUG]   (f) classesDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes
+[DEBUG]   (f) defaultManifestFile = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/classes/META-INF/MANIFEST.MF
+[DEBUG]   (f) finalName = notifications-1.0.0-SNAPSHOT
+[DEBUG]   (f) forceCreation = false
+[DEBUG]   (f) outputDirectory = /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target
+[DEBUG]   (f) project = MavenProject: org.nrg.xdat:notifications:1.0.0-SNAPSHOT @ /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/pom.xml
+[DEBUG]   (f) useDefaultManifestFile = false
+[DEBUG] -- end configuration --
+[DEBUG] isUp2date: false (Destination /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/notifications-1.0.0-SNAPSHOT.jar not found.)
+[INFO] Building jar: /Users/rherrick/Documents/Code/Projects/notifications/NotificationViewer/target/notifications-1.0.0-SNAPSHOT.jar
+[DEBUG] adding directory META-INF/
+[DEBUG] adding entry META-INF/MANIFEST.MF
+[DEBUG] adding directory META-INF/spring/
+[DEBUG] adding directory org/
+[DEBUG] adding directory org/nrg/
+[DEBUG] adding directory org/nrg/xdat/
+[DEBUG] adding directory org/nrg/xdat/notifications/
+[DEBUG] adding directory org/nrg/xdat/notifications/beans/
+[DEBUG] adding directory org/nrg/xdat/notifications/services/
+[DEBUG] adding directory org/nrg/xdat/notifications/services/impl/
+[DEBUG] adding entry META-INF/spring/app-context.xml
+[DEBUG] adding entry org/nrg/xdat/notifications/beans/Category.class
+[DEBUG] adding entry org/nrg/xdat/notifications/beans/Definition.class
+[DEBUG] adding entry org/nrg/xdat/notifications/beans/Notification.class
+[DEBUG] adding entry org/nrg/xdat/notifications/beans/Subscriber.class
+[DEBUG] adding entry org/nrg/xdat/notifications/beans/Subscription.class
+[DEBUG] adding entry org/nrg/xdat/notifications/beans/Vector.class
+[DEBUG] adding entry org/nrg/xdat/notifications/services/impl/DefaultNotificationDispatcherServiceImpl.class
+[DEBUG] adding entry org/nrg/xdat/notifications/services/impl/DefaultNotificationServiceImpl.class
+[DEBUG] adding entry org/nrg/xdat/notifications/services/NotificationDispatcherService.class
+[DEBUG] adding entry org/nrg/xdat/notifications/services/NotificationService.class
+[DEBUG] adding directory META-INF/maven/
+[DEBUG] adding directory META-INF/maven/org.nrg.xdat/
+[DEBUG] adding directory META-INF/maven/org.nrg.xdat/notifications/
+[DEBUG] adding entry META-INF/maven/org.nrg.xdat/notifications/pom.xml
+[DEBUG] adding entry META-INF/maven/org.nrg.xdat/notifications/pom.properties
+[INFO] ------------------------------------------------------------------------
+[INFO] BUILD SUCCESS
+[INFO] ------------------------------------------------------------------------
+[INFO] Total time: 3.079s
+[INFO] Finished at: Thu Aug 18 10:18:18 CDT 2011
+[INFO] Final Memory: 9M/81M
+[INFO] ------------------------------------------------------------------------

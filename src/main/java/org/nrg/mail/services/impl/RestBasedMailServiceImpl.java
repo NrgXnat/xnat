@@ -16,6 +16,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.mail.api.MailMessage;
+import org.nrg.mail.services.NrgServiceException;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -42,11 +43,11 @@ import java.util.Map.Entry;
  * @author rherrick
  */
 public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
-    public RestBasedMailServiceImpl() {
+    public RestBasedMailServiceImpl() throws NrgServiceException {
         super();
     }
 
-    public RestBasedMailServiceImpl(String address, String username, String password) {
+    public RestBasedMailServiceImpl(String address, String username, String password) throws NrgServiceException {
         super();
 
         setRestMailServiceEndpoint(address);

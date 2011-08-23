@@ -14,6 +14,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.services.MailService;
+import org.nrg.mail.services.NrgServiceException;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.Assert;
 
@@ -35,10 +36,11 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * call the static initializer method {@link #getInstance()}. The public
      * constructor is provided to allow Spring to create the class and auto-wire
      * the mail sender.
+     * @throws NrgServiceException Thrown when service is already initialized.
      */
-    public AbstractMailServiceImpl() {
+    public AbstractMailServiceImpl() throws NrgServiceException {
         if (_instance != null) {
-            throw new RuntimeException("The mail service instance is already initialized. Use the static MailService.getInstance() method to get an instance of this class.");
+            throw new NrgServiceException("The mail service instance is already initialized. Use the static MailService.getInstance() method to get an instance of this class.");
         }
         _log.info("Initializing mail service static singleton.");
         setInstance(this);

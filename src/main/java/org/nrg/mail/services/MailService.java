@@ -9,6 +9,7 @@
  */
 package org.nrg.mail.services;
 
+import org.nrg.framework.services.NrgService;
 import org.nrg.mail.api.MailMessage;
 import org.springframework.core.io.FileSystemResource;
 

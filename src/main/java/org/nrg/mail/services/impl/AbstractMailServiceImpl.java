@@ -12,9 +12,10 @@ package org.nrg.mail.services.impl;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.services.MailService;
-import org.nrg.mail.services.NrgServiceException;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.Assert;
 
@@ -40,7 +41,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     public AbstractMailServiceImpl() throws NrgServiceException {
         if (_instance != null) {
-            throw new NrgServiceException("The mail service instance is already initialized. Use the static MailService.getInstance() method to get an instance of this class.");
+            throw new NrgServiceException(NrgServiceError.AlreadyInitialized, "The mail service instance is already initialized. Use the static MailService.getInstance() method to get an instance of this class.");
         }
         _log.info("Initializing mail service static singleton.");
         setInstance(this);

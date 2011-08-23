@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beansProjectDescription>
+	<version>1</version>
+	<pluginVersion><![CDATA[2.7.0.201107040453-RELEASE]]></pluginVersion>
+	<configSuffixes>
+		<configSuffix><![CDATA[xml]]></configSuffix>
+	</configSuffixes>
+	<enableImports><![CDATA[false]]></enableImports>
+	<configs>
+		<config>src/test/resources/org/nrg/mail/services/impl/TestSpringBasedMailServiceImpl-context.xml</config>
+	</configs>
+	<configSets>
+	</configSets>
+</beansProjectDescription>

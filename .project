@@ -1,8 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <projectDescription>
-	<name>Notifications</name>
-	<comment>This project is a simple template for a jar utility using Spring.
-  </comment>
+	<name>nrg_notify</name>
+	<comment>Eclipse/STS project for the NRG Notify service.</comment>
 	<projects>
 	</projects>
 	<buildSpec>

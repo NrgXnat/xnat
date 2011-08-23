@@ -1,9 +1,9 @@
-Bundle-SymbolicName: org.nrg.xdat.notifications
-Bundle-Name: XDAT Notification Service
+Bundle-SymbolicName: org.nrg.notify
+Bundle-Name: NRG Notification Service
 Bundle-Vendor: Neuroinformatics Research Group
 Bundle-ManifestVersion: 2
 Import-Template: 
- org.nrg.xdat.notifications.*;version="[1.0.0, 2.0.0)",
+ org.nrg.notify.*;version="[1.0.0, 2.0.0)",
  org.springframework.beans.*;version="[3.0.0, 4.0.0)",
  org.springframework.context.*;version="[3.0.0, 4.0.0)",
  org.springframework.core.*;version="[3.0.0, 4.0.0)",

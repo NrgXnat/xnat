@@ -12,6 +12,8 @@ package org.nrg.notify.api;
 import java.util.List;
 
 import javax.persistence.Entity;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.SequenceGenerator;
 
@@ -21,7 +23,8 @@ import javax.persistence.SequenceGenerator;
 @Entity
 public class Subscriber {
     @Id
-    @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
     public long getId() {
         return _id;
     }
@@ -38,15 +41,15 @@ public class Subscriber {
         _name = name;
     }
 
-    public List<String> getEmails() {
+    public String getEmails() {
         return _emails;
     }
 
-    public void setEmails(List<String> emails) {
+    public void setEmails(String emails) {
         _emails = emails;
     }
 
     private long _id;
     private String _name;
-    private List<String> _emails;
+    private String _emails;
 }

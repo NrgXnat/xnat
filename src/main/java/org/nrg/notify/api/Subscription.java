@@ -13,9 +13,12 @@ import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.GeneratedValue;
+import javax.persistence.GenerationType;
 import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
+import javax.persistence.OneToOne;
 import javax.persistence.SequenceGenerator;
 
 /**
@@ -24,7 +27,8 @@ import javax.persistence.SequenceGenerator;
 @Entity
 public class Subscription {
     @Id
-    @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    // @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
     public long getId() {
         return _id;
     }
@@ -33,8 +37,7 @@ public class Subscription {
         _id = id;
     }
 
-    @OneToMany(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "id", nullable = false)
+    @ManyToOne(fetch = FetchType.LAZY)
     public Definition getDefinition() {
         return _definition;
     }
@@ -42,9 +45,13 @@ public class Subscription {
     public void setDefinition (Definition definition) {
         _definition = definition;
     }
-    
-    @OneToMany(fetch = FetchType.LAZY)
-    // @JoinColumn(name = "id", nullable = false)
+
+    /**
+     * Each subscription maps a {@link #getDefinition() definition} to a single
+     * {@link Subscriber subscriber}.
+     * @return
+     */
+    @OneToOne(fetch = FetchType.LAZY)
     public Subscriber getSubscriber() {
         return _subscriber;
     }
@@ -61,7 +68,13 @@ public class Subscription {
         _subscriberType = subscriberType;
     }
     
-    @ManyToOne(fetch = FetchType.LAZY)
+    /**
+     * Each {@link Vector vector} maps to multiple {@link Subscription subscriptions} and
+     * each subscription can map to multiple vectors, but each vector doesn't need to know
+     * about its subscriptions.
+     * @return A list of {@link Vector vectors} for notifying the subscriber. 
+     */
+    @OneToMany(fetch = FetchType.LAZY)
     public List<Vector> getVectors() {
         return _vectors;
     }

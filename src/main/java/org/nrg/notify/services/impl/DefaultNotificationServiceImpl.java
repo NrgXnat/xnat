@@ -9,12 +9,10 @@
  */
 package org.nrg.notify.services.impl;
 
-import org.nrg.notify.api.Category;
-import org.nrg.notify.daos.CategoryDAO;
+import org.nrg.notify.services.CategoryService;
 import org.nrg.notify.services.NotificationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import org.springframework.transaction.annotation.Transactional;
 
 /**
  * Provides a default implementation for the notification service.
@@ -25,22 +23,23 @@ import org.springframework.transaction.annotation.Transactional;
 public class DefaultNotificationServiceImpl implements NotificationService {
 
     /**
-     * @return A new empty {@link Category} object.
-     * @see NotificationService#newCategory()
+     * Sets the category service for this notification service.
+     * @param categoryService The category service to set.
      */
-    public Category newCategory() {
-        return new Category();
+    @Override
+    public void setCategoryService(CategoryService categoryService) {
+        _categoryService = categoryService;
     }
 
     /**
-     * @param category Adds the submitted {@link Category object} to the system.
-     * @see NotificationService#addCategory(Category)
+     * Gets the current category service instance.
+     * @return Returns the category service.
      */
-    @Transactional
-    public void addCategory(Category category) {
-        _categoryDAO.create(category);
+    @Override
+    public CategoryService getCategoryService() {
+        return _categoryService;
     }
-    
+
     @Autowired
-    private CategoryDAO _categoryDAO;
+    private CategoryService _categoryService;
 }

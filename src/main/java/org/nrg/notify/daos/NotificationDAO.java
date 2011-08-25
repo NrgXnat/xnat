@@ -9,15 +9,17 @@
  */
 package org.nrg.notify.daos;
 
+import org.nrg.framework.orm.hibernate.BaseHibernateDAO;
 import org.nrg.notify.api.Notification;
 import org.springframework.stereotype.Repository;
 
 /**
  * Implements the DAO class for the {@link Notification} entity type.
  * 
- * @see BaseDAO
- * @author rherrick
+ * @see BaseHibernateDAO
+ * @author Rick Herrick <rick.herrick@wustl.edu>
+
  */
 @Repository
-public class NotificationDAO extends BaseDAO<Notification> {
+public class NotificationDAO extends BaseHibernateDAO<Notification> {
 }

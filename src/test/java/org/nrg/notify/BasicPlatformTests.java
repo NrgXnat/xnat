@@ -26,6 +26,7 @@ import org.nrg.notify.api.Category;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.daos.CategoryDAO;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -34,7 +35,8 @@ import org.springframework.transaction.annotation.Transactional;
  * Tests various platform attributes to ensure that they're working, e.g. connection
  * to the data source.
  *
- * @author rherrick
+ * @author Rick Herrick <rick.herrick@wustl.edu>
+
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -101,6 +103,7 @@ public class BasicPlatformTests {
     }
 
     @Autowired
+    @Qualifier("dataSource")
     private DataSource _dataSource;
     
     @Autowired

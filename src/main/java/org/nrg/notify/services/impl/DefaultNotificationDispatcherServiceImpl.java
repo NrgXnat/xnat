@@ -15,7 +15,8 @@ import org.springframework.stereotype.Service;
 /**
  * The Class DefaultNotificationDispatcherServiceImpl.
  *
- * @author rherrick
+ * @author Rick Herrick <rick.herrick@wustl.edu>
+
  */
 @Service
 public class DefaultNotificationDispatcherServiceImpl implements NotificationDispatcherService {

@@ -10,36 +10,21 @@
 package org.nrg.notify.api;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.SequenceGenerator;
 
 import org.apache.commons.lang.StringUtils;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
  * The class Category.
  */
 @Entity
-public class Category {
+public class Category extends AbstractHibernateEntity {
     public Category() {
-        setId(0);
+        super();
         setScope(CategoryScope.Default);
         setEvent(null);
     }
-
-    // TODO: @GeneratedValue won't force H2 to create table, but @SequenceGenerator will. Why?
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
-    public long getId() {
-        return _id;
-    }
-
-    public void setId(long id) {
-        _id = id;
-    }
-
+    
     public CategoryScope getScope() {
         return _scope;
     }
@@ -58,7 +43,7 @@ public class Category {
 
     @Override
     public String toString() {
-        return "[" + _id + "] " + _scope + ": " + _event;
+        return "[" + getId() + "] " + _scope + ": " + _event;
     }
 
     @Override
@@ -72,12 +57,11 @@ public class Category {
 
         // TODO: Should equals be based on the ID? Or just the attributes?
         Category category = (Category) item;
-        return category.getId() == _id &&
+        return category.getId() == getId() &&
                StringUtils.equals(category.getEvent(), _event) &&
                category.getScope() == _scope;
     }
     
-    private long _id;
     private CategoryScope _scope;
     private String _event;
 }

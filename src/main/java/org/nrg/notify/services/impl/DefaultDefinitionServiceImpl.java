@@ -1,5 +1,5 @@
 /**
- * DefaultCategoryServiceImpl
+ * DefaultDefinitionServiceImpl
  * (C) 2011 Washington University School of Medicine
  * All Rights Reserved
  *
@@ -12,28 +12,28 @@ package org.nrg.notify.services.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.notify.api.Category;
-import org.nrg.notify.daos.CategoryDAO;
-import org.nrg.notify.services.CategoryService;
+import org.nrg.notify.api.Definition;
+import org.nrg.notify.daos.DefinitionDAO;
+import org.nrg.notify.services.DefinitionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Implements the {@link CategoryService} interface to provide default {@link Category category}
+ * Implements the {@link DefinitionService} interface to provide default {@link Definition Definition}
  * management functionality.
  * 
  * @author Rick Herrick <rick.herrick@wustl.edu>
  */
 @Service
-public class DefaultCategoryServiceImpl extends AbstractHibernateEntityService<Category> implements CategoryService {
+public class DefaultDefinitionServiceImpl extends AbstractHibernateEntityService<Definition> implements DefinitionService {
 
     /**
-     * @return A new empty {@link Category} object.
-     * @see CategoryService#newCategory()
+     * @return A new empty {@link Definition} object.
+     * @see DefinitionService#newDefinition()
      */
-    public Category newEntity() {
-        _log.debug("Creating a new category object");
-        return new Category();
+    public Definition newEntity() {
+        _log.debug("Creating a new definition object");
+        return new Definition();
     }
 
     /**
@@ -41,12 +41,12 @@ public class DefaultCategoryServiceImpl extends AbstractHibernateEntityService<C
      * @see AbstractHibernateEntityService#getDao()
      */
     @Override
-    protected CategoryDAO getDao() {
+    protected DefinitionDAO getDao() {
         return _dao;
     }
 
-    private static final Log _log = LogFactory.getLog(DefaultCategoryServiceImpl.class);
+    private static final Log _log = LogFactory.getLog(DefaultDefinitionServiceImpl.class);
 
     @Autowired
-    private CategoryDAO _dao;
+    private DefinitionDAO _dao;
 }

@@ -10,27 +10,14 @@
 package org.nrg.notify.api;
 
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.SequenceGenerator;
+
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
  * The Class Vector.
  */
 @Entity
-public class Vector {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
-    public long getId() {
-        return _id;
-    }
-
-    public void setId(long id) {
-        _id = id;
-    }
-
+public class Channel extends AbstractHibernateEntity {
     public String getName() {
         return _name;
     }
@@ -63,7 +50,6 @@ public class Vector {
         _transformer = transformer;
     }
 
-    private long _id;
     private String _name;
     private String _service;
     private String _format;

@@ -13,5 +13,5 @@ package org.nrg.notify.services;
  * The Interface NotificationDispatcherService.
  */
 public interface NotificationDispatcherService {
-
+    public static String SERVICE_NAME = "NotificationDispatcherService";
 }

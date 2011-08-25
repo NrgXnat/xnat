@@ -12,28 +12,28 @@ package org.nrg.notify.services.impl;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.notify.api.Category;
-import org.nrg.notify.daos.CategoryDAO;
-import org.nrg.notify.services.CategoryService;
+import org.nrg.notify.api.Subscriber;
+import org.nrg.notify.daos.SubscriberDAO;
+import org.nrg.notify.services.SubscriberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 /**
- * Implements the {@link CategoryService} interface to provide default {@link Category category}
+ * Implements the {@link SubscriberService} interface to provide default {@link Subscriber subscriber}
  * management functionality.
  * 
  * @author Rick Herrick <rick.herrick@wustl.edu>
  */
 @Service
-public class DefaultCategoryServiceImpl extends AbstractHibernateEntityService<Category> implements CategoryService {
+public class DefaultSubscriberServiceImpl extends AbstractHibernateEntityService<Subscriber> implements SubscriberService {
 
     /**
-     * @return A new empty {@link Category} object.
-     * @see CategoryService#newCategory()
+     * @return A new empty {@link Subscriber} object.
+     * @see SubscriberService#newEntity()
      */
-    public Category newEntity() {
-        _log.debug("Creating a new category object");
-        return new Category();
+    public Subscriber newEntity() {
+        _log.debug("Creating a new subscriber object");
+        return new Subscriber();
     }
 
     /**
@@ -41,12 +41,12 @@ public class DefaultCategoryServiceImpl extends AbstractHibernateEntityService<C
      * @see AbstractHibernateEntityService#getDao()
      */
     @Override
-    protected CategoryDAO getDao() {
+    protected SubscriberDAO getDao() {
         return _dao;
     }
 
-    private static final Log _log = LogFactory.getLog(DefaultCategoryServiceImpl.class);
+    private static final Log _log = LogFactory.getLog(DefaultSubscriberServiceImpl.class);
 
     @Autowired
-    private CategoryDAO _dao;
+    private SubscriberDAO _dao;
 }

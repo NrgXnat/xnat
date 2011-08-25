@@ -11,28 +11,16 @@ package org.nrg.notify.api;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.SequenceGenerator;
+import javax.persistence.Transient;
+
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
  * The Class Definition.
  */
 @Entity
-public class Definition {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
-    public long getId() {
-        return _id;
-    }
-
-    public void setId(long id) {
-        _id = id;
-    }
-
+public class Definition extends AbstractHibernateEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     public Category getCategory() {
         return _category;
@@ -51,11 +39,32 @@ public class Definition {
     }
     
     @Override
-    public String toString() {
-        return _category.toString() + "/[" + _id + "] " + _entity;
+    @Transient
+    public boolean isDeletable() {
+        return false;
     }
 
-    private long _id;
+    @Override
+    public String toString() {
+        return _category.toString() + "/[" + getId() + "] " + _entity;
+    }
+    
+    @Override
+    public boolean equals(Object item) {
+        if (item == null) {
+            return false;
+        }
+        if (!(item instanceof Definition)) {
+            return false;
+        }
+
+        // TODO: Should equals be based on the ID? Or just the attributes?
+        Definition definition = (Definition) item;
+        return definition.getId() == getId() &&
+               definition.getCategory().equals(_category) &&
+               definition.getEntity() == _entity;
+    }
+
     private Category _category;
     private long _entity;
 }

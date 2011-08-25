@@ -9,30 +9,15 @@
  */
 package org.nrg.notify.api;
 
-import java.util.List;
-
 import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-import javax.persistence.SequenceGenerator;
+
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
  * The Class Subscriber.
  */
 @Entity
-public class Subscriber {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
-    public long getId() {
-        return _id;
-    }
-
-    public void setId(long id) {
-        _id = id;
-    }
-
+public class Subscriber extends AbstractHibernateEntity {
     public String getName() {
         return _name;
     }
@@ -49,7 +34,6 @@ public class Subscriber {
         _emails = emails;
     }
 
-    private long _id;
     private String _name;
     private String _emails;
 }

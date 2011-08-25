@@ -1,5 +1,5 @@
 /**
- * SubscriptionDAO
+ * VectorServiceDAO
  * (C) 2011 Washington University School of Medicine
  * All Rights Reserved
  *
@@ -10,16 +10,16 @@
 package org.nrg.notify.daos;
 
 import org.nrg.framework.orm.hibernate.BaseHibernateDAO;
-import org.nrg.notify.api.Subscription;
+import org.nrg.notify.api.ChannelRenderer;
 import org.springframework.stereotype.Repository;
 
 /**
- * Implements the DAO class for the {@link Subscription} entity type.
+ * Implements the DAO class for the {@link ChannelRenderer} entity type.
  * 
  * @see BaseHibernateDAO
  * @author Rick Herrick <rick.herrick@wustl.edu>
 
  */
 @Repository
-public class SubscriptionDAO extends BaseHibernateDAO<Subscription> {
+public class ChannelRendererDAO extends BaseHibernateDAO<ChannelRenderer> {
 }

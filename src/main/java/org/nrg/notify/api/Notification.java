@@ -9,32 +9,18 @@
  */
 package org.nrg.notify.api;
 
-import java.util.Date;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.ManyToOne;
-import javax.persistence.SequenceGenerator;
+
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
  * The Class Notification.
  */
 @Entity
-public class Notification {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
-    public long getId() {
-        return _id;
-    }
-
-    public void setId(long id) {
-        _id = id;
-    }
-
+public class Notification extends AbstractHibernateEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     public Definition getDefinition() {
         return _definition;
@@ -60,17 +46,7 @@ public class Notification {
         _format = format;
     }
 
-    public Date getTimestamp() {
-        return _timestamp;
-    }
-
-    public void setTimestamp(Date timestamp) {
-        _timestamp = timestamp;
-    }
-
-    private long _id;
     private Definition _definition;
     private String _parameters;
     private String _format = "application/json";
-    private Date _timestamp = new Date();
 }

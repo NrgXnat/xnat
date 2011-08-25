@@ -13,30 +13,17 @@ import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 import javax.persistence.OneToOne;
-import javax.persistence.SequenceGenerator;
+
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
  * The Class Subscription.
  */
 @Entity
-public class Subscription {
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    // @SequenceGenerator(name="seq", initialValue=1, allocationSize=100)
-    public long getId() {
-        return _id;
-    }
-
-    public void setId(long id) {
-        _id = id;
-    }
-
+public class Subscription extends AbstractHibernateEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     public Definition getDefinition() {
         return _definition;
@@ -69,23 +56,22 @@ public class Subscription {
     }
     
     /**
-     * Each {@link Vector vector} maps to multiple {@link Subscription subscriptions} and
+     * Each {@link Channel vector} maps to multiple {@link Subscription subscriptions} and
      * each subscription can map to multiple vectors, but each vector doesn't need to know
      * about its subscriptions.
-     * @return A list of {@link Vector vectors} for notifying the subscriber. 
+     * @return A list of {@link Channel vectors} for notifying the subscriber. 
      */
     @OneToMany(fetch = FetchType.LAZY)
-    public List<Vector> getVectors() {
+    public List<Channel> getVectors() {
         return _vectors;
     }
 
-    public void setVectors(List<Vector> vectors) {
+    public void setVectors(List<Channel> vectors) {
         _vectors = vectors;
     }
     
-    private long _id;
     private Definition _definition;
     private Subscriber _subscriber;
     private String _subscriberType;
-    private List<Vector> _vectors;
+    private List<Channel> _vectors;
 }

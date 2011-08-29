@@ -54,26 +54,35 @@
 					<version>2.9</version>
 					<configuration>
 						<junitArtifactName>org.junit:com.springsource.org.junit</junitArtifactName>
+						<includes>
+							<include>**/Test*.java</include>
+							<include>**/*Tests.java</include>
+						</includes>
 						<excludes>
 							<exclude>**/Abstract*.java</exclude>
 							<exclude>**/Mock*.java</exclude>
 						</excludes>
 					</configuration>
 				</plugin>
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>cobertura-maven-plugin</artifactId>
-					<version>2.5.1</version>
-					<configuration>
-						<formats>
-							<format>html</format>
-							<format>xml</format>
-						</formats>
-					</configuration>
-				</plugin>
 			</plugins>
 		</pluginManagement>
 	</build>
+
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>cobertura-maven-plugin</artifactId>
+                <version>2.5.1</version>
+                <configuration>
+                    <formats>
+                        <format>html</format>
+                        <format>xml</format>
+                    </formats>
+                </configuration>
+            </plugin>
+        </plugins>
+    </reporting>
 
 	<pluginRepositories>
 		<pluginRepository>

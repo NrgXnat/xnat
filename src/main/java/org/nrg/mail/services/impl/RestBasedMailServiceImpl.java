@@ -5,7 +5,7 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 23, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.mail.services.impl;
 
@@ -40,7 +40,8 @@ import java.util.Map.Entry;
  * to Spring application context mail service without requiring context
  * initialization outside of Spring classes.
  *
- * @author rherrick
+ * @author Rick Herrick <rick.herrick@wustl.edu>
+
  */
 public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
     public RestBasedMailServiceImpl() throws NrgServiceException {

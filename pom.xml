@@ -93,11 +93,16 @@
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
             </plugin>
+        </plugins>
+	</build>
+
+    <reporting>
+        <plugins>
             <plugin>
-				<groupId>org.codehaus.mojo</groupId>
+                <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
             </plugin>
         </plugins>
-	</build>
+    </reporting>
 
 </project>

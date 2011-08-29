@@ -5,7 +5,7 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 23, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.mail.services;
 
@@ -20,7 +20,8 @@ import java.util.Map;
  * Provides implementation-independent mail service. This implements a large array of methods to send messages
  * to allow for easier key-value specification of parameters for REST-style invocations.
  *
- * @author rherrick
+ * @author Rick Herrick <rick.herrick@wustl.edu>
+
  */
 public interface MailService extends NrgService {
     public static String SERVICE_NAME = "MailService"; 

@@ -5,7 +5,7 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 23, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.mail.services.impl;
 
@@ -26,7 +26,8 @@ import javax.mail.internet.MimeMessage;
  * to Spring application context mail service without requiring context
  * initialization outside of Spring classes.
  * 
- * @author rherrick
+ * @author Rick Herrick <rick.herrick@wustl.edu>
+
  */
 @Service
 public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {

@@ -5,19 +5,28 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 17, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
-package org.nrg.notify.api;
+package org.nrg.notify.entities;
 
 import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
+import org.nrg.framework.orm.hibernate.annotations.Auditable;
+import org.nrg.notify.api.CategoryScope;
 
 /**
- * The class Category.
+ * The Category supports notification categories. These are basically a {@link CategoryScope scope} (e.g.
+ * site, project, etc.) and an event, which is just a string that identifies an event. The unique constraint
+ * for this class allows multiple disabled instances of a particular category, but only a single enabled
+ * instance of that category. 
  */
+@Auditable
 @Entity
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"scope", "event", "enabled", "disabled"}))
 public class Category extends AbstractHibernateEntity {
     public Category() {
         super();
@@ -61,7 +70,7 @@ public class Category extends AbstractHibernateEntity {
                StringUtils.equals(category.getEvent(), _event) &&
                category.getScope() == _scope;
     }
-    
+
     private CategoryScope _scope;
     private String _event;
 }

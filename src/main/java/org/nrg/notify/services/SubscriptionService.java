@@ -5,12 +5,13 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 25, 2011 by Rick Herrick <rick.herrick@wustl.edu>
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.services;
 
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
-import org.nrg.notify.api.Subscription;
+import org.nrg.notify.entities.Subscription;
+
 
 /**
  * 

@@ -1,27 +1,41 @@
 /**
- * DefaultNotificationServiceImpl
+ * HibernateNotificationService
  * (C) 2011 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 17, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
-package org.nrg.notify.services.impl;
+package org.nrg.notify.services.impl.hibernate;
 
+import java.util.Arrays;
+import java.util.List;
+
+import org.hibernate.Hibernate;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.notify.api.Notification;
+import org.nrg.notify.api.CategoryScope;
+import org.nrg.notify.api.SubscriberType;
 import org.nrg.notify.daos.NotificationDAO;
+import org.nrg.notify.entities.Category;
+import org.nrg.notify.entities.Channel;
+import org.nrg.notify.entities.Definition;
+import org.nrg.notify.entities.Notification;
+import org.nrg.notify.entities.Subscriber;
+import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.services.CategoryService;
 import org.nrg.notify.services.ChannelRendererService;
 import org.nrg.notify.services.ChannelService;
 import org.nrg.notify.services.DefinitionService;
+import org.nrg.notify.services.DuplicateDefinitionException;
 import org.nrg.notify.services.NotificationDispatcherService;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.notify.services.SubscriberService;
 import org.nrg.notify.services.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 
 /**
  * Provides a default implementation for the notification service.
@@ -29,7 +43,91 @@ import org.springframework.stereotype.Service;
  * @author Rick Herrick <rick.herrick@wustl.edu>
  */
 @Service
-public class DefaultNotificationServiceImpl extends AbstractHibernateEntityService<Notification> implements NotificationService {
+public class HibernateNotificationService extends AbstractHibernateEntityService<Notification> implements NotificationService {
+    /**
+     * Retrieves all {@link Definition definitions} associated with the given category.
+     * @param category The category for which to find all associated definitions. 
+     * @return All {@link Definition definitions} associated with the given category.
+     * @see NotificationService#getDefinitionsForCategory(Category)
+     */
+    @Override
+    @Transactional
+    public List<Definition> getDefinitionsForCategory(Category category) {
+        List<Definition> definitions = _definitionService.getDefinitionsForCategory(category);
+        Hibernate.initialize(definitions);
+        return definitions;
+    }
+
+    /**
+     * Creates a {@link Definition definition} associated with the {@link Category category} associated with
+     * the indicated {@link CategoryScope scope} and event. If there's already a category with the same scope
+     * and event, the new definition is associated with that category. Otherwise a new category is created. 
+     * @param scope The category scope.
+     * @param event The category event.
+     * @param entity The entity with which the definition is associated.
+     * @return A newly created definition.
+     * @throws DuplicateDefinitionException When a definition with the same scope, event, and entity association already exists.
+     * @see NotificationService#createDefinition(CategoryScope, String, long)
+     */
+    @Override
+    public Definition createDefinition(CategoryScope scope, String event, long entity) throws DuplicateDefinitionException {
+        Category category = getCategoryService().getCategoryByScopeAndEvent(scope, event);
+
+        if (category == null) {
+            category = getCategoryService().newEntity();
+            category.setScope(scope);
+            category.setEvent(event);
+            getCategoryService().create(category);
+        } else {
+            Definition definition = getDefinitionService().getDefinitionForCategoryAndEntity(category, entity);
+            if (definition != null) {
+                throw new DuplicateDefinitionException("A definition already exists for the criteria, scope [" + category.getScope() + "], event [" + category.getEvent() + "], entity [" + entity + "]");
+            }
+        }
+
+        Definition definition = getDefinitionService().newEntity();
+        definition.setCategory(category);
+        definition.setEntity(entity);
+        getDefinitionService().create(definition);
+        
+        return definition;
+    }
+
+    /**
+     * Creates a new subscription for the given {@link Definition definition}, {@link Subscriber subscriber}, 
+     * and {@link Channel channel}. This subscription indicates that the indicated subscriber wants to be notified
+     * of events matching the definition using the given notification channel. 
+     * @param subscriber The subscriber.
+     * @param subscriberType The type of subscriber.
+     * @param definition The definition or event to which the subscriber wants to subscribe.
+     * @param channel The channel by which the subscriber wants to be notified.
+     * @see NotificationService#subscribe(Definition, Subscriber, Channel)
+     */
+    @Override
+    public Subscription subscribe(Subscriber subscriber, SubscriberType subscriberType, Definition definition, Channel channel) {
+        return subscribe(subscriber, subscriberType, definition, Arrays.asList(new Channel[] {channel}));
+    }
+
+    /**
+     * This is the same as the {@link #subscribe(Definition, Subscriber, Channel)} method, except that it allows
+     * the subscriber to specify multiple notification channels. 
+     * @param subscriber The subscriber.
+     * @param subscriberType The type of subscriber.
+     * @param definition The definition or event to which the subscriber wants to subscribe.
+     * @param channels The channels by which the subscriber wants to be notified.
+     * @see NotificationService#subscribe(Definition, Subscriber, Channel)
+     */
+    @Override
+    public Subscription subscribe(Subscriber subscriber, SubscriberType subscriberType, Definition definition, List<Channel> channels) {
+        Subscription subscription = _subscriptionService.newEntity();
+        subscription.setDefinition(definition);
+        subscription.setSubscriber(subscriber);
+        subscription.setSubscriberType(subscriberType);
+        subscription.setChannels(channels);
+        _subscriptionService.create(subscription);
+        return subscription;
+    }
+
     /**
      * Creates a new {@link Notification notification} object.
      * @return A new {@link Notification notification} object.

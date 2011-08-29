@@ -1,20 +1,22 @@
 /**
- * Vector
+ * Channel
  * (C) 2011 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 17, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
-package org.nrg.notify.api;
+package org.nrg.notify.entities;
 
 import javax.persistence.Entity;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
- * The Class Vector.
+ * The channel class represents a notification channel that can be used to inform a subscriber that a
+ * particular event occurred. This allows notifications to be created generically and then displayed
+ * through a variety of means, such as email, IM, REST API calls, and so on.
  */
 @Entity
 public class Channel extends AbstractHibernateEntity {
@@ -26,14 +28,6 @@ public class Channel extends AbstractHibernateEntity {
         _name = name;
     }
 
-    public String getService() {
-        return _service;
-    }
-
-    public void setService(String service) {
-        _service = service;
-    }
-
     public String getFormat() {
         return _format;
     }
@@ -42,16 +36,6 @@ public class Channel extends AbstractHibernateEntity {
         _format = format;
     }
 
-    public String getTransformer() {
-        return _transformer;
-    }
-
-    public void setTransformer(String transformer) {
-        _transformer = transformer;
-    }
-
     private String _name;
-    private String _service;
     private String _format;
-    private String _transformer;
 }

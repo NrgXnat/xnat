@@ -1,22 +1,24 @@
 /**
- * DefaultChannelServiceImpl
+ * HibernateChannelService
  * (C) 2011 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 25, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
-package org.nrg.notify.services.impl;
+package org.nrg.notify.services.impl.hibernate;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.notify.api.Channel;
 import org.nrg.notify.daos.ChannelDAO;
+import org.nrg.notify.entities.Channel;
 import org.nrg.notify.services.ChannelService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+
 
 /**
  * 
@@ -24,7 +26,24 @@ import org.springframework.stereotype.Service;
  * @author Rick Herrick <rick.herrick@wustl.edu>
  */
 @Service
-public class DefaultChannelServiceImpl extends AbstractHibernateEntityService<Channel> implements ChannelService {
+public class HibernateChannelService extends AbstractHibernateEntityService<Channel> implements ChannelService {
+
+    /**
+     * A shortcut method for quickly creating a new channel.
+     * @param name The name of the channel.
+     * @param format The format supported by the channel.
+     * @return The newly created channel object.
+     * @see ChannelService#createChannel(String, String)
+     */
+    @Transactional
+    @Override
+    public Channel createChannel(String name, String format) {
+        Channel channel = newEntity();
+        channel.setName(name);
+        channel.setFormat(format);
+        getDao().create(channel);
+        return channel;
+    }
 
     /**
      * @return A new empty {@link Channel} object.
@@ -44,7 +63,7 @@ public class DefaultChannelServiceImpl extends AbstractHibernateEntityService<Ch
         return _dao;
     }
 
-    private static final Log _log = LogFactory.getLog(DefaultChannelServiceImpl.class);
+    private static final Log _log = LogFactory.getLog(HibernateChannelService.class);
     
     @Autowired
     private ChannelDAO _dao;

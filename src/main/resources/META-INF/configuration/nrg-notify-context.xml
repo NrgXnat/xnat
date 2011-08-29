@@ -10,7 +10,7 @@
     <context:component-scan base-package="org.nrg.notify.daos" />
 
     <util:list id="nrgNotificationEntityPackages">
-        <value>org.nrg.notify.api</value>
+        <value>org.nrg.notify.entities</value>
     </util:list>
 
 </beans>

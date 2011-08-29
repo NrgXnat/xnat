@@ -5,21 +5,68 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 19, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.daos;
 
-import org.nrg.framework.orm.hibernate.BaseHibernateDAO;
-import org.nrg.notify.api.Definition;
+import java.util.List;
+
+import org.hibernate.Criteria;
+import org.hibernate.criterion.Restrictions;
+import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
+import org.nrg.notify.entities.Category;
+import org.nrg.notify.entities.Definition;
+import org.nrg.notify.services.DefinitionService;
+import org.nrg.notify.services.DuplicateDefinitionException;
 import org.springframework.stereotype.Repository;
+
 
 /**
  * Implements the DAO class for the {@link Definition} entity type.
  * 
- * @see BaseHibernateDAO
+ * @see AbstractHibernateDAO
  * @author Rick Herrick <rick.herrick@wustl.edu>
 
  */
 @Repository
-public class DefinitionDAO extends BaseHibernateDAO<Definition> {
+public class DefinitionDAO extends AbstractHibernateDAO<Definition> {
+
+    /**
+     * Retrieves all {@link Definition definitions} associated with the given category.
+     * @param category The category for which to find all associated definitions. 
+     * @return All {@link Definition definitions} associated with the given category.
+     * @see DefinitionService#getDefinitionsForCategory(Category)
+     */
+    @SuppressWarnings("unchecked")
+    public List<Definition> getDefinitionsForCategory(Category category) {
+        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        criteria.add(Restrictions.eq("category", category));
+        criteria.add(Restrictions.eq("enabled", true));
+        return criteria.list();
+    }
+
+    /**
+     * Returns a {@link Definition definition} matching the specified criteria.
+     * @param category The category for which to find an associated definitions. 
+     * @param entity The entity ID for which to find an associated definition.
+     * @return The definition associated with the given category and entity.
+     * @throws DuplicateDefinitionException When multiple definitions for the given scope, event, and entity association exist.
+     */
+    public Definition getDefinitionForCategoryAndEntity(Category category, long entity) throws DuplicateDefinitionException {
+        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        criteria.add(Restrictions.eq("category", category));
+        criteria.add(Restrictions.eq("entity", entity));
+        criteria.add(Restrictions.eq("enabled", true));
+
+        @SuppressWarnings("rawtypes")
+        List list = criteria.list();
+        
+        if (list == null || list.size() == 0) {
+            return null;
+        } else if (list.size() > 1) {
+            throw new DuplicateDefinitionException("Found " + list.size() + " definitions for the given criteria, scope [" + category.getScope() + "], event [" + category.getEvent() + "], entity [" + entity + "]");
+        }
+
+        return (Definition) list.get(0);
+    }
 }

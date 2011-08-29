@@ -5,7 +5,7 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 19, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.api;
 

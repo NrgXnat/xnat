@@ -5,11 +5,15 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 17, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
-package org.nrg.notify.api;
+package org.nrg.notify.entities;
+
+import java.util.List;
 
 import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
@@ -34,6 +38,16 @@ public class Subscriber extends AbstractHibernateEntity {
         _emails = emails;
     }
 
+    @OneToMany(fetch = FetchType.LAZY)
+    public List<Subscription> getSubscriptions() {
+        return _subscriptions;
+    }
+
+    public void setSubscriptions(List<Subscription> subscriptions) {
+        _subscriptions = subscriptions;
+    }
+    
     private String _name;
     private String _emails;
+    private List<Subscription> _subscriptions;
 }

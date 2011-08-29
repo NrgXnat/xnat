@@ -5,9 +5,9 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 17, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
-package org.nrg.notify.api;
+package org.nrg.notify.entities;
 
 
 import javax.persistence.Entity;
@@ -15,10 +15,12 @@ import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
+import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
 /**
  * The Class Notification.
  */
+@Auditable
 @Entity
 public class Notification extends AbstractHibernateEntity {
     @ManyToOne(fetch = FetchType.LAZY)

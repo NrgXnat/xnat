@@ -5,7 +5,7 @@
  *
  * Released under the Simplified BSD License
  *
- * Created on Aug 18, 2011
+ * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify;
 
@@ -22,14 +22,15 @@ import javax.sql.DataSource;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
-import org.nrg.notify.api.Category;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.daos.CategoryDAO;
+import org.nrg.notify.entities.Category;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
+
 
 /**
  * Tests various platform attributes to ensure that they're working, e.g. connection

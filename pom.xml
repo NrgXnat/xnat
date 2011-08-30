@@ -160,6 +160,11 @@
 				<version>${nrg.framework.version}</version>
 			</dependency>
 			<dependency>
+				<groupId>org.nrg</groupId>
+				<artifactId>mail</artifactId>
+				<version>${nrg.framework.version}</version>
+			</dependency>
+			<dependency>
 				<groupId>org.springframework</groupId>
 				<artifactId>org.springframework.web</artifactId>
 				<version>${spring.framework.version}</version>
@@ -237,6 +242,12 @@
 			</dependency>
 
 			<dependency>
+                <groupId>org.codehaus.jackson</groupId>
+                <artifactId>jackson-mapper-asl</artifactId>
+                <version>1.8.5</version>
+			</dependency>
+
+			<dependency>
 				<groupId>org.slf4j</groupId>
 				<artifactId>com.springsource.slf4j.jcl</artifactId>
 				<version>1.6.1</version>
@@ -251,6 +262,11 @@
 				<artifactId>com.springsource.javassist</artifactId>
 				<version>3.10.0.GA</version>
 			</dependency>
+	        <dependency>
+	            <groupId>javax.inject</groupId>
+	            <artifactId>com.springsource.javax.inject</artifactId>
+	            <version>1.0.0</version>
+	        </dependency>
 			<dependency>
 				<groupId>javax.mail</groupId>
 				<artifactId>com.springsource.javax.mail</artifactId>

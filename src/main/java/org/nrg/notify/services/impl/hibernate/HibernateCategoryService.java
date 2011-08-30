@@ -9,6 +9,8 @@
  */
 package org.nrg.notify.services.impl.hibernate;
 
+import javax.inject.Inject;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -16,7 +18,6 @@ import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.daos.CategoryDAO;
 import org.nrg.notify.entities.Category;
 import org.nrg.notify.services.CategoryService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 
@@ -62,7 +63,7 @@ public class HibernateCategoryService extends AbstractHibernateEntityService<Cat
 
     private static final Log _log = LogFactory.getLog(HibernateCategoryService.class);
 
-    @Autowired
+    @Inject
     private CategoryDAO _dao;
 
 }

@@ -14,6 +14,7 @@ import java.util.List;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.notify.entities.Category;
 import org.nrg.notify.entities.Definition;
+import org.nrg.notify.exceptions.DuplicateDefinitionException;
 
 
 /**

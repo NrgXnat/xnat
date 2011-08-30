@@ -20,6 +20,7 @@ import org.nrg.notify.entities.Definition;
 import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.entities.Subscription;
+import org.nrg.notify.exceptions.DuplicateDefinitionException;
 
 
 /**
@@ -32,31 +33,14 @@ public interface NotificationService extends BaseHibernateService<Notification> 
     public static String SERVICE_NAME = "NotificationService";
 
     /**
-     * Getters and setters for all the dependent service instances.
-     * @return
+     * The ultimate convenience method. This creates a new {@link Notification notification}, setting it to the given
+     * definition and dispatching it to all subscribers with the given parameters.
+     * @param definition The notification definition from which the notification should be created.
+     * @param parameters Any parameters for this particular notification.
+     * @return The newly created and dispatched notification.
      */
-    abstract public CategoryService getCategoryService();
-    abstract public void setCategoryService(CategoryService categoryService);
-    abstract public ChannelRendererService getChannelRendererService();
-    abstract public void setChannelRendererService(ChannelRendererService channelRendererService);
-    abstract public ChannelService getChannelService();
-    abstract public void setChannelService(ChannelService channelService);
-    abstract public DefinitionService getDefinitionService();
-    abstract public void setDefinitionService(DefinitionService definitionService);
-    abstract public NotificationDispatcherService getNotificationDispatcherService();
-    abstract public void setNotificationDispatcherService(NotificationDispatcherService dispatcherService);
-    abstract public SubscriberService getSubscriberService();
-    abstract public void setSubscriberService(SubscriberService subscriberService);
-    abstract public SubscriptionService getSubscriptionService();
-    abstract public void setSubscriptionService(SubscriptionService subscriptionService);
+    public abstract Notification createNotification(Definition definition, String parameters);
 
-    /**
-     * Retrieves all {@link Definition definitions} associated with the given category.
-     * @param category The category for which to find all associated definitions. 
-     * @return All {@link Definition definitions} associated with the given category.
-     */
-    abstract public List<Definition> getDefinitionsForCategory(Category category);
-    
     /**
      * Creates a {@link Definition definition} associated with the {@link Category category} associated with
      * the indicated {@link CategoryScope scope} and event. If there's already a category with the same scope
@@ -89,4 +73,23 @@ public interface NotificationService extends BaseHibernateService<Notification> 
      * @param channels The channels by which the subscriber wants to be notified.
      */
     public abstract Subscription subscribe(Subscriber subscriber, SubscriberType subscriberType, Definition definition, List<Channel> channels);
+
+    /**
+     * Getters and setters for all the dependent service instances.
+     * @return
+     */
+    abstract public CategoryService getCategoryService();
+    abstract public void setCategoryService(CategoryService categoryService);
+    abstract public ChannelRendererService getChannelRendererService();
+    abstract public void setChannelRendererService(ChannelRendererService channelRendererService);
+    abstract public ChannelService getChannelService();
+    abstract public void setChannelService(ChannelService channelService);
+    abstract public DefinitionService getDefinitionService();
+    abstract public void setDefinitionService(DefinitionService definitionService);
+    abstract public NotificationDispatcherService getNotificationDispatcherService();
+    abstract public void setNotificationDispatcherService(NotificationDispatcherService dispatcherService);
+    abstract public SubscriberService getSubscriberService();
+    abstract public void setSubscriberService(SubscriberService subscriberService);
+    abstract public SubscriptionService getSubscriptionService();
+    abstract public void setSubscriptionService(SubscriptionService subscriptionService);
 }

@@ -11,6 +11,7 @@ package org.nrg.notify.services;
 
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.notify.entities.Subscriber;
+import org.nrg.notify.exceptions.DuplicateSubscriberException;
 
 
 /**

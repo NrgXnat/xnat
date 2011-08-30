@@ -7,16 +7,15 @@
  *
  * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
-package org.nrg.notify.services;
+package org.nrg.notify.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceException;
 
 /**
  * 
  * @author Rick Herrick <rick.herrick@wustl.edu>
  */
-public class DuplicateSubscriberException extends NrgServiceException {
+public class DuplicateSubscriberException extends NrgNotificationException {
 
     /**
      * Default constructor. This sets the {@link #getServiceError() service error}

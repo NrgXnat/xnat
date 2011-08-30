@@ -16,8 +16,8 @@ import org.hibernate.criterion.Restrictions;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.notify.entities.Category;
 import org.nrg.notify.entities.Definition;
+import org.nrg.notify.exceptions.DuplicateDefinitionException;
 import org.nrg.notify.services.DefinitionService;
-import org.nrg.notify.services.DuplicateDefinitionException;
 import org.springframework.stereotype.Repository;
 
 

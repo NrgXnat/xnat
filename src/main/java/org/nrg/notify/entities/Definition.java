@@ -9,9 +9,12 @@
  */
 package org.nrg.notify.entities;
 
+import java.util.List;
+
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
+import javax.persistence.OneToMany;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
@@ -22,7 +25,7 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
 @Auditable
 @Entity
 public class Definition extends AbstractHibernateEntity {
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     public Category getCategory() {
         return _category;
     }
@@ -37,6 +40,15 @@ public class Definition extends AbstractHibernateEntity {
 
     public void setEntity(long entity) {
         _entity = entity;
+    }
+
+    @OneToMany(fetch = FetchType.EAGER, mappedBy="definition")
+    public List<Subscription> getSubscriptions() {
+        return _subscriptions;
+    }
+
+    public void setSubscriptions(List<Subscription> subscriptions) {
+        _subscriptions = subscriptions;
     }
     
     @Override
@@ -62,4 +74,5 @@ public class Definition extends AbstractHibernateEntity {
 
     private Category _category;
     private long _entity;
+    private List<Subscription> _subscriptions;
 }

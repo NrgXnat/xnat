@@ -12,7 +12,8 @@ package org.nrg.notify.services.impl.hibernate;
 import java.util.Arrays;
 import java.util.List;
 
-import org.hibernate.Hibernate;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
@@ -23,11 +24,12 @@ import org.nrg.notify.entities.Definition;
 import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.entities.Subscription;
+import org.nrg.notify.exceptions.DuplicateDefinitionException;
+import org.nrg.notify.exceptions.NrgNotificationException;
 import org.nrg.notify.services.CategoryService;
 import org.nrg.notify.services.ChannelRendererService;
 import org.nrg.notify.services.ChannelService;
 import org.nrg.notify.services.DefinitionService;
-import org.nrg.notify.services.DuplicateDefinitionException;
 import org.nrg.notify.services.NotificationDispatcherService;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.notify.services.SubscriberService;
@@ -36,26 +38,37 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 /**
- * Provides a default implementation for the notification service.
+ * Provides the Hibernate implementation for the notification service.
  *
  * @author Rick Herrick <rick.herrick@wustl.edu>
  */
 @Service
 public class HibernateNotificationService extends AbstractHibernateEntityService<Notification> implements NotificationService {
+
     /**
-     * Retrieves all {@link Definition definitions} associated with the given category.
-     * @param category The category for which to find all associated definitions. 
-     * @return All {@link Definition definitions} associated with the given category.
-     * @see NotificationService#getDefinitionsForCategory(Category)
+     * The ultimate convenience method. This creates a new {@link Notification notification}, setting it to the given
+     * definition and dispatching it to all subscribers with the given parameters.
+     * @param definition The notification definition from which the notification should be created.
+     * @param parameters Any parameters for this particular notification.
+     * @return The newly created and dispatched notification.
+     * @see NotificationService#createNotification(Definition, String)
      */
     @Override
     @Transactional
-    public List<Definition> getDefinitionsForCategory(Category category) {
-        List<Definition> definitions = _definitionService.getDefinitionsForCategory(category);
-        Hibernate.initialize(definitions);
-        return definitions;
+    public Notification createNotification(Definition definition, String parameters) {
+        Notification notification = newEntity();
+        notification.setDefinition(definition);
+        notification.setParameters(parameters);
+        create(notification);
+        try {
+            _dispatcherService.dispatch(notification);
+        } catch (NrgNotificationException exception) {
+            // TODO: There should be some way of indicating, upon method return, that there was an error during dispatch.
+            _log.error("An error occurred while trying to dispatch a notification: " + notification, exception);
+        }
+
+        return notification;
     }
 
     /**
@@ -70,6 +83,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @see NotificationService#createDefinition(CategoryScope, String, long)
      */
     @Override
+    @Transactional
     public Definition createDefinition(CategoryScope scope, String event, long entity) throws DuplicateDefinitionException {
         Category category = getCategoryService().getCategoryByScopeAndEvent(scope, event);
 
@@ -118,6 +132,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @see NotificationService#subscribe(Definition, Subscriber, Channel)
      */
     @Override
+    @Transactional
     public Subscription subscribe(Subscriber subscriber, SubscriberType subscriberType, Definition definition, List<Channel> channels) {
         Subscription subscription = _subscriptionService.newEntity();
         subscription.setDefinition(definition);
@@ -125,6 +140,8 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
         subscription.setSubscriberType(subscriberType);
         subscription.setChannels(channels);
         _subscriptionService.create(subscription);
+        _subscriberService.refresh(subscriber);
+        _definitionService.refresh(definition);
         return subscription;
     }
 
@@ -288,6 +305,8 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
         return _dao;
     }
 
+    private static final Log _log = LogFactory.getLog(HibernateNotificationService.class);
+    
     @Autowired
     private NotificationDAO _dao;
 

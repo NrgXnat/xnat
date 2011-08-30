@@ -14,7 +14,7 @@
 		<property name="properties">
 			<props>
 				<prop key="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</prop>
-				<prop key="hibernate.hbm2ddl.auto">create</prop>
+				<prop key="hibernate.hbm2ddl.auto">create-drop</prop>
 				<prop key="hibernate.show_sql">true</prop>
 			</props>
 		</property>
@@ -24,7 +24,7 @@
 		<property name="properties">
 			<props>
 				<prop key="hibernate.dialect">org.hibernate.dialect.H2Dialect</prop>
-				<prop key="hibernate.hbm2ddl.auto">create</prop>
+				<prop key="hibernate.hbm2ddl.auto">create-drop</prop>
 				<prop key="hibernate.show_sql">true</prop>
 			</props>
   		</property>
@@ -44,9 +44,19 @@
 
 	<tx:annotation-driven />
 
-    <util:map id="renderers" value-type="java.lang.String">
-        <entry value="html" key="xxx" />
-        <entry value="text" key="yyy" />
+	<bean name="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl" p:host="mail.mir.wustl.edu"/>
+	<bean name="mailService" class="org.nrg.mail.services.impl.SpringBasedMailServiceImpl" p:javaMailSender-ref="mailSender" />
+    <bean id="mailChannelRenderer" class="org.nrg.notify.renderers.NrgMailChannelRenderer">
+        <property name="mailService" ref="mailService"/>
+    </bean>
+
+    <util:map id="renderers" key-type="java.lang.String" value-type="java.lang.String">
+        <entry value="htmlMail" key="mailChannelRenderer" />
+        <entry value="textMail" key="mailChannelRenderer" />
     </util:map>
-"
+
+	<bean id="rendererProvider" class="org.nrg.notify.entities.ChannelRendererProvider">
+		<property name="renderers" ref="renderers" />
+	</bean>
+
 </beans>

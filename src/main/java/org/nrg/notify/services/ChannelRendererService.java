@@ -12,7 +12,11 @@ package org.nrg.notify.services;
 import java.util.Map;
 
 import org.nrg.framework.services.NrgService;
-import org.nrg.notify.entities.ChannelRenderer;
+import org.nrg.notify.entities.ChannelRendererProvider;
+import org.nrg.notify.exceptions.ChannelRendererNotFoundException;
+import org.nrg.notify.exceptions.InvalidChannelRendererException;
+import org.nrg.notify.exceptions.UnknownChannelRendererException;
+import org.nrg.notify.renderers.ChannelRenderer;
 
 
 /**
@@ -23,9 +27,12 @@ import org.nrg.notify.entities.ChannelRenderer;
 public interface ChannelRendererService extends NrgService {
     public static String SERVICE_NAME = "ChannelRendererService";
     
-    abstract public ChannelRenderer getRenderer(String name);
+    abstract public ChannelRenderer getRenderer(String name) throws ChannelRendererNotFoundException, InvalidChannelRendererException, UnknownChannelRendererException;
     
-    abstract public void setRenderers(Map<String, String> renderers);
-
     abstract public Map<String, String> getRenderers();
+
+    /**
+     * @param renderers
+     */
+    abstract public void setRenderers(ChannelRendererProvider renderers);
 }

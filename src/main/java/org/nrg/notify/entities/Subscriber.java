@@ -38,7 +38,7 @@ public class Subscriber extends AbstractHibernateEntity {
         _emails = emails;
     }
 
-    @OneToMany(fetch = FetchType.LAZY)
+    @OneToMany(fetch = FetchType.EAGER, mappedBy="subscriber")
     public List<Subscription> getSubscriptions() {
         return _subscriptions;
     }

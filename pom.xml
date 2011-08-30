@@ -27,6 +27,10 @@
             <artifactId>framework</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.nrg</groupId>
+            <artifactId>mail</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.springframework</groupId>
             <artifactId>org.springframework.orm</artifactId>
         </dependency>
@@ -62,6 +66,14 @@
         <dependency>
             <groupId>org.jboss.javassist</groupId>
             <artifactId>com.springsource.javassist</artifactId>
+        </dependency>
+		<dependency>
+			<groupId>javax.inject</groupId>
+			<artifactId>com.springsource.javax.inject</artifactId>
+		</dependency>
+        <dependency>
+            <groupId>org.codehaus.jackson</groupId>
+            <artifactId>jackson-mapper-asl</artifactId>
         </dependency>
 
         <!-- Test dependencies -->

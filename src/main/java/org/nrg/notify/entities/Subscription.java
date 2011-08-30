@@ -9,12 +9,13 @@
  */
 package org.nrg.notify.entities;
 
+import java.util.ArrayList;
 import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
+import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
-import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -49,7 +50,7 @@ public class Subscription extends AbstractHibernateEntity {
      * {@link Subscriber subscriber}.
      * @return
      */
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     public Subscriber getSubscriber() {
         return _subscriber;
     }
@@ -86,7 +87,7 @@ public class Subscription extends AbstractHibernateEntity {
      * about its subscriptions.
      * @return A list of {@link Channel channels} for notifying the subscriber. 
      */
-    @OneToMany(fetch = FetchType.LAZY)
+    @ManyToMany(fetch = FetchType.LAZY)
     public List<Channel> getChannels() {
         return _channels;
     }
@@ -105,7 +106,10 @@ public class Subscription extends AbstractHibernateEntity {
      */
     @Transient
     public void addChannel(Channel channel) {
-        
+        if (_channels == null) {
+            _channels = new ArrayList<Channel>();
+        }
+        _channels.add(channel);
     }
 
     private Definition _definition;

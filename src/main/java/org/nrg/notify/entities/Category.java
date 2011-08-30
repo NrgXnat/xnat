@@ -49,7 +49,7 @@ public class Category extends AbstractHibernateEntity {
     public void setEvent(String event) {
         _event = event;
     }
-
+    
     @Override
     public String toString() {
         return "[" + getId() + "] " + _scope + ": " + _event;

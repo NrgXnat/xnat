@@ -14,7 +14,7 @@ import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.notify.daos.SubscriberDAO;
 import org.nrg.notify.entities.Subscriber;
-import org.nrg.notify.services.DuplicateSubscriberException;
+import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.SubscriberService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;

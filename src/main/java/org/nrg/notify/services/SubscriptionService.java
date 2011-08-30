@@ -9,14 +9,22 @@
  */
 package org.nrg.notify.services;
 
+import java.util.List;
+
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
+import org.nrg.notify.entities.Definition;
 import org.nrg.notify.entities.Subscription;
 
-
 /**
- * 
+ * Manages subscriptions and subscription queries.
  * @author Rick Herrick <rick.herrick@wustl.edu>
  */
 public interface SubscriptionService extends BaseHibernateService<Subscription> {
     public static String SERVICE_NAME = "SubscriptionService";
+
+    /**
+     * @param definition
+     * @return
+     */
+    List<Subscription> getSubscriptionsForDefinition(Definition definition);
 }

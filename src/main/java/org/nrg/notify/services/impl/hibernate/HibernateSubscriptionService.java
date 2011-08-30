@@ -9,10 +9,14 @@
  */
 package org.nrg.notify.services.impl.hibernate;
 
+import java.util.List;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.notify.daos.SubscriptionDAO;
+import org.nrg.notify.entities.Definition;
+import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.services.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +32,17 @@ import org.springframework.stereotype.Service;
 @Service
 public class HibernateSubscriptionService extends AbstractHibernateEntityService<Subscription> implements SubscriptionService {
 
+    /**
+     * Finds all subscriptions for the indicated {@link Definition definition}.
+     * @param subscriber The {@link Subscriber subscriber}.
+     * @return A list of subscriptions for the {@link Definition}.
+     * @see SubscriptionService#getSubscriptionsForDefinition(Definition)
+     */
+    @Override
+    public List<Subscription> getSubscriptionsForDefinition(Definition definition) {
+        return getDao().getSubscriptionsForDefinition(definition);
+    }
+    
     /**
      * @return A new empty {@link Subscription} object.
      * @see SubscriptionService#newEntity()

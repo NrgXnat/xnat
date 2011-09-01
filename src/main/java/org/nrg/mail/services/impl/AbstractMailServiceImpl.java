@@ -9,18 +9,17 @@
  */
 package org.nrg.mail.services.impl;
 
+import java.util.Map;
+
+import javax.mail.MessagingException;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.services.MailService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.Assert;
-
-import javax.mail.MessagingException;
-import java.util.Map;
 
 abstract public class AbstractMailServiceImpl implements MailService {
 
@@ -33,32 +32,12 @@ abstract public class AbstractMailServiceImpl implements MailService {
     public abstract void sendMessage(MailMessage message) throws MessagingException;
 
     /**
-     * Public constructor. Generally, you should NOT call this method! Instead
+     * Protected constructor. Generally, you should NOT call this method! Instead
      * call the static initializer method {@link #getInstance()}. The public
      * constructor is provided to allow Spring to create the class and auto-wire
      * the mail sender.
-     * @throws NrgServiceException Thrown when service is already initialized.
      */
-    public AbstractMailServiceImpl() throws NrgServiceException {
-        if (_instance != null) {
-            throw new NrgServiceException(NrgServiceError.AlreadyInitialized, "The mail service instance is already initialized. Use the static MailService.getInstance() method to get an instance of this class.");
-        }
-        _log.info("Initializing mail service static singleton.");
-        setInstance(this);
-    }
-
-    /**
-     * Returns an existing instance of the service class. The underlying
-     * singleton should be initialized by the context, e.g. Spring Framework.
-     *
-     * @return An instance of the mail service.
-     */
-    public static MailService getInstance() {
-        if (_instance == null) {
-            throw new RuntimeException("The mail service is not yet initialized. Use the static MailService.getInstance() method to get an instance of this class.");
-        }
-        _log.debug("Returning static mail service singleton.");
-        return _instance;
+    protected AbstractMailServiceImpl() {
     }
 
     /**
@@ -527,19 +506,6 @@ abstract public class AbstractMailServiceImpl implements MailService {
         sendHtmlMessage(from, new String[] { to }, new String[] {}, new String[] {}, subject, html, null, null);
     }
 
-    /**
-     * Sets the instance of the service class.
-     * @param instance The mail service to set.
-     */
-    protected static void setInstance(MailService instance) {
-        if (_instance != null) {
-            throw new RuntimeException("The mail service is already initialized with an instance of type " + _instance.getClass().getName() + ". Use the static MailService.getInstance() method to get the existing service instance.");
-        }
-        _log.debug("Returning static mail service singleton.");
-        _instance = instance;
-    }
-
    private static final Log _log = LogFactory.getLog(AbstractMailServiceImpl.class);
-   private static MailService _instance;
 }
 

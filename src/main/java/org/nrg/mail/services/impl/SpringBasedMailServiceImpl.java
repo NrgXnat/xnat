@@ -9,17 +9,16 @@
  */
 package org.nrg.mail.services.impl;
 
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.mail.api.MailMessage;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
-
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
 
 /**
  * Provides relatively implementation-independent mail service to allow access
@@ -32,10 +31,25 @@ import javax.mail.internet.MimeMessage;
 @Service
 public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 
-	public SpringBasedMailServiceImpl() throws NrgServiceException {
+	private SpringBasedMailServiceImpl() {
 		super();
 	}
 
+    /**
+     * Returns an existing instance of the service class. The underlying
+     * singleton should be initialized by the context, e.g. Spring Framework.
+     *
+     * @return An instance of the mail service.
+     */
+    public static SpringBasedMailServiceImpl getInstance() {
+        if (_instance == null) {
+            _instance = new SpringBasedMailServiceImpl();
+        }
+
+        _log.debug("Returning static Spring-based mail service singleton.");
+        return _instance;
+    }
+	
 	@Override
 	public void sendMessage(MailMessage message) throws MessagingException {
 		if (StringUtils.isBlank(message.getHtml())
@@ -86,6 +100,7 @@ public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 	}
 
 	private static final Log _log = LogFactory.getLog(SpringBasedMailServiceImpl.class);
+	private static SpringBasedMailServiceImpl _instance;
 
 	@Autowired
 	private JavaMailSender _sender;

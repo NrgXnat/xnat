@@ -24,18 +24,29 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
+import org.nrg.mail.services.MailService;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
 /**
- * Created by IntelliJ IDEA.
- * User: rherrick
- * Date: 21-7-11
- * Time: 4:32 PM
+ * This class provides a convenient encapsulation of mail message functionality that
+ * can be used with NRG {@link MailService} implementations.
+ *
+ * @author Rick Herrick <rick.herrick@wustl.edu>
  */
 public class MailMessage {
+    public static final String PROP_FROM = "from";
+    public static final String PROP_ON_BEHALF_OF = "onBehalfOf";
+    public static final String PROP_TOS = "tos";
+    public static final String PROP_CCS = "ccs";
+    public static final String PROP_BCCS = "bccs";
+    public static final String PROP_SUBJECT = "subject";
+    public static final String PROP_HTML = "html";
+    public static final String PROP_TEXT = "text";
+    public static final String PROP_ATTACHMENTS = "attachments";
+
     public MailMessage() {
     }
 
@@ -49,6 +60,35 @@ public class MailMessage {
         _html = html;
         _text = text;
         _attachments = attachments;
+    }
+
+    @SuppressWarnings("unchecked")
+    public MailMessage(Map<String, Object> properties) {
+        _from = (String) properties.get(PROP_FROM);
+        if (properties.containsKey(PROP_ON_BEHALF_OF)) {
+            _onBehalfOf = (String) properties.get(PROP_ON_BEHALF_OF);
+        }
+        if (properties.containsKey(PROP_TOS)) {
+            _tos = convertObjectToStringList(properties.get(PROP_TOS));
+        }
+        if (properties.containsKey(PROP_CCS)) {
+            _ccs = convertObjectToStringList(properties.get(PROP_CCS));
+        }
+        if (properties.containsKey(PROP_BCCS)) {
+            _bccs = convertObjectToStringList(properties.get(PROP_BCCS));
+        }
+        if (properties.containsKey(PROP_SUBJECT)) {
+            _subject = (String) properties.get(PROP_SUBJECT);
+        }
+        if (properties.containsKey(PROP_HTML)) {
+            _html = (String) properties.get(PROP_HTML);
+        }
+        if (properties.containsKey(PROP_TEXT)) {
+            _text = (String) properties.get(PROP_TEXT);
+        }
+        if (properties.containsKey(PROP_ATTACHMENTS)) {
+            _attachments = (Map<String, FileSystemResource>) properties.get(PROP_ATTACHMENTS);
+        }
     }
 
     public String getFrom() {
@@ -185,7 +225,10 @@ public class MailMessage {
     }
 
     public MimeMessage asMimeMessage(MimeMessage message) throws MessagingException {
-        MimeMessageHelper helper = new MimeMessageHelper(message, _attachments != null && _attachments.size() > 0);
+        boolean hasHtmlAndText = !StringUtils.isBlank(_html) && !StringUtils.isBlank(_text);
+        boolean hasAttachments = _attachments != null && _attachments.size() > 0;
+
+        MimeMessageHelper helper = new MimeMessageHelper(message, hasHtmlAndText || hasAttachments);
 
         if (!StringUtils.isBlank(_from)) {
             helper.setFrom(_from);
@@ -217,8 +260,10 @@ public class MailMessage {
             }
         }
 
-        for (Map.Entry<String, ? extends Resource> attachment : _attachments.entrySet()) {
-            helper.addAttachment(attachment.getKey(), attachment.getValue());
+        if (hasAttachments) {
+            for (Map.Entry<String, ? extends Resource> attachment : _attachments.entrySet()) {
+                helper.addAttachment(attachment.getKey(), attachment.getValue());
+            }
         }
 
         return helper.getMimeMessage();
@@ -257,6 +302,29 @@ public class MailMessage {
     	}
     	
     	return email;
+    }
+
+    /**
+     * This method converts a value of type <b>List<String></b>, <b>String[]</b>,
+     * or <b>String</b> into a <b>List<String></b>. If the submitted object is not
+     * of one of these types, this just calls the {@link Object#toString()} method
+     * on the object, which may lead to unexpected results.
+     * @param value The value to convert.
+     * @return The value(s) in the value parameter converted into a <b>List<String></b>.
+     */
+    @SuppressWarnings("unchecked")
+    private List<String> convertObjectToStringList(Object value) {
+        if (value == null) {
+            return null;
+        }
+        if (value instanceof List) {
+            return (List<String>) value;
+        } else if (value instanceof String[]) {
+            return Arrays.asList((String[]) value);
+        } else if (value instanceof String) {
+            return Arrays.asList(new String[] {(String) value});
+        }
+        return Arrays.asList(new String[] {value.toString()});
     }
 
     private static final Log _log = LogFactory.getLog(MailMessage.class);

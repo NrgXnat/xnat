@@ -13,23 +13,32 @@ import java.util.Map;
 
 import javax.inject.Provider;
 
+import org.nrg.notify.renderers.ChannelRenderer;
+
 /**
- * 
+ * The provider for injecting the channel renderer registry. This provider is necessary to inject
+ * the registry, since the registry is {@link Map}-based and because of type erasure maps can not
+ * be injected at run time.
  * @author Rick Herrick <rick.herrick@wustl.edu>
  */
-public class ChannelRendererProvider implements Provider<Map<String, String>> {
+public class ChannelRendererProvider implements Provider<Map<String, ChannelRenderer>> {
 
     /**
-     * @see javax.inject.Provider#get()
+     * Gets the map of registered channel renderers.
+     * @see Provider#get()
      */
     @Override
-    public Map<String, String> get() {
+    public Map<String, ChannelRenderer> get() {
         return _renderers;
     }
 
-    public void setRenderers(Map<String, String> renderers) {
+    /**
+     * Sets the map of available channel renderers.
+     * @param renderers
+     */
+    public void setRenderers(Map<String, ChannelRenderer> renderers) {
         _renderers = renderers;
     }
 
-    private Map<String, String> _renderers;
+    private Map<String, ChannelRenderer> _renderers;
 }

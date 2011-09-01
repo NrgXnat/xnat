@@ -44,7 +44,7 @@ public class Notification extends AbstractHibernateEntity {
         return _format;
     }
 
-    public void setFormat(String format) {
+    public void setParameterFormat(String format) {
         _format = format;
     }
 

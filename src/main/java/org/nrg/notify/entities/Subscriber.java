@@ -9,12 +9,16 @@
  */
 package org.nrg.notify.entities;
 
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.OneToMany;
+import javax.persistence.Transient;
 
+import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
@@ -46,7 +50,15 @@ public class Subscriber extends AbstractHibernateEntity {
     public void setSubscriptions(List<Subscription> subscriptions) {
         _subscriptions = subscriptions;
     }
-    
+
+    @Transient
+    public List<String> getEmailList() {
+        if (StringUtils.isBlank(_emails)) {
+            return new ArrayList<String>();
+        }
+        return Arrays.asList(_emails.split("[\\s]*,[\\s]*"));
+    }
+
     private String _name;
     private String _emails;
     private List<Subscription> _subscriptions;

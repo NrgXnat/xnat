@@ -39,20 +39,18 @@
 		p:packagesToScan-ref="nrgNotificationEntityPackages"
 		p:namingStrategy-ref="namingStrategy" />
 
-	<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager"
-		p:sessionFactory-ref="sessionFactory" />
+	<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager" p:sessionFactory-ref="sessionFactory" />
 
 	<tx:annotation-driven />
 
-	<bean name="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl" p:host="mail.mir.wustl.edu"/>
-	<bean name="mailService" class="org.nrg.mail.services.impl.SpringBasedMailServiceImpl" p:javaMailSender-ref="mailSender" />
-    <bean id="mailChannelRenderer" class="org.nrg.notify.renderers.NrgMailChannelRenderer">
-        <property name="mailService" ref="mailService"/>
-    </bean>
+	<bean name="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl" p:host="mail.nrg.wustl.edu"/>
+	<bean name="mailService" class="org.nrg.mail.services.impl.SpringBasedMailServiceImpl" factory-method="getInstance" p:javaMailSender-ref="mailSender" />
 
-    <util:map id="renderers" key-type="java.lang.String" value-type="java.lang.String">
-        <entry value="htmlMail" key="mailChannelRenderer" />
-        <entry value="textMail" key="mailChannelRenderer" />
+    <bean id="mailChannelRenderer" class="org.nrg.notify.renderers.NrgMailChannelRenderer" p:mailService-ref="mailService" p:fromAddress="admin@xnat.org" p:subjectPrefix="Test"/>
+    
+    <util:map id="renderers" value-type="org.nrg.notify.renderers.ChannelRenderer">
+        <entry key="htmlMail" value-ref="mailChannelRenderer" />
+        <entry key="textMail" value-ref="mailChannelRenderer" />
     </util:map>
 
 	<bean id="rendererProvider" class="org.nrg.notify.entities.ChannelRendererProvider">

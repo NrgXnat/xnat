@@ -14,8 +14,11 @@ import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 
+import java.io.IOException;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import javax.inject.Inject;
 
@@ -26,12 +29,12 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.mail.api.MailMessage;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
 import org.nrg.notify.entities.Category;
 import org.nrg.notify.entities.Channel;
 import org.nrg.notify.entities.Definition;
-import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
@@ -41,7 +44,6 @@ import org.springframework.test.annotation.ExpectedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
-
 
 /**
  * Many of these tests are annotated with {@link Transactional} to support session persistence through the execution
@@ -217,7 +219,7 @@ public class NotificationServiceTests {
     }
 
     @Test
-    public void testSubscribersAndSubscriptions() throws DuplicateDefinitionException, DuplicateSubscriberException {
+    public void testSubscribersAndSubscriptions() throws DuplicateDefinitionException, DuplicateSubscriberException, IOException {
         Subscriber subscriber1 = _service.getSubscriberService().createSubscriber("Subscriber 1", "subscriber1@rickherrick.com");
         Subscriber subscriber2 = _service.getSubscriberService().createSubscriber("Subscriber 2", "subscriber2@rickherrick.com");
         Subscriber subscriber3 = _service.getSubscriberService().createSubscriber("Subscriber 3", "subscriber3@rickherrick.com");
@@ -283,7 +285,12 @@ public class NotificationServiceTests {
         assertNotNull(definitionSubscriptions4);
         assertEquals(3, definitionSubscriptions4.size());
         
-        Notification notification = _service.createNotification(definition1, "Did that!");
+        Map<String, Object> parameters = new HashMap<String, Object>();
+        parameters.put(MailMessage.PROP_SUBJECT, "Test notification");
+        parameters.put(MailMessage.PROP_HTML, "<html><body>This is a test notification, which includes an <b>HTML</b> message payload.</body></html>");
+        parameters.put(MailMessage.PROP_TEXT, "This is a test notification, which includes a text message payload.");
+
+        _service.createNotification(definition1, parameters);
     }
 
     /**

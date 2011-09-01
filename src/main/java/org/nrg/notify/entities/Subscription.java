@@ -18,11 +18,19 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 
+import org.hibernate.annotations.LazyCollection;
+import org.hibernate.annotations.LazyCollectionOption;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.notify.api.SubscriberType;
 
 /**
  * The Class Subscription.
+ * 
+ * Note: The use of the {@link LazyCollection} annotation in place of the {@link FetchType}
+ * attribute on the relational annotations is due to a restriction in the JPA annotations on
+ * having more than one eager fetch in a class. The Hibernate-specific annotation allows you
+ * to specify more than one eager fetch. More information is available at 
+ * <a href="http://stackoverflow.com/questions/4334970/hibernate-cannot-simultaneously-fetch-multiple-bags">Stack Overflow</a>. 
  */
 @Entity
 public class Subscription extends AbstractHibernateEntity {
@@ -50,7 +58,8 @@ public class Subscription extends AbstractHibernateEntity {
      * {@link Subscriber subscriber}.
      * @return
      */
-    @ManyToOne(fetch = FetchType.EAGER)
+    @ManyToOne
+    @LazyCollection(LazyCollectionOption.FALSE)
     public Subscriber getSubscriber() {
         return _subscriber;
     }
@@ -87,7 +96,8 @@ public class Subscription extends AbstractHibernateEntity {
      * about its subscriptions.
      * @return A list of {@link Channel channels} for notifying the subscriber. 
      */
-    @ManyToMany(fetch = FetchType.LAZY)
+    @ManyToMany
+    @LazyCollection(LazyCollectionOption.FALSE)
     public List<Channel> getChannels() {
         return _channels;
     }

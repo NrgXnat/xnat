@@ -13,9 +13,12 @@ import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
 
-import javax.inject.Inject;
+import javax.mail.MessagingException;
 
+import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.map.ObjectMapper;
+import org.codehaus.jackson.type.TypeReference;
+import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscription;
@@ -45,14 +48,21 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
      */
     @Override
     public void render(Subscription subscription, Notification notification, String format) throws ChannelRendererProcessingException {
-        subscription.getDefinition();
-        subscription.getSubscriber();
         try {
             // TODO: For now, this is only supporting JSON. This should actually branch on notification.getParameterFormat();
-            Map<String,Object> parameters = new ObjectMapper().readValue(notification.getParameters(), HashMap.class);
-            // _mailService.
+            Map<String, Object> parameters = new ObjectMapper().readValue(notification.getParameters(), new TypeReference<HashMap<String, Object>>() {});
+            parameters.put(MailMessage.PROP_FROM, _fromAddress);
+            parameters.put(MailMessage.PROP_SUBJECT, formatSubject((String) parameters.get(MailMessage.PROP_SUBJECT)));
+            parameters.put(MailMessage.PROP_TOS, subscription.getSubscriber().getEmailList());
+            if (!StringUtils.isBlank(_onBehalfOf)) {
+                parameters.put(MailMessage.PROP_ON_BEHALF_OF, _onBehalfOf);
+            }
+
+            _mailService.sendMessage(new MailMessage(parameters));
         } catch (IOException exception) {
             throw new ChannelRendererProcessingException("An error occurred processing the notification parameters in format: " + notification.getParameterFormat(), exception);
+        } catch (MessagingException exception) {
+            throw new ChannelRendererProcessingException("An error occurred sending the mail message", exception);
         }
     }
 
@@ -70,5 +80,71 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
         return _mailService;
     }
 
+    /**
+     * @param fromAddress Sets the fromAddress property.
+     */
+    public void setFromAddress(String fromAddress) {
+        _fromAddress = fromAddress;
+    }
+
+    /**
+     * @return Returns the fromAddress property.
+     */
+    public String getFromAddress() {
+        return _fromAddress;
+    }
+
+    /**
+     * @param onBehalfOf Sets the onBehalfOf property.
+     */
+    public void setOnBehalfOf(String onBehalfOf) {
+        _onBehalfOf = onBehalfOf;
+    }
+
+    /**
+     * @return Returns the onBehalfOf property.
+     */
+    public String getOnBehalfOf() {
+        return _onBehalfOf;
+    }
+
+    /**
+     * @param subjectPrefix Sets the subjectPrefix property.
+     */
+    public void setSubjectPrefix(String subjectPrefix) {
+        _subjectPrefix = subjectPrefix;
+    }
+
+    /**
+     * @return Returns the subjectPrefix property.
+     */
+    public String getSubjectPrefix() {
+        return _subjectPrefix;
+    }
+
+    /**
+     * @param parameters
+     * @return
+     */
+    private String formatSubject(String subject) {
+        if (StringUtils.isBlank(subject)) {
+            if (StringUtils.isBlank(_subjectPrefix)) {
+                subject = "NRG Notification";
+            } else {
+                subject = "[" + _subjectPrefix + "]";
+            }
+        } else {
+            if (StringUtils.isBlank(_subjectPrefix)) {
+                subject = "[NRG] " + subject;
+            } else {
+                subject = "[" + _subjectPrefix + "] " + subject;
+            }
+        }
+        return subject;
+    }
+
     private MailService _mailService;
+    private String _fromAddress;
+    private String _onBehalfOf;
+    private String _subjectPrefix;
 }

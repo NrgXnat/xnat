@@ -9,7 +9,9 @@
  */
 package org.nrg.notify.services;
 
+import java.io.IOException;
 import java.util.List;
+import java.util.Map;
 
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.notify.api.CategoryScope;
@@ -38,9 +40,21 @@ public interface NotificationService extends BaseHibernateService<Notification> 
      * @param definition The notification definition from which the notification should be created.
      * @param parameters Any parameters for this particular notification.
      * @return The newly created and dispatched notification.
+     * @see NotificationService#createNotification(Definition, Map))
      */
     public abstract Notification createNotification(Definition definition, String parameters);
 
+    /**
+     * The ultimate convenience method. This creates a new {@link Notification notification}, setting it to the given
+     * definition and dispatching it to all subscribers with the given parameters.
+     * @param definition The notification definition from which the notification should be created.
+     * @param parameters Any parameters for this particular notification. These are transformed through JSON to a string.
+     * @return The newly created and dispatched notification.
+     * @throws IOException Thrown when there's a problem converting the parameters to  
+     * @see NotificationService#createNotification(Definition, String)
+     */
+    public abstract Notification createNotification(Definition definition, Map<String, Object> parameters) throws IOException;
+    
     /**
      * Creates a {@link Definition definition} associated with the {@link Category category} associated with
      * the indicated {@link CategoryScope scope} and event. If there's already a category with the same scope

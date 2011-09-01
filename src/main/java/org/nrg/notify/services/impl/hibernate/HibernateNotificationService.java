@@ -9,11 +9,16 @@
  */
 package org.nrg.notify.services.impl.hibernate;
 
+import java.io.IOException;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.codehaus.jackson.JsonGenerationException;
+import org.codehaus.jackson.map.JsonMappingException;
+import org.codehaus.jackson.map.ObjectMapper;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
@@ -53,6 +58,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @param parameters Any parameters for this particular notification.
      * @return The newly created and dispatched notification.
      * @see NotificationService#createNotification(Definition, String)
+     * @see NotificationService#createNotification(Definition, Map))
      */
     @Override
     @Transactional
@@ -61,6 +67,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
         notification.setDefinition(definition);
         notification.setParameters(parameters);
         create(notification);
+
         try {
             _dispatcherService.dispatch(notification);
         } catch (NrgNotificationException exception) {
@@ -69,6 +76,24 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
         }
 
         return notification;
+    }
+
+    /**
+     * The ultimate convenience method. This creates a new {@link Notification notification}, setting it to the given
+     * definition and dispatching it to all subscribers with the given parameters.
+     * @param definition The notification definition from which the notification should be created.
+     * @param parameters Any parameters for this particular notification. These are transformed through JSON to a string.
+     * @return The newly created and dispatched notification.
+     * @throws IOException 
+     * @throws JsonMappingException 
+     * @throws JsonGenerationException 
+     * @see NotificationService#createNotification(Definition, Map))
+     * @see NotificationService#createNotification(Definition, String)
+     */
+    @Override
+    @Transactional
+    public Notification createNotification(Definition definition, Map<String, Object> parameters) throws IOException {
+        return createNotification(definition, new ObjectMapper().writeValueAsString(parameters));
     }
 
     /**

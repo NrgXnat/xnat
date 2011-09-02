@@ -24,10 +24,6 @@
     <dependencies>
         <dependency>
             <groupId>org.nrg</groupId>
-            <artifactId>framework</artifactId>
-        </dependency>
-        <dependency>
-            <groupId>org.nrg</groupId>
             <artifactId>mail</artifactId>
         </dependency>
         <dependency>

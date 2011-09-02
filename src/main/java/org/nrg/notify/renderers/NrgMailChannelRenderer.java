@@ -23,6 +23,7 @@ import org.nrg.mail.services.MailService;
 import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.ChannelRendererProcessingException;
+import org.springframework.beans.factory.annotation.Autowired;
 
 /**
  * 
@@ -143,7 +144,9 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
         return subject;
     }
 
+    @Autowired(required = false)
     private MailService _mailService;
+
     private String _fromAddress;
     private String _onBehalfOf;
     private String _subjectPrefix;

@@ -32,10 +32,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
     public abstract void sendMessage(MailMessage message) throws MessagingException;
 
     /**
-     * Protected constructor. Generally, you should NOT call this method! Instead
-     * call the static initializer method {@link #getInstance()}. The public
-     * constructor is provided to allow Spring to create the class and auto-wire
-     * the mail sender.
+     * Protected constructor.
      */
     protected AbstractMailServiceImpl() {
     }
@@ -184,7 +181,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * @param attachments
      *            A map of attachments, with the attachment name as a string and
      *            the attachment body as a {@link java.io.File} object. Use the prefix
-     *            {@link org.nrg.xdat.mail.services.MailService#PREFIX_INLINE_ATTACHMENT} to indicate inline
+     *            {@link MailService#PREFIX_INLINE_ATTACHMENT} to indicate inline
      *            attachments.
      *
      * @param headers Additional headers to be added to the message.

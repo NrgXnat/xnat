@@ -9,6 +9,7 @@
  */
 package org.nrg.mail.services.impl;
 
+import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
@@ -16,7 +17,6 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.mail.api.MailMessage;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
@@ -31,8 +31,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 
-	private SpringBasedMailServiceImpl() {
+    /**
+     * This constructor should not be called directly! This is provided so that Spring can
+     * initialize the static instance on context instantiation.
+     */
+	public SpringBasedMailServiceImpl() {
 		super();
+		_instance = this;
 	}
 
     /**
@@ -102,6 +107,6 @@ public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 	private static final Log _log = LogFactory.getLog(SpringBasedMailServiceImpl.class);
 	private static SpringBasedMailServiceImpl _instance;
 
-	@Autowired
+	@Inject
 	private JavaMailSender _sender;
 }

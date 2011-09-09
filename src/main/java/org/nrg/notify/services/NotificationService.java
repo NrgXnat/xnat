@@ -23,6 +23,8 @@ import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
+import org.nrg.notify.exceptions.NoMatchingCategoryException;
+import org.nrg.notify.exceptions.NoMatchingDefinitionException;
 
 
 /**
@@ -50,10 +52,41 @@ public interface NotificationService extends BaseHibernateService<Notification> 
      * @param definition The notification definition from which the notification should be created.
      * @param parameters Any parameters for this particular notification. These are transformed through JSON to a string.
      * @return The newly created and dispatched notification.
-     * @throws IOException Thrown when there's a problem converting the parameters to  
+     * @throws IOException Thrown when there's a problem converting the parameters to a string.
      * @see NotificationService#createNotification(Definition, String)
      */
     public abstract Notification createNotification(Definition definition, Map<String, Object> parameters) throws IOException;
+    
+    /**
+     * This creates a new {@link CategoryScope system-scoped} {@link Notification notification}, setting 
+     * it to the given event and dispatching it to all subscribers with the given parameters. Basically,
+     * this uses the {@link Definition} with the given event and scope of {@link CategoryScope#Site}. There
+     * is no {@link Definition#getEntity() entity property} required, since system-scoped events by definition
+     * are not associated with a particular entity.
+     * @param event In conjunction with the scope {@link CategoryScope#Site}, specifies the {@link Definition} to use.
+     * @param parameters Any parameters for this particular notification.
+     * @return The newly created and dispatched notification.
+     * @throws NoMatchingCategoryException Thrown when the category specified can't be found.
+     * @throws NoMatchingDefinitionException Thrown when the definition specified can't be found.
+     * @see NotificationService#createNotification(String, Map))
+     */
+    public abstract Notification createNotification(String event, String parameters) throws NoMatchingCategoryException, NoMatchingDefinitionException;
+    
+    /**
+     * This creates a new {@link CategoryScope system-scoped} {@link Notification notification}, setting 
+     * it to the given event and dispatching it to all subscribers with the given parameters. Basically,
+     * this uses the {@link Definition} with the given event and scope of {@link CategoryScope#Site}. There
+     * is no {@link Definition#getEntity() entity property} required, since system-scoped events by definition
+     * are not associated with a particular entity.
+     * @param event In conjunction with the scope {@link CategoryScope#Site}, specifies the {@link Definition} to use.
+     * @param parameters Any parameters for this particular notification. These are transformed through JSON to a string.
+     * @return The newly created and dispatched notification.
+     * @throws IOException Thrown when there's a problem converting the parameters to a string.
+     * @throws NoMatchingCategoryException Thrown when the category specified can't be found.
+     * @throws NoMatchingDefinitionException Thrown when the definition specified can't be found.
+     * @see NotificationService#createNotification(String, String))
+     */
+    public abstract Notification createNotification(String event, Map<String, Object> parameters) throws IOException, NoMatchingCategoryException, NoMatchingDefinitionException;
     
     /**
      * Creates a {@link Definition definition} associated with the {@link Category category} associated with
@@ -63,6 +96,7 @@ public interface NotificationService extends BaseHibernateService<Notification> 
      * @param event The category event.
      * @param entity The entity with which the definition is associated.
      * @return A newly created definition.
+     * @throws IOException Thrown when there's a problem converting the parameters to a string.
      * @throws DuplicateDefinitionException When a definition with the same scope, event, and entity association already exists.
      */
     abstract public Definition createDefinition(CategoryScope scope, String event, long entity) throws DuplicateDefinitionException;

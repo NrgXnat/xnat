@@ -9,6 +9,7 @@
  */
 package org.nrg.notify.entities;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -20,6 +21,8 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
  */
 @Entity
 public class Channel extends AbstractHibernateEntity {
+
+    @Column(unique=true, nullable=false) 
     public String getName() {
         return _name;
     }

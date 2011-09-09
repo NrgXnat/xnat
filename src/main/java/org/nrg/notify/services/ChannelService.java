@@ -27,5 +27,12 @@ public interface ChannelService extends BaseHibernateService<Channel> {
      * @param format The format supported by the channel.
      * @return The newly created channel object.
      */
-    Channel createChannel(String name, String format);
+    abstract public Channel createChannel(String name, String format);
+
+    /**
+     * Retrieves the channel with the indicated name.
+     * @param name The name of the channel to retrieve.
+     * @return The indicated channel.
+     */
+    abstract public Channel getChannel(String name);
 }

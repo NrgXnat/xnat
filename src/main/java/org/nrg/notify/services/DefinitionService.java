@@ -30,7 +30,7 @@ public interface DefinitionService extends BaseHibernateService<Definition>  {
      * @param category The category for which to find all associated definitions. 
      * @return All {@link Definition definitions} associated with the given category.
      */
-    List<Definition> getDefinitionsForCategory(Category category);
+    abstract public List<Definition> getDefinitionsForCategory(Category category);
 
     /**
      * Retrieves the {@link Definition definition} associated with the given {@link Category category}
@@ -40,5 +40,5 @@ public interface DefinitionService extends BaseHibernateService<Definition>  {
      * @return The {@link Definition definition} associated with the given {@link Category category} and entity ID.
      * @throws DuplicateDefinitionException When multiple definitions for the given scope, event, and entity association exist.
      */
-    Definition getDefinitionForCategoryAndEntity(Category category, long entity) throws DuplicateDefinitionException;
+    abstract public Definition getDefinitionForCategoryAndEntity(Category category, long entity) throws DuplicateDefinitionException;
 }

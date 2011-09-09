@@ -19,6 +19,7 @@ import org.nrg.notify.daos.CategoryDAO;
 import org.nrg.notify.entities.Category;
 import org.nrg.notify.services.CategoryService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -39,6 +40,7 @@ public class HibernateCategoryService extends AbstractHibernateEntityService<Cat
      * @see CategoryService#getCategoryByScopeAndEvent(CategoryScope, String)
      */
     @Override
+    @Transactional
     public Category getCategoryByScopeAndEvent(CategoryScope scope, String event) {
         return getDao().getCategoryByScopeAndEvent(scope, event);
     }

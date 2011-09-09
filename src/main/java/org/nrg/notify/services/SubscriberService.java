@@ -30,4 +30,11 @@ public interface SubscriberService extends BaseHibernateService<Subscriber> {
      * @throws DuplicateSubscriberException When a subscriber with the same username already exists.
      */
     abstract public Subscriber createSubscriber(String name, String emails) throws DuplicateSubscriberException;
+
+    /**
+     * Gets the requested subscriber.
+     * @param name The name of the subscriber.
+     * @return The requested subscriber if found, <b>null</b> otherwise.
+     */
+    abstract public Subscriber getSubscriberByName(String name);
 }

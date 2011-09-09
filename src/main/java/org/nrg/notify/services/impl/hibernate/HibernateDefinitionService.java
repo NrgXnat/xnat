@@ -41,6 +41,7 @@ public class HibernateDefinitionService extends AbstractHibernateEntityService<D
      * @return All {@link Definition definitions} associated with the given category.
      * @see NotificationService#getDefinitionsForCategory(Category)
      */
+    @Override
     @Transactional
     public List<Definition> getDefinitionsForCategory(Category category) {
         List<Definition> definitions = _dao.getDefinitionsForCategory(category);
@@ -58,6 +59,7 @@ public class HibernateDefinitionService extends AbstractHibernateEntityService<D
      * @see DefinitionService#getDefinitionForCategoryAndEntity(Category, long)
      */
     @Override
+    @Transactional
     public Definition getDefinitionForCategoryAndEntity(Category category, long entity) throws DuplicateDefinitionException {
         return _dao.getDefinitionForCategoryAndEntity(category, entity);
     }

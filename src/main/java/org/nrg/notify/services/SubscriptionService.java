@@ -10,9 +10,11 @@
 package org.nrg.notify.services;
 
 import java.util.List;
+import java.util.Map;
 
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.notify.entities.Definition;
+import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.entities.Subscription;
 
 /**
@@ -26,5 +28,11 @@ public interface SubscriptionService extends BaseHibernateService<Subscription> 
      * @param definition
      * @return
      */
-    List<Subscription> getSubscriptionsForDefinition(Definition definition);
+    abstract public List<Subscription> getSubscriptionsForDefinition(Definition definition);
+
+    /**
+     * @param definition
+     * @return
+     */
+    abstract public Map<Subscriber, Subscription> getSubscriberMapOfSubscriptionsForDefinition(Definition definition);
 }

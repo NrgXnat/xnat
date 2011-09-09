@@ -19,6 +19,7 @@ import javax.persistence.OneToMany;
 import javax.persistence.Transient;
 
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
@@ -59,6 +60,19 @@ public class Subscriber extends AbstractHibernateEntity {
         return Arrays.asList(_emails.split("[\\s]*,[\\s]*"));
     }
 
+    @Override
+    @Transient
+    public String toString() {
+        List<String> emails = getEmailList();
+        return emails.size() == 0 ? _name : _name + " <" + emails.get(0) + ">"; 
+    }
+
+    @Override
+    @Transient
+    public int hashCode() {
+        return new HashCodeBuilder().append(_name).append(_emails).toHashCode();
+    }
+    
     private String _name;
     private String _emails;
     private List<Subscription> _subscriptions;

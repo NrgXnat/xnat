@@ -8,7 +8,7 @@
 	<import resource="classpath:/org/nrg/notify/TestDataSource-context.xml" />
 	<import resource="classpath:/META-INF/configuration/nrg-notify-context.xml" />
 
-	<bean id="namingStrategy" class="org.hibernate.cfg.ImprovedNamingStrategy" />
+	<bean id="namingStrategy" class="org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy" p:prefix="xhbm" />
 
 	<bean id="postgresqlHibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
 		<property name="properties">
@@ -44,7 +44,7 @@
 	<tx:annotation-driven />
 
 	<bean name="mailSender" class="org.springframework.mail.javamail.JavaMailSenderImpl" p:host="mail.nrg.wustl.edu"/>
-	<bean name="mailService" class="org.nrg.mail.services.impl.SpringBasedMailServiceImpl" factory-method="getInstance" p:javaMailSender-ref="mailSender" />
+	<bean name="mailService" class="org.nrg.mail.services.impl.SpringBasedMailServiceImpl" p:javaMailSender-ref="mailSender" />
 
     <bean id="mailChannelRenderer" class="org.nrg.notify.renderers.NrgMailChannelRenderer" p:mailService-ref="mailService" p:fromAddress="admin@xnat.org" p:subjectPrefix="Test"/>
     

@@ -9,7 +9,9 @@
  */
 package org.nrg.notify.services.impl.hibernate;
 
+import java.util.Hashtable;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -21,6 +23,7 @@ import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.services.SubscriptionService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 
 /**
@@ -39,10 +42,27 @@ public class HibernateSubscriptionService extends AbstractHibernateEntityService
      * @see SubscriptionService#getSubscriptionsForDefinition(Definition)
      */
     @Override
+    @Transactional
     public List<Subscription> getSubscriptionsForDefinition(Definition definition) {
         return getDao().getSubscriptionsForDefinition(definition);
     }
-    
+
+    /**
+     * Gets the {@link Subscription subscriptions} for the indicated {@link Definition definition}, then maps them by 
+     * {@link Subscriber#getName() subscriber name}.
+     * @see SubscriptionService#getSubscriberMapOfSubscriptionsForDefinition(Definition)
+     */
+    @Override
+    @Transactional
+    public Map<Subscriber, Subscription> getSubscriberMapOfSubscriptionsForDefinition(Definition definition) {
+        List<Subscription> subscriptions = getDao().getSubscriptionsForDefinition(definition);
+        Map<Subscriber, Subscription> map = new Hashtable<Subscriber, Subscription>();
+        for (Subscription subscription : subscriptions) {
+            map.put(subscription.getSubscriber(), subscription);
+        }
+        return map;
+    }
+
     /**
      * @return A new empty {@link Subscription} object.
      * @see SubscriptionService#newEntity()

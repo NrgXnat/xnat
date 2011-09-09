@@ -39,8 +39,8 @@ public class HibernateSubscriberService extends AbstractHibernateEntityService<S
      * @see SubscriberService#createSubscriber(String, String)
      * @throws DuplicateSubscriberException When a subscriber with the same username already exists.
      */
-    @Transactional
     @Override
+    @Transactional
     public Subscriber createSubscriber(String name, String emails) throws DuplicateSubscriberException {
         // TODO: Check for subscriber with existing name.
         Subscriber subscriber = newEntity();
@@ -50,6 +50,17 @@ public class HibernateSubscriberService extends AbstractHibernateEntityService<S
         return subscriber;
     }
 
+    /**
+     * Gets the requested subscriber.
+     * @param name The name of the subscriber.
+     * @return The requested subscriber if found, <b>null</b> otherwise.
+     */
+    @Override
+    @Transactional
+    public Subscriber getSubscriberByName(String name) {
+        return getDao().getSubscriberByName(name);
+    }
+    
     /**
      * @return A new empty {@link Subscriber} object.
      * @see SubscriberService#newEntity()

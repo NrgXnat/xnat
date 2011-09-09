@@ -35,14 +35,25 @@ public class HibernateChannelService extends AbstractHibernateEntityService<Chan
      * @return The newly created channel object.
      * @see ChannelService#createChannel(String, String)
      */
-    @Transactional
     @Override
+    @Transactional
     public Channel createChannel(String name, String format) {
         Channel channel = newEntity();
         channel.setName(name);
         channel.setFormat(format);
         getDao().create(channel);
         return channel;
+    }
+
+    /**
+     * Retrieves the channel with the indicated name.
+     * @param name The name of the channel to retrieve.
+     * @return The indicated channel.
+     */
+    @Override
+    @Transactional
+    public Channel getChannel(String name) {
+        return getDao().getChannelByName(name);
     }
 
     /**

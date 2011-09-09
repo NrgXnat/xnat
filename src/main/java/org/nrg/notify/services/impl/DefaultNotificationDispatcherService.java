@@ -26,6 +26,7 @@ import org.nrg.notify.renderers.ChannelRenderer;
 import org.nrg.notify.services.ChannelRendererService;
 import org.nrg.notify.services.NotificationDispatcherService;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 /**
  * The Class DefaultNotificationDispatcherServiceImpl.
@@ -44,6 +45,7 @@ public class DefaultNotificationDispatcherService implements NotificationDispatc
      * @see NotificationDispatcherService#dispatch(Notification)
      */
     @Override
+    @Transactional
     public void dispatch(Notification notification) throws NrgNotificationException {
         for(Subscription subscription : notification.getDefinition().getSubscriptions()) {
             for (Channel channel : subscription.getChannels()) {

@@ -30,6 +30,8 @@ import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
+import org.nrg.notify.exceptions.NoMatchingCategoryException;
+import org.nrg.notify.exceptions.NoMatchingDefinitionException;
 import org.nrg.notify.exceptions.NrgNotificationException;
 import org.nrg.notify.services.CategoryService;
 import org.nrg.notify.services.ChannelRendererService;
@@ -97,6 +99,66 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
     }
 
     /**
+     * This creates a new {@link CategoryScope system-scoped} {@link Notification notification}, setting 
+     * it to the given event and dispatching it to all subscribers with the given parameters. Basically,
+     * this uses the {@link Definition} with the given event and scope of {@link CategoryScope#Site}. There
+     * is no {@link Definition#getEntity() entity property} required, since system-scoped events by definition
+     * are not associated with a particular entity.
+     * <b>Note:</b> This will create the required {@link Category} and {@link Definition} for the notification
+     * if required.
+     * @param event In conjunction with the scope {@link CategoryScope#Site}, specifies the {@link Definition} to use.
+     * @param parameters Any parameters for this particular notification.
+     * @return The newly created and dispatched notification.
+     * @throws NoMatchingCategoryException Thrown when the category specified can't be found.
+     * @throws NoMatchingDefinitionException Thrown when the definition specified can't be found.
+     * @see NotificationService#createNotification(String, Map))
+     */
+    @Override
+    @Transactional
+    public Notification createNotification(String event, String parameters) throws NoMatchingCategoryException, NoMatchingDefinitionException {
+        // First get the category.
+        Category category = _categoryService.getCategoryByScopeAndEvent(CategoryScope.Site, event);
+        if (category == null) {
+            throw new NoMatchingCategoryException("Didn't find a category for site-scoped event: " + event);
+        }
+        
+        // Now get the definition.
+        Definition definition = null;
+        List<Definition> definitions = _definitionService.getDefinitionsForCategory(category);
+        if (definitions == null || definitions.size() == 0) {
+            throw new NoMatchingDefinitionException("Didn't find a category for site-scoped event: " + event);
+        } else {
+            // Just get the first if there's more than one, which there shouldn't be, since they shouldn't differ based on entity.
+            definition = definitions.get(0);
+        }
+        
+        // Create the notification.
+        return createNotification(definition, parameters);
+    }
+    
+    /**
+     * This creates a new {@link CategoryScope system-scoped} {@link Notification notification}, setting 
+     * it to the given event and dispatching it to all subscribers with the given parameters. Basically,
+     * this uses the {@link Definition} with the given event and scope of {@link CategoryScope#Site}. There
+     * is no {@link Definition#getEntity() entity property} required, since system-scoped events by definition
+     * are not associated with a particular entity.
+     * <b>Note:</b> This will create the required {@link Category} and {@link Definition} for the notification
+     * if required.
+     * @param event In conjunction with the scope {@link CategoryScope#Site}, specifies the {@link Definition} to use.
+     * @param parameters Any parameters for this particular notification. These are transformed through JSON to a string.
+     * @return The newly created and dispatched notification.
+     * @throws IOException Thrown when there's a problem converting the parameters to a string.
+     * @throws NoMatchingCategoryException Thrown when the category specified can't be found.
+     * @throws NoMatchingDefinitionException Thrown when the definition specified can't be found.
+     * @see NotificationService#createNotification(String, String))
+     */
+    @Override
+    @Transactional
+    public Notification createNotification(String event, Map<String, Object> parameters) throws IOException, NoMatchingCategoryException, NoMatchingDefinitionException {
+        return createNotification(event, new ObjectMapper().writeValueAsString(parameters));
+    }
+    
+    /**
      * Creates a {@link Definition definition} associated with the {@link Category category} associated with
      * the indicated {@link CategoryScope scope} and event. If there's already a category with the same scope
      * and event, the new definition is associated with that category. Otherwise a new category is created. 
@@ -157,7 +219,6 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @see NotificationService#subscribe(Definition, Subscriber, Channel)
      */
     @Override
-    @Transactional
     public Subscription subscribe(Subscriber subscriber, SubscriberType subscriberType, Definition definition, List<Channel> channels) {
         Subscription subscription = _subscriptionService.newEntity();
         subscription.setDefinition(definition);

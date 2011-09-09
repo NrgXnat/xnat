@@ -35,7 +35,7 @@ public enum NotificationType {
 		return _idLabelMap;
 	}
 
-	private final String _id = this.toString().toLowerCase();
+	private final String _id = this.toString();
 	private final String _label;
 
 	private static final Map<String, String> _idLabelMap;

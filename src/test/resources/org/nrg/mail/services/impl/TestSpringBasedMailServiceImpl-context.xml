@@ -5,6 +5,6 @@
         xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
     <bean name="mailSender" class="org.nrg.mail.services.impl.MockJavaMailSender" />
-    <bean name="mailService" class="org.nrg.mail.services.impl.SpringBasedMailServiceImpl" factory-method="getInstance" p:javaMailSender-ref="mailSender" />
+    <bean name="mailService" class="org.nrg.mail.services.impl.SpringBasedMailServiceImpl" p:javaMailSender-ref="mailSender" />
 
 </beans>

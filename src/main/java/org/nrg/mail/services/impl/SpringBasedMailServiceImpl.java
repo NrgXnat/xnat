@@ -31,30 +31,6 @@ import org.springframework.stereotype.Service;
 @Service
 public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 
-    /**
-     * This constructor should not be called directly! This is provided so that Spring can
-     * initialize the static instance on context instantiation.
-     */
-	public SpringBasedMailServiceImpl() {
-		super();
-		_instance = this;
-	}
-
-    /**
-     * Returns an existing instance of the service class. The underlying
-     * singleton should be initialized by the context, e.g. Spring Framework.
-     *
-     * @return An instance of the mail service.
-     */
-    public static SpringBasedMailServiceImpl getInstance() {
-        if (_instance == null) {
-            _instance = new SpringBasedMailServiceImpl();
-        }
-
-        _log.debug("Returning static Spring-based mail service singleton.");
-        return _instance;
-    }
-	
 	@Override
 	public void sendMessage(MailMessage message) throws MessagingException {
 		if (StringUtils.isBlank(message.getHtml())
@@ -105,7 +81,6 @@ public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 	}
 
 	private static final Log _log = LogFactory.getLog(SpringBasedMailServiceImpl.class);
-	private static SpringBasedMailServiceImpl _instance;
 
 	@Inject
 	private JavaMailSender _sender;

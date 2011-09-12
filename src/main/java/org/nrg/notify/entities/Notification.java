@@ -10,6 +10,7 @@
 package org.nrg.notify.entities;
 
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
@@ -31,7 +32,8 @@ public class Notification extends AbstractHibernateEntity {
     public void setDefinition (Definition definition) {
         _definition = definition;
     }
-    
+
+    @Column(columnDefinition="TEXT") 
     public String getParameters() {
         return _parameters;
     }

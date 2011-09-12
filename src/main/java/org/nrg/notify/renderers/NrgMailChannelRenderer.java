@@ -19,6 +19,7 @@ import org.apache.commons.lang.StringUtils;
 import org.codehaus.jackson.map.ObjectMapper;
 import org.codehaus.jackson.type.TypeReference;
 import org.nrg.mail.api.MailMessage;
+import org.nrg.mail.exceptions.InvalidMailAttachmentException;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscription;
@@ -63,6 +64,8 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
         } catch (IOException exception) {
             throw new ChannelRendererProcessingException("An error occurred processing the notification parameters in format: " + notification.getParameterFormat(), exception);
         } catch (MessagingException exception) {
+            throw new ChannelRendererProcessingException("An error occurred sending the mail message", exception);
+        } catch (InvalidMailAttachmentException exception) {
             throw new ChannelRendererProcessingException("An error occurred sending the mail message", exception);
         }
     }

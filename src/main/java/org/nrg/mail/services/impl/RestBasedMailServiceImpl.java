@@ -9,6 +9,14 @@
  */
 package org.nrg.mail.services.impl;
 
+import java.io.File;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Map;
+import java.util.Map.Entry;
+
+import javax.mail.MessagingException;
+
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
@@ -17,7 +25,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.mail.api.MailMessage;
-import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.client.CommonsClientHttpRequestFactory;
@@ -28,12 +35,6 @@ import org.springframework.http.converter.StringHttpMessageConverter;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.client.RestTemplate;
-
-import javax.mail.MessagingException;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
 
 /**
  * Provides relatively implementation-independent mail service to allow access
@@ -122,7 +123,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
         if (!StringUtils.isBlank(html)) {
             parameters.add("html", html);
         }
-        Map<String, ? extends Resource> attachments = message.getAttachments();
+        Map<String, File> attachments = message.getAttachments();
         if (attachments != null) {
             for (String id : attachments.keySet()) {
                 parameters.add(id, attachments.get(id));

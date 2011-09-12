@@ -9,7 +9,9 @@
  */
 package org.nrg.mail.api;
 
+import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -24,9 +26,9 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
+import org.nrg.mail.exceptions.InvalidMailAttachmentException;
 import org.nrg.mail.services.MailService;
 import org.springframework.core.io.FileSystemResource;
-import org.springframework.core.io.Resource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
@@ -50,7 +52,20 @@ public class MailMessage {
     public MailMessage() {
     }
 
-    public MailMessage(String from, String onBehalfOf, List<String> tos, List<String> ccs, List<String> bccs, String subject, String html, String text, Map<String, FileSystemResource> attachments) {
+    /**
+     * Creates a new mail message from the given parameters.
+     * @param from
+     * @param onBehalfOf
+     * @param tos
+     * @param ccs
+     * @param bccs
+     * @param subject
+     * @param html
+     * @param text
+     * @param attachments
+     * @throws InvalidMailAttachmentException
+     */
+    public MailMessage(String from, String onBehalfOf, List<String> tos, List<String> ccs, List<String> bccs, String subject, String html, String text, Map<String, Object> attachments) throws InvalidMailAttachmentException {
         _from = from;
         _onBehalfOf = onBehalfOf;
         _tos = tos;
@@ -59,11 +74,14 @@ public class MailMessage {
         _subject = subject;
         _html = html;
         _text = text;
-        _attachments = attachments;
+
+        if (attachments != null) {
+            _attachments = convertGenericAttachmentMap(attachments);
+        }
     }
 
     @SuppressWarnings("unchecked")
-    public MailMessage(Map<String, Object> properties) {
+    public MailMessage(Map<String, Object> properties) throws InvalidMailAttachmentException {
         _from = (String) properties.get(PROP_FROM);
         if (properties.containsKey(PROP_ON_BEHALF_OF)) {
             _onBehalfOf = (String) properties.get(PROP_ON_BEHALF_OF);
@@ -87,7 +105,7 @@ public class MailMessage {
             _text = (String) properties.get(PROP_TEXT);
         }
         if (properties.containsKey(PROP_ATTACHMENTS)) {
-            _attachments = (Map<String, FileSystemResource>) properties.get(PROP_ATTACHMENTS);
+            _attachments = convertGenericAttachmentMap((Map<String, Object>) properties.get(PROP_ATTACHMENTS));
         }
     }
 
@@ -198,18 +216,26 @@ public class MailMessage {
         values.add(value);
     }
 
-    public Map<String, ? extends Resource> getAttachments() {
+    public Map<String, File> getAttachments() {
         return _attachments;
     }
 
-    public void setAttachments(Map<String, FileSystemResource> attachments) {
+    public void setAttachments(Map<String, File> attachments) {
         _attachments = attachments;
     }
 
-    public void addAttachment(String id, FileSystemResource attachment) {
+    public void addAttachment(String id, File attachment) {
         _attachments.put(id, attachment);
     }
 
+    public void addAttachment(String id, String attachment) {
+        _attachments.put(id, new File(attachment));
+    }
+    
+    public void addAttachment(String id, URI attachment) {
+        _attachments.put(id, new File(attachment));
+    }
+    
     public SimpleMailMessage asSimpleMailMessage() {
         SimpleMailMessage message = new SimpleMailMessage();
         message.setTo(_tos.toArray(new String[_tos.size()]));
@@ -261,7 +287,7 @@ public class MailMessage {
         }
 
         if (hasAttachments) {
-            for (Map.Entry<String, ? extends Resource> attachment : _attachments.entrySet()) {
+            for (Map.Entry<String, File> attachment : _attachments.entrySet()) {
                 helper.addAttachment(attachment.getKey(), attachment.getValue());
             }
         }
@@ -290,9 +316,9 @@ public class MailMessage {
     	if (!StringUtils.isBlank(_html)) { email.setHtmlMsg(_html); }
     	if (!StringUtils.isBlank(_text)) { email.setTextMsg(_text); }
     	if (_attachments.size() > 0) {
-    		for (Map.Entry<String, FileSystemResource> entry : _attachments.entrySet()) {
+    		for (Map.Entry<String, File> entry : _attachments.entrySet()) {
     			String key = entry.getKey();
-    			FileSystemResource resource = entry.getValue();
+    			FileSystemResource resource = new FileSystemResource(entry.getValue());
     			try {
 					email.attach(resource.getURL(), key, "");
 				} catch (IOException exception) {
@@ -327,6 +353,36 @@ public class MailMessage {
         return Arrays.asList(new String[] {value.toString()});
     }
 
+    /**
+     * Converts from a map of objects to a map of file objects. Effectively, this supports a map of File objects
+     * along with String and URI objects, which are converted to File objects in a straightforward way. Any other
+     * object type will result in an {@link InvalidMailAttachmentException} being thrown.
+     * @param attachments The mixed bag of attachments represented by file, URI, and strings.
+     * @return A normalized map of files.
+     * @throws InvalidMailAttachmentException Thrown when a non-standard object is passed as a file.
+     */
+    private Map<String, File> convertGenericAttachmentMap(Map<String, Object> attachments) throws InvalidMailAttachmentException {
+        Map<String, File> fileAttachments = new HashMap<String, File>();
+        for (Map.Entry<String, Object> entry : attachments.entrySet()) {
+            Object value = entry.getValue();
+            if (value == null) {
+                continue;
+            }
+            if (File.class.isAssignableFrom(value.getClass())) {
+                fileAttachments.put(entry.getKey(), (File) value);
+            } else if (String.class.isAssignableFrom(value.getClass())) {
+                File file = new File((String) value);
+                fileAttachments.put(entry.getKey(), file);
+            } else if (URI.class.isAssignableFrom(value.getClass())) {
+                File file = new File((URI) value);
+                fileAttachments.put(entry.getKey(), file);
+            } else {
+                throw new InvalidMailAttachmentException("I don't know what this is: " + value);
+            }
+        }
+        return fileAttachments;
+    }
+
     private static final Log _log = LogFactory.getLog(MailMessage.class);
 
     private String _from;
@@ -338,5 +394,5 @@ public class MailMessage {
     private String _html;
     private String _text;
     private Map<String, List<String>> _headers = new HashMap<String, List<String>>();
-    private Map<String, FileSystemResource> _attachments = new HashMap<String, FileSystemResource>();
+    private Map<String, File> _attachments = new HashMap<String, File>();
 }

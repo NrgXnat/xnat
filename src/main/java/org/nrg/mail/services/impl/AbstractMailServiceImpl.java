@@ -9,6 +9,7 @@
  */
 package org.nrg.mail.services.impl;
 
+import java.io.File;
 import java.util.Map;
 
 import javax.mail.MessagingException;
@@ -18,7 +19,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.services.MailService;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.util.Assert;
 
 abstract public class AbstractMailServiceImpl implements MailService {
@@ -180,7 +180,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      *            The body of the email in plain-text format.
      * @param attachments
      *            A map of attachments, with the attachment name as a string and
-     *            the attachment body as a {@link java.io.File} object. Use the prefix
+     *            the attachment body as a {@link File} object. Use the prefix
      *            {@link MailService#PREFIX_INLINE_ATTACHMENT} to indicate inline
      *            attachments.
      *
@@ -199,7 +199,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * @see #sendHtmlMessage(String, String, String, String)
      */
     @Override
-    public void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, FileSystemResource> attachments, Map<String, String> headers) throws MessagingException {
+    public void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, File> attachments, Map<String, String> headers) throws MessagingException {
         Assert.notNull(to, "To address array must not be null");
         Assert.notNull(from, "From address must not be null");
 
@@ -271,7 +271,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * @see #sendHtmlMessage(String, String, String, String)
      */
     @Override
-    public void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, FileSystemResource> attachments) throws MessagingException {
+    public void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, File> attachments) throws MessagingException {
         sendHtmlMessage(from, to, cc, bcc, subject, html, text, attachments, null);
     }
 

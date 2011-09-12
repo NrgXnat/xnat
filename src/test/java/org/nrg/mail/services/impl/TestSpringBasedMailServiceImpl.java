@@ -9,6 +9,15 @@
  */
 package org.nrg.mail.services.impl;
 
+import static org.junit.Assert.fail;
+
+import java.io.File;
+import java.util.HashMap;
+import java.util.Map;
+
+import javax.mail.MessagingException;
+import javax.mail.internet.MimeMessage;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Ignore;
@@ -17,16 +26,8 @@ import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.mail.services.MailService;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.io.FileSystemResource;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-
-import javax.mail.MessagingException;
-import javax.mail.internet.MimeMessage;
-import java.util.HashMap;
-import java.util.Map;
-
-import static org.junit.Assert.fail;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -44,7 +45,7 @@ public class TestSpringBasedMailServiceImpl {
         MimeMessage message = Mockito.mock(MimeMessage.class);
         _sender.setMockMimeMessage(message);
 
-        Map<String, FileSystemResource> attachments = new HashMap<String, FileSystemResource>();
+        Map<String, File> attachments = new HashMap<String, File>();
         try {
             _service.sendHtmlMessage("test@yahoo.com",                      // From address
                                      new String[] { "test@gmail.com" },     // To address(es)

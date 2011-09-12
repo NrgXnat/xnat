@@ -9,12 +9,13 @@
  */
 package org.nrg.mail.services;
 
-import org.nrg.framework.services.NrgService;
-import org.nrg.mail.api.MailMessage;
-import org.springframework.core.io.FileSystemResource;
+import java.io.File;
+import java.util.Map;
 
 import javax.mail.MessagingException;
-import java.util.Map;
+
+import org.nrg.framework.services.NrgService;
+import org.nrg.mail.api.MailMessage;
 
 /**
  * Provides implementation-independent mail service. This implements a large array of methods to send messages
@@ -163,7 +164,7 @@ public interface MailService extends NrgService {
      * @see #sendHtmlMessage(String, String, String, String, String, String)
      * @see #sendHtmlMessage(String, String, String, String)
      */
-    void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, FileSystemResource> attachments, Map<String, String> headers) throws MessagingException;
+    void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, File> attachments, Map<String, String> headers) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method takes both an HTML-formatted
@@ -202,7 +203,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, FileSystemResource> attachments) throws MessagingException;
+	public abstract void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, File> attachments) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method takes both an HTML-formatted

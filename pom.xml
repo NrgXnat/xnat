@@ -15,66 +15,17 @@
 		<url>http://nrg.wustl.edu</url>
 	</organization>
 
-	<build>
-		<!--
-			Force the jar's name to be compliant with xdat_release's expectation (xdat-1.jar).
-			Eventually this should be removed once xdat_release moves to maven 2
-		-->
-		<finalName>xdat-1</finalName>
-		<!-- To define the plugin version in your parent POM -->
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>findbugs-maven-plugin</artifactId>
-					<version>2.3.1</version>
-				</plugin>
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>emma-maven-plugin</artifactId>
-					<version>1.0-alpha-3</version>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-		<!-- To use the plugin goals in your POM or parent POM -->
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>2.3.1</version>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>emma-maven-plugin</artifactId>
-				<version>1.0-alpha-3</version>
-			</plugin>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>2.3.1</version>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>emma-maven-plugin</artifactId>
-				<version>1.0-alpha-3</version>
-			</plugin>
-		</plugins>
-	</reporting>
+	<properties>
+		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
+		<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
+	</properties>
 
 	<dependencies>
+		<dependency>
+			<groupId>org.nrg.xnat</groupId>
+			<artifactId>xnatsrb</artifactId>
+			<version>1.0</version>
+		</dependency>
 		<dependency>
 			<groupId>junit</groupId>
 			<artifactId>junit</artifactId>
@@ -227,11 +178,6 @@
 			<version>1.4.25</version>
 		</dependency>
 		<dependency>
-			<groupId>org.nrg.xnat</groupId>
-			<artifactId>xnatsrb</artifactId>
-			<version>1.0</version>
-		</dependency>
-		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 			<version>20090211</version>
@@ -250,6 +196,65 @@
 			<type>jar</type>
 		</dependency>
 	</dependencies>
+
+	<build>
+		<!--
+			Force the jar's name to be compliant with xdat_release's expectation (xdat-1.jar).
+			Eventually this should be removed once xdat_release moves to maven 2
+		-->
+		<finalName>xdat-1</finalName>
+		<!-- To define the plugin version in your parent POM -->
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>findbugs-maven-plugin</artifactId>
+					<version>2.3.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>emma-maven-plugin</artifactId>
+					<version>1.0-alpha-3</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<!-- To use the plugin goals in your POM or parent POM -->
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>2.3.1</version>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>emma-maven-plugin</artifactId>
+				<version>1.0-alpha-3</version>
+			</plugin>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>2.3.1</version>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>emma-maven-plugin</artifactId>
+				<version>1.0-alpha-3</version>
+			</plugin>
+		</plugins>
+	</reporting>
 
 	<pluginRepositories>
 		<pluginRepository>

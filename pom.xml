@@ -1,10 +1,11 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	<groupId>org.nrg.xdat</groupId>
-	<artifactId>xdat_core</artifactId>
+	<artifactId>xdat</artifactId>
 	<packaging>jar</packaging>
 	<version>1.1-SNAPSHOT</version>
-	<name>xdat_core</name>
+	<name>xdat</name>
+
 	<url>http://bitbucket.org/nrg/xdat_core/</url>
 	<scm>
 		<url>http://bitbucket.org/nrg/xdat_core</url>
@@ -13,10 +14,11 @@
 		<name>Neuroinformatics Research Group</name>
 		<url>http://nrg.wustl.edu</url>
 	</organization>
+
 	<build>
-		<!-- 
-			Force the jar's name to be compliant with xdat_release's expectation (xdat-1.jar).  
-			Eventually this should be removed once xdat_release moves to maven 2 
+		<!--
+			Force the jar's name to be compliant with xdat_release's expectation (xdat-1.jar).
+			Eventually this should be removed once xdat_release moves to maven 2
 		-->
 		<finalName>xdat-1</finalName>
 		<!-- To define the plugin version in your parent POM -->
@@ -48,13 +50,15 @@
 			</plugin>
 			<plugin>
 				<artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
 				<configuration>
-					<source>1.5</source>
-					<target>1.5</target>
+					<source>1.6</source>
+					<target>1.6</target>
 				</configuration>
 			</plugin>
 		</plugins>
 	</build>
+
 	<reporting>
 		<plugins>
 			<plugin>
@@ -69,18 +73,7 @@
 			</plugin>
 		</plugins>
 	</reporting>
-	<!--
-		Use the Sun hosted javamail
-		http://maven.apache.org/guides/mini/guide-coping-with-sun-jars.html
-	-->
-	<repositories>
-		<repository>
-			<id>maven2-repository.dev.java.net</id>
-			<name>Java.net Repository for Maven</name>
-			<url>http://download.java.net/maven/2/</url>
-			<layout>default</layout>
-		</repository>
-	</repositories>
+
 	<dependencies>
 		<dependency>
 			<groupId>junit</groupId>
@@ -236,14 +229,7 @@
 		<dependency>
 			<groupId>org.nrg.xnat</groupId>
 			<artifactId>xnatsrb</artifactId>
-			<version>1</version>
-			<!-- 
-				Until we have our own Maven repository, we need to store any non-public 
-				jars in the project. Remove the scope, systemPath, and jar once xnatsrb is
-				publicly available.
-			-->
-			<scope>system</scope>
-			<systemPath>${basedir}/lib/xnatsrb-1.jar</systemPath>
+			<version>1.0</version>
 		</dependency>
 		<dependency>
 			<groupId>org.json</groupId>
@@ -264,4 +250,31 @@
 			<type>jar</type>
 		</dependency>
 	</dependencies>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<name>NRG/XDAT/XNAT Temporary Snapshot Maven Plugin Repo</name>
+			<id>org.nrg.maven.plugins.snapshot</id>
+			<url>http://nrg115.nrg.mir/artifactory/plugins-snapshot</url>
+		</pluginRepository>
+		<pluginRepository>
+			<name>NRG/XDAT/XNAT Temporary Release Maven Plugin Repo</name>
+			<id>org.nrg.maven.plugins.release</id>
+			<url>http://nrg115.nrg.mir/artifactory/plugins-release</url>
+		</pluginRepository>
+	</pluginRepositories>
+
+	<repositories>
+		<repository>
+			<name>NRG/XDAT/XNAT Temporary Release Maven Repo</name>
+			<id>org.nrg.maven.artifacts.release</id>
+			<url>http://nrg115.nrg.mir/artifactory/libs-release</url>
+		</repository>
+		<repository>
+			<name>NRG/XDAT/XNAT Temporary Snapshot Maven Repo</name>
+			<id>org.nrg.maven.artifacts.snapshot</id>
+			<url>http://nrg115.nrg.mir/artifactory/libs-snapshot</url>
+		</repository>
+	</repositories>
+
 </project>

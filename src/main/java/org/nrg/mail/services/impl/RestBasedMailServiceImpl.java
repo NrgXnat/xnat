@@ -49,7 +49,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
         super();
     }
 
-    public RestBasedMailServiceImpl(String address, String username, String password) throws NrgServiceException {
+    public RestBasedMailServiceImpl(String address, String username, String password) {
         super();
 
         setRestMailServiceEndpoint(address);

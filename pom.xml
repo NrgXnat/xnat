@@ -1,47 +1,102 @@
-<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
-	<groupId>org.nrg.xdat</groupId>
-	<artifactId>xdat</artifactId>
-	<packaging>jar</packaging>
-	<version>1.1-SNAPSHOT</version>
-	<name>xdat</name>
 
-	<url>http://bitbucket.org/nrg/xdat_core/</url>
+	<groupId>org.nrg.xdat</groupId>
+	<artifactId>core</artifactId>
+	<version>1.6.0-SNAPSHOT</version>
+	<packaging>jar</packaging>
+
+	<name>XDAT Core</name>
+	<url>http://bitbucket.org/nrg/xdat</url>
+
 	<scm>
-		<url>http://bitbucket.org/nrg/xdat_core</url>
+		<url>http://bitbucket.org/nrg/xdat</url>
 	</scm>
+
 	<organization>
 		<name>Neuroinformatics Research Group</name>
 		<url>http://nrg.wustl.edu</url>
 	</organization>
 
 	<properties>
+		<spring.version>3.0.5.RELEASE</spring.version>
+		<postgresql.version>9.0-801.jdbc4</postgresql.version>
 		<project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
 		<project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 	</properties>
 
+	<build>
+		<!-- Force the jar's name to be compliant with xdat_release's expectation
+			(xdat-1.jar). Eventually this should be removed once xdat_release moves to
+			maven 2 -->
+		<finalName>xdat-1</finalName>
+		<!-- To define the plugin version in your parent POM -->
+		<pluginManagement>
+			<plugins>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>findbugs-maven-plugin</artifactId>
+					<version>2.3.1</version>
+				</plugin>
+				<plugin>
+					<groupId>org.codehaus.mojo</groupId>
+					<artifactId>emma-maven-plugin</artifactId>
+					<version>1.0-alpha-3</version>
+				</plugin>
+			</plugins>
+		</pluginManagement>
+		<!-- To use the plugin goals in your POM or parent POM -->
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>2.3.1</version>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>emma-maven-plugin</artifactId>
+				<version>1.0-alpha-3</version>
+			</plugin>
+			<plugin>
+				<artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+				<configuration>
+					<source>1.6</source>
+					<target>1.6</target>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+	<reporting>
+		<plugins>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>findbugs-maven-plugin</artifactId>
+				<version>2.3.1</version>
+			</plugin>
+			<plugin>
+				<groupId>org.codehaus.mojo</groupId>
+				<artifactId>emma-maven-plugin</artifactId>
+				<version>1.0-alpha-3</version>
+			</plugin>
+		</plugins>
+	</reporting>
 	<dependencies>
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>com.springsource.org.apache.commons.lang</artifactId>
-			<version>2.5.0</version>
+			<groupId>org.nrg</groupId>
+			<artifactId>notify</artifactId>
+			<version>1.0.0-SNAPSHOT</version>
 		</dependency>
 		<dependency>
-			<groupId>org.nrg.xnat</groupId>
-			<artifactId>xnatsrb</artifactId>
-			<version>1.0</version>
+			<groupId>org.springframework</groupId>
+			<artifactId>org.springframework.web</artifactId>
+			<version>${spring.version}</version>
 		</dependency>
 		<dependency>
-			<groupId>junit</groupId>
-			<artifactId>junit</artifactId>
-			<version>4.8.1</version>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-all</artifactId>
-			<version>1.8.4</version>
-			<scope>test</scope>
+			<groupId>org.springframework</groupId>
+			<artifactId>org.springframework.context.support</artifactId>
+			<version>${spring.version}</version>
 		</dependency>
 		<dependency>
 			<groupId>log4j</groupId>
@@ -97,9 +152,30 @@
 			<version>1.4.3</version>
 		</dependency>
 		<dependency>
+		    <groupId>javax.inject</groupId>
+		    <artifactId>com.springsource.javax.inject</artifactId>
+		    <version>1.0.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-email</artifactId>
 			<version>1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>com.springsource.org.apache.commons.httpclient</artifactId>
+			<version>3.1.0</version>
+			<exclusions>
+				<exclusion>
+					<artifactId>com.springsource.org.apache.commons.codec</artifactId>
+					<groupId>org.apache.commons</groupId>
+				</exclusion>
+			</exclusions>
+		</dependency>
+		<dependency>
+			<groupId>org.apache.commons</groupId>
+			<artifactId>com.springsource.org.apache.commons.lang</artifactId>
+			<version>2.5.0</version>
 		</dependency>
 		<dependency>
 			<groupId>commons-fileupload</groupId>
@@ -191,6 +267,11 @@
 			<version>1.4.25</version>
 		</dependency>
 		<dependency>
+			<groupId>org.nrg.xnat</groupId>
+			<artifactId>xnatsrb</artifactId>
+			<version>1.0</version>
+		</dependency>
+		<dependency>
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 			<version>20090211</version>
@@ -206,93 +287,33 @@
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
 			<version>1.5</version>
-			<type>jar</type>
 		</dependency>
+
+		<!-- Unit testing dependencies -->
+		<dependency>
+			<groupId>junit</groupId>
+			<artifactId>junit</artifactId>
+			<version>4.8.1</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.mockito</groupId>
+			<artifactId>mockito-all</artifactId>
+			<version>1.8.4</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework</groupId>
+			<artifactId>org.springframework.test</artifactId>
+			<version>${spring.version}</version>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>postgresql</groupId>
+			<artifactId>postgresql</artifactId>
+			<version>${postgresql.version}</version>
+			<scope>test</scope>
+		</dependency>
+
 	</dependencies>
-
-	<build>
-		<!--
-			Force the jar's name to be compliant with xdat_release's expectation (xdat-1.jar).
-			Eventually this should be removed once xdat_release moves to maven 2
-		-->
-		<finalName>xdat-1</finalName>
-		<!-- To define the plugin version in your parent POM -->
-		<pluginManagement>
-			<plugins>
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>findbugs-maven-plugin</artifactId>
-					<version>2.3.1</version>
-				</plugin>
-				<plugin>
-					<groupId>org.codehaus.mojo</groupId>
-					<artifactId>emma-maven-plugin</artifactId>
-					<version>1.0-alpha-3</version>
-				</plugin>
-			</plugins>
-		</pluginManagement>
-		<!-- To use the plugin goals in your POM or parent POM -->
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>2.3.1</version>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>emma-maven-plugin</artifactId>
-				<version>1.0-alpha-3</version>
-			</plugin>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-                <version>2.3.2</version>
-				<configuration>
-					<source>1.6</source>
-					<target>1.6</target>
-				</configuration>
-			</plugin>
-		</plugins>
-	</build>
-
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-				<version>2.3.1</version>
-			</plugin>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>emma-maven-plugin</artifactId>
-				<version>1.0-alpha-3</version>
-			</plugin>
-		</plugins>
-	</reporting>
-
-	<pluginRepositories>
-		<pluginRepository>
-			<name>NRG/XDAT/XNAT Temporary Snapshot Maven Plugin Repo</name>
-			<id>org.nrg.maven.plugins.snapshot</id>
-			<url>http://nrg115.nrg.mir/artifactory/plugins-snapshot</url>
-		</pluginRepository>
-		<pluginRepository>
-			<name>NRG/XDAT/XNAT Temporary Release Maven Plugin Repo</name>
-			<id>org.nrg.maven.plugins.release</id>
-			<url>http://nrg115.nrg.mir/artifactory/plugins-release</url>
-		</pluginRepository>
-	</pluginRepositories>
-
-	<repositories>
-		<repository>
-			<name>NRG/XDAT/XNAT Temporary Release Maven Repo</name>
-			<id>org.nrg.maven.artifacts.release</id>
-			<url>http://nrg115.nrg.mir/artifactory/libs-release</url>
-		</repository>
-		<repository>
-			<name>NRG/XDAT/XNAT Temporary Snapshot Maven Repo</name>
-			<id>org.nrg.maven.artifacts.snapshot</id>
-			<url>http://nrg115.nrg.mir/artifactory/libs-snapshot</url>
-		</repository>
-	</repositories>
-
 </project>

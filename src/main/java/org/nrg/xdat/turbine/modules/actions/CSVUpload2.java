@@ -69,7 +69,7 @@ public class CSVUpload2 extends SecureAction {
             File temp = File.createTempFile("xnat", "csv");
             fi.write(temp);
 
-            ArrayList<ArrayList> rows = FileUtils.CSVFileToArrayList(temp);
+            List<List<String>> rows = FileUtils.CSVFileToArrayList(temp);
 
             temp.delete();
             fi.delete();

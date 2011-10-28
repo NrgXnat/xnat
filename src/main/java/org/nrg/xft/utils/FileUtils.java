@@ -6,15 +6,16 @@
 
 package org.nrg.xft.utils;
 
+import java.io.BufferedReader;
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
@@ -22,7 +23,6 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
 import java.util.zip.GZIPInputStream;
@@ -221,12 +221,12 @@ public  class FileUtils
         }
     }
 
-    public static ArrayList getCharContent(File f)
+    public static List<Integer> getCharContent(File f)
     {
         try {
             FileInputStream in = new FileInputStream(f);
             DataInputStream dis = new DataInputStream(in);
-            ArrayList sb = new ArrayList();
+            List<Integer> sb = new ArrayList<Integer>();
             while (dis.available() !=0)
             {
                                     // Print file line to screen
@@ -440,28 +440,37 @@ public  class FileUtils
 	 * @param f
 	 * @return ArrayList of Strings (one string for each line in the file)
 	 */
-    @SuppressWarnings("deprecation")
-	public static ArrayList FileLinesToArrayList(File f) throws FileNotFoundException, IOException{
-	    ArrayList al = new ArrayList();
+	public static List<String> FileLinesToArrayList(File f) throws FileNotFoundException, IOException{
+	    List<String> al = new ArrayList<String>();
 
-	    FileInputStream in = new FileInputStream(f);
-        DataInputStream dis = new DataInputStream(in);
-        while (dis.available() !=0)
+    	FileInputStream in = null;
+        BufferedReader reader = null;
+	    try
+	    {
+	    	in = new FileInputStream(f);
+	        reader = new BufferedReader(new InputStreamReader(in));
+	        String line = null;
+	        while ((line = reader.readLine()) != null)
 		{
-			al.add(dis.readLine());
+				al.add(line);
+			}
+	    } finally {
+	    	if (reader != null) {
+	    		reader.close();
+	    	}
+	    	if (in != null) {
+	    		in.close();
+	    	}
 		}
 
-        dis.close();
 	    return al;
 	}
 
-    public static ArrayList<ArrayList> CSVFileToArrayList(File f) throws FileNotFoundException, IOException{
-        ArrayList<ArrayList> all = new ArrayList<ArrayList>();
-        ArrayList rows = FileLinesToArrayList(f);
-        Iterator rowIter = rows.iterator();
-        while (rowIter.hasNext())
+    public static List<List<String>> CSVFileToArrayList(File f) throws FileNotFoundException, IOException{
+        ArrayList<List<String>> all = new ArrayList<List<String>>();
+        List<String> rows = FileLinesToArrayList(f);
+        for (String row : rows)
         {
-            String row = (String)rowIter.next();
             all.add(StringUtils.CommaDelimitedStringToArrayList(row));
         }
         all.trimToSize();
@@ -762,9 +771,21 @@ public  class FileUtils
      * @throws FileNotFoundException
      * @throws IOException
      */
-    public static ArrayList CompareFile(File src, File dest, ArrayList al) throws FileNotFoundException,IOException{
+    public static List<String> CompareFile(File src, File dest) throws FileNotFoundException,IOException {
+    	return CompareFile(src, dest, null);
+    }
+
+    /**
+     * Populates list of files which do not match.
+     * @param src
+     * @param dest
+     * @return
+     * @throws FileNotFoundException
+     * @throws IOException
+     */
+    public static List<String> CompareFile(File src, File dest, List<String> al) throws FileNotFoundException,IOException{
         if (al==null){
-            al = new ArrayList();
+            al = new ArrayList<String>();
         }
         if (src.exists() && dest.exists()){
 
@@ -959,10 +980,9 @@ public  class FileUtils
 		
 		ValidateUriAgainstRoot(s1, rootU, message);
 		
-    	URI u;
 		if(FileUtils.IsAbsolutePath(s1)){
 			try {
-				u=new URI(s1).normalize();
+				new URI(s1).normalize();
 			} catch (URISyntaxException e) {
 				throw new InvalidValueException("Invalid URI: " + s1 + "\nCheck for occurrences of non-standard characters.");
 			}

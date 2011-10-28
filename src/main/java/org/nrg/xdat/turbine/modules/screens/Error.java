@@ -31,7 +31,7 @@ public class Error extends org.nrg.xdat.turbine.modules.screens.SecureScreen {
             }else{
                 String s = data.getParameters().get("exception");
                 if (s !=null)
-                    AdminUtils.sendErrorEmail(data, s);
+                    AdminUtils.sendErrorEmail(data, s, context);
             }
         } catch (RuntimeException e) {
         }

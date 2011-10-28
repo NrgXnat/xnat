@@ -223,6 +223,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
         if(XFT.VERBOSE)System.out.println("User Init(" + this.getUsername() + "): " + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
 	}
 
+	public static String EncryptString(String stringToEncrypt) {
+	    return EncryptString(stringToEncrypt, "SHA-256");
+	}
+
 	public static String EncryptString(String stringToEncrypt, String algorithm)
 	{
 		if (algorithm.equals("SHA-256")){

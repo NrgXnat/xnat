@@ -10,10 +10,12 @@
 package org.nrg.xdat;
 
 import org.apache.commons.configuration.Configuration;
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
+import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.MarshallerCacheService;
 import org.nrg.mail.services.MailService;
@@ -28,6 +30,8 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.services.XftFieldExclusionService;
 import org.nrg.xft.utils.FileUtils;
 
+import java.io.File;
+
 /**
  * @author Tim
  *
@@ -40,6 +44,7 @@ public class XDAT implements Initializable,Configurable{
     private static XftFieldExclusionService _exclusionService;
     private static MarshallerCacheService _marshallerCacheService;
 	private String instanceSettingsLocation = null;
+    private static File _screenTemplatesFolder;
 
 	/**
 	 * configure torque
@@ -170,10 +175,10 @@ public class XDAT implements Initializable,Configurable{
 	}
 
 	/**
-	 * Returns an instance of the currently supported mail service.
-	 * @return An instance of the {@link MailService} service.
+     * Returns an instance of the Spring application context service. This provides a wrapper around the Spring
+     * application context to allow non-Spring components in XNAT to access the context.
+     * @return An instance of the {@link ContextService Spring application context service}.
 	 */
-    // TODO: Optimally, all of the services would be populated by dependency injection, e.g. Spring or Turbine.
 	public static ContextService getContextService() {
 		if (_contextService == null) {
 		    _contextService = ContextService.getInstance();
@@ -216,12 +221,46 @@ public class XDAT implements Initializable,Configurable{
 
     /**
      * Returns an instance of the currently supported {@link MarshallerCacheService XML marshaler cache service}.
-     * @return An instance of the {@link MarshallerCacheService XML marshaler cache service}.
+     * @return An instance of the {@link MarshallerCacheService XML marshaller cache service}.
      */
     public static MarshallerCacheService getMarshallerCacheService() {
         if (_marshallerCacheService == null) {
             _marshallerCacheService = getContextService().getBean(MarshallerCacheService.class);
 }
         return _marshallerCacheService;
+    }
+
+    /**
+     * Returns the folder containing screen templates. These are installed by custom datatypes, modules, and other
+     * customizations that extend or override the default application behavior.
+     * @return The full path to the screen templates folder.
+     */
+    public static String getScreenTemplatesFolder() {
+        return _screenTemplatesFolder.getAbsolutePath();
+}
+
+    public static void setScreenTemplatesFolder(String screenTemplatesFolder) {
+        _screenTemplatesFolder = new File(screenTemplatesFolder);
+    }
+
+    public static File getScreenTemplatesSubfolder(String subfolder) {
+        if (StringUtils.isBlank(subfolder)) {
+            return new File(getScreenTemplatesFolder());
+        }
+
+        File current = new File(getScreenTemplatesFolder(), "");
+
+        String[] subfolders = subfolder.split("/");
+        for (String folder : subfolders) {
+            current = new File(current, folder);
+            if (!current.exists()) {
+                throw new NrgRuntimeException("The folder indicated by " + current.getAbsolutePath() + " doesn't exist.");
+            }
+            if (!current.isDirectory()) {
+                throw new NrgRuntimeException("The path indicated by " + current.getAbsolutePath() + " isn't a folder.");
+            }
+        }
+
+        return current;
     }
 }

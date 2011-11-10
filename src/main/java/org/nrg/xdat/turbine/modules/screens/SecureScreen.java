@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -8,15 +8,23 @@
  *
  */
 package org.nrg.xdat.turbine.modules.screens;
-import java.util.Iterator;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -33,6 +41,7 @@ import org.nrg.xft.search.ItemSearch;
 public abstract class SecureScreen extends VelocitySecureScreen
 {
 	public final static Logger logger = Logger.getLogger(SecureScreen.class);
+    private static Pattern _pattern = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
 
 
     protected void error(Exception e,RunData data){
@@ -247,5 +256,68 @@ public abstract class SecureScreen extends VelocitySecureScreen
     public boolean allowGuestAccess(){
         return true;
     }
+
+    protected List<Properties> findTabs(String subfolder) throws FileNotFoundException {
+        List<Properties> tabs = new ArrayList<Properties>();
+        File tabsFolder = XDAT.getScreenTemplatesSubfolder(subfolder);
+        if (tabsFolder.exists()) {
+            File[] files = tabsFolder.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File folder, String name) {
+                    if (_log.isDebugEnabled()) {
+                        _log.debug("Testing the name: " + name + " in folder: " + folder.getAbsolutePath());
+                    }
+                    return name.endsWith(".vm");
+                }
+            });
+
+            for (File file: files) {
+                String fileName = file.getName();
+                String divName = fileName.substring(0, fileName.length() - 3);
+                Properties metadata = new Properties();
+
+                // Set default divName and title properties to start. These can be overridden during mix-in processing.
+                metadata.setProperty("fileName", fileName);
+                metadata.setProperty("divName", divName);
+                metadata.setProperty("title", divName);
+
+                boolean include = true;
+
+                Scanner scanner = new Scanner(file);
+                try {
+                    while (scanner.hasNextLine()) {
+                        String line = scanner.nextLine();
+                        Matcher matcher = _pattern.matcher(line);
+                        if (matcher.matches()) {
+                            String key = matcher.group(1);
+                            String value = matcher.group(2);
+                            if (key.equalsIgnoreCase("ignore") && value.equalsIgnoreCase("true")) {
+                                if (_log.isDebugEnabled()) {
+                                    _log.debug("Found ignore = true in file: " + file.getName());
+                                }
+                                include = false;
+                                break;
+                            }
+                            metadata.setProperty(key, value);
+                            if (_log.isDebugEnabled()) {
+                                _log.debug("Came up with " + key + "[" + value + "] from file: " + file.getName());
+                            }
+                        }
+                    }
+                } finally {
+                    if (scanner != null) {
+                        scanner.close();
+                    }
+}
+
+                if (include) {
+                    tabs.add(metadata);
+                }
+            }
+        }
+        return tabs;
+    }
+
+    private static final Log _log = LogFactory.getLog(SecureScreen.class);
 }
 

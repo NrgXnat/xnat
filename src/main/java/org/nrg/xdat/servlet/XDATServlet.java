@@ -44,6 +44,7 @@ public class XDATServlet extends HttpServlet{
             //XFT.setWEBAPP_NAME(webapp);
             
 			XDAT.init(path,true,false);
+            XDAT.setScreenTemplatesFolder(this.getServletContext().getRealPath("templates" + File.separator + "screens" + File.separator));
 			
             Thread t = new DelayedSequenceChecker();
             t.start();

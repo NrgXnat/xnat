@@ -15,6 +15,7 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
+import org.nrg.config.services.ConfigService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.MarshallerCacheService;
@@ -43,6 +44,7 @@ public class XDAT implements Initializable,Configurable{
     private static NotificationService _notificationService;
     private static XftFieldExclusionService _exclusionService;
     private static MarshallerCacheService _marshallerCacheService;
+    private static ConfigService _configurationService;
 	private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
 
@@ -263,4 +265,15 @@ public class XDAT implements Initializable,Configurable{
 
         return current;
     }
+    
+	/**
+	 * Returns an instance of the currently supported configuration service.
+	 * @return An instance of the {@link ConfigService} service.
+	 */
+	public static ConfigService getConfigService() {
+	    if (_configurationService == null) {
+	    	_configurationService = getContextService().getBean(ConfigService.class);
+	    }
+	    return _configurationService;
+	}
 }

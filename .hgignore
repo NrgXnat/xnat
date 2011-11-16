@@ -1,0 +1,14 @@
+syntax: glob
+.cvsignore
+.externalToolBuilders
+*.DS_Store
+.settings
+Thumbs.db
+glob:target*
+.classpath
+.project
+
+syntax: regexp
+.*\.log
+.*\.orig
+

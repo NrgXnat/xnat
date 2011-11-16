@@ -1,0 +1,39 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p" xmlns:tx="http://www.springframework.org/schema/tx"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd"
+>
+
+    <import resource="classpath:/org/nrg/config/TestDataSource-context.xml" />
+    <import resource="classpath:/META-INF/configuration/nrg-config-context.xml" />
+
+    <!--  <bean id="namingStrategy" class="org.hibernate.cfg.ImprovedNamingStrategy" />  -->
+    <bean id="namingStrategy" class="org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy" p:prefix="xhbm" />
+
+    <bean id="postgresqlHibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="properties">
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</prop>
+                <prop key="hibernate.hbm2ddl.auto">create</prop>
+                <prop key="hibernate.show_sql">true</prop>
+            </props>
+        </property>
+    </bean>
+
+    <!-- Switch between H2 and PostgreSQL by changing the parent of the dataSource and hibernateProperties beans. -->
+    <bean id="dataSource" parent="postgresqlDataSource" />
+    <bean id="hibernateProperties" parent="postgresqlHibernateProperties" />
+    
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean"
+        p:dataSource-ref="dataSource"
+        p:hibernateProperties-ref="hibernateProperties"
+        p:packagesToScan-ref="nrgConfigEntityPackages"
+        p:namingStrategy-ref="namingStrategy" />
+
+    <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager"
+        p:sessionFactory-ref="sessionFactory" />
+
+
+    <tx:annotation-driven />
+
+</beans>

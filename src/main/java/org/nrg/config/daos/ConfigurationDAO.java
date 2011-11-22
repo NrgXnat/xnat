@@ -72,14 +72,13 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 	}
 
 	/**
-     * Attempts to find an enabled configuration matching the submitted path values.
+     * Attempts to find a configuration matching the submitted path values.
      * If no matching configuration is found, this method returns <b>null</b>.
      * @param path The configuration path.
      * @return A matching configuration, if it exists.
      */
 	public Configuration getConfigurationByPath(String path){
         Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.eq("enabled", true));
         criteria.add(Restrictions.eq("path", path));
 
         @SuppressWarnings("rawtypes")
@@ -120,7 +119,6 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 	@SuppressWarnings("unchecked")
 	public List<Configuration> getConfigurationsByTool(String toolName, String projectID){
 		Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.eq("enabled", true));
         criteria.add(Restrictions.eq("tool", toolName));
         if(!(projectID == null || "".equals(projectID))){
         	criteria.add(Restrictions.eq("project", projectID));

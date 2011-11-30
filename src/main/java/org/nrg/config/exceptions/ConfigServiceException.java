@@ -1,11 +1,13 @@
 package org.nrg.config.exceptions;
-
+//org.nrg.config.exceptions.ConfigServiceException
 import java.util.ArrayList;
 import java.util.List;
 
 import org.nrg.config.entities.Configuration;
 
 public class ConfigServiceException extends Throwable {
+	
+	static final long serialVersionUID = 6690308402621986012L;
 	
 	public final List<Configuration> problem_scripts = new ArrayList<Configuration>();
 

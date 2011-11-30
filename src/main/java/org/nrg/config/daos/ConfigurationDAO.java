@@ -26,8 +26,8 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 		throw new UnsupportedOperationException();
 	}
 	
-	//FIX THESE COMMENTS. Be sure to put a comment on everything that says
-	//this method returns null if nothing found... even for LIST<T> return
+	//HEY, YOU. every method in here will return null
+	//if nothing found... even for LIST<T> return
 	//types. that makes it easy to know if nothing came back... no need to test the size.
 	
 	@SuppressWarnings("unchecked")
@@ -38,8 +38,8 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
         return (list == null || list.size() == 0) ? null : list;
 	}
 	
-	//this sort of method just has to be implemented in Hibernate somewhere... faster to code than find, i guess
-	private void addNullableCriteria(Criteria c, String name, String value) {
+	//this sort of method must be implemented in Hibernate somewhere... faster to code than find, i guess
+	private void addNullableCriteria(Criteria c, String name, Object value) {
 		if(value == null){
 			c.add(Restrictions.isNull(name));
 		} else {
@@ -49,7 +49,7 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 	
 	//I wanted to use hibernate's findByExample, but it ignores null parameters... so I had to write findBy.... methods:
 	@SuppressWarnings("unchecked")
-	public List<Configuration> findByToolPathProject(String tool, String path, String project){
+	public List<Configuration> findByToolPathProject(String tool, String path, Long project){
 		Criteria criteria = getSession().createCriteria(getParameterizedType());
 		addNullableCriteria(criteria, "tool", tool);
 		addNullableCriteria(criteria, "path", path);
@@ -60,7 +60,7 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 	}
 		
 	@SuppressWarnings("unchecked")
-	public List<Configuration> findByToolPathProjectStatus(String tool, String path, String project, String status){
+	public List<Configuration> findByToolPathProjectStatus(String tool, String path, Long project, String status){
 		Criteria criteria = getSession().createCriteria(getParameterizedType());
 		addNullableCriteria(criteria, "tool", tool);
 		addNullableCriteria(criteria, "path", path);
@@ -86,12 +86,9 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
         return (list == null || list.size() == 0) ? null : (Configuration) list.get(0);
 	}
 	
-	public List<String> getTools(){
-		return getTools(null);
-	}
-	
+
 	@SuppressWarnings("unchecked")
-	public List<String> getTools(String project){
+	public List<String> getTools(Long project){
 		Query sql;
 		if(project == null || "".equals(project)){
 			sql = this.getSession().createQuery("SELECT distinct tool from Configuration");
@@ -104,7 +101,7 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public List<String> getProjects(String toolName){
+	public List<Long> getProjects(String toolName){
 		Query sql;
 		if(toolName == null || "".equals(toolName)){
 			sql = this.getSession().createQuery("SELECT distinct project from Configuration");
@@ -117,7 +114,7 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 	}
 	
 	@SuppressWarnings("unchecked")
-	public List<Configuration> getConfigurationsByTool(String toolName, String projectID){
+	public List<Configuration> getConfigurationsByTool(String toolName, Long projectID){
 		Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("tool", toolName));
         if(!(projectID == null || "".equals(projectID))){

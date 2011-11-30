@@ -1,14 +1,9 @@
 package org.nrg.config.entities;
 
 import javax.persistence.CascadeType;
-import javax.persistence.Column;
 import javax.persistence.Entity;
-import javax.persistence.JoinColumn;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
-
-
-
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -21,7 +16,7 @@ public class Configuration extends AbstractHibernateEntity {
 	public static final String ENABLED_STRING = "enabled";
 	public static final String DISABLED_STRING = "disabled";
 	
-	private String project;
+	private Long project;
 	private String tool;
 	private String path;
 	private ConfigurationData configData;
@@ -29,7 +24,8 @@ public class Configuration extends AbstractHibernateEntity {
 	private String xnatUser;
 	private String reason;
 	private String status;
-	
+	private int version;
+
 	@Transient
 	public String getContents(){
 		if(configData != null) {
@@ -63,11 +59,11 @@ public class Configuration extends AbstractHibernateEntity {
 		this.status = status;
 	}
 	
-	public String getProject() {
+	public Long getProject() {
 		return project;
 	}
 	
-	public void setProject(String project) {
+	public void setProject(Long project) {
 		this.project = project;
 	}
 	
@@ -94,6 +90,14 @@ public class Configuration extends AbstractHibernateEntity {
 	
 	public void setPath(String path) {
 		this.path = path;
+	}
+	
+	public int getVersion() {
+		return version;
+	}
+
+	public void setVersion(int version) {
+		this.version = version;
 	}
 	
 	public String toString(){

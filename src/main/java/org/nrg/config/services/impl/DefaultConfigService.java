@@ -240,6 +240,9 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Transactional
 	public List<String> getTools(Callable<Long> projectID){
+		if(projectID == null){
+			return getToolsImpl(null);
+		}
 		try {
 			return getToolsImpl(projectID.call());
 		} catch (Exception e){
@@ -263,6 +266,9 @@ public class DefaultConfigService implements ConfigService {
 
 	@Transactional
 	public List<Configuration> getConfigsByTool(String toolName, Callable<Long> projectID){
+		if(projectID == null ){
+			return getConfigsByToolImpl(toolName, null);
+		}
 		try {
 			return getConfigsByToolImpl(toolName, projectID.call());
 		} catch (Exception e){
@@ -277,6 +283,9 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Transactional
 	public Configuration getConfig(String toolName, String path, Callable<Long> projectID){
+		if(projectID == null){
+			return getConfigImpl(toolName, path, null);
+		}
 		try {
 			return getConfigImpl(toolName, path, projectID.call());
 		} catch (Exception e){
@@ -296,6 +305,9 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Transactional
 	public String getConfigContents(String toolName, String path, Callable<Long> projectID){
+		if(projectID == null){
+			return getConfigContentsImpl(toolName, path, null);
+		}
 		try{
 			return getConfigContentsImpl(toolName, path, projectID.call());
 		} catch (Exception e){
@@ -315,6 +327,9 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Transactional
 	public Configuration getConfigById(String toolName, String path, String id, Callable<Long> projectID){
+		if(projectID == null){
+			return getConfigByIdImpl(toolName, path, id, null);
+		}
 		try {
 			return getConfigByIdImpl(toolName, path, id, projectID.call());
 		} catch (Exception e){
@@ -334,6 +349,9 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Transactional
 	public Configuration getConfigByVersion(String toolName, String path, int version, Callable<Long> projectID){
+		if(projectID == null){
+			return getConfigByVersionImpl(toolName, path, version, null);
+		}
 		try {
 			return getConfigByVersionImpl(toolName, path, version, projectID.call());
 		} catch (Exception e){
@@ -353,6 +371,9 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Transactional
 	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Callable<Long> projectID) throws ConfigServiceException{
+		if(projectID == null){
+			return replaceConfigImpl(xnatUser, reason,toolName,path,contents,null);
+		}
 		try {
 			return replaceConfigImpl(xnatUser,reason,toolName,path,contents,projectID.call());
 		} catch (Exception e){
@@ -372,6 +393,9 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Transactional
 	public String getStatus(String toolName, String path, Callable<Long> projectID){
+		if(projectID == null){
+			return getStatusImpl(toolName, path, null);
+		}
 		try {
 			return getStatusImpl(toolName, path, projectID.call());
 		} catch (Exception e){
@@ -391,6 +415,9 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Transactional
 	public void enable(String xnatUser, String reason, String toolName, String path, Callable<Long> projectID) {
+		if(projectID == null){
+			setStatus(xnatUser,reason, toolName, path, Configuration.ENABLED_STRING, null);
+		}
 		try {
 			setStatus(xnatUser,reason, toolName, path, Configuration.ENABLED_STRING, projectID.call());
 		} catch (Exception e){
@@ -411,6 +438,9 @@ public class DefaultConfigService implements ConfigService {
 
 	@Transactional
 	public void disable(String xnatUser, String reason, String toolName, String path, Callable<Long> projectID) {
+		if(projectID == null){
+			setStatus(xnatUser,reason, toolName, path, Configuration.DISABLED_STRING, null);
+		}
 		try {
 			setStatus(xnatUser,reason, toolName, path, Configuration.DISABLED_STRING, projectID.call());
 		} catch (Exception e){
@@ -431,6 +461,9 @@ public class DefaultConfigService implements ConfigService {
 	
 	@Transactional
 	public List<Configuration> getHistory(String toolName, String path, Callable<Long> projectID){
+		if(projectID == null){
+			return getHistoryImpl(toolName, path, null);
+		}
 		try {
 			return getHistoryImpl(toolName, path, projectID.call());
 		} catch (Exception e){

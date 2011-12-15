@@ -1,57 +1,58 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <issueManagement>
-  	<system>FogBugz</system>
-  	<url>http://bugs.nrg.wustl.edu</url>
-  </issueManagement>
-  <ciManagement>
-  </ciManagement>
-  <developers>
-  	<developer>
-  		<id>karchie</id>
-  		<name>Kevin A. Archie</name>
-  		<email>karchie@wustl.edu</email>
-  		<timezone>-6</timezone>
-  	</developer>
-  </developers>
-  <scm>
-  	<url>http://hg.xnat.org/extattr</url>
-  </scm>
-  <organization>
-  	<name>Washington University Neuroinformatics Research Group</name>
-  	<url>http://nrg.wustl.edu</url>
-  </organization>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-	<artifactId>maven-compiler-plugin</artifactId>
-	<configuration>
-	  <source>1.5</source>
-	  <target>1.5</target>
-	</configuration>
-      </plugin>
-    </plugins>
-  </build>
-  <groupId>org.nrg</groupId>
-  <artifactId>ExtAttr</artifactId>
-  <packaging>jar</packaging>
-  <name>External Attribute library</name>
-  <version>2.0.0</version>
-  <description>Library for converting native image metadata formats (e.g., DICOM, ECAT) into a unified external format (XNAT).</description>
-  <url>http://nrg.wustl.edu</url>
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-    	<groupId>com.google.guava</groupId>
-    	<artifactId>guava</artifactId>
-    	<version>r08</version>
-    </dependency>
-  </dependencies>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+    <issueManagement>
+        <system>FogBugz</system>
+        <url>http://bugs.nrg.wustl.edu</url>
+    </issueManagement>
+    <ciManagement>
+    </ciManagement>
+    <developers>
+        <developer>
+            <id>karchie</id>
+            <name>Kevin A. Archie</name>
+            <email>karchie@wustl.edu</email>
+            <timezone>-6</timezone>
+        </developer>
+    </developers>
+    <scm>
+        <url>http://hg.xnat.org/extattr</url>
+    </scm>
+    <organization>
+        <name>Washington University Neuroinformatics Research Group</name>
+        <url>http://nrg.wustl.edu</url>
+    </organization>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-compiler-plugin</artifactId>
+                <version>2.3.2</version>
+                <configuration>
+                    <source>1.6</source>
+                    <target>1.6</target>
+                </configuration>
+            </plugin>
+        </plugins>
+    </build>
+    <groupId>org.nrg</groupId>
+    <artifactId>ExtAttr</artifactId>
+    <packaging>jar</packaging>
+    <name>External Attribute library</name>
+    <version>2.0.0</version>
+    <description>Library for converting native image metadata formats (e.g., DICOM, ECAT) into a unified external format (XNAT).</description>
+    <url>http://nrg.wustl.edu</url>
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <version>4.8.2</version>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+            <version>10.0.1</version>
+        </dependency>
+    </dependencies>
 </project>

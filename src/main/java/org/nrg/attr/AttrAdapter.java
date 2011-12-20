@@ -19,11 +19,17 @@ public interface AttrAdapter<S,V> {
     void add(AttrDefs<S,V>...attrs);
 
     /**
-     * Adds single attributes to the adapter
+     * Adds attributes to the adapter
      * @param attrs external attributes for conversion
      */
     void add(ExtAttrDef<S,V>...attrs);
 
+    /**
+     * Adds attributes to the adapter
+     * @param attrs external attributes for conversion
+     */
+    void add(Iterable<? extends ExtAttrDef<S,V>> attrs);
+    
     /**
      * Removes the named attributes
      * @param attrNames names of attributes to remove

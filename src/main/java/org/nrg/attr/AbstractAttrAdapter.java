@@ -3,6 +3,7 @@
  */
 package org.nrg.attr;
 
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.HashMap;
@@ -56,6 +57,14 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
      * @see org.nrg.attr.AttrAdapter#add(org.nrg.attr.ExtAttrDef<S,V>[])
      */
     public final void add(final ExtAttrDef<S,V>...attrs) {
+        add(Arrays.asList(attrs));
+    }
+    
+    /*
+     * (non-Javadoc)
+     * @see org.nrg.attr.AttrAdapter#add(java.lang.Iterable)
+     */
+    public final void add(final Iterable<? extends ExtAttrDef<S,V>> attrs) {
         for (final ExtAttrDef<S,V> a : attrs) {
             attrDefs.add(a);
         }

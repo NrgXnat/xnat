@@ -22,6 +22,7 @@ public interface ZipI {
     public abstract void setOutputStream(OutputStream outStream) throws IOException;
     public abstract void setOutputStream(OutputStream outStream,int compressionMethod) throws IOException;
     public abstract void extract(File f, String dir,boolean deleteZip) throws IOException;
+    public ArrayList extract(InputStream is, String dir,boolean overwrite) throws IOException;
     public ArrayList extract(InputStream is, String dir) throws IOException;
     /**
      * @param relativePath path name for zip file

@@ -6,8 +6,5 @@
 	<classpathentry kind="src" output="target/test-classes" path="src/test/resources"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.maven.ide.eclipse.MAVEN2_CLASSPATH_CONTAINER"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/nrg_notify"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/nrg_mail"/>
-	<classpathentry combineaccessrules="false" kind="src" path="/nrg_framework"/>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

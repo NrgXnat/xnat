@@ -35,6 +35,16 @@ public class ModifyPassword extends SecureAction {
 	{
 		//TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		//parameter specifying elementAliass and elementNames
+		
+		XDATUser user=TurbineUtils.getUser(data);
+		if(user==null){
+			error(new Exception("User 'null' cannot change password."), data);
+		}
+
+		if(user.getUsername().equals("guest")){
+			error(new Exception("Guest account password must be managed in the administration section."), data);
+		}
+		
 		String header = "ELEMENT_";
 		int counter = 0;
 		Hashtable hash = new Hashtable();

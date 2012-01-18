@@ -1,3 +1,6 @@
 syntax: glob
 target/
 glob:xdat_1.jardesc
+
+syntax: regexp
+^.*\.log

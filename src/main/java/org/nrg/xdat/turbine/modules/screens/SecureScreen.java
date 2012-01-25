@@ -8,15 +8,6 @@
  *
  */
 package org.nrg.xdat.turbine.modules.screens;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpSession;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -34,6 +25,14 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
+
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 /**
  * @author Tim
  *
@@ -316,6 +315,25 @@ public abstract class SecureScreen extends VelocitySecureScreen
             }
         }
         return tabs;
+    }
+
+    /**
+     * Searches for the parameters contained in the <b>parameters</b> array. If the parameter is present with any of the
+     * names in the array, it will be pulled and stored in the context using the first parameter name in the array.
+     *
+     * @param data          The run data.
+     * @param context       The Velocity context object.
+     * @param parameters    An array of parameter names to be evaluated.
+     * @return <b>true</b> if the parameter was found in the run data, <b>false</b> otherwise.
+     */
+    protected static boolean storeParameterIfPresent(final RunData data, final Context context, final String... parameters) {
+        for (String parameter : parameters) {
+            if (TurbineUtils.HasPassedParameter(parameter, data)) {
+                context.put(parameters[0], TurbineUtils.GetPassedParameter(parameter, data));
+                return true;
+            }
+        }
+        return false;
     }
 
     private static final Log _log = LogFactory.getLog(SecureScreen.class);

@@ -2857,6 +2857,8 @@ public class GenericWrapperUtils {
 
     public static Collection<String> GetExtensionTables() {
         StringBuilder buffer = new StringBuilder();
+
+        buffer.append("SELECT create_class('analytics', '");
         buffer.append("CREATE TABLE analytics\n");
         buffer.append("(\n");
         buffer.append("        id serial NOT NULL,\n");
@@ -2868,7 +2870,7 @@ public class GenericWrapperUtils {
         buffer.append("        duration bigint,\n");
         buffer.append("        message text,\n");
         buffer.append("        PRIMARY KEY (id)\n");
-        buffer.append(") WITH (OIDS=FALSE);\n");
+        buffer.append(") WITH (OIDS=FALSE)');");
 
         List<String> statements = new ArrayList<String>();
         statements.add(buffer.toString());

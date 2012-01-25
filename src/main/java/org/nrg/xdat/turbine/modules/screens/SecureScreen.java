@@ -8,6 +8,15 @@
  *
  */
 package org.nrg.xdat.turbine.modules.screens;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.http.HttpSession;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -25,20 +34,11 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
-
-import javax.servlet.http.HttpSession;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 /**
  * @author Tim
  *
  */
-public abstract class SecureScreen extends VelocitySecureScreen
-{
+public abstract class SecureScreen extends VelocitySecureScreen {
 	public final static Logger logger = Logger.getLogger(SecureScreen.class);
     private static Pattern _pattern = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
 
@@ -61,19 +61,15 @@ public abstract class SecureScreen extends VelocitySecureScreen
      * perform a security check first and store the popup status in the context.
      *
      * @param data Turbine information.
-     * @exception Exception, a generic exception.
+     * @throws Exception, a generic exception.
      */
 	protected void doBuildTemplate(RunData data)
-    throws Exception
-	{
+            throws Exception {
 	    try {
-            if (isAuthorized(data))
-            {
+            if (isAuthorized(data)) {
                 Context c = TurbineVelocity.getContext(data);
-                if (data.getParameters().getString("popup")!=null)
-                {
-                    if(data.getParameters().getString("popup").equalsIgnoreCase("true"))
-                    {
+                if (data.getParameters().getString("popup") != null) {
+                    if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
                         c.put("popup","true");
                     }else{
                         c.put("popup","false");
@@ -89,10 +85,8 @@ public abstract class SecureScreen extends VelocitySecureScreen
                 doBuildTemplate(data, c);
             }else{
                 Context c = TurbineVelocity.getContext(data);
-                if (data.getParameters().getString("popup")!=null)
-                {
-                    if(data.getParameters().getString("popup").equalsIgnoreCase("true"))
-                    {
+                if (data.getParameters().getString("popup") != null) {
+                    if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
                         c.put("popup","true");
                     }else{
                         c.put("popup","false");
@@ -105,8 +99,7 @@ public abstract class SecureScreen extends VelocitySecureScreen
                 c.put("systemName",systemName);
                 preserveVariables(data,c);
 
-                if (XFT.GetRequireLogin())
-                {
+                if (XFT.GetRequireLogin()) {
                 }else{
                     data.setScreenTemplate("Login.vm");
                 }
@@ -117,26 +110,24 @@ public abstract class SecureScreen extends VelocitySecureScreen
             return;
         }
 	}
+
 	/**
 	 * Overide this method to perform the security check needed.
 	 *
 	 * @param data Turbine information.
 	 * @return True if the user is authorized to access the screen.
-	 * @exception Exception, a generic exception.
+     * @throws Exception, a generic exception.
 	 */
-	protected boolean isAuthorized( RunData data )  throws Exception
-	{
+    protected boolean isAuthorized(RunData data) throws Exception {
 	    //TurbineUtils.OutputDataParameters(data);
-	    if (XFT.GetRequireLogin() || TurbineUtils.HasPassedParameter("par", data))
-		{
+        if (XFT.GetRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
 	        logger.debug("isAuthorized() Login Required:true");
             TurbineVelocity.getContext(data).put("logout","true");
 			data.getParameters().setString("logout","true");
 			boolean isAuthorized = false;
 
 			XDATUser user = TurbineUtils.getUser(data);
-			if (user == null)
-			{
+            if (user == null) {
 		        //logger.debug("isAuthorized() Login Required:true user:null");
 				String Destination = data.getTemplateInfo().getScreenTemplate();
 				data.getParameters().add("nextPage", Destination);
@@ -147,19 +138,15 @@ public abstract class SecureScreen extends VelocitySecureScreen
 				//System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n");
 				doRedirect(data,org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
 
-			}else
-			{
+            } else {
 
 		        //logger.debug("isAuthorized() Login Required:true user:found");
 				isAuthorized = true;
-				if (data.getParameters().getString("popup") != null)
-				{
-					if (data.getParameters().getString("popup").equalsIgnoreCase("true"))
-					{
+                if (data.getParameters().getString("popup") != null) {
+                    if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
 						data.getTemplateInfo().setLayoutTemplate("/Popup.vm");
 					}
-				}else
-				{
+                } else {
 					data.getParameters().setString("popup","false");
 				}
 
@@ -171,8 +158,7 @@ public abstract class SecureScreen extends VelocitySecureScreen
             boolean isAuthorized = true;
 	        logger.debug("isAuthorized() Login Required:false");
 			XDATUser user = TurbineUtils.getUser(data);
-			if (user ==null)
-			{
+            if (user == null) {
                 if (!allowGuestAccess())isAuthorized=false;
 
                 HttpSession session = data.getSession();
@@ -182,14 +168,12 @@ public abstract class SecureScreen extends VelocitySecureScreen
 				search.setElement(e.getGenericXFTElement());
 				search.addCriteria(XDATUser.USER_ELEMENT +"/login", "guest");
 				ItemCollection items = search.exec(true);
-				if (items.size() > 0)
-				{
+                if (items.size() > 0) {
                     Iterator iter = items.iterator();
                     while (iter.hasNext()){
                         ItemI o = (ItemI)iter.next();
                         XDATUser temp = new XDATUser(o);
-                        if (temp.getUsername().equalsIgnoreCase("guest"))
-                        {
+                        if (temp.getUsername().equalsIgnoreCase("guest")) {
                             user = temp;
                         }
                     }
@@ -214,14 +198,11 @@ public abstract class SecureScreen extends VelocitySecureScreen
                 }
             }
 
-            if (data.getParameters().getString("popup") != null)
-            {
-                if (data.getParameters().getString("popup").equalsIgnoreCase("true"))
-                {
+            if (data.getParameters().getString("popup") != null) {
+                if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
                     data.getTemplateInfo().setLayoutTemplate("/Popup.vm");
                 }
-            }else
-            {
+            } else {
                 data.getParameters().setString("popup","false");
             }
 
@@ -242,18 +223,23 @@ public abstract class SecureScreen extends VelocitySecureScreen
 		}
 	}
 
-	public void logAccess(RunData data)
-	{
+    public void logAccess(RunData data) {
 		AccessLogger.LogScreenAccess(data);
 	}
 
-    public void logAccess(RunData data,String message)
-    {
+    public void logAccess(RunData data, String message) {
         AccessLogger.LogScreenAccess(data,message);
     }
 
     public boolean allowGuestAccess(){
         return true;
+    }
+
+    protected void cacheTabs(Context context, String subfolder) throws FileNotFoundException {
+        List<Properties> tabs = findTabs(subfolder);
+        if (tabs != null && tabs.size() > 0) {
+            context.put("tabs", tabs);
+        }
     }
 
     protected List<Properties> findTabs(String subfolder) throws FileNotFoundException {

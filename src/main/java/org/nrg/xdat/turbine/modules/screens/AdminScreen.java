@@ -26,7 +26,7 @@ public abstract class AdminScreen extends SecureScreen {
                 logAccess(data,"Unauthorized access.");
                 logger.error("Unauthorized Access to an Admin Screen (prevented).");
                 AdminUtils.sendAdminEmail(TurbineUtils.getUser(data),"Unauthorized Admin Access Attempt", "Unauthorized Access to an Admin Screen (" + data.getScreen() +") prevented.");
-                
+                data.getResponse().sendError(403);
             }
         }
         

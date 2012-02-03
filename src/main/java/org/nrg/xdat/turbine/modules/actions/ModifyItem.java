@@ -34,6 +34,7 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 
 /**
@@ -149,7 +150,7 @@ public class ModifyItem  extends SecureAction {
             	    if (items.size() > 0)
             	    {
             	        ItemI toRemove = items.getFirst();
-            	        DBAction.RemoveItemReference(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data));
+            	        SaveItemHelper.unauthorizedRemoveChild(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data));
             	        first.removeItem(toRemove);
             	        removedReference = true;
             	    }else{
@@ -270,7 +271,7 @@ public class ModifyItem  extends SecureAction {
     }
 
     public void save(XFTItem first,RunData data, Context context) throws InvalidItemException,Exception{
-        first.save(TurbineUtils.getUser(data),false,allowDataDeletion());
+    	SaveItemHelper.unauthorizedSave(first,TurbineUtils.getUser(data),false,allowDataDeletion());
     }
 
     @SuppressWarnings("serial")

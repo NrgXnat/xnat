@@ -1,17 +1,14 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xft.utils;
 
+import java.sql.SQLException;
+
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFT;
-import org.nrg.xft.ItemWrapper;
-
-
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.db.DBAction;
 import org.nrg.xft.security.UserI;
 
 public class SaveItemHelper {
@@ -21,12 +18,6 @@ public class SaveItemHelper {
 	}
 
 	protected void save(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval) throws Exception {
-		if(i==null){
-			throw new NullPointerException();
-		}
-
-		Authorizer.getInstance().authorizeSave(i.getItem().getGenericSchemaElement(), user);
-
 		if(i instanceof XFTItem){
 			ItemI temp=BaseElement.GetGeneratedItem(i);
 			temp.save(user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval);
@@ -35,26 +26,158 @@ public class SaveItemHelper {
 		}
 	}
 
-	protected void save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+	protected boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+		if(i instanceof XFTItem){
+			ItemI temp=BaseElement.GetGeneratedItem(i);
+			return temp.save(user, overrideSecurity, allowItemRemoval);
+		}else{
+			return i.save(user,overrideSecurity,allowItemRemoval);
+		}
+	}
+	
+	protected void delete(ItemI i, UserI user) throws SQLException, Exception{
+		DBAction.DeleteItem(i.getItem(),user);
+	}
+	
+	protected void removeItemReference(ItemI parent,String s, ItemI child, UserI user) throws SQLException, Exception{
+        DBAction.RemoveItemReference(parent.getItem(),null,child.getItem(),user);
+	}
+	
+	/**
+	 * Remove child from parent without additional security precautions.
+	 * @param i
+	 * @param user
+	 * @throws SQLException
+	 * @throws Exception
+	 */
+	public static void authorizedRemoveChild(ItemI parent,String s, ItemI child, UserI user) throws SQLException, Exception{
+		if(parent==null || child==null){
+			throw new NullPointerException();
+		}
+
+		getInstance().removeItemReference(parent, s, child, user);
+	}
+	
+	/**
+	 * Remove child from parent with additional security precautions.
+	 * @param i
+	 * @param user
+	 * @throws SQLException
+	 * @throws Exception
+	 */
+	public static void unauthorizedRemoveChild(ItemI parent,String s, ItemI child, UserI user) throws SQLException, Exception{
+		if(parent==null || child==null){
+			throw new NullPointerException();
+		}
+
+		Authorizer.getInstance().authorizeSave(parent.getItem(), user);
+
+		Authorizer.getInstance().authorizeSave(child.getItem(), user);
+
+		getInstance().removeItemReference(parent, s, child, user);
+	}
+	
+	/**
+	 * Delete resource without additional security precautions.
+	 * @param i
+	 * @param user
+	 * @throws SQLException
+	 * @throws Exception
+	 */
+	public static void authorizedDelete(XFTItem i, UserI user) throws SQLException, Exception{
 		if(i==null){
 			throw new NullPointerException();
 		}
 
-		Authorizer.getInstance().authorizeSave(i.getItem().getGenericSchemaElement(), user);
-
-		if(i instanceof XFTItem){
-			ItemI temp=BaseElement.GetGeneratedItem(i);
-			temp.save(user, overrideSecurity, allowItemRemoval);
-		}else{
-			i.save(user,overrideSecurity,allowItemRemoval);
-		}
+		getInstance().delete(i, user);
 	}
+	
+	/**
+	 * Delete resource with additional security precautions.
+	 * @param i
+	 * @param user
+	 * @throws SQLException
+	 * @throws Exception
+	 */
+	public static void unauthorizedDelete(XFTItem i, UserI user) throws SQLException, Exception{
+		if(i==null){
+			throw new NullPointerException();
+		}
 
-	public static void Save(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval) throws Exception {
+		Authorizer.getInstance().authorizeSave(i.getItem(), user);
+
+		getInstance().delete(i, user);
+	}
+	
+	/**
+	 * Save resource with additional security precautions.
+	 * @param i
+	 * @param user
+	 * @param overrideSecurity
+	 * @param quarantine
+	 * @param overrideQuarantine
+	 * @param allowItemRemoval
+	 * @throws Exception
+	 */
+	public static void unauthorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval) throws Exception {
+		if(i==null){
+			throw new NullPointerException();
+		}
+
+		Authorizer.getInstance().authorizeSave(i.getItem(), user);
+		
 		getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval);
 	}
 
-	public static void Save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
-		getInstance().save(i, user, overrideSecurity, allowItemRemoval);
+	/**
+	 * Save resource without additional security precautions.
+	 * @param i
+	 * @param user
+	 * @param overrideSecurity
+	 * @param quarantine
+	 * @param overrideQuarantine
+	 * @param allowItemRemoval
+	 * @throws Exception
+	 */
+	public static void authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval) throws Exception {
+		if(i==null){
+			throw new NullPointerException();
+		}
+		
+		getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval);
+	}
+
+	/**
+	 * Save resource with additional security precautions.
+	 * @param i
+	 * @param user
+	 * @param overrideSecurity
+	 * @param allowItemRemoval
+	 * @throws Exception
+	 */
+	public static boolean unauthorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+		if(i==null){
+			throw new NullPointerException();
+		}
+
+		Authorizer.getInstance().authorizeSave(i.getItem(), user);
+
+		return getInstance().save(i, user, overrideSecurity, allowItemRemoval);
+	}
+
+	/**
+	 * Save resource without additional security precautions.
+	 * @param i
+	 * @param user
+	 * @param overrideSecurity
+	 * @param allowItemRemoval
+	 * @throws Exception
+	 */
+	public static boolean authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+		if(i==null){
+			throw new NullPointerException();
+		}
+		
+		return getInstance().save(i, user, overrideSecurity, allowItemRemoval);
 	}
 }

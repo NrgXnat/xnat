@@ -30,8 +30,10 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.utils.SaveItemHelper;
 /**
  * @author Tim
  *
@@ -154,7 +156,7 @@ public class ModifyUserPrivileges extends SecureAction {
 	    
 	    
 	    try {
-			tempUser.getItem().save(TurbineUtils.getUser(data),false,false);
+	    	XDATUser.ModifyUser(tempUser, TurbineUtils.getUser(data));
 		} catch (Exception e) {
 			logger.error("Error Storing User",e);
 		}
@@ -191,13 +193,16 @@ public class ModifyUserPrivileges extends SecureAction {
 		
 		tempUser = SetUserProperties(tempUser,props,TurbineUtils.getUser(data).getLogin());
 
+		XDATUser authenticatedUser=TurbineUtils.getUser(data);
 		//logger.error("4\n"+tempUser.getItem().toString());
 		try {
-			tempUser.getItem().save(TurbineUtils.getUser(data),false,false);
-			//temp = tempUser.getItem().getCurrentDBVersion();
-			//tempUser = new XDATUser(temp);
+			XDATUser.ModifyUser(authenticatedUser, tempUser.getItem());
+		} catch (InvalidPermissionException e) {
+			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+			return authenticatedUser;
 		} catch (Exception e) {
-			logger.error("Error Storing User",e);
+			logger.error("Error Storing User", e);
+			return authenticatedUser;
 		}
 		
 		//UPDATE BUNDLES

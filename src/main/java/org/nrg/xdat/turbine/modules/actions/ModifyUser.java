@@ -8,6 +8,7 @@
  *
  */
 package org.nrg.xdat.turbine.modules.actions;
+import java.io.IOException;
 import java.util.Hashtable;
 
 import org.apache.commons.lang.StringUtils;
@@ -17,10 +18,13 @@ import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.search.ItemSearch;
 /**
  * 
@@ -57,53 +61,22 @@ public class ModifyUser extends SecureAction {
 		PopulateItem populater = PopulateItem.Populate(data,
 				org.nrg.xft.XFT.PREFIX + ":user", true);
 		ItemI found = populater.getItem();
+		
+		XDATUser authenticatedUser=TurbineUtils.getUser(data);
+		
+		if(found.getProperty("login")==null){
+			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+			return;
+		}
+		
 		try {
-			ItemSearch search = new ItemSearch();
-			search.setAllowMultiples(false);
-			search.setElement("xdat:user");
-			search.addCriteria("xdat:user.login", found.getProperty("login"));
-			ItemI temp = search.exec().getFirst();
-			if (temp == null)
-			{
-				// NEW USER
-				String tempPass = found
-						.getStringProperty("primary_password");
-				if (!StringUtils.isEmpty(tempPass))
-					found.setProperty("primary_password", XDATUser
-							.EncryptString(tempPass,"SHA-256"));
-
-				found.setProperty(
-						"xdat:user.assigned_roles.assigned_role[0].role_name",
-						"SiteUser");
-				XDATUser newUser = new XDATUser(found);
-				// newUser.initializePermissions();
-				newUser.save(TurbineUtils.getUser(data), true, false, true,
-						false);
-			} else {
-				// OLD USER
-				String tempPass = found.getStringProperty("primary_password");
-				String savedPass = temp.getStringProperty("primary_password");
-				if (StringUtils.isEmpty(tempPass)
-						&& StringUtils.isEmpty(savedPass)) {
-					
-				} else if (StringUtils.isEmpty(tempPass)) {
-					found.setProperty("primary_password", "NULL");
-				} else {
-					if (!tempPass.equals(savedPass))
-							found.setProperty("primary_password", XDATUser
-									.EncryptString(tempPass,"SHA-256"));
-				}
-				found.save(TurbineUtils.getUser(data), false, false);
-			}
-			// UserCache.Clear();
-			// if (temp == null)
-			// {
-			// AdminUtils.sendNewUserEmailMessage(found.getStringProperty("login"),found.getStringProperty("email"));
-			//			    
-			//			    
-			// }
+			XDATUser.ModifyUser(authenticatedUser, found);
+		} catch (InvalidPermissionException e) {
+			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+			return;
 		} catch (Exception e) {
 			logger.error("Error Storing User", e);
+			return;
 		}
 		data.getParameters().setString("search_element",
 				org.nrg.xft.XFT.PREFIX + ":user");
@@ -119,34 +92,4 @@ public class ModifyUser extends SecureAction {
 				.getInstance("DisplayItemAction");
 		action.doPerform(data, context);
 	}
-	// String header = "ELEMENT_";
-	// int counter = 0;
-	// Hashtable hash = new Hashtable();
-	// while (data.getParameters().get(header + counter) != null)
-	// {
-	// String elementToLoad = data.getParameters().getString(header +
-	// counter++);
-	// Integer numberOfInstances =
-	// data.getParameters().getInteger(elementToLoad);
-	// if (numberOfInstances != null && numberOfInstances.intValue()!=0)
-	// {
-	// int subCount = 0;
-	// while (subCount != numberOfInstances.intValue())
-	// {
-	// hash.put(elementToLoad + (subCount++),elementToLoad);
-	// }
-	// }else{
-	// hash.put(elementToLoad,elementToLoad);
-	// }
-	// }
-	//		
-	// Enumeration keys = hash.keys();
-	// while (keys.hasMoreElements())
-	// {
-	// String key = (String)keys.nextElement();
-	// System.out.println("looking for " + key);
-	// String element = (String)hash.get(key);
-	// ItemI found = PopulateItem.Populate(data,element,key);
-	// found.save();
-	// }
 }

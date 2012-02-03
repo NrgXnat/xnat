@@ -40,15 +40,16 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
                     enabled= true;
 					o.setProperty(XDATUser.USER_ELEMENT + ".enabled","1");
 				}
+
+                XDATUser userI = new XDATUser(o);
 				
-				o.save(TurbineUtils.getUser(data),false,false);
-				
+				XDATUser.ModifyUser(TurbineUtils.getUser(data), userI);
+
 				SchemaElementI se = SchemaElement.GetElement(o.getXSIType());
 				data = TurbineUtils.setDataItem(data,o);
                 
                 if (enabled)
                 {
-                    XDATUser userI = new XDATUser(o);
                     try {
                         AdminUtils.sendNewUserEmailMessage(userI.getUsername(), userI.getEmail(),data,context);
                     } catch (Exception e) {

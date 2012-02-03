@@ -22,7 +22,8 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.Event;
 import org.nrg.xft.event.EventManager;
-public class ModifyGroupPrivileges extends SecureAction {
+import org.nrg.xft.utils.SaveItemHelper;
+public class ModifyGroupPrivileges extends AdminAction {
 	static Logger logger = Logger.getLogger(ModifyUserPrivileges.class);
 	public void doPerform(RunData data, Context context) throws Exception
 	{
@@ -122,7 +123,7 @@ public class ModifyGroupPrivileges extends SecureAction {
 		final ItemI found = populater.getItem();
 		XdatUsergroup tempGroup = new XdatUsergroup(found);
 		try {
-			tempGroup.getItem().save(TurbineUtils.getUser(data), false, false);
+			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), false, false);
 		} catch (Exception e) {
 			logger.error("Error Storing User", e);
 		}
@@ -133,7 +134,7 @@ public class ModifyGroupPrivileges extends SecureAction {
 				data).getLogin());
 		// logger.error("4\n"+tempUser.getItem().toString());
 		try {
-			tempGroup.getItem().save(TurbineUtils.getUser(data), true, false);
+			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), true, false);
 			// temp = tempUser.getItem().getCurrentDBVersion();
 			// tempUser = new XDATUser(temp);
 		} catch (Exception e) {

@@ -90,6 +90,7 @@ import org.nrg.xft.search.ItemSearch.IdentifierResults;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.VelocityUtils;
 import org.nrg.xft.utils.XMLUtils;
@@ -5825,51 +5826,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
-	 */
-	public void save(UserI user, boolean overrideSecurity,boolean allowItemRemoval, org.nrg.xft.db.DBItemCache cache) throws InvalidItemException,Exception
-	{
-	    if (user == null)
-        {
-	        if (overrideSecurity)
-	        {
-           	    boolean q = getGenericSchemaElement().isQuarantine();
-           	    DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),cache);
-	        }else{
-	            ItemSearch search = ItemSearch.GetItemSearch("xdat:user",null);
-	            search.setAllowMultiples(false);
-	           	ItemCollection items = search.exec();
-	           	if (items.size() > 0){
-	    	        throw new Exception("Error.  Must have a valid user account to perform database updates/inserts.");
-	           	}else{
-	           	    if (getXSIType().startsWith("xdat"))
-	           	    {
-		           	    boolean q = getGenericSchemaElement().isQuarantine();
-		           	    DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),cache);
-	           	    }else{
-	           	        throw new Exception("Error.  Must have a valid user account to perform database updates/inserts.");
-	           	    }
-	           	}
-	        }
-        }else{
-            if (overrideSecurity)
-            {
-	    		boolean q = getGenericSchemaElement().isQuarantine();
-	    		DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),cache);
-            }else{
-                String error = user.canStoreItem(this,allowItemRemoval);
-                if (error == null)
-                {
-    	    		boolean q = getGenericSchemaElement().isQuarantine();
-    	    		DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),cache);
-                }else{
-                    throw new InvalidPermissionException(error);
-                }
-            }
-        }
-	}
-
-	/* (non-Javadoc)
-	 * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
+	 * 25 references (2/3/12)
 	 */
 	public boolean save(UserI user, boolean overrideSecurity,boolean allowItemRemoval) throws InvalidItemException,Exception
 	{
@@ -5915,6 +5872,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
+	 * 3 references (2/3/12)
 	 */
 	public void save(UserI user, boolean overrideSecurity,boolean quarantine,boolean overrideQuarantine, boolean allowItemRemoval) throws Exception
 	{
@@ -6157,40 +6115,6 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    	login=user.getUsername();
 	    }
 	    PoolDBUtils.PerformUpdateTrigger(this, login);
-	}
-	
-
-	/* (non-Javadoc)
-	 * @see org.nrg.xft.ItemI#activate(org.nrg.xft.security.UserI)
-	 */
-    @SuppressWarnings("unused")
-	private void activate(UserI user,DBItemCache cache) throws Exception
-	{
-		XFTItem meta = (XFTItem)getMeta();
-		if (meta != null)
-		{
-			if (((String)meta.getProperty(STATUS_STRING)).equalsIgnoreCase(ViewManager.QUARANTINE))
-			{
-				meta.setDirectProperty(STATUS_STRING,ACTIVE);
-				if (user != null)
-				{
-					meta.setDirectProperty("activation_user_xdat_user_id",user.getID());
-				}
-				meta.setDirectProperty("activation_date",Calendar.getInstance().getTime());
-				meta.save(user,true,false,cache);
-
-				logger.info(getXSIType() + " activated.");
-			}
-		}
-
-		Iterator iter = getChildItems().iterator();
-		while (iter.hasNext())
-		{
-			XFTItem child = (XFTItem)iter.next();
-			if (child.getGenericSchemaElement().getAddin().equals(""))
-			    child.activate(user,cache);
-		}
-
 	}
 
 	/* (non-Javadoc)
@@ -6768,7 +6692,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 */
 	public void removeChildFromDB(String xmlPath,XFTItem child,UserI user) throws SQLException,Exception
 	{
-	    DBAction.RemoveItemReference(this,xmlPath,child,user);
+		SaveItemHelper.unauthorizedRemoveChild(this,xmlPath,child,user);
 	}
 
 	/* (non-Javadoc)

@@ -16,6 +16,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.utils.SaveItemHelper;
 
 /**
  * @author Tim
@@ -43,7 +44,7 @@ public class RemoveItemReference extends SecureAction {
                 ItemI parent = parentItems.getFirst();
                 ItemI child = childItems.getFirst();
                 
-                DBAction.RemoveItemReference(parent.getItem(),null,child.getItem(),TurbineUtils.getUser(data));
+                SaveItemHelper.unauthorizedRemoveChild(parent.getItem(),null,child.getItem(),TurbineUtils.getUser(data));
                 
                 data.setMessage("Item adjusted.");
             	data.setScreenTemplate("Index.vm");

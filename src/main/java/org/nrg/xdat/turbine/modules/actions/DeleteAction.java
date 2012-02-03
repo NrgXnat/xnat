@@ -10,6 +10,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.utils.SaveItemHelper;
 
 /**
  * @author Tim
@@ -29,7 +30,7 @@ public class DeleteAction extends SecureAction {
 			if (o != null)
 			{		  
 				try {
-                    org.nrg.xft.db.DBAction.DeleteItem(o.getItem(),TurbineUtils.getUser(data));
+					SaveItemHelper.unauthorizedDelete(o.getItem(), TurbineUtils.getUser(data));
                     data.setMessage("<p>Item Deleted.</p>");
     			  	data.setScreenTemplate("Index.vm");
                 } catch (RuntimeException e1) {

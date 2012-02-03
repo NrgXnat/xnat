@@ -29,7 +29,7 @@ import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.utils.SaveItemHelper;
 /**
  * @author Tim
  *
@@ -93,7 +93,7 @@ public class XDATLoginUser extends VelocityAction{
 			item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
 			item.setProperty("xdat:user_login.login_date",today);
 			item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
-			item.save(null,true,false);
+			SaveItemHelper.authorizedSave(item,null,true,false);
 
 			HttpSession session = data.getSession();
 			session.setAttribute("user",user);

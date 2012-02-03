@@ -8,6 +8,7 @@
  *
  */
 package org.nrg.xdat.turbine.modules.actions;
+import java.io.IOException;
 import java.util.Iterator;
 
 import javax.servlet.http.HttpSession;
@@ -20,11 +21,13 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
@@ -47,6 +50,13 @@ public abstract class SecureAction extends VelocitySecureAction
 
     protected void error(Throwable e,RunData data){
         logger.error("",e);
+        if(e instanceof InvalidPermissionException){
+        	try {
+        		AdminUtils.sendAdminEmail(TurbineUtils.getUser(data), "Possible Authorization Bypass Attempt", "User attempted to access or modify protected content at action: " + data.getAction() + "; " + e.getMessage());
+				data.getResponse().sendError(403);
+			} catch (IOException e1) {
+			}
+        }
         data.setScreenTemplate("Error.vm");
         data.getParameters().setString("exception", e.toString());
     }
@@ -181,5 +191,10 @@ public abstract class SecureAction extends VelocitySecureAction
     public boolean allowGuestAccess(){
         return true;
     }
+	
+	public void notifyAdmin(XDATUser authenticatedUser, RunData data, int code, String subject, String message) throws IOException{
+		AdminUtils.sendAdminEmail(authenticatedUser, subject,message);
+		data.getResponse().sendError(code);
+	}
 }
 

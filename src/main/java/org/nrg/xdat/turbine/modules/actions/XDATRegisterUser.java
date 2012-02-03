@@ -22,6 +22,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.utils.SaveItemHelper;
 
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
@@ -71,7 +72,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                XDATUser newUser = new XDATUser(found);
 	               // newUser.initializePermissions();
 	                
-	                newUser.save(TurbineUtils.getUser(data),true,false,true,false); 		
+	                SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false);
 	                
 	                if (autoApproval)
 	                {
@@ -93,7 +94,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
 	                    item.setProperty("xdat:user_login.login_date",today);
 	                    item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
-	                    item.save(null,true,false);
+	                    SaveItemHelper.authorizedSave(item,null,true,false);
 	                    
 	                    try{
 	                    	directRequest(data,context,newUser);

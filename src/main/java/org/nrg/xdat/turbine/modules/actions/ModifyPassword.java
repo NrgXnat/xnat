@@ -20,6 +20,7 @@ import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
@@ -123,10 +124,15 @@ public class ModifyPassword extends SecureAction {
 				String tempPass = found.getStringProperty("primary_password");
 				found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
 				
+				XDATUser authenticatedUser=TurbineUtils.getUser(data);
 				try {
-					found.save(TurbineUtils.getUser(data),false,false);
+					XDATUser.ModifyUser(authenticatedUser, found);
+				} catch (InvalidPermissionException e) {
+					notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+					return;
 				} catch (Exception e) {
-					logger.error("Error Storing " + found.getXSIType(),e);
+					logger.error("Error Storing User", e);
+					return;
 				}
 			}
 			

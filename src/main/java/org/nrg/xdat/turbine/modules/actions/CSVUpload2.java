@@ -39,6 +39,7 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FieldMapping;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
@@ -265,7 +266,7 @@ public class CSVUpload2 extends SecureAction {
                 }
 
                 try {
-                    item.save(user, false, false);
+                	SaveItemHelper.unauthorizedSave(item,user, false, false);
                     rowSummary.add("<font color='black'><b>Successful</b></font>");
                 } catch (Throwable e1) {
                     logger.error("",e1);

@@ -20,13 +20,14 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 
 /**
  * @author Tim
  *
  */
-public class ElementSecurityWizard extends SecureAction {
+public class ElementSecurityWizard extends AdminAction {
 	static Logger logger = Logger.getLogger(ElementSecurityWizard.class);
 
     /* (non-Javadoc)
@@ -237,7 +238,7 @@ public class ElementSecurityWizard extends SecureAction {
 		    
 		    boolean saved=false;
 		    try {
-				found.save(TurbineUtils.getUser(data),false,false);
+		    	SaveItemHelper.authorizedSave(found,TurbineUtils.getUser(data),false,false);
 				saved=true;
 			} catch (Exception e) {
 				logger.error("Error Storing " + found.getXSIType(),e);

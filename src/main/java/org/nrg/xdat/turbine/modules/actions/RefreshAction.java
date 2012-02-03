@@ -27,7 +27,7 @@ import org.nrg.xft.utils.FileUtils;
  * @author Tim
  *
  */
-public class RefreshAction extends SecureAction {
+public class RefreshAction extends AdminAction {
 	static Logger logger = Logger.getLogger(RefreshAction.class);
 	public void doPerform(RunData data, Context context) throws Exception
 	{

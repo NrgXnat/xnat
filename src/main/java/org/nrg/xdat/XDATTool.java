@@ -186,7 +186,7 @@ public class XDATTool {
 			    q = item.getGenericSchemaElement().isQuarantine();
 			    override = false;
 			}
-        	SaveItemHelper.Save(item,user,overrideSecurity,q,override,allowItemRemoval);
+        	SaveItemHelper.unauthorizedSave(item,user,overrideSecurity,q,override,allowItemRemoval);
 			if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
 		    logger.info("Item Successfully Stored.");
 		}else

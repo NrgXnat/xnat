@@ -21,7 +21,9 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.utils.SaveItemHelper;
 
 public class ModifyUserGroups extends SecureAction {
 
@@ -69,7 +71,7 @@ public class ModifyUserGroups extends SecureAction {
                         XdatRoleType role = (XdatRoleType)iter.next();
                         if (role.getStringProperty("role_name").equals("Administrator")){
                             //DBAction.DeleteItem(role.getItem(), TurbineUtils.getUser(data));
-                            DBAction.RemoveItemReference(oldUser.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), TurbineUtils.getUser(data));
+                        	SaveItemHelper.unauthorizedRemoveChild(oldUser.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), TurbineUtils.getUser(data));
                         }
                     }
                 }
@@ -87,13 +89,21 @@ public class ModifyUserGroups extends SecureAction {
                 }
                 
                 if (!matched){
-                    DBAction.DeleteItem(uGroup.getItem(), TurbineUtils.getUser(data));
+                	SaveItemHelper.unauthorizedDelete(uGroup.getItem(), TurbineUtils.getUser(data));
                 }
             }
 
-            found.save(TurbineUtils.getUser(data),false,false);
-            
-            found.getItem().removeEmptyItems();
+            XDATUser authenticatedUser=TurbineUtils.getUser(data);
+            try {
+    			XDATUser.ModifyUser(authenticatedUser, found);
+                found.getItem().removeEmptyItems();
+    		} catch (InvalidPermissionException e) {
+    			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+    			return;
+    		} catch (Exception e) {
+    			logger.error("Error Storing User", e);
+    			return;
+    		}
             
             
             

@@ -10,6 +10,8 @@
 package org.nrg.xdat.turbine.modules.actions;
 import java.io.IOException;
 import java.util.Iterator;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 
 import javax.servlet.http.HttpSession;
 
@@ -61,32 +63,42 @@ public abstract class SecureAction extends VelocitySecureAction
         data.getParameters().setString("exception", e.toString());
     }
 
+    final static String encoding="ISO-8859-1";
+
     public void redirectToReportScreen(String report,ItemI item,RunData data)
     {
         data = TurbineUtils.SetSearchProperties(data,item);
-        String path = TurbineUtils.GetRelativeServerPath(data)+ "/app/template/" + report + "/search_field/" + data.getParameters().get("search_field") +  "/search_value/" +  data.getParameters().get("search_value")  + "/search_element/" +  data.getParameters().get("search_element");
+        try {
+			String path = TurbineUtils.GetRelativeServerPath(data)+ "/app/template/" + URLEncoder.encode(report,encoding) + "/search_field/" + URLEncoder.encode(data.getParameters().get("search_field"),encoding) +  "/search_value/" +  URLEncoder.encode(data.getParameters().get("search_value"),encoding)  + "/search_element/" +  URLEncoder.encode(data.getParameters().get("search_element"),encoding);
         if (data.getParameters().getString("popup")!=null){
-            path += "/popup/" + data.getParameters().getString("popup");
+			    path += "/popup/" + URLEncoder.encode(data.getParameters().getString("popup"),encoding);
         }
         if (data.getParameters().getString("project")!=null){
-            path += "/project/" + data.getParameters().getString("project");
+			    path += "/project/" + URLEncoder.encode(data.getParameters().getString("project"),encoding);
         }
         if (data.getParameters().getString("params")!=null){
-            path += data.getParameters().getString("params");
+			    path += URLEncoder.encode(data.getParameters().getString("params"),encoding);
         }
         data.setRedirectURI(path);
+		} catch (UnsupportedEncodingException e) {
+			logger.error("",e);
+		}
     }
 
     public void redirectToScreen(String report,RunData data)
     {
-        String path = TurbineUtils.GetRelativeServerPath(data)+ "/app/template/" + report;
+        try {
+			String path = TurbineUtils.GetRelativeServerPath(data)+ "/app/template/" + URLEncoder.encode(report,encoding);
         if (data.getParameters().getString("popup")!=null){
-            path += "/popup/" + data.getParameters().getString("popup");
+			    path += "/popup/" + URLEncoder.encode(data.getParameters().getString("popup"),encoding);
         }
         if (data.getParameters().getString("project")!=null){
-            path += "/project/" + data.getParameters().getString("project");
+			    path += "/project/" + URLEncoder.encode(data.getParameters().getString("project"),encoding);
         }
         data.setRedirectURI(path);
+		} catch (UnsupportedEncodingException e) {
+			logger.error("",e);
+		}
     }
 
     public void redirectToReportScreen(ItemI item,RunData data)

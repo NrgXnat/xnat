@@ -77,6 +77,9 @@ public abstract class SecureScreen extends VelocitySecureScreen
                 String systemName = TurbineUtils.GetSystemName();
                 c.put("turbineUtils",TurbineUtils.GetInstance());
                 c.put("systemName",systemName);
+                
+                c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
+                
                 preserveVariables(data,c);
                 doBuildTemplate(data, c);
             }else{
@@ -103,6 +106,7 @@ public abstract class SecureScreen extends VelocitySecureScreen
                     data.setScreenTemplate("Login.vm");
                 }
             }
+            
         } catch (RuntimeException e) {
             logger.error("",e);
             data.setScreenTemplate("Error.vm");
@@ -118,6 +122,15 @@ public abstract class SecureScreen extends VelocitySecureScreen
 	 */
 	protected boolean isAuthorized( RunData data )  throws Exception
 	{
+		
+//		String method = data.getRequest().getMethod();
+//	There are places where a secure screen gets a POST or a PUT. that's a problem. uncomment this to see where that happens.
+//    	if("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)){
+//    		if(!"XDATLoginUser".equalsIgnoreCase(data.getAction())){
+//    			System.out.println("SOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\n it was in:" + data.getAction());
+//    		}
+//    	}
+		
 	    //TurbineUtils.OutputDataParameters(data);
 	    if (XFT.GetRequireLogin() || TurbineUtils.HasPassedParameter("par", data))
 		{

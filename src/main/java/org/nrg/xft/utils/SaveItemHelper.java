@@ -7,6 +7,7 @@ import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.Authorizer;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.security.UserI;
@@ -18,21 +19,28 @@ public class SaveItemHelper {
 	}
 
 	protected void save(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval) throws Exception {
+		ItemWrapper temp;
 		if(i instanceof XFTItem){
-			ItemI temp=BaseElement.GetGeneratedItem(i);
-			temp.save(user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval);
+			temp=(ItemWrapper)BaseElement.GetGeneratedItem(i);
 		}else{
-			i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
+			temp=(ItemWrapper)i;
 		}
+		temp.preSave();
+		temp.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
+		temp.postSave();
 	}
 
 	protected boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+		ItemWrapper temp;
 		if(i instanceof XFTItem){
-			ItemI temp=BaseElement.GetGeneratedItem(i);
-			return temp.save(user, overrideSecurity, allowItemRemoval);
+			temp=(ItemWrapper)BaseElement.GetGeneratedItem(i);
 		}else{
-			return i.save(user,overrideSecurity,allowItemRemoval);
+			temp=(ItemWrapper)i;
 		}
+		temp.preSave();
+        final boolean _success= temp.save(user,overrideSecurity,allowItemRemoval);
+        if(_success)temp.postSave();
+        return _success;
 	}
 	
 	protected void delete(ItemI i, UserI user) throws SQLException, Exception{

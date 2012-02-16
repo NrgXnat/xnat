@@ -131,9 +131,9 @@ public class EmailReportAction extends EmailAction {
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
                 sb.append(" thought you might be interested in a data set contained in the ").append(TurbineUtils.GetSystemName()).append(".");
                 sb.append(" Please follow <A HREF=\"" +TurbineUtils.GetFullServerPath() + "/app/action/DisplayItemAction");
-                sb.append("/search_element/").append(data.getParameters().getString("search_element"));
-                sb.append("/search_field/").append(data.getParameters().getString("search_field"));
-                sb.append("/search_value/").append(data.getParameters().getString("search_value"));
+                sb.append("/search_element/").append((String)TurbineUtils.GetPassedParameter("search_element", data));
+                sb.append("/search_field/").append((String)TurbineUtils.GetPassedParameter("search_field",data));
+                sb.append("/search_value/").append((String)TurbineUtils.GetPassedParameter("search_value", data));
                 sb.append("\">this link</A> to view the data.<BR><BR>");
                 
                 sb.append("Message from sender:<BR>");

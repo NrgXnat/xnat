@@ -141,9 +141,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
     
     public void handleDuplicateEmail(RunData data,Context context,ItemI found){
     	try {
-			String nextPage = data.getParameters().getString("nextPage","");
-			String nextAction = data.getParameters().getString("nextAction","");
-			String par = data.getParameters().getString("par","");
+			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
+			String par = (String)TurbineUtils.GetPassedParameter("par",data);
 			
 			if(!StringUtils.isEmpty(par)){
 				context.put("par", par);
@@ -165,9 +165,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
     
     public void handleDuplicateLogin(RunData data,Context context,ItemI found){
     	try {
-			String nextPage = data.getParameters().getString("nextPage","");
-			String nextAction = data.getParameters().getString("nextAction","");
-			String par = data.getParameters().getString("par","");
+			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
+			String par = (String)TurbineUtils.GetPassedParameter("par",data);
 			
 			if(!StringUtils.isEmpty(par)){
 				context.put("par", par);
@@ -211,8 +211,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
     }
     
     public void directRequest(RunData data,Context context,XDATUser user) throws Exception{
-		String nextPage = data.getParameters().getString("nextPage","");
-		String nextAction = data.getParameters().getString("nextAction","");
+		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 
         data.setScreenTemplate("Index.vm");
         

@@ -216,7 +216,7 @@ public class ModifyUserPrivileges extends SecureAction {
 		{
 			final Map<Object,Object> nextRow = allbundles.nextRowHash();
 		    String bundleID=(String)nextRow.get("id");
-		    if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle_" + bundleID.toLowerCase(,data))) !=null)
+		    if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle_" + bundleID.toLowerCase(), data)) !=null)
 		    {
 		    	final Map<Object,Object> rowHash = presetBundles.getRowHash("xdat_stored_search_id",bundleID);
 		        if (rowHash == null)

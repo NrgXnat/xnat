@@ -79,7 +79,7 @@ public abstract class SearchA extends SecureAction {
 
 			XDATUser user = TurbineUtils.getUser(data);
 			String display = data.getParameters().getString("display","listing");
-			String elementName = data.getParameters().getString("element");
+			String elementName = ((String)TurbineUtils.GetPassedParameter("element",data));
 			Integer page = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("page",data));
 			String sortBy = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("sortBy",data));
 			String sortOrder = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("sortOrder",data));
@@ -192,7 +192,7 @@ public abstract class SearchA extends SecureAction {
 		while (enumer.hasMoreElements())
 		{
 			String key = (String)enumer.nextElement();
-			if (data.getParameters().getString("super_" + key.toLowerCase()) != null)
+			if ((String)TurbineUtils.GetPassedParameter("super_" + key.toLowerCase(),data) != null)
 			{
 				found = true;
 				break;
@@ -208,9 +208,9 @@ public abstract class SearchA extends SecureAction {
 		while (enumer.hasMoreElements())
 		{
 			String key = (String)enumer.nextElement();
-			if (data.getParameters().getString("super_" + key.toLowerCase()) != null)
+			if (((String)TurbineUtils.GetPassedParameter("super_" + key.toLowerCase(), data)) != null)
 			{
-			    String s = data.getParameters().getString("super_" + key.toLowerCase());
+			    String s = ((String)TurbineUtils.GetPassedParameter("super_" + key.toLowerCase(), data));
 			    if (! s.equalsIgnoreCase(""))
 			        found.add(new String[]{key,s});
 			}
@@ -450,13 +450,13 @@ public abstract class SearchA extends SecureAction {
 
 
             int counter = 0;
-            while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName(,data)) + ".COMBO" + counter) != null)
+            while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter, data)) != null)
             {
-                if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName(,data)) + ".COMBO" + counter).length() == 0){counter++;continue;}
+                if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter, data)).length() == 0){counter++;continue;}
 
                 final CriteriaCollection cc = new CriteriaCollection("OR");
-                final String value = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName(,data)) + ".COMBO" + counter);
-                final String keys = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName(,data)) + ".COMBO" + counter + "_FIELDS");
+                final String value = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter,data));
+                final String keys = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter + "_FIELDS",data));
 
                 ds.setWebFormValue(ed.getElementName() + ".COMBO" + counter,value);
                 ds.setWebFormValue(ed.getElementName() + ".COMBO" + counter + "_FIELDS",keys);

@@ -75,7 +75,11 @@ public class Authorizer implements AuthorizerI{
 	}
 	
 	private boolean requiresSecurity(String action,final GenericWrapperElement e, final UserI user) throws SQLException, Exception{
-		return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers()) || !((XDATUser)user).checkRole("Administrator")));
+		if(user != null){
+			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers()) || !((XDATUser)user).checkRole("Administrator")));
+		} else {
+			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers())));
+		}
 	}
 	
 	public void authorize(String action,final GenericWrapperElement e, final UserI user) throws Exception{

@@ -5,6 +5,8 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 
+import java.util.UUID;
+
 import javax.servlet.http.HttpSession;
 
 import org.apache.commons.lang.StringUtils;
@@ -81,6 +83,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                    session.setAttribute("user",newUser);
 	                    session.setAttribute("loggedin",true);
 	                    data.setMessage("User registration complete.");
+	                    
+	                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 	                    
 	                    String sub = "New User Created: " + newUser.getUsername();
 	                    String msg = this.getAutoApprovalTextMsg(data,newUser);

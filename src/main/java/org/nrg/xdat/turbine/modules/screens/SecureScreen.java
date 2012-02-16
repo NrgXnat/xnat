@@ -9,6 +9,7 @@
  */
 package org.nrg.xdat.turbine.modules.screens;
 import java.util.Iterator;
+import java.util.UUID;
 
 import javax.servlet.http.HttpSession;
 
@@ -203,7 +204,7 @@ public abstract class SecureScreen extends VelocitySecureScreen
                         user = new XDATUser(o);
                     }
 					TurbineUtils.setUser(data,user);
-
+					session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
                     String Destination = data.getTemplateInfo().getScreenTemplate();
                     data.getParameters().add("nextPage", Destination);
                     if (!data.getAction().equalsIgnoreCase(""))

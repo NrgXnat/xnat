@@ -250,6 +250,7 @@ public abstract class SecureAction extends VelocitySecureAction
                         user = new XDATUser(o);
                     }
                     TurbineUtils.setUser(data,user);
+                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
                     String Destination = data.getTemplateInfo().getScreenTemplate();
                     data.getParameters().add("nextPage", Destination);

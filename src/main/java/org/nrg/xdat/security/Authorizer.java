@@ -1,5 +1,6 @@
 package org.nrg.xdat.security;
 
+import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
@@ -8,6 +9,7 @@ import java.util.Map;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
@@ -60,8 +62,24 @@ public class Authorizer implements AuthorizerI{
 		authorize(SAVE,e,user);
 	}
 	
+	static boolean has_users=false;
+	private static synchronized boolean hasUsers() throws SQLException, Exception{
+		if(!has_users){
+			Long user_count=(Long)PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) AS USER_COUNT FROM xdat_user;", "USER_COUNT", PoolDBUtils.getDefaultDBName(), null);
+			if(user_count>0){
+				has_users=true;
+			}
+		}
+		
+		return has_users;
+	}
+	
+	private boolean requiresSecurity(String action,final GenericWrapperElement e, final UserI user) throws SQLException, Exception{
+		return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers()) || !((XDATUser)user).checkRole("Administrator")));
+	}
+	
 	public void authorize(String action,final GenericWrapperElement e, final UserI user) throws Exception{
-		if (!unsecured.get(action).contains(e.getXSIType()) && (user==null || !((XDATUser)user).checkRole("Administrator")))
+		if (requiresSecurity(action,e,user))
         {
 			if(protectedNamespace.get(action).contains(e.getType().getForeignPrefix())){
 	    		AdminUtils.sendAdminEmail(user,"Unauthorized Admin Data Access Attempt", "Unauthorized access of '" + e.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
@@ -74,7 +92,7 @@ public class Authorizer implements AuthorizerI{
 	}
 	
 	public void authorize(String action,final XFTItem e, final UserI user) throws Exception{
-		if (!unsecured.get(action).contains(e.getXSIType()) && (user==null || !((XDATUser)user).checkRole("Administrator")))
+		if (requiresSecurity(action,e.getGenericSchemaElement(),user))
         {
 			authorize(action,e.getGenericSchemaElement(),user);
 			if(ElementSecurity.IsSecureElement(e.getXSIType())){

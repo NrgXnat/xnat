@@ -73,7 +73,29 @@
 		Use the Sun hosted javamail
 		http://maven.apache.org/guides/mini/guide-coping-with-sun-jars.html
 	-->
+		<pluginRepositories>
+		<pluginRepository>
+			<name>NRG/XDAT/XNAT Temporary Snapshot Maven Plugin Repo</name>
+			<id>org.nrg.maven.plugins.snapshot</id>
+			<url>http://maven.xnat.org/plugins-snapshot</url>
+		</pluginRepository>
+		<pluginRepository>
+			<name>NRG/XDAT/XNAT Temporary Release Maven Plugin Repo</name>
+			<id>org.nrg.maven.plugins.release</id>
+			<url>http://maven.xnat.org/plugins-release</url>
+		</pluginRepository>
+	</pluginRepositories>
 	<repositories>
+		<repository>
+			<name>NRG/XDAT/XNAT Temporary Release Maven Repo</name>
+			<id>org.nrg.maven.artifacts.release</id>
+			<url>http://maven.xnat.org/libs-release</url>
+		</repository>
+		<repository>
+			<name>NRG/XDAT/XNAT Temporary Snapshot Maven Repo</name>
+			<id>org.nrg.maven.artifacts.snapshot</id>
+			<url>http://maven.xnat.org/libs-snapshot</url>
+		</repository>
 		<repository>
 			<id>maven2-repository.dev.java.net</id>
 			<name>Java.net Repository for Maven</name>

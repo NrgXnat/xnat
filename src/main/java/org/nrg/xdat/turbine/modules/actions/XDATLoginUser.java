@@ -10,6 +10,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.sql.SQLException;
+import java.util.UUID;
 
 import javax.servlet.http.HttpSession;
 
@@ -95,9 +96,13 @@ public class XDATLoginUser extends VelocityAction{
 			item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
 			SaveItemHelper.authorizedSave(item,null,true,false);
 
+			
+			
 			HttpSession session = data.getSession();
 			session.setAttribute("user",user);
             session.setAttribute("loggedin",true);
+            
+            session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
             AccessLogger.LogActionAccess(data, "Valid Login:"+user.getLogin());
             try{

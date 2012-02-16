@@ -69,8 +69,8 @@ public class XDATLoginUser extends VelocityAction{
 	{
 		//ScreenUtils.OutputDataParameters(data);
 		//ScreenUtils.OutputContextParameters(TurbineVelocity.getContext(data));
-		String username = data.getParameters().getString(CGI_USERNAME, "");
-		String password = data.getParameters().getString(CGI_PASSWORD, "");
+		String username = (String)TurbineUtils.GetPassedParameter(CGI_USERNAME, data);
+		String password = (String)TurbineUtils.GetPassedParameter(CGI_PASSWORD, data);
 		if (StringUtils.isEmpty(username))
 		{
 			return;
@@ -144,8 +144,8 @@ public class XDATLoginUser extends VelocityAction{
 	}
 
 	public void doRedirect(RunData data, Context context,XDATUser user) throws Exception{
-		String nextPage = data.getParameters().getString("nextPage","");
-		String nextAction = data.getParameters().getString("nextAction","");
+		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 		/*
 		 * If the setPage("template.vm") method has not
 		 * been used in the template to authenticate the

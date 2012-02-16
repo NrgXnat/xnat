@@ -30,9 +30,9 @@ public class XDATScreen_manageGroups_xdat_user extends AdminScreen {
                 try {
                     context.put("item",item);
                     context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
-                    context.put("search_element",data.getParameters().getString("search_element"));
-                    context.put("search_field",data.getParameters().getString("search_field"));
-                    context.put("search_value",data.getParameters().getString("search_value"));
+                    context.put("search_element",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));
+                    context.put("search_field",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)));
+                    context.put("search_value",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)));
 
                     XDATUser tempUser = new XDATUser(item);
                     context.put("userObject",tempUser);

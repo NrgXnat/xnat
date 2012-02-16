@@ -34,8 +34,8 @@ public class EmailCustomSearchAction extends SecureAction{
      */
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
-        if (data.getParameters().getString("search_xml")!=null){
-            data.getSession().setAttribute("search_xml",data.getParameters().getString("search_xml"));
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data))!=null){
+            data.getSession().setAttribute("search_xml",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data)));
         }
         
         if (data.getSession().getAttribute("search_xml")!=null){
@@ -43,7 +43,7 @@ public class EmailCustomSearchAction extends SecureAction{
             if(XFT.VERBOSE)System.out.println("URL LENGTH:" + search_xml.length());
         }
         
-        if (data.getParameters().get("send")!=null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("send",data))!=null)
         {
             EmailReportAction email = new EmailReportAction();
             data.getParameters().setString("txtMessage",getTxtMessage(data,context));
@@ -59,7 +59,7 @@ public class EmailCustomSearchAction extends SecureAction{
     
     public String getTxtMessage(RunData data, Context context)
     {
-        if (data.getParameters().get("txtmessage")==null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data))==null)
         {
             try {
                 XDATUser user = TurbineUtils.getUser(data);
@@ -73,7 +73,7 @@ public class EmailCustomSearchAction extends SecureAction{
                 sb.append(">this link to view the data.\n\n");
                 
                 sb.append("Message from sender:\n");
-                sb.append(data.getParameters().getString("message"));
+                sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
                 sb.append("\n\nThis email was sent by the <" +TurbineUtils.GetFullServerPath() + ">XNAT data management system on ").append(Calendar.getInstance().getTime()).append(".");
                 sb.append("  If you have questions or concerns, please contact the <" + org.nrg.xft.XFT.GetAdminEmail() + ">CNDA administrator.");
                 return sb.toString();
@@ -82,14 +82,14 @@ public class EmailCustomSearchAction extends SecureAction{
                 return "error";
             }
         }else{
-            return data.getParameters().getString("txtmessage");
+            return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data));
         }
 
     }
     
     public String getHtmlMessage(RunData data, Context context)
     {
-        if (data.getParameters().get("htmlmessage")==null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data))==null)
         {
             try {
                 XDATUser user = TurbineUtils.getUser(data);
@@ -105,7 +105,7 @@ public class EmailCustomSearchAction extends SecureAction{
                 sb.append("\">this link</A> to view the data.<BR><BR>");
                 
                 sb.append("Message from sender:<BR>");
-                sb.append(data.getParameters().getString("message"));
+                sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
                 sb.append("<BR><BR>This email was sent by the <A HREF=\"" +TurbineUtils.GetFullServerPath() + "\">XNAT</A> data management system on ").append(Calendar.getInstance().getTime()).append(".");
                 sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:" + org.nrg.xft.XFT.GetAdminEmail() + "\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
                 
@@ -118,7 +118,7 @@ public class EmailCustomSearchAction extends SecureAction{
                 return "error";
             }
         }else{
-            return data.getParameters().getString("htmlmessage");
+            return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data));
         }
 
     }

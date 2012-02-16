@@ -34,10 +34,10 @@ public class ModifyUserGroups extends SecureAction {
         String header = "ELEMENT_";
         int counter = 0;
         Hashtable hash = new Hashtable();
-        while (data.getParameters().get(header + counter) != null)
+        while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter,data)) != null)
         {
-            String elementToLoad = data.getParameters().getString(header + counter++);
-            Integer numberOfInstances = data.getParameters().getIntObject(elementToLoad);
+            String elementToLoad = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter++,data));
+            Integer numberOfInstances = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(elementToLoad,data));
             if (numberOfInstances != null && numberOfInstances.intValue()!=0)
             {
                 int subCount = 0;

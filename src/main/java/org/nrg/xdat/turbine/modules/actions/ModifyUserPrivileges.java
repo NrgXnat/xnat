@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -216,7 +216,7 @@ public class ModifyUserPrivileges extends SecureAction {
 		{
 			final Map<Object,Object> nextRow = allbundles.nextRowHash();
 		    String bundleID=(String)nextRow.get("id");
-		    if (data.getParameters().get("bundle_" + bundleID.toLowerCase()) !=null)
+		    if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle_" + bundleID.toLowerCase(,data))) !=null)
 		    {
 		    	final Map<Object,Object> rowHash = presetBundles.getRowHash("xdat_stored_search_id",bundleID);
 		        if (rowHash == null)

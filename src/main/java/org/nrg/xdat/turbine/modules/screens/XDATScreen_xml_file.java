@@ -79,7 +79,7 @@ created in buildPDF.
 		ByteArrayOutputStream baos = buildXml(data);
 		if (baos != null)
 		{
-		    String fileName = data.getParameters().getString("fileName");
+		    String fileName = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fileName",data));
 		    if (fileName == null)
 		    {
 		    	final String format="%1$tm_%1$td_%1$ty_%1$tH_%1$tM_%1$tS.xml";

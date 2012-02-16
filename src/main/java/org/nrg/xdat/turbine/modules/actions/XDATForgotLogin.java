@@ -33,8 +33,8 @@ public class XDATForgotLogin extends VelocitySecureAction {
     
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
-        String email = data.getParameters().getString("email");
-        String username = data.getParameters().getString("username");
+        String email = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("email",data));
+        String username = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("username",data));
         if (email != null && !email.equals(""))
         {
             //check email

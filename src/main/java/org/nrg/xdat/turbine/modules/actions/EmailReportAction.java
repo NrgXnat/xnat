@@ -76,7 +76,7 @@ public class EmailReportAction extends EmailAction {
 			}
             
             try {
-				SchemaElement se=SchemaElement.GetElement(data.getParameters().getString("search_element"));
+				SchemaElement se=SchemaElement.GetElement(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));
 				data.setScreenTemplate(DisplayItemAction.GetReportScreen(se));
 			} catch (XFTInitException e) {
 				logger.error(e);
@@ -89,7 +89,7 @@ public class EmailReportAction extends EmailAction {
     
     public String getTxtMessage(RunData data, Context context)
     {
-        if (data.getParameters().get("txtmessage")==null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data))==null)
         {
             try {
                 XDATUser user = TurbineUtils.getUser(data);
@@ -98,13 +98,13 @@ public class EmailReportAction extends EmailAction {
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
                 sb.append(" thought you might be interested in a data set contained in the ").append(TurbineUtils.GetSystemName()).append(".");
                 sb.append(" Please follow <" +TurbineUtils.GetFullServerPath() + "/app/action/DisplayItemAction");
-                sb.append("/search_element/").append(data.getParameters().getString("search_element"));
-                sb.append("/search_field/").append(data.getParameters().getString("search_field"));
-                sb.append("/search_value/").append(data.getParameters().getString("search_value"));
+                sb.append("/search_element/").append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));
+                sb.append("/search_field/").append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)));
+                sb.append("/search_value/").append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)));
                 sb.append(">this link to view the data.\n\n");
                 
                 sb.append("Message from sender:\n");
-                sb.append(data.getParameters().getString("message"));
+                sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
                 sb.append("\n\nThis email was sent by the <" +TurbineUtils.GetFullServerPath() + ">XNAT data management system on ").append(Calendar.getInstance().getTime()).append(".");
                 sb.append("  If you have questions or concerns, please contact the <" + org.nrg.xft.XFT.GetAdminEmail() + ">CNDA administrator.");
                 return sb.toString();
@@ -113,14 +113,14 @@ public class EmailReportAction extends EmailAction {
                 return "error";
             }
         }else{
-            return data.getParameters().getString("txtmessage");
+            return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data));
         }
 
     }
     
     public String getHtmlMessage(RunData data, Context context)
     {
-        if (data.getParameters().get("htmlmessage")==null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data))==null)
         {
             try {
                 XDATUser user = TurbineUtils.getUser(data);
@@ -137,7 +137,7 @@ public class EmailReportAction extends EmailAction {
                 sb.append("\">this link</A> to view the data.<BR><BR>");
                 
                 sb.append("Message from sender:<BR>");
-                sb.append(data.getParameters().getString("message"));
+                sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
                 sb.append("<BR><BR>This email was sent by the <A HREF=\"" +TurbineUtils.GetFullServerPath() + "\">XNAT</A> data management system on ").append(Calendar.getInstance().getTime()).append(".");
                 sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:" + org.nrg.xft.XFT.GetAdminEmail() + "\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
                 
@@ -150,7 +150,7 @@ public class EmailReportAction extends EmailAction {
                 return "error";
             }
         }else{
-            return data.getParameters().getString("htmlmessage");
+            return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data));
         }
 
     }

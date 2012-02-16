@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -80,9 +80,9 @@ public abstract class SearchA extends SecureAction {
 			XDATUser user = TurbineUtils.getUser(data);
 			String display = data.getParameters().getString("display","listing");
 			String elementName = data.getParameters().getString("element");
-			Integer page = data.getParameters().getIntObject("page");
-			String sortBy = data.getParameters().getString("sortBy");
-			String sortOrder = data.getParameters().getString("sortOrder");
+			Integer page = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("page",data));
+			String sortBy = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("sortBy",data));
+			String sortOrder = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("sortOrder",data));
 			String queryType = data.getParameters().getString("queryType","stored");
 
 			//TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
@@ -243,7 +243,7 @@ public abstract class SearchA extends SecureAction {
                     if (TurbineUtils.HasPassedParameter(s + "_equals",data))
                     {
                         //logger.debug("like " + s);
-                        Object[] os = data.getParameters().getObjects(s + "_equals");
+                        Object[] os = ((Object[])org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_equals",data));
 
                         String osString = "";
                         int c =0;
@@ -260,7 +260,7 @@ public abstract class SearchA extends SecureAction {
                     if (TurbineUtils.HasPassedParameter(s + "_in",data))
                     {
                         //logger.debug("like " + s);
-                        Object o = data.getParameters().getObject(s + "_in");
+                        Object o = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_in",data);
                         ds.setWebFormValue(s + "_in",o);
                         String temp = (String)o;
 
@@ -274,8 +274,8 @@ public abstract class SearchA extends SecureAction {
                     {
                         if (TurbineUtils.HasPassedParameter(s + "_to_fulldate",data) && TurbineUtils.HasPassedParameter(s + "_from_fulldate",data))
                         {
-                            String to = data.getParameters().getString(s + "_to_fulldate");
-                            String from = data.getParameters().getString(s + "_from_fulldate");
+                            String to = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_to_fulldate",data));
+                            String from = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_from_fulldate",data));
 
                             ds.setWebFormValue(s + "_to_fulldate",to);
                             ds.setWebFormValue(s + "_from_fulldate",from);
@@ -291,12 +291,12 @@ public abstract class SearchA extends SecureAction {
 
                             ds.addCriteria(cc);
                         }else if ((TurbineUtils.HasPassedParameter(s + "_to_fulldate",data))){
-                            String to = data.getParameters().getString(s + "_to_fulldate");
+                            String to = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_to_fulldate",data));
                             ds.setWebFormValue(s + "_to_fulldate",to);
                             Date toD = DateUtils.parseDate(to);
                             ds.addCriteria(ed.getElementName(),df.getId(),">",to);
                         }else{
-                            String from = data.getParameters().getString(s + "_from_fulldate");
+                            String from = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_from_fulldate",data));
 
                             ds.setWebFormValue(s + "_from_fulldate",from);
 
@@ -304,13 +304,13 @@ public abstract class SearchA extends SecureAction {
                             ds.addCriteria(ed.getElementName(),df.getId(),"<",from);
                         }
                     }else{
-                        Integer tomonth = data.getParameters().getIntObject(s + "_to_month");
-                        Integer todate = data.getParameters().getIntObject(s + "_to_date");
-                        Integer toyear = data.getParameters().getIntObject(s + "_to_year");
+                        Integer tomonth = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_to_month",data));
+                        Integer todate = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_to_date",data));
+                        Integer toyear = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_to_year",data));
 
-                        Integer frommonth = data.getParameters().getIntObject(s + "_from_month");
-                        Integer fromdate = data.getParameters().getIntObject(s + "_from_date");
-                        Integer fromyear = data.getParameters().getIntObject(s + "_from_year");
+                        Integer frommonth = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_from_month",data));
+                        Integer fromdate = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_from_date",data));
+                        Integer fromyear = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_from_year",data));
 
                         boolean hasTo=false;
                         boolean hasFrom=false;
@@ -377,7 +377,7 @@ public abstract class SearchA extends SecureAction {
                     if (TurbineUtils.HasPassedParameter(s + "_equals",data))
                     {
                         ////logger.debug("equals " + s);
-                        Object o = data.getParameters().getObject(s + "_equals");
+                        Object o = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_equals",data);
                         ds.setWebFormValue(s + "_equals",o);
                         if (o != null && !o.toString().equals(""))
                         {
@@ -393,7 +393,7 @@ public abstract class SearchA extends SecureAction {
                     if (TurbineUtils.HasPassedParameter(s + "_equals",data))
                     {
                         ////logger.debug("equals " + s);
-                        Object o = data.getParameters().getObject(s + "_equals");
+                        Object o = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_equals",data);
                         if (o != null && !o.toString().equals(""))
                         {
                             ds.setWebFormValue(s + "_equals",o);
@@ -409,7 +409,7 @@ public abstract class SearchA extends SecureAction {
                     if (TurbineUtils.HasPassedParameter(s + "_equals",data))
                     {
                         ////logger.debug("equals " + s);
-                        Object o = data.getParameters().getObject(s + "_equals");
+                        Object o = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_equals",data);
                         if (o != null && !o.toString().equals(""))
                         {
                             ds.setWebFormValue(s + "_equals",o);
@@ -424,7 +424,7 @@ public abstract class SearchA extends SecureAction {
                     if (TurbineUtils.HasPassedParameter(s + "_equals",data))
                     {
                         ////logger.debug("equals");
-                        Object o = data.getParameters().getObject(s + "_equals");
+                        Object o = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_equals",data);
                         if (o != null && !o.toString().equals(""))
                         {
                             ds.setWebFormValue(s + "_equals",o);
@@ -438,7 +438,7 @@ public abstract class SearchA extends SecureAction {
                     if (TurbineUtils.HasPassedParameter(s + "_equals",data))
                     {
                         ////logger.debug("default " + s);
-                        Object o = data.getParameters().getObject(s + "_equals");
+                        Object o = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_equals",data);
                         if (o != null && !o.toString().equals(""))
                         {
                             ds.setWebFormValue(s + "_equals",o);
@@ -450,13 +450,13 @@ public abstract class SearchA extends SecureAction {
 
 
             int counter = 0;
-            while (data.getParameters().getString(ed.getElementName() + ".COMBO" + counter) != null)
+            while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName(,data)) + ".COMBO" + counter) != null)
             {
-                if(data.getParameters().getString(ed.getElementName() + ".COMBO" + counter).length() == 0){counter++;continue;}
+                if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName(,data)) + ".COMBO" + counter).length() == 0){counter++;continue;}
 
                 final CriteriaCollection cc = new CriteriaCollection("OR");
-                final String value = data.getParameters().getString(ed.getElementName() + ".COMBO" + counter);
-                final String keys = data.getParameters().getString(ed.getElementName() + ".COMBO" + counter + "_FIELDS");
+                final String value = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName(,data)) + ".COMBO" + counter);
+                final String keys = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName(,data)) + ".COMBO" + counter + "_FIELDS");
 
                 ds.setWebFormValue(ed.getElementName() + ".COMBO" + counter,value);
                 ds.setWebFormValue(ed.getElementName() + ".COMBO" + counter + "_FIELDS",keys);
@@ -509,8 +509,8 @@ public abstract class SearchA extends SecureAction {
         while (TurbineUtils.HasPassedParameter("COMBO" +counter,data))
         {
             CriteriaCollection cc = new CriteriaCollection("OR");
-            String value = data.getParameters().getString("COMBO" + counter);
-            String keys = data.getParameters().getString("COMBO" + counter + "_FIELDS");
+            String value = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("COMBO" + counter,data));
+            String keys = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("COMBO" + counter + "_FIELDS",data));
 
             ds.setWebFormValue("COMBO" + counter,value);
             ds.setWebFormValue("COMBO" + counter + "_FIELDS",keys);

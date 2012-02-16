@@ -172,7 +172,7 @@ public class EmailAction extends SecureAction {
 
 	public void setAddresses(RunData data, Context context) throws Exception {
 
-		for (int i = 1; i <= data.getParameters().getInt("RowCount"); i++) {
+		for (int i = 1; i <= ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("RowCount",data)); i++) {
 
 			String to = "to" + i;
 
@@ -182,17 +182,17 @@ public class EmailAction extends SecureAction {
 
 			String emailId = "EMAILID_" + i;
 
-			if (data.getParameters().get(to) != null)
+			if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(to,data)) != null)
 
-				toAddress += data.getParameters().getString(emailId) + ", ";
+				toAddress += ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(emailId,data)) + ", ";
 
-			if (data.getParameters().get(cc) != null)
+			if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(cc,data)) != null)
 
-				ccAddress += data.getParameters().getString(emailId) + ", ";
+				ccAddress += ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(emailId,data)) + ", ";
 
-			if (data.getParameters().get(bcc) != null)
+			if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(bcc,data)) != null)
 
-				bccAddress += data.getParameters().getString(emailId) + ", ";
+				bccAddress += ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(emailId,data)) + ", ";
 
 		}
 
@@ -212,7 +212,7 @@ public class EmailAction extends SecureAction {
 
 	{
 
-		return data.getParameters().getString("subject");
+		return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("subject",data));
 
 	}
 
@@ -220,7 +220,7 @@ public class EmailAction extends SecureAction {
 
 	{
 
-		return data.getParameters().getString("message");
+		return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data));
 
 	}
 

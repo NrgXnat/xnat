@@ -151,9 +151,9 @@ public class XDATScreen_pdf extends SecureScreen {
 			    context.put("user",TurbineUtils.getUser(data));
 			    
             	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
-            	context.put("search_element",data.getParameters().getString("search_element"));
-            	context.put("search_field",data.getParameters().getString("search_field"));
-            	context.put("search_value",data.getParameters().getString("search_value"));
+            	context.put("search_element",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));
+            	context.put("search_field",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)));
+            	context.put("search_value",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)));
 			    
 				finalProcessing(data,context);
 			} catch (Exception e) {

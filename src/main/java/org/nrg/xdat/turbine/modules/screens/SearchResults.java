@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT � Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -121,8 +121,8 @@ public class SearchResults extends SecureScreen {
         if (TurbineUtils.getUser(data).getLogin().equals("tolsen"))
         {
             long results_time = 0;
-            if (data.getParameters().get("results_time")!=null){
-                results_time += data.getParameters().getLong("results_time");
+            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("results_time",data))!=null){
+                results_time += ((Long)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("results_time",data));
             }
             if (context.get("results_time")!=null){
                 results_time += (Long)context.get("results_time");

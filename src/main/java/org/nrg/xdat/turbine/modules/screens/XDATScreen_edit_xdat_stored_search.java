@@ -83,7 +83,7 @@ public class XDATScreen_edit_xdat_stored_search extends AdminEditScreenA {
 		}
 
 		if (data.getParameters().containsKey("destination")){
-			context.put("destination", data.getParameters().getString("destination"));
+			context.put("destination", ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("destination",data)));
 		}
 	}
 }

@@ -24,12 +24,12 @@ public class Error extends org.nrg.xdat.turbine.modules.screens.SecureScreen {
         try {
             if (TurbineUtils.HasPassedParameter("new_session", data))
             {
-                String s = data.getParameters().get("exception");
+                String s = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("exception",data));
                 if (s !=null)
                     data.setMessage(s);
                 this.doRedirect(data, "Index.vm");
             }else{
-                String s = data.getParameters().get("exception");
+                String s = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("exception",data));
                 if (s !=null)
                     AdminUtils.sendErrorEmail(data, s);
             }

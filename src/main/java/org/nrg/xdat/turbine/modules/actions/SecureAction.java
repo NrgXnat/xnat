@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -45,8 +45,8 @@ public abstract class SecureAction extends VelocitySecureAction
 
     protected void preserveVariables(RunData data, Context context){
         if (data.getParameters().containsKey("project")){
-        	if(XFT.VERBOSE)System.out.println(this.getClass().getName() + ": maintaining project '" + data.getParameters().getString("project") +"'");
-            context.put("project", data.getParameters().getString("project"));
+        	if(XFT.VERBOSE)System.out.println(this.getClass().getName() + ": maintaining project '" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)) +"'");
+            context.put("project", ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)));
         }
     }
 
@@ -69,15 +69,15 @@ public abstract class SecureAction extends VelocitySecureAction
     {
         data = TurbineUtils.SetSearchProperties(data,item);
         try {
-			String path = TurbineUtils.GetRelativeServerPath(data)+ "/app/template/" + URLEncoder.encode(report,encoding) + "/search_field/" + URLEncoder.encode(data.getParameters().get("search_field"),encoding) +  "/search_value/" +  URLEncoder.encode(data.getParameters().get("search_value"),encoding)  + "/search_element/" +  URLEncoder.encode(data.getParameters().get("search_element"),encoding);
-        if (data.getParameters().getString("popup")!=null){
-			    path += "/popup/" + URLEncoder.encode(data.getParameters().getString("popup"),encoding);
+			String path = TurbineUtils.GetRelativeServerPath(data)+ "/app/template/" + URLEncoder.encode(report,encoding) + "/search_field/" + URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)),encoding) +  "/search_value/" +  URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)),encoding)  + "/search_element/" +  URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)),encoding);
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
+			    path += "/popup/" + URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)),encoding);
         }
-        if (data.getParameters().getString("project")!=null){
-			    path += "/project/" + URLEncoder.encode(data.getParameters().getString("project"),encoding);
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data))!=null){
+			    path += "/project/" + URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)),encoding);
         }
-        if (data.getParameters().getString("params")!=null){
-			    path += URLEncoder.encode(data.getParameters().getString("params"),encoding);
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("params",data))!=null){
+			    path += URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("params",data)),encoding);
         }
         data.setRedirectURI(path);
 		} catch (UnsupportedEncodingException e) {
@@ -89,11 +89,11 @@ public abstract class SecureAction extends VelocitySecureAction
     {
         try {
 			String path = TurbineUtils.GetRelativeServerPath(data)+ "/app/template/" + URLEncoder.encode(report,encoding);
-        if (data.getParameters().getString("popup")!=null){
-			    path += "/popup/" + URLEncoder.encode(data.getParameters().getString("popup"),encoding);
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
+			    path += "/popup/" + URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)),encoding);
         }
-        if (data.getParameters().getString("project")!=null){
-			    path += "/project/" + URLEncoder.encode(data.getParameters().getString("project"),encoding);
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data))!=null){
+			    path += "/project/" + URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)),encoding);
         }
         data.setRedirectURI(path);
 		} catch (UnsupportedEncodingException e) {
@@ -175,7 +175,7 @@ public abstract class SecureAction extends VelocitySecureAction
                         data.getParameters().add("nextAction",data.getAction());
                     else 
                         data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login")); 
-                    //System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n"); 
+                    //System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n"); 
                     
                 }
             }else{
@@ -194,7 +194,7 @@ public abstract class SecureAction extends VelocitySecureAction
                     data.getParameters().add("nextAction",data.getAction());
                 else 
                     data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login")); 
-                //System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n"); 
+                //System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n"); 
             }
             return isAuthorized;
         }

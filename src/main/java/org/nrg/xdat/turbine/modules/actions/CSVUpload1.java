@@ -19,10 +19,10 @@ public class CSVUpload1 extends SecureAction {
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
         preserveVariables(data,context);
-        String fm_id = data.getParameters().getString("fm_id");
+        String fm_id = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
         File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
-        String[] fields = data.getParameters().getStrings("fields");
+        String[] fields = ((String[])org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fields",data));
         if (fields==null)
         {
             context.put("fm_id",fm_id);
@@ -45,8 +45,8 @@ public class CSVUpload1 extends SecureAction {
     public void doPrep(RunData data, Context context) throws Exception {
         preserveVariables(data,context);
         
-        String root = data.getParameters().getString("root_data_type");
-        String title = data.getParameters().getString("title");
+        String root = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("root_data_type",data));
+        String title = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("title",data));
         if(root==null || root.equals("BAD") || title==null || title=="")
         {
             data.setMessage("Select a root data type.");

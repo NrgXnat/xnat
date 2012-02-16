@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -21,9 +21,9 @@ public class CSVAction extends SecureAction {
 	public void doPerform(RunData data, Context context) throws Exception
 	{
         preserveVariables(data,context);
-	    if (data.getParameters().get("querytype") !=null)
+	    if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("querytype",data)) !=null)
 	    {
-	        if(data.getParameters().getString("querytype").equals("new"))
+	        if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("querytype",data)).equals("new"))
 	        {
 	            DisplaySearchAction dsa = new DisplaySearchAction();
 	            DisplaySearch ds = dsa.setupSearch(data,context);
@@ -33,9 +33,9 @@ public class CSVAction extends SecureAction {
 	        }
 	    }
         
-        if (data.getParameters().get("bundle") !=null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle",data)) !=null)
         {
-            String bundle = data.getParameters().get("bundle");
+            String bundle = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle",data));
             BundleAction ba = new BundleAction();
             DisplaySearch ds = ba.setupSearch(data, context);
             TurbineUtils.setSearch(data,ds);
@@ -44,7 +44,7 @@ public class CSVAction extends SecureAction {
         }
 
         
-        if (data.getParameters().get("search_xml") !=null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data)) !=null)
         {
             data.setScreenTemplate("CSVScreen.vm");
             return;

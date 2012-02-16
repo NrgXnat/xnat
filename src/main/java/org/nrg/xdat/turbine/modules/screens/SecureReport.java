@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -101,18 +101,18 @@ public abstract class SecureReport extends SecureScreen {
 			    if(XFT.VERBOSE)System.out.println("Loaded user object (org.nrg.xdat.security.XDATUser) as context parameter 'user'.");
 
             	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
-            	if(data.getParameters().getString("search_element")!=null)
-					context.put("search_element",data.getParameters().getString("search_element"));
+            	if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data))!=null)
+					context.put("search_element",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));
 				else
 					context.put("search_element", item.getXSIType());
 
-				if(data.getParameters().getString("search_field")!=null)
-					context.put("search_field",data.getParameters().getString("search_field"));
+				if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data))!=null)
+					context.put("search_field",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)));
 				else
 					context.put("search_field", item.getXSIType() + ".ID");
 
-				if(data.getParameters().getString("search_value")!=null)
-					context.put("search_value",data.getParameters().getString("search_value"));
+				if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data))!=null)
+					context.put("search_value",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)));
 				else
             		context.put("search_value", item.getProperty("ID"));
 
@@ -135,8 +135,8 @@ public abstract class SecureReport extends SecureScreen {
 	{
 	    String message="";
         try {
-            message = data.getParameters().getString("search_element");
-            message +=" " + data.getParameters().getString("search_value");
+            message = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data));
+            message +=" " + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data));
         } catch (Exception e) {
             logger.error("",e);
         }

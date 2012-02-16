@@ -27,7 +27,7 @@ public class Register extends VelocitySecureScreen {
 					&& (!paramS.equalsIgnoreCase("action"))
 					&& (!paramS.equalsIgnoreCase("username"))
 					&& (!paramS.equalsIgnoreCase("password"))){
-				context.put(paramS,data.getParameters().get(paramS));
+				context.put(paramS,((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(paramS,data)));
 			}
 		}
 	}

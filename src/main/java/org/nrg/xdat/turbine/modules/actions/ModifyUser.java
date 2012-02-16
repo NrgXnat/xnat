@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT � Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -41,12 +41,12 @@ public class ModifyUser extends SecureAction {
 		String header = "ELEMENT_";
 		int counter = 0;
 		Hashtable hash = new Hashtable();
-		while (data.getParameters().get(header + counter) != null)
+		while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter,data)) != null)
 		{
-			String elementToLoad = data.getParameters().getString(
-					header + counter++);
-			Integer numberOfInstances = data.getParameters().getIntObject(
-					elementToLoad);
+			String elementToLoad = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(
+					header + counter++,data));
+			Integer numberOfInstances = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(
+					elementToLoad,data));
 			if (numberOfInstances != null && numberOfInstances.intValue() != 0)
 			{
 				int subCount = 0;

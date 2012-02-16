@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -28,10 +28,10 @@ public class RemoveItemReference extends SecureAction {
      * @see org.apache.turbine.modules.actions.VelocityAction#doPerform(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public void doPerform(RunData data, Context context) throws Exception {
-        String parentCol = data.getParameters().getString("parentCol");
-        Object parentValue = data.getParameters().getObject("parentValue");
-        String childCol = data.getParameters().getString("childCol");
-        Object childValue = data.getParameters().getObject("childValue");
+        String parentCol = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("parentCol",data));
+        Object parentValue = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("parentValue",data);
+        String childCol = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("childCol",data));
+        Object childValue = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("childValue",data);
         
         if (TurbineUtils.HasPassedParameter("parentCol",data) && TurbineUtils.HasPassedParameter("parentValue",data)
             && TurbineUtils.HasPassedParameter("childCol",data) && TurbineUtils.HasPassedParameter("childValue",data))

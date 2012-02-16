@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -64,10 +64,10 @@ public class ModifyItem  extends SecureAction {
             String header = "ELEMENT_";
             int counter = 0;
             Hashtable hash = new Hashtable();
-            while (data.getParameters().get(header + counter) != null)
+            while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter,data)) != null)
             {
-            	String elementToLoad = data.getParameters().getString(header + counter++);
-            	Integer numberOfInstances = data.getParameters().getIntObject(elementToLoad);
+            	String elementToLoad = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter++,data));
+            	Integer numberOfInstances = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(elementToLoad,data));
             	if (numberOfInstances != null && numberOfInstances.intValue()!=0)
             	{
             		int subCount = 0;
@@ -81,9 +81,9 @@ public class ModifyItem  extends SecureAction {
             }
 
             String screenName = null;
-            if (data.getParameters().getString("edit_screen") !=null && !data.getParameters().getString("edit_screen").equals(""))
+            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null && !((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)).equals(""))
             {
-                screenName = data.getParameters().getString("edit_screen").substring(0,data.getParameters().getString("edit_screen").lastIndexOf(".vm"));
+                screenName = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)).substring(0,((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)).lastIndexOf(".vm"));
             }
 
             InvalidValueException error = null;
@@ -144,7 +144,7 @@ public class ModifyItem  extends SecureAction {
                     }
             	    int index = key.indexOf("=");
             	    String field = key.substring(index+1);
-            	    Object value = data.getParameters().getObject(key);
+            	    Object value = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(key,data);
             	    logger.debug("FOUND REMOVE: " + field + " " + value);
             	    ItemCollection items =ItemSearch.GetItems(field,value,TurbineUtils.getUser(data),false);
             	    if (items.size() > 0)
@@ -162,9 +162,9 @@ public class ModifyItem  extends SecureAction {
 //            if (removedReference)
 //            {
 //                data.getSession().setAttribute(this.getReturnEditItemIdentifier(),first);
-//                if (data.getParameters().getString("edit_screen") !=null)
+//                if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
 //                {
-//                    data.setScreenTemplate(data.getParameters().getString("edit_screen"));
+//                    data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
 //                }
 //                return;
 //            }
@@ -181,9 +181,9 @@ public class ModifyItem  extends SecureAction {
             {
                 data.getSession().setAttribute(this.getReturnEditItemIdentifier(),first);
                 context.put("vr",vr);
-                if (data.getParameters().getString("edit_screen") !=null)
+                if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
                 {
-                    data.setScreenTemplate(data.getParameters().getString("edit_screen"));
+                    data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
                 }
             }else{
         		try {
@@ -247,9 +247,9 @@ public class ModifyItem  extends SecureAction {
     public void handleException(RunData data,XFTItem first,Throwable error){
         data.getSession().setAttribute(this.getReturnEditItemIdentifier(),first);
         data.addMessage(error.getMessage());
-        if (data.getParameters().getString("edit_screen") !=null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
         {
-            data.setScreenTemplate(data.getParameters().getString("edit_screen"));
+            data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
         }else{
             data.setScreenTemplate("Index.vm");
         }

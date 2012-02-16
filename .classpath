@@ -4,5 +4,45 @@
 	<classpathentry kind="src" path="src/test/java"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="con" path="org.maven.ide.eclipse.MAVEN2_CLASSPATH_CONTAINER"/>
+	<classpathentry kind="lib" path="/home/deech/.m2/repository/javax/servlet/com.springsource.javax.servlet/2.5.0/com.springsource.javax.servlet-2.5.0.jar">
+		<attributes>
+			<attribute name="maven.groupId" value="javax.servlet"/>
+			<attribute name="maven.artifactId" value="com.springsource.javax.servlet"/>
+			<attribute name="maven.version" value="2.5.0"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/home/deech/.m2/repository/org/apache/log4j/com.springsource.org.apache.log4j/1.2.16/com.springsource.org.apache.log4j-1.2.16.jar">
+		<attributes>
+			<attribute name="maven.groupId" value="org.apache.log4j"/>
+			<attribute name="maven.artifactId" value="com.springsource.org.apache.log4j"/>
+			<attribute name="maven.version" value="1.2.16"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/home/deech/.m2/repository/turbine/turbine/2.3.1/turbine-2.3.1.jar">
+		<attributes>
+			<attribute name="maven.groupId" value="turbine"/>
+			<attribute name="maven.artifactId" value="turbine"/>
+			<attribute name="maven.version" value="2.3.1"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/home/deech/.m2/repository/org/apache/commons/com.springsource.org.apache.commons.lang/2.5.0/com.springsource.org.apache.commons.lang-2.5.0.jar">
+		<attributes>
+			<attribute name="maven.groupId" value="org.apache.commons"/>
+			<attribute name="maven.artifactId" value="com.springsource.org.apache.commons.lang"/>
+			<attribute name="maven.version" value="2.5.0"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
+	<classpathentry kind="lib" path="/home/deech/.m2/repository/velocity/velocity/1.3.1/velocity-1.3.1.jar">
+		<attributes>
+			<attribute name="maven.groupId" value="velocity"/>
+			<attribute name="maven.artifactId" value="velocity"/>
+			<attribute name="maven.version" value="1.3.1"/>
+			<attribute name="maven.scope" value="compile"/>
+		</attributes>
+	</classpathentry>
 	<classpathentry kind="output" path="target/classes"/>
 </classpath>

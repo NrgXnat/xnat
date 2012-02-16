@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -48,9 +48,9 @@ public class CSVScreen extends org.apache.turbine.modules.screens.RawScreen
       
       public DisplaySearch getSearch(RunData data){
 
-          if (data.getParameters().get("search_xml") !=null)
+          if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data)) !=null)
           {
-              String search_xml = data.getParameters().get("search_xml");
+              String search_xml = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data));
 
               XDATUser user = TurbineUtils.getUser(data);
               

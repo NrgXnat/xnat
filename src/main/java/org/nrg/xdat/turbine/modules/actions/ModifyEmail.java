@@ -35,10 +35,10 @@ public class ModifyEmail extends SecureAction {
         String header = "ELEMENT_";
         int counter = 0;
         Hashtable hash = new Hashtable();
-        while (data.getParameters().get(header + counter) != null)
+        while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter,data)) != null)
         {
-            String elementToLoad = data.getParameters().getString(header + counter++);
-            Integer numberOfInstances = data.getParameters().getIntObject(elementToLoad);
+            String elementToLoad = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter++,data));
+            Integer numberOfInstances = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(elementToLoad,data));
             if (numberOfInstances != null && numberOfInstances.intValue()!=0)
             {
                 int subCount = 0;
@@ -72,9 +72,9 @@ public class ModifyEmail extends SecureAction {
         {
             TurbineUtils.SetEditItem(first,data);
             data.addMessage(error.getMessage());
-            if (data.getParameters().getString("edit_screen") !=null)
+            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
             {
-                data.setScreenTemplate(data.getParameters().getString("edit_screen"));
+                data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
             }
             return;
         }
@@ -97,9 +97,9 @@ public class ModifyEmail extends SecureAction {
         {
             TurbineUtils.SetEditItem(first,data);
             context.put("vr",vr);
-            if (data.getParameters().getString("edit_screen") !=null)
+            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
             {
-                data.setScreenTemplate(data.getParameters().getString("edit_screen"));
+                data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
             }
         }else{
             iter = al.iterator();

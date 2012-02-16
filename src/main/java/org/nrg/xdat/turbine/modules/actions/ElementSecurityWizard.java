@@ -133,7 +133,7 @@ public class ElementSecurityWizard extends AdminAction {
 
 		    if (TurbineUtils.HasPassedParameter("edit",data))
 		    {
-		        if (data.getParameters().getString("edit").equalsIgnoreCase("1"))
+		        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit",data)).equalsIgnoreCase("1"))
 		        {
 		            int count = found.getChildItems("xdat:element_security.element_actions.element_action").size();
 		            String s = "xdat:element_security.element_actions.element_action__"+count;
@@ -166,7 +166,7 @@ public class ElementSecurityWizard extends AdminAction {
 
 		    if (TurbineUtils.HasPassedParameter("xml",data))
 		    {
-		        if (data.getParameters().getString("xml").equalsIgnoreCase("1"))
+		        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("xml",data)).equalsIgnoreCase("1"))
 		        {
 		            int count = found.getChildItems("xdat:element_security.element_actions.element_action").size();
 		            String s = "xdat:element_security.element_actions.element_action__"+count;
@@ -190,7 +190,7 @@ public class ElementSecurityWizard extends AdminAction {
 
 		    if (TurbineUtils.HasPassedParameter("activate",data))
 		    {
-		        if (data.getParameters().getString("activate").equalsIgnoreCase("1"))
+		        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("activate",data)).equalsIgnoreCase("1"))
 		        {
 		            int count = found.getChildItems("xdat:element_security.element_actions.element_action").size();
 
@@ -204,7 +204,7 @@ public class ElementSecurityWizard extends AdminAction {
 
 		    if (TurbineUtils.HasPassedParameter("email_report",data))
 		    {
-		        if (data.getParameters().getString("email_report").equalsIgnoreCase("1"))
+		        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("email_report",data)).equalsIgnoreCase("1"))
 		        {
 		            int count = found.getChildItems("xdat:element_security.element_actions.element_action").size();
 

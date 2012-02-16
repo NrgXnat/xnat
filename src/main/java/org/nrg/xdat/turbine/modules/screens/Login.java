@@ -23,7 +23,7 @@ public class Login extends VelocitySecureScreen {
 		for(final Object param : data.getParameters().keySet()){
 			final String paramS= (String)param;
 			if ((!paramS.equalsIgnoreCase("template")) && (!paramS.equalsIgnoreCase("action"))){
-				context.put(paramS,data.getParameters().get(paramS));
+				context.put(paramS,((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(paramS,data)));
 			}
 		}
 	}

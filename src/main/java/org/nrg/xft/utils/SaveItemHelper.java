@@ -19,6 +19,9 @@ public class SaveItemHelper {
 	}
 
 	protected void save(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval) throws Exception {
+		if(!StringUtils.IsEmpty(i.getItem().getGenericSchemaElement().getAddin())){
+			i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
+		}else{
 		ItemWrapper temp;
 		if(i instanceof XFTItem){
 			temp=(ItemWrapper)BaseElement.GetGeneratedItem(i);
@@ -29,8 +32,12 @@ public class SaveItemHelper {
 		temp.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
 		temp.postSave();
 	}
+	}
 
 	protected boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+		if(!StringUtils.IsEmpty(i.getItem().getGenericSchemaElement().getAddin())){
+			return i.save(user, overrideSecurity, allowItemRemoval);
+		}else{
 		ItemWrapper temp;
 		if(i instanceof XFTItem){
 			temp=(ItemWrapper)BaseElement.GetGeneratedItem(i);
@@ -41,6 +48,7 @@ public class SaveItemHelper {
         final boolean _success= temp.save(user,overrideSecurity,allowItemRemoval);
         if(_success)temp.postSave();
         return _success;
+	}
 	}
 	
 	protected void delete(ItemI i, UserI user) throws SQLException, Exception{

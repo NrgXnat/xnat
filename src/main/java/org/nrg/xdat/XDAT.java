@@ -22,7 +22,9 @@ import org.nrg.framework.services.MarshallerCacheService;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
+import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.generators.SQLCreateGenerator;
@@ -30,7 +32,11 @@ import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.services.XftFieldExclusionService;
 import org.nrg.xft.utils.FileUtils;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
+import javax.sql.DataSource;
 import java.io.File;
 
 /**
@@ -40,14 +46,39 @@ import java.io.File;
 public class XDAT implements Initializable,Configurable{
 	static Logger logger = Logger.getLogger(XDAT.class);
 	private static ContextService _contextService;
+    private static DataSource _dataSource;
 	private static MailService _mailService;
     private static NotificationService _notificationService;
     private static XftFieldExclusionService _exclusionService;
     private static MarshallerCacheService _marshallerCacheService;
+	private static XdatUserAuthService _xdatUserAuthService;
     private static ConfigService _configurationService;
 	private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
 
+	public static boolean isAuthenticated() {
+		return SecurityContextHolder.getContext().getAuthentication()
+				.isAuthenticated();
+	}
+
+	public static XDATUserDetails getUserDetails() {
+		Authentication authentication = SecurityContextHolder.getContext()
+				.getAuthentication();
+
+		if (authentication != null && authentication.getPrincipal() != null
+				&& authentication.getPrincipal() instanceof XDATUserDetails) {
+			return (XDATUserDetails) authentication.getPrincipal();
+		}
+
+		return null;
+	}
+
+	public static void setUserDetails(XDATUserDetails userDetails) {
+		Authentication authentication = new UsernamePasswordAuthenticationToken(
+				userDetails, null);
+		SecurityContextHolder.getContext().setAuthentication(authentication);
+	}
+	
 	/**
 	 * configure torque
 	 *
@@ -276,4 +307,24 @@ public class XDAT implements Initializable,Configurable{
 	    }
 	    return _configurationService;
 	}
+
+	/**
+	 * Returns an instance of the currently supported data source.
+	 * @return An instance of the {@link DataSource} bean.
+	 */
+	public static DataSource getDataSource() {
+	    if (_dataSource == null) {
+	    	_dataSource = getContextService().getBean(DataSource.class);
+	    }
+	    return _dataSource;
+	}
+
+	public static XdatUserAuthService getXdatUserAuthService() {
+		if (_xdatUserAuthService == null) {
+			_xdatUserAuthService = getContextService().getBean(
+					XdatUserAuthService.class);
+		}
+		return _xdatUserAuthService;
+	}
+	
 }

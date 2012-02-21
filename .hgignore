@@ -2,5 +2,8 @@ syntax: glob
 target/
 glob:xdat_1.jardesc
 
+.settings/org.eclipse.m2e.core.prefs
+.settings/org.eclipse.jdt.core.prefs
+.settings/org.eclipse.core.resources.prefs
 syntax: regexp
 ^.*\.log

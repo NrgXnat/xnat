@@ -6,7 +6,11 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import javax.servlet.http.HttpSession;
+import java.util.HashSet;
+import java.util.Set;
 
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
@@ -15,6 +19,9 @@ import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.XDATUserDetails;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -22,6 +29,14 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.search.ItemSearch;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
@@ -72,7 +87,11 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	               // newUser.initializePermissions();
 	                
 	                newUser.save(TurbineUtils.getUser(data),true,false,true,false); 		
+	                TurbineUtils.setUser(data,newUser);
 	                
+	                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
+                    XDAT.getXdatUserAuthService().create(newUserAuth);
+
 	                if (autoApproval)
 	                {
 	
@@ -93,8 +112,16 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
 	                    item.setProperty("xdat:user_login.login_date",today);
 	                    item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
-	                    item.save(null,true,false);
+	                    item.setProperty("login_date",today);
+	                    item.setProperty("ip_address",data.getRemoteAddr());
+						item.save(null,true,false);
 	                    
+						Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
+	                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
+	    		    	Authentication authentication = new UsernamePasswordAuthenticationToken((String)found.getProperty("login"), tempPass, grantedAuthorities);
+	    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
+	    		    	securityContext.setAuthentication(authentication);
+						
 	                    try{
 	                    	directRequest(data,context,newUser);
 	                    }catch(Exception e){

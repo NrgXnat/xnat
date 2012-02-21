@@ -11,7 +11,7 @@ import java.io.StringReader;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-
+import org.nrg.xdat.XDAT;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTItem;
@@ -34,7 +34,7 @@ public class StoreXML {
         }
         response.setContentType("text/plain");
         response.setHeader("Cache-Control", "no-cache");
-        XDATUser user = (XDATUser)req.getSession().getAttribute("user");
+        XDATUser user = XDAT.getUserDetails();
         if (user!=null){
             StringReader sr = new StringReader(xmlString);
             InputSource is = new InputSource(sr);

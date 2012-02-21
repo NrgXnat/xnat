@@ -17,6 +17,7 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
@@ -40,7 +41,7 @@ public class XMLSearch {
         if (allowMultiples!=null){
             allowChildren=Boolean.valueOf(allowMultiples).booleanValue();
         }
-        XDATUser user = (XDATUser)req.getSession().getAttribute("user");
+        XDATUser user = XDAT.getUserDetails();
         if (user!=null){
             StringReader sr = new StringReader(xmlString);
             InputSource is = new InputSource(sr);

@@ -22,7 +22,8 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.XDATUserDetails;
 import javax.servlet.http.HttpServletRequest;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -423,12 +424,19 @@ public class TurbineUtils {
 	
 	public static XDATUser getUser(RunData data)
 	{
-		return (XDATUser)data.getSession().getAttribute("user");
+		XDATUser user;
+		if (data.getSession().getAttribute("user") == null) {
+			user = XDAT.getUserDetails();
+			data.getSession().setAttribute("user", user);
+		} else {
+			user = (XDATUser) data.getSession().getAttribute("user");
+		}
+		return user;
 	}
 	
-	public static void setUser(RunData data, XDATUser user)
+	public static void setUser(RunData data, XDATUser user) throws Exception
 	{
-		data.getSession().setAttribute("user",user);
+		XDAT.setUserDetails(new XDATUserDetails(user));
 	}
 	
 	/**

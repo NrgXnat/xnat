@@ -45,7 +45,7 @@ public abstract class SecureScreen extends VelocitySecureScreen
     protected void preserveVariables(RunData data, Context context){
         if (data.getParameters().containsKey("project")){
         	if(XFT.VERBOSE)System.out.println(this.getClass().getName() + ": maintaining project '" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)) +"'");
-            context.put("project", ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)));
+            context.put("project", TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data))));
         }
     }
 

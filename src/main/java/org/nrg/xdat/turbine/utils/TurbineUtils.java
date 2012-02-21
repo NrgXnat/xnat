@@ -143,8 +143,8 @@ public class TurbineUtils {
 	public static ItemI GetItemBySearch(RunData data, boolean preLoad) throws Exception
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		final String searchField = data.getParameters().getString("search_field");
-		final Object searchValue = data.getParameters().getObject("search_value");
+		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+		final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
 		if (searchField != null && searchValue != null)
 		{
 			final ItemSearch search = new ItemSearch();
@@ -174,8 +174,8 @@ public class TurbineUtils {
 	public static SchemaElementI GetSchemaElementBySearch(RunData data)
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		final String searchField = data.getParameters().getString("search_field");
-		final String searchElement = data.getParameters().getString("search_element");
+		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+		final String searchElement = TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
 		if (searchElement!=null)
 		{
 		    try {
@@ -199,8 +199,8 @@ public class TurbineUtils {
 	public static XFTItem GetItemBySearch(RunData data) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		final String searchField = data.getParameters().getString("search_field");
-		final Object searchValue = data.getParameters().getObject("search_value");
+		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+		final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
 		if (searchField != null && searchValue != null)
 		{
 			final ItemSearch search = new ItemSearch();
@@ -232,8 +232,8 @@ public class TurbineUtils {
 	public static ItemI GetItemBySearch(RunData data,Boolean preload) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		final String searchField = data.getParameters().getString("search_field");
-		final Object searchValue = data.getParameters().getObject("search_value");
+		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+		final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
 		if (searchField != null && searchValue != null)
 		{
 			final ItemSearch search = new ItemSearch();
@@ -292,7 +292,7 @@ public class TurbineUtils {
 		final ItemI edit_item = (ItemI)data.getSession().getAttribute("participant");
 	    if (edit_item==null)
 	    {
-	       String s = data.getParameters().getString("part_id");
+	       String s = TurbineUtils.escapeParam(data.getParameters().getString("part_id"));
 	       if (s != null)
 	       {
 		       try {
@@ -305,7 +305,7 @@ public class TurbineUtils {
                 logger.error("",e);
             }
 	       }else{
-	           s = data.getParameters().getString("search_field");
+	           s = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
 	           if (s != null)
 	           {
 	               if (s.equalsIgnoreCase("xnat:subjectData.ID"))
@@ -329,10 +329,10 @@ public class TurbineUtils {
 	
 	public static String GetSearchElement(RunData data)
 	{
-		String s =  data.getParameters().getString("search_element");
+		String s =  TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
 		if (s==null)
 		{
-			s = data.getParameters().getString("element");
+			s = TurbineUtils.escapeParam(data.getParameters().getString("element"));
 		}
 		return s;
 	}
@@ -443,10 +443,10 @@ public class TurbineUtils {
             DisplaySearch ds =  (DisplaySearch)data.getSession().getAttribute("search");
             if (ds == null)
             {
-                String displayElement = data.getParameters().getString("search_element");
+                String displayElement = TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
                 if (displayElement == null)
                 {
-                    displayElement = data.getParameters().getString("element");
+                    displayElement = TurbineUtils.escapeParam(data.getParameters().getString("element"));
                 }
                 
                 if (displayElement == null)
@@ -457,8 +457,8 @@ public class TurbineUtils {
                 try {
                     ds = TurbineUtils.getUser(data).getSearch(displayElement,"listing");
                     
-                    final String searchField = data.getParameters().getString("search_field");
-                    final Object searchValue = data.getParameters().getObject("search_value");
+                    final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+                    final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
                     if (searchField!= null && searchValue != null)
                     {
                         SearchCriteria criteria = new SearchCriteria();
@@ -655,7 +655,7 @@ public class TurbineUtils {
 			final List<String> al = new ArrayList<String>();
 			for(int i=0; i < data.getParameters().getKeys().length; i++)
 			{
-				al.add(data.getParameters().getKeys()[i].toString());
+				al.add(escapeParam(data.getParameters().getKeys()[i].toString()));
 			}
 			Collections.sort(al);
 			return al;
@@ -670,7 +670,7 @@ public class TurbineUtils {
             Enumeration<Object> penum = pp.keys();
             while (penum.hasMoreElements()){
             	final String key = penum.nextElement().toString();
-            	final  Object value = data.getParameters().get(key);
+            	final  Object value = TurbineUtils.escapeParam(data.getParameters().get(key));
                 if (value!=null && !value.equals(""))
                     hash.put(key,value.toString());
             }
@@ -767,7 +767,7 @@ public class TurbineUtils {
 	{
 	    if (data.getParameters().get(s.toLowerCase())!=null)
 	    {
-	    	final Object o = data.getParameters().get(s.toLowerCase());
+	    	final Object o = TurbineUtils.escapeParam(data.getParameters().get(s.toLowerCase()));
 	        if(o.toString().equalsIgnoreCase(""))
 	        {
 	            return false;
@@ -788,7 +788,7 @@ public class TurbineUtils {
 	{
 	    if (data.getParameters().get(s.toLowerCase())!=null)
 	    {
-	    	final Object o = data.getParameters().get(s.toLowerCase());
+	    	final Object o = TurbineUtils.escapeParam(data.getParameters().get(s.toLowerCase()));
 	        if(o.toString().equalsIgnoreCase(""))
 	        {
 	            return defualt;
@@ -812,9 +812,9 @@ public class TurbineUtils {
             	
             	context.put("item",o);
             	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(o.getXSIType()));
-            	context.put("search_element",data.getParameters().getString("search_element"));
-            	context.put("search_field",data.getParameters().getString("search_field"));
-            	context.put("search_value",data.getParameters().getString("search_value"));
+            	context.put("search_element",TurbineUtils.escapeParam(data.getParameters().getString("search_element")));
+            	context.put("search_field",TurbineUtils.escapeParam(data.getParameters().getString("search_field")));
+            	context.put("search_value",TurbineUtils.escapeParam(data.getParameters().getString("search_value")));
             	
             }else{
             	logger.error("No Item Found.");
@@ -962,6 +962,17 @@ public class TurbineUtils {
     
     public Object getArrayIndex(Object[] array, int index){
         return array[index];
+    }
+    
+    public static String escapeParam(String o){
+    	return (o==null)?null:StringEscapeUtils.escapeXml(o);
+    }
+    
+    public static Object escapeParam(Object o){
+    	if(o instanceof String)
+    		return (o==null)?null:StringEscapeUtils.escapeXml((String)o);
+    	else
+    		return o;
     }
     
     public String escapeHTML(String o){

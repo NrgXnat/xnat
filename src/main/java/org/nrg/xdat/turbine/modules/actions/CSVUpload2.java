@@ -59,7 +59,7 @@ public class CSVUpload2 extends SecureAction {
         FileItem fi = params.getFileItem("csv_to_store");
 
 
-        String fm_id=((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
+        String fm_id=TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data)));
         File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
@@ -308,7 +308,7 @@ public class CSVUpload2 extends SecureAction {
         int i=0;
         while (data.getParameters().containsKey("row" + i))
         {
-            String row = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("row" + i,data));
+            String row = TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("row" + i,data)));
             ArrayList rowAL =StringUtils.CommaDelimitedStringToArrayList(row);
             rows.add(rowAL);
             i++;

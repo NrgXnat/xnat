@@ -51,7 +51,7 @@ public abstract class SecureAction extends VelocitySecureAction
     protected void preserveVariables(RunData data, Context context){
         if (data.getParameters().containsKey("project")){
         	if(XFT.VERBOSE)System.out.println(this.getClass().getName() + ": maintaining project '" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)) +"'");
-            context.put("project", ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)));
+            context.put("project", TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data))));
         }
     }
 
@@ -140,7 +140,7 @@ public abstract class SecureAction extends VelocitySecureAction
     public static boolean isCsrfTokenOk(RunData runData) throws Exception {
     	//occasionally, (really, only on "actions" that inherit off securescreen instead of secure action like report issue) 
     	//the HTTPServletRequest parameters magically get cleared. that's why this method is here.
-    	String clientToken = runData.getParameters().get("XNAT_CSRF");
+    	String clientToken = TurbineUtils.escapeParam(runData.getParameters().get("XNAT_CSRF"));
     	return isCsrfTokenOk(runData.getRequest(), clientToken);
     }
     

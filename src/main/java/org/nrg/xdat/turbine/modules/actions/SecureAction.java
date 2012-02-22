@@ -153,7 +153,6 @@ public abstract class SecureAction extends VelocitySecureAction
     //if you change that behavior, look at every place this is used to be sure it actually
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(HttpServletRequest request, String clientToken, boolean strict) throws Exception {
-    	
     	//let anyone using something other than a browser ignore the token.
     	//curl's user agent always starts with curl.
     	//pyxnat's httplib2 uses headers['user-agent'] = "Python-httplib2/%s" % __version__
@@ -167,18 +166,16 @@ public abstract class SecureAction extends VelocitySecureAction
     	}
     	
     	HttpSession session = request.getSession();
+    	String serverToken = (String)session.getAttribute("XNAT_CSRF");
+
+    	if(serverToken == null){
+    		String errorMessage = csrfTokenErrorMessage(request);
+    		AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
+    		throw new Exception("Invalid submit value (" + errorMessage + ")");
+    	}
     	
     	String method = request.getMethod();
     	if("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method)){
-    		//moved server-side token retrieval to within code block where it is required.  (prevents failure on GETs)
-        	String serverToken = (String)session.getAttribute("XNAT_CSRF");
-
-        	if(serverToken == null){
-        		String errorMessage = csrfTokenErrorMessage(request);
-        		AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
-        		throw new Exception("Invalid submit value (" + errorMessage + ")");
-        	}
-        	
     		//pull the token out of the parameter
     		
     		if(serverToken.equalsIgnoreCase(clientToken)){

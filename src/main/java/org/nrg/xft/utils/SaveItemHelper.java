@@ -22,33 +22,44 @@ public class SaveItemHelper {
 		if(!StringUtils.IsEmpty(i.getItem().getGenericSchemaElement().getAddin())){
 			i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
 		}else{
-		ItemWrapper temp;
-		if(i instanceof XFTItem){
-			temp=(ItemWrapper)BaseElement.GetGeneratedItem(i);
-		}else{
-			temp=(ItemWrapper)i;
+			ItemWrapper temp;
+			try {
+				if(i instanceof XFTItem){
+					temp=(ItemWrapper)BaseElement.GetGeneratedItem(i);
+				}else{
+					temp=(ItemWrapper)i;
+				}
+			} catch (Exception e) {
+				logger.error("",e);
+				i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);	
+				return;
+			}
+			temp.preSave();
+			temp.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
+			temp.postSave();
 		}
-		temp.preSave();
-		temp.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
-		temp.postSave();
-	}
 	}
 
 	protected boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
 		if(!StringUtils.IsEmpty(i.getItem().getGenericSchemaElement().getAddin())){
 			return i.save(user, overrideSecurity, allowItemRemoval);
 		}else{
-		ItemWrapper temp;
-		if(i instanceof XFTItem){
-			temp=(ItemWrapper)BaseElement.GetGeneratedItem(i);
-		}else{
-			temp=(ItemWrapper)i;
+			ItemWrapper temp;
+			try {
+				if(i instanceof XFTItem){
+					temp=(ItemWrapper)BaseElement.GetGeneratedItem(i);
+				}else{
+					temp=(ItemWrapper)i;
+				}
+			} catch (Throwable e) {
+				logger.error("",e);
+				return i.save(user,overrideSecurity,allowItemRemoval);				
+			}
+			temp.preSave();
+	        final boolean _success= temp.save(user,overrideSecurity,allowItemRemoval);
+	        if(_success)temp.postSave();
+	        return _success;
 		}
-		temp.preSave();
-        final boolean _success= temp.save(user,overrideSecurity,allowItemRemoval);
-        if(_success)temp.postSave();
-        return _success;
-	}
 	}
 	
 	protected void delete(ItemI i, UserI user) throws SQLException, Exception{

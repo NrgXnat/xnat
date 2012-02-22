@@ -141,41 +141,44 @@ public abstract class SecureAction extends VelocitySecureAction
     	//occasionally, (really, only on "actions" that inherit off securescreen instead of secure action like report issue) 
     	//the HTTPServletRequest parameters magically get cleared. that's why this method is here.
     	String clientToken = TurbineUtils.escapeParam(runData.getParameters().get("XNAT_CSRF"));
-    	return isCsrfTokenOk(runData.getRequest(), clientToken);
+    	return isCsrfTokenOk(runData.getRequest(), clientToken,true);
     }
     
     //just a wrapper for isCsrfTokenOk(request, token)
-    public static boolean isCsrfTokenOk(HttpServletRequest request) throws Exception {
-    	return isCsrfTokenOk(request, request.getParameter("XNAT_CSRF"));
+    public static boolean isCsrfTokenOk(HttpServletRequest request,boolean strict) throws Exception {
+    	return isCsrfTokenOk(request, request.getParameter("XNAT_CSRF"),strict);
     }
     
     //this is a little silly in that it either returns true or throws an exception...
     //if you change that behavior, look at every place this is used to be sure it actually
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
-    public static boolean isCsrfTokenOk(HttpServletRequest request, String clientToken) throws Exception {
+    public static boolean isCsrfTokenOk(HttpServletRequest request, String clientToken, boolean strict) throws Exception {
     	
     	//let anyone using something other than a browser ignore the token.
     	//curl's user agent always starts with curl.
     	//pyxnat's httplib2 uses headers['user-agent'] = "Python-httplib2/%s" % __version__
     	//Wget normally identifies as ‘Wget/version’, version being the current version number of Wget.
     	//commons httpclient = params.setParameter(HttpMethodParams.USER_AGENT, "Jakarta Commons-HttpClient/3.1")
+    	//java=Java/1.6.0_24
     	String userAgent = StringUtils.upperCase(request.getHeader("User-Agent"));
-    	if(StringUtils.contains(userAgent, "CURL") || StringUtils.contains(userAgent, "PYTHON") 
-    			|| StringUtils.contains(userAgent, "WGET")|| StringUtils.contains(userAgent, "JAKARTA") ){
+    	if(!strict &&(StringUtils.contains(userAgent, "CURL") || StringUtils.contains(userAgent, "PYTHON") 
+    			|| StringUtils.contains(userAgent, "WGET")|| StringUtils.contains(userAgent, "JAKARTA")|| StringUtils.contains(userAgent, "JAVA") )){
     		return true;
     	}
     	
     	HttpSession session = request.getSession();
-    	String serverToken = (String)session.getAttribute("XNAT_CSRF");
-
-    	if(serverToken == null){
-    		String errorMessage = csrfTokenErrorMessage(request);
-    		AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
-    		throw new Exception("Invalid submit value (" + errorMessage + ")");
-    	}
     	
     	String method = request.getMethod();
     	if("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method) || "DELETE".equalsIgnoreCase(method)){
+    		//moved server-side token retrieval to within code block where it is required.  (prevents failure on GETs)
+        	String serverToken = (String)session.getAttribute("XNAT_CSRF");
+
+        	if(serverToken == null){
+        		String errorMessage = csrfTokenErrorMessage(request);
+        		AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
+        		throw new Exception("Invalid submit value (" + errorMessage + ")");
+        	}
+        	
     		//pull the token out of the parameter
     		
     		if(serverToken.equalsIgnoreCase(clientToken)){

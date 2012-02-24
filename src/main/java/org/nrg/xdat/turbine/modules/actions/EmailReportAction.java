@@ -5,22 +5,19 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.email.EmailUtils;
-import org.nrg.xft.email.EmailerI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.utils.StringUtils;
 
 /**
  * @author Tim
@@ -30,45 +27,26 @@ public class EmailReportAction extends EmailAction {
     static Logger logger = Logger.getLogger(EmailReportAction.class);
     
     public void sendMessage(RunData data, Context context) {
-        if (!toAddress.equals("") || !ccAddress.equals("") || !bccAddress.equals("")) {	
-        	try {
-				EmailerI sm=EmailUtils.getEmailer();
-				sm.setFrom(AdminUtils.getAdminEmailId());
-				
-				if (!toAddress.equals("")){ 
-				    ArrayList al = StringUtils.CommaDelimitedStringToArrayList(toAddress.substring(0,toAddress.lastIndexOf(",")));
-				    Iterator iter = al.iterator();
-				    while (iter.hasNext())
-				    {
-				        sm.addTo((String)iter.next());
-				    }
+        if (!StringUtils.isBlank(toAddress) | !StringUtils.isBlank(ccAddress) || !StringUtils.isBlank(bccAddress)) {	
+			if (AdminUtils.GetPageEmail()) {
+				if (StringUtils.isBlank(bccAddress)) {
+					bccAddress = AdminUtils.getAdminEmailId();
+				} else {
+					bccAddress += ", " + AdminUtils.getAdminEmailId();
 				}
-				if (!ccAddress.equals("")){
-				    ArrayList al = StringUtils.CommaDelimitedStringToArrayList(ccAddress.substring(0,ccAddress.lastIndexOf(",")));
-				    Iterator iter = al.iterator();
-				    while (iter.hasNext())
-				    {
-				        sm.addCc((String)iter.next());
-				    }
-				}
-				if (!bccAddress.equals("")){
-				    ArrayList al = StringUtils.CommaDelimitedStringToArrayList(bccAddress.substring(0,bccAddress.lastIndexOf(",")));
-				    Iterator iter = al.iterator();
-				    while (iter.hasNext())
-				    {
-				        sm.addBcc((String)iter.next());
-				    }
-				}
-				
-				if(AdminUtils.GetPageEmail()){
-				    sm.addBcc(AdminUtils.getAdminEmailId());
-				}
-				
-				sm.setSubject(getSubject(data,context));
-				sm.setTextMsg(getTxtMessage(data,context));
-				sm.setHtmlMsg(getHtmlMessage(data,context));
-				
-			    sm.send();
+			}
+
+			// Split each string on commas and whitespace.
+			String[] tos = StringUtils.split(toAddress == null ? "" : toAddress, ", ");
+			String[] ccs = StringUtils.split(ccAddress == null ? "" : ccAddress, ", ");
+			String[] bccs = StringUtils.split(bccAddress == null ? "" : bccAddress, ", ");
+			
+			String subject = getSubject(data,context);
+			String message = getHtmlMessage(data,context);
+			String text = getTxtMessage(data,context);
+
+			try {
+				XDAT.getMailService().sendHtmlMessage(AdminUtils.getAdminEmailId(), tos, ccs, bccs, subject, message, text);
 			    data.setMessage("Message sent.");
 			} catch (Exception e) {
 			    logger.error("Unable to send mail");

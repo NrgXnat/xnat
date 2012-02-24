@@ -53,7 +53,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                 if (temp==null)
                 {
                 	// NEW USER
-                    String tempPass = found.getStringProperty("primary_password");
+	                    String tempPass = found.getStringProperty("primary_password");
                     found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
 
 	                boolean autoApproval=autoApproval(data,context);	       
@@ -120,7 +120,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                    if (TurbineUtils.HasPassedParameter("lab", data))
 	                        lab = (String)TurbineUtils.GetPassedParameter("lab", data);
 	                    
-	                    AdminUtils.sendNewUserRequestEmailMessage(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments,phone,lab);
+	                    AdminUtils.sendNewUserRequestEmailMessage(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
 	                    
 	                    data.setRedirectURI(null);
 	                    data.setScreenTemplate("PostRegister.vm");
@@ -194,11 +194,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
         if (TurbineUtils.HasPassedParameter("comments", data))
             msg +="<br>Comments: " + TurbineUtils.GetPassedParameter("comments", data);
         
-        String phone = "";
         if (TurbineUtils.HasPassedParameter("phone", data))
             msg +="<br>Phone: " + TurbineUtils.GetPassedParameter("phone", data);
         
-        String lab = "";
         if (TurbineUtils.HasPassedParameter("lab", data))
             msg +="<br>Lab: " + TurbineUtils.GetPassedParameter("lab", data);
         

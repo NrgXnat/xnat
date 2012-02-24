@@ -6,30 +6,24 @@
 package org.nrg.xdat.ajax;
 
 import java.io.IOException;
-import java.sql.SQLException;
-import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Iterator;
-import java.util.List;
 
-import javax.mail.MessagingException;
-import javax.mail.internet.InternetAddress;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.email.EmailUtils;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.utils.StringUtils;
 
 public class EmailCustomSearch {
     static org.apache.log4j.Logger logger = Logger.getLogger(EmailCustomSearch.class);
+
     public void send(HttpServletRequest req, HttpServletResponse response,ServletConfig sc) throws IOException{
         String xmlString = req.getParameter("search_xml");
         
@@ -44,59 +38,29 @@ public class EmailCustomSearch {
             String subject = req.getParameter("subject");
             String message = req.getParameter("message");
             
-            if (toAddress!=null || ccAddress!=null || bccAddress!=null) {  
-                try {
-                  List<InternetAddress> tos=new ArrayList<InternetAddress>();
-                  List<InternetAddress> ccs=new ArrayList<InternetAddress>();
-                  List<InternetAddress> bccs=new ArrayList<InternetAddress>();
-                    if (toAddress!=null && !toAddress.equals("")){ 
-                        ArrayList al = StringUtils.CommaDelimitedStringToArrayList(toAddress);
-                        Iterator iter = al.iterator();
-                        while (iter.hasNext())
-                        {
-                            tos.add(new InternetAddress((String)iter.next()));
-                        }
-                    }
-                    if (ccAddress!=null && !ccAddress.equals("")){
-                        ArrayList al = StringUtils.CommaDelimitedStringToArrayList(ccAddress);
-                        Iterator iter = al.iterator();
-                        while (iter.hasNext())
-                        {
-                            ccs.add(new InternetAddress((String)iter.next()));
-                        }
-                    }
-                    if (bccAddress!=null && !bccAddress.equals("")){
-                        ArrayList al = StringUtils.CommaDelimitedStringToArrayList(bccAddress);
-                        Iterator iter = al.iterator();
-                        while (iter.hasNext())
-                        {
-                            bccs.add(new InternetAddress((String)iter.next()));
+			if (AdminUtils.GetPageEmail()) {
+				if (StringUtils.isBlank(bccAddress)) {
+					bccAddress = AdminUtils.getAdminEmailId();
+				} else {
+					bccAddress += ", " + AdminUtils.getAdminEmailId();
                         }
                     }
                     
-                    if(AdminUtils.GetPageEmail()){
-                    	bccs.add(new InternetAddress(AdminUtils.getAdminEmailId()));
-                    }
+			// Split each string on commas and whitespace.
+			String[] tos = StringUtils.split(toAddress, ", ");
+			String[] ccs = StringUtils.split(ccAddress, ", ");
+			String[] bccs = StringUtils.split(bccAddress, ", ");
+
+			if (toAddress != null || ccAddress != null || bccAddress != null) {
+				try {
                     Object search_id=PoolDBUtils.LogCustomSearch(user.getUsername(), xmlString, user.getDBName());
-                    try {
-                    	EmailUtils.sendEmail(tos, ccs, bccs, user.getEmail(), subject, getHtmlMessage(req,user,message,search_id));
-                        
+					String formattedMessage = formatHtmlMessage(req, user, message, search_id);
+					XDAT.getMailService().sendHtmlMessage(user.getEmail(), tos, ccs, bccs, subject, formattedMessage);
                         _return=("<DIV class=\"warning\">Message sent.</DIV>");
                     } catch (Exception e) {
                         logger.error("",e);
                         _return=("<DIV class=\"error\">Unable to send mail.</DIV>");
                     }
-                } catch (MessagingException e) {
-                    logger.error("",e);
-                } catch (SQLException e) {
-                    logger.error("",e);
-                } catch (DBPoolException e) {
-                    logger.error("",e);
-                } catch (Exception e) {
-                    logger.error("",e);
-                }
-                
-
             }
         }else{
             _return= "<DIV class=\"error\">Missing User Account</DIV>";
@@ -106,11 +70,8 @@ public class EmailCustomSearch {
         response.getWriter().write(_return);
     }
 
-    
-    public String getTxtMessage(HttpServletRequest req, XDATUser user,String msg, Object search_id)
-    {
-        if (req.getParameter("txtmessage")==null)
-        {
+	public String getTxtMessage(HttpServletRequest req, XDATUser user, String msg, Object search_id) {
+		if (req.getParameter("txtmessage") == null) {
             try {                
                 StringBuffer sb = new StringBuffer();
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
@@ -135,10 +96,8 @@ public class EmailCustomSearch {
 
     }
     
-    public String getHtmlMessage(HttpServletRequest req, XDATUser user,String msg, Object search_id)
-    {
-        if (req.getParameter("htmlmessage")==null)
-        {
+	private String formatHtmlMessage(HttpServletRequest req, XDATUser user, String msg, Object search_id) {
+		if (req.getParameter("htmlmessage") == null) {
             try {
                 StringBuffer sb = new StringBuffer();
                 sb.append("<html>");

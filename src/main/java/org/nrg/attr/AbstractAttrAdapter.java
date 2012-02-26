@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2006-2011 Washington University
+ * Copyright (c) 2006-2012 Washington University
  */
 package org.nrg.attr;
 
@@ -59,7 +59,7 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
     public final void add(final ExtAttrDef<S,V>...attrs) {
         add(Arrays.asList(attrs));
     }
-    
+
     /*
      * (non-Javadoc)
      * @see org.nrg.attr.AttrAdapter#add(java.lang.Iterable)
@@ -188,22 +188,25 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
         final List<Set<ExtAttrValue>> values = Lists.newArrayList();
         final Map<S,ConversionFailureException> failedS = Maps.newHashMap();
 
-        ATTRS: for (final ExtAttrDef<S,V> ea : defs) {
+        if (!defs.iterator().hasNext()) {
+            throw new IllegalArgumentException("empty attribute definitions");
+        }
+
+        for (final ExtAttrDef<S,V> ea : defs) {
             final Set<ExtAttrValue> attrVals = Sets.newHashSet();
             values.add(attrVals);
 
             // More than one combination of native values might map to a single value
-            // of the external attribute.  In this case, we want to return the single
-            // external attribute value once only.
-            for (final Map<S,V> value: getUniqueCombinationsGivenValues(given, ea.getAttrs(), failedS)) {
+            // of the external attribute. In this case, we want to return the single
+            // external attribute value once only. Also, some of the underlying objects
+            // may not have all the components necessary to build this external attribute;
+            // skip insufficient combinations in hopes of getting a valid one.
+            // (This last problem comes up in practice in Philips DICOM: many series contain
+            // secondary objects that are missing Patient, Study, or Series-level fields.)
+            VALUES: for (final Map<S,V> value: getUniqueCombinationsGivenValues(given, ea.getAttrs(), failedS)) {
                 for (final S attr : ea.getAttrs()) {
                     if (!value.containsKey(attr) && ea.requires(attr)) {
-                        if (ea instanceof Optional) {
-                            continue ATTRS; // can't build this optional attribute; move on to the next one.
-                        } else {
-                            failures.put(ea, new ConversionFailureException(attr, null, "missing constituent"));   
-                            continue ATTRS;
-                        }
+                        continue VALUES; // can't build the attribute from this value
                     }
                 }
                 try {
@@ -213,7 +216,6 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
                 }
             }
 
-            // Maybe we couldn't find any of the underlying native attributes. This is (usually) bad.
             if (attrVals.isEmpty()) {
                 // Constant attributes don't need native attributes.
                 if (ea instanceof ExtAttrDef.Constant<?,?>) {
@@ -222,6 +224,8 @@ public abstract class AbstractAttrAdapter<S,V> implements AttrAdapter<S,V> {
                     } catch (ConversionFailureException e) {
                         throw new RuntimeException(e);    // can't happen
                     }
+                } else if (ea instanceof Optional) {
+                    // Don't generate a failure if the attribute is optional
                 } else {
                     failures.put(ea, new ConversionFailureException(ea, null, "no native values available"));
                 }

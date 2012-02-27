@@ -1,18 +1,12 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
  * Created on Jul 20, 2004
  */
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
-
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.CriteriaCollection;
@@ -25,14 +19,12 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.references.XFTManyToManyReference;
-import org.nrg.xft.references.XFTMappingColumn;
-import org.nrg.xft.references.XFTReferenceI;
-import org.nrg.xft.references.XFTRelationSpecification;
-import org.nrg.xft.references.XFTSuperiorReference;
+import org.nrg.xft.references.*;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.SearchCriteria;
+
+import java.util.*;
 
 /**
  * Class used to perform tasks which manipulate and format the data in
@@ -73,12 +65,8 @@ public class GenericWrapperUtils {
                         try {
                             XFTReferenceI ref = field.getXFTReference();
                             if (!ref.isManyToMany()) {
-                                Iterator specs = ((XFTSuperiorReference) ref)
-                                        .getKeyRelations().iterator();
-                                while (specs.hasNext()) {
-                                    XFTRelationSpecification spec = (XFTRelationSpecification) specs
-                                            .next();
-
+                                for (XFTRelationSpecification spec : ((XFTSuperiorReference) ref)
+                                        .getKeyRelations()) {
                                     if (count == 0) {
                                         sb.append("\n");
                                     } else {
@@ -157,7 +145,7 @@ public class GenericWrapperUtils {
                             }
                             count++;
                             sb.append(field.getSQLName()).append(" ");
-                            if (field.getType(converter) != "") {
+                            if (!field.getType(converter).equals("")) {
                                 sb.append(field.getType(converter)).append(" ");
                             } else {
                                 sb.append(
@@ -192,10 +180,8 @@ public class GenericWrapperUtils {
                 }
                 sb.append(") ");
 
-                Iterator uniques = input.getUniqueFields().iterator();
-                while (uniques.hasNext()) {
-                    GenericWrapperField unique = (GenericWrapperField) uniques
-                            .next();
+                for (Object o : input.getUniqueFields()) {
+                    GenericWrapperField unique = (GenericWrapperField) o;
                     sb.append("\n, UNIQUE KEY (").append(unique.getSQLName())
                             .append(") ");
                 }
@@ -259,12 +245,8 @@ public class GenericWrapperUtils {
                             try {
                                 XFTReferenceI ref = field.getXFTReference();
                                 if (!ref.isManyToMany()) {
-                                    Iterator specs = ((XFTSuperiorReference) ref)
-                                            .getKeyRelations().iterator();
-                                    while (specs.hasNext()) {
-                                        XFTRelationSpecification spec = (XFTRelationSpecification) specs
-                                                .next();
-
+                                    for (XFTRelationSpecification spec : ((XFTSuperiorReference) ref)
+                                            .getKeyRelations()) {
                                         if (count == 0) {
                                             sb.append("\n");
                                         } else {
@@ -380,7 +362,7 @@ public class GenericWrapperUtils {
                                 // field.getSQLName() +
                                 // "_seq;\n\n").append(sb.toString());
                             } else {
-                                if (field.getType(converter) != "") {
+                                if (!field.getType(converter).equals("")) {
                                     sb.append(field.getType(converter)).append(
                                             " ");
                                 } else {
@@ -616,9 +598,9 @@ public class GenericWrapperUtils {
         return sb;
     }
 
-    public static ArrayList GetFunctionSQL() {
-        ArrayList all = new ArrayList();
-        StringBuffer functions = new StringBuffer();
+    public static List<String> GetFunctionSQL() {
+        List<String> all = new ArrayList<String>();
+        StringBuilder functions = new StringBuilder();
         functions.append("\n\n\nCREATE OR REPLACE FUNCTION class_exists( VARCHAR)");
         functions.append("\nRETURNS BOOLEAN AS");
         functions.append("\n'");
@@ -635,7 +617,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n\n\nCREATE OR REPLACE FUNCTION schema_exists( VARCHAR)");
         functions.append("\nRETURNS BOOLEAN AS");
         functions.append("\n'");
@@ -652,7 +634,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n\nCREATE OR REPLACE FUNCTION function_exists( VARCHAR)");
         functions.append("\nRETURNS BOOLEAN AS");
         functions.append("\n'");
@@ -669,7 +651,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n\nCREATE OR REPLACE FUNCTION trigger_exists( VARCHAR)");
         functions.append("\nRETURNS BOOLEAN AS");
         functions.append("\n'");
@@ -686,7 +668,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n\nCREATE OR REPLACE FUNCTION create_trigger(VARCHAR,VARCHAR)");
         functions.append("\nRETURNS VARCHAR AS");
         functions.append("\n'");
@@ -700,7 +682,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n\nCREATE OR REPLACE FUNCTION create_class(VARCHAR,VARCHAR)");
         functions.append("\nRETURNS VARCHAR AS");
@@ -715,7 +697,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n\nCREATE OR REPLACE FUNCTION create_schema(VARCHAR,VARCHAR)");
         functions.append("\nRETURNS VARCHAR AS");
@@ -730,7 +712,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n");
         functions.append("\nCREATE OR REPLACE FUNCTION create_function(VARCHAR,VARCHAR)");
@@ -747,7 +729,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n");
         functions.append("\nCREATE OR REPLACE FUNCTION xs_concat(text, text) RETURNS text AS");
@@ -765,7 +747,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n");
         functions.append("\nSELECT create_function('xs_a_concat','CREATE AGGREGATE xs_a_concat(");
@@ -775,11 +757,8 @@ public class GenericWrapperUtils {
         functions.append("\n    INITCOND = '''')');");
         all.add(functions.toString());
         try {
-            Iterator elements = XFTManager.GetInstance().getOrderedElements()
-                    .iterator();
-            while (elements.hasNext()) {
-                GenericWrapperElement element = (GenericWrapperElement) elements
-                        .next();
+            for (Object o : XFTManager.GetInstance().getOrderedElements()) {
+                GenericWrapperElement element = (GenericWrapperElement) o;
                 //System.out.println(element.getXSIType());
                 //if (!element.isSkipSQL())
                 //                if (!(element.getName().endsWith("meta_data") || element
@@ -797,10 +776,10 @@ public class GenericWrapperUtils {
         return all;
     }
     
-    public static ArrayList GetTextOutputFunctions(GenericWrapperElement input)
+    public static List<String> GetTextOutputFunctions(GenericWrapperElement input)
     throws ElementNotFoundException, XFTInitException 
     {
-        ArrayList all = new ArrayList();
+        List<String> all = new ArrayList<String>();
         StringBuffer sb = new StringBuffer();
 
         Object[][] keyArray = input.getSQLKeys();
@@ -816,7 +795,7 @@ public class GenericWrapperUtils {
             functionName += " " + keyArray[i][1];
         }
         functionName += ", int4,bool,bool,bool)";
-        sb.append("\n\n\nCREATE OR REPLACE FUNCTION " + functionName);
+        sb.append("\n\n\nCREATE OR REPLACE FUNCTION ").append(functionName);
 
         String counter = "$" + (keyArray.length + 1);
         String allowMultiples = "$" + (keyArray.length + 2);
@@ -869,7 +848,7 @@ public class GenericWrapperUtils {
                                 
                                 String mappingTable = ((XFTManyToManyReference) ref)
                                         .getMappingTable();
-                                sb.append("\n        IF("+ allowMultiples);
+                                sb.append("\n        IF(").append(allowMultiples);
                                 if (field.isOnlyRoot())
                                 {
                                     sb.append(" AND "+ isRoot +"");
@@ -948,7 +927,7 @@ public class GenericWrapperUtils {
                                 sb.append("\n        END IF; ");
                             } else {
                                 XFTSuperiorReference supRef = (XFTSuperiorReference) ref;
-                                sb.append("\n        IF("+ allowMultiples);
+                                sb.append("\n        IF(").append(allowMultiples);
                                 if (field.isOnlyRoot())
                                 {
                                     sb.append(" AND "+ isRoot +"");
@@ -1209,13 +1188,9 @@ public class GenericWrapperUtils {
                 }
             }
         }
-        Iterator iter2 = input.getUndefinedReferences().iterator();
-        while (iter2.hasNext())
-        {
-            GenericWrapperField field = (GenericWrapperField)iter2.next();
-            if (field.isReference() && (!field.isMultiple()))
-            {
-                XFTSuperiorReference supRef = (XFTSuperiorReference)field.getXFTReference();
+        for (GenericWrapperField field : input.getUndefinedReferences()) {
+            if (field.isReference() && (!field.isMultiple())) {
+                XFTSuperiorReference supRef = (XFTSuperiorReference) field.getXFTReference();
                 sb.append("\n        IF (");
                 Iterator refsCols = supRef.getKeyRelations().iterator();
                 int count = 0;
@@ -1229,15 +1204,14 @@ public class GenericWrapperUtils {
 
                 }
 
-                if (field.isOnlyRoot())
-                {
-                    sb.append(" && "+ isRoot +"");
+                if (field.isOnlyRoot()) {
+                    sb.append(" && " + isRoot + "");
                 }
-                
-                if (field.isPossibleLoop()){
-                    sb.append(" AND NOT ("+ preventLoop +")");
+
+                if (field.isPossibleLoop()) {
+                    sb.append(" AND NOT (" + preventLoop + ")");
                 }
-                
+
                 sb.append(") THEN");
 
                 refsCols = supRef.getKeyRelations().iterator();
@@ -1249,7 +1223,7 @@ public class GenericWrapperUtils {
                                     "\n            fullText := fullText || ''(")
                             .append(spec.getLocalCol().toLowerCase())
                             .append(":" + spec.getSchemaType().getLocalType() + ")=('' || current_row.").append(
-                                    spec.getLocalCol().toLowerCase())
+                            spec.getLocalCol().toLowerCase())
                             .append(" || '')'';");
                 }
                 sb.append("\n        END IF;");
@@ -1273,7 +1247,6 @@ public class GenericWrapperUtils {
             try {
                 GenericWrapperField field = input.getExtensionField();
                 sb.append("\n      IF (row_ct=0) THEN ");
-                XFTSuperiorReference supRef =(XFTSuperiorReference)field.getXFTReference();
                 GenericWrapperElement foreign = (GenericWrapperElement)field.getReferenceElement();
 //                Iterator refsCols = supRef.getKeyRelations().iterator();
 //                while (refsCols.hasNext()) {
@@ -2395,9 +2368,8 @@ public class GenericWrapperUtils {
         return all;
     }
 
-    public static ArrayList GetFunctionStatements(GenericWrapperElement input)
-            throws ElementNotFoundException, XFTInitException {
-        ArrayList sb= new ArrayList();
+    public static List<String> GetFunctionStatements(GenericWrapperElement input) throws ElementNotFoundException, XFTInitException {
+        List<String> sb= new ArrayList<String>();
         
         /*******************************
          * TEXT OUTPUT FUNCTIONS
@@ -2883,4 +2855,25 @@ public class GenericWrapperUtils {
         return al;
     }
 
+    public static Collection<String> GetExtensionTables() {
+        StringBuilder buffer = new StringBuilder();
+
+        buffer.append("SELECT create_class('analytics', '");
+        buffer.append("CREATE TABLE analytics\n");
+        buffer.append("(\n");
+        buffer.append("        id serial NOT NULL,\n");
+        buffer.append("        entry_date timestamp without time zone,\n");
+        buffer.append("        entry_level character varying(10),\n");
+        buffer.append("        entry_location character varying(512),\n");
+        buffer.append("        entry_type character varying(32),\n");
+        buffer.append("        entry_subtype character varying(32),\n");
+        buffer.append("        duration bigint,\n");
+        buffer.append("        message text,\n");
+        buffer.append("        PRIMARY KEY (id)\n");
+        buffer.append(") WITH (OIDS=FALSE)');");
+
+        List<String> statements = new ArrayList<String>();
+        statements.add(buffer.toString());
+        return statements;
+    }
 }

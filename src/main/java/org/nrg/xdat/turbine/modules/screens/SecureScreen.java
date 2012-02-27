@@ -8,7 +8,6 @@
  *
  */
 package org.nrg.xdat.turbine.modules.screens;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
@@ -35,168 +34,167 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
-
 /**
  * @author Tim
+ *
  */
 public abstract class SecureScreen extends VelocitySecureScreen {
-    public final static Logger logger = Logger.getLogger(SecureScreen.class);
+	public final static Logger logger = Logger.getLogger(SecureScreen.class);
     private static Pattern _pattern = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
 
 
-    protected void error(Exception e, RunData data) {
-        logger.error("", e);
+    protected void error(Exception e,RunData data){
+        logger.error("",e);
         data.setScreenTemplate("Error.vm");
         data.getParameters().setString("exception", e.toString());
     }
 
-    protected void preserveVariables(RunData data, Context context) {
-        if (data.getParameters().containsKey("project")) {
-            if (XFT.VERBOSE)
-                System.out.println(this.getClass().getName() + ": maintaining project '" + data.getParameters().getString("project") + "'");
+    protected void preserveVariables(RunData data, Context context){
+        if (data.getParameters().containsKey("project")){
+        	if(XFT.VERBOSE)System.out.println(this.getClass().getName() + ": maintaining project '" + data.getParameters().getString("project") +"'");
             context.put("project", data.getParameters().getString("project"));
         }
     }
 
-    /**
+	/**
      * This method overrides the method in VelocitySecureScreen to
      * perform a security check first and store the popup status in the context.
      *
      * @param data Turbine information.
      * @throws Exception, a generic exception.
      */
-    protected void doBuildTemplate(RunData data)
+	protected void doBuildTemplate(RunData data)
             throws Exception {
-        try {
+	    try {
             if (isAuthorized(data)) {
                 Context c = TurbineVelocity.getContext(data);
                 if (data.getParameters().getString("popup") != null) {
                     if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
-                        c.put("popup", "true");
-                    } else {
-                        c.put("popup", "false");
+                        c.put("popup","true");
+                    }else{
+                        c.put("popup","false");
                     }
-                } else {
-                    c.put("popup", "false");
+                }else{
+                    c.put("popup","false");
                 }
 
                 String systemName = TurbineUtils.GetSystemName();
-                c.put("turbineUtils", TurbineUtils.GetInstance());
-                c.put("systemName", systemName);
-                preserveVariables(data, c);
+                c.put("turbineUtils",TurbineUtils.GetInstance());
+                c.put("systemName",systemName);
+                preserveVariables(data,c);
                 doBuildTemplate(data, c);
-            } else {
+            }else{
                 Context c = TurbineVelocity.getContext(data);
                 if (data.getParameters().getString("popup") != null) {
                     if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
-                        c.put("popup", "true");
-                    } else {
-                        c.put("popup", "false");
+                        c.put("popup","true");
+                    }else{
+                        c.put("popup","false");
                     }
-                } else {
-                    c.put("popup", "false");
+                }else{
+                    c.put("popup","false");
                 }
                 String systemName = TurbineUtils.GetSystemName();
-                c.put("turbineUtils", TurbineUtils.GetInstance());
-                c.put("systemName", systemName);
-                preserveVariables(data, c);
+                c.put("turbineUtils",TurbineUtils.GetInstance());
+                c.put("systemName",systemName);
+                preserveVariables(data,c);
 
                 if (XFT.GetRequireLogin()) {
-                } else {
+                }else{
                     data.setScreenTemplate("Login.vm");
                 }
             }
         } catch (RuntimeException e) {
-            logger.error("", e);
+            logger.error("",e);
             data.setScreenTemplate("Error.vm");
             return;
         }
-    }
+	}
 
-    /**
-     * Overide this method to perform the security check needed.
-     *
-     * @param data Turbine information.
-     * @return True if the user is authorized to access the screen.
+	/**
+	 * Overide this method to perform the security check needed.
+	 *
+	 * @param data Turbine information.
+	 * @return True if the user is authorized to access the screen.
      * @throws Exception, a generic exception.
-     */
+	 */
     protected boolean isAuthorized(RunData data) throws Exception {
-        //TurbineUtils.OutputDataParameters(data);
+	    //TurbineUtils.OutputDataParameters(data);
         if (XFT.GetRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
-            logger.debug("isAuthorized() Login Required:true");
-            TurbineVelocity.getContext(data).put("logout", "true");
-            data.getParameters().setString("logout", "true");
-            boolean isAuthorized = false;
+	        logger.debug("isAuthorized() Login Required:true");
+            TurbineVelocity.getContext(data).put("logout","true");
+			data.getParameters().setString("logout","true");
+			boolean isAuthorized = false;
 
-            XDATUser user = TurbineUtils.getUser(data);
+			XDATUser user = TurbineUtils.getUser(data);
             if (user == null) {
-                //logger.debug("isAuthorized() Login Required:true user:null");
-                String Destination = data.getTemplateInfo().getScreenTemplate();
-                data.getParameters().add("nextPage", Destination);
-                if (!data.getAction().equalsIgnoreCase(""))
-                    data.getParameters().add("nextAction", data.getAction());
-                else
-                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
-                //System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n");
-                doRedirect(data, org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
+		        //logger.debug("isAuthorized() Login Required:true user:null");
+				String Destination = data.getTemplateInfo().getScreenTemplate();
+				data.getParameters().add("nextPage", Destination);
+				if (!data.getAction().equalsIgnoreCase(""))
+					data.getParameters().add("nextAction",data.getAction());
+				else
+					data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+				//System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n");
+				doRedirect(data,org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
 
             } else {
 
-                //logger.debug("isAuthorized() Login Required:true user:found");
-                isAuthorized = true;
+		        //logger.debug("isAuthorized() Login Required:true user:found");
+				isAuthorized = true;
                 if (data.getParameters().getString("popup") != null) {
                     if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
-                        data.getTemplateInfo().setLayoutTemplate("/Popup.vm");
-                    }
+						data.getTemplateInfo().setLayoutTemplate("/Popup.vm");
+					}
                 } else {
-                    data.getParameters().setString("popup", "false");
-                }
+					data.getParameters().setString("popup","false");
+				}
 
-                logAccess(data);
-            }
+				logAccess(data);
+			}
 
-            return isAuthorized;
-        } else {
+			return isAuthorized;
+		}else{
             boolean isAuthorized = true;
-            logger.debug("isAuthorized() Login Required:false");
-            XDATUser user = TurbineUtils.getUser(data);
+	        logger.debug("isAuthorized() Login Required:false");
+			XDATUser user = TurbineUtils.getUser(data);
             if (user == null) {
-                if (!allowGuestAccess()) isAuthorized = false;
+                if (!allowGuestAccess())isAuthorized=false;
 
                 HttpSession session = data.getSession();
                 session.removeAttribute("loggedin");
-                ItemSearch search = new ItemSearch();
-                SchemaElementI e = SchemaElement.GetElement(XDATUser.USER_ELEMENT);
-                search.setElement(e.getGenericXFTElement());
-                search.addCriteria(XDATUser.USER_ELEMENT + "/login", "guest");
-                ItemCollection items = search.exec(true);
+				ItemSearch search = new ItemSearch();
+				SchemaElementI e = SchemaElement.GetElement(XDATUser.USER_ELEMENT);
+				search.setElement(e.getGenericXFTElement());
+				search.addCriteria(XDATUser.USER_ELEMENT +"/login", "guest");
+				ItemCollection items = search.exec(true);
                 if (items.size() > 0) {
                     Iterator iter = items.iterator();
-                    while (iter.hasNext()) {
-                        ItemI o = (ItemI) iter.next();
+                    while (iter.hasNext()){
+                        ItemI o = (ItemI)iter.next();
                         XDATUser temp = new XDATUser(o);
                         if (temp.getUsername().equalsIgnoreCase("guest")) {
                             user = temp;
                         }
                     }
-                    if (user == null) {
+                    if (user == null){
                         ItemI o = items.getFirst();
                         user = new XDATUser(o);
                     }
-                    TurbineUtils.setUser(data, user);
+					TurbineUtils.setUser(data,user);
 
                     String Destination = data.getTemplateInfo().getScreenTemplate();
                     data.getParameters().add("nextPage", Destination);
                     if (!data.getAction().equalsIgnoreCase(""))
-                        data.getParameters().add("nextAction", data.getAction());
+                        data.getParameters().add("nextAction",data.getAction());
                     else
-                        data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+                        data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
                     //System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n");
 
-                }
-            } else {
-                if (!allowGuestAccess() && user.getLogin().equals("guest")) {
-                    isAuthorized = false;
+				}
+			}else{
+			    if (!allowGuestAccess() && user.getLogin().equals("guest")){
+                    isAuthorized=false;
                 }
             }
 
@@ -205,35 +203,35 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     data.getTemplateInfo().setLayoutTemplate("/Popup.vm");
                 }
             } else {
-                data.getParameters().setString("popup", "false");
+                data.getParameters().setString("popup","false");
             }
 
             logAccess(data);
 
-            if (!isAuthorized) {
+            if (!isAuthorized){
                 String Destination = data.getTemplateInfo().getScreenTemplate();
                 data.getParameters().add("nextPage", Destination);
                 if (!data.getAction().equalsIgnoreCase(""))
-                    data.getParameters().add("nextAction", data.getAction());
+                    data.getParameters().add("nextAction",data.getAction());
                 else
-                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+                    data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
                 //System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n");
-                doRedirect(data, org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
+                doRedirect(data,org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
 
             }
-            return isAuthorized;
-        }
-    }
+			return isAuthorized;
+		}
+	}
 
     public void logAccess(RunData data) {
-        AccessLogger.LogScreenAccess(data);
-    }
+		AccessLogger.LogScreenAccess(data);
+	}
 
     public void logAccess(RunData data, String message) {
-        AccessLogger.LogScreenAccess(data, message);
+        AccessLogger.LogScreenAccess(data,message);
     }
 
-    public boolean allowGuestAccess() {
+    public boolean allowGuestAccess(){
         return true;
     }
 
@@ -258,7 +256,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 }
             });
 
-            for (File file : files) {
+            for (File file: files) {
                 String fileName = file.getName();
                 String divName = fileName.substring(0, fileName.length() - 3);
                 Properties metadata = new Properties();
@@ -295,7 +293,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     if (scanner != null) {
                         scanner.close();
                     }
-                }
+}
 
                 if (include) {
                     tabs.add(metadata);
@@ -305,5 +303,25 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         return tabs;
     }
 
+    /**
+     * Searches for the parameters contained in the <b>parameters</b> array. If the parameter is present with any of the
+     * names in the array, it will be pulled and stored in the context using the first parameter name in the array.
+     *
+     * @param data          The run data.
+     * @param context       The Velocity context object.
+     * @param parameters    An array of parameter names to be evaluated.
+     * @return <b>true</b> if the parameter was found in the run data, <b>false</b> otherwise.
+     */
+    protected static boolean storeParameterIfPresent(final RunData data, final Context context, final String... parameters) {
+        for (String parameter : parameters) {
+            if (TurbineUtils.HasPassedParameter(parameter, data)) {
+                context.put(parameters[0], TurbineUtils.GetPassedParameter(parameter, data));
+                return true;
+            }
+        }
+        return false;
+    }
+
     private static final Log _log = LogFactory.getLog(SecureScreen.class);
 }
+

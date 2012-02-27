@@ -9,11 +9,15 @@
  */
 package org.nrg.xdat.security;
 
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Tim
@@ -21,7 +25,8 @@ import org.nrg.xft.exception.XFTInitException;
  */
 @SuppressWarnings("serial")
 public class ElementAction extends ItemWrapper {
-	public ElementAction()
+
+    public ElementAction()
 	{
 	}
 
@@ -85,14 +90,39 @@ public class ElementAction extends ItemWrapper {
 	public String getPopup() throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 		try {
-			return (String)getProperty("popup");
+            // This method will initialize the matcher and all associated metadata.
+            initializePopupOptions();
+            // So return whatever the results of that are.
+            return popup;
 		} catch (FieldEmptyException e) {
 			e.printStackTrace();
 			return "never";
 		}
 	}
-	
-	public String getSecureAccess() throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+
+    public String getPopupWidth() throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+    {
+        try {
+            initializePopupOptions();
+            return popupWidth;
+        } catch (FieldEmptyException e) {
+            e.printStackTrace();
+        }
+        return popupWidth;
+    }
+
+    public String getPopupHeight() throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+    {
+        try {
+            initializePopupOptions();
+            return popupHeight;
+        } catch (FieldEmptyException e) {
+            e.printStackTrace();
+        }
+        return popupHeight;
+    }
+
+    public String getSecureAccess() throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 		try {
 			return (String)getProperty("secureAccess");
@@ -119,5 +149,34 @@ public class ElementAction extends ItemWrapper {
 			return "";
 		}
 	}
+
+    private void initializePopupOptions() throws ElementNotFoundException, FieldNotFoundException {
+        // If popup is null, we haven't initialized this.
+        if (popup == null) {
+            try {
+                // So try to initialize from the property.
+                popup = (String) getProperty("popup");
+            } catch (FieldEmptyException ignored) {
+                // If that failed, just do nothing.
+            }
+            // If it's still blank, set it to the default.
+            if (StringUtils.isBlank(popup)) {
+                popup = "never";
+            } else {
+                // If it's not blank, it might have dimension data.
+                Matcher matcher = pattern.matcher(popup);
+                if (matcher.matches()) {
+                    popup = matcher.group(1);
+                    popupWidth = matcher.group(2);
+                    popupHeight = matcher.group(3);
+                }
+            }
+        }
+    }
+
+    private static final Pattern pattern = Pattern.compile("(\\w+):(\\d+),(\\d+)", Pattern.CASE_INSENSITIVE);
+    private String popup = null;
+    private String popupWidth = "700";
+    private String popupHeight = "600";
 }
 

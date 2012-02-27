@@ -21,8 +21,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
@@ -44,7 +42,6 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
-import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.FavEntries;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
@@ -2680,7 +2677,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 					&& StringUtils.IsEmpty(savedPass)) {
 				
 			} else if (StringUtils.IsEmpty(tempPass)) {
-				found.setProperty("primary_password", "NULL");
+				
 			} else {
 				if (!tempPass.equals(savedPass))
 						found.setProperty("primary_password", XDATUser

@@ -172,7 +172,7 @@ public class EmailAction extends SecureAction {
 
 	public void setAddresses(RunData data, Context context) throws Exception {
 
-		for (int i = 1; i <= ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("RowCount",data)); i++) {
+		for (int i = 1; i <= ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger("RowCount",data,0)); i++) {
 
 			String to = "to" + i;
 

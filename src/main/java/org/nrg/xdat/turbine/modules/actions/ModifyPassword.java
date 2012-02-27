@@ -52,7 +52,7 @@ public class ModifyPassword extends SecureAction {
 		while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter,data)) != null)
 		{
 			String elementToLoad = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter++,data));
-			Integer numberOfInstances = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(elementToLoad,data));
+			Integer numberOfInstances = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger(elementToLoad,data,null));
 			if (numberOfInstances != null && numberOfInstances.intValue()!=0)
 			{
 				int subCount = 0;

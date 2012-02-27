@@ -784,6 +784,43 @@ public class TurbineUtils {
 	    return GetPassedParameter(s.toLowerCase(),data,null);
 	}
 	
+	public static Boolean GetPassedBoolean(String s, RunData data)
+	{
+		return data.getParameters().getBool(s);
+	}
+	
+	public static Integer GetPassedInteger(String s, RunData data)
+	{
+		return TurbineUtils.GetPassedInteger(s, data,null);
+	}
+	
+	public static Integer GetPassedInteger(String s, RunData data,Integer defualt)
+	{
+		if (data.getParameters().get(s.toLowerCase())!=null)
+	    {
+	    	final Object o = TurbineUtils.escapeParam(data.getParameters().getInteger(s.toLowerCase()));
+	        if(o.toString().equalsIgnoreCase(""))
+	        {
+	            return defualt;
+	        }else{
+		        return (Integer)o;
+	        }
+	    }else{
+	        return defualt;
+	    }
+	}
+	
+	public static Object[] GetPassedObjects(String s, RunData data)
+	{
+		final Object[] v=data.getParameters().getObjects(s);
+		if(v!=null){
+			for(int i=0;i<v.length;i++){
+				v[i]=TurbineUtils.escapeParam(v[i]);
+			}
+		}
+		return v;
+	}
+	
 	public static Object GetPassedParameter(String s, RunData data, Object defualt)
 	{
 	    if (data.getParameters().get(s.toLowerCase())!=null)

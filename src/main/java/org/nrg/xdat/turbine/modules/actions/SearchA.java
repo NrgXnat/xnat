@@ -80,7 +80,7 @@ public abstract class SearchA extends SecureAction {
 			XDATUser user = TurbineUtils.getUser(data);
 			String display = data.getParameters().getString("display","listing");
 			String elementName = ((String)TurbineUtils.GetPassedParameter("element",data));
-			Integer page = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("page",data));
+			Integer page = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger("page",data));
 			String sortBy = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("sortBy",data));
 			String sortOrder = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("sortOrder",data));
 			String queryType = data.getParameters().getString("queryType","stored");
@@ -243,7 +243,7 @@ public abstract class SearchA extends SecureAction {
                     if (TurbineUtils.HasPassedParameter(s + "_equals",data))
                     {
                         //logger.debug("like " + s);
-                        Object[] os = ((Object[])org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_equals",data));
+                        Object[] os = ((Object[])org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedObjects(s + "_equals",data));
 
                         String osString = "";
                         int c =0;
@@ -304,13 +304,13 @@ public abstract class SearchA extends SecureAction {
                             ds.addCriteria(ed.getElementName(),df.getId(),"<",from);
                         }
                     }else{
-                        Integer tomonth = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_to_month",data));
-                        Integer todate = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_to_date",data));
-                        Integer toyear = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_to_year",data));
+                        Integer tomonth = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger(s + "_to_month",data));
+                        Integer todate = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger(s + "_to_date",data));
+                        Integer toyear = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger(s + "_to_year",data));
 
-                        Integer frommonth = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_from_month",data));
-                        Integer fromdate = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_from_date",data));
-                        Integer fromyear = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_from_year",data));
+                        Integer frommonth = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger(s + "_from_month",data));
+                        Integer fromdate = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger(s + "_from_date",data));
+                        Integer fromyear = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger(s + "_from_year",data));
 
                         boolean hasTo=false;
                         boolean hasFrom=false;

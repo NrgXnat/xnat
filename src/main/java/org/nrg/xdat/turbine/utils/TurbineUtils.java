@@ -672,7 +672,7 @@ public class TurbineUtils {
             	final String key = penum.nextElement().toString();
             	final  Object value = TurbineUtils.escapeParam(data.getParameters().get(key));
                 if (value!=null && !value.equals(""))
-                    hash.put(key,value.toString());
+                    hash.put(TurbineUtils.escapeParam(key),value.toString());
             }
 			return hash;
 		}

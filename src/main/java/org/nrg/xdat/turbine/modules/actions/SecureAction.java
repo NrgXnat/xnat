@@ -161,7 +161,8 @@ public abstract class SecureAction extends VelocitySecureAction
     	//java=Java/1.6.0_24
     	String userAgent = StringUtils.upperCase(request.getHeader("User-Agent"));
     	if(!strict &&(StringUtils.contains(userAgent, "CURL") || StringUtils.contains(userAgent, "PYTHON") 
-    			|| StringUtils.contains(userAgent, "WGET")|| StringUtils.contains(userAgent, "JAKARTA")|| StringUtils.contains(userAgent, "JAVA") )){
+    			|| StringUtils.contains(userAgent, "WGET")|| StringUtils.contains(userAgent, "JAKARTA")
+    			|| StringUtils.contains(userAgent, "JAVA") || StringUtils.contains(userAgent, "NOELIOS-RESTLET-ENGINE"))){
     		return true;
     	}
     	

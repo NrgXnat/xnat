@@ -794,7 +794,7 @@ public class TurbineUtils {
 		return TurbineUtils.GetPassedInteger(s, data,null);
 	}
 	
-	public static Integer GetPassedInteger(String s, RunData data,Integer defualt)
+	public static Integer GetPassedInteger(String s, RunData data,Integer defualt) 
 	{
 		if (data.getParameters().get(s.toLowerCase())!=null)
 	    {

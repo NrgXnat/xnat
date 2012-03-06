@@ -19,6 +19,9 @@ import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpSession;
 
+import nl.bitwalker.useragentutils.Browser;
+import nl.bitwalker.useragentutils.BrowserType;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
@@ -154,16 +157,14 @@ public abstract class SecureAction extends VelocitySecureAction
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(HttpServletRequest request, String clientToken, boolean strict) throws Exception {
     	//let anyone using something other than a browser ignore the token.
-    	//curl's user agent always starts with curl.
-    	//pyxnat's httplib2 uses headers['user-agent'] = "Python-httplib2/%s" % __version__
-    	//Wget normally identifies as ‘Wget/version’, version being the current version number of Wget.
-    	//commons httpclient = params.setParameter(HttpMethodParams.USER_AGENT, "Jakarta Commons-HttpClient/3.1")
-    	//java=Java/1.6.0_24
-    	String userAgent = StringUtils.upperCase(request.getHeader("User-Agent"));
-    	if(!strict &&(StringUtils.contains(userAgent, "CURL") || StringUtils.contains(userAgent, "PYTHON") 
-    			|| StringUtils.contains(userAgent, "WGET")|| StringUtils.contains(userAgent, "JAKARTA")
-    			|| StringUtils.contains(userAgent, "JAVA") || StringUtils.contains(userAgent, "NOELIOS-RESTLET-ENGINE"))){
+    	String userAgent = request.getHeader("User-Agent");
+    	if(!strict && userAgent==null){
     		return true;
+    	}else if(!strict){
+    		 Browser b=Browser.parseUserAgentString(request.getHeader("User-Agent"));
+    		 if(!(b.getBrowserType().equals(BrowserType.MOBILE_BROWSER) || b.getBrowserType().equals(BrowserType.WEB_BROWSER))){
+    			 return true;
+    		 }
     	}
     	
     	HttpSession session = request.getSession();

@@ -120,9 +120,6 @@ public class ModifyPassword extends SecureAction {
 			while (iter.hasNext())
 			{
 				ItemI found = (ItemI)iter.next();
-			
-				String tempPass = found.getStringProperty("primary_password");
-				found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
 				
 				XDATUser authenticatedUser=TurbineUtils.getUser(data);
 				try {

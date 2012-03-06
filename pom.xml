@@ -19,6 +19,7 @@
         <xnat.version>1.6.0-SNAPSHOT</xnat.version>
         <pipeline.version>1.6.0-SNAPSHOT</pipeline.version>
         <spring.framework.version>3.0.5.RELEASE</spring.framework.version>
+        <spring.security.version>3.0.4.RELEASE</spring.security.version>
         <hibernate.version>3.6.3.Final</hibernate.version>
         <junit.version>4.8.2</junit.version>
         <mockito.version>1.8.5</mockito.version>
@@ -83,6 +84,9 @@
                             </goals>
                         </execution>
                     </executions>
+                    <configuration>
+                        <quiet>true</quiet>
+                    </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
@@ -284,6 +288,37 @@
                 <groupId>org.springframework</groupId>
                 <artifactId>org.springframework.context.support</artifactId>
                 <version>${spring.framework.version}</version>
+            </dependency>
+
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>org.springframework.security.core</artifactId>
+                <version>${spring.security.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>org.springframework.beans</artifactId>
+                        <groupId>org.springframework</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>org.springframework.core</artifactId>
+                        <groupId>org.springframework</groupId>
+                    </exclusion>
+                </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>org.springframework.security.web</artifactId>
+                <version>${spring.security.version}</version>
+                <exclusions>
+                    <exclusion>
+                        <artifactId>org.springframework.beans</artifactId>
+                        <groupId>org.springframework</groupId>
+                    </exclusion>
+                    <exclusion>
+                        <artifactId>org.springframework.core</artifactId>
+                        <groupId>org.springframework</groupId>
+                    </exclusion>
+                </exclusions>
             </dependency>
 
             <dependency>

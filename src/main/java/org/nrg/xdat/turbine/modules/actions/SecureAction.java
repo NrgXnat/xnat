@@ -161,8 +161,8 @@ public abstract class SecureAction extends VelocitySecureAction
     	if(!strict && userAgent==null){
     		return true;
     	}else if(!strict){
-    		 Browser b=Browser.parseUserAgentString(request.getHeader("User-Agent"));
-    		 if(!(b.getBrowserType().equals(BrowserType.MOBILE_BROWSER) || b.getBrowserType().equals(BrowserType.WEB_BROWSER))){
+    		 Browser b=Browser.parseUserAgentString(userAgent);
+    		 if((!(b.getBrowserType().equals(BrowserType.MOBILE_BROWSER) || b.getBrowserType().equals(BrowserType.WEB_BROWSER))) || userAgent.toUpperCase().contains("JAVA")){
     			 return true;
     		 }
     	}

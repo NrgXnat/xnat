@@ -22,7 +22,7 @@ public class CSVUpload1 extends SecureAction {
         String fm_id = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
         File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
-        String[] fields = ((String[])org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fields",data));
+        String[] fields = ((String[])org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedObjects("fields",data));
         if (fields==null)
         {
             context.put("fm_id",fm_id);

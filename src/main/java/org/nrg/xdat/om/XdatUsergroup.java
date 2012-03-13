@@ -195,10 +195,10 @@ public class XdatUsergroup extends BaseXdatUsergroup {
                 }else if(!includesModification){
                 	if(!(create || read || edit || delete || activate)){
                 		if(fms.getAllow().size()==1){
-                			SaveItemHelper.unauthorizedDelete(fms.getItem(), user);
+                			SaveItemHelper.authorizedDelete(fms.getItem(), user);
                 			return true;
                 		}else{
-                			SaveItemHelper.unauthorizedDelete(fm.getItem(), user);
+                			SaveItemHelper.authorizedDelete(fm.getItem(), user);
                 			return true;
                 		}
                 	}

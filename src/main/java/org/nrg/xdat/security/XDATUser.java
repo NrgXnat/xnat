@@ -1994,13 +1994,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
         }
     }
 
-    public void setPermissions(String elementName,String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges)
+    public static void setPermissions(XDATUser effected, XDATUser authenticated,String elementName,String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges)
     {
         try {
             ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
 
                 XdatElementAccess ea = null;
-                Iterator eams = getElementAccess().iterator();
+                Iterator eams = effected.getElementAccess().iterator();
                 while (eams.hasNext())
                 {
                     XdatElementAccess temp = (XdatElementAccess)eams.next();
@@ -2013,9 +2013,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 
                 if (ea==null)
                 {
-                    ea = new XdatElementAccess((UserI)this);
+                    ea = new XdatElementAccess((UserI)authenticated);
                     ea.setElementName(elementName);
-                    ea.setProperty("xdat_user_xdat_user_id", this.getXdatUserId());
+                    ea.setProperty("xdat_user_xdat_user_id", effected.getXdatUserId());
                 }
 
                 XdatFieldMappingSet fms = null;
@@ -2023,7 +2023,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
                 if (al.size()>0){
                     fms = (XdatFieldMappingSet)ea.getPermissions_allowSet().get(0);
                 }else{
-                    fms = new XdatFieldMappingSet((UserI)this);
+                    fms = new XdatFieldMappingSet((UserI)authenticated);
                     fms.setMethod("OR");
                     ea.setPermissions_allowSet(fms);
                 }
@@ -2044,15 +2044,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 
                     if (fm ==null){
                     	if(create || read || edit || delete || activate)
-                    		fm = new XdatFieldMapping((UserI)this);
+                    		fm = new XdatFieldMapping((UserI)authenticated);
                     	else
                     		return;
                     }else if(!(create || read || edit || delete || activate)){
                 		if(fms.getAllow().size()==1){
-                			SaveItemHelper.unauthorizedDelete(fms.getItem(), this);
+                			SaveItemHelper.authorizedDelete(fms.getItem(), authenticated);
                 			return;
                 		}else{
-                			SaveItemHelper.unauthorizedDelete(fm.getItem(), this);
+                			SaveItemHelper.authorizedDelete(fm.getItem(), authenticated);
                 			return;
                 		}
                 	}
@@ -2074,27 +2074,27 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
                         fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
 
                         if (activateChanges){
-                        	SaveItemHelper.authorizedSave(fm,this, true, false, true, false);
-                            fm.activate(this);
+                        	SaveItemHelper.authorizedSave(fm,authenticated, true, false, true, false);
+                            fm.activate(authenticated);
                         }else{
-                        	SaveItemHelper.authorizedSave(fm,this, true, false, false, false);
+                        	SaveItemHelper.authorizedSave(fm,authenticated, true, false, false, false);
                         }
                     }else if(ea.getXdatElementAccessId()!=null){
                         fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
                         if (activateChanges){
-                        	SaveItemHelper.authorizedSave(fms,this, true, false, true, false);
-                            fms.activate(this);
+                        	SaveItemHelper.authorizedSave(fms,authenticated, true, false, true, false);
+                            fms.activate(authenticated);
                         }else{
-                        	SaveItemHelper.authorizedSave(fms,this, true, false, false, false);
+                        	SaveItemHelper.authorizedSave(fms,authenticated, true, false, false, false);
                         }
                     }else{
                         if (activateChanges){
-                        	SaveItemHelper.authorizedSave(ea,this, true, false, true, false);
-                            ea.activate(this);
+                        	SaveItemHelper.authorizedSave(ea,authenticated, true, false, true, false);
+                            ea.activate(authenticated);
                         }else{
-                        	SaveItemHelper.authorizedSave(ea,this, true, false, false, false);
+                        	SaveItemHelper.authorizedSave(ea,authenticated, true, false, false, false);
                         }
-                        this.setElementAccess(ea);
+                        effected.setElementAccess(ea);
                     }
         } catch (XFTInitException e) {
             logger.error("",e);

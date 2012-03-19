@@ -30,9 +30,10 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="nrg_notify" />
-    <orderEntry type="module" module-name="nrg_mail" />
-    <orderEntry type="module" module-name="nrg_framework" />
+    <orderEntry type="library" name="Maven: org.restlet:org.restlet:1.1.10" level="project" />
+    <orderEntry type="module" module-name="notify" />
+    <orderEntry type="module" module-name="mail" />
+    <orderEntry type="module" module-name="framework" />
     <orderEntry type="library" name="Maven: org.springframework:org.springframework.orm:3.0.5.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:org.springframework.beans:3.0.5.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:org.springframework.core:3.0.5.RELEASE" level="project" />
@@ -71,7 +72,7 @@
     <orderEntry type="library" name="Maven: org.slf4j:com.springsource.slf4j.api:1.6.1" level="project" />
     <orderEntry type="library" name="Maven: net.sourceforge.cglib:com.springsource.net.sf.cglib:2.2.0" level="project" />
     <orderEntry type="library" name="Maven: org.jboss.javassist:com.springsource.javassist:3.10.0.GA" level="project" />
-    <orderEntry type="module" module-name="nrg_config" />
+    <orderEntry type="module" module-name="config" />
     <orderEntry type="library" name="Maven: commons-beanutils:commons-beanutils:1.7.0" level="project" />
     <orderEntry type="library" name="Maven: commons-logging:commons-logging:1.0.4" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.security:org.springframework.security.core:3.0.4.RELEASE" level="project" />

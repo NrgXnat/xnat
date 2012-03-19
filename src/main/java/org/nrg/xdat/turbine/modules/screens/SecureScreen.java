@@ -8,15 +8,6 @@
  *
  */
 package org.nrg.xdat.turbine.modules.screens;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpSession;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -34,6 +25,14 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
+
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 /**
  * @author Tim
  *
@@ -235,6 +234,10 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         return true;
     }
 
+    protected void setDefaultTabs(String... defaultTabs) {
+        _defaultTabs = Arrays.asList(defaultTabs);
+    }
+
     protected void cacheTabs(Context context, String subfolder) throws FileNotFoundException {
         List<Properties> tabs = findTabs(subfolder);
         if (tabs != null && tabs.size() > 0) {
@@ -259,44 +262,48 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             for (File file: files) {
                 String fileName = file.getName();
                 String divName = fileName.substring(0, fileName.length() - 3);
-                Properties metadata = new Properties();
 
-                // Set default divName and title properties to start. These can be overridden during mix-in processing.
-                metadata.setProperty("fileName", fileName);
-                metadata.setProperty("divName", divName);
-                metadata.setProperty("title", divName);
+                // If there are no default tabs or if the defaultTabs doesn't exclude this divName...
+                if (_defaultTabs == null || !_defaultTabs.contains(divName)) {
+                    Properties metadata = new Properties();
 
-                boolean include = true;
+                    // Set default divName and title properties to start. These can be overridden during mix-in processing.
+                    metadata.setProperty("fileName", fileName);
+                    metadata.setProperty("divName", divName);
+                    metadata.setProperty("title", divName);
 
-                Scanner scanner = new Scanner(file);
-                try {
-                    while (scanner.hasNextLine()) {
-                        String line = scanner.nextLine();
-                        Matcher matcher = _pattern.matcher(line);
-                        if (matcher.matches()) {
-                            String key = matcher.group(1);
-                            String value = matcher.group(2);
-                            if (key.equalsIgnoreCase("ignore") && value.equalsIgnoreCase("true")) {
-                                if (_log.isDebugEnabled()) {
-                                    _log.debug("Found ignore = true in file: " + file.getName());
+                    boolean include = true;
+
+                    Scanner scanner = new Scanner(file);
+                    try {
+                        while (scanner.hasNextLine()) {
+                            String line = scanner.nextLine();
+                            Matcher matcher = _pattern.matcher(line);
+                            if (matcher.matches()) {
+                                String key = matcher.group(1);
+                                String value = matcher.group(2);
+                                if (key.equalsIgnoreCase("ignore") && value.equalsIgnoreCase("true")) {
+                                    if (_log.isDebugEnabled()) {
+                                        _log.debug("Found ignore = true in file: " + file.getName());
+                                    }
+                                    include = false;
+                                    break;
                                 }
-                                include = false;
-                                break;
-                            }
-                            metadata.setProperty(key, value);
-                            if (_log.isDebugEnabled()) {
-                                _log.debug("Came up with " + key + "[" + value + "] from file: " + file.getName());
+                                metadata.setProperty(key, value);
+                                if (_log.isDebugEnabled()) {
+                                    _log.debug("Came up with " + key + "[" + value + "] from file: " + file.getName());
+                                }
                             }
                         }
-                    }
-                } finally {
-                    if (scanner != null) {
-                        scanner.close();
-                    }
-}
+                    } finally {
+                        if (scanner != null) {
+                            scanner.close();
+                        }
+    }
 
-                if (include) {
-                    tabs.add(metadata);
+                    if (include) {
+                        tabs.add(metadata);
+                    }
                 }
             }
         }
@@ -323,5 +330,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     }
 
     private static final Log _log = LogFactory.getLog(SecureScreen.class);
+
+    private List<String> _defaultTabs;
 }
 

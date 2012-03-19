@@ -29,13 +29,13 @@ public class CreateCSVTemplate extends RawScreen {
             File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
             fm  = new FieldMapping(f);
         }
-        
+
         HttpServletResponse response = data.getResponse();
          //We have to set the size to workaround a bug in IE (see com.lowagie iText FAQ)
          //data.getResponse().setContentLength(baos.size());
-         data.getResponse().setHeader("Content-Disposition","inline;filename=template.csv");
+         TurbineUtils.setContentDisposition(data.getResponse(), "template.csv", false);
          ServletOutputStream out = response.getOutputStream();
-         
+
          StringBuffer sb = new StringBuffer();
          List fields = fm.getFields();
          for(int i=0;i<fields.size();i++){

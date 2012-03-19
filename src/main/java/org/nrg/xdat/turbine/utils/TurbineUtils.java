@@ -22,8 +22,9 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-
+import org.nrg.xdat.XDAT;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
@@ -377,7 +378,7 @@ public class TurbineUtils {
     
     /**
      * Returns server & context as specified in user request object.
-     * @param data
+     * @param req    Servlet request
      * @return
      */
     public static String GetFullServerPath(HttpServletRequest req){
@@ -1023,5 +1024,44 @@ public class TurbineUtils {
     public int getYear(){
     	return Calendar.getInstance().get(Calendar.YEAR);
     }
+
+    /**
+     * Sets the Content-Disposition response header. The filename parameter indicates the name of the content.
+     * This method specifies the content as an attachment. If you need to specify inline content (e.g. for MIME
+     * content in email or embedded content situations), use {@link #setContentDisposition(javax.servlet.http.HttpServletResponse, String, boolean)}.
+     * @param response    The servlet response on which the header should be set.
+     * @param filename    The suggested filename for downloaded content.
+     */
+    public static void setContentDisposition(HttpServletResponse response, String filename){
+        setContentDisposition(response, filename, true);
 }
 
+    /**
+     * Sets the Content-Disposition response header. The filename parameter indicates the name of the content.
+     * This method specifies the content as an attachment when the <b>isAttachment</b> parameter is set to true,
+     * and as inline content when the <b>isAttachment</b> parameter is set to false. You can specify the content
+     * as an attachment by default by calling {@link #setContentDisposition(HttpServletResponse, String)}.
+     * @param response    The servlet response on which the header should be set.
+     * @param filename    The suggested filename for downloaded content.
+     * @param isAttachment    Indicates whether the content is an attachment or inline.
+     */
+    @SuppressWarnings("unchecked")
+    public static void setContentDisposition(HttpServletResponse response, String filename, boolean isAttachment) {
+        if (response.containsHeader(CONTENT_DISPOSITION)) {
+            throw new IllegalStateException("A content disposition header has already been added to this response.");
+        }
+        response.addHeader(CONTENT_DISPOSITION, createContentDispositionValue(filename, isAttachment));
+    }
+
+    /**
+     * Creates the value to be set for a content disposition header.
+     * @param filename        The filename for the header.
+     * @param isAttachment    Whether the content is an attachment or inline.
+     * @return The value to be set for the content disposition header.
+     */
+    public static String createContentDispositionValue(final String filename, final boolean isAttachment) {
+        return String.format("%s; filename=\"%s\";", isAttachment ? "attachment" : "inline", filename);
+}
+
+    private static final String CONTENT_DISPOSITION = "Content-Disposition";
+}

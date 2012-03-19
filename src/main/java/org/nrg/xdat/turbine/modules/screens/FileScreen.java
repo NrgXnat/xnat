@@ -5,17 +5,18 @@
  */
 package org.nrg.xdat.turbine.modules.screens;
 
-import java.io.BufferedInputStream;
-import java.io.File;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-
 import org.apache.ecs.ConcreteElement;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.utils.FileUtils;
+
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.BufferedInputStream;
+import java.io.File;
+import java.io.FileInputStream;
 
 /**
  * @author Tim
@@ -26,10 +27,6 @@ public abstract class FileScreen extends SecureScreen {
     public String getContentType(RunData data)
     {
  	   return "application/octet-stream";
-    }
-
-    public String getContentDisposition(RunData data){
-        return null;
     }
 
     public abstract File getDownloadFile(RunData data, Context context);
@@ -51,39 +48,31 @@ public abstract class FileScreen extends SecureScreen {
             f = new File(path + "/images/rc.gif");
         }
         
-          HttpServletResponse resp =data.getResponse();
+          HttpServletResponse response =data.getResponse();
           
           //set file name
-          String contentDisposition = getContentDisposition(data);
-          if (contentDisposition==null){
-              data.getResponse().setHeader("Content-Disposition","attachment;filename=" + f.getName());
-          }else{
-              data.getResponse().setHeader("Content-Disposition",contentDisposition);
-          }
+          TurbineUtils.setContentDisposition(response, f.getName());
 
           ServletOutputStream sos = null;
           BufferedInputStream bis = null;
 
           try {
-          sos = resp.getOutputStream();
-
-          } catch (Exception e) {
-          System.out.println("exception !!!!");
-          logger.error(e);
-          }
-
-          //write file
-          try {
-	          bis = new BufferedInputStream(new java.io.FileInputStream(f));
+        	  sos = response.getOutputStream();
+        	  bis = new BufferedInputStream(new FileInputStream(f));
 	
 	          int bytesRead;
 	          final byte[] buffer = new byte[FileUtils.SMALL_DOWNLOAD];
 	          while ((bytesRead = bis.read(buffer)) > 0) {
 	        	  sos.write(buffer, 0, bytesRead);
 	          }
-	          bis.close();
           } catch (Exception e) {
-              logger.error(e);
+        	  	if (sos != null) {
+        	  		sos.close();
+        		}
+        		  
+        		if (bis != null) {
+        			bis.close();
+        		}
           }
 
     }

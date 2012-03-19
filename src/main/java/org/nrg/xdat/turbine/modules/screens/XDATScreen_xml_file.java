@@ -88,8 +88,8 @@ created in buildPDF.
 		    }
 		    HttpServletResponse response = data.getResponse();
 			  //We have to set the size to workaround a bug in IE (see com.lowagie iText FAQ)
-			  data.getResponse().setContentLength(baos.size());
-			  data.getResponse().setHeader("Content-Disposition","attachment;filename=" +fileName);
+			  response.setContentLength(baos.size());
+			  TurbineUtils.setContentDisposition(response, fileName);
 			  ServletOutputStream out = response.getOutputStream();
 			  baos.writeTo(out);
 		}

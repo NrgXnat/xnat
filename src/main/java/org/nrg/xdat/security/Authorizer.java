@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.log4j.Logger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -13,8 +14,10 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.SaveItemHelper;
 
 public class Authorizer implements AuthorizerI{
+	static Logger logger = Logger.getLogger(Authorizer.class);
 
 	private static final String READ = "READ";
 	private static final String SAVE = "SAVE";
@@ -45,8 +48,8 @@ public class Authorizer implements AuthorizerI{
 
 		private static final Map<String,List<String>> unsecured= 
 			new HashMap<String,List<String>>(){{
-				put(READ,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME));
-				put(SAVE,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME));
+				put(READ,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
+				put(SAVE,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
 			}};
 
 	
@@ -87,10 +90,10 @@ public class Authorizer implements AuthorizerI{
         {
 			if(protectedNamespace.get(action).contains(e.getType().getForeignPrefix())){
 	    		AdminUtils.sendAdminEmail(user,"Unauthorized Admin Data Access Attempt", "Unauthorized access of '" + e.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
-	    		throw new InvalidPermissionException("Only site administrators can read core documents.");
+	    		throwException(new InvalidPermissionException("Only site administrators can read core documents."));
 	        }else if(!ElementSecurity.IsSecureElement(e.getXSIType())){
 	        	AdminUtils.sendAdminEmail(user,"Unauthorized Data Access Attempt", "Unauthorized access of '" + e.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
-	    		throw new InvalidPermissionException("Unsecured data access attempt");
+	        	throwException(new InvalidPermissionException("Unsecured data access attempt"));
 	        }
         }
 	}
@@ -102,11 +105,17 @@ public class Authorizer implements AuthorizerI{
 			if(ElementSecurity.IsSecureElement(e.getXSIType())){
 	        	if(!user.canEdit(e)){
 	        		AdminUtils.sendAdminEmail(user,"Unauthorized Data Retrieval Attempt", "Unauthorized access of '" + e.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
-		    		throw new InvalidPermissionException("Unsecured data Access attempt");
+		    		throwException(new InvalidPermissionException("Unsecured data Access attempt"));
 		        }
 	        }
         }
 	}
+	
+	public static void throwException(Exception e) throws Exception{
+		logger.error("",e);
+		throw e;
+	}
+	
 
 	/* (non-Javadoc)
 	 * User is authorized if:

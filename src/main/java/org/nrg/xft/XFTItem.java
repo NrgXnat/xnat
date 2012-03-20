@@ -7005,6 +7005,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	{
 	    try {
             VelocityUtils.init();
+            
+            if(templateName==null)templateName=this.getGenericSchemaElement().getFormattedName() +"_text.vm";
 
             String path = XFTManager.GetInstance().getSourceDir() + "src/templates/text/"+ templateName;
             File f = new File(path);
@@ -7030,7 +7032,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	public String output()
 	{
 	    try {
-	        return output(this.getGenericSchemaElement().getFormattedName() +"_text.vm");
+	        return output(null);
         } catch (Exception e) {
             logger.error("",e);
             return this.toXML_String();

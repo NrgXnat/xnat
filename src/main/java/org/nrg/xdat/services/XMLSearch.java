@@ -12,8 +12,11 @@ import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import javax.xml.transform.TransformerFactoryConfigurationError;
+
 import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
+import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.XDATUser.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFTItem;
@@ -51,18 +54,22 @@ public class XMLSearch {
                 {
                     XFTItem item =(XFTItem)iter.next();
                     
-                    StringWriter sw = new StringWriter();
-                    BufferedWriter bw = new BufferedWriter(sw);
-        			SAXWriter writer = new SAXWriter(bw,true);
-        			writer.setAllowSchemaLocation(true);
-        			writer.setLocation("schemas/");
-        			writer.write(item);
-        			bw.flush();
-        			bw.close();
-                    ArrayList child = new ArrayList();
-                    child.add(item.getUniqueFileName());
-                    child.add(sw.toString());
-                    al.add(child);
+                    try {
+						Authorizer.getInstance().authorizeRead(item, search.getUser());
+						StringWriter sw = new StringWriter();
+						BufferedWriter bw = new BufferedWriter(sw);
+						SAXWriter writer = new SAXWriter(bw,true);
+						writer.setAllowSchemaLocation(true);
+						writer.setLocation("schemas/");
+						writer.write(item);
+						bw.flush();
+						bw.close();
+						ArrayList child = new ArrayList();
+						child.add(item.getUniqueFileName());
+						child.add(sw.toString());
+						al.add(child);
+					} catch (Exception e) {
+					}
                 }
             }else{
             }

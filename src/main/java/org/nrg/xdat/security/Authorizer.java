@@ -19,9 +19,6 @@ import org.nrg.xft.utils.SaveItemHelper;
 public class Authorizer implements AuthorizerI{
 	static Logger logger = Logger.getLogger(Authorizer.class);
 
-	private static final String READ = "READ";
-	private static final String SAVE = "SAVE";
-
 	private Authorizer(){}
 	
 	public static AuthorizerI getInstance(){
@@ -37,20 +34,22 @@ public class Authorizer implements AuthorizerI{
 	 * 
 	 */
 	public void authorizeRead(final XFTItem e, final UserI user) throws Exception {
-		authorize(READ,e,user);
+		authorize(SecurityManager.READ,e,user);
 	}
 
 	private static final Map<String,List<String>> protectedNamespace= 
 		new HashMap<String,List<String>>(){{
-			put(READ,Arrays.asList(new String[]{XFT.PREFIX}));
-			put(SAVE,Arrays.asList(new String[]{XFT.PREFIX,"arc"}));
+			put(SecurityManager.READ,Arrays.asList(new String[]{XFT.PREFIX}));
+			put(SecurityManager.EDIT,Arrays.asList(new String[]{XFT.PREFIX,"arc"}));
+			put(SecurityManager.DELETE,Arrays.asList(new String[]{XFT.PREFIX,"arc"}));
 		}};
 
-		private static final Map<String,List<String>> unsecured= 
-			new HashMap<String,List<String>>(){{
-				put(READ,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
-				put(SAVE,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
-			}};
+	private static final Map<String,List<String>> unsecured= 
+		new HashMap<String,List<String>>(){{
+			put(SecurityManager.READ,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
+			put(SecurityManager.EDIT,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
+			put(SecurityManager.DELETE,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
+		}};
 
 	
 	/* (non-Javadoc)
@@ -62,7 +61,7 @@ public class Authorizer implements AuthorizerI{
 	 * 
 	 */
 	public void authorizeSave(final XFTItem e, final UserI user) throws Exception{
-		authorize(SAVE,e,user);
+		authorize(SecurityManager.EDIT,e,user);
 	}
 	
 	static boolean has_users=false;
@@ -98,13 +97,13 @@ public class Authorizer implements AuthorizerI{
         }
 	}
 	
-	public void authorize(String action,final XFTItem e, final UserI user) throws Exception{
-		if (requiresSecurity(action,e.getGenericSchemaElement(),user))
+	public void authorize(String action,final XFTItem item, final UserI user) throws Exception{
+		if (requiresSecurity(action,item.getGenericSchemaElement(),user))
         {
-			authorize(action,e.getGenericSchemaElement(),user);
-			if(ElementSecurity.IsSecureElement(e.getXSIType())){
-	        	if(!user.canEdit(e)){
-	        		AdminUtils.sendAdminEmail(user,"Unauthorized Data Retrieval Attempt", "Unauthorized access of '" + e.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
+			authorize(action,item.getGenericSchemaElement(),user);
+			if(ElementSecurity.IsSecureElement(item.getXSIType())){
+	        	if(!user.can(item,action)){
+	        		AdminUtils.sendAdminEmail(user,"Unauthorized Data Retrieval Attempt", "Unauthorized access of '" + item.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
 		    		throwException(new InvalidPermissionException("Unsecured data Access attempt"));
 		        }
 	        }
@@ -126,22 +125,22 @@ public class Authorizer implements AuthorizerI{
 	 * 
 	 */
 	public void authorizeDelete(final XFTItem e, final UserI user) throws Exception{
-		authorize(SAVE,e,user);
+		authorize(SecurityManager.DELETE,e,user);
 	}
 
 	public void authorizeRead(GenericWrapperElement e, UserI user)
 			throws Exception {
-		authorize(READ,e,user);
+		authorize(SecurityManager.READ,e,user);
 	}
 
 	public void authorizeSave(GenericWrapperElement e, UserI user)
 			throws Exception {
-		authorize(SAVE,e,user);
+		authorize(SecurityManager.READ,e,user);
 	}
 
 	public void authorizeDelete(GenericWrapperElement e, UserI user)
 			throws Exception {
-		authorize(SAVE,e,user);
+		authorize(SecurityManager.DELETE,e,user);
 	}
 	
 }

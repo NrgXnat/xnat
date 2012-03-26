@@ -28,7 +28,7 @@ import org.springframework.stereotype.Service;
  * @author Rick Herrick <rick.herrick@wustl.edu>
 
  */
-@Service
+@Service("mailService")
 public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 
 	@Override

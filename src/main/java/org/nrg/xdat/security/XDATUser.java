@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -577,10 +578,39 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 		final ArrayList<ElementDisplay> al = new ArrayList<ElementDisplay>();
 		al.addAll(hash.values());
 		al.trimToSize();
-
-		Collections.sort(al,ElementDisplay.SequenceComparator);
+		//Collections.sort(al,ElementDisplay.SequenceComparator);
+		
+		Collections.sort(al,DescriptionComparator);
 		return al;
 	}
+	
+	private final static Comparator NameComparator = new Comparator() {
+	  	  public int compare(Object mr1, Object mr2) throws ClassCastException {
+	  		  try{
+	  			String value1 = ((ElementDisplay)mr1).getElementName();
+	  			String value2 = ((ElementDisplay)mr2).getElementName();
+
+	  			return value1.compareToIgnoreCase(value2);
+	  		  }catch(Exception ex)
+	  		  {
+	  			  throw new ClassCastException("Error Comparing Sequence");
+	  		  }
+	  	  }
+	  	};
+	
+	private final static Comparator DescriptionComparator = new Comparator() {
+	  	  public int compare(Object mr1, Object mr2) throws ClassCastException {
+	  		  try{
+	  			String value1 = ((ElementDisplay)mr1).getSchemaElement().getSingularDescription();
+	  			String value2 = ((ElementDisplay)mr2).getSchemaElement().getSingularDescription();
+
+	  			return value1.compareToIgnoreCase(value2);
+	  		  }catch(Exception ex)
+	  		  {
+	  			  throw new ClassCastException("Error Comparing Sequence");
+	  		  }
+	  	  }
+	  	};
 
 	/**
 	 * ArrayList of ElementDisplays which this user could edit
@@ -1675,7 +1705,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 	            logger.error("",e);
 	        }
 	        bc.trimToSize();
-
+	        
 	    return bc;
 	}
 
@@ -1707,7 +1737,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
             }
             searchable.trimToSize();
             
-            Collections.sort(searchable, ElementDisplay.SequenceComparator);
+            Collections.sort(searchable, NameComparator);
         }
 
         return searchable;

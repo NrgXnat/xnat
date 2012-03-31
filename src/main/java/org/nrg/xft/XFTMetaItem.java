@@ -8,6 +8,7 @@ package org.nrg.xft;
 import java.util.Date;
 
 import org.apache.log4j.Logger;
+import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -107,15 +108,9 @@ public class XFTMetaItem {
     {
         try {
             return this.getSmallItem().getStringProperty("status");
-        } catch (XFTInitException e) {
+        } catch (Exception e) {
             logger.error("",e);
-            return "active";
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-            return "active";
-        } catch (FieldNotFoundException e) {
-            logger.error("",e);
-            return "active";
+            return ViewManager.ACTIVE;
         }
     }
     

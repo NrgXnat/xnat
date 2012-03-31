@@ -12,6 +12,7 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFTItem;
@@ -19,6 +20,7 @@ import org.nrg.xft.meta.XFTMetaElement;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.schema.design.XFTNode;
 import org.nrg.xft.utils.NodeUtils;
+import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -57,6 +59,7 @@ import org.w3c.dom.Node;
  *
  * @author Tim
  */
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public class XFTElement extends XFTNode{
 	private static final String TRUE = "true";
 	private static final String STRING = "string";
@@ -196,6 +199,7 @@ public class XFTElement extends XFTNode{
 				if (NodeUtils.HasAttribute(coreElement,QUARANTINE))
 				    this.setQuarantineSetting(NodeUtils.GetBooleanAttributeValue(coreElement,QUARANTINE,false));
 				this.setSkipSQL(NodeUtils.GetAttributeValue(coreElement,SKIP_SQL,FALSE));
+				this.setDisplayIdentifiers(StringUtils.CommaDelimitedStringToArrayList(NodeUtils.GetAttributeValue(coreElement,"displayIdentifiers","")));
 			}
 			if (sqlElement != null)
 			{
@@ -935,12 +939,29 @@ public class XFTElement extends XFTNode{
 	public void setAddin(String addin) {
 		this.addin = addin;
 	}
+	
+	List<String> displayIdentifiers=null;
+	/**
+	 * @return Returns the displayIdentifiers.
+	 */
+	public List<String> getDisplayIdentifiers() {
+		return displayIdentifiers;
+	}
+	/**
+	 * @param displayIdentifiers The displayIdentifiers to set.
+	 */
+	public void setDisplayIdentifiers(List<String> di) {
+		this.displayIdentifiers = di;
+	}
 
-	public XFTElement clone(XFTElement e)
+	public XFTElement clone(XFTElement e,boolean history)
 	{
 		XFTElement clone = new XFTElement(e.getSchema());
-
-		clone.setAddin("generated");
+		if(history){
+            clone.setAddin("history");
+		}else{
+			clone.setAddin("generated");
+		}
 		clone.setName(e.getName() + "_" + this.getName());
 		clone.setType(clone.getName(),e.getSchema());
 

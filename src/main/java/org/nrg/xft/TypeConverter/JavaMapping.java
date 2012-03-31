@@ -24,6 +24,7 @@ public class JavaMapping extends TypeMappingA {
 		mapping.put("nonPositiveInteger", "java.lang.Integer");
 		mapping.put("negativeInteger", "java.lang.Integer");
 		mapping.put("long", "java.lang.Integer");
+		mapping.put("bigserial", "java.lang.Integer");
 		mapping.put("int", "java.lang.Integer");
 		mapping.put("short", "java.lang.Integer");
 		mapping.put("byte", "java.lang.Integer");

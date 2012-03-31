@@ -12,6 +12,7 @@ import java.util.Hashtable;
 
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
@@ -60,7 +61,7 @@ public class XFTElementIDManager {
 			GenericWrapperElement e =(GenericWrapperElement)GenericWrapperFactory.GetInstance().wrapElement(XFTManager.GetElementTable());
 			XFTItem item = XFTItem.NewItem(e,null);
 			item.setDirectProperty("element_name",s);
-			item.save(null,true,false);
+			item.save(null,true,false,(EventMetaI)null);
 			
 			Integer i = null;
 			Object o = item.getProperty("xdat_meta_element_id");

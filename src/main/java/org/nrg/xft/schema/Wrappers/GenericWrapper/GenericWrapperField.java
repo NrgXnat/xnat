@@ -51,6 +51,7 @@ import org.nrg.xft.utils.StringUtils;
  * 
  * @author Tim
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperField.class);
 	private TorqueField tf = null;
@@ -641,18 +642,13 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 		return getSqlField().getPrimaryKey();
 	}
 	
-	private XFTRelation getRelation()
-	{
-		return wrapped.getRelation();
-	}
-	
 	
 	/**
 	 * if wrapped field has a displayName then that is returned, else
 	 * the wrapped field's name is returned.
 	 * @return
 	 */
-	public String getDisplayName(boolean withPrefix)
+	public String getName(boolean withPrefix)
 	{
 		if (wrapped.getDisplayName() != "")
 		{

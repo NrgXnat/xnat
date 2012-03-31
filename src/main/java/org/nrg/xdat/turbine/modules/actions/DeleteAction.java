@@ -10,6 +10,10 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 
 /**
  * @author Tim
@@ -28,13 +32,28 @@ public class DeleteAction extends SecureAction {
 			o = TurbineUtils.GetItemBySearch(data,true);
 			if (o != null)
 			{		  
+				PersistentWorkflowI wrk=null;
+				if(o.getItem().instanceOf("xnat:experimentData") || o.getItem().instanceOf("xnat:subjectData")){
+					wrk=PersistentWorkflowUtils.buildOpenWorkflow(TurbineUtils.getUser(data),o.getItem(), this.newEventInstance(data, EventUtils.CATEGORY.DATA,"Deprecated Delete Action"));
+				}
+				
+				final EventMetaI ci;
+				if(wrk!=null){
+					ci=wrk.buildEvent();
+				}else{
+					ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
+				}
+				
 				try {
-                    org.nrg.xft.db.DBAction.DeleteItem(o.getItem(),TurbineUtils.getUser(data));
+                    org.nrg.xft.db.DBAction.DeleteItem(o.getItem(),TurbineUtils.getUser(data),ci);
+                    
+                    PersistentWorkflowUtils.complete(wrk,ci);
                     data.setMessage("<p>Item Deleted.</p>");
     			  	data.setScreenTemplate("Index.vm");
                 } catch (RuntimeException e1) {
                     logger.error("",e1);
                     data.setMessage(e1.getMessage());
+                    PersistentWorkflowUtils.fail(wrk,ci);
                 }
 			}else{
 			  	logger.error("No Item Found.");

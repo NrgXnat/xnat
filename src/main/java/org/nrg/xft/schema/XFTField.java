@@ -155,7 +155,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	 * @param string
 	 */
 	public void setDescription(String string) {
-		description = string;
+		description = StringUtils.intern(string);
 	}
 
 	/**

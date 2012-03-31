@@ -13,7 +13,8 @@ package org.nrg.xft.references;
  * 
  * @author Tim
  */
-public interface XFTReferenceI {
+public interface XFTReferenceI extends Comparable<XFTReferenceI>{
 	public boolean isManyToMany();
+	public int compareTo(XFTReferenceI ref);
 }
 

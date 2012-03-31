@@ -434,7 +434,7 @@ public class XMLWriter {
 	 */
 	private Node getAttribute(XFTItem item, Document doc, XMLWrapperField xmlAttr, boolean withPrefix) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
-		Node attribute = doc.createAttribute(xmlAttr.getDisplayName(false));
+		Node attribute = doc.createAttribute(xmlAttr.getName(false));
 		Object o = item.getProperty(xmlAttr.getId());
 		if (o != null)
 		{
@@ -483,7 +483,7 @@ public class XMLWriter {
 								long startTime = Calendar.getInstance().getTimeInMillis();
 								if ((!limited) || (!many1.canBeRootWithBase()))
 								{
-									Node node =itemToNode(many1,doc,xmlField.getDisplayName(withPrefix),false,true,null,withPrefix,limited);
+									Node node =itemToNode(many1,doc,xmlField.getName(withPrefix),false,true,null,withPrefix,limited);
 									if (! xmlField.getXMLType().getFullForeignType().equalsIgnoreCase(many1.getXSIType()))
 									{
 										Node attribute = doc.createAttribute("xsi:type");
@@ -527,7 +527,7 @@ public class XMLWriter {
 	                        XFTItem many1 = XFTItem.SelectItemByIds(foreign, o.toArray(),item.getUser(),true,xmlField.getPreventLoop());
 	                        if ((!limited) || (!many1.canBeRootWithBase()))
 	                        {
-	                        	Node node =itemToNode(many1,doc,xmlField.getDisplayName(withPrefix),false,true,null,withPrefix,limited);
+	                        	Node node =itemToNode(many1,doc,xmlField.getName(withPrefix),false,true,null,withPrefix,limited);
 	                        	if (! xmlField.getXMLType().getFullForeignType().equalsIgnoreCase(many1.getXSIType()))
 	                        	{
 	                        		Node attribute = doc.createAttribute("xsi:type");
@@ -574,19 +574,19 @@ public class XMLWriter {
 							try {
 								if(XFTPseudonymManager.IsAnAlias(xmlField.getSQLName().toLowerCase(),parent.getNodeName()))
 								{
-									Node temp=itemToNode(child,doc,xmlField.getDisplayName(withPrefix),false,true,null,withPrefix,limited);
+									Node temp=itemToNode(child,doc,xmlField.getName(withPrefix),false,true,null,withPrefix,limited);
 									parent =CopyFields(temp,parent);
 								}else if((aliases.get(parent.getNodeName()) != null) && (XFTPseudonymManager.IsAnAlias(xmlField.getSQLName().toLowerCase(),(String)aliases.get(parent.getNodeName()))))
 								{
-									Node temp=itemToNode(child,doc,xmlField.getDisplayName(withPrefix),false,true,null,withPrefix,limited);
+									Node temp=itemToNode(child,doc,xmlField.getName(withPrefix),false,true,null,withPrefix,limited);
 									parent =CopyFields(temp,parent);
 								}else if (! xmlField.isChildXMLNode())
 								{
-									Node temp=itemToNode(child,doc,xmlField.getDisplayName(withPrefix),false,true,null,withPrefix,limited);
+									Node temp=itemToNode(child,doc,xmlField.getName(withPrefix),false,true,null,withPrefix,limited);
 									parent =CopyFields(temp,parent);
 								}else
 								{
-								    Node temp=itemToNode(child,doc,xmlField.getDisplayName(withPrefix),false,true,null,withPrefix,limited);
+								    Node temp=itemToNode(child,doc,xmlField.getName(withPrefix),false,true,null,withPrefix,limited);
 
 
 									if (! xmlField.getXMLType().getFullForeignType().equalsIgnoreCase(child.getXSIType()))
@@ -612,14 +612,14 @@ public class XMLWriter {
 				}
 				if (! xmlField.getWrapped().getMinOccurs().equalsIgnoreCase("0"))
 				{
-					parent.appendChild(doc.createElement(xmlField.getDisplayName(withPrefix)));
+					parent.appendChild(doc.createElement(xmlField.getName(withPrefix)));
 				}
 				return parent;
 			}
 		}
 
 		//NOT A REFERENCE
-		Node main = doc.createElement(xmlField.getDisplayName(withPrefix));
+		Node main = doc.createElement(xmlField.getName(withPrefix));
 		Iterator attributes = xmlField.getAttributes().iterator();
 		while (attributes.hasNext())
 		{

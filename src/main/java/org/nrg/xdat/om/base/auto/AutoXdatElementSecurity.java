@@ -15,6 +15,7 @@ import org.nrg.xdat.om.XdatElementSecurityListingAction;
 import org.nrg.xdat.om.XdatPrimarySecurityField;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ResourceFile;
@@ -365,7 +366,7 @@ public abstract class AutoXdatElementSecurity extends org.nrg.xdat.base.BaseElem
 	public Boolean getQuarantine() {
 		try{
 			if (_Quarantine==null){
-				_Quarantine=getBooleanProperty("quarantine");
+				_Quarantine=getBooleanProperty(ViewManager.QUARANTINE);
 				return _Quarantine;
 			}else {
 				return _Quarantine;

@@ -25,6 +25,8 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -58,11 +60,11 @@ import org.nrg.xft.utils.StringUtils;
  * 
  * @author Tim
  */
+@SuppressWarnings({ "unchecked", "rawtypes" })
 public class DBAction {
 	static org.apache.log4j.Logger logger = Logger.getLogger(DBAction.class);
 	
 	private static boolean ADJUSTED_SEQUENCES = false;
-	private static boolean HAS_PG_SERIAL_SEQUENCE_FUNCTION = true;
 	
 	private static Hashtable sequences = new Hashtable();
 	/**
@@ -81,11 +83,11 @@ public class DBAction {
 	 * @param item
 	 * @return updated XFTItem
 	 */
-	public static boolean StoreItem(XFTItem item, UserI user,boolean checkForDuplicates,boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite,SecurityManagerI securityManager) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,SQLException,Exception
+	public static boolean StoreItem(XFTItem item, UserI user,boolean checkForDuplicates,boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite,SecurityManagerI securityManager,EventMetaI c) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,SQLException,Exception
 	{	    
        long totalStartTime= Calendar.getInstance().getTimeInMillis();
        long localStartTime= Calendar.getInstance().getTimeInMillis();
-	   DBItemCache cache =  new DBItemCache();
+	   DBItemCache cache =  new DBItemCache(user,c);
 	   item = StoreItem(item,user,checkForDuplicates,new ArrayList(),quarantine,overrideQuarantine,allowItemOverwrite,cache,securityManager,false);
 
        logger.debug("prepare-sql: "+(Calendar.getInstance().getTimeInMillis()-localStartTime) + " ms");
@@ -109,8 +111,8 @@ public class DBAction {
 				    username = user.getUsername();
 				    xdat_user_id=user.getID();
 				}
-                if (!cache.getModified().contains(item, false)){
-                    cache.getModified().add(item);
+                if (!cache.getDBTriggers().contains(item, false)){
+                    cache.getDBTriggers().add(item);
                 }
 
                 if(cache.getRemoved().size()>0){
@@ -124,7 +126,7 @@ public class DBAction {
 
 				con = new PoolDBUtils();				
 				con.sendBatch(cache,item.getDBName(),username);
-				if(XFT.VERBOSE)System.out.println("Item modifications stored. " + cache.getModified().size() + " modified elements. " + cache.getStatements().size() + " SQL statements.");
+				if(XFT.VERBOSE)System.out.println("Item modifications stored. " + cache.getDBTriggers().size() + " modified elements. " + cache.getStatements().size() + " SQL statements.");
 
                 
                 logger.debug("store: "+(Calendar.getInstance().getTimeInMillis()-localStartTime) + " ms");
@@ -197,7 +199,7 @@ public class DBAction {
 	 */
 	public static DBItemCache StoreItem(XFTItem item, UserI user,boolean checkForDuplicates,boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite,SecurityManagerI securityManager, DBItemCache cache) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,SQLException,Exception
 	{	    
-	   XFTItem t = StoreItem(item,user,checkForDuplicates,new ArrayList(),quarantine,overrideQuarantine,allowItemOverwrite,cache,securityManager,false);
+	   StoreItem(item,user,checkForDuplicates,new ArrayList(),quarantine,overrideQuarantine,allowItemOverwrite,cache,securityManager,false);
 
 	   return cache;
 	}
@@ -240,6 +242,7 @@ public class DBAction {
 	 */
     	public static XFTItem StoreItem(XFTItem item, UserI user,boolean checkForDuplicates, ArrayList storedRelationships,boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite,DBItemCache cache,SecurityManagerI securityManager, boolean allowFieldMatching) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,SQLException,Exception
     	{
+            boolean isNew = true;
     		try {
     
     			String login = null;
@@ -266,7 +269,6 @@ public class DBAction {
                 }
                 boolean hasOneColumnTable = StoreSingleRefs(item,false,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,true);
 
-                boolean isNew = true;
                 if (item.getPossibleFieldNames().size() == 1)
                 {
                 	String keyName = (String)((Object[])item.getPossibleFieldNames().get(0))[0];
@@ -422,9 +424,10 @@ public class DBAction {
                 						if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
                 						{
                 							GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                							if(item.getProperty(f) == null)
+                							XFTItem meta=(XFTItem)item.getProperty(f);
+                							if(meta == null)
                 							{
-                								XFTItem meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine);
+                								meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 								StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 								
                 								GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
@@ -446,6 +449,9 @@ public class DBAction {
                 										 }
                 									}
                 								}
+                							}else{
+                								meta.setDirectProperty("row_last_modified",cache.getModTime());
+                								meta.setDirectProperty("last_modified",cache.getModTime());
                 							}
                 						}
                 						
@@ -466,9 +472,10 @@ public class DBAction {
                 					if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
                 					{
                 						GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                						if(item.getProperty(f) == null)
-                						{
-                							XFTItem meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine);
+                						XFTItem meta=(XFTItem)item.getProperty(f);
+            							if(meta == null)
+            							{
+                							meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 							StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 							
                 							GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
@@ -489,7 +496,10 @@ public class DBAction {
             										 }
                 								}
                 							}
-                						}
+                						}else{
+            								meta.setDirectProperty("row_last_modified",cache.getModTime());
+            								meta.setDirectProperty("last_modified",cache.getModTime());
+            							}
                 					}
     
             						if (hasOneColumnTable)
@@ -572,9 +582,10 @@ public class DBAction {
                 				if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
                 				{
                 					GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                					if(item.getProperty(f) == null)
-                					{
-                						XFTItem meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine);
+                					XFTItem meta=(XFTItem)item.getProperty(f);
+        							if(meta == null)
+        							{
+                						meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 						StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 						
                 						GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
@@ -595,7 +606,10 @@ public class DBAction {
        										 }
                 							}
                 						}
-                					}
+                					}else{
+        								meta.setDirectProperty("row_last_modified",cache.getModTime());
+        								meta.setDirectProperty("last_modified",cache.getModTime());
+        							}
                 				}
     
                 				if (hasOneColumnTable)
@@ -671,9 +685,10 @@ public class DBAction {
                 			if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
                 			{
                 				GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                				if(item.getProperty(f) == null)
-                				{
-                					XFTItem meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine);
+                				XFTItem meta=(XFTItem)item.getProperty(f);
+    							if(meta == null)
+    							{
+                					meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 					StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 					
                 					GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
@@ -694,7 +709,10 @@ public class DBAction {
    										 }
                 						}
                 					}
-                				}
+                				}else{
+    								meta.setDirectProperty("row_last_modified",cache.getModTime());
+    								meta.setDirectProperty("last_modified",cache.getModTime());
+    							}
                 			}
     
                 			if (hasOneColumnTable)
@@ -709,9 +727,10 @@ public class DBAction {
                 			if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
                 			{
                 				GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
-                				if(item.getProperty(f) == null)
-                				{
-                					XFTItem meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine);
+                				XFTItem meta=(XFTItem)item.getProperty(f);
+    							if(meta == null)
+    							{
+    								meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 					StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 					
                 					GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
@@ -732,7 +751,10 @@ public class DBAction {
    										 }
                 						}
                 					}
-                				}
+                				}else{
+    								meta.setDirectProperty("row_last_modified",cache.getModTime());
+    								meta.setDirectProperty("last_modified",cache.getModTime());
+    							}
                 			}
     
                 			if (hasOneColumnTable)
@@ -768,14 +790,54 @@ public class DBAction {
                 logger.error("Error saving item: \n"+ item.toString());
                 throw e;
             }
-    		
-            if (item.modified && item.getGenericSchemaElement().canBeRoot()){
-                if (!cache.getModified().contains(item, false)){
-                    cache.getModified().add(item);
+
+            
+            if(item.modified && !isNew){
+	            if(item.getGenericSchemaElement().isExtension()){
+	            	//add extensions to the history (if they weren't already)
+	            	confirmExtensionHistory(item,cache,user);
+	            	
+	            	//confirm that item has history has been modified
+	            	if(!cache.getModified().contains(item,false)){
+    	        		StoreHistoryAndMeta(item,user,null,cache);
+            			cache.getModified().add(item);
+            		}
+	            }
+            }
+            
+            if ((item.modified || item.child_modified) && item.getGenericSchemaElement().canBeRoot()){
+            	if (!cache.getDBTriggers().contains(item, false)){
+                    cache.getDBTriggers().add(item);
                 }
             }
             
     		return item;
+    	}
+    	
+    	/**
+    	 * if this item is an extension of another item, and this item was modified, then add history rows for the extended item.
+    	 * @param i
+    	 * @param cache
+    	 * @param user
+    	 * @throws ElementNotFoundException
+    	 * @throws XFTInitException
+    	 * @throws FieldNotFoundException
+    	 * @throws Exception
+    	 */
+    	private static void confirmExtensionHistory(XFTItem i,DBItemCache cache, UserI user) throws ElementNotFoundException, XFTInitException, FieldNotFoundException, Exception{
+            if(i.getGenericSchemaElement().isExtension()){
+	    		final XFTItem extension=i.getExtensionItem();
+	
+	        	//add history rows for this if extended row modified
+	        	if(!cache.getModified().contains(extension,false)){
+	        		//extended item was not modified... but this one was.
+	            	//add history rows for extended items.
+	        		StoreHistoryAndMeta(extension,user,null,cache);
+	    			cache.getModified().add(extension);
+	        	}
+	        	
+	        	confirmExtensionHistory(extension, cache, user);
+            }
     	}
 	
 	/**
@@ -1328,8 +1390,8 @@ public class DBAction {
         							  }
         						  }
                                   
-                                  if (temp.modified){
-                                      item.modified=true;
+                                  if (temp.modified || temp.child_modified){
+                                      item.child_modified=true;
                                   }
         					}else if ((isNoIdentifierTable) && (storeSubItems))
         					{
@@ -1373,7 +1435,7 @@ public class DBAction {
             					    }
         	
         							 //Set foreign keys based on saved values.
-        							 Iterator refIter = ref.getLocalRefNames().iterator();
+        							 ref.getLocalRefNames().iterator();
         							 Object value = temp.getProperty(foreignKey.getId());
         							 if (value != null)
         							 {
@@ -1383,7 +1445,8 @@ public class DBAction {
         							 }
         						 
         						}
-                                if (temp.modified){
+        						if (temp.modified || temp.child_modified){
+                                    item.child_modified=true;
                                     item.modified=true;
                                 }
         					}
@@ -1498,7 +1561,7 @@ public class DBAction {
         					    }
     	
     							 //Set foreign keys based on saved values.
-    							 Iterator refIter = ref.getLocalRefNames().iterator();
+    							 ref.getLocalRefNames().iterator();
     							 Object value = temp.getProperty(foreignKey.getId());
     							 if (value != null)
     							 {
@@ -1586,7 +1649,7 @@ public class DBAction {
                                           
 									      DBAction.RemoveItemReference(dbVersion,ref.getXMLPathString(item.getXSIType()),itemToRemove,user,cache,false,false);
                                           
-                                          item.modified=true;
+                                          item.child_modified=true;
 									  }
 							      }
 						      }
@@ -1603,8 +1666,8 @@ public class DBAction {
 						  counter = counter+1;
 
                           
-                          if (temp.modified){
-                              item.modified=true;
+						  if (temp.modified || temp.child_modified){
+                              item.child_modified=true;
                           }
 					  }
 				
@@ -1646,8 +1709,9 @@ public class DBAction {
 							  }
 						  }
 					
-						  if (StoreMapping(many,search,login,cache))
-						      item.modified=true;
+						  if (StoreMapping(many,search,login,cache)){
+						      item.child_modified=true;
+						  }
 					  }
 					 
 					 if (foreignElement.hasUniqueIdentifiers() && (!foreignElement.matchByValues()))
@@ -1691,7 +1755,7 @@ public class DBAction {
 							          
 									  if(!found){
 									      DBAction.RemoveItemReference(dbVersion,ref.getXMLPathString(item.getXSIType()),itemToRemove,user,cache,false,false);
-                                          item.modified=true;
+                                          item.child_modified=true;
 									  }
 							      }
 						      }
@@ -1701,7 +1765,7 @@ public class DBAction {
 				  }else{
 					  GenericWrapperElement foreignElement = (GenericWrapperElement)ref.getReferenceElement();
 
-					  GenericWrapperField foreignKey = foreignElement.getField(item.getGenericSchemaElement().getFullXMLName());
+					  foreignElement.getField(item.getGenericSchemaElement().getFullXMLName());
 					  if (!foreignElement.hasUniqueIdentifiers() && (!foreignElement.matchByValues()))
 					  {
 					      if (allowItemRemoval)
@@ -1743,7 +1807,7 @@ public class DBAction {
                                           
 									      DBAction.RemoveItemReference(dbVersion,ref.getXMLPathString(item.getXSIType()),itemToRemove,user,cache,false,false);
                                           
-                                          item.modified=true;
+                                          item.child_modified=true;
                                       }
 							      }
 						      }
@@ -1752,7 +1816,6 @@ public class DBAction {
 					  
 					  XFTSuperiorReference supRef = (XFTSuperiorReference)xftRef;
 					  
-					  int counter = 0;
 					  Iterator children = item.getChildItems(ref).iterator();
 					  while (children.hasNext())
 					  {
@@ -1778,9 +1841,9 @@ public class DBAction {
 							  temp = StoreItem(temp,user,false,quarantine,overrideQuarantine,allowItemRemoval, cache,securityManager,true);
 
                               
-                              if (temp.modified){
-                                  item.modified=true;
-                              }
+							  if (temp.modified || temp.child_modified){
+	                              item.child_modified=true;
+	                          }
 							  
 						  }			
 					  }
@@ -1825,7 +1888,7 @@ public class DBAction {
 								  if(!found)
 								  {
 								      DBAction.RemoveItemReference(dbVersion,ref.getXMLPathString(item.getXSIType()),itemToRemove,user,cache,false,false);
-                                      item.modified=true;
+                                      item.child_modified=true;
 								  }
 						      }
 					      }
@@ -1899,7 +1962,7 @@ public class DBAction {
 			GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(item.getXSIType() + "/meta");
 			if(item.getProperty(f) == null)
 			{
-				XFTItem meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),quarantine);
+				XFTItem meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),quarantine,Calendar.getInstance().getTime(),null);
 				
 				item.setChild(f,meta,true);
 			}
@@ -1914,7 +1977,7 @@ public class DBAction {
 	 * @param item
 	 * @return
 	 */
-	private static XFTItem InsertItem(XFTItem item,String login,DBItemCache cache,boolean allowInvalidValues) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,Exception
+	public static XFTItem InsertItem(XFTItem item,String login,DBItemCache cache,boolean allowInvalidValues) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,Exception
 	{
         item.modified=true;
 		item.assignDefaultValues();
@@ -2112,57 +2175,61 @@ public class DBAction {
 	    }
         
 	}
+	private static void StoreHistoryAndMeta(XFTItem oldI, XFTItem newI,UserI user,Boolean quarantine,DBItemCache cache) throws Exception
+	{
+		XFTItem meta=StoreHistoryAndMeta(oldI, user, quarantine, cache);
+		
+		if(newI!=null && meta!=null)
+			newI.setProperty("meta.status",meta.getProperty("status"));
+	}
 	
+	private static XFTItem StoreHistoryAndMeta(XFTItem oldI, UserI user,Boolean quarantine,DBItemCache cache) throws Exception
+	{
+		if (oldI.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
+	    {
+	    	XFTItem meta=(XFTItem)oldI.getMeta();
+
+			//STORE HISTORY ITEM
+	    	try {
+				StoreHistoryItem(oldI,user,cache,oldI.getRowLastModified());
+			} catch (ElementNotFoundException e) {
+			}
+	    	
+			if (meta != null)
+			{
+				meta.setFieldValue("modified","1");
+				meta.setFieldValue("last_modified",cache.getModTime());//other processes may change this as well, like modifications to a child element
+				meta.setFieldValue("row_last_modified",cache.getModTime());//added to track specific changes to this row
+				meta.setFieldValue("xft_version",cache.getChangeId());//added to track specific changes to this row
+								
+				if (quarantine !=null){
+					if(quarantine)
+						meta.setFieldValue("status",ViewManager.QUARANTINE);
+					else
+						meta.setFieldValue("status",ViewManager.ACTIVE);
+				}
+				
+				UpdateItem(meta,user,cache,false);
+			}
+			return meta;
+	    }
+		return null;
+	}
 	/**
 	 * @param item
 	 * @return
 	 */
 	private static XFTItem UpdateItem(XFTItem oldI, XFTItem newI, UserI user,boolean quarantine, boolean overrideQuarantine,DBItemCache cache,boolean storeNULLS) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,Exception
 	{
-	    String login = null;
-	    String id = "NULL";
-		if (user != null)
-		{
-		    login = user.getUsername();
-		    id = user.getID().intValue()+"";
-		}
+
+		Boolean q;
+		if (overrideQuarantine)
+		    q = quarantine;
+		else
+		    q = oldI.getGenericSchemaElement().isQuarantine(quarantine);
+		
 		// MARK MODIFIED AS TRUE
-	    if (oldI.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
-	    {
-			Object metaDataId = (Object)oldI.getProperty(oldI.getGenericSchemaElement().getMetaDataFieldName().toLowerCase());
-			if (metaDataId != null)
-			{
-				XFTItem oldMeta = XFTItem.NewItem(oldI.getGenericSchemaElement().getFullXMLName() +"_meta_data",null);
-				oldMeta.setFieldValue("meta_data_id",metaDataId);
-				oldMeta.setFieldValue("modified","1");
-			    oldMeta.setFieldValue("last_modified",Calendar.getInstance().getTime());
-				
-				
-				boolean q;
-				if (overrideQuarantine)
-				    q = quarantine;
-				else
-				    q = oldI.getGenericSchemaElement().isQuarantine(quarantine);
-				
-				if (q)
-				    oldMeta.setFieldValue("status",ViewManager.QUARANTINE);
-				else
-				    oldMeta.setFieldValue("status",ViewManager.ACTIVE);
-				UpdateItem(oldMeta,user,cache,false);
-				
-				newI.setProperty("meta.status",oldMeta.getProperty("status"));
-			}
-			
-			//STORE HISTORY ITEM
-			try {
-				StoreHistoryItem(oldI,user,cache);
-			} catch (ElementNotFoundException e) {
-				if (newI.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
-				{
-					throw e;
-				}
-			}
-	    }
+	    StoreHistoryAndMeta(oldI, newI, user, q, cache);
 					
 		//COPY PK VALUES INTO NEW ITEM
 		newI.getProps().putAll(oldI.getPkValues());
@@ -2170,33 +2237,15 @@ public class DBAction {
 		//UPDATE ITEM
 		newI = UpdateItem(newI,user,cache,storeNULLS);
 
-		
-//		//CALL UPDATE FUNCTION
-//		String updateFunction = "SELECT update_ls_" + newI.getGenericSchemaElement().getSQLName()+ "(";
-//		int counter = 0;
-//		Iterator iter = newI.getPkNames().iterator();
-//		while (iter.hasNext())
-//		{
-//			String key = (String)iter.next();
-//			GenericWrapperField field = newI.getGenericSchemaElement().getNonMultipleField(key);
-//			if (counter++ == 0)
-//			{
-//			    updateFunction += ValueParser(newI.getProperty(key),field);
-//			}else
-//			{
-//			    updateFunction += ", " + ValueParser(newI.getProperty(key),field);
-//			}
-//		}
-//		updateFunction += ", " + id + ");";
-//		cache.addStatement(updateFunction);
-		
+		cache.getModified().add(newI);
+				
         oldI.modified=true;
         newI.modified=true;
         
 		return newI;
 	}
 	
-	public static void StoreHistoryItem(XFTItem oldI,UserI user,DBItemCache cache) throws ElementNotFoundException,Exception
+	public static void StoreHistoryItem(XFTItem oldI,UserI user,final DBItemCache cache,final Date previousChangeDate) throws ElementNotFoundException,Exception
 	{
 		String login = null;
 		if (user != null)
@@ -2211,7 +2260,11 @@ public class DBAction {
 			{
 				history.setDirectProperty("change_user",user.getID());
 			}
-			history.setDirectProperty("change_date",Calendar.getInstance().getTime());
+			if(previousChangeDate!=null){
+				history.setDirectProperty("previous_change_date",previousChangeDate);
+			}
+			history.setDirectProperty("change_date",cache.getModTime());
+			history.setDirectProperty("xft_version",oldI.getXFTVersion());
 			
 			Hashtable pkHash = (Hashtable)oldI.getPkValues();
 			Enumeration pks = pkHash.keys();
@@ -2226,142 +2279,6 @@ public class DBAction {
 		}
 	}
 	
-//	private static void UpdateRefs(XFTItem oldI,XFTItem newI,String login) throws XFTInitException,ElementNotFoundException,Exception
-//	{
-//		Iterator subs = newI.getGenericSchemaElement().getSubordinateReferences().iterator();
-//		while (subs.hasNext())
-//		{
-//			XFTSuperiorReference sup = (XFTSuperiorReference)subs.next();
-//			GenericWrapperElement foreign = sup.getSubordinateElement();
-//			String query = "UPDATE " + foreign.getSQLName();
-//			query = query + " SET ";
-//			int counter = 0;
-//			
-//			Iterator fields = sup.getKeyRelations().iterator();
-//			while (fields.hasNext())
-//			{
-//				XFTRelationSpecification spec = (XFTRelationSpecification)fields.next();
-//				Object newValue = newI.getProperty(spec.getForeignCol());
-//				if (newValue!= null)
-//				{
-//					if (counter++ == 0)
-//					{
-//						query+= " " + spec.getLocalCol();
-//						query+= "=" + ValueParser(newValue,spec.getSchemaType().getLocalType());
-//					}else{
-//						query += ", " + spec.getLocalCol();
-//						query+= "=" + ValueParser(newValue,spec.getSchemaType().getLocalType());
-//					}
-//				}else{
-//					throw new Exception("CRITICAL ERROR: Missing Key\n" + newI);
-//				}
-//			}
-//			
-//			query += " WHERE ";
-//			
-//			fields = sup.getKeyRelations().iterator();
-//			while (fields.hasNext())
-//			{
-//				XFTRelationSpecification spec = (XFTRelationSpecification)fields.next();
-//				Object oldValue = oldI.getProperty(spec.getForeignCol());
-//				if (oldValue!= null)
-//				{
-//					if (counter++ == 0)
-//					{
-//						query += " " + spec.getLocalCol();
-//						query += "=" + ValueParser(oldValue,spec.getSchemaType().getLocalType());
-//					}else{
-//						query += ", " + spec.getLocalCol();
-//						query += "=" + ValueParser(oldValue,spec.getSchemaType().getLocalType());
-//					}
-//				}else{
-//					throw new Exception("CRITICAL ERROR: Missing Key\n" + oldI);
-//				}
-//			}
-//			
-//			query += ";";
-//			
-//			logger.debug(query);
-//			PoolDBUtils con = null;
-//			try {
-//				con = new PoolDBUtils();
-//				con.executeNonSelectQuery(query,newI.getGenericSchemaElement().getDbName(),login);
-//			} catch (ClassNotFoundException e) {
-//				e.printStackTrace();
-//			} catch (SQLException e) {
-//				e.printStackTrace();
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}	
-//		}
-//		
-//		Iterator manys = newI.getGenericSchemaElement().getManyToManyReferences().iterator();
-//		while (manys.hasNext())
-//		{
-//			XFTManyToManyReference many = (XFTManyToManyReference)manys.next();
-//			String query = "UPDATE " + many.getMappingTable();
-//			query = query + " SET ";
-//			int counter = 0;
-//			
-//			Iterator fields = many.getMappingColumnsForElement(newI.getGenericSchemaElement()).iterator();
-//			while (fields.hasNext())
-//			{
-//				XFTMappingColumn map = (XFTMappingColumn)fields.next();
-//				Object newValue = newI.getProperty(map.getLocalSqlName());
-//				if (newValue!= null)
-//				{
-//					if (counter++ == 0)
-//					{
-//						query+= " " + newI.getGenericSchemaElement().getSQLName() + "_" + map.getLocalSqlName();
-//						query+= "=" + ValueParser(newValue,map.getXmlType().getLocalType());
-//					}else{
-//						query += ", " + newI.getGenericSchemaElement().getSQLName() + "_" + map.getLocalSqlName();
-//						query+= "=" + ValueParser(newValue,map.getXmlType().getLocalType());
-//					}
-//				}else{
-//					throw new Exception("CRITICAL ERROR: Missing Key\n" + newI);
-//				}
-//			}
-//			
-//			query += " WHERE ";
-//			
-//			fields = many.getMappingColumnsForElement(newI.getGenericSchemaElement()).iterator();
-//			while (fields.hasNext())
-//			{
-//				XFTMappingColumn map = (XFTMappingColumn)fields.next();
-//				Object oldValue = oldI.getProperty(map.getLocalSqlName());
-//				if (oldValue!= null)
-//				{
-//					if (counter++ == 0)
-//					{
-//						query+= " " + newI.getGenericSchemaElement().getSQLName() + "_" + map.getLocalSqlName();
-//						query+= "=" + ValueParser(oldValue,map.getXmlType().getLocalType());
-//					}else{
-//						query += ", " + newI.getGenericSchemaElement().getSQLName() + "_" + map.getLocalSqlName();
-//						query+= "=" + ValueParser(oldValue,map.getXmlType().getLocalType());
-//					}
-//				}else{
-//					throw new Exception("CRITICAL ERROR: Missing Key\n" + oldI);
-//				}
-//			}
-//			
-//			query += ";";
-//			
-//			logger.debug(query);
-//			PoolDBUtils con = null;
-//			try {
-//				con = new PoolDBUtils();
-//				con.executeNonSelectQuery(query,newI.getGenericSchemaElement().getDbName(),login);
-//			} catch (ClassNotFoundException e) {
-//				e.printStackTrace();
-//			} catch (SQLException e) {
-//				e.printStackTrace();
-//			} catch (Exception e) {
-//				e.printStackTrace();
-//			}	
-//		}
-//	}
-	
 	/**
 	 * @param item
 	 * @return
@@ -2369,11 +2286,9 @@ public class DBAction {
 	private static XFTItem UpdateItem(XFTItem item,UserI user,DBItemCache cache, boolean storeNULLS) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,InvalidValueException
 	{
 	    String login = null;
-	    String id = "NULL";
 		if (user != null)
 		{
 		    login = user.getUsername();
-		    id = user.getID().intValue()+"";
 		}
 		String query = "UPDATE ";
 		GenericWrapperElement element = item.getGenericSchemaElement();
@@ -2482,6 +2397,9 @@ public class DBAction {
 		return item;
 	}
 	
+	private static String buildType(GenericWrapperField field){
+		return field.getXMLType().getLocalType();
+	}
 	
 	
 	/**
@@ -2507,7 +2425,7 @@ public class DBAction {
 			}
 
 
-			String type = field.getXMLType().getLocalType();
+			String type = buildType(field);
 			if (type.equalsIgnoreCase(""))
 			{
 				if (o instanceof String)
@@ -2842,7 +2760,7 @@ public class DBAction {
             }
             
             if (d!=null){
-                SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+                SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
                 
                 return "'" + df.format(d) + "'";
             }else{
@@ -2859,9 +2777,9 @@ public class DBAction {
 	 * @param toRemove
 	 * @param user
 	 */
-	public static void RemoveItemReference(XFTItem item, String xmlPath, XFTItem toRemove, UserI user) throws SQLException,Exception
+	public static void RemoveItemReference(XFTItem item, String xmlPath, XFTItem toRemove, UserI user, EventMetaI c) throws SQLException,Exception
 	{
-	    DBItemCache cache =  new DBItemCache();
+	    DBItemCache cache =  new DBItemCache(user,c);
 	    RemoveItemReference((XFTItem)item,xmlPath,(XFTItem)toRemove,user,cache,false,false);
 	    
 	    PoolDBUtils con = null;
@@ -2878,8 +2796,8 @@ public class DBAction {
 				    xdat_user_id=user.getID();
 				}
     			
-                if (!cache.getModified().contains(item, false)){
-                    cache.getModified().add(item);
+                if (!cache.getDBTriggers().contains(item, false)){
+                    cache.getDBTriggers().add(item);
                 }
                             
                 PerformUpdateTriggers(cache, username,xdat_user_id,false);
@@ -3032,7 +2950,7 @@ public class DBAction {
                                 if (!noHistory)
                                 {
                                     try {
-                            			StoreHistoryItem(updateItem,user,cache);
+                    	        		StoreHistoryAndMeta(updateItem,user,null,cache);
                             		} catch (ElementNotFoundException e) {
                             			if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
                             			{
@@ -3123,7 +3041,7 @@ public class DBAction {
                                 if (!noHistory)
                                 {
             	                    try {
-            	            			StoreHistoryItem(updateItem,user,cache);
+                    	        		StoreHistoryAndMeta(updateItem,user,null,cache);
             	            		} catch (ElementNotFoundException e) {
             	            			if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
             	            			{
@@ -3174,7 +3092,7 @@ public class DBAction {
                                 if (!noHistory)
                                 {
             	                    try {
-            	            			StoreHistoryItem(updateItem,user,cache);
+                    	        		StoreHistoryAndMeta(updateItem,user,null,cache);
             	            		} catch (ElementNotFoundException e) {
             	            			if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
             	            			{
@@ -3277,7 +3195,7 @@ public class DBAction {
                             if (!noHistory)
                             {
         	                    try {
-        	            			StoreHistoryItem(updateItem,user,cache);
+                	        		StoreHistoryAndMeta(updateItem,user,null,cache);
         	            		} catch (ElementNotFoundException e) {
         	            			if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
         	            			{
@@ -3405,9 +3323,9 @@ public class DBAction {
 	 * @param toRemove
 	 * @param user
 	 */
-	public static void DeleteItem(XFTItem item,UserI user) throws SQLException,Exception
+	public static void DeleteItem(XFTItem item,UserI user,EventMetaI c) throws SQLException,Exception
 	{
-	    DBItemCache cache =  new DBItemCache();
+	    DBItemCache cache =  new DBItemCache(user,c);
 	    DeleteItem(item,user,cache,false,false);
 	    
         XFT.LogInsert(cache.getSQL(),item);
@@ -3423,8 +3341,8 @@ public class DBAction {
 			    xdat_user_id=user.getID();
 			}
 			
-            if (!cache.getModified().contains(item, false)){
-                cache.getModified().add(item);
+            if (!cache.getDBTriggers().contains(item, false)){
+                cache.getDBTriggers().add(item);
             }
             
             PerformUpdateTriggers(cache, username,xdat_user_id,false);
@@ -3445,9 +3363,9 @@ public class DBAction {
 	 * @param toRemove
 	 * @param user
 	 */
-	public static void CleanDeleteItem(XFTItem item,UserI user) throws SQLException,Exception
+	public static void CleanDeleteItem(XFTItem item,UserI user,EventMetaI c) throws SQLException,Exception
 	{
-	    DBItemCache cache =  new DBItemCache();
+	    DBItemCache cache =  new DBItemCache(user,c);
 	    DeleteItem(item,user,cache,true,false);
 
         XFT.LogInsert(cache.getSQL(),item);
@@ -3463,8 +3381,8 @@ public class DBAction {
 			    xdat_user_id=user.getID();
 			}
 			
-            if (!cache.getModified().contains(item, false)){
-                cache.getModified().add(item);
+            if (!cache.getDBTriggers().contains(item, false)){
+                cache.getDBTriggers().add(item);
             }
 
             PerformUpdateTriggers(cache, username,xdat_user_id,false);
@@ -3498,7 +3416,7 @@ public class DBAction {
 		if (!cleanHistory)
 		{
 		    try {
-				StoreHistoryItem(item,user,cache);
+        		StoreHistoryAndMeta(item,user,null,cache);
 			} catch (ElementNotFoundException e) {
 				if (item.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
 				{
@@ -3519,6 +3437,7 @@ public class DBAction {
 		}
 		
 		//DELETE RELATIONS
+		//allowExtension set to true to delete xnat:demographicData when deleting xnat:subjectData (otherwise only deletes xnat:abstactDemographicdata)
 		item = item.getCurrentDBVersion(false,false);
 		
 		if(item!=null){
@@ -3538,7 +3457,7 @@ public class DBAction {
 	    			    {
 	    			        if (extensionItem==null || (! XFTItem.CompareItemsByPKs(child,extensionItem)))
 	    			        {
-	    			            DBAction.RemoveItemReference(item,xmlPath,child,user,cache,true,cleanHistory);
+	    			            DBAction.RemoveItemReference(item,xmlPath,child.getCurrentDBVersion(true, true),user,cache,true,cleanHistory);
 	    			        }
 	    			    }
 	    		    }
@@ -3641,7 +3560,6 @@ public class DBAction {
 	public static void InsertMetaDatas()
 	{
 		try {
-		    DBItemCache cache = new DBItemCache();
 			Iterator iter = XFTManager.GetInstance().getAllElements().iterator();
 			while (iter.hasNext())
 			{
@@ -3660,7 +3578,7 @@ public class DBAction {
 			GenericWrapperElement e =(GenericWrapperElement)GenericWrapperElement.GetElement(elementName);
 			//System.out.println("Update Meta-Data: " + e.getFullXMLName());
 
-            DBItemCache cache = new DBItemCache();
+            DBItemCache cache = new DBItemCache(null,null);
             logger.info("Update Meta-Data: " + e.getFullXMLName());
             ArrayList<GenericWrapperField> keys=e.getAllPrimaryKeys();
             String keyString="";
@@ -3677,7 +3595,7 @@ public class DBAction {
                 t.resetRowCursor();
                 while(t.hasMoreRows()){     
                     Object[] row = t.nextRow();
-                    XFTItem meta = XFTItem.NewMetaDataElement(null,e.getXSIType(),false);
+                    XFTItem meta = XFTItem.NewMetaDataElement(null,e.getXSIType(),false,Calendar.getInstance().getTime(),null);
                     StoreItem(meta,null,true,false,false,false, cache,null,true);
                     keyString = "";
                     int count =0;
@@ -3702,7 +3620,6 @@ public class DBAction {
                PoolDBUtils con = null;
                 try {
                     con = new PoolDBUtils();
-                    String username = null;
                     con.sendBatch(cache,e.getDbName(),null);
                      
                 } catch (SQLException ex) {
@@ -3840,9 +3757,9 @@ public class DBAction {
         ArrayList<String> cmds= new ArrayList<String>();
         try{
             //process modification triggers
-            if (cache.getModified().size()>0){
+            if (cache.getDBTriggers().size()>0){
             	
-                ArrayList<XFTItem> items=cache.getModified().items();
+                ArrayList<XFTItem> items=cache.getDBTriggers().items();
                 
                 if(asynchronous)cmds.add("SET LOCAL synchronous_commit TO OFF;");
                 
@@ -3853,7 +3770,6 @@ public class DBAction {
                     String ids = "";
                     ArrayList keys = mod.getGenericSchemaElement().getAllPrimaryKeys();
                     Iterator keyIter = keys.iterator();
-                    String pk = null;
                     while (keyIter.hasNext())
                     {
                         GenericWrapperField sf = (GenericWrapperField)keyIter.next();

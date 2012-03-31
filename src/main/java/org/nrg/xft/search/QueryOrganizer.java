@@ -40,6 +40,7 @@ import org.nrg.xft.utils.StringUtils;
  * @author Tim
  *
  */
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class QueryOrganizer implements QueryOrganizerI{
 	static org.apache.log4j.Logger logger = Logger.getLogger(QueryOrganizer.class);
     protected SchemaElementI rootElement = null;
@@ -47,7 +48,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 
     protected String level = ViewManager.DEFAULT_LEVEL;
     protected ArrayList<String> fields = new ArrayList<String>();
-    protected Hashtable tables = new Hashtable();
+	protected Hashtable tables = new Hashtable();
 
     protected StringBuffer joins = new StringBuffer();
 
@@ -206,7 +207,7 @@ public class QueryOrganizer implements QueryOrganizerI{
     public static String GetTableAndFieldSQL(String tableAlias, String xmlPath) throws FieldNotFoundException
     {
         String[] layers = GenericWrapperElement.TranslateXMLPathToTables(xmlPath);
-	    String s = layers[0];
+	    
         String tableName = null;
         if (layers[1].indexOf(".")!=-1){
             tableName= layers[1].substring(layers[1].lastIndexOf(".") + 1);
@@ -217,7 +218,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         String viewColumnName="";
         try {
             SchemaElement se = SchemaElement.GetElement(rootElement);
-            viewColumnName = ViewManager.GetViewColumnName(se.getGenericXFTElement(),xmlPath,"ACTIVE",true,true);
+            viewColumnName = ViewManager.GetViewColumnName(se.getGenericXFTElement(),xmlPath,ViewManager.ACTIVE,true,true);
         } catch (XFTInitException e) {
             logger.error("",e);
         } catch (ElementNotFoundException e) {
@@ -242,7 +243,8 @@ public class QueryOrganizer implements QueryOrganizerI{
                 String[] layers = GenericWrapperElement.TranslateXMLPathToTables(s);
                 addFieldToJoin(layers);
             } catch (FieldNotFoundException e) {
-                throw new FieldNotFoundException(s);
+            	e.printStackTrace();
+            	throw new FieldNotFoundException(s);
             } catch (Exception e) {
                 logger.error(e);
                 throw new FieldNotFoundException(s);
@@ -491,7 +493,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     String tableName = layers[1].substring(layers[1].lastIndexOf(".")+1);
                     String colName = layers[2];
 
-                    String viewColName = ViewManager.GetViewColumnName(se,s,"ACTIVE",true,true);
+                    String viewColName = ViewManager.GetViewColumnName(se,s,ViewManager.ACTIVE,true,true);
 
 
                     if (tableAliases.get(tableName)!= null)
@@ -533,7 +535,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     String tableName = layers[1].substring(layers[1].lastIndexOf(".")+1);
                     String colName = layers[2];
 
-                    String viewColName = ViewManager.GetViewColumnName(se,s,"ACTIVE",true,true);
+                    String viewColName = ViewManager.GetViewColumnName(se,s,ViewManager.ACTIVE,true,true);
 
 
                     if (tableAliases.get(tableName)!= null)
@@ -660,13 +662,13 @@ public class QueryOrganizer implements QueryOrganizerI{
                         newColl.add(where);
                         newColl.add(coll);
                         if (activatedOnly){
-                            newColl.addClause(e.getFullXMLName()+"/meta/status", "active");
+                            newColl.addClause(e.getFullXMLName()+"/meta/status", ViewManager.ACTIVE);
                         }
                         coll = newColl;
                     }else if (activatedOnly){
                         CriteriaCollection newColl = new CriteriaCollection("AND");
                         newColl.add(coll);
-                        newColl.addClause(e.getFullXMLName()+"/meta/status", "active");
+                        newColl.addClause(e.getFullXMLName()+"/meta/status", ViewManager.ACTIVE);
                         coll = newColl;
                     }
 
@@ -731,7 +733,6 @@ public class QueryOrganizer implements QueryOrganizerI{
                 }else{
                     String query = "SELECT * FROM " + sql_name;
                     Iterator keys = rootElement.getAllPrimaryKeys().iterator();
-                    CriteriaCollection cc = new CriteriaCollection("AND");
                     int keyCount =0;
                     while (keys.hasNext())
                     {
@@ -813,7 +814,6 @@ public class QueryOrganizer implements QueryOrganizerI{
                         rootTable = (String)tableAliases.get(rootTable);
                     }
 
-                    String rootFieldName=null;
                     String rootElementName = null;
 
                     if (subString.indexOf("]")==-1)
@@ -1594,7 +1594,6 @@ public class QueryOrganizer implements QueryOrganizerI{
 	    			pkCount=0;
 	                while (pks.hasNext())
 	                {
-	SchemaFieldI sf = (SchemaFieldI)pks.next();
 	                    if (pkCount++ != 0)
 	                    {
 	                        sb.append(" AND ");

@@ -413,7 +413,7 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 
 	public String toString()
 	{
-	    StringBuffer sb = new StringBuffer();
+	    StringBuilder sb = new StringBuilder();
 	    Iterator iter = this.getKeyRelations().iterator();
 	    while (iter.hasNext())
 	    {
@@ -421,6 +421,35 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 	        sb.append(spec.toString()).append("\n");
 	    }
 	    return sb.toString();
+	}
+
+	public int compareTo(XFTReferenceI arg0) {
+		if(!(arg0 instanceof XFTSuperiorReference)){
+			return 1;
+		}
+		
+		XFTSuperiorReference ref=(XFTSuperiorReference)arg0;
+		
+		if(this.isManyToMany()==ref.isManyToMany()){
+			return (isManyToMany())?-1:1;
+		}
+		
+		int c=ref.getElement1().getXSIType().compareTo(this.getElement1().getXSIType());
+		if(c!=0){
+			return c;
+		}
+		
+		c=ref.getElement2().getXSIType().compareTo(this.getElement2().getXSIType());
+		if(c!=0){
+			return c;
+		}
+		
+		c=ref.getField1().getXMLPathString().compareTo(this.getField1().getXMLPathString());
+		if(c!=0){
+			return c;
+		}
+		
+		return ref.getField2().getXMLPathString().compareTo(this.getField2().getXMLPathString());
 	}
 }
 

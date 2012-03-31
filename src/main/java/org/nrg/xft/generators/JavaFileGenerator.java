@@ -1396,6 +1396,11 @@ public class JavaFileGenerator {
             validateForm.append("\n</script>");
             
         }else if(e.instanceOf("xnat:experimentData")){
+
+            if (e.instanceOf("xnat:imageAssessorData")){
+                template = StringUtils.ReplaceStr(template, "ModifyItem", "ModifyImageAssessorData");
+            }
+            
             ignoreXMLPaths.add("xnat:experimentData/project");
             ignoreXMLPaths.add("xnat:experimentData/ID");
             ignoreXMLPaths.add("xnat:experimentData/sharing/share");

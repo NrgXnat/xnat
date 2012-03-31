@@ -12,7 +12,6 @@ import java.io.FileFilter;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
-import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -22,6 +21,7 @@ import java.net.URISyntaxException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Properties;
@@ -626,8 +626,11 @@ public  class FileUtils
 	public static void MoveDir(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
 		MoveDir(src,dest,overwrite,null);
 	}
-
 	public static void MoveDir(File src, File dest,boolean overwrite, FileFilter filter) throws FileNotFoundException,IOException{
+		MoveDir(src,dest,overwrite,filter,new DefaultOldFileHandler());
+	}
+	
+	public static void MoveDir(File src, File dest,boolean overwrite, FileFilter filter,OldFileHandlerI handler) throws FileNotFoundException,IOException{
 		if(!overwrite){
 			final File match=FindFirstMatch(src, dest, filter);
 			if(match!=null){
@@ -635,10 +638,20 @@ public  class FileUtils
 			}
 		}
 		
-		MoveDirImpl(src,dest,overwrite,filter);
+		MoveDirImpl(src,dest,overwrite,filter,handler);
 	}
 	
-	private static void MoveDirImpl(File src, File dest,boolean overwrite, FileFilter filter) throws FileNotFoundException,IOException{
+	public static interface OldFileHandlerI{
+		public boolean handle(File f);
+	}
+	
+	public static class DefaultOldFileHandler implements OldFileHandlerI{
+		public boolean handle(File f){
+			return f.delete();
+		}
+	}
+	
+	private static void MoveDirImpl(File src, File dest,boolean overwrite, FileFilter filter,OldFileHandlerI handler) throws FileNotFoundException,IOException{
         boolean moved = false;
 
         if (!dest.exists()){
@@ -661,10 +674,10 @@ public  class FileUtils
         	    	if(filter==null || filter.accept(dChild)){
                     if (f.isDirectory())
                     {
-	                    	MoveDirImpl(f,dChild,overwrite,filter);
+	                    	MoveDirImpl(f,dChild,overwrite,filter,handler);
                     }else{
                     	try{
-	                          MoveFile(f,dChild,overwrite);
+	                          MoveFile(f,dChild,overwrite,handler);
                     	}catch(FileNotFoundException e){
                     		logger.warn("", e);
                     	}
@@ -679,7 +692,9 @@ public  class FileUtils
         }
 	}
 	
-	public static void MoveFile(File src, File dest,boolean overwrite,boolean deleteDIR)throws FileNotFoundException,IOException{
+	
+	
+	public static void MoveFile(File src, File dest,boolean overwrite,boolean deleteDIR,OldFileHandlerI handler)throws FileNotFoundException,IOException{
 		boolean moved = false;
 
 		if(!src.exists())throw new FileNotFoundException(src.getAbsolutePath()); 
@@ -693,7 +708,10 @@ public  class FileUtils
             }else if (!overwrite){
                 return;
             }else{
-            	dest.delete();
+            	if(handler!=null)
+            		handler.handle(dest);
+            	else
+            		dest.delete();
             }
     
             if (!moved)
@@ -706,8 +724,15 @@ public  class FileUtils
             }
 	}
 
+	public static void MoveFile(File src, File dest,boolean overwrite,boolean deleteDIR) throws FileNotFoundException,IOException{
+	    MoveFile(src,dest,overwrite,deleteDIR,null);
+	}
+
+	public static void MoveFile(File src, File dest,boolean overwrite,OldFileHandlerI handler) throws FileNotFoundException,IOException{
+	    MoveFile(src,dest,overwrite,false,handler);
+	}
 	public static void MoveFile(File src, File dest,boolean overwrite) throws FileNotFoundException,IOException{
-	    MoveFile(src,dest,overwrite,false);
+	    MoveFile(src,dest,overwrite,false,null);
 	}
 
 	public static void CleanEmptyDirectories(File level1) throws FileNotFoundException,IOException{
@@ -899,14 +924,55 @@ public  class FileUtils
         }
     }
     
-	public static String renameWTimestamp(final String n){
-		return n + "_" + getTimestamp();
+	public static String renameWTimestamp(final String n,Date d){
+		return n + "_" + getTimestamp(d);
 	}
 	
-	public static String getTimestamp(){
+	public static String getTimestamp(Date d){
 		final SimpleDateFormat sdf = new SimpleDateFormat("yyMMddHHmmss");
-		return sdf.format(Calendar.getInstance().getTime());
+		return sdf.format(d);
 	}
+
+	public static String BuildRootHistoryPath(){
+		String cache = XFT.GetArchiveRootPath();
+		
+		if(StringUtils.IsEmpty(cache))
+		{
+			return "/.history/";
+		}else{
+			return AppendSlash(cache)+".history/";
+		}
+	}
+	
+	public static File BuildHistoryParentFile(File f){
+		return new File(AppendSlash(BuildRootHistoryPath())+AppendSlash(RemoveAbsoluteCharacters(f.getParentFile().getAbsolutePath())));
+	}
+    
+    public static File BuildHistoryFile(final File f, String timestamp) throws FileNotFoundException, IOException{
+		return new File(BuildHistoryParentFile(f),(StringUtils.IsEmpty(timestamp)?"":AppendSlash(timestamp))+ f.getName());
+	}
+    
+    public static File MoveToHistory(final File f,String timestamp) throws FileNotFoundException, IOException{
+		final File dest=BuildHistoryFile(f,timestamp);
+				
+		if(f.isDirectory())
+			FileUtils.MoveDir(f, dest, true);
+		else
+			FileUtils.MoveFile(f, dest, true);
+		
+		return dest; 
+    }
+    
+    public static File CopyToHistory(final File f,String timestamp) throws FileNotFoundException, IOException{
+		final File dest=BuildHistoryFile(f,timestamp);
+				
+		if(f.isDirectory())
+			FileUtils.CopyDir(f, dest, true);
+		else
+			FileUtils.CopyFile(f, dest, true);
+		
+		return dest; 
+    }
     
     public static void MoveToCache(File f) throws FileNotFoundException, IOException{
 		String cache = XFT.GetCachePath();
@@ -916,7 +982,7 @@ public  class FileUtils
 		}
 		cache=AppendSlash(cache)+"DELETED";
 		
-		cache=AppendSlash(cache)+getTimestamp();		
+		cache=AppendSlash(cache)+getTimestamp(Calendar.getInstance().getTime());		
 		
 		String path=f.getAbsolutePath();
 			

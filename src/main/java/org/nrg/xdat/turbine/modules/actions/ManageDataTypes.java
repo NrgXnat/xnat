@@ -16,6 +16,8 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 
 public class ManageDataTypes extends SecureAction {
 
@@ -28,6 +30,8 @@ public class ManageDataTypes extends SecureAction {
         XdatSecurity sec = new XdatSecurity(found);
         
         ArrayList<XdatElementSecurity> ess=sec.getElementSecuritySet_elementSecurity();
+        
+        EventMetaI ci = EventUtils.ADMIN_EVENT(user);
         
         for(XdatElementSecurity es : ess){
             if (es.getProperty("accessible")==null){
@@ -42,7 +46,7 @@ public class ManageDataTypes extends SecureAction {
                 es.setBrowse("false");
             }
             
-            es.save(user, false, false);
+            es.save(user, false, false,ci);
         }
         
         ElementSecurity.refresh();

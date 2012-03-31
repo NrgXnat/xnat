@@ -149,6 +149,10 @@ public class PoolDBUtils {
 
 		return o;
 	}
+	
+	public static synchronized Object GetNextID(String db,String table, String pk, String sequence) throws SQLException, Exception{
+		return (new PoolDBUtils()).getNextID(db, table, pk, sequence);
+	}
 
 	public Object getNextID(String db,String table, String pk, String sequence) throws SQLException, Exception
 	{
@@ -279,6 +283,7 @@ public class PoolDBUtils {
 
 	public void sendBatch(DBItemCache cache,String db,String userName) throws SQLException, Exception
 	{
+		cache.finalize();
 		this.sendBatch(cache.getStatements(), db, userName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
     	cache.reset();
 	}
@@ -646,7 +651,8 @@ public class PoolDBUtils {
      * @throws SQLException
      * @throws DBPoolException
      */
-    public static void PerformUpdateTrigger(XFTItem item, String login)throws SQLException,DBPoolException{
+    @SuppressWarnings("rawtypes")
+	public static void PerformUpdateTrigger(XFTItem item, String login)throws SQLException,DBPoolException{
         CreateCache(item.getDBName(),login);
 
         Connection con = null;
@@ -821,7 +827,12 @@ public class PoolDBUtils {
 
     public static boolean HackCheck(String value)
     {
+    	if(value.matches("[a-zA-z0-9 _\\.]*")){
+    		return false;
+    	}
+    	
     	value=value.toUpperCase();
+    	
     	if(value.matches("<*SCRIPT"))return true;
     	if(StringContains(value,"SELECT")) return true;
     	if(StringContains(value,"INSERT")) return true;

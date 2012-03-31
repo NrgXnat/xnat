@@ -24,6 +24,7 @@ import java.util.Hashtable;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.om.XdatUserI;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -248,6 +249,11 @@ public abstract class ItemWrapper implements ItemI {
 	    this.getItem().quarantine(user);
 	}
 	
+	public void lock(UserI user) throws Exception
+	{
+	    this.getItem().lock(user);
+	}
+	
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#canActivate(org.nrg.xft.security.UserI)
 	 */
@@ -313,6 +319,14 @@ public abstract class ItemWrapper implements ItemI {
         return this.getItem().getChildItems(field);
     }
     /* (non-Javadoc)
+     * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
+     */
+    public ArrayList getChildItems(XFTFieldWrapper field,boolean includeHistory)
+            throws XFTInitException, ElementNotFoundException,
+            FieldNotFoundException {
+        return this.getItem().getChildItems(field,includeHistory);
+    }
+    /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#getCurrentDBVersion()
      */
     public XFTItem getCurrentDBVersion() {
@@ -350,18 +364,18 @@ public abstract class ItemWrapper implements ItemI {
     /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
      */
-    public boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+    public boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
     	this.preSave();
-        final boolean _success= this.getItem().save(user,overrideSecurity,allowItemRemoval);
+        final boolean _success= this.getItem().save(user,overrideSecurity,allowItemRemoval,c);
         if(_success)this.postSave();
         return _success;
     }
     /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
      */
-    public void save(UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval) throws Exception {
+    public void save(UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception {
         this.preSave();
-    	this.getItem().save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
+    	this.getItem().save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);
     	this.postSave();
     }
     

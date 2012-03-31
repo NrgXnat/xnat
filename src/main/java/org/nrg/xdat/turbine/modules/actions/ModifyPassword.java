@@ -20,6 +20,7 @@ import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
@@ -124,7 +125,7 @@ public class ModifyPassword extends SecureAction {
 				found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
 				
 				try {
-					found.save(TurbineUtils.getUser(data),false,false);
+					found.save(TurbineUtils.getUser(data),false,false,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
 				} catch (Exception e) {
 					logger.error("Error Storing " + found.getXSIType(),e);
 				}

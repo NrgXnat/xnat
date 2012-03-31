@@ -23,7 +23,10 @@ import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.event.EventDetails;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
@@ -36,7 +39,6 @@ import org.nrg.xft.search.ItemSearch;
 public abstract class SecureAction extends VelocitySecureAction
 {
     static Logger logger = Logger.getLogger(SecureAction.class);
-
 
     protected void preserveVariables(RunData data, Context context){
         if (data.getParameters().containsKey("project")){
@@ -180,6 +182,48 @@ public abstract class SecureAction extends VelocitySecureAction
 
     public boolean allowGuestAccess(){
         return true;
+    }
+
+	
+	public static EventUtils.TYPE getEventType(RunData data){
+		final String id=(String)TurbineUtils.GetPassedParameter(EventUtils.EVENT_TYPE, data);
+		if(id!=null){
+			return EventUtils.getType(id, EventUtils.TYPE.WEB_FORM);
+		}else{
+			return EventUtils.TYPE.WEB_FORM;
+		}
+	}
+
+    public static String getReason(RunData data){
+    	return (String)TurbineUtils.GetPassedParameter(EventUtils.EVENT_REASON, data);
+    }
+	
+	public static String getAction(RunData data){
+		return (String)TurbineUtils.GetPassedParameter(EventUtils.EVENT_ACTION,data);
+	}
+	
+	public static String getComment(RunData data){
+		return (String)TurbineUtils.GetPassedParameter(EventUtils.EVENT_COMMENT,data);
+	}
+	
+	public static EventDetails newEventInstance(RunData data,EventUtils.CATEGORY cat){
+		return EventUtils.newEventInstance(cat, getEventType(data), getAction(data), getReason(data), getComment(data));
+	}
+	
+	public static EventDetails newEventInstance(RunData data,EventUtils.CATEGORY cat,String action){
+		return EventUtils.newEventInstance(cat, getEventType(data), (getAction(data)!=null)?getAction(data):action, getReason(data), getComment(data));
+	}
+
+    public void handleException(RunData data,XFTItem first,Throwable error, String itemIdentifier){
+        data.getSession().setAttribute(itemIdentifier,first);
+        data.addMessage(error.getMessage());
+        if (data.getParameters().getString("edit_screen") !=null)
+        {
+            data.setScreenTemplate(data.getParameters().getString("edit_screen"));
+        }else{
+            data.setScreenTemplate("Index.vm");
+        }
+        return;
     }
 }
 

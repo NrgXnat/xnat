@@ -12,9 +12,12 @@ import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.Date;
+import java.util.Hashtable;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 /**
  * @author Tim
  *
@@ -24,9 +27,6 @@ public class DateUtils {
 	List<SimpleDateFormat> dateTimes=new ArrayList<SimpleDateFormat>();
 	List<SimpleDateFormat> times=new ArrayList<SimpleDateFormat>();
 	
-	private boolean inUse=false;
-	
-	private DateFormat df=null;
 	private static List<DateUtils> FREE=new ArrayList<DateUtils>();
 		
 	public synchronized static DateUtils GetInstance(){
@@ -46,12 +46,19 @@ public class DateUtils {
 	}
 		
 	private void open(){
-		inUse=true;
 	}
 	
 	private void close(){
 		FREE.add(this);
-		inUse=false;
+	}
+	
+	static Map<String,SimpleDateFormat> formatters=new Hashtable<String,SimpleDateFormat>();
+	public synchronized static String format(Date d, String format){
+		if(!formatters.containsKey(format)){
+			formatters.put(format,new SimpleDateFormat(format));
+		}
+		
+		return formatters.get(format).format(d);
 	}
 	
 	private DateUtils(){
@@ -63,8 +70,8 @@ public class DateUtils {
 		
 
 		dateTimes.add(new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US));
-		dateTimes.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US));
 		dateTimes.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S", Locale.US));
+		dateTimes.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US));
 		dateTimes.add(new SimpleDateFormat("EEE MMM dd HH:mm:ss.S", Locale.US));
 		dateTimes.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss z", Locale.US));
 		dateTimes.add(new SimpleDateFormat("EEE MMM dd HH:mm:ss", Locale.US));
@@ -76,8 +83,6 @@ public class DateUtils {
 		times.add(new SimpleDateFormat("HH:mm:ss", Locale.US));
 		times.add(new SimpleDateFormat("HH:mm:ss z", Locale.US));
 		times.add(new SimpleDateFormat("HHmmss", Locale.US));
-		
-		df=DateFormat.getInstance();
 	}
 	
 	
@@ -144,6 +149,71 @@ public class DateUtils {
     	Date d=du.parseT(s);
     	du.close();
         return d;
+    }
+    
+    /**
+     * Returns true if d1 is on or after d2.  If both are null, then they are equal.  Otherwise, null is considered to be after a valid date.
+     * @param d1
+     * @param d2
+     * @return
+     */
+    public static boolean isOnOrAfter(Date d1, Date d2){
+    	int compare=(new TimestampSafeComparator()).compare(d1,d2);
+    	return (compare==0 || compare==1);
+    }
+
+    
+    /**
+     * Returns true if d1 is on or before d2.  If both are null, then they are equal.  Otherwise, null is considered to be after a valid date.
+     * @param d1
+     * @param d2
+     * @return
+     */
+    public static boolean isOnOrBefore(Date d1, Date d2){
+    	int compare=(new TimestampSafeComparator()).compare(d1,d2);
+    	return (compare==0 || compare==-1);
+    }
+
+
+    
+    /**
+     * Returns true if is = d2.  If both are null, then they are equal.  Otherwise, null is considered to be after a valid date.
+     * @param d1
+     * @param d2
+     * @return
+     */
+    public static boolean isEqualTo(Date d1, Date d2){
+    	int compare=(new TimestampSafeComparator()).compare(d1,d2);
+    	return (compare==0);
+    }
+
+    
+    /**
+     * Returns 0 if d1 is = d2.  If both are null, then they are equal.  Otherwise, null is considered to be after a valid date.
+     * @param d1
+     * @param d2
+     * @return
+     */
+    public static int compare(Date d1, Date d2){
+    	return (new TimestampSafeComparator()).compare(d1,d2);
+    }
+    
+    public static class TimestampSafeComparator implements Comparator<Date>{
+
+		public int compare(Date one, Date two) {
+			if (one == null ^ two == null) {        
+				return (one == null) ? 1 : -1;     
+			}      
+			if (one == null && two == null) {         
+				return 0;     
+			}
+			return ((Long)one.getTime()).compareTo((Long)two.getTime()); 
+		}
+    	
+    }
+    
+    public static java.util.Date toDate(java.sql.Timestamp timestamp) {
+        return new java.util.Date(timestamp.getTime());
     }
 }
 

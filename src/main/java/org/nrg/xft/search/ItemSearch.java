@@ -342,6 +342,15 @@ public class ItemSearch implements SearchI {
         
         return items;
     }
+    
+    public String getFunctionName(){
+    	String functionName= element.getTextFunctionName();
+	    if ((!this.isExtend()) && (element.isExtended() && (!(element.getName().endsWith("meta_data")))))
+	    {
+	        functionName= GenericWrapperUtils.TXT_EXT_FUNCTION + element.getFormattedName();
+	    }
+	    return functionName;
+    }
 
     public ItemCollection getItemsFromKeys(List<List<IdentifierResults>> matches, String login)throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception{
 	    if (!allowMultipleMatches && matches.size()>1)
@@ -352,12 +361,7 @@ public class ItemSearch implements SearchI {
 	    long midTime = Calendar.getInstance().getTimeInMillis();
 
 	    ItemCollection items = new ItemCollection();
-	    String functionName= element.getTextFunctionName();
-	    if ((!this.isExtend()) && (element.isExtended() && (!(element.getName().endsWith("meta_data") || element
-                .getName().endsWith("history")))))
-	    {
-	        functionName= GenericWrapperUtils.TXT_EXT_FUNCTION + element.getFormattedName();
-	    }
+	    final String functionName=getFunctionName();
 	    
 	    
 
@@ -419,7 +423,7 @@ public class ItemSearch implements SearchI {
 
 	public ItemCollection exec() throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
 	{
-        if (!allowMultiples && ALLOW_OLD_SEARCH && !element.isExtended()){
+        if (!allowMultiples && ALLOW_OLD_SEARCH && !element.isExtended() && !element.getName().endsWith("_history")){
             return execute();
         }else{
             String login = null;
@@ -820,6 +824,9 @@ public class ItemSearch implements SearchI {
 	 */
 	public static ItemCollection GetItems(CriteriaCollection cc, UserI user,boolean preLoad) throws Exception
 	{
+		if(cc.toArrayList().size()==0){
+			return new ItemCollection();
+		}
         SQLClause clause = (SQLClause)cc.toArrayList().get(0);
 	    return GetItems(clause.getElementName(),cc,user,preLoad);
 	}

@@ -17,6 +17,7 @@ import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidPermissionException;
@@ -79,12 +80,7 @@ public class XMLUpload extends SecureAction {
                 	q = item.getGenericSchemaElement().isQuarantine();
                 	override = false;
 
-                	if (allowDeletion.equalsIgnoreCase("true"))
-                	{
-                    	SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,true);
-                	}else{
-                    	SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,false);
-                	}
+                    SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"),newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XAR));
 
                 	if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");

@@ -27,6 +27,8 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.MaterializedView;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -99,6 +101,7 @@ public class CSVUpload2 extends SecureAction {
 
         String project = data.getParameters().getString("project");
         
+        EventMetaI ci=EventUtils.DEFAULT_EVENT(TurbineUtils.getUser(data),"Spreadsheet upload");
 
         ArrayList displaySummary = new ArrayList();
         List fields = fm.getFields();
@@ -265,7 +268,7 @@ public class CSVUpload2 extends SecureAction {
                 }
 
                 try {
-                    item.save(user, false, false);
+                    item.save(user, false, false,ci);
                     rowSummary.add("<font color='black'><b>Successful</b></font>");
                 } catch (Throwable e1) {
                     logger.error("",e1);

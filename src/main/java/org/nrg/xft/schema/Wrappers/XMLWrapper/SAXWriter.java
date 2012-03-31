@@ -328,11 +328,11 @@ public class SAXWriter {
             		Object o = child.getProperty(attField.getId());
             		if (o != null && !o.toString().equals(""))
             		{
-            		    atts.addAttribute("","",attField.getDisplayName(false),"CDATA",XMLWriter.ValueParser(o,attField,appendRootPath,relativizePath));
+            		    atts.addAttribute("","",attField.getName(false),"CDATA",XMLWriter.ValueParser(o,attField,appendRootPath,relativizePath));
             		}else{
             		    if (attField.isRequired())
             		    {
-            		        atts.addAttribute("","",attField.getDisplayName(false),"CDATA","");
+            		        atts.addAttribute("","",attField.getName(false),"CDATA","");
             		    }else{
 
             		    }
@@ -416,7 +416,7 @@ public class SAXWriter {
 			    {
 			        int counter = 0;
 					try {
-                        ArrayList children =  item.getCurrentChildItems(xmlField,item.getUser());
+                        ArrayList children =  item.getCurrentChildItems(xmlField,item.getUser(),false);
                         Iterator iter = children.iterator();
                         int child_count = children.size();
                         while (iter.hasNext())
@@ -442,10 +442,10 @@ public class SAXWriter {
                                             writeChildData(many1,parentNodeName);
                         				}else
                         				{
-                        					this.transformer.startElement("","",xmlField.getDisplayName(allowSchemaLocation),atts);
+                        					this.transformer.startElement("","",xmlField.getName(allowSchemaLocation),atts);
                                             writeHiddenFields(many1);
-                        			        writeChildData(many1,xmlField.getDisplayName(allowSchemaLocation));
-                        					this.transformer.endElement("","",xmlField.getDisplayName(allowSchemaLocation));
+                        			        writeChildData(many1,xmlField.getName(allowSchemaLocation));
+                        					this.transformer.endElement("","",xmlField.getName(allowSchemaLocation));
                         				}
                         			}
 
@@ -492,10 +492,10 @@ public class SAXWriter {
                                         writeChildData(many1,parentNodeName);
                         			}else
                         			{
-                        				this.transformer.startElement("","",xmlField.getDisplayName(allowSchemaLocation),atts);
+                        				this.transformer.startElement("","",xmlField.getName(allowSchemaLocation),atts);
                                         writeHiddenFields(many1);
-                        		        writeChildData(many1,xmlField.getDisplayName(allowSchemaLocation));
-                        				this.transformer.endElement("","",xmlField.getDisplayName(allowSchemaLocation));
+                        		        writeChildData(many1,xmlField.getName(allowSchemaLocation));
+                        				this.transformer.endElement("","",xmlField.getName(allowSchemaLocation));
                         			}
                                 }
 
@@ -558,10 +558,10 @@ public class SAXWriter {
                                         writeChildData(child,parentNodeName);
                     				}else
                     				{
-                    					this.transformer.startElement("","",xmlField.getDisplayName(allowSchemaLocation),atts);
+                    					this.transformer.startElement("","",xmlField.getName(allowSchemaLocation),atts);
                                         writeHiddenFields(child);
-                    			        writeChildData(child,xmlField.getDisplayName(allowSchemaLocation));
-                    					this.transformer.endElement("","",xmlField.getDisplayName(allowSchemaLocation));
+                    			        writeChildData(child,xmlField.getName(allowSchemaLocation));
+                    					this.transformer.endElement("","",xmlField.getName(allowSchemaLocation));
                     				}
 //
 //							//CLEAR PROCESSED CHILDREN
@@ -571,8 +571,8 @@ public class SAXWriter {
                     }else if ((! xmlField.getWrapped().getMinOccurs().equalsIgnoreCase("0")) && (!item.getGenericSchemaElement().getExtensionFieldName().equals(xmlField.getName())))
     				{
 
-    				    this.transformer.startElement("","",xmlField.getDisplayName(allowSchemaLocation),new AttributesImpl());
-    					this.transformer.endElement("","",xmlField.getDisplayName(allowSchemaLocation));
+    				    this.transformer.startElement("","",xmlField.getName(allowSchemaLocation),new AttributesImpl());
+    					this.transformer.endElement("","",xmlField.getName(allowSchemaLocation));
     				}
                 } catch (XFTInitException e) {
                     logger.error("",e);
@@ -594,11 +594,11 @@ public class SAXWriter {
                         Object o = item.getProperty(x.getId());
                         if (o != null && !o.toString().equals(""))
                         {
-                            nextAtts.addAttribute("","",x.getDisplayName(false),"CDATA",XMLWriter.ValueParser(o,x,appendRootPath,relativizePath));
+                            nextAtts.addAttribute("","",x.getName(false),"CDATA",XMLWriter.ValueParser(o,x,appendRootPath,relativizePath));
                         }else{
                             if (x.isRequired())
                             {
-                        	    nextAtts.addAttribute("","",x.getDisplayName(false),"CDATA","");
+                        	    nextAtts.addAttribute("","",x.getName(false),"CDATA","");
                             }else{
                             }
                         }
@@ -614,17 +614,17 @@ public class SAXWriter {
                             Object o = item.getProperty(x.getId());
                         	if (o != null && !o.toString().equals(""))
                         	{
-                        	    nextAtts.addAttribute("","",x.getDisplayName(false),"CDATA",XMLWriter.ValueParser(o,x,appendRootPath,relativizePath));
+                        	    nextAtts.addAttribute("","",x.getName(false),"CDATA",XMLWriter.ValueParser(o,x,appendRootPath,relativizePath));
                         	}else{
                         	    if (x.isRequired())
                         	    {
-                        		    nextAtts.addAttribute("","",x.getDisplayName(false),"CDATA","");
+                        		    nextAtts.addAttribute("","",x.getName(false),"CDATA","");
                         	    }else{
                         	    }
                         	}
                         }else{
                             if (x.isRequired()){
-                        	    nextAtts.addAttribute("","",x.getDisplayName(false),"CDATA","");
+                        	    nextAtts.addAttribute("","",x.getName(false),"CDATA","");
                             }
                         }
                     } catch (XFTInitException e) {
@@ -649,7 +649,7 @@ public class SAXWriter {
 
 			    if (hasContent)
 			    {
-			        transformer.startElement("","",xmlField.getDisplayName(allowSchemaLocation),nextAtts);
+			        transformer.startElement("","",xmlField.getName(allowSchemaLocation),nextAtts);
 
 					Iterator childElements2 = xmlField.getChildren().iterator();
 					while(childElements2.hasNext())
@@ -657,10 +657,10 @@ public class SAXWriter {
 						XMLWrapperField xwf = (XMLWrapperField)childElements2.next();
 						if (xwf.getExpose())
 						{
-						    writeChildField(item,xwf,xmlField.getDisplayName(allowSchemaLocation),false);
+						    writeChildField(item,xwf,xmlField.getName(allowSchemaLocation),false);
 						}
 					}
-					transformer.endElement("","",xmlField.getDisplayName(allowSchemaLocation));
+					transformer.endElement("","",xmlField.getName(allowSchemaLocation));
 
 			    }
 			}else
@@ -679,9 +679,9 @@ public class SAXWriter {
                     	String value = XMLWriter.ValueParser(item.getProperty(xmlField.getId()),xmlField,appendRootPath,relativizePath);
                     	if (! (value == null || value.equalsIgnoreCase("")))
                     	{
-                    	    if (!noChildParent)transformer.startElement("","",xmlField.getDisplayName(allowSchemaLocation),nextAtts);
+                    	    if (!noChildParent)transformer.startElement("","",xmlField.getName(allowSchemaLocation),nextAtts);
                     	    transformer.characters(value.toCharArray(),0,value.length());
-                    	    if (!noChildParent)transformer.endElement("","",xmlField.getDisplayName(allowSchemaLocation));
+                    	    if (!noChildParent)transformer.endElement("","",xmlField.getName(allowSchemaLocation));
                     	    needsEmptyTag=false;
                     	}
                     }else if (xmlField.isRequired()){
@@ -691,8 +691,8 @@ public class SAXWriter {
 
                     if (needsEmptyTag)
                     {
-                        transformer.startElement("","",xmlField.getDisplayName(allowSchemaLocation),nextAtts);
-                        transformer.endElement("","",xmlField.getDisplayName(allowSchemaLocation));
+                        transformer.startElement("","",xmlField.getName(allowSchemaLocation),nextAtts);
+                        transformer.endElement("","",xmlField.getName(allowSchemaLocation));
                     }
                 }catch (XFTInitException e) {
                     logger.error("",e);

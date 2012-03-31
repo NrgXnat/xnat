@@ -10,14 +10,17 @@ package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.List;
 
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 /**
  * Alternative version of the GenericWrapperElement used to summarize the element
  * from an XML perspective.
  * 
  * @author Tim
  */
+@SuppressWarnings({"unchecked","rawtypes"})
 public class XMLWrapperElement extends GenericWrapperElement implements XMLNode {
 
 	public org.nrg.xft.schema.design.XFTFactoryI getFactory()
@@ -26,6 +29,7 @@ public class XMLWrapperElement extends GenericWrapperElement implements XMLNode 
 	}
 
 	private ArrayList children=null;
+	
 	/**
 	* Includes all child nodes where the field's expose is true and it is not an attribute.
 	* @return ArrayList of XMLWrapperField
@@ -78,5 +82,28 @@ public class XMLWrapperElement extends GenericWrapperElement implements XMLNode 
 	    }
 		return attributes;
 	}
+	
+
+	
+	/**
+	 * Returns the sql names of the pk fields for this item.
+	 * @return ArrayList of strings
+	 */
+	public List<String> getPkNames() throws org.nrg.xft.exception.XFTInitException
+	{
+		List<String> keyNames = new ArrayList<String>();
+
+		Iterator keys = getAllPrimaryKeys().iterator();
+
+		while (keys.hasNext())
+		{
+			keyNames.add(((GenericWrapperField)keys.next()).getName());
+		}
+
+		return keyNames;
+	}
+
+
+
 }
 

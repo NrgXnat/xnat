@@ -83,23 +83,13 @@ public class XMLWrapperField extends GenericWrapperField implements XMLNode{
 	 * the wrapped field's name is returned.
 	 * @return
 	 */
-	public String getDisplayName(boolean withPrefix)
+	public String getName(boolean withPrefix)
 	{
-		if (wrapped.getDisplayName() != "")
-		{
-		    if (withPrefix)
-		        return this.getPrefix() +":" + wrapped.getDisplayName();
-		    else{
-		        return wrapped.getDisplayName();
-		    }
-		}else
-		{
-		    if (withPrefix)
-			    return this.getPrefix() +":" + wrapped.getName();
-		    else{
-			    return wrapped.getName();
-		    }
-		}
+		if (withPrefix)
+		    return this.getPrefix() +":" + wrapped.getName();
+	    else{
+		    return wrapped.getName();
+	    }
 	}
     
     public String getDisplayName()
@@ -114,7 +104,7 @@ public class XMLWrapperField extends GenericWrapperField implements XMLNode{
     }
     
     public XMLType getExternalXMLType(){
-        return new XMLType(this.getPrefix() +":" + getDisplayName(),this.getParentElement().getGenericXFTElement().getSchema());
+        return new XMLType(getName(true),this.getParentElement().getGenericXFTElement().getSchema());
     }
 	
 	public String getPrefix()

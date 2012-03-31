@@ -60,6 +60,7 @@ import org.xml.sax.SAXException;
  *
  */
 public class TurbineUtils {
+	public static final String EDIT_ITEM = "edit_item";
 	static Logger logger = Logger.getLogger(TurbineUtils.class);
 	private XdatSecurity _security = null;
 	
@@ -272,13 +273,13 @@ public class TurbineUtils {
 	
 	public static void SetEditItem(ItemI item,RunData data)
 	{
-	    data.getSession().setAttribute("edit_item",item);
+	    data.getSession().setAttribute(EDIT_ITEM,item);
 	}
 	
 	public static ItemI GetEditItem(RunData data)
 	{
-		final ItemI edit_item = (ItemI)data.getSession().getAttribute("edit_item");
-	    data.getSession().removeAttribute("edit_item");
+		final ItemI edit_item = (ItemI)data.getSession().getAttribute(EDIT_ITEM);
+	    data.getSession().removeAttribute(EDIT_ITEM);
 	    return edit_item;
 	}
 	

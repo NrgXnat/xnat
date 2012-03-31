@@ -38,6 +38,7 @@ public class PGSQLMapping extends TypeMappingA {
 		mapping.put("gYear","INTEGER");
 		mapping.put("LONGVARCHAR","TEXT");
         mapping.put("anyURI","TEXT");
+        mapping.put("bigserial","bigserial");
 		this.setName("SQL");
 	}
 }

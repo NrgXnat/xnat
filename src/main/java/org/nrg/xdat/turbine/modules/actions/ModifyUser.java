@@ -21,6 +21,8 @@ import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 /**
  * 
@@ -54,6 +56,9 @@ public class ModifyUser extends SecureAction {
 				hash.put(elementToLoad, elementToLoad);
 			}
 		}
+		
+		EventMetaI ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
+		
 		PopulateItem populater = PopulateItem.Populate(data,
 				org.nrg.xft.XFT.PREFIX + ":user", true);
 		ItemI found = populater.getItem();
@@ -77,8 +82,7 @@ public class ModifyUser extends SecureAction {
 						"SiteUser");
 				XDATUser newUser = new XDATUser(found);
 				// newUser.initializePermissions();
-				newUser.save(TurbineUtils.getUser(data), true, false, true,
-						false);
+				newUser.save(TurbineUtils.getUser(data), true, false, true,	false,ci);
 			} else {
 				// OLD USER
 				String tempPass = found.getStringProperty("primary_password");
@@ -93,7 +97,7 @@ public class ModifyUser extends SecureAction {
 							found.setProperty("primary_password", XDATUser
 									.EncryptString(tempPass,"SHA-256"));
 				}
-				found.save(TurbineUtils.getUser(data), false, false);
+				found.save(TurbineUtils.getUser(data), false, false,ci);
 			}
 			// UserCache.Clear();
 			// if (temp == null)

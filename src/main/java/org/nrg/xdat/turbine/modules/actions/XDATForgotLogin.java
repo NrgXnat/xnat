@@ -21,6 +21,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.email.EmailUtils;
 import org.nrg.xft.email.EmailerI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 
 public class XDATForgotLogin extends VelocitySecureAction {
@@ -120,7 +121,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     String tempPass = newUser.getStringProperty("primary_password");
                     newUser.setProperty("primary_password",XDATUser.EncryptString(newPassword,"SHA-256"));
                    	
-                    newUser.save(null, true, false);
+                    newUser.save(null, true, false,EventUtils.ADMIN_EVENT(newUser));
                     try {
                     	EmailerI sm = EmailUtils.getEmailer();
                         sm.setFrom(AdminUtils.getAdminEmailId());

@@ -19,6 +19,7 @@ import java.lang.reflect.Method;
 import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Comparator;
 import java.util.Date;
@@ -33,6 +34,7 @@ import java.util.TreeMap;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
+import org.apache.commons.collections.Predicate;
 import org.apache.log4j.Logger;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
@@ -48,9 +50,11 @@ import org.nrg.xft.compare.ItemEqualityI;
 import org.nrg.xft.compare.ItemPKEquality;
 import org.nrg.xft.compare.ItemUniqueEquality;
 import org.nrg.xft.db.DBAction;
-import org.nrg.xft.db.DBItemCache;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
+import org.nrg.xft.db.loaders.XFTItemDBLoader;
+import org.nrg.xft.db.loaders.XFTItemDBLoader.ItemCache;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -61,6 +65,10 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.MetaDataException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
+import org.nrg.xft.presentation.FlattenedItemA;
+import org.nrg.xft.presentation.ItemHtmlBuilder;
+import org.nrg.xft.presentation.ItemMerger;
+import org.nrg.xft.presentation.ItemPropBuilder;
 import org.nrg.xft.references.XFTManyToManyReference;
 import org.nrg.xft.references.XFTMappingColumn;
 import org.nrg.xft.references.XFTPseudonymManager;
@@ -83,10 +91,10 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.search.ItemSearch.IdentifierResults;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.search.TableSearch;
-import org.nrg.xft.search.ItemSearch.IdentifierResults;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
@@ -109,9 +117,9 @@ import org.w3c.dom.Node;
  *
  * @author Tim
  */
-@SuppressWarnings({"serial","unchecked"})
+@SuppressWarnings({"unchecked","rawtypes"})
 public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
-	private static final String EQUALS = "=";
+	public static final String EQUALS = "=";
 	private static final String COLON = ":";
 	private static final String STATUS_STRING = "status";
 	private static final String META_DATA_ID = "meta_data_id";
@@ -123,7 +131,6 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	private static final String _META_DATA_META_DATA_ID = "_meta_data.meta_data_id";
 	private static final String XDAT_META_ELEMENT = "xdat:meta_element";
 	private static final String STATUS = _STATUS;
-	private static final String ACTIVE = "active";
 	private static final String META_STATUS = "meta/status";
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTItem.class);
 	private static Hashtable PRE_FORMATTED_ITEMS = new Hashtable();
@@ -135,7 +142,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	private String xmlType = "";
 	private GenericWrapperElement element = null;
-	private ArrayList keyNames = null;
+	private ArrayList<String> keyNames = null;
 
 	private Hashtable fieldIds =  null;//DATA,SINGLE,MULTI
 	private Hashtable xmlFieldNames = null;
@@ -160,6 +167,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	private boolean verifyXMLPaths = false;
 
     public boolean modified =false;
+    public boolean child_modified =false;
 	/**
 	 *
 	 */
@@ -263,7 +271,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @param name
 	 * @return
 	 */
-	public static XFTItem NewMetaDataElement(UserI user, String name, boolean quarantine)
+	public static XFTItem NewMetaDataElement(UserI user, String name, boolean quarantine, Date insert_date, Object xft_version)
 	{
 		try {
 			GenericWrapperElement e = GenericWrapperElement.GetElement(name);
@@ -274,7 +282,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 			{
 				meta.setDirectProperty("insert_user_xdat_user_id",user.getID());
 			}
-			meta.setDirectProperty(INSERT_DATE,Calendar.getInstance().getTime());
+			meta.setDirectProperty(INSERT_DATE,insert_date);
+			meta.setDirectProperty("row_last_modified",insert_date);
+			if(xft_version!=null)
+				meta.setDirectProperty("xft_version",xft_version);
 			meta.setDirectProperty(SHAREABLE,"1");
 
 			if (quarantine)
@@ -394,7 +405,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 				{
 					if (field.isMultiple())
 					{
-						ArrayList children = getChildItems(field,false,false,this.getUser());
+						ArrayList children = getChildItems(field,false,false,this.getUser(),false,null);
 						if (children.size()> 0)
 						{
 						    Iterator iter = children.iterator();
@@ -1299,9 +1310,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 				if (foreign.getFullXMLName().equalsIgnoreCase(this.getXSIType()) && f.getRelationType().equalsIgnoreCase("single"))
 				{
-					if (getChildItems(f,allowMultiples,false,user).size() > 0)
+					if (getChildItems(f,allowMultiples,false,user,false,null).size() > 0)
 					{
-						Iterator children = getChildItems(f,allowMultiples,false,user).iterator();
+						Iterator children = getChildItems(f,allowMultiples,false,user,false,null).iterator();
 						while(children.hasNext())
 						{
 							XFTItem sub = (XFTItem)children.next();
@@ -1347,7 +1358,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 				{
 					GenericWrapperField foreignKey = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
 					int childCounter =0;
-					Iterator children = getChildItems(f,allowMultiples,false,user).iterator();
+					Iterator children = getChildItems(f,allowMultiples,false,user,false,null).iterator();
 					while(children.hasNext())
 					{
 						XFTItem sub = (XFTItem)children.next();
@@ -1386,7 +1397,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 						childCounter++;
 					}
 				}else{
-					Iterator children = getChildItems(f,allowMultiples,false,user).iterator();
+					Iterator children = getChildItems(f,allowMultiples,false,user,false,null).iterator();
 					while(children.hasNext())
 					{
 						XFTItem sub = (XFTItem)children.next();
@@ -1482,11 +1493,11 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * Returns the sql names of the pk fields for this item.
 	 * @return ArrayList of strings
 	 */
-	public ArrayList getPkNames() throws org.nrg.xft.exception.XFTInitException
+	public ArrayList<String> getPkNames() throws org.nrg.xft.exception.XFTInitException
 	{
 		if (keyNames == null)
 		{
-			keyNames = new ArrayList();
+			keyNames = new ArrayList<String>();
 
 			try {
 				Iterator keys = getGenericSchemaElement().getAllPrimaryKeys().iterator();
@@ -2222,9 +2233,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 				}
 			}
 		} catch (Throwable e1) {}
-		
-		final String xsiType=this.getXSIType();
-		
+				
 		ItemSearch search = new ItemSearch();
 		search.setElement(getGenericSchemaElement());
 		search.setCriteriaCollection(getPkSearch(false));
@@ -2290,7 +2299,6 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    	    }
 
                 String query = "SELECT " + functionName + "(";
-                Object[][] keyArray = element.getSQLKeys();
 
                 int count=0;
     		    for (IdentifierResults ir:keys.get(0))
@@ -3007,6 +3015,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         return checker.isEqualTo(newI, oldI);
 
     }
+    
 
 	/**
 	 * Returns the parent XFTItem
@@ -3283,16 +3292,21 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	    return null;
 	}
-
+	
 	/* (non-Javadoc)
 	 * @see java.lang.Object#clone()
 	 */
 	public Object clone()
 	{
+		return clone(false);
+	}
+	
+	public Object clone(boolean reviveHistory)
+	{
 		XFTItem item = null;
 		
 		try {
-            item = XFTItem.NewItem(getXSIType(),user);
+			item = XFTItem.NewItem((reviveHistory && this.getXSIType().endsWith("_history"))?getXSIType().substring(0,getXSIType().indexOf("_history")):getXSIType(),user);
 
             for (Map.Entry<String,Object> entry: props.entrySet())
             {
@@ -3668,7 +3682,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 						    throw new FieldNotFoundException(id);
 						}
 					}else if(f.isMultiple()){
-                        return getChildItems(f,user);
+                        return getChildItems(f,user,false);
                     }else{
 						return getProperty(f,allowMultipleValues);
 					}
@@ -3708,7 +3722,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     id = CleanFilter(id);
                 }
                 GenericWrapperField lastField = this.getGenericSchemaElement().getDirectField(id);
-                ArrayList subs = this.getChildItems(lastField,expectedXSIType,user);
+                ArrayList subs = this.getChildItems(lastField,expectedXSIType,user,false);
 
                 if (where!=null)
                 {
@@ -3901,7 +3915,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                         }
 					}
 				}else{
-					ArrayList subs = this.getChildItems(lastField,expectedXSIType);
+					ArrayList subs = this.getChildItems(lastField,expectedXSIType,false);
 
                     if (where!=null)
                     {
@@ -4071,7 +4085,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 						return null;
 					}
 				}else{
-					ArrayList subs = this.getChildItems(lastField,expectedXSIType,user);
+					ArrayList subs = this.getChildItems(lastField,expectedXSIType,user,false);
                     if (where!=null)
                     {
                         int indexEq = where.indexOf(EQUALS);
@@ -4165,7 +4179,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                             return null;
                         }
                     }else{
-                        ArrayList subs = this.getChildItems(lastField,expectedXSIType,user);
+                        ArrayList subs = this.getChildItems(lastField,expectedXSIType,user,false);
 
                         if (where!=null)
                         {
@@ -4490,7 +4504,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             				return;
             			}else{
             			    //	   org.nrg.xft.XFT.LogCurrentTime("SET XML PROPERTY CHILD::MULTI found::1");
-            				ArrayList subs = this.getChildItems(lastField,expectedXSIType);
+            				ArrayList subs = this.getChildItems(lastField,expectedXSIType,false);
 
                             if (where!=null)
                             {
@@ -4568,7 +4582,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             						counter++;
             					}
 
-            					subs = this.getChildItems(lastField,expectedXSIType);
+            					subs = this.getChildItems(lastField,expectedXSIType,false);
                                 XFTItem sub = (XFTItem)subs.get(multiIndex);
                                 sub.setXMLPropertyChild(xmlPath,value,parseValue);
                                 return;
@@ -4795,7 +4809,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                             if (multiIndex==null && where==null)
                                 setChild(lastField,(XFTItem)value,true);
                             else{
-                                ArrayList subs = this.getChildItems(lastField,expectedXSIType);
+                                ArrayList subs = this.getChildItems(lastField,expectedXSIType,false);
 
                                 if (where!=null)
                                 {
@@ -4851,7 +4865,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                             GenericWrapperElement foreign = (GenericWrapperElement)lastField.getReferenceElement();
                             if (lastField.isCreatedChild())
                             {
-                                ArrayList subs = this.getChildItems(lastField,expectedXSIType);
+                                ArrayList subs = this.getChildItems(lastField,expectedXSIType,false);
 
                                 if (where!=null)
                                 {
@@ -4903,7 +4917,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                                     }
                                     //         org.nrg.xft.XFT.LogCurrentTime("SET XML PROPERTY CHILD::MULTI CREATE::2");
 
-                                    subs = this.getChildItems(lastField,expectedXSIType);
+                                    subs = this.getChildItems(lastField,expectedXSIType,false);
                                     XFTItem sub = (XFTItem)subs.get(multiIndex.intValue());
                                     sub.setXMLPropertyChild(xmlPath,value,parseValue);
                                     //         org.nrg.xft.XFT.LogCurrentTime("SET XML PROPERTY CHILD::MULTI CREATE::3");
@@ -4920,7 +4934,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                                     throw new FieldNotFoundException(originalPath);
                                 }
 
-                                ArrayList subs = this.getChildItems(lastField,expectedXSIType);
+                                ArrayList subs = this.getChildItems(lastField,expectedXSIType,false);
 
                                 if (where!=null)
                                 {
@@ -4972,7 +4986,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                                     }
                                     //         org.nrg.xft.XFT.LogCurrentTime("SET XML PROPERTY CHILD::MULTI CREATE::2");
 
-                                    subs = this.getChildItems(lastField,expectedXSIType);
+                                    subs = this.getChildItems(lastField,expectedXSIType,false);
                                     XFTItem sub = (XFTItem)subs.get(multiIndex.intValue());
                                     sub.setXMLPropertyChild(fieldName,value,parseValue);
                                     //         org.nrg.xft.XFT.LogCurrentTime("SET XML PROPERTY CHILD::MULTI CREATE::3");
@@ -5104,7 +5118,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	        try {
                 GenericWrapperField lastField = this.getGenericSchemaElement().getDirectField(id);
 
-                return getChildItems(lastField,xsiType,user);
+                return getChildItems(lastField,xsiType,user,false);
             } catch (FieldNotFoundException e) {
                 if (this.getGenericSchemaElement().isExtension()) {
 					Object o = this.getProperty(this.getGenericSchemaElement().getExtensionFieldName());
@@ -5211,7 +5225,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 						return null;
 					}
 				}else{
-					ArrayList subs = this.getChildItems(lastField,expectedXSIType,user);
+					ArrayList subs = this.getChildItems(lastField,expectedXSIType,user,false);
 
                     if (where!=null)
                     {
@@ -5319,10 +5333,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
 	 */
-	public java.util.ArrayList getChildItems(XFTFieldWrapper field,UserI user)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+	public java.util.ArrayList getChildItems(XFTFieldWrapper field,UserI user,boolean loadHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 	    boolean allowDBAccess = ! (preLoaded || loading);
-	    return getChildItems(field,allowDBAccess,false,user);
+	    return getChildItems(field,allowDBAccess,false,user,loadHistory,null);
 	}
 
     /* (non-Javadoc)
@@ -5331,60 +5345,78 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     public java.util.ArrayList getChildItems(XFTFieldWrapper field)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
     {
         boolean allowDBAccess = ! (preLoaded || loading);
-        return getChildItems(field,allowDBAccess,false,this.getUser());
+        return getChildItems(field,allowDBAccess,false,this.getUser(),false,null);
     }
 
     /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
      */
-    public java.util.ArrayList getChildItems(XFTFieldWrapper field, String xsiType,UserI user)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+    public java.util.ArrayList getChildItems(XFTFieldWrapper field,boolean loadHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
     {
         boolean allowDBAccess = ! (preLoaded || loading);
-        return getChildItems(field,allowDBAccess,false,xsiType,user);
+        return getChildItems(field,allowDBAccess,false,this.getUser(),loadHistory,null);
     }
 
     /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
      */
-    public java.util.ArrayList getChildItems(XFTFieldWrapper field, String xsiType)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+    public java.util.ArrayList getChildItems(XFTFieldWrapper field,boolean loadHistory,ItemCache cache)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
     {
         boolean allowDBAccess = ! (preLoaded || loading);
-        return getChildItems(field,allowDBAccess,false,xsiType,this.getUser());
+        return getChildItems(field,allowDBAccess,false,this.getUser(),loadHistory,cache);
+    }
+
+    /* (non-Javadoc)
+     * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
+     */
+    public java.util.ArrayList getChildItems(XFTFieldWrapper field, String xsiType,UserI user,boolean loadHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+    {
+        boolean allowDBAccess = ! (preLoaded || loading);
+        return getChildItems(field,allowDBAccess,false,xsiType,user,loadHistory);
+    }
+
+    /* (non-Javadoc)
+     * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
+     */
+    public java.util.ArrayList getChildItems(XFTFieldWrapper field, String xsiType,boolean loadHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+    {
+        boolean allowDBAccess = ! (preLoaded || loading);
+        return getChildItems(field,allowDBAccess,false,xsiType,this.getUser(),loadHistory);
     }
 
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
 	 */
-	public java.util.ArrayList getChildItems(XFTFieldWrapper field,boolean allowChildMultiples,UserI user)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+	public java.util.ArrayList getChildItems(XFTFieldWrapper field,boolean allowChildMultiples,UserI user,boolean loadHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 	    boolean allowDBAccess = ! (preLoaded || loading);
-	    return getChildItems(field,allowDBAccess,allowChildMultiples,user);
+	    return getChildItems(field,allowDBAccess,allowChildMultiples,user,loadHistory,null);
 	}
 
     /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
      */
-    public java.util.ArrayList getChildItems(XFTFieldWrapper field,boolean allowChildMultiples,String xsiType,UserI user)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+    public java.util.ArrayList getChildItems(XFTFieldWrapper field,boolean allowChildMultiples,String xsiType,UserI user,boolean loadHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
     {
         boolean allowDBAccess = ! (preLoaded || loading);
-        return getChildItems(field,allowDBAccess,allowChildMultiples,xsiType,user);
+        return getChildItems(field,allowDBAccess,allowChildMultiples,xsiType,user,loadHistory);
     }
 
 
     /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
      */
-    public java.util.ArrayList getCurrentChildItems(XFTFieldWrapper field,UserI user)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+    public java.util.ArrayList getCurrentChildItems(XFTFieldWrapper field,UserI user, boolean loadHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
     {
-        return getChildItems(field,false,true,user);
+        return getChildItems(field,false,true,user,loadHistory,null);
     }
 
     /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
      */
-    private java.util.ArrayList getChildItems(XFTFieldWrapper field, boolean allowDBAccess,boolean allowChildMultiples,String xsiType,UserI user)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+    private java.util.ArrayList getChildItems(XFTFieldWrapper field, boolean allowDBAccess,boolean allowChildMultiples,String xsiType,UserI user,boolean loadHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
     {
-        ArrayList all= getChildItems(field,allowDBAccess,allowChildMultiples,user);
+        ArrayList all= getChildItems(field,allowDBAccess,allowChildMultiples,user,loadHistory,null);
         if (org.apache.commons.lang.StringUtils.isEmpty(xsiType))
         {
             return all;
@@ -5408,14 +5440,24 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         }
 
     }
+    
+    XFTItemDBLoader loader=null;
+    public XFTItemDBLoader getDBLoader(ItemCache cache){
+    	if(loader==null){
+    		loader=new XFTItemDBLoader(this,cache);
+    	}
+    	return loader;
+    }
 
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#getChildItems(org.nrg.xft.schema.design.XFTFieldWrapper)
 	 */
-	private java.util.ArrayList getChildItems(XFTFieldWrapper field, boolean allowDBAccess,boolean allowChildMultiples, UserI user)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+	private java.util.ArrayList getChildItems(XFTFieldWrapper field, boolean allowDBAccess,boolean allowChildMultiples, UserI user,boolean loadHistory, ItemCache cache)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 		ArrayList al = new ArrayList();
 		GenericWrapperField f = (GenericWrapperField)GenericWrapperFactory.GetInstance().convertField(field);
+		
+		//first check for pre-loaded entries
 		int counter = 0;
 		if (f.isMultiple())
 		{
@@ -5430,26 +5472,29 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 			}
 		}
 
-		if (al.size()>0 || this.postLoaded.contains(f.getId().toLowerCase()) || (!allowDBAccess) || (preLoaded))
+		if ((!loadHistory) && (al.size()>0 || this.postLoaded.contains(f.getId().toLowerCase()) || (!allowDBAccess) || (preLoaded)))
 		{
 			al.trimToSize();
 			return al;
 		}else{
-		    if (! this.isPauseDBAccess())
+		    if (! this.isPauseDBAccess())//if we are allowed to query database
 		    {
 			    postLoaded.add(f.getId().toLowerCase());
-			    if (! this.isChildOf(f.getReferenceElementName().getFullForeignType()))
+			    if (! this.isChildOf(f.getReferenceElementName().getFullForeignType()))//prevent circular references
 			    {
 			        logger.debug("Loading: " + this.getXSIType() + "/"+f.getXMLPathString());
-				    ItemCollection items = getCurrentDBChildren(f,user,allowChildMultiples);
+				    ItemCollection items = getDBLoader(cache).getCurrentDBChildren(f,user,allowChildMultiples,loadHistory);
 				    if (items != null)
 				    {
+				    	if(loadHistory){
+				    		return items.getItems();
+				    	}
 						Iterator iter = items.getItemIterator();
 						while (iter.hasNext())
 						{
 						    XFTItem child = (XFTItem)iter.next();
 
-						    if (child.getGenericSchemaElement().isExtended())
+						    if (child.getGenericSchemaElement().isExtended() && !child.getXSIType().endsWith("_history"))//make sure we are dealing with the top most element (mrScan rather than imageScan)
 						    {
 							    try {
 			                        String extensionName = child.getExtensionElement();
@@ -5507,7 +5552,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 						    }
 						}
 				    }
-					return getChildItems(f,false,allowChildMultiples,user);
+					return getChildItems(f,allowDBAccess,allowChildMultiples,user,false,cache);
 			    }else{
 			        al.trimToSize();
 					return al;
@@ -5559,17 +5604,12 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		return XMLUtils.DOMToBAOS(doc);
 	}
 
-	/**
-	 * whether or not this Item has been activated.
-	 * @return
-	 */
-	public boolean isActive() throws MetaDataException
-	{
-	    try {
+	public boolean checkStatus(Predicate compare,boolean _default) throws MetaDataException{
+		try {
             if (getProperty(META_STATUS)!=null)
             {
                 String s = (String)getProperty(META_STATUS);
-            	if (s.equalsIgnoreCase(ACTIVE))
+            	if (compare.evaluate(s))
             	{
             		return true;
             	}
@@ -5577,7 +5617,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             {
             	try {
             		String s = (String)getMeta().getProperty(meta.getXSIType()  +STATUS);
-            		if (s.equalsIgnoreCase(ACTIVE))
+            		if (compare.evaluate(s))
             		{
             			return true;
             		}
@@ -5603,7 +5643,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                                 {
                                     this.setMeta(_meta);
                                     String s = (String)getMeta().getProperty(meta.getXSIType() + _STATUS);
-                            		if (s.equalsIgnoreCase(ACTIVE))
+                            		if (compare.evaluate(s))
                             		{
                             			return true;
                             		}
@@ -5626,7 +5666,52 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         } catch (FieldNotFoundException e) {
             logger.error("",e);
         }
-		return false;
+		return _default;
+	}
+	
+	/**
+	 * whether or not this Item has been activated.
+	 * @return
+	 */
+	public boolean isQuarantine() throws MetaDataException
+	{
+	    return checkStatus(new Predicate(){
+			public boolean evaluate(Object arg0) {
+				if(arg0 !=null && arg0 instanceof String){
+					return (ViewManager.QUARANTINE.equals(arg0));
+				}
+				return false;
+			}},false);
+	}
+	
+	/**
+	 * whether or not this Item has been activated.
+	 * @return
+	 */
+	public boolean isLocked() throws MetaDataException
+	{
+	    return checkStatus(new Predicate(){
+			public boolean evaluate(Object arg0) {
+				if(arg0 !=null && arg0 instanceof String){
+					return (ViewManager.LOCKED.equals(arg0));
+				}
+				return false;
+			}},false);
+	}
+	
+	/**
+	 * whether or not this Item has been activated.
+	 * @return
+	 */
+	public boolean isActive() throws MetaDataException
+	{
+	    return checkStatus(new Predicate(){
+			public boolean evaluate(Object arg0) {
+				if(arg0 !=null && arg0 instanceof String){
+					return (ViewManager.ACTIVE.equals(arg0) || ViewManager.LOCKED.equals(arg0));
+				}
+				return false;
+			}},false);
 	}
 
 	/* (non-Javadoc)
@@ -5634,193 +5719,14 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 */
 	public String toHTML() throws Exception
 	{
-		StringBuffer sb  = new StringBuffer();
-		if (isHistory())
-		{
-		    sb.append("<TABLE style=\"color: gray\">\n");
-		}else if (isActive()){
-			sb.append("<TABLE style=\"color: black\">\n");
-		}else{
-			sb.append("<TABLE style=\"color: red\">\n");
-		}
-		sb.append("<TR><TH colspan=2 align=left>").append(this.getXSIType()).append("</TH></TR>\n");
-		XMLWrapperElement root = (XMLWrapperElement)XMLWrapperFactory.GetInstance().convertElement(this.getGenericSchemaElement());
-
-		Iterator fields = root.getAttributes().iterator();
-		while (fields.hasNext())
-		{
-			XMLWrapperField field = (XMLWrapperField)fields.next();
-			if (field.isReference())
-			{
-				if (field.isMultiple())
-				{
-					ArrayList refs = this.getChildItems(field);
-					Iterator iter = refs.iterator();
-					while (iter.hasNext())
-					{
-						XFTItem ref = (XFTItem)iter.next();
-						sb.append("<TR><TD valign=top>").append(field.getName()).append("</TD><TD>");
-						sb.append(ref.toHTML()).append("</TD></TR>\n");
-					}
-				}else{
-					XFTItem ref = (XFTItem)this.getField(field.getId());
-					if (ref != null)
-					{
-						sb.append("<TR><TD valign=top>").append(field.getName()).append("</TD><TD>");
-						sb.append(ref.toHTML()).append("</TD></TR>\n");
-					}
-				}
-			}else{
-				Object value = getField(field.getId());
-				if (value != null)
-				{
-					sb.append("<TR><TD valign=top>").append(field.getName()).append("</TD><TD>");
-					if (value.getClass().getName().equalsIgnoreCase("[B"))
-					{
-						byte[] b = (byte[]) value;
-						java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-						try {
-							baos.write(b);
-						} catch (Exception e) {
-						}
-						sb.append(baos.toString()).append("</TD></TR>\n");
-					}else{
-						sb.append(value.toString()).append("</TD></TR>\n");
-					}
-				}
-			}
-		}
-
-
-		fields = root.getChildren().iterator();
-		while (fields.hasNext())
-		{
-			XMLWrapperField field = (XMLWrapperField)fields.next();
-			sb.append(FieldToHTML(this,field));
-		}
-
-		if (hasHistory())
-		{
-			Iterator histories = this.getHistoryItems().iterator();
-			while (histories.hasNext())
-			{
-				XFTItem item = (XFTItem) histories.next();
-				sb.append("<TR><TD style=\"color:gray\">Previous Version<BR>" + item.getProperty("change_date") + "</TD><TD style=\"color:grey\">");
-				sb.append(item.toHTML());
-				sb.append("</TD></TR>\n");
-			}
-		}
-
-		sb.append("</TABLE>\n");
-
-		return sb.toString();
+		return this.toHTML(null);
 	}
-
-	/**
-	 * @param item
-	 * @param field
-	 * @return
-	 * @throws Exception
-	 */
-	private static String FieldToHTML(ItemI item,XMLWrapperField field) throws Exception
+	
+	public String toHTML(FlattenedItemA.HistoryConfigI includeHistory) throws Exception
 	{
-		StringBuffer sb = new StringBuffer();
-
-		Iterator atts = field.getAttributes().iterator();
-		while (atts.hasNext())
-		{
-			XMLWrapperField att = (XMLWrapperField)atts.next();
-			if (att.isReference())
-			{
-				if (att.isMultiple())
-				{
-					ArrayList refs = item.getChildItems(att);
-					Iterator iter = refs.iterator();
-					while (iter.hasNext())
-					{
-						XFTItem ref = (XFTItem)iter.next();
-						sb.append("<TR><TD valign=top>").append(att.getName()).append("</TD><TD>");
-						sb.append(ref.toHTML()).append("</TD></TR>");
-					}
-				}else{
-					XFTItem ref = (XFTItem)item.getProperty(att.getId());
-					if (ref != null)
-					{
-						sb.append("<TR><TD valign=top>").append(att.getName()).append("</TD><TD>");
-						sb.append(ref.toHTML()).append("</TD></TR>");
-					}
-				}
-			}else{
-				Object value = item.getProperty(att.getId());
-				if (value != null)
-				{
-					sb.append("<TR><TD valign=top>").append(att.getName()).append("</TD><TD>");
-					if (value.getClass().getName().equalsIgnoreCase("[B"))
-					{
-						byte[] b = (byte[]) value;
-						java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-						try {
-							baos.write(b);
-						} catch (Exception e) {
-						}
-						sb.append(baos.toString()).append("</TD></TR>");
-					}else{
-						sb.append(value.toString()).append("</TD></TR>");
-					}
-				}
-			}
-		}
-
-		ArrayList children = field.getChildren();
-		if (children.size() > 0)
-		{
-			Iterator iter = children.iterator();
-			while(iter.hasNext())
-			{
-				XMLWrapperField child = (XMLWrapperField)iter.next();
-				sb.append(FieldToHTML(item,child));
-			}
-		}
-		if (field.isReference())
-		{
-			if (field.isMultiple())
-			{
-				ArrayList refs = item.getChildItems(field);
-				Iterator iter = refs.iterator();
-				while (iter.hasNext())
-				{
-					XFTItem ref = (XFTItem)iter.next();
-					sb.append("<TR><TD valign=top>").append(field.getName()).append("</TD><TD>");
-					sb.append(ref.toHTML()).append("</TD></TR>");
-				}
-			}else{
-				XFTItem ref = (XFTItem)item.getProperty(field.getId());
-				if (ref != null)
-				{
-					sb.append("<TR><TD valign=top>").append(field.getName()).append("</TD><TD>");
-					sb.append(ref.toHTML()).append("</TD></TR>");
-				}
-			}
-		}else{
-			Object value = item.getProperty(field.getId());
-			if (value != null)
-			{
-				sb.append("<TR><TD valign=top>").append(field.getName()).append("</TD><TD>");
-				if (value.getClass().getName().equalsIgnoreCase("[B"))
-					{
-						byte[] b = (byte[]) value;
-						java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
-						try {
-							baos.write(b);
-						} catch (Exception e) {
-						}
-						sb.append(baos.toString()).append("</TD></TR>");
-					}else{
-						sb.append(value.toString()).append("</TD></TR>");
-					}
-			}
-		}
-		return sb.toString();
+		return ItemHtmlBuilder.build(null,Arrays.asList(
+				ItemMerger.merge(
+						ItemPropBuilder.build(this.getItem(), includeHistory,null))));
 	}
 
 	/* (non-Javadoc)
@@ -5871,14 +5777,14 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
 	 */
-	public boolean save(UserI user, boolean overrideSecurity,boolean allowItemRemoval) throws InvalidItemException,Exception
+	public boolean save(UserI user, boolean overrideSecurity,boolean allowItemRemoval,EventMetaI c) throws InvalidItemException,Exception
 	{
 	    if (user == null)
         {
 	        if (overrideSecurity)
 	        {
            	    boolean q = getGenericSchemaElement().isQuarantine();
-           	    return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance());
+           	    return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),c);
 	        }else{
 	            ItemSearch search = ItemSearch.GetItemSearch("xdat:user",null);
 	            search.setAllowMultiples(false);
@@ -5889,7 +5795,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	           	    if (getXSIType().startsWith("xdat"))
 	           	    {
 		           	    boolean q = getGenericSchemaElement().isQuarantine();
-		           	    return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance());
+		           	    return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),c);
 	           	    }else{
 	           	        throw new Exception("Error.  Must have a valid user account to perform database updates/inserts.");
 	           	    }
@@ -5899,13 +5805,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             if (overrideSecurity)
             {
 	    		boolean q = getGenericSchemaElement().isQuarantine();
-	    		return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance());
+	    		return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),c);
             }else{
                 String error = user.canStoreItem(this,allowItemRemoval);
                 if (error == null)
                 {
     	    		boolean q = getGenericSchemaElement().isQuarantine();
-    	    		return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance());
+    	    		return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),c);
                 }else{
                     throw new InvalidPermissionException(error);
                 }
@@ -5916,14 +5822,14 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
 	 */
-	public void save(UserI user, boolean overrideSecurity,boolean quarantine,boolean overrideQuarantine, boolean allowItemRemoval) throws Exception
+	public void save(UserI user, boolean overrideSecurity,boolean quarantine,boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception
 	{
 	    if (user == null)
         {
 	        if (overrideSecurity)
 	        {
 	    		boolean q = getGenericSchemaElement().isQuarantine(quarantine);
-	    		DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance());
+	    		DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance(),c);
 	        }else{
 	            ItemSearch search = ItemSearch.GetItemSearch("xdat:user",null);
 	            search.setAllowMultiples(false);
@@ -5934,7 +5840,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	           	    if (getXSIType().startsWith("xdat"))
 	           	    {
 	    	    		boolean q = getGenericSchemaElement().isQuarantine(quarantine);
-                        DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance());
+                        DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance(),c);
 	           	    }else{
 	           	        throw new Exception("Error.  Must have a valid user account to perform database updates/inserts.");
 	           	    }
@@ -5944,13 +5850,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             if (overrideSecurity)
             {
 	    		boolean q = getGenericSchemaElement().isQuarantine(quarantine);
-                DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance());
+                DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance(),c);
             }else{
                 String error = user.canStoreItem(this,allowItemRemoval);
                 if (error == null)
                 {
     	    		boolean q = getGenericSchemaElement().isQuarantine(quarantine);
-                    DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance());
+                    DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance(),c);
                 }else{
                     throw new InvalidPermissionException(error);
                 }
@@ -6091,6 +5997,26 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                 	} catch (FieldNotFoundException e) {
                         logger.error("",e);
                 	}
+                }else if(this.getGenericSchemaElement().getAddin().equals("history")){
+                	try {
+						GenericWrapperField f = GenericWrapperElement.GetElement(this.getXSIType().substring(0,this.getXSIType().indexOf("_history"))).getField(META);
+						if (f != null)
+						{
+							ArrayList al = this.getChildItems(f);
+							if (al.size() > 0)
+							{
+								meta = (ItemI)al.get(0);
+								if (meta.getProperty(SHAREABLE)!=null || meta.getProperty(INSERT_DATE)!=null)
+								{
+								    return meta;
+								}
+							}
+						}
+					} catch (XFTInitException e) {
+                        logger.error("",e);
+                	} catch (FieldNotFoundException e) {
+                        logger.error("",e);
+                	}
                 }
             } catch (ElementNotFoundException e) {
                 logger.error("",e);
@@ -6106,14 +6032,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 
-
-
-	/* (non-Javadoc)
-	 * @see org.nrg.xft.ItemI#activate(org.nrg.xft.security.UserI)
+	/**
+	 * Set status 'quarantine', 'active', or 'locked'
+	 * @param user
+	 * @throws Exception
 	 */
-	public void activate(UserI user) throws Exception
-	{
-	    String query = "SELECT " + GenericWrapperUtils.ACT_FUNCTION + this.getGenericSchemaElement().getFormattedName() + "(";
+	public void setStatus(UserI user,String status) throws Exception{
+		String query = "SELECT " + GenericWrapperUtils.ACT_FUNCTION + this.getGenericSchemaElement().getFormattedName() + "(";
 	    ArrayList keys = element.getAllPrimaryKeys();
         Iterator keyIter = keys.iterator();
         String pk = null;
@@ -6123,7 +6048,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             pk = sf.getXMLPathString(element.getXSIType());
             query +=DBAction.ValueParser(getProperty(pk),sf,true);
         }
-	    query += "," + user.getID() + ",'active',true);";
+	    query += "," + user.getID() + ",'" + status + "',true);";
 	    PoolDBUtils.ExecuteNonSelectQuery(query,this.getDBName(),user.getUsername());
 	    
 	    String login="";
@@ -6131,6 +6056,14 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    	login=user.getUsername();
 	    }
 	    PoolDBUtils.PerformUpdateTrigger(this, login);
+	}
+
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.ItemI#activate(org.nrg.xft.security.UserI)
+	 */
+	public void activate(UserI user) throws Exception
+	{
+	    setStatus(user,ViewManager.ACTIVE);
 	}
 
 
@@ -6139,59 +6072,17 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 */
 	public void quarantine(UserI user) throws Exception
 	{
-	    String query = "SELECT " + GenericWrapperUtils.ACT_FUNCTION + this.getGenericSchemaElement().getFormattedName() + "(";
-	    ArrayList keys = element.getAllPrimaryKeys();
-        Iterator keyIter = keys.iterator();
-        String pk = null;
-        while (keyIter.hasNext())
-        {
-            GenericWrapperField sf = (GenericWrapperField)keyIter.next();
-            pk = sf.getXMLPathString(element.getXSIType());
-            query +=DBAction.ValueParser(getProperty(pk),sf,true);
-        }
-	    query += "," + user.getID() + ",'quarantine',true);";
-	    PoolDBUtils.ExecuteNonSelectQuery(query,this.getDBName(),user.getUsername());
-	    
-	    String login="";
-	    if(user!=null){
-	    	login=user.getUsername();
-	    }
-	    PoolDBUtils.PerformUpdateTrigger(this, login);
+	    setStatus(user,ViewManager.QUARANTINE);
+	}
+
+
+
+	public void lock(UserI user) throws Exception
+	{
+	    setStatus(user,ViewManager.LOCKED);
 	}
 	
 
-	/* (non-Javadoc)
-	 * @see org.nrg.xft.ItemI#activate(org.nrg.xft.security.UserI)
-	 */
-    @SuppressWarnings("unused")
-	private void activate(UserI user,DBItemCache cache) throws Exception
-	{
-		XFTItem meta = (XFTItem)getMeta();
-		if (meta != null)
-		{
-			if (((String)meta.getProperty(STATUS_STRING)).equalsIgnoreCase(ViewManager.QUARANTINE))
-			{
-				meta.setDirectProperty(STATUS_STRING,ACTIVE);
-				if (user != null)
-				{
-					meta.setDirectProperty("activation_user_xdat_user_id",user.getID());
-				}
-				meta.setDirectProperty("activation_date",Calendar.getInstance().getTime());
-				meta.save(user,true,false,cache);
-
-				logger.info(getXSIType() + " activated.");
-			}
-		}
-
-		Iterator iter = getChildItems().iterator();
-		while (iter.hasNext())
-		{
-			XFTItem child = (XFTItem)iter.next();
-			if (child.getGenericSchemaElement().getAddin().equals(""))
-			    child.activate(user,cache);
-		}
-
-	}
 
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#activate(org.nrg.xft.security.UserI)
@@ -6501,135 +6392,6 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         }
 	}
 
-	/* (non-Javadoc)
-	 * @see org.nrg.xft.ItemI#getCurrentDBVersion()
-	 */
-	public ItemCollection getCurrentDBChildren(GenericWrapperField refField, UserI user)
-	{
-	    return getCurrentDBChildren(refField,user,false);
-	}
-	public ItemCollection getCurrentDBChildren(GenericWrapperField refField, UserI user, boolean allowMultiples)
-	{
-	    try {
-		    GenericWrapperElement foreign = (GenericWrapperElement)refField.getReferenceElement();
-		    XFTReferenceI ref = refField.getXFTReference();
-		    if (ref.isManyToMany())
-		    {
-		        XFTManyToManyReference many = (XFTManyToManyReference)ref;
-		        boolean nullKey = false;
-			    String query = "SELECT * FROM " + many.getMappingTable();
-			    Iterator iter =many.getMappingColumns().iterator();
-			    int counter = 0;
-			    while(iter.hasNext())
-			    {
-			        XFTMappingColumn map = (XFTMappingColumn)iter.next();
-			        if ( map.getForeignElement().getFormattedName().equalsIgnoreCase(this.getGenericSchemaElement().getFormattedName()))
-	                {
-		                Object o = this.getProperty(map.getForeignKey().getXMLPathString());
-		                if (o == null)
-		                {
-		                    nullKey = true;
-		                    break;
-		                }else{
-				            if (counter++==0)
-				            {
-				                query += " WHERE " + map.getLocalSqlName() + EQUALS + DBAction.ValueParser(o,map.getXmlType().getLocalType(),true);
-				            }else{
-				                query += " AND " + map.getLocalSqlName() + EQUALS + DBAction.ValueParser(o,map.getXmlType().getLocalType(),true);
-				            }
-		                }
-	                }
-			    }
-			    query +=";";
-
-			    if (nullKey)
-			    {
-			        return new ItemCollection();
-			    }else{
-					String login = null;
-					if (user != null)
-					{
-					    login = user.getUsername();
-					}
-
-		            XFTTable table = TableSearch.Execute(query,foreign.getDbName(),login);
-		            if (table.size() > 0)
-		            {
-			            ItemSearch search = new ItemSearch(user,foreign);
-
-		                CriteriaCollection col = new CriteriaCollection("OR");
-
-			            table.resetRowCursor();
-			            while (table.hasMoreRows())
-			            {
-			                Hashtable hash = table.nextRowHash();
-			                CriteriaCollection subCol = new CriteriaCollection("AND");
-			                iter = many.getMappingColumns().iterator();
-				            while(iter.hasNext())
-						    {
-						        XFTMappingColumn map = (XFTMappingColumn)iter.next();
-
-						        if ( map.getForeignElement().getFormattedName().equalsIgnoreCase(foreign.getFormattedName()))
-				                {
-					                Object o = hash.get(map.getLocalSqlName().toLowerCase());
-
-					                if (o == null)
-					                {
-					                    nullKey = true;
-					                    break;
-					                }else{
-							            subCol.addClause(map.getForeignKey().getXMLPathString(foreign.getFullXMLName()),o);
-					                }
-				                }
-						    }
-				            col.add(subCol);
-			            }
-			            search.add(col);
-
-			            if (nullKey)
-					    {
-					        return new ItemCollection();
-					    }
-
-			            return search.exec(allowMultiples);
-		            }else{
-		                return new ItemCollection();
-		            }
-			    }
-		    }else{
-		        XFTSuperiorReference sup = (XFTSuperiorReference)ref;
-		        ItemSearch search = new ItemSearch(user,foreign);
-		        if (refField.getPreventLoop())
-                {
-		            search.setPreventLoop(true);
-                }
-		        boolean nullKey = false;
-		        Iterator keys = sup.getKeyRelations().iterator();
-		        while (keys.hasNext())
-		        {
-		            XFTRelationSpecification spec = (XFTRelationSpecification)keys.next();
-		            Object localValue = this.getProperty(spec.getForeignCol());
-		            if (localValue == null)
-		            {
-	                    nullKey = true;
-	                    break;
-		            }else{
-		                search.addCriteria(foreign.getFullXMLName() + XFT.PATH_SEPERATOR + spec.getLocalXMLPath(),localValue);
-		            }
-		        }
-
-		        if (nullKey)
-			    {
-			        return new ItemCollection();
-			    }
-
-	            return search.exec(allowMultiples);
-		    }
-        } catch (Exception e) {
-            logger.error("",e);
-            return null;
-        }
-	}
 
 
 	/**
@@ -6766,9 +6528,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @param child
 	 * @param user
 	 */
-	public void removeChildFromDB(String xmlPath,XFTItem child,UserI user) throws SQLException,Exception
+	public void removeChildFromDB(String xmlPath,XFTItem child,UserI user,EventMetaI c) throws SQLException,Exception
 	{
-	    DBAction.RemoveItemReference(this,xmlPath,child,user);
+	    DBAction.RemoveItemReference(this,xmlPath,child,user,c);
 	}
 
 	/* (non-Javadoc)
@@ -6815,6 +6577,64 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		{
 	        try {
 	            return (Date) this.getMeta().getProperty("activation_date");
+	        } catch (XFTInitException e) {
+	            logger.error("",e);
+	        } catch (ElementNotFoundException e) {
+	            logger.error("",e);
+	        } catch (FieldNotFoundException e) {
+	            logger.error("",e);
+	        }
+		}
+        return null;
+    }
+
+    public Date getLastModified()
+    {
+        if (this.getMeta() != null)
+		{
+	        try {
+	            return (Date) this.getMeta().getProperty("last_modified");
+	        } catch (XFTInitException e) {
+	            logger.error("",e);
+	        } catch (ElementNotFoundException e) {
+	            logger.error("",e);
+	        } catch (FieldNotFoundException e) {
+	            logger.error("",e);
+	        }
+		}
+        return null;
+    }
+
+    public Date getRowLastModified()
+    {
+        if (this.getMeta() != null)
+		{
+	        try {
+	            return (Date) this.getMeta().getProperty("row_last_modified");
+	        } catch (XFTInitException e) {
+	            logger.error("",e);
+	        } catch (ElementNotFoundException e) {
+	            logger.error("",e);
+	        } catch (FieldNotFoundException e) {
+	            logger.error("",e);
+	        }
+		}
+        return null;
+    }
+
+    public Long getXFTVersion()
+    {
+        if (this.getMeta() != null)
+		{
+	        try {
+	            Object o= this.getMeta().getProperty("xft_version");
+	            if(o!=null){
+		            if(o instanceof Long){
+		            	return (Long)o;
+		            }else{
+		            	return Long.valueOf(o.toString());
+		            }
+	            }
 	        } catch (XFTInitException e) {
 	            logger.error("",e);
 	        } catch (ElementNotFoundException e) {
@@ -6898,18 +6718,11 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		{
 		    try {
 	            return this.getMeta().getStringProperty(STATUS_STRING);
-	        } catch (XFTInitException e) {
+	        } catch (Exception e) {
 	            logger.error("",e);
-	            return ACTIVE;
-	        } catch (ElementNotFoundException e) {
-	            logger.error("",e);
-	            return ACTIVE;
-	        } catch (FieldNotFoundException e) {
-	            logger.error("",e);
-	            return ACTIVE;
 	        }
 		}
-        return ACTIVE;
+        return ViewManager.ACTIVE;//default
     }
 
     public boolean isModified()
@@ -7410,7 +7223,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                         }
                     }else{
                         try {
-                            if (getCurrentChildItems(field,user).size()>0){
+                            if (getCurrentChildItems(field,user,false).size()>0){
                                 return true;
                             }
                         } catch (XFTInitException e) {
@@ -7828,6 +7641,31 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     			((ItemI)e.getValue()).getItem().internValues();
     		}
     	}
+    }
+    
+    public static String identity(XFTItem i){
+    	StringBuilder sb=new StringBuilder();
+    	
+    	try {
+        	GenericWrapperElement gwe = i.getGenericSchemaElement().ignoreHistory();
+        	sb.append(gwe.getXSIType());
+        	
+        	Iterator iter = gwe.getPkNames().iterator();
+    		while (iter.hasNext())
+    		{
+    			Object v = i.getProperty((String)iter.next());
+    			if(v!=null){
+        			sb.append(v);
+    			}
+    		}
+		} catch (XFTInitException e) {
+			logger.error("",e);
+		} catch (ElementNotFoundException e) {
+			logger.error("",e);
+		} catch (FieldNotFoundException e) {
+			logger.error("",e);
+		}
+    	return sb.toString();
     }
 }
 

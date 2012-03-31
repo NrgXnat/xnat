@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.Hashtable;
 
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -91,6 +92,7 @@ public interface ItemI extends Externalizable{
 	 * @throws FieldNotFoundException
 	 */
 	public java.util.ArrayList getChildItems(XFTFieldWrapper field)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	public ArrayList getChildItems(XFTFieldWrapper field,boolean includeHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 	/**
 	 * Gets an ItemCollection of the XFTItems which are specified by the supplied field reference.
 	 * @param field
@@ -188,8 +190,8 @@ public interface ItemI extends Externalizable{
 	 * @param user
 	 * @throws Exception
 	 */
-	public boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception;
-	public void save(UserI user, boolean overrideSecurity,boolean quarantine,boolean overrideQuarantine, boolean allowItemRemoval) throws Exception;
+	public boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception;
+	public void save(UserI user, boolean overrideSecurity,boolean quarantine,boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception;
 	/**
 	 * Save item data to DB.
 	 * @param location
@@ -203,6 +205,18 @@ public interface ItemI extends Externalizable{
 	 * @throws Exception
 	 */
 	public void activate(UserI user) throws Exception;
+	/**
+	 * Lock this item and all of its children.
+	 * @param user
+	 * @throws Exception
+	 */
+	public void lock(UserI user) throws Exception;
+	/**
+	 * Quarantine this item and all of its children.
+	 * @param user
+	 * @throws Exception
+	 */
+	public void quarantine(UserI user) throws Exception;
 	/**
 	 * Validates this item's content.
 	 * @return

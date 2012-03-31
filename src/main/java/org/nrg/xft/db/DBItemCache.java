@@ -7,10 +7,18 @@ package org.nrg.xft.db;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.Iterator;
 
+import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
 
 /**
@@ -18,26 +26,74 @@ import org.nrg.xft.security.UserI;
  *
  */
 public class DBItemCache {
+	static org.apache.log4j.Logger logger = Logger.getLogger(DBItemCache.class);
     private ItemCollection saved = new ItemCollection();
     private ItemCollection removed = new ItemCollection();
     private ItemCollection preexisting = new ItemCollection();
+    private ItemCollection dbTrigger = new ItemCollection();
     private ItemCollection modified = new ItemCollection();
-
 
     private ArrayList<String> sql = new ArrayList<String>();
 
+    private Date mod_time;
+    private Object change_id;
+    private String comment;
+    private Object event_id;
+    
+    private static String dbName=null,table=null,pk=null,sequence=null;
+    
+    private final UserI user;
+    
     /**
      *
      */
-    public DBItemCache() {
-        super();
+    public DBItemCache(UserI user,EventMetaI event) throws Exception {
+        this.mod_time=EventUtils.getEventDate(event, false);
+               
+        this.comment=(event==null)?null:event.getMessage();
+
+        this.event_id=(event==null)?null:event.getEventId();
+        
+        this.user=user;
+    }
+    
+//    /**
+//     *
+//     */
+//    public DBItemCache(UserI user,String comment) throws Exception {
+//        this(user,comment,null);
+//    }
+    
+    public void setComment(String s){
+    	this.comment=s;
     }
 
-    /**
-     * @param al
-     */
-    public DBItemCache(ArrayList al) {
-        saved.addAll(al);
+    public Date getModTime(){
+    	return mod_time;
+    }
+    
+    public Object getChangeId() throws Exception{
+    	if(change_id==null){
+            change_id=getNextChangeID();
+    	}
+    	return change_id;
+    }
+    
+    private synchronized static Object getNextChangeID() throws Exception{
+        if(dbName==null){
+        	try {
+				GenericWrapperElement element=GenericWrapperElement.GetElement("xdat:change_info");
+				dbName=element.getDbName();
+				table=element.getSQLName();
+				pk="xdat_change_info_id";
+				sequence=element.getSequenceName();
+			} catch (XFTInitException e) {
+				logger.error("",e);
+			} catch (ElementNotFoundException e) {
+				logger.error("",e);
+			}
+        }
+    	return PoolDBUtils.GetNextID(dbName, table, pk, sequence);
     }
 
     public void addStatement(String query)
@@ -54,11 +110,31 @@ public class DBItemCache {
     {
         return sql;
     }
+    
+    public void finalize() throws Exception{    	
+		XFTItem cache_info=XFTItem.NewItem("xdat:change_info", user);
+		cache_info.setDirectProperty("change_date",getModTime());
+		if (user != null)
+		{
+			cache_info.setDirectProperty("change_user",user.getID());
+		}
+		cache_info.setDirectProperty("xdat_change_info_id",this.getChangeId());
+		
+		if(this.comment!=null){
+			cache_info.setDirectProperty("comment",this.comment);
+		}
+		
+		if(this.event_id!=null){
+			cache_info.setDirectProperty("event_id",this.event_id);
+		}
+		
+		DBAction.InsertItem(cache_info, null, this, false);
+    }
 
     public String getSQL()
     {
         StringBuffer sb = new StringBuffer();
-        Iterator iter = sql.iterator();
+        Iterator<String> iter = sql.iterator();
         while (iter.hasNext())
         {
             sb.append(iter.next());
@@ -66,9 +142,9 @@ public class DBItemCache {
         return sb.toString();
     }
 
-    public void reset()
+    public void reset() throws Exception
     {
-        this.sql = new ArrayList();
+        this.sql = new ArrayList<String>();
 
         saved.clear();
         removed.clear();
@@ -141,15 +217,15 @@ public class DBItemCache {
     /**
      * @return the modified
      */
-    public ItemCollection getModified() {
-        return modified;
+    public ItemCollection getDBTriggers() {
+        return dbTrigger;
     }
 
     /**
      * @param modified the modified to set
      */
-    public void setModified(ItemCollection modified) {
-        this.modified = modified;
+    public void setDBTriggers(ItemCollection modified) {
+        this.dbTrigger = modified;
     }
 
     public void prependStatments(ArrayList<String> new_statements){
@@ -159,4 +235,17 @@ public class DBItemCache {
     public void appendStatments(ArrayList<String> new_statements){
     	this.sql.addAll(new_statements);
     }
+
+	public ItemCollection getModified() {
+		return modified;
+	}
+
+	public void setModified(ItemCollection modified) {
+		this.modified = modified;
+	}
+    
+	static int next_id =0;
+	public final synchronized static Integer getNextExternalId(){
+		return Integer.valueOf(next_id++);
+	}
 }

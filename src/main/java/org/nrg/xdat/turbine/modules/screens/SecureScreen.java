@@ -24,6 +24,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 /**
@@ -34,6 +35,9 @@ public abstract class SecureScreen extends VelocitySecureScreen
 {
 	public final static Logger logger = Logger.getLogger(SecureScreen.class);
 
+    public String getReason(RunData data){
+    	return (String)TurbineUtils.GetPassedParameter(EventUtils.EVENT_REASON, data);
+    }
 
     protected void error(Exception e,RunData data){
         logger.error("",e);

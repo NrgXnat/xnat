@@ -17,6 +17,10 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFT;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -73,7 +77,9 @@ public class StoreXML {
                 	    q = item.getGenericSchemaElement().isQuarantine();
                 	    override = false;
                 	}
-                	SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue());
+                    
+                    
+                    SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
                 	sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
                     AccessLogger.LogServiceAccess(_username,"","StoreXML",item.getProperName() + " Successfully Stored");		
@@ -162,7 +168,9 @@ public class StoreXML {
                 	    q = item.getGenericSchemaElement().isQuarantine();
                 	    override = false;
                 	}
-                	SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue());
+                    
+                    SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+                    
                 	sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
                     AccessLogger.LogServiceAccess(session_id,"","StoreXML",item.getProperName() + " Successfully Stored");		

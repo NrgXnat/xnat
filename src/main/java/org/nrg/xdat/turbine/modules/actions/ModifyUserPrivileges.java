@@ -30,6 +30,8 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
 /**
@@ -42,7 +44,7 @@ public class ModifyUserPrivileges extends SecureAction {
 
 	public void doEmail(RunData data, Context context) throws Exception
 	{
-		final XDATUser tempUser = storeChanges(data,context);
+		final XDATUser tempUser = storeChanges(data,context,(String)TurbineUtils.GetPassedParameter("message",data));
 	
 		if (tempUser.needsActivation())
 		{
@@ -61,7 +63,7 @@ public class ModifyUserPrivileges extends SecureAction {
 	
 	public void doPerform(RunData data, Context context) throws Exception
 	{
-		final XDATUser tempUser = storeChanges(data,context);
+		final XDATUser tempUser = storeChanges(data,context,(String)TurbineUtils.GetPassedParameter("message",data));
 		
 		TurbineUtils.setDataItem(data,tempUser.getItem());
 		data.getParameters().setString("search_element",org.nrg.xft.XFT.PREFIX + ":user");
@@ -139,7 +141,7 @@ public class ModifyUserPrivileges extends SecureAction {
 		return tempUser;
 	}
 	
-	public XDATUser storeChanges(RunData data,Context context) throws Exception
+	public XDATUser storeChanges(RunData data,Context context,String message) throws Exception
 	{
 //	  TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		//parameter specifying elementAliass and elementNames
@@ -151,10 +153,10 @@ public class ModifyUserPrivileges extends SecureAction {
 	    
 		final String login = tempUser.getUsername();
 	    		
-	    
+	    EventMetaI ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
 	    
 	    try {
-			tempUser.getItem().save(TurbineUtils.getUser(data),false,false);
+			tempUser.getItem().save(TurbineUtils.getUser(data),false,false,ci);
 		} catch (Exception e) {
 			logger.error("Error Storing User",e);
 		}
@@ -179,7 +181,7 @@ public class ModifyUserPrivileges extends SecureAction {
                 
                 if (!foundChild)
                 {
-                    item.removeChildFromDB("xdat:user.assigned_roles.assigned_role",oldChild,TurbineUtils.getUser(data));
+                    item.removeChildFromDB("xdat:user.assigned_roles.assigned_role",oldChild,TurbineUtils.getUser(data),ci);
                 }
             }
 	    }
@@ -193,7 +195,7 @@ public class ModifyUserPrivileges extends SecureAction {
 
 		//logger.error("4\n"+tempUser.getItem().toString());
 		try {
-			tempUser.getItem().save(TurbineUtils.getUser(data),false,false);
+			tempUser.getItem().save(TurbineUtils.getUser(data),false,false,ci);
 			//temp = tempUser.getItem().getCurrentDBVersion();
 			//tempUser = new XDATUser(temp);
 		} catch (Exception e) {
@@ -246,7 +248,7 @@ public class ModifyUserPrivileges extends SecureAction {
 	   throws Exception
 	{
 		if(XFT.VERBOSE)System.out.println("ModifyUserPriviledges doPrint()"); 
-		final XDATUser tempUser = storeChanges(data,context);
+		final XDATUser tempUser = storeChanges(data,context,(String)TurbineUtils.GetPassedParameter("message",data));
 		ElementSecurity.refresh();
 		
 		TurbineUtils.setDataItem(data,tempUser.getItem());

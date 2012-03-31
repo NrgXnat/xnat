@@ -27,6 +27,10 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.MaterializedView;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidItemException;
@@ -48,6 +52,8 @@ public class ModifyItem  extends SecureAction {
     public void preProcess(XFTItem item,RunData data, Context context){
 
     }
+    
+    
 
     public boolean allowDataDeletion(){
         return false;
@@ -128,8 +134,14 @@ public class ModifyItem  extends SecureAction {
                 handleException(data,first,error);
                 return;
             }
+            
 
-            XFTItem dbVersion = null;
+            XFTItem dbVersion = first.getCurrentDBVersion();
+
+			final PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), first,newEventInstance(data, EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(first.getXSIType(), dbVersion==null)));
+	    	EventMetaI c=wrk.buildEvent();
+            PersistentWorkflowUtils.save(wrk,c);
+
             boolean removedReference = false;
             Object[] keysArray = data.getParameters().getKeys();
             for (int i=0;i<keysArray.length;i++)
@@ -137,10 +149,6 @@ public class ModifyItem  extends SecureAction {
             	String key = (String)keysArray[i];
             	if (key.toLowerCase().startsWith("remove_"))
             	{
-                    if (dbVersion ==null)
-                    {
-                        dbVersion = first.getCurrentDBVersion();
-                    }
             	    int index = key.indexOf("=");
             	    String field = key.substring(index+1);
             	    Object value = data.getParameters().getObject(key);
@@ -149,7 +157,7 @@ public class ModifyItem  extends SecureAction {
             	    if (items.size() > 0)
             	    {
             	        ItemI toRemove = items.getFirst();
-            	        DBAction.RemoveItemReference(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data));
+            	        DBAction.RemoveItemReference(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data),c);
             	        first.removeItem(toRemove);
             	        removedReference = true;
             	    }else{
@@ -193,9 +201,11 @@ public class ModifyItem  extends SecureAction {
                     } catch (RuntimeException e) {
                         logger.error("",e);
                     }
-                    save(first,data,context);
+                    save(first,data,context,c);
+                    PersistentWorkflowUtils.complete(wrk,c);
 					MaterializedView.DeleteByUser(TurbineUtils.getUser(data));
         		} catch (Exception e) {
+                    PersistentWorkflowUtils.fail(wrk,c);
                     handleException(data,first,error);
                     return;
         		}
@@ -206,6 +216,8 @@ public class ModifyItem  extends SecureAction {
                     data.setMessage(e.getMessage());
                 }
             }
+            
+           
         } catch (XFTInitException e) {
             handleException(data,first,e);
             return;
@@ -220,6 +232,10 @@ public class ModifyItem  extends SecureAction {
             return;
         }
 	}
+
+    public void handleException(RunData data,XFTItem first,Throwable error){
+        handleException(data, first, error, getReturnEditItemIdentifier());
+    }
 
     public void preSave(XFTItem item,RunData data, Context context) throws Exception{}
 
@@ -243,18 +259,6 @@ public class ModifyItem  extends SecureAction {
         }
     }
 
-    public void handleException(RunData data,XFTItem first,Throwable error){
-        data.getSession().setAttribute(this.getReturnEditItemIdentifier(),first);
-        data.addMessage(error.getMessage());
-        if (data.getParameters().getString("edit_screen") !=null)
-        {
-            data.setScreenTemplate(data.getParameters().getString("edit_screen"));
-        }else{
-            data.setScreenTemplate("Index.vm");
-        }
-        return;
-    }
-
     /**
      * @return the returnEditItemIdentifier
      */
@@ -269,8 +273,8 @@ public class ModifyItem  extends SecureAction {
         this.returnEditItemIdentifier = returnEditItemIdentifier;
     }
 
-    public void save(XFTItem first,RunData data, Context context) throws InvalidItemException,Exception{
-        first.save(TurbineUtils.getUser(data),false,allowDataDeletion());
+    public void save(XFTItem first,RunData data, Context context, EventMetaI c) throws InvalidItemException,Exception{
+        first.save(TurbineUtils.getUser(data),false,allowDataDeletion(),c);
     }
 
     @SuppressWarnings("serial")

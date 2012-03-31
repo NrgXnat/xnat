@@ -18,6 +18,7 @@ import org.nrg.xdat.turbine.modules.actions.DisplayItemAction;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 
 /**
@@ -40,15 +41,16 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
                     enabled= true;
 					o.setProperty(XDATUser.USER_ELEMENT + ".enabled","1");
 				}
-				
-				o.save(TurbineUtils.getUser(data),false,false);
+
+                XDATUser userI = new XDATUser(o);
+                
+				o.save(TurbineUtils.getUser(data),false,false,EventUtils.ADMIN_EVENT(userI));
 				
 				SchemaElementI se = SchemaElement.GetElement(o.getXSIType());
 				data = TurbineUtils.setDataItem(data,o);
                 
                 if (enabled)
                 {
-                    XDATUser userI = new XDATUser(o);
                     try {
                         AdminUtils.sendNewUserEmailMessage(userI.getUsername(), userI.getEmail(),data,context);
                     } catch (Exception e) {

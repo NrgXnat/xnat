@@ -19,9 +19,12 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.ZipOutputStream;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 import org.apache.tools.tar.TarOutputStream;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.srb.XNATDirectory;
 import org.nrg.xnat.srb.XNATSrbFile;
@@ -62,10 +65,10 @@ public class TarUtils implements ZipI {
 
     
     public ArrayList extract(InputStream is, String dir) throws IOException{
-    	return extract(is,dir,true);
+    	return extract(is,dir,true,null);
     }
     
-    public ArrayList extract(InputStream is, String dir,boolean overwrite) throws IOException{
+    public ArrayList extract(InputStream is, String dir,boolean overwrite,EventMetaI ci) throws IOException{
         ArrayList extractedFiles = new ArrayList();
         if (_compressionMethod==ZipOutputStream.DEFLATED)
         {
@@ -89,6 +92,8 @@ public class TarUtils implements ZipI {
             {
                 if(destPath.exists() && !overwrite){
                 	throw new IOException("File already exists"+destPath.getCanonicalPath());
+                }else{
+                	FileUtils.MoveToHistory(destPath,EventUtils.getTimestamp(ci));
                 }
                 
             	destPath.getParentFile().mkdirs();

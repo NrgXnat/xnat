@@ -19,6 +19,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTool;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 
@@ -237,7 +238,7 @@ public class ElementSecurityWizard extends SecureAction {
 		    
 		    boolean saved=false;
 		    try {
-				found.save(TurbineUtils.getUser(data),false,false);
+				found.save(TurbineUtils.getUser(data),false,false,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
 				saved=true;
 			} catch (Exception e) {
 				logger.error("Error Storing " + found.getXSIType(),e);

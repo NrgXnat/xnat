@@ -1,3 +1,4 @@
 syntax: glob
 target/
 glob:xdat_1.jardesc
+quick-deploy.bat*

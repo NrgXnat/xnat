@@ -352,5 +352,47 @@ public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferen
     public void setUnique(boolean unique) {
         this.unique = unique;
     }
+
+	public String toString()
+	{
+	    StringBuilder sb = new StringBuilder();
+		sb.append(this.getElement1().getXSIType());
+		sb.append(".");
+		sb.append(this.getField1().getXMLPathString());
+		sb.append("=");
+		sb.append(this.getElement2().getXSIType());
+		sb.append(".");
+		sb.append(this.getField2().getXMLPathString());
+	    return sb.toString();
+	}
+
+	public int compareTo(XFTReferenceI arg0) {
+		if(!(arg0 instanceof XFTManyToManyReference)){
+			return -1;
+		}
+		
+		XFTManyToManyReference ref=(XFTManyToManyReference)arg0;
+		
+		if(this.isManyToMany()==ref.isManyToMany()){
+			return (isManyToMany())?-1:1;
+		}
+		
+		int c=ref.getElement1().getXSIType().compareTo(this.getElement1().getXSIType());
+		if(c!=0){
+			return c;
+		}
+		
+		c=ref.getElement2().getXSIType().compareTo(this.getElement2().getXSIType());
+		if(c!=0){
+			return c;
+		}
+		
+		c=ref.getField1().getXMLPathString().compareTo(this.getField1().getXMLPathString());
+		if(c!=0){
+			return c;
+		}
+		
+		return ref.getField2().getXMLPathString().compareTo(this.getField2().getXMLPathString());
+	}
 }
 

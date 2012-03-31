@@ -39,6 +39,7 @@ public class ViewManager {
 	public final static Hashtable<String,ArrayList<String>> FIELD_NAMES = new Hashtable<String,ArrayList<String>>();
 	public static final String ACTIVE = "active";
 	public static final String ALL = "all";
+	public static final String LOCKED = "locked";
 	public static final String QUARANTINE = "quarantine";
 	public static final String DELETED = "deleted";
 	public final static String DEFAULT_LEVEL = QUARANTINE;

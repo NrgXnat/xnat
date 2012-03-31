@@ -49,6 +49,8 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.Event;
 import org.nrg.xft.event.EventManager;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -257,7 +259,7 @@ public class ElementSecurity extends ItemWrapper{
 	    	Collection<ElementSecurity> ess= GetElementSecurities().values();
 			for (ElementSecurity es:ess)
 			{
-                if (es.getBooleanProperty("quarantine") !=null)
+                if (es.getBooleanProperty(ViewManager.QUARANTINE) !=null)
                 {
                     al.add(es);
                 }
@@ -1417,7 +1419,7 @@ public class ElementSecurity extends ItemWrapper{
         return fields.contains(field);
     }
     
-    public void initPSF(String field){
+    public void initPSF(String field,EventMetaI meta){
         try {
             String query = "SELECT primary_security_field FROM xdat_primary_security_field WHERE primary_security_field = '" + field + "';";
             XFTTable t = XFTTable.Execute(query, this.getDBName(), null);
@@ -1425,7 +1427,7 @@ public class ElementSecurity extends ItemWrapper{
                 XdatPrimarySecurityField psf = new XdatPrimarySecurityField(this.getUser());
                 psf.setPrimarySecurityField(field);
                 psf.setProperty("xdat:primary_security_field/primary_security_fields_primary_element_name",this.getElementName());
-                psf.save(this.getUser(), true, true);
+                psf.save(this.getUser(), true, true,meta);
             }
         } catch (Exception e) {
             logger.error("",e);
@@ -2032,9 +2034,7 @@ public class ElementSecurity extends ItemWrapper{
     public static String GetSingularDescription(String elementName){
         try {
             ElementSecurity es=GetElementSecurities().get(elementName);
-            if (es!=null){
-                return es.getSingularDescription();
-            }
+            return (es!=null && !StringUtils.IsEmpty(es.getSingularDescription()))?es.getSingularDescription():GenericWrapperElement.GetElement(elementName).getProperName();
         } catch (Exception e) {
             logger.error("",e);
         }

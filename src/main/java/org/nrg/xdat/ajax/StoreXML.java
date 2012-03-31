@@ -15,11 +15,16 @@ import javax.servlet.http.HttpServletResponse;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -39,14 +44,12 @@ public class StoreXML {
             StringReader sr = new StringReader(xmlString);
             InputSource is = new InputSource(sr);
             
-            boolean successful=false;
             SAXReader reader = new SAXReader(user);
             try {
 
                 XFTItem item = reader.parse(is);
-                
-                item.save(user, false, allowDataDeletion);
 
+                SaveItemHelper.Save(item,user,false,false,false,allowDataDeletion,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.SOAP, "Store XML", req.getParameter(EventUtils.EVENT_REASON), req.getParameter(EventUtils.EVENT_COMMENT)));
                 
                 SAXWriter writer = new SAXWriter(response.getOutputStream(),false);
                 writer.setWriteHiddenFields(true);

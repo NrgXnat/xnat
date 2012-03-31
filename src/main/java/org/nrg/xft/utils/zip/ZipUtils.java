@@ -23,6 +23,8 @@ import java.util.zip.ZipOutputStream;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.Target;
 import org.apache.tools.ant.taskdefs.Expand;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.srb.XNATDirectory;
 import org.nrg.xnat.srb.XNATSrbFile;
@@ -330,10 +332,10 @@ public class ZipUtils implements ZipI {
     }
     
     public ArrayList extract(InputStream is, String dir) throws IOException{
-    	return extract(is,dir,true);
+    	return extract(is,dir,true,null);
     }
     
-    public ArrayList extract(InputStream is, String destination,boolean overwrite) throws IOException{;
+    public ArrayList extract(InputStream is, String destination,boolean overwrite, EventMetaI ci) throws IOException{;
          ArrayList extractedFiles = new ArrayList();       
         //  Create a ZipInputStream to read the zip file
         BufferedOutputStream dest = null;
@@ -353,8 +355,12 @@ public class ZipUtils implements ZipI {
           {            
             final File f = new File(destination,entry.getName());
             
-            if(f.exists() && !overwrite){
-            	throw new IOException("File already exists"+f.getCanonicalPath());
+            if(f.exists()){
+                if(!overwrite){
+                	throw new IOException("File already exists"+f.getCanonicalPath());
+                }else{
+                	FileUtils.MoveToHistory(f,EventUtils.getTimestamp(ci));
+                }
             }
             f.getParentFile().mkdirs();
             // Write the file to the file system

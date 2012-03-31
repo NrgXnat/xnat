@@ -98,7 +98,7 @@ public class XDAT implements Initializable,Configurable{
 	            while (quarantineElements.hasNext())
 	            {
 	                ElementSecurity es = (ElementSecurity)quarantineElements.next();
-	                GenericWrapperElement.GetElement(es.getElementName()).setQuarantineSetting(es.getBooleanProperty("quarantine",false));
+	                GenericWrapperElement.GetElement(es.getElementName()).setQuarantineSetting(es.getBooleanProperty(ViewManager.QUARANTINE,false));
 	            }
 	            
 	            Iterator preloadElements = ElementSecurity.GetPreLoadElements().iterator();

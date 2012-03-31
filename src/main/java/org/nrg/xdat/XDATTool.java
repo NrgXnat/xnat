@@ -27,6 +27,7 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.XFTTableI;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -186,7 +187,7 @@ public class XDATTool {
 			    q = item.getGenericSchemaElement().isQuarantine();
 			    override = false;
 			}
-        	SaveItemHelper.Save(item,user,overrideSecurity,q,override,allowItemRemoval);
+        	SaveItemHelper.Save(item,user,overrideSecurity,q,override,allowItemRemoval,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
 			if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
 		    logger.info("Item Successfully Stored.");
 		}else

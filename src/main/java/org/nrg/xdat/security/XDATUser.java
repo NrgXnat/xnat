@@ -21,8 +21,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
+import java.util.TreeMap;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
@@ -48,6 +47,8 @@ import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.FavEntries;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -1995,7 +1996,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
         }
     }
 
-    public void setPermissions(String elementName,String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges)
+    public void setPermissions(String elementName,String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges,EventMetaI ci)
     {
         try {
             ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
@@ -2050,10 +2051,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
                     		return;
                     }else if(!(create || read || edit || delete || activate)){
                 		if(fms.getAllow().size()==1){
-                			DBAction.DeleteItem(fms.getItem(), this);
+                			DBAction.DeleteItem(fms.getItem(), this,ci);
                 			return;
                 		}else{
-                			DBAction.DeleteItem(fm.getItem(), this);
+                			DBAction.DeleteItem(fm.getItem(), this,ci);
                 			return;
                 		}
                 	}
@@ -2075,25 +2076,25 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
                         fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
 
                         if (activateChanges){
-                            fm.save(this, true, false, true, false);
+                            fm.save(this, true, false, true, false,ci);
                             fm.activate(this);
                         }else{
-                            fm.save(this, true, false, false, false);
+                            fm.save(this, true, false, false, false,ci);
                         }
                     }else if(ea.getXdatElementAccessId()!=null){
                         fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
                         if (activateChanges){
-                            fms.save(this, true, false, true, false);
+                            fms.save(this, true, false, true, false,ci);
                             fms.activate(this);
                         }else{
-                            fms.save(this, true, false, false, false);
+                            fms.save(this, true, false, false, false,ci);
                         }
                     }else{
                         if (activateChanges){
-                            ea.save(this, true, false, true, false);
+                            ea.save(this, true, false, true, false,ci);
                             ea.activate(this);
                         }else{
-                            ea.save(this, true, false, false, false);
+                            ea.save(this, true, false, false, false,ci);
                         }
                         this.setElementAccess(ea);
                     }
@@ -2642,6 +2643,43 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
     	}else{
     		return false;
     	}
+    }
+    
+    public static String getUsername(Object xdat_user_id){
+    	if(xdat_user_id==null)return null;
+    	else if(xdat_user_id instanceof Integer){
+    		return getUsername((Integer)xdat_user_id);
+    	}else {
+    		return null;
+    	}
+    }
+    
+    private static Map<Integer,String> users=null;
+    public static String getUsername(Integer xdat_user_id){
+    	if(xdat_user_id==null)return null;
+    	
+    	if(users==null){
+    		try {
+				users= XFTTable.Execute("select xdat_user_id,login FROM xdat_user ORDER BY xdat_user_id;", null, null).toHashtable("xdat_user_id", "login");
+			} catch (Exception e) {
+				logger.error("",e);
+				users=new TreeMap<Integer,String>();
+			}
+    	}
+    	
+    	String u=users.get(xdat_user_id);
+    	if(u==null){
+    		try {
+				u=(String)PoolDBUtils.ReturnStatisticQuery("select login FROM xdat_user WHERE xdat_user_id="+xdat_user_id, "login", null, null);
+				if(u!=null){
+					users.put(xdat_user_id,u);
+				}
+			} catch (Exception e) {
+				logger.error("",e);
+			}
+    	}
+    	
+    	return u;
     }
 }
 

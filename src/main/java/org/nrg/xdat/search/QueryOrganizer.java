@@ -46,6 +46,7 @@ import org.nrg.xft.utils.StringUtils;
  * 
  * 
  */
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements QueryOrganizerI{
 	static org.apache.log4j.Logger logger = Logger.getLogger(QueryOrganizer.class);
 
@@ -211,7 +212,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                         ArrayList<String> values = StringUtils.CommaDelimitedStringToArrayList(VALUE);
                         int count =0;
                         for(String value1:values){
-                            subquery= StringUtils.ReplaceStr(subquery, "@WHERE" + count++, VALUE);
+                            subquery= StringUtils.ReplaceStr(subquery, "@WHERE" + count++, value1);
                         }
                     }
 
@@ -415,7 +416,6 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                         }
                     }else if (viewName.startsWith("SUBQUERYFIELD"))
                     {
-                        String s = viewName.substring(14);
 
                     }else{
                         throw new Exception("No Such View Found. " + viewName);
@@ -1150,7 +1150,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     String tableName = layers[1].substring(layers[1].lastIndexOf(".")+1);
                     String colName = layers[2];
 
-					String viewColName = ViewManager.GetViewColumnName(se.getGenericXFTElement(),s,"ACTIVE",true,true);
+					String viewColName = ViewManager.GetViewColumnName(se.getGenericXFTElement(),s,ViewManager.ACTIVE,true,true);
 
 
                     if (tableAliases.get(tableName)!= null)
@@ -1193,7 +1193,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     String tableName = layers[1].substring(layers[1].lastIndexOf(".")+1);
                     String colName = layers[2];
 
-                    String viewColName = ViewManager.GetViewColumnName(se.getGenericXFTElement(),s,"ACTIVE",true,true);
+                    String viewColName = ViewManager.GetViewColumnName(se.getGenericXFTElement(),s,ViewManager.ACTIVE,true,true);
 
                     if (tableAliases.get(tableName)!= null)
                     {

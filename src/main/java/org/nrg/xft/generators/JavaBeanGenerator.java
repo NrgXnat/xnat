@@ -938,9 +938,9 @@ public class JavaBeanGenerator {
                 String xmlPath = attField.getXMLPathString();
                 String formatted = formatFieldName(xmlPath);
                 sb.append("\n\t\tif (_").append(formatted).append("!=null)");
-                sb.append("\n\t\t\tmap.put(\"").append(attField.getDisplayName(false)).append("\",ValueParser(_").append(formatted).append(",\"" + attField.getXMLType().getLocalType() + "\"));");
+                sb.append("\n\t\t\tmap.put(\"").append(attField.getName(false)).append("\",ValueParser(_").append(formatted).append(",\"" + attField.getXMLType().getLocalType() + "\"));");
                 if (attField.isRequired()){
-                    sb.append("\n\t\telse map.put(\"").append(attField.getDisplayName(false)).append("\",\"\");//REQUIRED FIELD\n");
+                    sb.append("\n\t\telse map.put(\"").append(attField.getName(false)).append("\",\"\");//REQUIRED FIELD\n");
                 }else{
                     sb.append("\n\t\t//NOT REQUIRED FIELD\n");
                 }
@@ -1221,7 +1221,7 @@ public class JavaBeanGenerator {
                             sb.append("\n\t\t").append("java.util.Iterator iter" + iterCounter + "=_" + formatted + ".iterator();");
                             sb.append("\n\t\t").append("while(iter" + iterCounter + ".hasNext()){");
                             sb.append("\n\t\t\t").append(project + ".bean.").append(foreignClassName).append(" child = ("+ project + ".bean.").append(foreignClassName).append(")iter" + iterCounter++ + ".next();");
-                            sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getDisplayName(true) + "\");");
+                            sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getName(true) + "\");");
                             sb.append("\n\t\t\t").append("child.addXMLAtts(writer);");
                             sb.append("\n\t\t\t").append("if(!child.getFullSchemaElementName().equals(\"" + xmlField.getXMLType().getFullForeignType() + "\")){");
                             sb.append("\n\t\t\t\t").append("writer.write(\" xsi:type=\\\"\" + child.getFullSchemaElementName() + \"\\\"\");");
@@ -1230,9 +1230,9 @@ public class JavaBeanGenerator {
                             sb.append("\n\t\t\t\t").append("writer.write(\">\");");
                             sb.append("\n\t\t\t\t").append("boolean return" + iterCounter + " =child.addXMLBody(writer,header);");
                             sb.append("\n\t\t\t\t").append("if(return" + iterCounter + "){");
-                            sb.append("\n\t\t\t\t\t").append("writer.write(\"\\n\" + createHeader(--header) + \"</" + xmlField.getDisplayName(true) + ">\");");
+                            sb.append("\n\t\t\t\t\t").append("writer.write(\"\\n\" + createHeader(--header) + \"</" + xmlField.getName(true) + ">\");");
                             sb.append("\n\t\t\t\t").append("}else{");
-                            sb.append("\n\t\t\t\t\t").append("writer.write(\"</" + xmlField.getDisplayName(true) + ">\");");
+                            sb.append("\n\t\t\t\t\t").append("writer.write(\"</" + xmlField.getName(true) + ">\");");
                             sb.append("\n\t\t\t\t\t").append("header--;");
                             sb.append("\n\t\t\t\t").append("}");
                             sb.append("\n\t\t\t").append("}else {writer.write(\"/>\");header--;}");
@@ -1257,7 +1257,7 @@ public class JavaBeanGenerator {
                                 sb.append("\n\t\t\t").append("_" + formatted + ".addXMLBody(writer,header);");
                             }else{
                                 sb.append("\n\t\t").append("//NEW ELEMENT");
-                                sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getDisplayName(true) + "\");");
+                                sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getName(true) + "\");");
                                 sb.append("\n\t\t\t").append("_" + formatted + ".addXMLAtts(writer);");
                                 sb.append("\n\t\t\t").append("if(!_" + formatted + ".getFullSchemaElementName().equals(\"" + xmlField.getXMLType().getFullForeignType() + "\")){");
                                 sb.append("\n\t\t\t\t").append("writer.write(\" xsi:type=\\\"\" + _" + formatted + ".getFullSchemaElementName() + \"\\\"\");");
@@ -1267,9 +1267,9 @@ public class JavaBeanGenerator {
                                 sb.append("\n\t\t\t\t").append("writer.write(\">\");");
                                 sb.append("\n\t\t\t\t").append("boolean return" + iterCounter + " =_" + formatted + ".addXMLBody(writer,header);");
                                 sb.append("\n\t\t\t\t").append("if(return" + iterCounter + "){");
-                                sb.append("\n\t\t\t\t\t").append("writer.write(\"\\n\" + createHeader(--header) + \"</" + xmlField.getDisplayName(true) + ">\");");
+                                sb.append("\n\t\t\t\t\t").append("writer.write(\"\\n\" + createHeader(--header) + \"</" + xmlField.getName(true) + ">\");");
                                 sb.append("\n\t\t\t\t").append("}else{");
-                                sb.append("\n\t\t\t\t\t").append("writer.write(\"</" + xmlField.getDisplayName(true) + ">\");");
+                                sb.append("\n\t\t\t\t\t").append("writer.write(\"</" + xmlField.getName(true) + ">\");");
                                 sb.append("\n\t\t\t\t\t").append("header--;");
                                 sb.append("\n\t\t\t\t").append("}");
                                 sb.append("\n\t\t\t").append("}else {writer.write(\"/>\");header--;}");
@@ -1277,7 +1277,7 @@ public class JavaBeanGenerator {
                             sb.append("\n\t\t").append("}");
                             if (! xmlField.getWrapped().getMinOccurs().equalsIgnoreCase("0")){
                                 sb.append("\n\t\t").append("else{");
-                                sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header) + \"<" + xmlField.getDisplayName(true) + "/>\");//REQUIRED");
+                                sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header) + \"<" + xmlField.getName(true) + "/>\");//REQUIRED");
                                 sb.append("\n\t\t").append("}");
                             }else{
                                 sb.append("\n\t\t").append("//NOT REQUIRED\n");
@@ -1302,9 +1302,9 @@ public class JavaBeanGenerator {
                         String xmlPathATT = attField.getXMLPathString();
                         String formattedATT = formatFieldName(xmlPathATT);
                         sb.append("\n\t\tif (_").append(formattedATT).append("!=null)");
-                        sb.append("\n\t\t\t" + formatted + "ATTMap.put(\"").append(attField.getDisplayName(false)).append("\",ValueParser(_").append(formattedATT).append(",\"" + attField.getXMLType().getLocalType() + "\"));");
+                        sb.append("\n\t\t\t" + formatted + "ATTMap.put(\"").append(attField.getName(false)).append("\",ValueParser(_").append(formattedATT).append(",\"" + attField.getXMLType().getLocalType() + "\"));");
                         if (attField.isRequired()){
-                            sb.append("\n\t\telse " +formatted + "ATTMap.put(\"").append(attField.getDisplayName(false)).append("\",ValueParser(_").append(formattedATT).append(",\"" + attField.getXMLType().getLocalType() + "\"));//REQUIRED FIELD\n");
+                            sb.append("\n\t\telse " +formatted + "ATTMap.put(\"").append(attField.getName(false)).append("\",ValueParser(_").append(formattedATT).append(",\"" + attField.getXMLType().getLocalType() + "\"));//REQUIRED FIELD\n");
                         }
                     }
                     sb.append("\n\t\t").append("java.util.Iterator iter" + iterCounter + " =" + formatted + "ATTMap.keySet().iterator();");
@@ -1346,7 +1346,7 @@ public class JavaBeanGenerator {
                         }
                     }
                     
-                    sb.append("\n\t\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getDisplayName(true) + "\");");
+                    sb.append("\n\t\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getName(true) + "\");");
                     if (attAL.size() > 0)
                     {   
                         sb.append("\n\t\t\t\t").append("writer.write(" + formatted + "ATT);");
@@ -1359,7 +1359,7 @@ public class JavaBeanGenerator {
                     
                     sb.append(childCode);
                     
-                    sb.append("\n\t\t\t\t").append("writer.write(\"\\n\" + createHeader(--header) + \"</" + xmlField.getDisplayName(true) + ">\");");
+                    sb.append("\n\t\t\t\t").append("writer.write(\"\\n\" + createHeader(--header) + \"</" + xmlField.getName(true) + ">\");");
 
                     sb.append("\n\t\t\t").append("}");
                     sb.append("\n\t\t\t").append("}\n");
@@ -1368,7 +1368,7 @@ public class JavaBeanGenerator {
 
                     if (xmlField.getXMLType()==null){
                         sb.append("\n\t\t").append("if(!" + formatted + "ATT.equals(\"\")){");
-                        sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header) + \"<" + xmlField.getDisplayName(true) + "\");");
+                        sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header) + \"<" + xmlField.getName(true) + "\");");
                         if (attAL.size() > 0)
                         {   
                             sb.append("\n\t\t\t").append("writer.write(" + formatted + "ATT);");
@@ -1379,7 +1379,7 @@ public class JavaBeanGenerator {
                     {
                         sb.append("\n\t\t").append("if (_" + formatted + "!=null){");
                         if (!e.isANoChildElement()){
-                            sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getDisplayName(true) + "\");");
+                            sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getName(true) + "\");");
                             if (attAL.size() > 0)
                             {   
                                 sb.append("\n\t\t\t").append("writer.write(" + formatted + "ATT);");
@@ -1387,13 +1387,13 @@ public class JavaBeanGenerator {
                             sb.append("\n\t\t\t").append("writer.write(\">\");");
                         }
                         sb.append("\n\t\t\t").append("writer.write(ValueParser(_").append(formatted).append(",\"" + xmlField.getXMLType().getLocalType() + "\"));");
-                        if (!e.isANoChildElement())sb.append("\n\t\t\t").append("writer.write(\"</" + xmlField.getDisplayName(true) + ">\");");
+                        if (!e.isANoChildElement())sb.append("\n\t\t\t").append("writer.write(\"</" + xmlField.getName(true) + ">\");");
                         sb.append("\n\t\t\t").append("header--;");
                         sb.append("\n\t\t").append("}");
                         if (xmlField.isRequired())
                         {
                             sb.append("\n\t\t").append("else{");
-                            sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getDisplayName(true) + "\");");
+                            sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getName(true) + "\");");
                             if (attAL.size() > 0)
                             {   
                                 sb.append("\n\t\t\t").append("writer.write(" + formatted + "ATT);");
@@ -1403,7 +1403,7 @@ public class JavaBeanGenerator {
                             sb.append("\n\t\t").append("}\n");
                         }else if (attAL.size() > 0){
                             sb.append("\n\t\t").append("else if(!" + formatted + "ATT.equals(\"\")){");
-                            sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getDisplayName(true) + "\");");
+                            sb.append("\n\t\t\t").append("writer.write(\"\\n\" + createHeader(header++) + \"<" + xmlField.getName(true) + "\");");
                             sb.append("\n\t\t\t").append("writer.write(" + formatted + "ATT);");
                             sb.append("\n\t\t\t").append("writer.write(\"/>\");");
                             sb.append("\n\t\t\t").append("header--;");

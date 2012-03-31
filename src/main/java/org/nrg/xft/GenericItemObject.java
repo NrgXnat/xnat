@@ -100,7 +100,7 @@ public abstract class GenericItemObject implements ItemI {
 	 * @param key
 	 * @return
 	 */
-	protected Object getField(final String key) 
+	public Object getField(final String key) 
 	{
 		return props.get(key);
 		

@@ -21,6 +21,8 @@ import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.db.DBAction;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
@@ -108,7 +110,7 @@ public class XdatUsergroup extends BaseXdatUsergroup {
 		xfm.setComparisonType(pc.getComparisonType());
     }
 
-    public void removePermissions(String elementName,UserI user){
+    public void removePermissions(String elementName,UserI user,EventMetaI c){
         try {
             final ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
 
@@ -124,7 +126,7 @@ public class XdatUsergroup extends BaseXdatUsergroup {
 
             if (ea!=null)
             {
-                DBAction.DeleteItem(ea.getItem(), user);
+                DBAction.DeleteItem(ea.getItem(), user,c);
             }
         } catch (XFTInitException e) {
             logger.error("",e);
@@ -140,7 +142,7 @@ public class XdatUsergroup extends BaseXdatUsergroup {
     }
 
 
-    public boolean setPermissions(String elementName, String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges, XDATUser user, boolean includesModification) throws Exception
+    public boolean setPermissions(String elementName, String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges, XDATUser user, boolean includesModification,EventMetaI c) throws Exception
     {
         try {
             final ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
@@ -194,10 +196,10 @@ public class XdatUsergroup extends BaseXdatUsergroup {
                 }else if(!includesModification){
                 	if(!(create || read || edit || delete || activate)){
                 		if(fms.getAllow().size()==1){
-                			DBAction.DeleteItem(fms.getItem(), user);
+                			DBAction.DeleteItem(fms.getItem(), user,c);
                 			return true;
                 		}else{
-                			DBAction.DeleteItem(fm.getItem(), user);
+                			DBAction.DeleteItem(fm.getItem(), user,c);
                 			return true;
                 		}
                 	}
@@ -220,25 +222,25 @@ public class XdatUsergroup extends BaseXdatUsergroup {
                     fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
 
                     if (activateChanges){
-                        fm.save(user, true, false, true, false);
+                        fm.save(user, true, false, true, false,c);
                         fm.activate(user);
                     }else{
-                        fm.save(user, true, false, false, false);
+                        fm.save(user, true, false, false, false,c);
                     }
                 }else if(ea.getXdatElementAccessId()!=null){
                     fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
                     if (activateChanges){
-                        fms.save(user, true, false, true, false);
+                        fms.save(user, true, false, true, false,c);
                         fms.activate(user);
                     }else{
-                    	fms.save(user, true, false, false, false);
+                    	fms.save(user, true, false, false, false,c);
                     }
                 }else{
                     if (activateChanges){
-                        ea.save(user, true, false, true, false);
+                        ea.save(user, true, false, true, false,c);
                         ea.activate(user);
                     }else{
-                        ea.save(user, true, false, false, false);
+                        ea.save(user, true, false, false, false,c);
                     }
                     this.setElementAccess(ea);
                 }
@@ -258,7 +260,7 @@ public class XdatUsergroup extends BaseXdatUsergroup {
     }
 
 
-    public void setPermissions(String elementName,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges, XDATUser user) throws Exception
+    public void setPermissions(String elementName,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges, XDATUser user,EventMetaI c) throws Exception
     {
         try {
             ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
@@ -327,25 +329,25 @@ public class XdatUsergroup extends BaseXdatUsergroup {
                         fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
 
                         if (activateChanges){
-                            fm.save(user, true, false, true, false);
+                            fm.save(user, true, false, true, false,c);
                             fm.activate(user);
                         }else{
-                            fm.save(user, true, false, false, false);
+                            fm.save(user, true, false, false, false,c);
                         }
                     }else if(ea.getXdatElementAccessId()!=null){
                         fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
                         if (activateChanges){
-                            fms.save(user, true, false, true, false);
+                            fms.save(user, true, false, true, false,c);
                             fms.activate(user);
                         }else{
-                            fms.save(user, true, false, false, false);
+                            fms.save(user, true, false, false, false,c);
                         }
                     }else{
                         if (activateChanges){
-                            ea.save(user, true, false, true, false);
+                            ea.save(user, true, false, true, false,c);
                             ea.activate(user);
                         }else{
-                            ea.save(user, true, false, false, false);
+                            ea.save(user, true, false, false, false,c);
                         }
                         this.setElementAccess(ea);
                     }

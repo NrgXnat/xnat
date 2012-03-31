@@ -482,5 +482,14 @@ public class ItemCollection {
     public boolean removeItem(ItemI i){
         return this.items.remove(i);
     }
+    
+    public void merge(ItemCollection _new){
+    	if(_new==null)return;
+    	for(ItemI i: _new.items){
+    		if(!this.contains(i, false)){
+    			this.add(i);
+    		}
+    	}
+    }
 }
 

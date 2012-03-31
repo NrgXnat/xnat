@@ -928,9 +928,9 @@ public class JavaScriptGenerator {
                 String xmlPath = attField.getXMLPathString();
                 String formatted = formatFieldName(xmlPath);
                 sb.append("\n\t\tif (this.").append(formatted).append("!=null)");
-                sb.append("\n\t\t\tattTxt+=\" ").append(attField.getDisplayName(false)).append("=\\\"\" +this.").append(formatted).append(" +\"\\\"\";");
+                sb.append("\n\t\t\tattTxt+=\" ").append(attField.getName(false)).append("=\\\"\" +this.").append(formatted).append(" +\"\\\"\";");
                 if (attField.isRequired()){
-                    sb.append("\n\t\telse attTxt+=\" ").append(attField.getDisplayName(false)).append("=\\\"\\\"\";//REQUIRED FIELD\n");
+                    sb.append("\n\t\telse attTxt+=\" ").append(attField.getName(false)).append("=\\\"\\\"\";//REQUIRED FIELD\n");
                 }else{
                     sb.append("\n\t\t//NOT REQUIRED FIELD\n");
                 }
@@ -1209,7 +1209,7 @@ public class JavaScriptGenerator {
                             sb.append("\n\t\t").append("}");
                         }else{
                             sb.append("\n\t\t").append("for(var " + formattedCount + "=0;" + formattedCount + "<this." + formatted + ".length;" + formattedCount + "++){");
-                            sb.append("\n\t\t\t").append("xmlTxt +=\"\\n<" + xmlField.getDisplayName(true) + "\";");
+                            sb.append("\n\t\t\t").append("xmlTxt +=\"\\n<" + xmlField.getName(true) + "\";");
                             sb.append("\n\t\t\t").append("xmlTxt +=this." + formatted + "[" + formattedCount + "].getXMLAtts();");
                             sb.append("\n\t\t\t").append("if(this." + formatted + "[" + formattedCount + "].xsiType!=\"" + xmlField.getXMLType().getFullForeignType() + "\"){");
                             sb.append("\n\t\t\t\t").append("xmlTxt+=\" xsi:type=\\\"\" + this." + formatted + "[" + formattedCount + "].xsiType + \"\\\"\";");
@@ -1218,7 +1218,7 @@ public class JavaScriptGenerator {
                             sb.append("\n\t\t\t\t").append("xmlTxt+=\">\";");
                             sb.append("\n\t\t\t\t").append("xmlTxt+=this." + formatted + "[" + formattedCount + "].getXMLBody(preventComments);");
 
-                            sb.append("\n\t\t\t\t\t").append("xmlTxt+=\"</" + xmlField.getDisplayName(true) + ">\";");
+                            sb.append("\n\t\t\t\t\t").append("xmlTxt+=\"</" + xmlField.getName(true) + ">\";");
 
                             sb.append("\n\t\t\t").append("}else {xmlTxt+=\"/>\";}");
                             
@@ -1239,7 +1239,7 @@ public class JavaScriptGenerator {
                             if (! isNewElement){
                                 sb.append("\n\t\t\t").append("xmlTxt+=this." + formatted + ".getXMLBody(writer,header);");
                             }else{
-                                sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getDisplayName(true) + "\";");
+                                sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getName(true) + "\";");
                                 sb.append("\n\t\t\t").append("xmlTxt+=this." + formatted + ".getXMLAtts();");
                                 sb.append("\n\t\t\t").append("if(this." + formatted + ".xsiType!=\"" + xmlField.getXMLType().getFullForeignType() + "\"){");
                                 sb.append("\n\t\t\t\t").append("xmlTxt+=\" xsi:type=\\\"\" + this." + formatted + ".xsiType + \"\\\"\";");
@@ -1248,13 +1248,13 @@ public class JavaScriptGenerator {
                                 sb.append("\n\t\t\t").append("if (this." + formatted + ".hasXMLBodyContent()){");
                                 sb.append("\n\t\t\t\t").append("xmlTxt+=\">\";");
                                 sb.append("\n\t\t\t\t").append("xmlTxt+=this." + formatted + ".getXMLBody(preventComments);");
-                                sb.append("\n\t\t\t\t").append("xmlTxt+=\"</" + xmlField.getDisplayName(true) + ">\";");
+                                sb.append("\n\t\t\t\t").append("xmlTxt+=\"</" + xmlField.getName(true) + ">\";");
                                 sb.append("\n\t\t\t").append("}else {xmlTxt+=\"/>\";}");
                             }
                             sb.append("\n\t\t").append("}");
                             if (! xmlField.getWrapped().getMinOccurs().equalsIgnoreCase("0")){
                                 sb.append("\n\t\t").append("else{");
-                                sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getDisplayName(true) + "/>\";//REQUIRED");
+                                sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getName(true) + "/>\";//REQUIRED");
                                 sb.append("\n\t\t").append("}");
                             }else{
                                 sb.append("\n\t\t").append("//NOT REQUIRED\n");
@@ -1280,12 +1280,12 @@ public class JavaScriptGenerator {
                         sb.append("\n\t\tif (this.").append(formattedATT).append("!=null)");
 
                         if(attField.getXMLType().getLocalType().equals("string"))
-                        	sb.append("\n\t\t\t" + formatted + "ATT+=\" ").append(attField.getDisplayName(false)).append("=\\\"\" + this.").append(formattedATT).append(".replace(/>/g,\"&gt;\").replace(/</g,\"&lt;\") + \"\\\"\";");
+                        	sb.append("\n\t\t\t" + formatted + "ATT+=\" ").append(attField.getName(false)).append("=\\\"\" + this.").append(formattedATT).append(".replace(/>/g,\"&gt;\").replace(/</g,\"&lt;\") + \"\\\"\";");
                         else
-                        	sb.append("\n\t\t\t" + formatted + "ATT+=\" ").append(attField.getDisplayName(false)).append("=\\\"\" + this.").append(formattedATT).append(" + \"\\\"\";");
+                        	sb.append("\n\t\t\t" + formatted + "ATT+=\" ").append(attField.getName(false)).append("=\\\"\" + this.").append(formattedATT).append(" + \"\\\"\";");
                         
                         if (attField.isRequired()){
-                            sb.append("\n\t\telse " + formatted + "ATT+=\" ").append(attField.getDisplayName(false)).append("=\"+ this.").append(formattedATT).append(" +\"\\\"\";//REQUIRED FIELD\n");
+                            sb.append("\n\t\telse " + formatted + "ATT+=\" ").append(attField.getName(false)).append("=\"+ this.").append(formattedATT).append(" +\"\\\"\";//REQUIRED FIELD\n");
                             
                         }
                     }
@@ -1323,7 +1323,7 @@ public class JavaScriptGenerator {
                         }
                     }
                     
-                    sb.append("\n\t\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getDisplayName(true) + "\";");
+                    sb.append("\n\t\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getName(true) + "\";");
                     if (attAL.size() > 0)
                     {   
                         sb.append("\n\t\t\t\t").append("xmlTxt+=" + formatted + "ATT;");
@@ -1336,7 +1336,7 @@ public class JavaScriptGenerator {
                     
                     sb.append(childCode);
                     
-                    sb.append("\n\t\t\t\t").append("xmlTxt+=\"\\n</" + xmlField.getDisplayName(true) + ">\";");
+                    sb.append("\n\t\t\t\t").append("xmlTxt+=\"\\n</" + xmlField.getName(true) + ">\";");
 
                     sb.append("\n\t\t\t").append("}");
                     sb.append("\n\t\t\t").append("}\n");
@@ -1345,7 +1345,7 @@ public class JavaScriptGenerator {
 
                     if (xmlField.getXMLType()==null){
                         sb.append("\n\t\t").append("if(" + formatted + "ATT!=\"\"){");
-                        sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getDisplayName(true) + "\";");
+                        sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getName(true) + "\";");
                         if (attAL.size() > 0)
                         {   
                             sb.append("\n\t\t\t").append("xmlTxt+=" + formatted + "ATT;");
@@ -1356,7 +1356,7 @@ public class JavaScriptGenerator {
                     {
                         sb.append("\n\t\t").append("if (this." + formatted + "!=null){");
                         if (!e.isANoChildElement()){
-                            sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getDisplayName(true) + "\";");
+                            sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getName(true) + "\";");
                             if (attAL.size() > 0)
                             {   
                                 sb.append("\n\t\t\t").append("xmlTxt+=" + formatted + "ATT;");
@@ -1368,12 +1368,12 @@ public class JavaScriptGenerator {
                         else
                         	sb.append("\n\t\t\t").append("xmlTxt+=this.").append(formatted).append(";");
                         
-                        if (!e.isANoChildElement())sb.append("\n\t\t\t").append("xmlTxt+=\"</" + xmlField.getDisplayName(true) + ">\";");
+                        if (!e.isANoChildElement())sb.append("\n\t\t\t").append("xmlTxt+=\"</" + xmlField.getName(true) + ">\";");
                         sb.append("\n\t\t").append("}");
                         if (xmlField.isRequired())
                         {
                             sb.append("\n\t\t").append("else{");
-                            sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getDisplayName(true) + "\";");
+                            sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getName(true) + "\";");
                             if (attAL.size() > 0)
                             {   
                                 sb.append("\n\t\t\t").append("xmlTxt+=" + formatted + "ATT;");
@@ -1382,7 +1382,7 @@ public class JavaScriptGenerator {
                             sb.append("\n\t\t").append("}\n");
                         }else if (attAL.size() > 0){
                             sb.append("\n\t\t").append("else if(" + formatted + "ATT!=\"\"){");
-                            sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getDisplayName(true) + "\";");
+                            sb.append("\n\t\t\t").append("xmlTxt+=\"\\n<" + xmlField.getName(true) + "\";");
                             sb.append("\n\t\t\t").append("xmlTxt+=" + formatted + "ATT;");
                             sb.append("\n\t\t\t").append("xmlTxt+=\"/>\";");
                             sb.append("\n\t\t").append("}\n");

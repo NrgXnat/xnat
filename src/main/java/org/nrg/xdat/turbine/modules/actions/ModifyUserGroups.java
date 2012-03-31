@@ -21,6 +21,8 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 
 public class ModifyUserGroups extends SecureAction {
@@ -48,6 +50,7 @@ public class ModifyUserGroups extends SecureAction {
             }
         }
         
+        EventMetaI ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
         
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
         ItemI found = populater.getItem();
@@ -69,7 +72,7 @@ public class ModifyUserGroups extends SecureAction {
                         XdatRoleType role = (XdatRoleType)iter.next();
                         if (role.getStringProperty("role_name").equals("Administrator")){
                             //DBAction.DeleteItem(role.getItem(), TurbineUtils.getUser(data));
-                            DBAction.RemoveItemReference(oldUser.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), TurbineUtils.getUser(data));
+                            DBAction.RemoveItemReference(oldUser.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), TurbineUtils.getUser(data),ci);
                         }
                     }
                 }
@@ -87,11 +90,11 @@ public class ModifyUserGroups extends SecureAction {
                 }
                 
                 if (!matched){
-                    DBAction.DeleteItem(uGroup.getItem(), TurbineUtils.getUser(data));
+                    DBAction.DeleteItem(uGroup.getItem(), TurbineUtils.getUser(data),ci);
                 }
             }
 
-            found.save(TurbineUtils.getUser(data),false,false);
+            found.save(TurbineUtils.getUser(data),false,false,ci);
             
             found.getItem().removeEmptyItems();
             

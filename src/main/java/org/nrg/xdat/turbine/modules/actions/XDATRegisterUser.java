@@ -21,7 +21,10 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.security.UserI;
 
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
@@ -71,7 +74,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                XDATUser newUser = new XDATUser(found);
 	               // newUser.initializePermissions();
 	                
-	                newUser.save(TurbineUtils.getUser(data),true,false,true,false); 		
+	                newUser.save(TurbineUtils.getUser(data),true,false,true,false,EventUtils.ADMIN_EVENT(newUser)); 		
 	                
 	                if (autoApproval)
 	                {
@@ -93,7 +96,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
 	                    item.setProperty("xdat:user_login.login_date",today);
 	                    item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
-	                    item.save(null,true,false);
+	                    item.save((UserI)null,true,false,(EventMetaI)null);
 	                    
 	                    try{
 	                    	directRequest(data,context,newUser);

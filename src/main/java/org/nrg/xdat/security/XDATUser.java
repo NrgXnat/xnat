@@ -22,8 +22,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
@@ -45,7 +43,6 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
-import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.FavEntries;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
@@ -53,6 +50,7 @@ import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidItemException;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.MetaDataException;
 import org.nrg.xft.exception.XFTInitException;
@@ -64,6 +62,7 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 /**
  * @author Tim
@@ -2029,13 +2028,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
         }
     }
 
-    public void setPermissions(String elementName,String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges)
+    public static void setPermissions(XDATUser effected, XDATUser authenticated,String elementName,String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges)
     {
         try {
             ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
 
                 XdatElementAccess ea = null;
-                Iterator eams = getElementAccess().iterator();
+                Iterator eams = effected.getElementAccess().iterator();
                 while (eams.hasNext())
                 {
                     XdatElementAccess temp = (XdatElementAccess)eams.next();
@@ -2048,9 +2047,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 
                 if (ea==null)
                 {
-                    ea = new XdatElementAccess((UserI)this);
+                    ea = new XdatElementAccess((UserI)authenticated);
                     ea.setElementName(elementName);
-                    ea.setProperty("xdat_user_xdat_user_id", this.getXdatUserId());
+                    ea.setProperty("xdat_user_xdat_user_id", effected.getXdatUserId());
                 }
 
                 XdatFieldMappingSet fms = null;
@@ -2058,7 +2057,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
                 if (al.size()>0){
                     fms = (XdatFieldMappingSet)ea.getPermissions_allowSet().get(0);
                 }else{
-                    fms = new XdatFieldMappingSet((UserI)this);
+                    fms = new XdatFieldMappingSet((UserI)authenticated);
                     fms.setMethod("OR");
                     ea.setPermissions_allowSet(fms);
                 }
@@ -2079,15 +2078,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
 
                     if (fm ==null){
                     	if(create || read || edit || delete || activate)
-                    		fm = new XdatFieldMapping((UserI)this);
+                    		fm = new XdatFieldMapping((UserI)authenticated);
                     	else
                     		return;
                     }else if(!(create || read || edit || delete || activate)){
                 		if(fms.getAllow().size()==1){
-                			DBAction.DeleteItem(fms.getItem(), this);
+                			SaveItemHelper.authorizedDelete(fms.getItem(), authenticated);
                 			return;
                 		}else{
-                			DBAction.DeleteItem(fm.getItem(), this);
+                			SaveItemHelper.authorizedDelete(fm.getItem(), authenticated);
                 			return;
                 		}
                 	}
@@ -2109,27 +2108,27 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
                         fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
 
                         if (activateChanges){
-                            fm.save(this, true, false, true, false);
-                            fm.activate(this);
+                        	SaveItemHelper.authorizedSave(fm,authenticated, true, false, true, false);
+                            fm.activate(authenticated);
                         }else{
-                            fm.save(this, true, false, false, false);
+                        	SaveItemHelper.authorizedSave(fm,authenticated, true, false, false, false);
                         }
                     }else if(ea.getXdatElementAccessId()!=null){
                         fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
                         if (activateChanges){
-                            fms.save(this, true, false, true, false);
-                            fms.activate(this);
+                        	SaveItemHelper.authorizedSave(fms,authenticated, true, false, true, false);
+                            fms.activate(authenticated);
                         }else{
-                            fms.save(this, true, false, false, false);
+                        	SaveItemHelper.authorizedSave(fms,authenticated, true, false, false, false);
                         }
                     }else{
                         if (activateChanges){
-                            ea.save(this, true, false, true, false);
-                            ea.activate(this);
+                        	SaveItemHelper.authorizedSave(ea,authenticated, true, false, true, false);
+                            ea.activate(authenticated);
                         }else{
-                            ea.save(this, true, false, false, false);
+                        	SaveItemHelper.authorizedSave(ea,authenticated, true, false, false, false);
                         }
-                        this.setElementAccess(ea);
+                        effected.setElementAccess(ea);
                     }
         } catch (XFTInitException e) {
             logger.error("",e);
@@ -2676,6 +2675,64 @@ public class XDATUser extends XdatUser implements UserI, Serializable{
     	}else{
     		return false;
     	}
+    }
+    
+    public static void ModifyUser(XDATUser authenticatedUser, ItemI found) throws InvalidPermissionException,Exception{
+    	ItemSearch search = new ItemSearch();
+		search.setAllowMultiples(false);
+		search.setElement("xdat:user");
+		search.addCriteria("xdat:user.login", found.getProperty("login"));
+		ItemI temp = search.exec().getFirst();
+		if (temp == null)
+		{
+			// NEW USER
+			if(authenticatedUser.checkRole("Administrator")){
+				String tempPass = found
+						.getStringProperty("primary_password");
+				if (!StringUtils.IsEmpty(tempPass))
+					found.setProperty("primary_password", XDATUser
+							.EncryptString(tempPass,"SHA-256"));
+
+				found.setProperty(
+						"xdat:user.assigned_roles.assigned_role[0].role_name",
+						"SiteUser");
+				XDATUser newUser = new XDATUser(found);
+				// newUser.initializePermissions();
+				SaveItemHelper.authorizedSave(newUser,authenticatedUser, true, false, true,
+						false);
+			}else{
+				throw new InvalidPermissionException("Unauthorized user modification attempt");
+			}
+		} else {
+			// OLD USER
+			String tempPass = found.getStringProperty("primary_password");
+			String savedPass = temp.getStringProperty("primary_password");
+			if (StringUtils.IsEmpty(tempPass)
+					&& StringUtils.IsEmpty(savedPass)) {
+				
+			} else if (StringUtils.IsEmpty(tempPass)) {
+				
+			} else {
+				if (!tempPass.equals(savedPass))
+						found.setProperty("primary_password", XDATUser
+								.EncryptString(tempPass,"SHA-256"));
+			}
+			
+			if(authenticatedUser.checkRole("Administrator")){
+				SaveItemHelper.authorizedSave(found,authenticatedUser, false, false);
+			}else if(found.getProperty("login").equals(authenticatedUser.getLogin())){
+				XFTItem toSave=XFTItem.NewItem("xdat:user", authenticatedUser);
+				toSave.setProperty("login", authenticatedUser.getLogin());
+				toSave.setProperty("primary_password",found.getProperty("primary_password"));
+				toSave.setProperty("email", found.getProperty("email"));
+				SaveItemHelper.authorizedSave(toSave,authenticatedUser, false, false);
+
+				authenticatedUser.setProperty("primary_password",found.getProperty("primary_password"));
+				authenticatedUser.setProperty("email", found.getProperty("email"));
+			}else{
+				throw new InvalidPermissionException("Unauthorized user modification attempt");
+			}
+		}
     }
 }
 

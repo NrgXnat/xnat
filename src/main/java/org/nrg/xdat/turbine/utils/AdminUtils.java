@@ -80,7 +80,7 @@ public class AdminUtils {
 	/**
 	 * Gets the Authorizer Email Id
 	 * 
-	 * @return Randy Buckner Email id
+		* @return Email id   
 	 */
 	public static String getAuthorizerEmailId() {
 		if (authorizerEmailAddress == null) {

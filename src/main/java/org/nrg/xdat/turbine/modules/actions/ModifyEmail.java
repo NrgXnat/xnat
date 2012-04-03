@@ -15,10 +15,12 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
@@ -33,10 +35,10 @@ public class ModifyEmail extends SecureAction {
         String header = "ELEMENT_";
         int counter = 0;
         Hashtable hash = new Hashtable();
-        while (data.getParameters().get(header + counter) != null)
+        while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter,data)) != null)
         {
-            String elementToLoad = data.getParameters().getString(header + counter++);
-            Integer numberOfInstances = data.getParameters().getIntObject(elementToLoad);
+            String elementToLoad = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter++,data));
+            Integer numberOfInstances = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger(elementToLoad,data,null));
             if (numberOfInstances != null && numberOfInstances.intValue()!=0)
             {
                 int subCount = 0;
@@ -70,9 +72,9 @@ public class ModifyEmail extends SecureAction {
         {
             TurbineUtils.SetEditItem(first,data);
             data.addMessage(error.getMessage());
-            if (data.getParameters().getString("edit_screen") !=null)
+            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
             {
-                data.setScreenTemplate(data.getParameters().getString("edit_screen"));
+                data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
             }
             return;
         }
@@ -95,9 +97,9 @@ public class ModifyEmail extends SecureAction {
         {
             TurbineUtils.SetEditItem(first,data);
             context.put("vr",vr);
-            if (data.getParameters().getString("edit_screen") !=null)
+            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
             {
-                data.setScreenTemplate(data.getParameters().getString("edit_screen"));
+                data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
             }
         }else{
             iter = al.iterator();
@@ -105,12 +107,16 @@ public class ModifyEmail extends SecureAction {
             {
                 ItemI found = (ItemI)iter.next();
                 
+                XDATUser authenticatedUser=TurbineUtils.getUser(data);
                 try {
-                    found.save(TurbineUtils.getUser(data),false,false);
-                    TurbineUtils.getUser(data).setEmail(found.getStringProperty("email"));
-                } catch (Exception e) {
-                    logger.error("Error Storing " + found.getXSIType(),e);
-                }
+                	XDATUser.ModifyUser(authenticatedUser, found);
+                } catch (InvalidPermissionException e) {
+        			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+        			return;
+        		} catch (Exception e) {
+        			logger.error("Error Storing User", e);
+        			return;
+        		}
                 
             }
             

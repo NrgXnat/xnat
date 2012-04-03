@@ -5,6 +5,8 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 
+import java.util.UUID;
+
 import javax.servlet.http.HttpSession;
 import java.util.HashSet;
 import java.util.Set;
@@ -30,6 +32,7 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.search.ItemSearch;
 import org.springframework.security.authentication.AuthenticationManager;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.core.Authentication;
@@ -86,7 +89,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                XDATUser newUser = new XDATUser(found);
 	               // newUser.initializePermissions();
 	                
-	                newUser.save(TurbineUtils.getUser(data),true,false,true,false); 		
+	                SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false);
 	                TurbineUtils.setUser(data,newUser);
 	                
 	                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
@@ -99,6 +102,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                    session.setAttribute("user",newUser);
 	                    session.setAttribute("loggedin",true);
 	                    data.setMessage("User registration complete.");
+	                    
+	                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 	                    
 	                    String sub = "New User Created: " + newUser.getUsername();
 	                    String msg = this.getAutoApprovalTextMsg(data,newUser);
@@ -113,8 +118,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                    item.setProperty("xdat:user_login.login_date",today);
 	                    item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
 	                    item.setProperty("login_date",today);
-	                    item.setProperty("ip_address",data.getRemoteAddr());
-						item.save(null,true,false);
+	                    item.setProperty("ip_address",data.getRemoteAddr());	                    
+	                    SaveItemHelper.authorizedSave(item,null,true,false);
 	                    
 						Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 	                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
@@ -167,9 +172,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
     
     public void handleDuplicateEmail(RunData data,Context context,ItemI found){
     	try {
-			String nextPage = data.getParameters().getString("nextPage","");
-			String nextAction = data.getParameters().getString("nextAction","");
-			String par = data.getParameters().getString("par","");
+			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
+			String par = (String)TurbineUtils.GetPassedParameter("par",data);
 			
 			if(!StringUtils.isEmpty(par)){
 				context.put("par", par);
@@ -191,9 +196,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
     
     public void handleDuplicateLogin(RunData data,Context context,ItemI found){
     	try {
-			String nextPage = data.getParameters().getString("nextPage","");
-			String nextAction = data.getParameters().getString("nextAction","");
-			String par = data.getParameters().getString("par","");
+			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
+			String par = (String)TurbineUtils.GetPassedParameter("par",data);
 			
 			if(!StringUtils.isEmpty(par)){
 				context.put("par", par);
@@ -235,8 +240,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
     }
     
     public void directRequest(RunData data,Context context,XDATUser user) throws Exception{
-		String nextPage = data.getParameters().getString("nextPage","");
-		String nextAction = data.getParameters().getString("nextAction","");
+		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 
         data.setScreenTemplate("Index.vm");
         

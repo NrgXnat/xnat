@@ -43,6 +43,8 @@ public class SearchService {
     public SearchService() {
         super();
     }
+
+    XDATUser user=null;
     
     public ItemCollection execute() throws ElementNotFoundException,DBPoolException,SQLException,FieldNotFoundException,FailedLoginException,Exception
     {
@@ -83,7 +85,6 @@ public class SearchService {
                 throw new Exception("Requires Username And Password.");
             }
             
-            XDATUser user=null;
             if (session_id== null)
             {
                 user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
@@ -251,5 +252,9 @@ public class SearchService {
      */
     public void setSession_id(String session_id) {
         this.session_id = session_id;
+    }
+    
+    public XDATUser getUser(){
+    	return user;
     }
 }

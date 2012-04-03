@@ -20,6 +20,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -45,7 +46,7 @@ public class StoreXML {
 
                 XFTItem item = reader.parse(is);
                 
-                item.save(user, false, allowDataDeletion);
+                SaveItemHelper.unauthorizedSave(item, user, false, allowDataDeletion);
 
                 
                 SAXWriter writer = new SAXWriter(response.getOutputStream(),false);

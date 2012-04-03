@@ -79,7 +79,7 @@ created in buildPDF.
 		ByteArrayOutputStream baos = buildXml(data);
 		if (baos != null)
 		{
-		    String fileName = data.getParameters().getString("fileName");
+		    String fileName = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fileName",data));
 		    if (fileName == null)
 		    {
 		    	final String format="%1$tm_%1$td_%1$ty_%1$tH_%1$tM_%1$tS.xml";
@@ -88,8 +88,8 @@ created in buildPDF.
 		    }
 		    HttpServletResponse response = data.getResponse();
 			  //We have to set the size to workaround a bug in IE (see com.lowagie iText FAQ)
-			  data.getResponse().setContentLength(baos.size());
-			  data.getResponse().setHeader("Content-Disposition","attachment;filename=" +fileName);
+			  response.setContentLength(baos.size());
+			  TurbineUtils.setContentDisposition(response, fileName);
 			  ServletOutputStream out = response.getOutputStream();
 			  baos.writeTo(out);
 		}

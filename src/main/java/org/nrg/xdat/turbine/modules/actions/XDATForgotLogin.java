@@ -19,6 +19,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.utils.SaveItemHelper;
 
 public class XDATForgotLogin extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATForgotLogin.class);
@@ -29,8 +30,8 @@ public class XDATForgotLogin extends VelocitySecureAction {
     
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
-        String email = data.getParameters().getString("email");
-        String username = data.getParameters().getString("username");
+        String email = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("email",data));
+        String username = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("username",data));
 		String subject = TurbineUtils.GetSystemName() + " Login Request";
 		String admin = AdminUtils.getAdminEmailId();
 		if (!StringUtils.isBlank(email)) {
@@ -94,7 +95,8 @@ public class XDATForgotLogin extends VelocitySecureAction {
 					// String tempPass = newUser.getStringProperty("primary_password");
 					user.setProperty("primary_password", XDATUser.EncryptString(newPassword));
                     }
-				user.save(null, true, false);
+                    SaveItemHelper.authorizedSave(user,null, true, false);
+                    
                     try {
 					String to = user.getEmail();
                         String url=TurbineUtils.GetFullServerPath() + "/app/action/XDATActionRouter/xdataction/MyXNAT";

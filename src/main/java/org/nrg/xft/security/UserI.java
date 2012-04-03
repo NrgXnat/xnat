@@ -27,6 +27,7 @@ public interface UserI {
 	public boolean canCreate(ItemI item) throws InvalidItemException,Exception;
 	public boolean canActivate(ItemI item) throws InvalidItemException,Exception;
 	public boolean canDelete(ItemI item) throws InvalidItemException,Exception;
+	public boolean can(ItemI item,String action) throws InvalidItemException,Exception;
 	public String canStoreItem(ItemI item,boolean descend) throws InvalidItemException,Exception;
 	public CriteriaCollection getCriteriaForBackendRead(SchemaElementI rootElement) throws Exception;
 	

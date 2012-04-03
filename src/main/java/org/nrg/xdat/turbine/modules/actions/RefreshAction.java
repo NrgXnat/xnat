@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -27,13 +27,13 @@ import org.nrg.xft.utils.FileUtils;
  * @author Tim
  *
  */
-public class RefreshAction extends SecureAction {
+public class RefreshAction extends AdminAction {
 	static Logger logger = Logger.getLogger(RefreshAction.class);
 	public void doPerform(RunData data, Context context) throws Exception
 	{
-		if (data.getParameters().getString("refresh") !=null)
+		if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("refresh",data)) !=null)
 		{
-			String refresh = data.getParameters().getString("refresh");
+			String refresh = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("refresh",data));
 			if (refresh.equalsIgnoreCase("security"))
 			{
 				String location = XFTTool.GetSettingsLocation();

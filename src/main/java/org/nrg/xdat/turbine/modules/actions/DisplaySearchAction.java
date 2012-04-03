@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -30,10 +30,10 @@ public class DisplaySearchAction extends SearchA {
      * @see org.nrg.xdat.turbine.modules.actions.SearchA#setupSearch(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     public DisplaySearch setupSearch(RunData data, Context context) throws Exception {
-        if (data.getParameters().get("search_xml")!=null || data.getParameters().get("search_id") !=null || data.getRequest().getAttribute("xss")!=null){
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data))!=null || ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_id",data)) !=null || data.getRequest().getAttribute("xss")!=null){
             return TurbineUtils.getDSFromSearchXML(data);
         }else{
-            String elementName= data.getParameters().getString("ELEMENT_0");
+            String elementName= ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("ELEMENT_0",data));
             if (elementName==null)
             {
                 return null;

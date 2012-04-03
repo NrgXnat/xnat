@@ -26,6 +26,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.SaveItemHelper;
 
 /**
  * @author XDAT
@@ -124,7 +125,7 @@ public class XdatUsergroup extends BaseXdatUsergroup {
 
             if (ea!=null)
             {
-                DBAction.DeleteItem(ea.getItem(), user);
+            	SaveItemHelper.unauthorizedDelete(ea.getItem(), user);
             }
         } catch (XFTInitException e) {
             logger.error("",e);
@@ -194,10 +195,10 @@ public class XdatUsergroup extends BaseXdatUsergroup {
                 }else if(!includesModification){
                 	if(!(create || read || edit || delete || activate)){
                 		if(fms.getAllow().size()==1){
-                			DBAction.DeleteItem(fms.getItem(), user);
+                			SaveItemHelper.authorizedDelete(fms.getItem(), user);
                 			return true;
                 		}else{
-                			DBAction.DeleteItem(fm.getItem(), user);
+                			SaveItemHelper.authorizedDelete(fm.getItem(), user);
                 			return true;
                 		}
                 	}
@@ -220,25 +221,25 @@ public class XdatUsergroup extends BaseXdatUsergroup {
                     fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
 
                     if (activateChanges){
-                        fm.save(user, true, false, true, false);
+                    	SaveItemHelper.authorizedSave(fm,user, true, false, true, false);
                         fm.activate(user);
                     }else{
-                        fm.save(user, true, false, false, false);
+                    	SaveItemHelper.authorizedSave(fm,user, true, false, false, false);
                     }
                 }else if(ea.getXdatElementAccessId()!=null){
                     fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
                     if (activateChanges){
-                        fms.save(user, true, false, true, false);
+                    	SaveItemHelper.authorizedSave(fms,user, true, false, true, false);
                         fms.activate(user);
                     }else{
-                    	fms.save(user, true, false, false, false);
+                    	SaveItemHelper.authorizedSave(fms,user, true, false, false, false);
                     }
                 }else{
                     if (activateChanges){
-                        ea.save(user, true, false, true, false);
+                    	SaveItemHelper.authorizedSave(ea,user, true, false, true, false);
                         ea.activate(user);
                     }else{
-                        ea.save(user, true, false, false, false);
+                    	SaveItemHelper.authorizedSave(ea,user, true, false, false, false);
                     }
                     this.setElementAccess(ea);
                 }
@@ -256,115 +257,6 @@ public class XdatUsergroup extends BaseXdatUsergroup {
 
         return true;
     }
-
-
-    public void setPermissions(String elementName,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges, XDATUser user) throws Exception
-    {
-        try {
-            ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
-            if (es.getPrimarySecurityFields().size()>0)
-            {
-                XdatElementAccess ea = null;
-                Iterator eams = getElementAccess().iterator();
-                while (eams.hasNext())
-                {
-                    XdatElementAccess temp = (XdatElementAccess)eams.next();
-                    if(temp.getElementName().equals(elementName))
-                    {
-                        ea= temp;
-                        break;
-                    }
-                }
-
-                if (ea==null)
-                {
-                    ea = new XdatElementAccess((UserI)this);
-                    ea.setElementName(elementName);
-                    ea.setProperty("xdat_usergroup_xdat_usergroup_id", this.getXdatUsergroupId());
-                }
-
-                XdatFieldMappingSet fms = null;
-                ArrayList al =  ea.getPermissions_allowSet();
-                if (al.size()>0){
-                    fms = (XdatFieldMappingSet)ea.getPermissions_allowSet().get(0);
-                }else{
-                    fms = new XdatFieldMappingSet((UserI)this);
-                    fms.setMethod("OR");
-                    ea.setPermissions_allowSet(fms);
-                }
-
-                for(String psf:es.getPrimarySecurityFields()){
-                    XdatFieldMapping fm = null;
-
-                    Iterator iter = fms.getAllow().iterator();
-                    while (iter.hasNext())
-                    {
-                        Object o = iter.next();
-                        if (o instanceof XdatFieldMapping)
-                        {
-                            if (((XdatFieldMapping)o).getFieldValue().equals(value) && ((XdatFieldMapping)o).getField().equals(psf)){
-                                fm = (XdatFieldMapping)o;
-                            }
-                        }
-                    }
-
-                    if (fm ==null)
-                        fm = new XdatFieldMapping((UserI)this);
-
-                    fm.setField(psf);
-                    fm.setFieldValue(value);
-
-                    fm.setCreateElement(create);
-                    fm.setReadElement(read);
-                    fm.setEditElement(edit);
-                    fm.setDeleteElement(delete);
-                    fm.setActiveElement(activate);
-                    fm.setComparisonType("equals");
-                    fms.setAllow(fm);
-
-                    if (fms.getXdatFieldMappingSetId()!=null)
-                    {
-                        fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
-
-                        if (activateChanges){
-                            fm.save(user, true, false, true, false);
-                            fm.activate(user);
-                        }else{
-                            fm.save(user, true, false, false, false);
-                        }
-                    }else if(ea.getXdatElementAccessId()!=null){
-                        fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
-                        if (activateChanges){
-                            fms.save(user, true, false, true, false);
-                            fms.activate(user);
-                        }else{
-                            fms.save(user, true, false, false, false);
-                        }
-                    }else{
-                        if (activateChanges){
-                            ea.save(user, true, false, true, false);
-                            ea.activate(user);
-                        }else{
-                            ea.save(user, true, false, false, false);
-                        }
-                        this.setElementAccess(ea);
-                    }
-                }
-            }
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
-            logger.error("",e);
-        } catch (InvalidValueException e) {
-            logger.error("",e);
-        } catch (Exception e) {
-            logger.error("",e);
-        }
-
-    }
-    
 
     /**
      * ArrayList: 0:elementName 1:ArrayList of PermissionItems

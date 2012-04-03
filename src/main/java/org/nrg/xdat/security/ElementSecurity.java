@@ -68,6 +68,7 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.VelocityUtils;
 
@@ -1425,7 +1426,7 @@ public class ElementSecurity extends ItemWrapper{
                 XdatPrimarySecurityField psf = new XdatPrimarySecurityField(this.getUser());
                 psf.setPrimarySecurityField(field);
                 psf.setProperty("xdat:primary_security_field/primary_security_fields_primary_element_name",this.getElementName());
-                psf.save(this.getUser(), true, true);
+                SaveItemHelper.authorizedSave(psf,this.getUser(), true, true);
             }
         } catch (Exception e) {
             logger.error("",e);

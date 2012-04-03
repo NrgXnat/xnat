@@ -237,7 +237,7 @@ public class XFTTool {
 		    q = item.getGenericSchemaElement().isQuarantine();
 		    override = false;
 		}
-    	SaveItemHelper.Save(item,user,false,q,override,allowItemRemoval);
+    	SaveItemHelper.authorizedSave(item,user,false,q,override,allowItemRemoval);
 		return XMLWriter.ItemToDOM(item,true,false);
 	}
 	
@@ -292,7 +292,7 @@ public class XFTTool {
 			    q = item.getGenericSchemaElement().isQuarantine();
 			    override = false;
 			}
-        	SaveItemHelper.Save(item,user,overrideSecurity,q,override,allowItemRemoval);
+        	SaveItemHelper.authorizedSave(item,user,overrideSecurity,q,override,allowItemRemoval);
 			
 			//XFTItem temp = item.getCurrentDBVersion(true);
 			//XMLWriter.StoreXFTItemToXMLFile(temp,location.getAbsolutePath()+".stored.xml");

@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT ï¿½ Extensible Data Archive Toolkit
+ * XDAT – Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -10,6 +10,7 @@
 package org.nrg.xdat.turbine.modules.screens;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
@@ -50,8 +51,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
     protected void preserveVariables(RunData data, Context context){
         if (data.getParameters().containsKey("project")){
-        	if(XFT.VERBOSE)System.out.println(this.getClass().getName() + ": maintaining project '" + data.getParameters().getString("project") +"'");
-            context.put("project", data.getParameters().getString("project"));
+        	if(XFT.VERBOSE)System.out.println(this.getClass().getName() + ": maintaining project '" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)) +"'");
+            context.put("project", TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data))));
         }
     }
 
@@ -67,8 +68,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 	    try {
             if (isAuthorized(data)) {
                 Context c = TurbineVelocity.getContext(data);
-                if (data.getParameters().getString("popup") != null) {
-                    if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
+                if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
+                    if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true"))
                         c.put("popup","true");
                     }else{
                         c.put("popup","false");
@@ -80,12 +81,15 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 String systemName = TurbineUtils.GetSystemName();
                 c.put("turbineUtils",TurbineUtils.GetInstance());
                 c.put("systemName",systemName);
+                
+                c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
+                
                 preserveVariables(data,c);
                 doBuildTemplate(data, c);
             }else{
                 Context c = TurbineVelocity.getContext(data);
-                if (data.getParameters().getString("popup") != null) {
-                    if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
+                if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
+                    if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
                         c.put("popup","true");
                     }else{
                         c.put("popup","false");
@@ -103,6 +107,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     data.setScreenTemplate("Login.vm");
                 }
             }
+            
         } catch (RuntimeException e) {
             logger.error("",e);
             data.setScreenTemplate("Error.vm");
@@ -118,6 +123,15 @@ public abstract class SecureScreen extends VelocitySecureScreen {
      * @throws Exception, a generic exception.
 	 */
     protected boolean isAuthorized(RunData data) throws Exception {
+		
+//		String method = data.getRequest().getMethod();
+//	There are places where a secure screen gets a POST or a PUT. that's a problem. uncomment this to see where that happens.
+//    	if("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)){
+//    		if(!"XDATLoginUser".equalsIgnoreCase(data.getAction())){
+//    			System.out.println("SOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\n it was in:" + data.getAction());
+//    		}
+//    	}
+		
 	    //TurbineUtils.OutputDataParameters(data);
         if (XFT.GetRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
 	        logger.debug("isAuthorized() Login Required:true");
@@ -134,15 +148,15 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 					data.getParameters().add("nextAction",data.getAction());
 				else
 					data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
-				//System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n");
+				//System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
 				doRedirect(data,org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
 
             } else {
 
 		        //logger.debug("isAuthorized() Login Required:true user:found");
 				isAuthorized = true;
-                if (data.getParameters().getString("popup") != null) {
-                    if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
+				if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)) != null){
+					if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
 						data.getTemplateInfo().setLayoutTemplate("/Popup.vm");
 					}
                 } else {
@@ -181,14 +195,14 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                         user = new XDATUser(o);
                     }
 					TurbineUtils.setUser(data,user);
-
+					session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
                     String Destination = data.getTemplateInfo().getScreenTemplate();
                     data.getParameters().add("nextPage", Destination);
                     if (!data.getAction().equalsIgnoreCase(""))
                         data.getParameters().add("nextAction",data.getAction());
                     else
                         data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
-                    //System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n");
+                    //System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
 
 				}
 			}else{
@@ -197,8 +211,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 }
             }
 
-            if (data.getParameters().getString("popup") != null) {
-                if (data.getParameters().getString("popup").equalsIgnoreCase("true")) {
+            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)) != null){
+                if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
                     data.getTemplateInfo().setLayoutTemplate("/Popup.vm");
                 }
             } else {
@@ -214,7 +228,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     data.getParameters().add("nextAction",data.getAction());
                 else
                     data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
-                //System.out.println("nextPage::" + data.getParameters().getString("nextPage") + "::nextAction" + data.getParameters().getString("nextAction") + "\n");
+                //System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
                 doRedirect(data,org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
 
             }

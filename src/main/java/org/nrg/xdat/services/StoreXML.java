@@ -73,7 +73,7 @@ public class StoreXML {
                 	    q = item.getGenericSchemaElement().isQuarantine();
                 	    override = false;
                 	}
-                	SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue());
+                	SaveItemHelper.unauthorizedSave(item,user,false,q,override,_allowDataDeletion.booleanValue());
                 	sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
                     AccessLogger.LogServiceAccess(_username,"","StoreXML",item.getProperName() + " Successfully Stored");		
@@ -162,7 +162,7 @@ public class StoreXML {
                 	    q = item.getGenericSchemaElement().isQuarantine();
                 	    override = false;
                 	}
-                	SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue());
+                	SaveItemHelper.unauthorizedSave(item,user,false,q,override,_allowDataDeletion.booleanValue());
                 	sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
                     AccessLogger.LogServiceAccess(session_id,"","StoreXML",item.getProperName() + " Successfully Stored");		

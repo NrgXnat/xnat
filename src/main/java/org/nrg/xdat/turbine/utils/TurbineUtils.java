@@ -25,6 +25,7 @@ import java.util.Map;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XDATUserDetails;
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
@@ -144,8 +145,8 @@ public class TurbineUtils {
 	public static ItemI GetItemBySearch(RunData data, boolean preLoad) throws Exception
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		final String searchField = data.getParameters().getString("search_field");
-		final Object searchValue = data.getParameters().getObject("search_value");
+		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+		final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
 		if (searchField != null && searchValue != null)
 		{
 			final ItemSearch search = new ItemSearch();
@@ -175,8 +176,8 @@ public class TurbineUtils {
 	public static SchemaElementI GetSchemaElementBySearch(RunData data)
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		final String searchField = data.getParameters().getString("search_field");
-		final String searchElement = data.getParameters().getString("search_element");
+		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+		final String searchElement = TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
 		if (searchElement!=null)
 		{
 		    try {
@@ -200,8 +201,8 @@ public class TurbineUtils {
 	public static XFTItem GetItemBySearch(RunData data) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		final String searchField = data.getParameters().getString("search_field");
-		final Object searchValue = data.getParameters().getObject("search_value");
+		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+		final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
 		if (searchField != null && searchValue != null)
 		{
 			final ItemSearch search = new ItemSearch();
@@ -233,8 +234,8 @@ public class TurbineUtils {
 	public static ItemI GetItemBySearch(RunData data,Boolean preload) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
 	{
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
-		final String searchField = data.getParameters().getString("search_field");
-		final Object searchValue = data.getParameters().getObject("search_value");
+		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+		final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
 		if (searchField != null && searchValue != null)
 		{
 			final ItemSearch search = new ItemSearch();
@@ -293,7 +294,7 @@ public class TurbineUtils {
 		final ItemI edit_item = (ItemI)data.getSession().getAttribute("participant");
 	    if (edit_item==null)
 	    {
-	       String s = data.getParameters().getString("part_id");
+	       String s = TurbineUtils.escapeParam(data.getParameters().getString("part_id"));
 	       if (s != null)
 	       {
 		       try {
@@ -306,7 +307,7 @@ public class TurbineUtils {
                 logger.error("",e);
             }
 	       }else{
-	           s = data.getParameters().getString("search_field");
+	           s = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
 	           if (s != null)
 	           {
 	               if (s.equalsIgnoreCase("xnat:subjectData.ID"))
@@ -330,10 +331,10 @@ public class TurbineUtils {
 	
 	public static String GetSearchElement(RunData data)
 	{
-		String s =  data.getParameters().getString("search_element");
+		String s =  TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
 		if (s==null)
 		{
-			s = data.getParameters().getString("element");
+			s = TurbineUtils.escapeParam(data.getParameters().getString("element"));
 		}
 		return s;
 	}
@@ -378,7 +379,7 @@ public class TurbineUtils {
     
     /**
      * Returns server & context as specified in user request object.
-     * @param data
+     * @param req    Servlet request
      * @return
      */
     public static String GetFullServerPath(HttpServletRequest req){
@@ -451,10 +452,10 @@ public class TurbineUtils {
             DisplaySearch ds =  (DisplaySearch)data.getSession().getAttribute("search");
             if (ds == null)
             {
-                String displayElement = data.getParameters().getString("search_element");
+                String displayElement = TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
                 if (displayElement == null)
                 {
-                    displayElement = data.getParameters().getString("element");
+                    displayElement = TurbineUtils.escapeParam(data.getParameters().getString("element"));
                 }
                 
                 if (displayElement == null)
@@ -465,8 +466,8 @@ public class TurbineUtils {
                 try {
                     ds = TurbineUtils.getUser(data).getSearch(displayElement,"listing");
                     
-                    final String searchField = data.getParameters().getString("search_field");
-                    final Object searchValue = data.getParameters().getObject("search_value");
+                    final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
+                    final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
                     if (searchField!= null && searchValue != null)
                     {
                         SearchCriteria criteria = new SearchCriteria();
@@ -663,7 +664,7 @@ public class TurbineUtils {
 			final List<String> al = new ArrayList<String>();
 			for(int i=0; i < data.getParameters().getKeys().length; i++)
 			{
-				al.add(data.getParameters().getKeys()[i].toString());
+				al.add(escapeParam(data.getParameters().getKeys()[i].toString()));
 			}
 			Collections.sort(al);
 			return al;
@@ -678,9 +679,9 @@ public class TurbineUtils {
             Enumeration<Object> penum = pp.keys();
             while (penum.hasMoreElements()){
             	final String key = penum.nextElement().toString();
-            	final  Object value = data.getParameters().get(key);
+            	final  Object value = TurbineUtils.escapeParam(data.getParameters().get(key));
                 if (value!=null && !value.equals(""))
-                    hash.put(key,value.toString());
+                    hash.put(TurbineUtils.escapeParam(key),value.toString());
             }
 			return hash;
 		}
@@ -775,7 +776,7 @@ public class TurbineUtils {
 	{
 	    if (data.getParameters().get(s.toLowerCase())!=null)
 	    {
-	    	final Object o = data.getParameters().get(s.toLowerCase());
+	    	final Object o = TurbineUtils.escapeParam(data.getParameters().get(s.toLowerCase()));
 	        if(o.toString().equalsIgnoreCase(""))
 	        {
 	            return false;
@@ -792,11 +793,48 @@ public class TurbineUtils {
 	    return GetPassedParameter(s.toLowerCase(),data,null);
 	}
 	
+	public static Boolean GetPassedBoolean(String s, RunData data)
+	{
+		return data.getParameters().getBool(s);
+	}
+	
+	public static Integer GetPassedInteger(String s, RunData data)
+	{
+		return TurbineUtils.GetPassedInteger(s, data,null);
+	}
+	
+	public static Integer GetPassedInteger(String s, RunData data,Integer defualt) 
+	{
+		if (data.getParameters().get(s.toLowerCase())!=null)
+	    {
+	    	final Object o = TurbineUtils.escapeParam(data.getParameters().getInteger(s.toLowerCase()));
+	        if(o.toString().equalsIgnoreCase(""))
+	        {
+	            return defualt;
+	        }else{
+		        return (Integer)o;
+	        }
+	    }else{
+	        return defualt;
+	    }
+	}
+	
+	public static Object[] GetPassedObjects(String s, RunData data)
+	{
+		final Object[] v=data.getParameters().getObjects(s);
+		if(v!=null){
+			for(int i=0;i<v.length;i++){
+				v[i]=TurbineUtils.escapeParam(v[i]);
+			}
+		}
+		return v;
+	}
+	
 	public static Object GetPassedParameter(String s, RunData data, Object defualt)
 	{
 	    if (data.getParameters().get(s.toLowerCase())!=null)
 	    {
-	    	final Object o = data.getParameters().get(s.toLowerCase());
+	    	final Object o = TurbineUtils.escapeParam(data.getParameters().get(s.toLowerCase()));
 	        if(o.toString().equalsIgnoreCase(""))
 	        {
 	            return defualt;
@@ -820,9 +858,9 @@ public class TurbineUtils {
             	
             	context.put("item",o);
             	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(o.getXSIType()));
-            	context.put("search_element",data.getParameters().getString("search_element"));
-            	context.put("search_field",data.getParameters().getString("search_field"));
-            	context.put("search_value",data.getParameters().getString("search_value"));
+            	context.put("search_element",TurbineUtils.escapeParam(data.getParameters().getString("search_element")));
+            	context.put("search_field",TurbineUtils.escapeParam(data.getParameters().getString("search_field")));
+            	context.put("search_value",TurbineUtils.escapeParam(data.getParameters().getString("search_value")));
             	
             }else{
             	logger.error("No Item Found.");
@@ -972,6 +1010,17 @@ public class TurbineUtils {
         return array[index];
     }
     
+    public static String escapeParam(String o){
+    	return (o==null)?null:StringEscapeUtils.escapeXml(o);
+    }
+    
+    public static Object escapeParam(Object o){
+    	if(o instanceof String)
+    		return (o==null)?null:StringEscapeUtils.escapeXml((String)o);
+    	else
+    		return o;
+    }
+    
     public String escapeHTML(String o){
     	return (o==null)?null:StringEscapeUtils.escapeHtml(o);
     }
@@ -983,5 +1032,44 @@ public class TurbineUtils {
     public int getYear(){
     	return Calendar.getInstance().get(Calendar.YEAR);
     }
+
+    /**
+     * Sets the Content-Disposition response header. The filename parameter indicates the name of the content.
+     * This method specifies the content as an attachment. If you need to specify inline content (e.g. for MIME
+     * content in email or embedded content situations), use {@link #setContentDisposition(javax.servlet.http.HttpServletResponse, String, boolean)}.
+     * @param response    The servlet response on which the header should be set.
+     * @param filename    The suggested filename for downloaded content.
+     */
+    public static void setContentDisposition(HttpServletResponse response, String filename){
+        setContentDisposition(response, filename, true);
 }
 
+    /**
+     * Sets the Content-Disposition response header. The filename parameter indicates the name of the content.
+     * This method specifies the content as an attachment when the <b>isAttachment</b> parameter is set to true,
+     * and as inline content when the <b>isAttachment</b> parameter is set to false. You can specify the content
+     * as an attachment by default by calling {@link #setContentDisposition(HttpServletResponse, String)}.
+     * @param response    The servlet response on which the header should be set.
+     * @param filename    The suggested filename for downloaded content.
+     * @param isAttachment    Indicates whether the content is an attachment or inline.
+     */
+    @SuppressWarnings("unchecked")
+    public static void setContentDisposition(HttpServletResponse response, String filename, boolean isAttachment) {
+        if (response.containsHeader(CONTENT_DISPOSITION)) {
+            throw new IllegalStateException("A content disposition header has already been added to this response.");
+        }
+        response.addHeader(CONTENT_DISPOSITION, createContentDispositionValue(filename, isAttachment));
+    }
+
+    /**
+     * Creates the value to be set for a content disposition header.
+     * @param filename        The filename for the header.
+     * @param isAttachment    Whether the content is an attachment or inline.
+     * @return The value to be set for the content disposition header.
+     */
+    public static String createContentDispositionValue(final String filename, final boolean isAttachment) {
+        return String.format("%s; filename=\"%s\";", isAttachment ? "attachment" : "inline", filename);
+}
+
+    private static final String CONTENT_DISPOSITION = "Content-Disposition";
+}

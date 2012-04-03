@@ -57,8 +57,6 @@ public class XMLSearch {
                 XdatStoredSearch xss = new XdatStoredSearch(item);
                 ItemSearch search= xss.getItemSearch(user);
                 
-                Authorizer.getInstance().authorizeRead(search.getElement(), user);
-                
                 ItemCollection items =search.exec(allowChildren);
                 if (items.size()>1 || items.size()==0){
                     response.getWriter().write("<matchingResults xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\">");
@@ -66,42 +64,46 @@ public class XMLSearch {
                     while(iter.hasNext())
                     {
                         XFTItem next = (XFTItem)iter.next();
-                        ByteArrayOutputStream baos = new ByteArrayOutputStream();
-                        response.getWriter().write("<matchingResult>");
-                        
                         try {
-                            SAXWriter writer = new SAXWriter(baos,false);
-                            writer.setWriteHiddenFields(true);
-                            writer.write(next);
-                        } catch (TransformerConfigurationException e) {
-                            logger.error("",e);
-                        } catch (TransformerFactoryConfigurationError e) {
-                            logger.error("",e);
-                        } catch (FieldNotFoundException e) {
-                            logger.error("",e);
-                        }
-                        response.getWriter().write(baos.toString());
-                        response.getWriter().flush();
-                        
-                        response.getWriter().write("</matchingResult>");
+							Authorizer.getInstance().authorizeRead(next, user);
+							ByteArrayOutputStream baos = new ByteArrayOutputStream();
+							response.getWriter().write("<matchingResult>");
+							
+							try {
+							    SAXWriter writer = new SAXWriter(baos,false);
+							    writer.setWriteHiddenFields(true);
+							    writer.write(next);
+							} catch (TransformerConfigurationException e) {
+							    logger.error("",e);
+							} catch (TransformerFactoryConfigurationError e) {
+							    logger.error("",e);
+							} catch (FieldNotFoundException e) {
+							    logger.error("",e);
+							}
+							response.getWriter().write(baos.toString());
+							response.getWriter().flush();
+							
+							response.getWriter().write("</matchingResult>");
+						} catch (Exception e) {
+							
+						}
                     }
                     response.getWriter().write("</matchingResults>");
                 }else{
                     XFTItem next = (XFTItem)items.first();
+                    Authorizer.getInstance().authorizeRead(next, user);
+                    try {
+                        SAXWriter writer = new SAXWriter(response.getOutputStream(),false);
+                        writer.setWriteHiddenFields(true);
                         
-                        try {
-                            SAXWriter writer = new SAXWriter(response.getOutputStream(),false);
-                            writer.setWriteHiddenFields(true);
-                            
-                            writer.write(next);
-                        } catch (TransformerConfigurationException e) {
-                            logger.error("",e);
-                        } catch (TransformerFactoryConfigurationError e) {
-                            logger.error("",e);
-                        } catch (FieldNotFoundException e) {
-                            logger.error("",e);
-                        }
-                        
+                        writer.write(next);
+                    } catch (TransformerConfigurationException e) {
+                        logger.error("",e);
+                    } catch (TransformerFactoryConfigurationError e) {
+                        logger.error("",e);
+                    } catch (FieldNotFoundException e) {
+                        logger.error("",e);
+                    }
                 }
 
             } catch (SAXException e) {

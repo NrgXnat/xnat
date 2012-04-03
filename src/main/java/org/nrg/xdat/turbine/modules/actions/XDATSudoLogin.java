@@ -17,6 +17,8 @@ public class XDATSudoLogin extends SecureAction{
 			XDATUser temp = new XDATUser(login);
 			
 			TurbineUtils.setUser(data, temp);
+		}else{
+			notifyAdmin(user, data, 403, "Non-admin sudo attempt", "User attempted to sudo to another user account.");
 		}
 	}
 

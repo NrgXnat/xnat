@@ -1200,11 +1200,20 @@ public class XFTTable implements XFTTableI {
 			public int compare(Object[] o1, Object[] o2) {
 				for(final Integer i:indexes){
 					try {
-						@SuppressWarnings({ "unchecked", "rawtypes" })
 						//contents could be String, Number or Date
-						int c=((Comparable)o1[i]).compareTo(((Comparable)o2[i]));
-						if(c!=0){
-							return c;
+						if(o1[i]==null){
+							if(o2[i]==null){
+								return 0;
+							}else{
+								return 1;
+							}
+						}else if(o2==null){
+							return -1;
+						}else{
+							int c=((Comparable)o1[i]).compareTo(((Comparable)o2[i]));
+							if(c!=0){
+								return c;
+							}
 						}
 					} catch (ClassCastException e) {
 						//ignore non comparables for now.

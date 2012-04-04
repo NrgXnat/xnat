@@ -60,28 +60,7 @@
 		</plugins>
 	</reporting>
 
-		<pluginRepositories>
-		<pluginRepository>
-			<name>NRG/XDAT/XNAT Temporary Snapshot Maven Plugin Repo</name>
-			<id>org.nrg.maven.plugins.snapshot</id>
-			<url>http://maven.xnat.org/plugins-snapshot</url>
-		</pluginRepository>
-		<pluginRepository>
-			<name>NRG/XDAT/XNAT Temporary Release Maven Plugin Repo</name>
-			<id>org.nrg.maven.plugins.release</id>
-			<url>http://maven.xnat.org/plugins-release</url>
-		</pluginRepository>
-	</pluginRepositories>
-			<name>NRG/XDAT/XNAT Temporary Release Maven Repo</name>
-			<id>org.nrg.maven.artifacts.release</id>
-			<url>http://maven.xnat.org/libs-release</url>
-		</repository>
-		<repository>
-			<name>NRG/XDAT/XNAT Temporary Snapshot Maven Repo</name>
-			<id>org.nrg.maven.artifacts.snapshot</id>
-			<url>http://maven.xnat.org/libs-snapshot</url>
-		</repository>
-		<repository>
+
 	<dependencies>
 		<dependency>
 			<groupId>org.nrg</groupId>
@@ -222,7 +201,6 @@
 			<groupId>commons-codec</groupId>
 			<artifactId>commons-codec</artifactId>
 		</dependency>
-		</dependency>
 		<dependency>
 			<groupId>commons-dbcp</groupId>
 			<artifactId>commons-dbcp</artifactId>
@@ -231,6 +209,7 @@
 			<groupId>nl.bitwalker</groupId>
 			<artifactId>UserAgentUtils</artifactId>
 			<version>1.2.4</version>
+		</dependency>
 		<dependency>
 			<groupId>ant</groupId>
 			<artifactId>ant</artifactId>
@@ -281,7 +260,7 @@
 			<name>NRG/XDAT/XNAT Temporary Snapshot Maven Repo</name>
 			<id>org.nrg.maven.artifacts.snapshot</id>
 			<url>http://maven.xnat.org/libs-snapshot</url>
-		</repository>
+		</repository>		
 	</repositories>
 
 </project>

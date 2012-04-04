@@ -69,7 +69,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             if (isAuthorized(data)) {
                 Context c = TurbineVelocity.getContext(data);
                 if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
-                    if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true"))
+                    if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
                         c.put("popup","true");
                     }else{
                         c.put("popup","false");

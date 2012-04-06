@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
+/*
+ * XDAT Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -8,7 +8,6 @@
  *
  */
 package org.nrg.xdat.display;
-import java.util.Hashtable;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.schema.SchemaElement;
@@ -22,7 +21,8 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.utils.StringUtils;
-;
+
+import java.util.Hashtable;
 
 /**
  * @author Tim
@@ -94,7 +94,7 @@ public class DisplayFieldElement {
 
     boolean checked = false;
     private Hashtable elementMapping = new Hashtable();
-	public String getSQLJoinedName(SchemaElementI e) 
+	public String getSQLJoinedName(SchemaElementI e)
 	{
 		try {
             if (!elementMapping.containsKey(e.getFullXMLName()) && !checked)
@@ -119,7 +119,7 @@ public class DisplayFieldElement {
             return null;
         }
 	}
-	
+
     String fieldType = null;
 	public String getFieldType()
 	{
@@ -136,12 +136,12 @@ public class DisplayFieldElement {
                 }
             } catch (Exception e) {
                 fieldType= "UNKNOWN";
-            }       
+            }
         }
-        
+
         return fieldType;
 	}
-    
+
     private String standardized_path=null;
     public String getStandardizedPath(){
         if(standardized_path==null){
@@ -167,10 +167,10 @@ public class DisplayFieldElement {
                 }
             }
         }
-        
+
         return standardized_path;
     }
-	
+
     SchemaField sf = null;
 	public SchemaField getSchemaField() throws XFTInitException,ElementNotFoundException, Exception
 	{
@@ -179,10 +179,10 @@ public class DisplayFieldElement {
             GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(getSchemaElementName());
             sf= new SchemaField(f);
         }
-        
+
         return sf;
 	}
-	
+
     /**
      * @return Returns the xdatType.
      */

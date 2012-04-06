@@ -24,7 +24,8 @@ import org.nrg.xft.event.Event;
 import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-public class ModifyGroupPrivileges extends SecureAction {
+import org.nrg.xft.utils.SaveItemHelper;
+public class ModifyGroupPrivileges extends AdminAction {
 	static Logger logger = Logger.getLogger(ModifyUserPrivileges.class);
 	public void doPerform(RunData data, Context context) throws Exception
 	{
@@ -128,6 +129,7 @@ public class ModifyGroupPrivileges extends SecureAction {
 		
 		try {
 			tempGroup.getItem().save(TurbineUtils.getUser(data), false, false,ci);
+			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), false, false);
 		} catch (Exception e) {
 			logger.error("Error Storing User", e);
 		}
@@ -139,6 +141,7 @@ public class ModifyGroupPrivileges extends SecureAction {
 		// logger.error("4\n"+tempUser.getItem().toString());
 		try {
 			tempGroup.getItem().save(TurbineUtils.getUser(data), true, false,ci);
+			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), true, false);
 			// temp = tempUser.getItem().getCurrentDBVersion();
 			// tempUser = new XDATUser(temp);
 		} catch (Exception e) {

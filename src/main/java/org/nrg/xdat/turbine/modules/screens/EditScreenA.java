@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -61,9 +61,9 @@ public abstract class EditScreenA extends SecureScreen {
                 context.put("tag", TurbineUtils.GetPassedParameter("tag", data));
             }
 			
-			if (data.getParameters().getString("source") != null)
+			if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("source",data)) != null)
 			{
-				context.put("source", data.getParameters().getString("source"));
+				context.put("source", ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("source",data)));
 			}
 			
 			item = null;
@@ -133,9 +133,9 @@ public abstract class EditScreenA extends SecureScreen {
 					}
 					context.put("item",item);
 					context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
-					context.put("search_element",data.getParameters().getString("search_element"));
-					context.put("search_field",data.getParameters().getString("search_field"));
-					context.put("search_value",data.getParameters().getString("search_value"));
+					context.put("search_element",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));
+					context.put("search_field",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)));
+					context.put("search_value",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)));
 
 	            	context.put("om",BaseElement.GetGeneratedItem(item));
 					finalProcessing(data,context);

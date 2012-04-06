@@ -25,17 +25,17 @@ public class FieldPopup extends SecureScreen {
      */
     protected void doBuildTemplate(RunData data, Context context)
             throws Exception {
-        String s = data.getParameters().getString("element_name");
+        String s = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("element_name",data));
         context.put("element_name",s);
         
-        String textID = data.getParameters().getString("textID");
+        String textID = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("textID",data));
         context.put("textID",textID);
         
-        String headerID = data.getParameters().getString("headerID");
+        String headerID = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("headerID",data));
         if (headerID != null)
             context.put("headerID",headerID);
         
-        String typeID = data.getParameters().getString("typeID");
+        String typeID = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("typeID",data));
         if (typeID != null)
             context.put("typeID",typeID);
         

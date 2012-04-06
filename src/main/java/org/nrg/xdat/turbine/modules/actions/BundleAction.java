@@ -22,9 +22,9 @@ public class BundleAction extends SearchA {
     public DisplaySearch setupSearch(RunData data, Context context)
             throws Exception {
         DisplaySearch ds = null;
-        if (data.getParameters().get("bundle")!=null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle",data))!=null)
         {
-            String bundle = data.getParameters().getString("bundle");
+            String bundle = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle",data));
             ds = TurbineUtils.getUser(data).getStoredSearch(bundle);
             if (ds ==null)
             {

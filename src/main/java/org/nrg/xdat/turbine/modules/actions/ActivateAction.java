@@ -9,10 +9,12 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.utils.SaveItemHelper;
 
 /**
  * @author Tim
@@ -50,6 +52,8 @@ public class ActivateAction extends SecureAction{
 			o = TurbineUtils.GetItemBySearch(data,true);
 			if (o != null)
 			{		  
+				Authorizer.getInstance().authorizeSave(o.getItem().getGenericSchemaElement(), TurbineUtils.getUser(data));
+				
 				o.activate(TurbineUtils.getUser(data));
 				SchemaElementI se = SchemaElement.GetElement(o.getXSIType());
 				if (se.getFullXMLName().startsWith("xdat:"))

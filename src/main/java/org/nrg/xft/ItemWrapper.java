@@ -365,18 +365,14 @@ public abstract class ItemWrapper implements ItemI {
      * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
      */
     public boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
-    	this.preSave();
+    	return this.getItem().save(user,overrideSecurity,allowItemRemoval);
         final boolean _success= this.getItem().save(user,overrideSecurity,allowItemRemoval,c);
-        if(_success)this.postSave();
-        return _success;
     }
     /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
      */
     public void save(UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception {
-        this.preSave();
     	this.getItem().save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);
-    	this.postSave();
     }
     
     /**

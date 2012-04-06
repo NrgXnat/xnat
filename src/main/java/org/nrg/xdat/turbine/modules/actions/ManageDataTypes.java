@@ -17,9 +17,10 @@ import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.event.EventUtils;
 
-public class ManageDataTypes extends SecureAction {
+public class ManageDataTypes extends AdminAction {
 
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
@@ -47,6 +48,7 @@ public class ManageDataTypes extends SecureAction {
             }
             
             es.save(user, false, false,ci);
+            SaveItemHelper.authorizedSave(es,user, false, false);
         }
         
         ElementSecurity.refresh();

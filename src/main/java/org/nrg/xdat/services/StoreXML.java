@@ -78,6 +78,7 @@ public class StoreXML {
                 	    override = false;
                 	}
                     
+                	SaveItemHelper.unauthorizedSave(item,user,false,q,override,_allowDataDeletion.booleanValue());
                     
                     SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
                 	sb.append("Item Successfully Stored.");
@@ -169,6 +170,7 @@ public class StoreXML {
                 	    override = false;
                 	}
                     
+                	SaveItemHelper.unauthorizedSave(item,user,false,q,override,_allowDataDeletion.booleanValue());
                     SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
                     
                 	sb.append("Item Successfully Stored.");

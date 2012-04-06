@@ -2317,8 +2317,8 @@ public class JavaFileGenerator {
         sb.append("\n$page.setTitle(\"@PAGE_TITLE@\")");
         sb.append("\n$page.setLinkColor($ui.alink)");
         sb.append("\n$page.setVlinkColor($ui.vlink)");
-        sb.append("\n#if ($data.getParameters().getString(\"popup\"))");
-        sb.append("\n\t#set ($popup = $data.getParameters().getString(\"popup\") )");
+        sb.append("\n#if ($turbineUtils.GetPassedParameter(\"popup\", $data))");
+        sb.append("\n\t#set ($popup = $turbineUtils.GetPassedParameter(\"popup\", data) )");
         sb.append("\n\t#set ($popup = \"false\")");
         sb.append("\n#end");
         sb.append("\n<TABLE width=\"100%\">");

@@ -80,7 +80,14 @@ public class XMLUpload extends SecureAction {
                 	q = item.getGenericSchemaElement().isQuarantine();
                 	override = false;
 
+                	SaveItemHelper.unauthorizedSave(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"));
+                	if (allowDeletion.equalsIgnoreCase("true"))
                     SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"),newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XAR));
+                	{
+                    	SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,true);
+                	}else{
+                    	SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,false);
+                	}
 
                 	if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");

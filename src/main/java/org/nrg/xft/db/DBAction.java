@@ -240,7 +240,7 @@ public class DBAction {
 	 * @param item
 	 * @return updated XFTItem
 	 */
-    	public static XFTItem StoreItem(XFTItem item, UserI user,boolean checkForDuplicates, ArrayList storedRelationships,boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite,DBItemCache cache,SecurityManagerI securityManager, boolean allowFieldMatching) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,SQLException,Exception
+    	private static XFTItem StoreItem(XFTItem item, UserI user,boolean checkForDuplicates, ArrayList storedRelationships,boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite,DBItemCache cache,SecurityManagerI securityManager, boolean allowFieldMatching) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,SQLException,Exception
     	{
             boolean isNew = true;
     		try {

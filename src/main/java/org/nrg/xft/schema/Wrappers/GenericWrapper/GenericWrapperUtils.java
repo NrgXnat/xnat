@@ -1,18 +1,12 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
  * Created on Jul 20, 2004
  */
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
-
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.CriteriaCollection;
@@ -26,14 +20,12 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.TextFunctionGenerator;
-import org.nrg.xft.references.XFTManyToManyReference;
-import org.nrg.xft.references.XFTMappingColumn;
-import org.nrg.xft.references.XFTReferenceI;
-import org.nrg.xft.references.XFTRelationSpecification;
-import org.nrg.xft.references.XFTSuperiorReference;
+import org.nrg.xft.references.*;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.SearchCriteria;
+
+import java.util.*;
 
 /**
  * Class used to perform tasks which manipulate and format the data in
@@ -74,12 +66,8 @@ public class GenericWrapperUtils {
                         try {
                             XFTReferenceI ref = field.getXFTReference();
                             if (!ref.isManyToMany()) {
-                                Iterator specs = ((XFTSuperiorReference) ref)
-                                        .getKeyRelations().iterator();
-                                while (specs.hasNext()) {
-                                    XFTRelationSpecification spec = (XFTRelationSpecification) specs
-                                            .next();
-
+                                for (XFTRelationSpecification spec : ((XFTSuperiorReference) ref)
+                                        .getKeyRelations()) {
                                     if (count == 0) {
                                         sb.append("\n");
                                     } else {
@@ -158,7 +146,7 @@ public class GenericWrapperUtils {
                             }
                             count++;
                             sb.append(field.getSQLName()).append(" ");
-                            if (field.getType(converter) != "") {
+                            if (!field.getType(converter).equals("")) {
                                 sb.append(field.getType(converter)).append(" ");
                             } else {
                                 sb.append(
@@ -193,10 +181,8 @@ public class GenericWrapperUtils {
                 }
                 sb.append(") ");
 
-                Iterator uniques = input.getUniqueFields().iterator();
-                while (uniques.hasNext()) {
-                    GenericWrapperField unique = (GenericWrapperField) uniques
-                            .next();
+                for (Object o : input.getUniqueFields()) {
+                    GenericWrapperField unique = (GenericWrapperField) o;
                     sb.append("\n, UNIQUE KEY (").append(unique.getSQLName())
                             .append(") ");
                 }
@@ -260,12 +246,8 @@ public class GenericWrapperUtils {
                             try {
                                 XFTReferenceI ref = field.getXFTReference();
                                 if (!ref.isManyToMany()) {
-                                    Iterator specs = ((XFTSuperiorReference) ref)
-                                            .getKeyRelations().iterator();
-                                    while (specs.hasNext()) {
-                                        XFTRelationSpecification spec = (XFTRelationSpecification) specs
-                                                .next();
-
+                                    for (XFTRelationSpecification spec : ((XFTSuperiorReference) ref)
+                                            .getKeyRelations()) {
                                         if (count == 0) {
                                             sb.append("\n");
                                         } else {
@@ -381,7 +363,7 @@ public class GenericWrapperUtils {
                                 // field.getSQLName() +
                                 // "_seq;\n\n").append(sb.toString());
                             } else {
-                                if (field.getType(converter) != "") {
+                                if (!field.getType(converter).equals("")) {
                                     sb.append(field.getType(converter)).append(
                                             " ");
                                 } else {
@@ -617,9 +599,9 @@ public class GenericWrapperUtils {
         return sb;
     }
 
-	public static ArrayList GetFunctionSQL() {
-        ArrayList all = new ArrayList();
-        StringBuffer functions = new StringBuffer();
+    public static List<String> GetFunctionSQL() {
+        List<String> all = new ArrayList<String>();
+        StringBuilder functions = new StringBuilder();
         functions.append("\n\n\nCREATE OR REPLACE FUNCTION class_exists( VARCHAR)");
         functions.append("\nRETURNS BOOLEAN AS");
         functions.append("\n'");
@@ -636,7 +618,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n\n\nCREATE OR REPLACE FUNCTION schema_exists( VARCHAR)");
         functions.append("\nRETURNS BOOLEAN AS");
         functions.append("\n'");
@@ -653,7 +635,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n\nCREATE OR REPLACE FUNCTION function_exists( VARCHAR)");
         functions.append("\nRETURNS BOOLEAN AS");
         functions.append("\n'");
@@ -670,7 +652,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n\nCREATE OR REPLACE FUNCTION trigger_exists( VARCHAR)");
         functions.append("\nRETURNS BOOLEAN AS");
         functions.append("\n'");
@@ -687,7 +669,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n\nCREATE OR REPLACE FUNCTION create_trigger(VARCHAR,VARCHAR)");
         functions.append("\nRETURNS VARCHAR AS");
         functions.append("\n'");
@@ -701,7 +683,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n\nCREATE OR REPLACE FUNCTION create_class(VARCHAR,VARCHAR)");
         functions.append("\nRETURNS VARCHAR AS");
@@ -716,7 +698,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n\nCREATE OR REPLACE FUNCTION create_schema(VARCHAR,VARCHAR)");
         functions.append("\nRETURNS VARCHAR AS");
@@ -731,7 +713,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n");
         functions.append("\nCREATE OR REPLACE FUNCTION create_function(VARCHAR,VARCHAR)");
@@ -748,7 +730,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n");
         functions.append("\nCREATE OR REPLACE FUNCTION xs_concat(text, text) RETURNS text AS");
@@ -766,7 +748,7 @@ public class GenericWrapperUtils {
         functions.append("\n'");
         functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
         all.add(functions.toString());
-        functions = new StringBuffer();
+        functions = new StringBuilder();
         functions.append("\n");
         functions.append("\n");
         functions.append("\nSELECT create_function('xs_a_concat','CREATE AGGREGATE xs_a_concat(");
@@ -776,11 +758,8 @@ public class GenericWrapperUtils {
         functions.append("\n    INITCOND = '''')');");
         all.add(functions.toString());
         try {
-            Iterator elements = XFTManager.GetInstance().getOrderedElements()
-                    .iterator();
-            while (elements.hasNext()) {
-                GenericWrapperElement element = (GenericWrapperElement) elements
-                        .next();
+            for (Object o : XFTManager.GetInstance().getOrderedElements()) {
+                GenericWrapperElement element = (GenericWrapperElement) o;
                 //System.out.println(element.getXSIType());
                 //if (!element.isSkipSQL())
                 //                if (!(element.getName().endsWith("meta_data") || element
@@ -798,7 +777,669 @@ public class GenericWrapperUtils {
         return all;
     }
     
+    public static List<String> GetTextOutputFunctions(GenericWrapperElement input)
+    throws ElementNotFoundException, XFTInitException 
+    {
+        List<String> all = new ArrayList<String>();
+        StringBuffer sb = new StringBuffer();
+
+        Object[][] keyArray = input.getSQLKeys();
+
+        String functionName = input.getTextFunctionName() + "(";
+        if (input.isExtended() && (!(input.getName().endsWith("meta_data") || input
+                .getName().endsWith("history")))) {
+            functionName = GenericWrapperUtils.TXT_EXT_FUNCTION + input.getFormattedName() + "(";
+        }
+        for (int i = 0; i < keyArray.length; i++) {
+            if (i > 0)
+                functionName += ",";
+            functionName += " " + keyArray[i][1];
+        }
+        functionName += ", int4,bool,bool,bool)";
+        sb.append("\n\n\nCREATE OR REPLACE FUNCTION ").append(functionName);
+
+        String counter = "$" + (keyArray.length + 1);
+        String allowMultiples = "$" + (keyArray.length + 2);
+        String isRoot = "$" + (keyArray.length + 3);
+        String preventLoop = "$" + (keyArray.length + 4);
+        sb.append("\n  RETURNS TEXT AS");
+        sb.append("\n'");
+        sb.append("\n    declare");
+        sb.append("\n     current_row RECORD;");
+        sb.append("\n     tempText TEXT;");
+        sb.append("\n     fullText TEXT;");
+        sb.append("\n     row_ct int4;");
+        sb.append("\n     local_count int4;");
+        sb.append("\n     child_count int4;");
+        sb.append("\n    begin");
+        sb.append("\n    --ID,counter,allowMultiples,isRoot,preventLoop");
+
+        //sb.append("\n RAISE NOTICE ''" +functionName + "'';");
+        sb.append("\n      local_count := ").append(counter).append(";");
+        sb.append("\n      child_count := ").append(counter).append(";");
+        sb.append("\n      row_ct := 0;");
+        sb.append("\n      fullText := ''Item:(''");
+        sb.append(" || local_count || ''(").append(input.getXSIType()).append(
+                ")('';");
+        sb.append("\n      FOR current_row IN SELECT * FROM ").append(input.getSQLName());
+        sb.append(" WHERE ");
+        for (int i = 0; i < keyArray.length; i++) {
+            if (i > 0)
+                sb.append(" AND ");
+            sb.append(" ").append(keyArray[i][0]).append("=").append(
+                    keyArray[i][2]);
+        }
+        sb.append("\n      LOOP");
+        sb.append("\n           row_ct := row_ct+1;");
+        sb.append("\n          ");
+        Iterator fieldIter = input.getAllFields(false, true).iterator();
+        TypeConverter converter = new TypeConverter(new PGSQLMapping(input
+                .getWrapped().getSchemaPrefix()));
+        while (fieldIter.hasNext()) {
+            GenericWrapperField field = (GenericWrapperField) fieldIter.next();
+            if (field.isReference()) {
+                GenericWrapperElement foreign = (GenericWrapperElement) field
+                        .getReferenceElement();
+                if (field.isMultiple()) {
+                    if (!(input.getName().endsWith("meta_data") || input
+                            .getName().endsWith("history"))) {
+                        try {
+                            XFTReferenceI ref = field.getXFTReference();
+                            if (ref.isManyToMany()) {
+                                
+                                String mappingTable = ((XFTManyToManyReference) ref)
+                                        .getMappingTable();
+                                sb.append("\n        IF(").append(allowMultiples);
+                                if (field.isOnlyRoot())
+                                {
+                                    sb.append(" AND "+ isRoot +"");
+                                }
+                                
+                                if (field.isPossibleLoop()){
+                                    sb.append(" AND ( NOT "+ preventLoop +")");
+                                }
+                                
+                                sb.append(") THEN ");
+          
+                                sb.append("\n        DECLARE ");
+                                sb.append("\n        mapping_row RECORD; ");
+                                sb.append("\n        loop_count int4:=0; ");
+                                sb.append("\n        BEGIN ");
+                                sb
+                                        .append("\n        FOR mapping_row IN SELECT * FROM "
+                                                + mappingTable + " WHERE ");
+                                Iterator refCols = ((XFTManyToManyReference) ref)
+                                        .getMappingColumnsForElement(input)
+                                        .iterator();
+                                int count = 0;
+                                while (refCols.hasNext()) {
+                                    XFTMappingColumn spec = (XFTMappingColumn) refCols
+                                            .next();
+                                    if (count++ > 0)
+                                        sb.append(" AND ");
+                                    sb.append(" ").append(
+                                            spec.getLocalSqlName()).append("=");
+                                    sb.append("current_row.").append(
+                                            spec.getForeignKey().getSQLName());
+                                }
+//                                sb.append(" ORDER BY ");
+//                                refCols = ((XFTManyToManyReference) ref).getMappingColumnsForElement(foreign).iterator();
+//		                        count = 0;
+//		                        while (refCols.hasNext()) {
+//		                            XFTMappingColumn spec = (XFTMappingColumn) refCols
+//		                                    .next();
+//		                            if (count++ > 0)
+//		                                sb.append(", ");
+//		                            sb.append(spec.getLocalSqlName());
+//		                        }
+                                sb.append("\n        LOOP");
+                                
+                                sb.append("\n           child_count := child_count+1;");
+                                sb.append("\n           tempText := NULL;");
+                                sb.append("\n           tempText := " + GenericWrapperUtils.TXT_FUNCTION)
+                                        .append(foreign.getFormattedName()).append(
+                                                "(");
+                                refCols = ((XFTManyToManyReference) ref)
+                                        .getMappingColumnsForElement(foreign)
+                                        .iterator();
+                                count = 0;
+                                while (refCols.hasNext()) {
+                                    XFTMappingColumn spec = (XFTMappingColumn) refCols
+                                            .next();
+                                    if (count++ > 0)
+                                        sb.append(",");
+                                    sb.append(" mapping_row.").append(
+                                            spec.getLocalSqlName());
+                                }
+                                sb.append(", child_count," + allowMultiples + ",false," + field.getPreventLoop() + ");");
+                                sb
+                                        .append("\n              fullText := fullText || ''("
+                                                + (field.getSQLName() + "_" + field
+                                                        .getXMLType()
+                                                        .getLocalType())
+                                                        .toLowerCase()
+                                                + "'' || loop_count || '':XFTItem)='';");
+                                sb
+                                        .append("\n              fullText := fullText || ''('' || tempText || '')'';");
+                                sb
+                                        .append("\n              loop_count := loop_count+1;");
+                                sb.append("\n        END LOOP;");
+                                sb.append("\n        END; ");
+                                sb.append("\n        END IF; ");
+                            } else {
+                                XFTSuperiorReference supRef = (XFTSuperiorReference) ref;
+                                sb.append("\n        IF(").append(allowMultiples);
+                                if (field.isOnlyRoot())
+                                {
+                                    sb.append(" AND "+ isRoot +"");
+                                }
+                                
+                                if (field.isPossibleLoop()){
+                                    sb.append(" AND (NOT "+ preventLoop +")");
+                                }
+                                
+                                sb.append(") THEN ");
+                                //                              FOREIGN has the fk column
+                                sb.append("\n        DECLARE ");
+                                sb.append("\n        parent_row RECORD; ");
+                                sb.append("\n        loop_count int4:=0; ");
+                                sb.append("\n        BEGIN ");
+                                sb.append("\n        FOR parent_row IN SELECT * FROM "
+                                                + foreign.getSQLName()
+                                                + " WHERE ");
+
+                                Iterator refsCols = supRef.getKeyRelations()
+                                        .iterator();
+                                int count = 0;
+                                while (refsCols.hasNext()) {
+                                    XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+                                            .next();
+                                    if (count++ > 0)
+                                        sb.append(" AND ");
+                                    sb.append(spec.getLocalCol()).append(
+                                            "=current_row.").append(
+                                            spec.getForeignCol());
+                                }
+
+                                Object[][] foreignKeyArray = foreign.getSQLKeys();
+                              sb.append(" ORDER BY ");
+		                        for (int i = 0; i < foreignKeyArray.length; i++) {
+		                            if (i > 0)
+		                                sb.append(", ");
+		                            sb.append(foreignKeyArray[i][0]);
+		                        }
+                                sb.append("\n        LOOP");
+                                sb
+                                        .append("\n           child_count := child_count+1;");
+                                sb.append("\n           tempText := NULL;");
+                                sb.append("\n           tempText := " + GenericWrapperUtils.TXT_FUNCTION)
+                                        .append(foreign.getFormattedName()).append(
+                                                "(");
+                                foreignKeyArray = foreign
+                                        .getSQLKeys();
+                                for (int i = 0; i < foreignKeyArray.length; i++) {
+                                    if (i > 0)
+                                        sb.append(", ");
+                                    sb.append(" parent_row.").append(
+                                            foreignKeyArray[i][0]);
+                                }
+                                sb.append(", child_count," + allowMultiples + ",false," + field.getPreventLoop() + ");");
+                                sb
+                                        .append("\n              fullText := fullText || ''("
+                                                + (field.getSQLName() + "_" + field
+                                                        .getXMLType()
+                                                        .getLocalType())
+                                                        .toLowerCase()
+                                                + "'' || loop_count || '':XFTItem)='';");
+                                sb
+                                        .append("\n              fullText := fullText || ''('' || tempText || '')'';");
+                                sb
+                                        .append("\n              loop_count := loop_count+1;");
+                                sb.append("\n        END LOOP;");
+                                sb.append("\n        END;");
+                                sb.append("\n        END IF; ");
+                            }
+                        } catch (Exception e) {
+                            e.printStackTrace();
+                        }
+                    }
+                } else {
+                    XFTSuperiorReference supRef = (XFTSuperiorReference) field
+                            .getXFTReference();
+                    if (supRef.getSubordinateElement().equals(input)) {
+                        //INPUT has the fk column (check if it is null)
+                        sb.append("\n        IF (");
+                        Iterator refsCols = supRef.getKeyRelations().iterator();
+                        int count = 0;
+                        while (refsCols.hasNext()) {
+                            XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+                                    .next();
+                            if (count++ > 0)
+                                sb.append(" && ");
+                            sb.append("(current_row.").append(
+                                    spec.getLocalCol()).append(" IS NOT NULL)");
+
+                        }
+                        
+                        if (field.isOnlyRoot())
+                        {
+                            sb.append(" AND "+ isRoot +"");
+                        }
+                        
+                        if (field.isPossibleLoop()){
+                            sb.append(" AND (NOT "+ preventLoop +")");
+                        }
+                        
+                        sb.append(") THEN");
+
+                        refsCols = supRef.getKeyRelations().iterator();
+                        while (refsCols.hasNext()) {
+                            XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+                                    .next();
+                            sb
+                                    .append(
+                                            "\n            fullText := fullText || ''(")
+                                    .append(spec.getLocalCol().toLowerCase())
+                                    .append(":" + spec.getSchemaType().getLocalType() + ")=('' || current_row.").append(
+                                            spec.getLocalCol().toLowerCase())
+                                    .append(" || '')'';");
+                        }
+                        if (!(input.getName().endsWith("meta_data") || input
+                                .getName().endsWith("history"))) {
+                            sb.append("\n           child_count := child_count+1;");
+                            sb.append("\n           tempText := NULL;");
+                            if (input.getExtensionFieldName().equalsIgnoreCase(field.getName()))
+                            {
+                                sb.append("\n           tempText := " + GenericWrapperUtils.TXT_EXT_FUNCTION)
+                                .append(foreign.getFormattedName()).append("(");
+                            }else{
+                                sb.append("\n           tempText := " + GenericWrapperUtils.TXT_FUNCTION)
+                                .append(foreign.getFormattedName()).append("(");
+                            }
+                            refsCols = supRef.getKeyRelations().iterator();
+                            count = 0;
+                            while (refsCols.hasNext()) {
+                                XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+                                        .next();
+                                if (count++ > 0)
+                                    sb.append(", ");
+                                sb.append("current_row.").append(
+                                        spec.getLocalCol());
+                            }
+                            sb.append(", child_count," + allowMultiples + ",false," + field.getPreventLoop() + ");");
+                            sb
+                                    .append("\n              fullText := fullText || ''("
+                                            + (field.getSQLName() + "_" + field
+                                                    .getXMLType()
+                                                    .getLocalType())
+                                                    .toLowerCase() + ":XFTItem)='';");
+                            sb
+                                    .append("\n              fullText := fullText || ''('' || tempText || '')'';");
+                        }
+                        sb.append("\n        END IF;");
+                    } else {
+
+                        if (!(input.getName().endsWith("meta_data") || input
+                                .getName().endsWith("history"))) {
+                            //FOREIGN has the fk column
+                            sb.append("\n        IF("+ allowMultiples +") THEN ");
+                            sb.append("\n        DECLARE ");
+                            sb.append("\n        parent_row RECORD; ");
+                            sb.append("\n        loop_count int4:=0; ");
+                            sb.append("\n        BEGIN ");
+                            sb
+                                    .append("\n        FOR parent_row IN SELECT * FROM "
+                                            + foreign.getSQLName() + " WHERE ");
+
+                            Iterator refsCols = supRef.getKeyRelations()
+                                    .iterator();
+                            int count = 0;
+                            while (refsCols.hasNext()) {
+                                XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+                                        .next();
+                                if (count++ > 0)
+                                    sb.append(" AND ");
+                                sb.append(spec.getLocalCol()).append(
+                                        "=current_row.").append(
+                                        spec.getForeignCol());
+                            }
+
+                            sb.append(" ORDER BY ");
+                            Object[][] foreignKeyArray = foreign.getSQLKeys();
+	                        for (int i = 0; i < foreignKeyArray.length; i++) {
+	                            if (i > 0)
+	                                sb.append(", ");
+	                            sb.append(foreignKeyArray[i][0]);
+	                        }
+                            sb.append("\n        LOOP");
+                            sb
+                                    .append("\n           child_count := child_count+1;");
+                            sb.append("\n           tempText := NULL;");
+                            sb.append("\n           tempText := " + GenericWrapperUtils.TXT_FUNCTION)
+                                    .append(foreign.getFormattedName()).append("(");
+                            foreignKeyArray = foreign.getSQLKeys();
+                            for (int i = 0; i < foreignKeyArray.length; i++) {
+                                if (i > 0)
+                                    sb.append(", ");
+                                sb.append(" parent_row.").append(
+                                        foreignKeyArray[i][0]);
+                            }
+                            sb.append(", child_count," + allowMultiples + ",false," + field.getPreventLoop() + ");");
+                            sb
+                                    .append("\n              fullText := fullText || ''("
+                                            + (field.getSQLName() + "_" + field
+                                                    .getXMLType()
+                                                    .getLocalType())
+                                                    .toLowerCase()
+                                            + "'' || loop_count || '':XFTItem)='';");
+                            sb
+                                    .append("\n              fullText := fullText || ''('' || tempText || '')'';");
+                            sb
+                                    .append("\n              loop_count := loop_count+1;");
+                            sb.append("\n        END LOOP;");
+                            sb.append("\n        END;");
+                            sb.append("\n        END IF; ");
+                        }
+                    }
+                }
+
+            } else {
+                if (GenericWrapperField.IsLeafNode(field.getWrapped())) {
+
+                    sb.append("\n          IF (current_row.").append(
+                            field.getSQLName().toLowerCase()).append(
+                            " IS NOT NULL) THEN ");
+
+                    String type = field.getType(converter);
+                    
+                    if (type.equals("BYTEA")) {
+                        sb.append("\n              fullText := fullText || ''(");
+                        sb.append(field.getSQLName().toLowerCase());
+                        sb.append(":string)=('' || REPLACE(REPLACE(ENCODE(current_row.").append(field.getSQLName().toLowerCase());
+                        sb.append(",''escape''),''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
+                    }else if (type.equals("DATE")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":date)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
+                    }else if (type.equals("TIMESTAMP")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":dateTime)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
+                    }else if (type.equals("TIME")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":time)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
+                    }else if (type.equals("FLOAT")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":float)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
+                    }else if (type.equals("NUMERIC") || type.equals("DECIMAL")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":double)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
+                    }else if (type.equals("INTEGER") || type.equals("BIGINT") || type.equals("SMALLINT") || type.equals("TINYINT")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":integer)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
+                    } else if (type.startsWith("VARCHAR")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append(",''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
+                    } else if (type.startsWith("TEXT")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append(",''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");
+                    } else {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":string)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
+                    }
+                    sb.append("\n          END IF;");
+                }
+            }
+        }
+        for (GenericWrapperField field : input.getUndefinedReferences()) {
+            if (field.isReference() && (!field.isMultiple())) {
+                XFTSuperiorReference supRef = (XFTSuperiorReference) field.getXFTReference();
+                sb.append("\n        IF (");
+                Iterator refsCols = supRef.getKeyRelations().iterator();
+                int count = 0;
+                while (refsCols.hasNext()) {
+                    XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+                            .next();
+                    if (count++ > 0)
+                        sb.append(" && ");
+                    sb.append("(current_row.").append(
+                            spec.getLocalCol()).append(" IS NOT NULL)");
+
+                }
+
+                if (field.isOnlyRoot()) {
+                    sb.append(" && " + isRoot + "");
+                }
+
+                if (field.isPossibleLoop()) {
+                    sb.append(" AND NOT (" + preventLoop + ")");
+                }
+
+                sb.append(") THEN");
+
+                refsCols = supRef.getKeyRelations().iterator();
+                while (refsCols.hasNext()) {
+                    XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+                            .next();
+                    sb
+                            .append(
+                                    "\n            fullText := fullText || ''(")
+                            .append(spec.getLocalCol().toLowerCase())
+                            .append(":" + spec.getSchemaType().getLocalType() + ")=('' || current_row.").append(
+                            spec.getLocalCol().toLowerCase())
+                            .append(" || '')'';");
+                }
+                sb.append("\n        END IF;");
+            }
+        }
+        if (!input.containsStatedKey()) {
+			GenericWrapperField field = (GenericWrapperField)input.getDefaultKey();
+			sb.append("\n          IF (current_row.").append(
+                    field.getSQLName().toLowerCase()).append(
+                    " IS NOT NULL) THEN ");
+            
+            sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+            sb.append(":integer)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
+            
+            sb.append("\n          END IF;");
+		}
+        
+        sb.append("\n      END LOOP;");
+        if(input.isExtension())
+        {
+            try {
+                GenericWrapperField field = input.getExtensionField();
+                sb.append("\n      IF (row_ct=0) THEN ");
 	/**
+                GenericWrapperElement foreign = (GenericWrapperElement)field.getReferenceElement();
+//                Iterator refsCols = supRef.getKeyRelations().iterator();
+//                while (refsCols.hasNext()) {
+//                    XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+//                            .next();
+//                    sb
+//                            .append(
+//                                    "\n            fullText := fullText || ''(")
+//                            .append(spec.getLocalCol().toLowerCase())
+//                            .append(":" + spec.getSchemaType().getLocalType() + ")=('' || current_row.").append(
+//                                    spec.getLocalCol().toLowerCase())
+//                            .append(" || '')'';");
+//                }
+                if (!(input.getName().endsWith("meta_data") || input
+                        .getName().endsWith("history"))) {
+                    sb.append("\n           child_count := child_count+1;");
+                    sb.append("\n           tempText := NULL;");
+                    sb.append("\n           tempText := "+TXT_EXT_FUNCTION)
+                        .append(foreign.getFormattedName()).append("(");
+
+                    for (int i = 0; i < keyArray.length; i++) {
+                        if (i > 0)
+                            sb.append(",");
+                        sb.append(" ").append(keyArray[i][2]);
+                    }
+                    sb.append(", child_count," + allowMultiples + "," + isRoot + "," + field.getPreventLoop() + ");");
+                    sb
+                            .append("\n              fullText := fullText || ''("
+                                    + (field.getSQLName() + "_" + field
+                                            .getXMLType()
+                                            .getLocalType())
+                                            .toLowerCase() + ":XFTItem)='';");
+                    sb
+                            .append("\n              fullText := fullText || ''('' || tempText || '')'';");
+                }
+                sb.append("\n          ");
+                sb.append("\n      END IF;");
+            } catch (ElementNotFoundException e) {
+                logger.error("",e);
+            } catch (FieldNotFoundException e) {
+                logger.error("",e);
+            } catch (XFTInitException e) {
+                logger.error("",e);
+            }
+        }
+        sb.append("\n	   fullText := fullText || '')*END_ITEM*'' || local_count || '')'';");
+        sb.append("\n	");
+        sb.append("\n	 RETURN fullText;");
+        sb.append("\n    end;");
+        sb.append("\n'");
+        sb.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+
+        all.add(sb.toString());
+        sb = new StringBuffer();
+        if (input.isExtended() && (!(input.getName().endsWith("meta_data") || input
+                .getName().endsWith("history")))) {
+	        functionName = input.getTextFunctionName() + "(";
+	        for (int i = 0; i < keyArray.length; i++) {
+	            if (i > 0)
+	                functionName += ",";
+	            functionName += " " + keyArray[i][1];
+	        }
+	        functionName += ", int4,bool,bool,bool)";
+	        sb.append("\n\n\nCREATE OR REPLACE FUNCTION " + functionName);
+	
+	        sb.append("\n  RETURNS TEXT AS");
+	        sb.append("\n'");
+	        sb.append("\n    declare");
+	        sb.append("\n     current_row RECORD;");
+	        sb.append("\n     fullText TEXT;");
+	        sb.append("\n    begin");
+	
+	        //sb.append("\n RAISE NOTICE ''" +functionName + "'';");
+	        if (input.isExtended() && (!(input.getName().endsWith("meta_data") || input
+	                .getName().endsWith("history")))) {
+	            //Build Query to get Extension id
+	            try {
+	                QueryOrganizer qo = new QueryOrganizer(input, null,
+	                        ViewManager.ALL);
+	                qo.addField(input.getFullXMLName()
+	                        + "/extension_item/element_name");
+	                CriteriaCollection cc = new CriteriaCollection("AND");
+	                for (int i = 0; i < keyArray.length; i++) {
+	                    GenericWrapperField gwf = (GenericWrapperField) keyArray[i][3];
+	                    qo.addField(gwf
+	                            .getXMLPathString(input.getFullXMLName()));
+	
+	                    SearchCriteria sc = new SearchCriteria();
+	                    sc.setFieldWXMLPath(gwf.getXMLPathString(input
+	                            .getFullXMLName()));
+	                    sc.setOverrideFormatting(true);
+	                    sc.setValue(keyArray[i][2]);
+	                    cc.add(sc);
+	                }
+	
+	                String query = "SELECT * FROM (" + qo.buildQuery()
+	                        + ") SEARCH";
+	                query += " WHERE " + cc.getSQLClause(qo);
+	
+	                String colname = qo.translateXMLPath(input.getFullXMLName()
+	                        + "/extension_item/element_name");
+	
+	                sb.append("\n      FOR current_row IN ").append(query);
+	                sb.append("\n      LOOP");
+	                sb.append("\n         IF (current_row.").append(colname)
+	                        .append(" IS NULL) THEN ");
+	                sb.append("\n             fullText:= " + GenericWrapperUtils.TXT_EXT_FUNCTION
+	                        + input.getFormattedName() + "(");
+	                for (int i = 0; i < keyArray.length; i++) {
+	                    if (i > 0)
+	                        sb.append(",");
+	                    sb.append(" ").append(keyArray[i][2]);
+	                }
+	                sb.append(", ").append(counter).append("," + allowMultiples + "," + isRoot +"," + preventLoop + ");");
+	                sb.append("\n         ELSE");
+	                sb.append("\n            --CALL EXTENDER ");
+	                sb.append("\n            declare");
+	                sb.append("\n               matches int4:=0;");
+	                sb.append("\n            begin");
+	                Iterator pEs = input.getPossibleExtenders().iterator();
+	                while (pEs.hasNext()) {
+	                    SchemaElementI se = (SchemaElementI) pEs.next();
+	                    sb.append("\n            IF (current_row.").append(
+	                            colname).append("=''").append(
+	                            se.getFullXMLName()).append("'') THEN");
+	                    //sb.append("\n RAISE NOTICE ''PASSING CALL FROM " +
+	                    // input.getSQLName() + " TO " + se.getSQLName() +
+	                    // "'';");
+	                    if (se.getGenericXFTElement().isExtended())
+	                        sb.append("\n                fullText:= " + GenericWrapperUtils.TXT_EXT_FUNCTION
+	                            + se.getFormattedName() + "(");
+	                    else
+		                    sb.append("\n                fullText:= " + GenericWrapperUtils.TXT_FUNCTION
+		                            + se.getFormattedName() + "(");
+	                    for (int i = 0; i < keyArray.length; i++) {
+	                        if (i > 0)
+	                            sb.append(",");
+	                        sb.append(" ").append(keyArray[i][2]);
+	                    }
+	                    sb.append(", ").append(counter).append("," + allowMultiples + "," + isRoot +"," + preventLoop + ");");
+	                    sb.append("\n                matches:=1;");
+	                    sb.append("\n            END IF;");
+	                }
+	                sb.append("\n                IF (matches=0) THEN");
+	               sb.append("\n                    fullText:= " + GenericWrapperUtils.TXT_EXT_FUNCTION
+	                        + input.getFormattedName() + "(");
+	                for (int i = 0; i < keyArray.length; i++) {
+	                    if (i > 0)
+	                        sb.append(",");
+	                    sb.append(" ").append(keyArray[i][2]);
+	                }
+	                sb.append(", ").append(counter).append("," + allowMultiples + "," + isRoot +"," + preventLoop + ");");
+	                sb.append("\n                END IF;");
+	                sb.append("\n            end;");
+	                sb.append("\n         end IF;");
+	                sb.append("\n      END LOOP;");
+	            } catch (Exception e) {
+	                logger.error("", e);
+	                sb.append("\n      fullText:= " + GenericWrapperUtils.TXT_EXT_FUNCTION
+	                        + input.getFormattedName() + "(");
+	                for (int i = 0; i < keyArray.length; i++) {
+	                    if (i > 0)
+	                        sb.append(",");
+	                    sb.append(" ").append(keyArray[i][2]);
+	                }
+	                sb.append(", ").append(counter).append("," + allowMultiples + "," + isRoot +"," + preventLoop + ");");
+	            }
+	        } else {
+	            sb.append("\n -- ITEM IS NOT EXTENDED BY ANYTHING... REDIRECT TO MAIN FUNCTION");
+	            sb.append("\n      fullText:= " + GenericWrapperUtils.TXT_EXT_FUNCTION + input.getFormattedName()
+	                    + "(");
+	            for (int i = 0; i < keyArray.length; i++) {
+	                if (i > 0)
+	                    sb.append(",");
+	                sb.append(" ").append(keyArray[i][2]);
+	            }
+	            sb.append(", ").append(counter).append("," + allowMultiples + "," + isRoot +"," + preventLoop + ");");
+	        }
+	
+	        sb.append("\n	");
+	        sb.append("\n	RETURN fullText;");
+	        sb.append("\n    end;");
+	        sb.append("\n'");
+	        sb.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+	
+	        all.add(sb.toString());
+        }
+        return all;
+    }
+    
+    /**
      * @param input
      * @return
      * @throws ElementNotFoundException
@@ -1728,9 +2369,9 @@ public class GenericWrapperUtils {
         return all;
     }
 
-    public static ArrayList GetFunctionStatements(GenericWrapperElement input)
+    public static List<String> GetFunctionStatements(GenericWrapperElement input) throws ElementNotFoundException, XFTInitException {
             throws ElementNotFoundException, XFTInitException,Exception {
-        ArrayList sb= new ArrayList();
+        List<String> sb= new ArrayList<String>();
         
         /*******************************
          * TEXT OUTPUT FUNCTIONS
@@ -2216,4 +2857,25 @@ public class GenericWrapperUtils {
         return al;
     }
 
+    public static Collection<String> GetExtensionTables() {
+        StringBuilder buffer = new StringBuilder();
+
+        buffer.append("SELECT create_class('analytics', '");
+        buffer.append("CREATE TABLE analytics\n");
+        buffer.append("(\n");
+        buffer.append("        id serial NOT NULL,\n");
+        buffer.append("        entry_date timestamp without time zone,\n");
+        buffer.append("        entry_level character varying(10),\n");
+        buffer.append("        entry_location character varying(512),\n");
+        buffer.append("        entry_type character varying(32),\n");
+        buffer.append("        entry_subtype character varying(32),\n");
+        buffer.append("        duration bigint,\n");
+        buffer.append("        message text,\n");
+        buffer.append("        PRIMARY KEY (id)\n");
+        buffer.append(") WITH (OIDS=FALSE)');");
+
+        List<String> statements = new ArrayList<String>();
+        statements.add(buffer.toString());
+        return statements;
+    }
 }

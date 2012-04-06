@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /* 
- * XDAT � Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -25,10 +25,10 @@ public class XDATActionRouter extends SecureAction
 	static Logger logger = Logger.getLogger(XDATActionRouter.class);
    public void doPerform(RunData data, Context context){
        preserveVariables(data,context);
-   		String action = data.getParameters().getString("xdataction");
+   		String action = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("xdataction",data));
    		if (action != null)
    		{
-   			String elementName = data.getParameters().getString("search_element");
+   			String elementName = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data));
    			if (elementName != null)
    			{
    				try {

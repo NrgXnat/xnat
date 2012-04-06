@@ -239,6 +239,7 @@ public class XFTTool {
 		    override = false;
 		}
     	SaveItemHelper.Save(item,user,false,q,override,allowItemRemoval,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+    	SaveItemHelper.authorizedSave(item,user,false,q,override,allowItemRemoval);
 		return XMLWriter.ItemToDOM(item,true,false);
 	}
 	
@@ -294,6 +295,7 @@ public class XFTTool {
 			    override = false;
 			}
         	SaveItemHelper.Save(item,user,overrideSecurity,q,override,allowItemRemoval,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+        	SaveItemHelper.authorizedSave(item,user,overrideSecurity,q,override,allowItemRemoval);
 			
 			//XFTItem temp = item.getCurrentDBVersion(true);
 			//XMLWriter.StoreXFTItemToXMLFile(temp,location.getAbsolutePath()+".stored.xml");

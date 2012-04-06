@@ -188,6 +188,7 @@ public class XDATTool {
 			    override = false;
 			}
         	SaveItemHelper.Save(item,user,overrideSecurity,q,override,allowItemRemoval,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+        	SaveItemHelper.unauthorizedSave(item,user,overrideSecurity,q,override,allowItemRemoval);
 			if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
 		    logger.info("Item Successfully Stored.");
 		}else

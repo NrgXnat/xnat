@@ -41,6 +41,7 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FieldMapping;
 import org.nrg.xft.utils.FileUtils;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
@@ -60,7 +61,7 @@ public class CSVUpload2 extends SecureAction {
         FileItem fi = params.getFileItem("csv_to_store");
 
 
-        String fm_id=data.getParameters().getString("fm_id");
+        String fm_id=TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data)));
         File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
@@ -71,7 +72,7 @@ public class CSVUpload2 extends SecureAction {
             File temp = File.createTempFile("xnat", "csv");
             fi.write(temp);
 
-            ArrayList<ArrayList> rows = FileUtils.CSVFileToArrayList(temp);
+            List<List<String>> rows = FileUtils.CSVFileToArrayList(temp);
 
             temp.delete();
             fi.delete();
@@ -93,13 +94,13 @@ public class CSVUpload2 extends SecureAction {
         ArrayList rows = new ArrayList();
         rows = (ArrayList)data.getSession().getAttribute("rows");
 
-        String fm_id=data.getParameters().getString("fm_id");
+        String fm_id=((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
         File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
         context.put("fm_id", fm_id);
 
-        String project = data.getParameters().getString("project");
+        String project = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
         
         EventMetaI ci=EventUtils.DEFAULT_EVENT(TurbineUtils.getUser(data),"Spreadsheet upload");
 
@@ -269,6 +270,7 @@ public class CSVUpload2 extends SecureAction {
 
                 try {
                     item.save(user, false, false,ci);
+                	SaveItemHelper.unauthorizedSave(item,user, false, false);
                     rowSummary.add("<font color='black'><b>Successful</b></font>");
                 } catch (Throwable e1) {
                     logger.error("",e1);
@@ -310,16 +312,16 @@ public class CSVUpload2 extends SecureAction {
         int i=0;
         while (data.getParameters().containsKey("row" + i))
         {
-            String row = data.getParameters().getString("row" + i);
+            String row = TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("row" + i,data)));
             ArrayList rowAL =StringUtils.CommaDelimitedStringToArrayList(row);
             rows.add(rowAL);
             i++;
         }
         data.getSession().setAttribute("rows", rows);
 
-        String project = data.getParameters().getString("project");
+        String project = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
 
-        String fm_id=data.getParameters().getString("fm_id");
+        String fm_id=((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
         File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);

@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
+/*
+ * XDAT Â– Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -45,15 +45,15 @@ public class CSVScreen extends org.apache.turbine.modules.screens.RawScreen
 		 // return "application/octet-stream";
 	  };
 
-      
+
       public DisplaySearch getSearch(RunData data){
 
-          if (data.getParameters().get("search_xml") !=null)
+          if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data)) !=null)
           {
-              String search_xml = data.getParameters().get("search_xml");
+              String search_xml = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data));
 
               XDATUser user = TurbineUtils.getUser(data);
-              
+
               if (user!=null){
                   StringReader sr = new StringReader(search_xml);
                   InputSource is = new InputSource(sr);
@@ -110,21 +110,21 @@ public class CSVScreen extends org.apache.turbine.modules.screens.RawScreen
 
 				java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
 				 fileName=TurbineUtils.getUser(data).getUsername() + "_" + (today.getMonth() + 1) + "_" + today.getDate() + "_" + (today.getYear() + 1900) + "_" + today.getHours() + "_" + today.getMinutes() + "_" + today.getSeconds() + ".csv";
-				 
+
 				try {
 				    File f = new File(org.nrg.xdat.turbine.utils.AccessLogger.getAccessLogDirectory() + "history");
 				    if (!f.exists())
 				    {
 				        f.mkdir();
 				    }
-					 FileUtils.OutputToFile(sb.toString(),org.nrg.xdat.turbine.utils.AccessLogger.getAccessLogDirectory() + "history" + File.separator + fileName);	
+					 FileUtils.OutputToFile(sb.toString(),org.nrg.xdat.turbine.utils.AccessLogger.getAccessLogDirectory() + "history" + File.separator + fileName);
 				} catch (RuntimeException e) {
 					e.printStackTrace();
 				}
-				
+
 				 HttpServletResponse response = data.getResponse();
 				 //data.getResponse().setContentLength(baos.size());
-				 data.getResponse().setHeader("Content-Disposition","inline;filename=" + fileName);
+				 TurbineUtils.setContentDisposition(response, fileName, false);
 				 ServletOutputStream out = response.getOutputStream();
 				 out.print(sb.toString());
 				 out.close();

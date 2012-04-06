@@ -21,13 +21,14 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 
 /**
  * @author Tim
  *
  */
-public class ElementSecurityWizard extends SecureAction {
+public class ElementSecurityWizard extends AdminAction {
 	static Logger logger = Logger.getLogger(ElementSecurityWizard.class);
 
     /* (non-Javadoc)
@@ -133,7 +134,7 @@ public class ElementSecurityWizard extends SecureAction {
 
 		    if (TurbineUtils.HasPassedParameter("edit",data))
 		    {
-		        if (data.getParameters().getString("edit").equalsIgnoreCase("1"))
+		        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit",data)).equalsIgnoreCase("1"))
 		        {
 		            int count = found.getChildItems("xdat:element_security.element_actions.element_action").size();
 		            String s = "xdat:element_security.element_actions.element_action__"+count;
@@ -166,7 +167,7 @@ public class ElementSecurityWizard extends SecureAction {
 
 		    if (TurbineUtils.HasPassedParameter("xml",data))
 		    {
-		        if (data.getParameters().getString("xml").equalsIgnoreCase("1"))
+		        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("xml",data)).equalsIgnoreCase("1"))
 		        {
 		            int count = found.getChildItems("xdat:element_security.element_actions.element_action").size();
 		            String s = "xdat:element_security.element_actions.element_action__"+count;
@@ -190,7 +191,7 @@ public class ElementSecurityWizard extends SecureAction {
 
 		    if (TurbineUtils.HasPassedParameter("activate",data))
 		    {
-		        if (data.getParameters().getString("activate").equalsIgnoreCase("1"))
+		        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("activate",data)).equalsIgnoreCase("1"))
 		        {
 		            int count = found.getChildItems("xdat:element_security.element_actions.element_action").size();
 
@@ -204,7 +205,7 @@ public class ElementSecurityWizard extends SecureAction {
 
 		    if (TurbineUtils.HasPassedParameter("email_report",data))
 		    {
-		        if (data.getParameters().getString("email_report").equalsIgnoreCase("1"))
+		        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("email_report",data)).equalsIgnoreCase("1"))
 		        {
 		            int count = found.getChildItems("xdat:element_security.element_actions.element_action").size();
 
@@ -239,6 +240,7 @@ public class ElementSecurityWizard extends SecureAction {
 		    boolean saved=false;
 		    try {
 				found.save(TurbineUtils.getUser(data),false,false,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
+		    	SaveItemHelper.authorizedSave(found,TurbineUtils.getUser(data),false,false);
 				saved=true;
 			} catch (Exception e) {
 				logger.error("Error Storing " + found.getXSIType(),e);

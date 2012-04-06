@@ -11,6 +11,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -46,6 +47,7 @@ public class DeleteAction extends SecureAction {
 				
 				try {
                     org.nrg.xft.db.DBAction.DeleteItem(o.getItem(),TurbineUtils.getUser(data),ci);
+					SaveItemHelper.unauthorizedDelete(o.getItem(), TurbineUtils.getUser(data));
                     
                     PersistentWorkflowUtils.complete(wrk,ci);
                     data.setMessage("<p>Item Deleted.</p>");

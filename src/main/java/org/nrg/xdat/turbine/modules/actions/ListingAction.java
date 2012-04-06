@@ -16,9 +16,9 @@ public abstract class ListingAction extends SecureAction {
     public void doPerform(RunData data, Context context) throws Exception {
         preserveVariables(data,context);
         String destination = getDestinationScreenName(data);
-        if (data.getParameters().get("querytype") !=null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("querytype",data)) !=null)
         {
-            if(data.getParameters().getString("querytype").equals("new"))
+            if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("querytype",data)).equals("new"))
             {
                 DisplaySearchAction dsa = new DisplaySearchAction();
                 DisplaySearch ds = dsa.setupSearch(data,context);
@@ -28,9 +28,9 @@ public abstract class ListingAction extends SecureAction {
             }
         }
         
-        if (data.getParameters().get("bundle") !=null)
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle",data)) !=null)
         {
-            String bundle = data.getParameters().get("bundle");
+            String bundle = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle",data));
             BundleAction ba = new BundleAction();
             DisplaySearch ds = ba.setupSearch(data, context);
             TurbineUtils.setSearch(data,ds);

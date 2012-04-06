@@ -58,8 +58,8 @@ created in buildPDF.
 	*/
 	protected final void doOutput(RunData data) throws Exception
 	{
-	    String username = data.getParameters().getString("username");
-	    String password = data.getParameters().getString("password");
+	    String username = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("username",data));
+	    String password = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("password",data));
 	    XDATUser user = TurbineUtils.getUser(data);
         if(user==null){
             if (username != null && password !=null)
@@ -71,8 +71,8 @@ created in buildPDF.
         if (user != null)
         {
     	    try {
-                String dataType = data.getParameters().getString("data_type");
-                String id = data.getParameters().getString("id");
+                String dataType = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("data_type",data));
+                String id = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("id",data));
                 
                 GenericWrapperElement element = GenericWrapperElement.GetElement(dataType);
                 String functionName= element.getTextFunctionName();

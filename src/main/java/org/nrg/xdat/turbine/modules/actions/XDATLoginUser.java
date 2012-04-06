@@ -10,6 +10,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.sql.SQLException;
+import java.util.UUID;
 
 import javax.servlet.http.HttpSession;
 
@@ -30,6 +31,7 @@ import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.utils.SaveItemHelper;
 /**
  * @author Tim
  *
@@ -69,8 +71,8 @@ public class XDATLoginUser extends VelocityAction{
 	{
 		//ScreenUtils.OutputDataParameters(data);
 		//ScreenUtils.OutputContextParameters(TurbineVelocity.getContext(data));
-		String username = data.getParameters().getString(CGI_USERNAME, "");
-		String password = data.getParameters().getString(CGI_PASSWORD, "");
+		String username = (String)TurbineUtils.GetPassedParameter(CGI_USERNAME, data);
+		String password = (String)TurbineUtils.GetPassedParameter(CGI_PASSWORD, data);
 		if (StringUtils.isEmpty(username))
 		{
 			return;
@@ -94,10 +96,15 @@ public class XDATLoginUser extends VelocityAction{
 			item.setProperty("xdat:user_login.login_date",today);
 			item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
 			item.save(null,true,false,(EventMetaI)null);
+			SaveItemHelper.authorizedSave(item,null,true,false);
 
+			
+			
 			HttpSession session = data.getSession();
 			session.setAttribute("user",user);
             session.setAttribute("loggedin",true);
+            
+            session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
             AccessLogger.LogActionAccess(data, "Valid Login:"+user.getLogin());
             try{
@@ -144,8 +151,8 @@ public class XDATLoginUser extends VelocityAction{
 	}
 
 	public void doRedirect(RunData data, Context context,XDATUser user) throws Exception{
-		String nextPage = data.getParameters().getString("nextPage","");
-		String nextAction = data.getParameters().getString("nextAction","");
+		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 		/*
 		 * If the setPage("template.vm") method has not
 		 * been used in the template to authenticate the

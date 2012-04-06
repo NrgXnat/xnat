@@ -17,6 +17,7 @@ import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.utils.SaveItemHelper;
 /**
  * @author Tim
  *
@@ -62,6 +63,7 @@ public class XFTElementIDManager {
 			XFTItem item = XFTItem.NewItem(e,null);
 			item.setDirectProperty("element_name",s);
 			item.save(null,true,false,(EventMetaI)null);
+			SaveItemHelper.authorizedSave(item,null,true,false);
 			
 			Integer i = null;
 			Object o = item.getProperty("xdat_meta_element_id");

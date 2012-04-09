@@ -10,6 +10,8 @@
 package org.nrg.mail.services.impl;
 
 import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -17,12 +19,14 @@ import java.util.Map.Entry;
 
 import javax.mail.MessagingException;
 
+import org.apache.commons.httpclient.Credentials;
 import org.apache.commons.httpclient.HttpClient;
 import org.apache.commons.httpclient.UsernamePasswordCredentials;
 import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.mail.api.MailMessage;
 import org.springframework.http.HttpStatus;
@@ -45,14 +49,15 @@ import org.springframework.web.client.RestTemplate;
 
  */
 public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
-    public RestBasedMailServiceImpl() throws NrgServiceException {
-        super();
-    }
 
-    public RestBasedMailServiceImpl(String address, String username, String password) {
+    public RestBasedMailServiceImpl(String address, String username, String password) throws NrgServiceException {
         super();
 
-        setRestMailServiceEndpoint(address);
+        try {
+            setRestMailServiceEndpoint(address);
+        } catch (URISyntaxException exception) {
+            throw new NrgServiceException(NrgServiceError.InvalidRestServiceParameters, "Invalid server address", exception);
+        }
         setUsername(username);
         setPassword(password);
     }
@@ -64,11 +69,11 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
      * @param address The address of the REST mail service, including protocol, server address,
      *                and method path.
      */
-    public void setRestMailServiceEndpoint(String address) {
+    public void setRestMailServiceEndpoint(String address) throws URISyntaxException {
         if (_log.isDebugEnabled()) {
             _log.debug("Setting the REST mail service endpoint to: " + address);
         }
-        _address = address;
+        _address = new URI(address);
     }
 
     /**
@@ -89,9 +94,6 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
     @Override
     public void sendMessage(MailMessage message) throws MessagingException {
-        RestTemplate template = new RestTemplate(new AuthenticatedClientHttpRequestFactory(_username, _password));
-        template.setMessageConverters(Arrays.asList(messageConverters));
-
         assert !StringUtils.isBlank(message.getFrom()) : "You must specify a from address for your email.";
         assert message.getTos() != null && message.getTos().size() > 0 : "You must specify at least one address to which to send an email.";
         assert message.getSubject() != null : "You must specify a subject for your email.";
@@ -139,6 +141,12 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
             }
         }
 
+        HttpClient client = new HttpClient();
+        client.getParams().setAuthenticationPreemptive(true);
+        Credentials credentials = new UsernamePasswordCredentials(_username, _password);
+        client.getState().setCredentials(new AuthScope(_address.getHost(), _address.getPort(), AuthScope.ANY_REALM), credentials);
+        RestTemplate template = new RestTemplate(new CommonsClientHttpRequestFactory(client));
+        template.setMessageConverters(Arrays.asList(messageConverters));
         ResponseEntity<String> response = template.postForEntity(_address, parameters, String.class);
 
         if (_log.isInfoEnabled()) {
@@ -157,30 +165,8 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
     private static final Log _log = LogFactory.getLog(RestBasedMailServiceImpl.class);
     private final HttpMessageConverter<?>[] messageConverters = new HttpMessageConverter<?>[] { new FormHttpMessageConverter(), new StringHttpMessageConverter(), new ResourceHttpMessageConverter() };
-    private String _address;
+    private URI _address;
     private String _username;
     private String _password;
-
-    // TODO: This is probably a class we'll want to move out and expand for future use.
-    private class AuthenticatedClientHttpRequestFactory extends CommonsClientHttpRequestFactory {
-        private final String _user;
-        private final String _password;
-
-        public AuthenticatedClientHttpRequestFactory(String user, String password) {
-            _user = user;
-            _password = password;
-        }
-
-        @Override
-        public HttpClient getHttpClient() {
-            HttpClient client = super.getHttpClient();
-
-            if (_user != null) {
-                client.getState().setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(_user, _password));
-            }
-
-            return client;
-        }
-    }
 }
 

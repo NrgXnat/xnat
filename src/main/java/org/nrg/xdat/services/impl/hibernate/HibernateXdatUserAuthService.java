@@ -54,6 +54,7 @@ import org.springframework.transaction.annotation.Transactional;
 public class HibernateXdatUserAuthService extends AbstractHibernateEntityService<XdatUserAuth> implements XdatUserAuthService {
 
     private static final String[] EXCLUSION_PROPERTIES = new String[] {"xdatUsername", "id", "enabled", "created", "timestamp", "disabled" };
+    private static final String[] EXCLUSION_PROPERTIES_USERNAME = new String[] {"xdatUsername", "id", "enabled", "created", "timestamp", "disabled","auth_method"};
 
     protected final Log logger = LogFactory.getLog(getClass());
     
@@ -75,6 +76,13 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	        return auths.get(0);
 	}
 
+	@Transactional
+	public List<XdatUserAuth> getUsersByName(String user) {
+		XdatUserAuth example = new XdatUserAuth();
+	        example.setAuthUser(user);
+	        return  _dao.findByExample(example, EXCLUSION_PROPERTIES_USERNAME);
+	}
+	
     @Override
     protected XdatUserAuthDAO getDao() {
         return _dao;

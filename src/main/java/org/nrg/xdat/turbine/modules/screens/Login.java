@@ -6,6 +6,12 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import java.util.List;
+import java.util.ArrayList;
+import org.nrg.xdat.XDAT;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
+
 
 public class Login extends VelocitySecureScreen {
 
@@ -15,6 +21,16 @@ public class Login extends VelocitySecureScreen {
         String systemName = TurbineUtils.GetSystemName();
         c.put("turbineUtils",TurbineUtils.GetInstance());
         c.put("systemName",systemName);
+        List<AuthenticationProvider> prov = XDAT.getContextService().getBean("customAuthenticationManager",ProviderManager.class).getProviders();
+        List<String> providerNames = new ArrayList<String>();
+        for(AuthenticationProvider p : prov){
+        	String name = p.toString();
+        	if(!providerNames.contains(name)){
+        		providerNames.add(name);
+        	}
+        }
+
+        c.put("login_methods", providerNames);
         doBuildTemplate(data, c);
 	}
 

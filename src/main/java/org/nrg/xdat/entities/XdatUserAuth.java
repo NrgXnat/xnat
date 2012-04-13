@@ -1,6 +1,7 @@
 package org.nrg.xdat.entities;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -26,6 +27,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 	private boolean accountNonExpired;
 	private boolean accountNonLocked;
 	private boolean credentialsNonExpired;
+	private Date passwordUpdated;
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -46,7 +48,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		accountNonLocked=true;
 		credentialsNonExpired=true;
 		this.xdatUsername = xdat;
-		
+		passwordUpdated = new Date();
 	}
 	
 	public XdatUserAuth(String user, String method, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth) {
@@ -56,7 +58,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		accountNonExpired=true;
 		accountNonLocked=true;
 		credentialsNonExpired=true;
-		
+		passwordUpdated = new Date();
 	}
 	
 	public XdatUserAuth(String user, String method, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername) {
@@ -67,6 +69,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		accountNonLocked=true;
 		credentialsNonExpired=true;
 		this.xdatUsername = xdatUsername;
+		passwordUpdated = new Date();
 	}
 	
 	public XdatUserAuth() {
@@ -96,6 +99,16 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 	public void setAuthMethod(String means) {
 		this.authMethod = means;
 	}
+
+    @Temporal(TemporalType.TIMESTAMP)
+    public Date getPasswordUpdated() {
+        return passwordUpdated;
+    }
+
+    @Temporal(TemporalType.TIMESTAMP)
+    public void setPasswordUpdated(Date timestamp) {
+    	passwordUpdated = timestamp;
+    }
 	
     @Override
     public boolean equals(Object object) {

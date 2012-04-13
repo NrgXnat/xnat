@@ -7,13 +7,10 @@ import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.Authorizer;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowI;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
 
 public class SaveItemHelper {
@@ -24,7 +21,7 @@ public class SaveItemHelper {
 
 	protected void save(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(!StringUtils.IsEmpty(i.getItem().getGenericSchemaElement().getAddin())){
-			i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
+			i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);
 		}else{
 			ItemWrapper temp;
 			try {
@@ -35,18 +32,18 @@ public class SaveItemHelper {
 				}
 			} catch (Exception e) {
 				logger.error("",e);
-				i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);	
+				i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);	
 				return;
 			}
 			temp.preSave();
-			temp.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval);
+			temp.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);
 			temp.postSave();
 		}
 	}
 
-	protected boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+	protected boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(!StringUtils.IsEmpty(i.getItem().getGenericSchemaElement().getAddin())){
-			return i.save(user, overrideSecurity, allowItemRemoval);
+			return i.save(user, overrideSecurity, allowItemRemoval,c);
 		}else{
 			ItemWrapper temp;
 			try {
@@ -57,21 +54,21 @@ public class SaveItemHelper {
 				}
 			} catch (Throwable e) {
 				logger.error("",e);
-				return i.save(user,overrideSecurity,allowItemRemoval);				
+				return i.save(user,overrideSecurity,allowItemRemoval,c);				
 			}
 			temp.preSave();
-	        final boolean _success= temp.save(user,overrideSecurity,allowItemRemoval);
+	        final boolean _success= temp.save(user,overrideSecurity,allowItemRemoval,c);
 	        if(_success)temp.postSave();
 	        return _success;
 		}
 	}
 	
-	protected void delete(ItemI i, UserI user) throws SQLException, Exception{
-		DBAction.DeleteItem(i.getItem(),user);
+	protected void delete(ItemI i, UserI user,EventMetaI c) throws SQLException, Exception{
+		DBAction.DeleteItem(i.getItem(),user,c);
 	}
 	
-	protected void removeItemReference(ItemI parent,String s, ItemI child, UserI user) throws SQLException, Exception{
-        DBAction.RemoveItemReference(parent.getItem(),null,child.getItem(),user);
+	protected void removeItemReference(ItemI parent,String s, ItemI child, UserI user,EventMetaI c) throws SQLException, Exception{
+        DBAction.RemoveItemReference(parent.getItem(),null,child.getItem(),user,c);
 	}
 	
 	/**
@@ -81,12 +78,12 @@ public class SaveItemHelper {
 	 * @throws SQLException
 	 * @throws Exception
 	 */
-	public static void authorizedRemoveChild(ItemI parent,String s, ItemI child, UserI user) throws SQLException, Exception{
+	public static void authorizedRemoveChild(ItemI parent,String s, ItemI child, UserI user,EventMetaI c) throws SQLException, Exception{
 		if(parent==null || child==null){
 			throw new NullPointerException();
 		}
 
-		getInstance().removeItemReference(parent, s, child, user);
+		getInstance().removeItemReference(parent, s, child, user,c);
 	}
 	
 	/**
@@ -96,7 +93,7 @@ public class SaveItemHelper {
 	 * @throws SQLException
 	 * @throws Exception
 	 */
-	public static void unauthorizedRemoveChild(ItemI parent,String s, ItemI child, UserI user) throws SQLException, Exception{
+	public static void unauthorizedRemoveChild(ItemI parent,String s, ItemI child, UserI user,EventMetaI c) throws SQLException, Exception{
 		if(parent==null || child==null){
 			throw new NullPointerException();
 		}
@@ -105,7 +102,7 @@ public class SaveItemHelper {
 
 		Authorizer.getInstance().authorizeSave(child.getItem(), user);
 
-		getInstance().removeItemReference(parent, s, child, user);
+		getInstance().removeItemReference(parent, s, child, user,c);
 	}
 	
 	/**
@@ -115,12 +112,12 @@ public class SaveItemHelper {
 	 * @throws SQLException
 	 * @throws Exception
 	 */
-	public static void authorizedDelete(XFTItem i, UserI user) throws SQLException, Exception{
+	public static void authorizedDelete(XFTItem i, UserI user,EventMetaI c) throws SQLException, Exception{
 		if(i==null){
 			throw new NullPointerException();
 		}
 
-		getInstance().delete(i, user);
+		getInstance().delete(i, user,c);
 	}
 	
 	/**
@@ -130,14 +127,14 @@ public class SaveItemHelper {
 	 * @throws SQLException
 	 * @throws Exception
 	 */
-	public static void unauthorizedDelete(XFTItem i, UserI user) throws SQLException, Exception{
+	public static void unauthorizedDelete(XFTItem i, UserI user,EventMetaI c) throws SQLException, Exception{
 		if(i==null){
 			throw new NullPointerException();
 		}
 
 		Authorizer.getInstance().authorizeSave(i.getItem(), user);
 
-		getInstance().delete(i, user);
+		getInstance().delete(i, user,c);
 	}
 	
 	/**
@@ -150,14 +147,14 @@ public class SaveItemHelper {
 	 * @param allowItemRemoval
 	 * @throws Exception
 	 */
-	public static void unauthorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval) throws Exception {
+	public static void unauthorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(i==null){
 			throw new NullPointerException();
 		}
 
 		Authorizer.getInstance().authorizeSave(i.getItem(), user);
 		
-		getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval);
+		getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval,c);
 	}
 
 	/**
@@ -170,7 +167,7 @@ public class SaveItemHelper {
 	 * @param allowItemRemoval
 	 * @throws Exception
 	 */
-	public static void authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval) throws Exception {
+	public static void authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(i==null){
 			throw new NullPointerException();
 		}
@@ -186,14 +183,14 @@ public class SaveItemHelper {
 	 * @param allowItemRemoval
 	 * @throws Exception
 	 */
-	public static boolean unauthorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+	public static boolean unauthorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(i==null){
 			throw new NullPointerException();
 		}
 
 		Authorizer.getInstance().authorizeSave(i.getItem(), user);
 
-		return getInstance().save(i, user, overrideSecurity, allowItemRemoval);
+		return getInstance().save(i, user, overrideSecurity, allowItemRemoval,c);
 	}
 
 	/**
@@ -226,11 +223,11 @@ public class SaveItemHelper {
 	
 	
 	 */
-	public static boolean authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval) throws Exception {
+	public static boolean authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(i==null){
 			throw new NullPointerException();
 		}
 		
-		return getInstance().save(i, user, overrideSecurity, allowItemRemoval);
+		return getInstance().save(i, user, overrideSecurity, allowItemRemoval,c);
 	}
 }

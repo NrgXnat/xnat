@@ -92,8 +92,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                XDATUser newUser = new XDATUser(found);
 	               // newUser.initializePermissions();
 	                
-	                newUser.save(TurbineUtils.getUser(data),true,false,true,false,EventUtils.ADMIN_EVENT(newUser)); 		
-	                SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false);
+	                SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false,EventUtils.ADMIN_EVENT(newUser));
 	                TurbineUtils.setUser(data,newUser);
 	                
 	                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
@@ -121,8 +120,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
 	                    item.setProperty("xdat:user_login.login_date",today);
 	                    item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
-	                    item.save((UserI)null,true,false,(EventMetaI)null);	                    
-	                    SaveItemHelper.authorizedSave(item,null,true,false);
+	                    SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
 	                    
 						Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 	                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));

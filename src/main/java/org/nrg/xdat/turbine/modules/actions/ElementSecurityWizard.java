@@ -239,8 +239,7 @@ public class ElementSecurityWizard extends AdminAction {
 		    
 		    boolean saved=false;
 		    try {
-				found.save(TurbineUtils.getUser(data),false,false,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
-		    	SaveItemHelper.authorizedSave(found,TurbineUtils.getUser(data),false,false);
+		    	SaveItemHelper.authorizedSave(found,TurbineUtils.getUser(data),false,false,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
 				saved=true;
 			} catch (Exception e) {
 				logger.error("Error Storing " + found.getXSIType(),e);

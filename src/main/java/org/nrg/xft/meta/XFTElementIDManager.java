@@ -62,8 +62,7 @@ public class XFTElementIDManager {
 			GenericWrapperElement e =(GenericWrapperElement)GenericWrapperFactory.GetInstance().wrapElement(XFTManager.GetElementTable());
 			XFTItem item = XFTItem.NewItem(e,null);
 			item.setDirectProperty("element_name",s);
-			item.save(null,true,false,(EventMetaI)null);
-			SaveItemHelper.authorizedSave(item,null,true,false);
+			SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
 			
 			Integer i = null;
 			Object o = item.getProperty("xdat_meta_element_id");

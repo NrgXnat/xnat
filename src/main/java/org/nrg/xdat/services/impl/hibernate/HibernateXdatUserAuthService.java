@@ -30,8 +30,10 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.daos.XftFieldExclusionDAO;
 import org.nrg.xft.entities.XftFieldExclusion;
 import org.nrg.xft.entities.XftFieldExclusionScope;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.services.XftFieldExclusionService;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -118,7 +120,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	                
 	                XDATUser newUser = new XDATUser(item);
 	                
-	                newUser.save(XDAT.getUserDetails(),true,false,true,false); 
+	                SaveItemHelper.authorizedSave(newUser,XDAT.getUserDetails(),true,false,true,false,EventUtils.ADMIN_EVENT(newUser)); 
 	                XDAT.setUserDetails(new XDATUserDetails(newUser));
 	                
 	                if(users.size() == 0){

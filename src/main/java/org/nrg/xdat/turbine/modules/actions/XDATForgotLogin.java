@@ -82,28 +82,27 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     data.setScreenTemplate("ForgotLogin.vm");
                     return;
                 }else{
-				XDATUser user = new XDATUser(temp, false);
+                	XDATUser user = new XDATUser(temp, false);
 
                     try{
-					additionalProcessing(data, context, user);
+                    	additionalProcessing(data, context, user);
                     }catch(Exception e){
                         logger.error(e);
                     }
                 	
                     String newPassword = XFT.CreateRandomAlphaNumeric(10);
-				if (user.getBooleanProperty("primary_password.encrypt", true)) {
-					// This tempPass was never used, but wanted to make sure I wasn't missing something...
-					// String tempPass = newUser.getStringProperty("primary_password");
-					user.setProperty("primary_password", XDATUser.EncryptString(newPassword));
+					if (user.getBooleanProperty("primary_password.encrypt", true)) {
+						// This tempPass was never used, but wanted to make sure I wasn't missing something...
+						// String tempPass = newUser.getStringProperty("primary_password");
+						user.setProperty("primary_password", XDATUser.EncryptString(newPassword));
                     }
-                    SaveItemHelper.authorizedSave(user,null, true, false);
+                    SaveItemHelper.authorizedSave(user,null, true, false,EventUtils.ADMIN_EVENT(user));
                     
-                    newUser.save(null, true, false,EventUtils.ADMIN_EVENT(newUser));
                     try {
-					String to = user.getEmail();
+                    	String to = user.getEmail();
                         String url=TurbineUtils.GetFullServerPath() + "/app/action/XDATActionRouter/xdataction/MyXNAT";
-					String message = String.format(PASSWORD_RESET, newPassword, url);
-                    XDAT.getMailService().sendHtmlMessage(admin, to, subject, message);
+                        String message = String.format(PASSWORD_RESET, newPassword, url);
+                        XDAT.getMailService().sendHtmlMessage(admin, to, subject, message);
                         data.setMessage("The password for " + username + " has been reset.  The new password has been emailed to your account. <br><br>Please use the new password to login to the site and change your password in the account settings.");
                         data.setScreenTemplate("Login.vm");
                     } catch (MessagingException e) {

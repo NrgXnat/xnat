@@ -47,8 +47,7 @@ public class ManageDataTypes extends AdminAction {
                 es.setBrowse("false");
             }
             
-            es.save(user, false, false,ci);
-            SaveItemHelper.authorizedSave(es,user, false, false);
+            SaveItemHelper.authorizedSave(es,user, false, false,ci);
         }
         
         ElementSecurity.refresh();

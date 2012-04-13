@@ -124,8 +124,7 @@ public class ModifyPassword extends SecureAction {
 				
 				XDATUser authenticatedUser=TurbineUtils.getUser(data);
 				try {
-					found.save(TurbineUtils.getUser(data),false,false,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
-					XDATUser.ModifyUser(authenticatedUser, found);
+					XDATUser.ModifyUser(authenticatedUser, found,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
 				} catch (InvalidPermissionException e) {
 					notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 					return;

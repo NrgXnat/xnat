@@ -74,8 +74,7 @@ public class ModifyUserGroups extends SecureAction {
                         XdatRoleType role = (XdatRoleType)iter.next();
                         if (role.getStringProperty("role_name").equals("Administrator")){
                             //DBAction.DeleteItem(role.getItem(), TurbineUtils.getUser(data));
-                            DBAction.RemoveItemReference(oldUser.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), TurbineUtils.getUser(data),ci);
-                        	SaveItemHelper.unauthorizedRemoveChild(oldUser.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), TurbineUtils.getUser(data));
+                        	SaveItemHelper.unauthorizedRemoveChild(oldUser.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), TurbineUtils.getUser(data),ci);
                         }
                     }
                 }
@@ -93,15 +92,13 @@ public class ModifyUserGroups extends SecureAction {
                 }
                 
                 if (!matched){
-                    DBAction.DeleteItem(uGroup.getItem(), TurbineUtils.getUser(data),ci);
-                	SaveItemHelper.unauthorizedDelete(uGroup.getItem(), TurbineUtils.getUser(data));
+                	SaveItemHelper.unauthorizedDelete(uGroup.getItem(), TurbineUtils.getUser(data),ci);
                 }
             }
 
-            found.save(TurbineUtils.getUser(data),false,false,ci);
             XDATUser authenticatedUser=TurbineUtils.getUser(data);
             try {
-    			XDATUser.ModifyUser(authenticatedUser, found);
+    			XDATUser.ModifyUser(authenticatedUser, found,ci);
                 found.getItem().removeEmptyItems();
     		} catch (InvalidPermissionException e) {
     			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");

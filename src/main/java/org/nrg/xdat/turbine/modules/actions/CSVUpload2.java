@@ -269,8 +269,7 @@ public class CSVUpload2 extends SecureAction {
                 }
 
                 try {
-                    item.save(user, false, false,ci);
-                	SaveItemHelper.unauthorizedSave(item,user, false, false);
+                	SaveItemHelper.unauthorizedSave(item,user, false, false,ci);
                     rowSummary.add("<font color='black'><b>Successful</b></font>");
                 } catch (Throwable e1) {
                     logger.error("",e1);

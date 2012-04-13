@@ -128,8 +128,7 @@ public class ModifyGroupPrivileges extends AdminAction {
 		EventMetaI ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
 		
 		try {
-			tempGroup.getItem().save(TurbineUtils.getUser(data), false, false,ci);
-			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), false, false);
+			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), false, false,ci);
 		} catch (Exception e) {
 			logger.error("Error Storing User", e);
 		}
@@ -140,8 +139,7 @@ public class ModifyGroupPrivileges extends AdminAction {
 				data).getLogin());
 		// logger.error("4\n"+tempUser.getItem().toString());
 		try {
-			tempGroup.getItem().save(TurbineUtils.getUser(data), true, false,ci);
-			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), true, false);
+			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), true, false,ci);
 			// temp = tempUser.getItem().getCurrentDBVersion();
 			// tempUser = new XDATUser(temp);
 		} catch (Exception e) {

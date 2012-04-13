@@ -78,10 +78,23 @@ public class StoreXML {
                 	    override = false;
                 	}
                     
-                	SaveItemHelper.unauthorizedSave(item,user,false,q,override,_allowDataDeletion.booleanValue());
+                	PersistentWorkflowI wrk=null;
+    				if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
+    					wrk=PersistentWorkflowUtils.buildOpenWorkflow(user,item.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+    				}
+    				
+    				final EventMetaI ci;
+    				if(wrk!=null){
+    					ci=wrk.buildEvent();
+    				}else{
+    					ci=EventUtils.ADMIN_EVENT(user);
+    				}
                     
-                    SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
-                	sb.append("Item Successfully Stored.");
+                    SaveItemHelper.unauthorizedSave(item, user, false,q,override,_allowDataDeletion.booleanValue(),ci);
+                    
+                    PersistentWorkflowUtils.complete(wrk,ci);
+                    
+                    sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
                     AccessLogger.LogServiceAccess(_username,"","StoreXML",item.getProperName() + " Successfully Stored");		
                 }else
@@ -170,9 +183,21 @@ public class StoreXML {
                 	    override = false;
                 	}
                     
-                	SaveItemHelper.unauthorizedSave(item,user,false,q,override,_allowDataDeletion.booleanValue());
-                    SaveItemHelper.Save(item,user,false,q,override,_allowDataDeletion.booleanValue(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+                	PersistentWorkflowI wrk=null;
+    				if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
+    					wrk=PersistentWorkflowUtils.buildOpenWorkflow(user,item.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+    				}
+    				
+    				final EventMetaI ci;
+    				if(wrk!=null){
+    					ci=wrk.buildEvent();
+    				}else{
+    					ci=EventUtils.ADMIN_EVENT(user);
+    				}
                     
+                    SaveItemHelper.unauthorizedSave(item, user, false,q,override,_allowDataDeletion.booleanValue(),ci);
+                    
+                    PersistentWorkflowUtils.complete(wrk,ci);
                 	sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
                     AccessLogger.LogServiceAccess(session_id,"","StoreXML",item.getProperName() + " Successfully Stored");		

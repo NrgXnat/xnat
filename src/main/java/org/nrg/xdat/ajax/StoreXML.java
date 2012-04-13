@@ -14,6 +14,7 @@ import javax.servlet.http.HttpServletResponse;
 import org.nrg.xdat.XDAT;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -49,8 +50,21 @@ public class StoreXML {
 
                 XFTItem item = reader.parse(is);
 
-                SaveItemHelper.Save(item,user,false,false,false,allowDataDeletion,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.SOAP, "Store XML", req.getParameter(EventUtils.EVENT_REASON), req.getParameter(EventUtils.EVENT_COMMENT)));
-                SaveItemHelper.unauthorizedSave(item, user, false, allowDataDeletion);
+                PersistentWorkflowI wrk=null;
+				if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
+					wrk=PersistentWorkflowUtils.buildOpenWorkflow(user,item.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.SOAP, "Store XML", req.getParameter(EventUtils.EVENT_REASON), req.getParameter(EventUtils.EVENT_COMMENT)));
+				}
+				
+				final EventMetaI ci;
+				if(wrk!=null){
+					ci=wrk.buildEvent();
+				}else{
+					ci=EventUtils.ADMIN_EVENT(user);
+				}
+                
+                SaveItemHelper.unauthorizedSave(item, user, false, allowDataDeletion,ci);
+                
+                PersistentWorkflowUtils.complete(wrk,ci);
                 
                 SAXWriter writer = new SAXWriter(response.getOutputStream(),false);
                 writer.setWriteHiddenFields(true);

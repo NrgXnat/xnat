@@ -6024,6 +6024,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    setStatus(user,ViewManager.ACTIVE);
 	}
 
+	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#quarantine(org.nrg.xft.security.UserI)
 	 */
 	public void quarantine(UserI user) throws Exception
@@ -6487,7 +6488,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	public void removeChildFromDB(String xmlPath,XFTItem child,UserI user,EventMetaI c) throws SQLException,Exception
 	{
 	    DBAction.RemoveItemReference(this,xmlPath,child,user,c);
-		SaveItemHelper.unauthorizedRemoveChild(this,xmlPath,child,user);
+		SaveItemHelper.unauthorizedRemoveChild(this,xmlPath,child,user,c);
 	}
 
 	/* (non-Javadoc)

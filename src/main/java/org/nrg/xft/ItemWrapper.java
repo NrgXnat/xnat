@@ -365,8 +365,7 @@ public abstract class ItemWrapper implements ItemI {
      * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)
      */
     public boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
-    	return this.getItem().save(user,overrideSecurity,allowItemRemoval);
-        final boolean _success= this.getItem().save(user,overrideSecurity,allowItemRemoval,c);
+        return this.getItem().save(user,overrideSecurity,allowItemRemoval,c);
     }
     /* (non-Javadoc)
      * @see org.nrg.xft.ItemI#save(org.nrg.xft.security.UserI)

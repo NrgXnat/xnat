@@ -159,7 +159,7 @@ public class ModifyItem  extends SecureAction {
             	    {
             	        ItemI toRemove = items.getFirst();
             	        DBAction.RemoveItemReference(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data),c);
-            	        SaveItemHelper.unauthorizedRemoveChild(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data));
+            	        SaveItemHelper.unauthorizedRemoveChild(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data),c);
             	        first.removeItem(toRemove);
             	        removedReference = true;
             	    }else{
@@ -261,18 +261,6 @@ public class ModifyItem  extends SecureAction {
         }
     }
 
-    public void handleException(RunData data,XFTItem first,Throwable error){
-        data.getSession().setAttribute(this.getReturnEditItemIdentifier(),first);
-        data.addMessage(error.getMessage());
-        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
-        {
-            data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
-        }else{
-            data.setScreenTemplate("Index.vm");
-        }
-        return;
-    }
-
     /**
      * @return the returnEditItemIdentifier
      */
@@ -288,8 +276,7 @@ public class ModifyItem  extends SecureAction {
     }
 
     public void save(XFTItem first,RunData data, Context context, EventMetaI c) throws InvalidItemException,Exception{
-        first.save(TurbineUtils.getUser(data),false,allowDataDeletion(),c);
-    	SaveItemHelper.unauthorizedSave(first,TurbineUtils.getUser(data),false,allowDataDeletion());
+    	SaveItemHelper.unauthorizedSave(first,TurbineUtils.getUser(data),false,allowDataDeletion(),c);
     }
 
     @SuppressWarnings("serial")

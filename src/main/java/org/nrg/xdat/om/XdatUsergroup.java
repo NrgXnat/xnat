@@ -127,8 +127,7 @@ public class XdatUsergroup extends BaseXdatUsergroup {
 
             if (ea!=null)
             {
-                DBAction.DeleteItem(ea.getItem(), user,c);
-            	SaveItemHelper.unauthorizedDelete(ea.getItem(), user);
+            	SaveItemHelper.unauthorizedDelete(ea.getItem(), user,c);
             }
         } catch (XFTInitException e) {
             logger.error("",e);
@@ -198,12 +197,10 @@ public class XdatUsergroup extends BaseXdatUsergroup {
                 }else if(!includesModification){
                 	if(!(create || read || edit || delete || activate)){
                 		if(fms.getAllow().size()==1){
-                			DBAction.DeleteItem(fms.getItem(), user,c);
-                			SaveItemHelper.authorizedDelete(fms.getItem(), user);
+                			SaveItemHelper.authorizedDelete(fms.getItem(), user,c);
                 			return true;
                 		}else{
-                			DBAction.DeleteItem(fm.getItem(), user,c);
-                			SaveItemHelper.authorizedDelete(fm.getItem(), user);
+                			SaveItemHelper.authorizedDelete(fm.getItem(), user,c);
                 			return true;
                 		}
                 	}
@@ -226,31 +223,25 @@ public class XdatUsergroup extends BaseXdatUsergroup {
                     fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
 
                     if (activateChanges){
-                        fm.save(user, true, false, true, false,c);
-                    	SaveItemHelper.authorizedSave(fm,user, true, false, true, false);
+                    	SaveItemHelper.authorizedSave(fm,user, true, false, true, false,c);
                         fm.activate(user);
                     }else{
-                        fm.save(user, true, false, false, false,c);
-                    	SaveItemHelper.authorizedSave(fm,user, true, false, false, false);
+                    	SaveItemHelper.authorizedSave(fm,user, true, false, false, false,c);
                     }
                 }else if(ea.getXdatElementAccessId()!=null){
                     fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
                     if (activateChanges){
-                        fms.save(user, true, false, true, false,c);
-                    	SaveItemHelper.authorizedSave(fms,user, true, false, true, false);
+                    	SaveItemHelper.authorizedSave(fms,user, true, false, true, false,c);
                         fms.activate(user);
                     }else{
-                    	fms.save(user, true, false, false, false,c);
-                    	SaveItemHelper.authorizedSave(fms,user, true, false, false, false);
+                    	SaveItemHelper.authorizedSave(fms,user, true, false, false, false,c);
                     }
                 }else{
                     if (activateChanges){
-                        ea.save(user, true, false, true, false,c);
-                    	SaveItemHelper.authorizedSave(ea,user, true, false, true, false);
+                    	SaveItemHelper.authorizedSave(ea,user, true, false, true, false,c);
                         ea.activate(user);
                     }else{
-                        ea.save(user, true, false, false, false,c);
-                    	SaveItemHelper.authorizedSave(ea,user, true, false, false, false);
+                    	SaveItemHelper.authorizedSave(ea,user, true, false, false, false,c);
                     }
                     this.setElementAccess(ea);
                 }

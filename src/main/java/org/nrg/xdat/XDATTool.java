@@ -27,7 +27,10 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.XFTTableI;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -187,8 +190,22 @@ public class XDATTool {
 			    q = item.getGenericSchemaElement().isQuarantine();
 			    override = false;
 			}
-        	SaveItemHelper.Save(item,user,overrideSecurity,q,override,allowItemRemoval,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
-        	SaveItemHelper.unauthorizedSave(item,user,overrideSecurity,q,override,allowItemRemoval);
+        	
+			PersistentWorkflowI wrk=null;
+			if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
+				wrk=PersistentWorkflowUtils.buildOpenWorkflow(user,item.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+			}
+			
+			final EventMetaI ci;
+			if(wrk!=null){
+				ci=wrk.buildEvent();
+			}else{
+				ci=EventUtils.ADMIN_EVENT(user);
+			}
+            
+            SaveItemHelper.unauthorizedSave(item, user, false,q,override,allowItemRemoval,ci);
+            
+            PersistentWorkflowUtils.complete(wrk,ci);
 			if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
 		    logger.info("Item Successfully Stored.");
 		}else

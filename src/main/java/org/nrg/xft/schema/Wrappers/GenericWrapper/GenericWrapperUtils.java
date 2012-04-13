@@ -1248,7 +1248,7 @@ public class GenericWrapperUtils {
             try {
                 GenericWrapperField field = input.getExtensionField();
                 sb.append("\n      IF (row_ct=0) THEN ");
-	/**
+	
                 GenericWrapperElement foreign = (GenericWrapperElement)field.getReferenceElement();
 //                Iterator refsCols = supRef.getKeyRelations().iterator();
 //                while (refsCols.hasNext()) {
@@ -2369,8 +2369,7 @@ public class GenericWrapperUtils {
         return all;
     }
 
-    public static List<String> GetFunctionStatements(GenericWrapperElement input) throws ElementNotFoundException, XFTInitException {
-            throws ElementNotFoundException, XFTInitException,Exception {
+    public static List<String> GetFunctionStatements(GenericWrapperElement input) throws ElementNotFoundException, XFTInitException,Exception {
         List<String> sb= new ArrayList<String>();
         
         /*******************************

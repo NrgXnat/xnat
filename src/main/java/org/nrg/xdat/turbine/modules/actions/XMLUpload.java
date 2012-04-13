@@ -17,7 +17,10 @@ import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidPermissionException;
@@ -79,15 +82,22 @@ public class XMLUpload extends SecureAction {
                 	boolean override;
                 	q = item.getGenericSchemaElement().isQuarantine();
                 	override = false;
+                	
+                	PersistentWorkflowI wrk=null;
+    				if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
+    					wrk=PersistentWorkflowUtils.buildOpenWorkflow(TurbineUtils.getUser(data),item.getItem(), newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XML));
+    				}
+    				
+    				final EventMetaI ci;
+    				if(wrk!=null){
+    					ci=wrk.buildEvent();
+    				}else{
+    					ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
+    				}
 
-                	SaveItemHelper.unauthorizedSave(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"));
-                	if (allowDeletion.equalsIgnoreCase("true"))
-                    SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"),newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XAR));
-                	{
-                    	SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,true);
-                	}else{
-                    	SaveItemHelper.Save(item,TurbineUtils.getUser(data),false,q,override,false);
-                	}
+                	SaveItemHelper.unauthorizedSave(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"),ci);
+                	
+                	PersistentWorkflowUtils.complete(wrk,ci);
 
                 	if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");

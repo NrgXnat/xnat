@@ -46,8 +46,7 @@ public class DeleteAction extends SecureAction {
 				}
 				
 				try {
-                    org.nrg.xft.db.DBAction.DeleteItem(o.getItem(),TurbineUtils.getUser(data),ci);
-					SaveItemHelper.unauthorizedDelete(o.getItem(), TurbineUtils.getUser(data));
+					SaveItemHelper.unauthorizedDelete(o.getItem(), TurbineUtils.getUser(data),ci);
                     
                     PersistentWorkflowUtils.complete(wrk,ci);
                     data.setMessage("<p>Item Deleted.</p>");

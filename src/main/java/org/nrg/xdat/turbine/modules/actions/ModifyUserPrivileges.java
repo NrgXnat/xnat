@@ -158,8 +158,7 @@ public class ModifyUserPrivileges extends SecureAction {
 	    EventMetaI ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
 	    
 	    try {
-			tempUser.getItem().save(TurbineUtils.getUser(data),false,false,ci);
-	    	XDATUser.ModifyUser(tempUser, TurbineUtils.getUser(data));
+	    	XDATUser.ModifyUser(tempUser, TurbineUtils.getUser(data),ci);
 		} catch (Exception e) {
 			logger.error("Error Storing User",e);
 		}
@@ -199,8 +198,7 @@ public class ModifyUserPrivileges extends SecureAction {
 		XDATUser authenticatedUser=TurbineUtils.getUser(data);
 		//logger.error("4\n"+tempUser.getItem().toString());
 		try {
-			tempUser.getItem().save(TurbineUtils.getUser(data),false,false,ci);
-			XDATUser.ModifyUser(authenticatedUser, tempUser.getItem());
+			XDATUser.ModifyUser(authenticatedUser, tempUser.getItem(),ci);
 		} catch (InvalidPermissionException e) {
 			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 			return authenticatedUser;

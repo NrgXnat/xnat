@@ -147,7 +147,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
         return subject;
     }
 
-    @Autowired(required = false)
+    @Autowired
     private MailService _mailService;
 
     private String _fromAddress;

@@ -1957,7 +1957,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
     }
 
-    public Date getLastLogin() throws SQLException, Exception {
+    public Date getPreviousLogin() throws SQLException, Exception {
         String query = "SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id=" + this.getXdatUserId() + " AND login_date < (SELECT MAX(login_date) FROM xdat_user_login WHERE user_xdat_user_id=" + this.getXdatUserId() + ") ORDER BY login_date DESC LIMIT 1";
         return (Date) PoolDBUtils.ReturnStatisticQuery(query, "login_date", this.getDBName(), this.getUsername());
     }
@@ -2492,6 +2492,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 throw new InvalidPermissionException("Unauthorized user modification attempt");
             }
         }
+    }
+
+    public Date getLastLogin() throws SQLException, Exception{
+    	String query = "SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id=" + this.getXdatUserId() + " ORDER BY login_date DESC LIMIT 1";
+        return (Date) PoolDBUtils.ReturnStatisticQuery(query, "login_date", this.getDBName(), this.getUsername());
     }
 }
 

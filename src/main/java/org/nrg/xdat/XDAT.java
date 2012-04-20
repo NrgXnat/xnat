@@ -247,7 +247,7 @@ public class XDAT implements Initializable,Configurable{
 	 */
 	public static XftFieldExclusionService getExclusionService() {
 	    if (_exclusionService == null) {
-	        _exclusionService = getContextService().getBean(XftFieldExclusionService.class);
+	        _exclusionService = getContextService().getBean(org.nrg.xft.services.XftFieldExclusionService.class);
 	    }
 	    return _exclusionService;
 	}

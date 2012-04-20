@@ -3,9 +3,11 @@
   <component name="FacetManager">
     <facet type="Spring" name="Spring">
       <configuration>
-        <fileset id="fileset1" name="My Fileset" removed="false">
-          <file>file://$MODULE_DIR$/src/test/resources/TestDataSource-context.xml</file>
+        <fileset id="fileset1" name="Xml Application Context" removed="false">
           <file>file://$MODULE_DIR$/src/test/resources/org/nrg/xft/services/TestXftFieldExclusionService-context.xml</file>
+          <file>file://$MODULE_DIR$/src/test/resources/org/nrg/xdat/services/TestXdatUserAuthService-context.xml</file>
+          <file>file://$MODULE_DIR$/src/test/resources/TestDataSource-context.xml</file>
+          <file>file://$MODULE_DIR$/src/main/resources/META-INF/configuration/xdat-core-context.xml</file>
         </fileset>
       </configuration>
     </facet>
@@ -30,7 +32,6 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="library" name="Maven: org.restlet:org.restlet:1.1.10" level="project" />
     <orderEntry type="module" module-name="notify" />
     <orderEntry type="module" module-name="mail" />
     <orderEntry type="module" module-name="framework" />
@@ -116,6 +117,7 @@
     <orderEntry type="library" name="Maven: org.apache.commons:com.springsource.org.apache.commons.io:1.4.0" level="project" />
     <orderEntry type="library" name="Maven: commons-dbcp:commons-dbcp:1.4" level="project" />
     <orderEntry type="library" name="Maven: commons-pool:commons-pool:1.5.4" level="project" />
+    <orderEntry type="library" name="Maven: nl.bitwalker:UserAgentUtils:1.2.4" level="project" />
     <orderEntry type="library" name="Maven: ant:ant:1.6.1" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.junit:com.springsource.org.junit:4.8.2" level="project" />
     <orderEntry type="library" scope="TEST" name="Maven: org.mockito:mockito-all:1.8.5" level="project" />

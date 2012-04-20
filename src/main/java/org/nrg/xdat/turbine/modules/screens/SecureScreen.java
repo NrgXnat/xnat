@@ -26,6 +26,9 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 
 import javax.servlet.http.HttpSession;
 import java.io.File;
@@ -84,6 +87,20 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 
                 c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
                 
+                                
+                SessionRegistry sessionRegistry = null;
+                sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
+                
+                if(sessionRegistry != null){
+                	int sessionCount = 0;
+                	List<SessionInformation> l = sessionRegistry.getAllSessions(TurbineUtils.getUser(data), false);
+                	if(l != null){
+                		sessionCount = l.size();
+                	}
+                	if(sessionCount > 1){
+                		data.setMessage("WARNING: Your account currently has " + sessionCount +" login sessions open. If you believe this is incorrect, please contact support.");
+                	}
+                }
                 preserveVariables(data,c);
                 doBuildTemplate(data, c);
             }else{

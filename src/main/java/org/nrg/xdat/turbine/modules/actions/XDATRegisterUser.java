@@ -27,6 +27,8 @@ import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xdat.security.PasswordValidator;
+import org.nrg.xdat.security.RegExpValidator;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -40,6 +42,8 @@ import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.authentication.AuthenticationProvider;
+import org.springframework.security.authentication.ProviderManager;
 
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
@@ -70,92 +74,98 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
                 if (temp==null)
                 {
-                	// NEW USER
-	                    String tempPass = found.getStringProperty("primary_password");
-                    found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
-
-	                boolean autoApproval=autoApproval(data,context);	       
+	                String tempPass = found.getStringProperty("primary_password");
+	                PasswordValidator validator = XDAT.getContextService().getBean(PasswordValidator.class);
+	                if(validator.isValid(tempPass)){
 	                
-	                if (autoApproval)
-	                {
-	                    found.setProperty("enabled","true");
-	                }else{
-	                    found.setProperty("enabled","false");
-	                }
-	                
-	                found.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name","SiteUser");
-                    found.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name","DataManager");
-	                
-	                XDATUser newUser = new XDATUser(found);
-	               // newUser.initializePermissions();
-	                
-	                SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false);
-	                TurbineUtils.setUser(data,newUser);
-	                
-	                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
-                    XDAT.getXdatUserAuthService().create(newUserAuth);
-
-	                if (autoApproval)
-	                {
+		             // NEW USER
+	                    found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));
 	
-	                    HttpSession session = data.getSession();
-	                    session.setAttribute("user",newUser);
-	                    session.setAttribute("loggedin",true);
-	                    data.setMessage("User registration complete.");
-	                    
-	                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-	                    
-	                    String sub = "New User Created: " + newUser.getUsername();
-	                    String msg = this.getAutoApprovalTextMsg(data,newUser);
-	                    
-	                    
-	                    if (AdminUtils.GetNewUserRegistrationsEmail())
-	                        AdminUtils.sendAdminEmail(sub, msg);
+		                boolean autoApproval=autoApproval(data,context);	       
+		                
+		                if (autoApproval)
+		                {
+		                    found.setProperty("enabled","true");
+		                }else{
+		                    found.setProperty("enabled","false");
+		                }
+		                
+		                found.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name","SiteUser");
+	                    found.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name","DataManager");
+		                
+		                XDATUser newUser = new XDATUser(found);
+		               // newUser.initializePermissions();
+		                
+		                SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false);
+		                TurbineUtils.setUser(data,newUser);
+		                
+		                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
+	                    XDAT.getXdatUserAuthService().create(newUserAuth);
 	
-	                    XFTItem item = XFTItem.NewItem("xdat:user_login",newUser);
-	                    java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-	                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
-	                    item.setProperty("xdat:user_login.login_date",today);
-	                    item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
-	                    item.setProperty("login_date",today);
-	                    item.setProperty("ip_address",data.getRemoteAddr());	                    
-	                    SaveItemHelper.authorizedSave(item,null,true,false);
-	                    
-						Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
-	                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
-	    		    	Authentication authentication = new UsernamePasswordAuthenticationToken((String)found.getProperty("login"), tempPass, grantedAuthorities);
-	    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
-	    		    	securityContext.setAuthentication(authentication);
-						
-	                    try{
-	                    	directRequest(data,context,newUser);
-	                    }catch(Exception e){
-	                        logger.error(e);
-	                    }
+		                if (autoApproval)
+		                {
+		
+		                    HttpSession session = data.getSession();
+		                    session.setAttribute("user",newUser);
+		                    session.setAttribute("loggedin",true);
+		                    data.setMessage("User registration complete.");
+		                    
+		                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
+		                    
+		                    String sub = "New User Created: " + newUser.getUsername();
+		                    String msg = this.getAutoApprovalTextMsg(data,newUser);
+		                    
+		                    
+		                    if (AdminUtils.GetNewUserRegistrationsEmail())
+		                        AdminUtils.sendAdminEmail(sub, msg);
+		
+		                    XFTItem item = XFTItem.NewItem("xdat:user_login",newUser);
+		                    java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
+		                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
+		                    item.setProperty("xdat:user_login.login_date",today);
+		                    item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
+		                    item.setProperty("login_date",today);
+		                    item.setProperty("ip_address",data.getRemoteAddr());	                    
+		                    SaveItemHelper.authorizedSave(item,null,true,false);
+		                    
+							Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
+		                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
+		    		    	Authentication authentication = new UsernamePasswordAuthenticationToken((String)found.getProperty("login"), tempPass, grantedAuthorities);
+		    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
+		    		    	securityContext.setAuthentication(authentication);
+							
+		                    try{
+		                    	directRequest(data,context,newUser);
+		                    }catch(Exception e){
+		                        logger.error(e);
+		                    }
+		                }else{
+		                    
+		                    try{
+		                    	directRequest(data,context,newUser);
+		                    }catch(Exception e){
+		                        logger.error(e);
+		                    }
+		                	
+		                    String comments = "";
+		                    if (TurbineUtils.HasPassedParameter("comments", data))
+		                        comments = (String)TurbineUtils.GetPassedParameter("comments", data);
+		                              
+		                    String phone = "";
+		                    if (TurbineUtils.HasPassedParameter("phone", data))
+		                        phone = (String)TurbineUtils.GetPassedParameter("phone", data);
+		                              
+		                    String lab = "";
+		                    if (TurbineUtils.HasPassedParameter("lab", data))
+		                        lab = (String)TurbineUtils.GetPassedParameter("lab", data);
+		                    
+		                    AdminUtils.sendNewUserRequestEmailMessage(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
+		                    
+		                    data.setRedirectURI(null);
+		                    data.setScreenTemplate("PostRegister.vm");
+		                }
 	                }else{
-	                    
-	                    try{
-	                    	directRequest(data,context,newUser);
-	                    }catch(Exception e){
-	                        logger.error(e);
-	                    }
-	                	
-	                    String comments = "";
-	                    if (TurbineUtils.HasPassedParameter("comments", data))
-	                        comments = (String)TurbineUtils.GetPassedParameter("comments", data);
-	                              
-	                    String phone = "";
-	                    if (TurbineUtils.HasPassedParameter("phone", data))
-	                        phone = (String)TurbineUtils.GetPassedParameter("phone", data);
-	                              
-	                    String lab = "";
-	                    if (TurbineUtils.HasPassedParameter("lab", data))
-	                        lab = (String)TurbineUtils.GetPassedParameter("lab", data);
-	                    
-	                    AdminUtils.sendNewUserRequestEmailMessage(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
-	                    
-	                    data.setRedirectURI(null);
-	                    data.setScreenTemplate("PostRegister.vm");
+		            	handleInvalidPassword(data, context, found, validator.getMessage());
 	                }
 	            }else{
 	            	handleDuplicateEmail(data, context, found);
@@ -168,6 +178,30 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
         
         
+    }
+    
+    public void handleInvalidPassword(RunData data,Context context,ItemI found, String message){
+    	try {
+			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
+			String par = (String)TurbineUtils.GetPassedParameter("par",data);
+			
+			if(!StringUtils.isEmpty(par)){
+				context.put("par", par);
+			}
+			if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+				context.put("nextAction", nextAction);
+			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
+				context.put("nextPage", nextPage);
+			}
+			// OLD USER
+			data.setMessage(message);
+		} catch (Exception e) {
+            logger.error("Error adding user without complex enough password",e);
+			data.setMessage(message);
+		}finally{
+			data.setScreenTemplate("Register.vm");
+		}
     }
     
     public void handleDuplicateEmail(RunData data,Context context,ItemI found){

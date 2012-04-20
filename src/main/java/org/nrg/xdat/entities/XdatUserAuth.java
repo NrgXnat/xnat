@@ -1,6 +1,7 @@
 package org.nrg.xdat.entities;
 
 import java.util.Collection;
+import java.util.Date;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -23,19 +24,23 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 	private String xdatUsername;
 	private String authUser;
 	private String authMethod;
+	private String authMethodId;
 	private boolean accountNonExpired;
 	private boolean accountNonLocked;
 	private boolean credentialsNonExpired;
+	private Date passwordUpdated;
 	
 	private static final long serialVersionUID = 1L;
+	
+	public XdatUserAuth() {
+	}
 	
 	public XdatUserAuth(String user, String method) {
 		this(user,method,user,true);
 	}
-	
-	public XdatUserAuth(String user, String method, boolean enabled) {
-		this(user,method,user,enabled);
-		
+
+	public XdatUserAuth(String user, String method, String id) {
+		this(user,method,id,user,true);
 	}
 	
 	public XdatUserAuth(String user, String method, String xdat, boolean enabled) {
@@ -46,17 +51,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		accountNonLocked=true;
 		credentialsNonExpired=true;
 		this.xdatUsername = xdat;
-		
-	}
-	
-	public XdatUserAuth(String user, String method, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth) {
-		this.authUser = user;
-		this.authMethod = method;
-		setEnabled(enabled);
-		accountNonExpired=true;
-		accountNonLocked=true;
-		credentialsNonExpired=true;
-		
+		passwordUpdated = new Date();
 	}
 	
 	public XdatUserAuth(String user, String method, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername) {
@@ -67,10 +62,31 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		accountNonLocked=true;
 		credentialsNonExpired=true;
 		this.xdatUsername = xdatUsername;
+		passwordUpdated = new Date();
 	}
 	
-	public XdatUserAuth() {
-		// TODO Auto-generated constructor stub
+	public XdatUserAuth(String user, String method, String methodId, String xdat, boolean enabled) {
+		this.authUser = user;
+		this.authMethod = method;
+		this.authMethodId = methodId;
+		setEnabled(enabled);
+		accountNonExpired=true;
+		accountNonLocked=true;
+		credentialsNonExpired=true;
+		this.xdatUsername = xdat;
+		passwordUpdated = new Date();
+	}
+	
+	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername) {
+		this.authUser = user;
+		this.authMethod = method;
+		this.authMethodId = methodId;
+		setEnabled(enabled);
+		accountNonExpired=true;
+		accountNonLocked=true;
+		credentialsNonExpired=true;
+		this.xdatUsername = xdatUsername;
+		passwordUpdated = new Date();
 	}
 
 	public String getXdatUsername() {
@@ -96,6 +112,24 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 	public void setAuthMethod(String means) {
 		this.authMethod = means;
 	}
+	
+	public String getAuthMethodId() {
+		return authMethodId;
+	}
+
+	public void setAuthMethodId(String means) {
+		this.authMethodId = means;
+	}
+
+    @Temporal(TemporalType.TIMESTAMP)
+    public Date getPasswordUpdated() {
+        return passwordUpdated;
+    }
+
+    @Temporal(TemporalType.TIMESTAMP)
+    public void setPasswordUpdated(Date timestamp) {
+    	passwordUpdated = timestamp;
+    }
 	
     @Override
     public boolean equals(Object object) {

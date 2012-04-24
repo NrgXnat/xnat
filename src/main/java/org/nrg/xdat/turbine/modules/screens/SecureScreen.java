@@ -97,7 +97,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 	if(l != null){
                 		sessionCount = l.size();
                 	}
-                	if(sessionCount > 1){
+                	if(sessionCount > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest")){
                 		data.setMessage("WARNING: Your account currently has " + sessionCount +" login sessions open. If you believe this is incorrect, please contact support.");
                 	}
                 }

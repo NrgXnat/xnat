@@ -12,6 +12,7 @@ package org.nrg.xdat.security;
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
@@ -33,12 +34,14 @@ import org.nrg.xft.layeredSequence.LayeredSequenceCollection;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 
 import java.io.File;
 import java.io.Serializable;
@@ -250,6 +253,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     ;
 
+    public static class PasswordComplexityException extends Exception {
+
+        public PasswordComplexityException(String message) {
+            super(message);
+        }
+    }
+
+    ;
     /**
      * @return
      */
@@ -2448,10 +2459,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             if (authenticatedUser.checkRole("Administrator")) {
                 String tempPass = found
                         .getStringProperty("primary_password");
-                if (!StringUtils.IsEmpty(tempPass))
-                    found.setProperty("primary_password", XDATUser
+                if (!StringUtils.IsEmpty(tempPass)){
+                	PasswordValidator validator = XDAT.getContextService().getBean(PasswordValidator.class);
+                	if(validator.isValid(tempPass)){
+                		found.setProperty("primary_password", XDATUser
                             .EncryptString(tempPass, "SHA-256"));
-
+                	} else {
+                		throw new PasswordComplexityException(validator.getMessage());
+                	}
+                }
                 found.setProperty(
                         "xdat:user.assigned_roles.assigned_role[0].role_name",
                         "SiteUser");
@@ -2472,9 +2488,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             } else if (StringUtils.IsEmpty(tempPass)) {
 
             } else {
-                if (!tempPass.equals(savedPass))
+                if (!tempPass.equals(savedPass)){
+                	PasswordValidator validator = XDAT.getContextService().getBean(PasswordValidator.class);
+                	if(validator.isValid(tempPass)){
                     found.setProperty("primary_password", XDATUser
                             .EncryptString(tempPass, "SHA-256"));
+                	} else {
+                		throw new PasswordComplexityException(validator.getMessage());
+                	}
+                }
             }
 
             if (authenticatedUser.checkRole("Administrator")) {

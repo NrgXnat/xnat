@@ -205,7 +205,8 @@ public class XDATTool {
             
             SaveItemHelper.unauthorizedSave(item, user, false,q,override,allowItemRemoval,ci);
             
-            PersistentWorkflowUtils.complete(wrk,ci);
+            if(wrk!=null)
+            	PersistentWorkflowUtils.complete(wrk,ci);
 			if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
 		    logger.info("Item Successfully Stored.");
 		}else

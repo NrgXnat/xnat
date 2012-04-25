@@ -1873,7 +1873,7 @@ public class GenericWrapperUtils {
 	                        sb.append("\n            END IF;");
 	                    }
 	                    sb.append("\n                IF (matches=0) THEN");
-                sb.append("\n            PERFORM  " + ACT_FUNCTION);
+                sb.append("\n            PERFORM  ");
                 if(input.isExtended()){
                 	sb.append(ACT_EXT_FUNCTION);
                 }else{

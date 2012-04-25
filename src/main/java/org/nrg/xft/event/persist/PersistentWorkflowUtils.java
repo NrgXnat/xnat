@@ -106,6 +106,7 @@ public class PersistentWorkflowUtils {
 
 			workflow.setType(event.getType());
 			workflow.setComments(event.getComment());
+			workflow.setCategory(event.getCategory());
 			
 			if(StringUtils.isEmpty(event.getReason()) && requiresReason(xsiType, project_id)){
 				throw new JustificationAbsent();

@@ -48,7 +48,8 @@ public class DeleteAction extends SecureAction {
 				try {
 					SaveItemHelper.unauthorizedDelete(o.getItem(), TurbineUtils.getUser(data),ci);
                     
-                    PersistentWorkflowUtils.complete(wrk,ci);
+					if(wrk!=null)
+						PersistentWorkflowUtils.complete(wrk,ci);
                     data.setMessage("<p>Item Deleted.</p>");
     			  	data.setScreenTemplate("Index.vm");
                 } catch (RuntimeException e1) {

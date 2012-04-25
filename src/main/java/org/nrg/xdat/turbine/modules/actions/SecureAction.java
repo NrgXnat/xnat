@@ -326,6 +326,7 @@ public abstract class SecureAction extends VelocitySecureAction
 	}
 
     public void handleException(RunData data,XFTItem first,Throwable error, String itemIdentifier){
+    	logger.error("",error);
         data.getSession().setAttribute(itemIdentifier,first);
         data.addMessage(error.getMessage());
         if (data.getParameters().getString("edit_screen") !=null)

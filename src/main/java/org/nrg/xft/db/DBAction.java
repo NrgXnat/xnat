@@ -12,11 +12,13 @@ import java.sql.SQLException;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -26,7 +28,6 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -2183,6 +2184,8 @@ public class DBAction {
 			newI.setProperty("meta.status",meta.getProperty("status"));
 	}
 	
+	private static final List<String> modifiable_status=Arrays.asList(ViewManager.ACTIVE,ViewManager.QUARANTINE);
+	
 	private static XFTItem StoreHistoryAndMeta(XFTItem oldI, UserI user,Boolean quarantine,DBItemCache cache) throws Exception
 	{
 		if (oldI.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
@@ -2202,6 +2205,10 @@ public class DBAction {
 				meta.setFieldValue("row_last_modified",cache.getModTime());//added to track specific changes to this row
 				meta.setFieldValue("xft_version",cache.getChangeId());//added to track specific changes to this row
 								
+				if(!modifiable_status.contains(meta.getField("status"))){
+					throw new UnmodifiableStatusException();
+				}
+				
 				if (quarantine !=null){
 					if(quarantine)
 						meta.setFieldValue("status",ViewManager.QUARANTINE);
@@ -2215,6 +2222,11 @@ public class DBAction {
 	    }
 		return null;
 	}
+	
+	public static class UnmodifiableStatusException extends Exception{
+		private static final long serialVersionUID = 68282673755608498L;
+	}
+	
 	/**
 	 * @param item
 	 * @return

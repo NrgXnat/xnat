@@ -68,7 +68,7 @@ public class SaveItemHelper {
 	}
 	
 	protected void removeItemReference(ItemI parent,String s, ItemI child, UserI user,EventMetaI c) throws SQLException, Exception{
-        DBAction.RemoveItemReference(parent.getItem(),null,child.getItem(),user,c);
+        DBAction.RemoveItemReference(parent.getItem(),s,child.getItem(),user,c);
 	}
 	
 	/**

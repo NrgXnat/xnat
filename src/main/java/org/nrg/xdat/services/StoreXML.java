@@ -92,7 +92,8 @@ public class StoreXML {
                     
                     SaveItemHelper.unauthorizedSave(item, user, false,q,override,_allowDataDeletion.booleanValue(),ci);
                     
-                    PersistentWorkflowUtils.complete(wrk,ci);
+                    if(wrk!=null)
+                    	PersistentWorkflowUtils.complete(wrk,ci);
                     
                     sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
@@ -197,7 +198,8 @@ public class StoreXML {
                     
                     SaveItemHelper.unauthorizedSave(item, user, false,q,override,_allowDataDeletion.booleanValue(),ci);
                     
-                    PersistentWorkflowUtils.complete(wrk,ci);
+                    if(wrk!=null)
+                    	PersistentWorkflowUtils.complete(wrk,ci);
                 	sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
                     AccessLogger.LogServiceAccess(session_id,"","StoreXML",item.getProperName() + " Successfully Stored");		

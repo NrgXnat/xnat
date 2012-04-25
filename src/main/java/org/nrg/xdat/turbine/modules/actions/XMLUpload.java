@@ -97,7 +97,8 @@ public class XMLUpload extends SecureAction {
 
                 	SaveItemHelper.unauthorizedSave(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"),ci);
                 	
-                	PersistentWorkflowUtils.complete(wrk,ci);
+                	if(wrk!=null)
+                    	PersistentWorkflowUtils.complete(wrk,ci);
 
                 	if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");

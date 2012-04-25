@@ -2461,7 +2461,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                         .getStringProperty("primary_password");
                 if (!StringUtils.IsEmpty(tempPass)){
                 	PasswordValidator validator = XDAT.getContextService().getBean(PasswordValidator.class);
-                	if(validator.isValid(tempPass)){
+                	if(validator.isValid(tempPass, authenticatedUser)){
                 		found.setProperty("primary_password", XDATUser
                             .EncryptString(tempPass, "SHA-256"));
                 	} else {
@@ -2490,7 +2490,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             } else {
                 if (!tempPass.equals(savedPass)){
                 	PasswordValidator validator = XDAT.getContextService().getBean(PasswordValidator.class);
-                	if(validator.isValid(tempPass)){
+                	if(validator.isValid(tempPass, authenticatedUser)){
                     found.setProperty("primary_password", XDATUser
                             .EncryptString(tempPass, "SHA-256"));
                 	} else {

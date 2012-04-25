@@ -1,5 +1,7 @@
 package org.nrg.xdat.entities;
 
+import org.apache.commons.lang.builder.EqualsBuilder;
+import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.nrg.xdat.security.XDATUser;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
@@ -67,6 +69,31 @@ public class XDATUserDetails extends XDATUser implements UserDetails {
 
     public boolean isEnabled() {
         return true;
+    }
+    
+    
+    //necessary for spring security session management
+	public int hashCode() {
+        return new HashCodeBuilder(691, 431). // two randomly chosen prime numbers
+            // if deriving: appendSuper(super.hashCode()).
+        	append(this.getUsername()).
+            
+            toHashCode();
+    }
+
+	public boolean equals(Object obj) {
+        if (obj == null)
+            return false;
+        if (obj == this)
+            return true;
+        if (obj.getClass() != getClass())
+            return false;
+
+        XDATUserDetails rhs = (XDATUserDetails) obj;
+        return new EqualsBuilder().
+            // if deriving: appendSuper(super.equals(obj)).
+        	append(this.getUsername(), rhs.getUsername()).
+            isEquals();
     }
 
 }

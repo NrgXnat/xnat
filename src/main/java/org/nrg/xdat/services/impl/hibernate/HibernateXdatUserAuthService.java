@@ -63,12 +63,14 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return new XdatUserAuth();
     }
 
-	@Override
 	@Transactional
-	public XdatUserAuth getUserByNameAndAuth(String user, String auth) {
+	public XdatUserAuth getUserByNameAndAuth(String user, String auth, String id) {
 		XdatUserAuth example = new XdatUserAuth();
 	        example.setAuthUser(user);
 	        example.setAuthMethod(auth);
+	        if(!id.equals("")){
+	        	example.setAuthMethodId(id);
+	        }
 	        List<XdatUserAuth> auths =  _dao.findByExample(example, EXCLUSION_PROPERTIES);
 	        if(auths==null || auths.size()==0){
 	        	return null;
@@ -94,20 +96,25 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     @Inject
     private DataSource _datasource;
     
-	@Override
+    @Override
 	@Transactional
-	public XDATUserDetails getUserDetailsByNameAndAuth(String user,
-			String auth) {
-		return getUserDetailsByNameAndAuth(user, auth, null);
+	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth) {
+		return getUserDetailsByNameAndAuth(user, auth, "", null);
 	}
     
 	@Override
 	@Transactional
-	public XDATUserDetails getUserDetailsByNameAndAuth(String username, String auth, String email) {
+	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id) {
+		return getUserDetailsByNameAndAuth(user, auth, id, null);
+	}
+    
+	@Override
+	@Transactional
+	public XDATUserDetails getUserDetailsByNameAndAuth(String username, String auth, String id, String email) {
 		List<UserDetails> users = loadUsersByUsername(username, auth);
 
         if (users.size() == 0 || users.get(0)==null) {
-        	if(auth.equals("ldap") && !isLDAPUserDisabled(username)){
+        	if(auth.equals("ldap") && !isLDAPUserDisabled(username, id)){
     			logger.debug("Adding LDAP user '" + username + "' to database.");
 
 	        	try{
@@ -138,7 +145,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 		                users.set(0, new XDATUserDetails(newUser));
 	                }
 	                
-	                XdatUserAuth newUserAuth = new XdatUserAuth(username, "ldap");
+	                XdatUserAuth newUserAuth = new XdatUserAuth(username, "ldap", id);
 	                XDAT.getXdatUserAuthService().create(newUserAuth);
 	        	}
 	        	catch(Exception e){
@@ -169,10 +176,8 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
                             new Object[] {username}, "User {0} has no GrantedAuthority"), username);
         }
 
-        return createUserDetails(username, user, dbAuths, auth);
+        return createUserDetails(username, user, dbAuths, auth, id);
 	}
-
-    
 
 	public String getUsersByUsernameQuery() {
 		return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ?";
@@ -208,14 +213,33 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 		}
 		return isDisabled;
     }
+	
+	public boolean isLDAPUserDisabled(String username, String id) {
+		boolean isDisabled = false;
+		try{
+			List<Boolean> enabled = (new JdbcTemplate(_datasource)).query("SELECT enabled FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'ldap' AND auth_method_id = ?", new String[] {username, id}, new RowMapper<Boolean>() {
+            public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
+                boolean enabled = rs.getBoolean(1);
+                return enabled;
+            }
+        });
+			if(enabled.get(0).equals(false)){
+				isDisabled=true;
+			}
+		}
+		catch(Exception e){
+			
+		}
+		return isDisabled;
+    }
 
 	protected XDATUserDetails createUserDetails(String username,
 			UserDetails userFromUserQuery,
 			List<GrantedAuthority> combinedAuthorities,
-			String auth) {
+			String auth, String id) {
     	XDATUserDetails u = null;
     	try {
-	    	XdatUserAuth userAuth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(username, auth);
+	    	XdatUserAuth userAuth = getUserByNameAndAuth(username, auth, id);
 			u = new XDATUserDetails(userAuth.getXdatUsername());
 		} catch (Exception e) {
 			logger.error(e);

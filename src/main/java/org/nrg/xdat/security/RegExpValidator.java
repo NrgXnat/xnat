@@ -12,7 +12,7 @@ public class RegExpValidator implements PasswordValidator{
 	}
 	
 	@Override
-	public boolean isValid(String password) {
+	public boolean isValid(String password, XDATUser user) {
 		boolean valid = false;
 		if((regexp.equals(""))){
 			valid = true;

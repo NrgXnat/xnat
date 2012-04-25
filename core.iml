@@ -3,9 +3,11 @@
   <component name="FacetManager">
     <facet type="Spring" name="Spring">
       <configuration>
-        <fileset id="fileset1" name="My Fileset" removed="false">
-          <file>file://$MODULE_DIR$/src/test/resources/TestDataSource-context.xml</file>
+        <fileset id="fileset1" name="Xml Application Context" removed="false">
           <file>file://$MODULE_DIR$/src/test/resources/org/nrg/xft/services/TestXftFieldExclusionService-context.xml</file>
+          <file>file://$MODULE_DIR$/src/test/resources/org/nrg/xdat/services/TestXdatUserAuthService-context.xml</file>
+          <file>file://$MODULE_DIR$/src/test/resources/TestDataSource-context.xml</file>
+          <file>file://$MODULE_DIR$/src/main/resources/META-INF/configuration/xdat-core-context.xml</file>
         </fileset>
       </configuration>
     </facet>
@@ -28,8 +30,8 @@
       <excludeFolder url="file://$MODULE_DIR$/target/surefire-reports" />
       <excludeFolder url="file://$MODULE_DIR$/target/test-classes" />
     </content>
-    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="module" module-name="notify" />
     <orderEntry type="module" module-name="mail" />
     <orderEntry type="module" module-name="framework" />
@@ -80,6 +82,8 @@
     <orderEntry type="library" name="Maven: org.slf4j:com.springsource.slf4j.bridge:1.6.1" level="project" />
     <orderEntry type="library" name="Maven: javax.servlet:com.springsource.javax.servlet:2.5.0" level="project" />
     <orderEntry type="library" name="Maven: javax.activation:com.springsource.javax.activation:1.1.1" level="project" />
+    <orderEntry type="library" name="Maven: com.google.guava:guava:10.0.1" level="project" />
+    <orderEntry type="library" name="Maven: com.google.code.findbugs:jsr305:1.3.9" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:com.springsource.org.apache.commons.fileupload:1.2.1" level="project" />
     <orderEntry type="library" name="Maven: org.apache.axis:com.springsource.org.apache.axis:1.4.0" level="project" />
     <orderEntry type="library" name="Maven: org.apache.commons:com.springsource.org.apache.commons.discovery:0.4.0" level="project" />

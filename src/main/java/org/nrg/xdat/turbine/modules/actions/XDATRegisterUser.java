@@ -79,7 +79,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                 {
 	                String tempPass = found.getStringProperty("primary_password");
 	                PasswordValidator validator = XDAT.getContextService().getBean(PasswordValidator.class);
-	                if(validator.isValid(tempPass)){
+	                if(validator.isValid(tempPass, null)){
 	                
 		             // NEW USER
 	                    found.setProperty("primary_password",XDATUser.EncryptString(tempPass,"SHA-256"));

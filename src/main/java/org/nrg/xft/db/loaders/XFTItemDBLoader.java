@@ -64,7 +64,7 @@ public class XFTItemDBLoader {
 		}
 		try {
 			boolean nullKey = false;
-			String query = "SELECT * FROM " + many.getMappingTable();
+			String query = "SELECT * FROM " + mapping_name;
 			Iterator<?> iter = many.getMappingColumns().iterator();
 			int counter = 0;
 			while (iter.hasNext()) {

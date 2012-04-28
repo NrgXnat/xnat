@@ -12,7 +12,6 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -34,6 +33,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.services.XftFieldExclusionService;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xft.utils.AuthUtils;
 import org.springframework.dao.DataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -53,8 +53,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class HibernateXdatUserAuthService extends AbstractHibernateEntityService<XdatUserAuth> implements XdatUserAuthService {
 
-    private static final String[] EXCLUSION_PROPERTIES = new String[] {"xdatUsername", "id", "enabled", "created", "timestamp", "disabled" };
-    private static final String[] EXCLUSION_PROPERTIES_USERNAME = new String[] {"xdatUsername", "id", "enabled", "created", "timestamp", "disabled","auth_method"};
+    private static final String[] EXCLUSION_PROPERTIES = new String[] {"xdatUsername", "id", "enabled", "created", "timestamp", "disabled","failedLoginAttempts" };
+    private static final String[] EXCLUSION_PROPERTIES_USERNAME = new String[] {"xdatUsername", "id", "enabled", "created", "timestamp", "disabled","authMethodId","failedLoginAttempts"};
 
     protected final Log logger = LogFactory.getLog(getClass());
     
@@ -114,7 +114,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 		List<UserDetails> users = loadUsersByUsername(username, auth);
 
         if (users.size() == 0 || users.get(0)==null) {
-        	if(auth.equals("ldap") && !isLDAPUserDisabled(username, id)){
+        	if(auth.equals(XdatUserAuthService.LDAP) && !isLDAPUserDisabled(username, id) &&!isLDAPUserLocked(username,id)){
     			logger.debug("Adding LDAP user '" + username + "' to database.");
 
 	        	try{
@@ -145,7 +145,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 		                users.set(0, new XDATUserDetails(newUser));
 	                }
 	                
-	                XdatUserAuth newUserAuth = new XdatUserAuth(username, "ldap", id);
+	                XdatUserAuth newUserAuth = new XdatUserAuth(username, XdatUserAuthService.LDAP, id);
 	                XDAT.getXdatUserAuthService().create(newUserAuth);
 	        	}
 	        	catch(Exception e){
@@ -180,7 +180,12 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	}
 
 	public String getUsersByUsernameQuery() {
-		return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ?";
+		if(AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS>-1){
+			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS+"  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ?";
+		}else{
+			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ?";
+		}
+		
     }
 	
 
@@ -198,7 +203,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	public boolean isLDAPUserDisabled(String username) {
 		boolean isDisabled = false;
 		try{
-			List<Boolean> enabled = (new JdbcTemplate(_datasource)).query("SELECT enabled FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'ldap'", new String[] {username}, new RowMapper<Boolean>() {
+			List<Boolean> enabled = (new JdbcTemplate(_datasource)).query("SELECT enabled FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP+"'", new String[] {username}, new RowMapper<Boolean>() {
             public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
                 boolean enabled = rs.getBoolean(1);
                 return enabled;
@@ -214,10 +219,29 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 		return isDisabled;
     }
 	
+	private boolean isLDAPUserLocked(String username, String id) {
+		boolean isLocked = false;
+		try{
+			List<Integer> count = (new JdbcTemplate(_datasource)).query("SELECT failed_login_attempts FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP+"' AND auth_method_id = ?", new String[] {username, id}, new RowMapper<Integer>() {
+            public Integer mapRow(ResultSet rs, int rowNum) throws SQLException {
+            	Integer count = rs.getInt(1);
+                return count;
+            }
+        });
+			if(count.get(0)>=AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS){
+				isLocked=true;
+			}
+		}
+		catch(Exception e){
+			
+		}
+		return isLocked;
+	}
+	
 	public boolean isLDAPUserDisabled(String username, String id) {
 		boolean isDisabled = false;
 		try{
-			List<Boolean> enabled = (new JdbcTemplate(_datasource)).query("SELECT enabled FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'ldap' AND auth_method_id = ?", new String[] {username, id}, new RowMapper<Boolean>() {
+			List<Boolean> enabled = (new JdbcTemplate(_datasource)).query("SELECT enabled FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP+"' AND auth_method_id = ?", new String[] {username, id}, new RowMapper<Boolean>() {
             public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
                 boolean enabled = rs.getBoolean(1);
                 return enabled;
@@ -255,7 +279,8 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
                 String method = rs.getString(2);
                 String xdatUsername = rs.getString(3);
                 boolean enabled = rs.getBoolean(4);
-                XdatUserAuth u = new XdatUserAuth(username, method, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, xdatUsername);
+                Integer failedLoginAttempts = rs.getInt(5);
+                XdatUserAuth u = new XdatUserAuth(username, method, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, xdatUsername,failedLoginAttempts);
                 XDATUserDetails xdat;
                 xdat = null;
 				try {

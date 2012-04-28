@@ -5,14 +5,11 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 
+import java.util.HashSet;
+import java.util.Set;
 import java.util.UUID;
 
 import javax.servlet.http.HttpSession;
-import java.util.HashSet;
-import java.util.Set;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;

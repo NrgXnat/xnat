@@ -29,6 +29,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 	private boolean accountNonLocked;
 	private boolean credentialsNonExpired;
 	private Date passwordUpdated;
+	private Integer failedLoginAttempts;
 	
 	private static final long serialVersionUID = 1L;
 	
@@ -36,14 +37,14 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 	}
 	
 	public XdatUserAuth(String user, String method) {
-		this(user,method,user,true);
+		this(user,method,user,true,0);
 	}
 
 	public XdatUserAuth(String user, String method, String id) {
-		this(user,method,id,user,true);
+		this(user,method,id,user,true,0);
 	}
 	
-	public XdatUserAuth(String user, String method, String xdat, boolean enabled) {
+	public XdatUserAuth(String user, String method, String xdat, boolean enabled,Integer failedLoginAttempts) {
 		this.authUser = user;
 		this.authMethod = method;
 		setEnabled(enabled);
@@ -52,9 +53,10 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		credentialsNonExpired=true;
 		this.xdatUsername = xdat;
 		passwordUpdated = new Date();
+		this.failedLoginAttempts=failedLoginAttempts;
 	}
 	
-	public XdatUserAuth(String user, String method, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername) {
+	public XdatUserAuth(String user, String method, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts) {
 		this.authUser = user;
 		this.authMethod = method;
 		setEnabled(enabled);
@@ -63,9 +65,10 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		credentialsNonExpired=true;
 		this.xdatUsername = xdatUsername;
 		passwordUpdated = new Date();
+		this.failedLoginAttempts=failedLoginAttempts;
 	}
 	
-	public XdatUserAuth(String user, String method, String methodId, String xdat, boolean enabled) {
+	public XdatUserAuth(String user, String method, String methodId, String xdat, boolean enabled,Integer failedLoginAttempts) {
 		this.authUser = user;
 		this.authMethod = method;
 		this.authMethodId = methodId;
@@ -75,9 +78,10 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		credentialsNonExpired=true;
 		this.xdatUsername = xdat;
 		passwordUpdated = new Date();
+		this.failedLoginAttempts=failedLoginAttempts;
 	}
 	
-	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername) {
+	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts) {
 		this.authUser = user;
 		this.authMethod = method;
 		this.authMethodId = methodId;
@@ -87,6 +91,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		credentialsNonExpired=true;
 		this.xdatUsername = xdatUsername;
 		passwordUpdated = new Date();
+		this.failedLoginAttempts=failedLoginAttempts;
 	}
 
 	public String getXdatUsername() {
@@ -119,6 +124,18 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 
 	public void setAuthMethodId(String means) {
 		this.authMethodId = means;
+	}
+
+	public Integer getFailedLoginAttempts() {
+		if(failedLoginAttempts==null){
+			return 0;
+		}else{
+			return failedLoginAttempts;
+		}
+	}
+
+	public void setFailedLoginAttempts(Integer count) {
+		this.failedLoginAttempts = count;
 	}
 
     @Temporal(TemporalType.TIMESTAMP)

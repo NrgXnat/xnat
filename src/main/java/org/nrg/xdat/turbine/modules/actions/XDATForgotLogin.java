@@ -21,6 +21,9 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.services.AliasTokenService;
+import javax.mail.MessagingException;
 
 public class XDATForgotLogin extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATForgotLogin.class);
@@ -57,16 +60,16 @@ public class XDATForgotLogin extends VelocitySecureAction {
                 }
             	
                 try {
-                    String url=TurbineUtils.GetFullServerPath() + "/app/template/Index.vm";
-					String message = String.format(USERNAME_REQUEST, user.getUsername(), url, TurbineUtils.GetSystemName());
-					XDAT.getMailService().sendHtmlMessage(admin, email, subject, message);
-                    data.setMessage("The corresponding username for this email address has been emailed to your account.");
-                    data.setScreenTemplate("Login.vm");
+                	String url=TurbineUtils.GetFullServerPath() + "/app/template/Index.vm";
+                    String message = String.format(USERNAME_REQUEST, user.getUsername(), url, TurbineUtils.GetSystemName());
+                    XDAT.getMailService().sendHtmlMessage(admin, email, subject, message);
+					data.setMessage("The corresponding username for this email address has been emailed to your account.");
+					data.setScreenTemplate("Login.vm");
 				} catch (MessagingException exception) {
 					logger.error(exception);
-                    data.setMessage("Due to a technical difficulty, we are unable to send you the email containing your information.  Please contact our technical support.");
-                    data.setScreenTemplate("ForgotLogin.vm");
-                    return;
+					data.setMessage("Due to a technical difficulty, we are unable to send you the email containing your information.  Please contact our technical support.");
+					data.setScreenTemplate("ForgotLogin.vm");
+					return;
                 }
             }
 		} else if (!StringUtils.isBlank(username)) {
@@ -100,11 +103,12 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     
                     try {
                     	String to = user.getEmail();
-                        String url=TurbineUtils.GetFullServerPath() + "/app/action/XDATActionRouter/xdataction/MyXNAT";
-                        String message = String.format(PASSWORD_RESET, newPassword, url);
-                        XDAT.getMailService().sendHtmlMessage(admin, to, subject, message);
-                        data.setMessage("The password for " + username + " has been reset.  The new password has been emailed to your account. <br><br>Please use the new password to login to the site and change your password in the account settings.");
-                        data.setScreenTemplate("Login.vm");
+				        String url=TurbineUtils.GetFullServerPath() + "/app/action/XDATActionRouter/xdataction/MyXNAT";
+				        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user,true,null);
+				        String text = "Dear " + user.getFirstname() + " " + user.getLastname() + ",<br/>\r\n" + "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "/app/template/ChangePassword.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
+				        XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
+				        data.setMessage("You have been sent an email with a link to reset your password. Please check your email.");
+				        data.setScreenTemplate("Login.vm");
                     } catch (MessagingException e) {
                         logger.error("Unable to send mail",e);
                         System.out.println("Error sending Email");

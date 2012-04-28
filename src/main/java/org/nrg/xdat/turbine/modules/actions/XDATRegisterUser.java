@@ -27,7 +27,7 @@ import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xdat.security.PasswordValidator;
+import org.nrg.xdat.security.PasswordValidatorChain;
 import org.nrg.xdat.security.RegExpValidator;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
@@ -71,14 +71,13 @@ public class XDATRegisterUser extends VelocitySecureAction {
                     search.setAllowMultiples(false);
                     search.setElement("xdat:user");
                     search.addCriteria("xdat:user.email",found.getProperty("email"));
-
                     temp = search.exec().getFirst();
             	}
 
                 if (temp==null)
                 {
 	                String tempPass = found.getStringProperty("primary_password");
-	                PasswordValidator validator = XDAT.getContextService().getBean(PasswordValidator.class);
+	                PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 	                if(validator.isValid(tempPass, null)){
 	                
 		             // NEW USER

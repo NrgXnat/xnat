@@ -166,6 +166,18 @@ public class AliasToken extends AbstractHibernateEntity {
         return false;
     }
 
+    /**
+     * Indicates whether the candidate string matches the format used by the token for aliases.
+     * Note that this provides no indication as to whether candidate string is an actual alias
+     * or is still a valid alias in the system.
+     *
+     * @param candidate    The string to test for format compatibility.
+     * @return <b>true</b> if the string matches the alias format, <b>false</b> otherwise.
+     */
+    public static boolean isAliasFormat(String candidate) {
+        return PATTERN_UUID.matcher(candidate).matches();
+    }
+
     private void initializeAddressLists() {
         if (_validIPAddresses == null) {
             return;
@@ -174,9 +186,9 @@ public class AliasToken extends AbstractHibernateEntity {
         _validSubnets = Lists.newArrayList();
 
         for (String address : _validIPAddresses) {
-            if (IP_PLAIN.matcher(address).matches()) {
+            if (PATTERN_IP_PLAIN.matcher(address).matches()) {
                 _validPlainIPAddresses.add(address);
-            } else if (IP_MASK.matcher(address).matches()) {
+            } else if (PATTERN_IP_MASK.matcher(address).matches()) {
                 _validSubnets.add(new SubnetUtils(address).getInfo());
             } else {
                 _log.warn("Found specified IP address that doesn't match patterns for IP or IP subnet mask: "+ address);
@@ -185,8 +197,9 @@ public class AliasToken extends AbstractHibernateEntity {
     }
 
     private static final Log _log = LogFactory.getLog(AliasToken.class);
-    private static final Pattern IP_PLAIN = Pattern.compile("\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b");
-    private static final Pattern IP_MASK = Pattern.compile("\\b(?:\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}\\b");
+    private static final Pattern PATTERN_UUID = Pattern.compile("[0-9a-fA-F]{8}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{4}-[0-9a-fA-F]{12}");
+    private static final Pattern PATTERN_IP_PLAIN = Pattern.compile("\\b(?:\\d{1,3}\\.){3}\\d{1,3}\\b");
+    private static final Pattern PATTERN_IP_MASK = Pattern.compile("\\b(?:\\d{1,3}\\.){3}\\d{1,3}/\\d{1,2}\\b");
     private String _alias;
     private long _secret;
     private boolean _isSingleUse;

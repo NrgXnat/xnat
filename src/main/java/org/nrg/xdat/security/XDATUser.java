@@ -18,6 +18,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
@@ -2516,6 +2517,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 XDATUser newUser = new XDATUser(found);
                 // newUser.initializePermissions();
                 SaveItemHelper.authorizedSave(newUser, authenticatedUser, true, false, true, false,ci);
+                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
+                XDAT.getXdatUserAuthService().create(newUserAuth);
             } else {
                 throw new InvalidPermissionException("Unauthorized user modification attempt");
             }

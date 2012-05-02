@@ -125,7 +125,7 @@ public abstract class SecureAction extends VelocitySecureAction
 
     public static String csrfTokenErrorMessage(HttpServletRequest request){
 		StringBuffer errorMessage = new StringBuffer();
-		errorMessage.append(request.getMethod()).append(" on URL: ").append(request.getRequestURL()).append(" from ").append(request.getRemoteAddr()).append(" (").append(request.getRemotePort()).append(") user: ").append(request.getRemoteHost()).append("\n");
+		errorMessage.append(request.getMethod()).append(" on URL: ").append(request.getRequestURL()).append(" from ").append(AccessLogger.GetRequestIp(request)).append(" (").append(request.getRemotePort()).append(") user: ").append(request.getRemoteHost()).append("\n");
 		errorMessage.append("Headers:\n");
 		Enumeration<String> headerNames =  request.getHeaderNames();
 		while(headerNames.hasMoreElements()){

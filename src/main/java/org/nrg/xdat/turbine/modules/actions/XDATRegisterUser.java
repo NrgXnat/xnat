@@ -21,6 +21,7 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.entities.XdatUserAuth;
+import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -122,7 +123,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                    java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
 		                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
 		                    item.setProperty("xdat:user_login.login_date",today);
-		                    item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
+		                    item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
 	                    SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
 		                    
 							Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();

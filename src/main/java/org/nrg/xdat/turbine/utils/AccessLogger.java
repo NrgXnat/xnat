@@ -6,10 +6,14 @@
 package org.nrg.xdat.turbine.utils;
 
 import java.io.File;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Enumeration;
 import java.util.List;
+
+import javax.servlet.http.HttpServletRequest;
 
 import org.apache.axis.AxisEngine;
 import org.apache.axis.MessageContext;
@@ -45,12 +49,44 @@ public class AccessLogger {
         return TRACKING_SESSIONS.booleanValue();
     }
     
+    
+    public static String GetRequestIp(HttpServletRequest request){
+    	@SuppressWarnings("unchecked")
+		final Enumeration<String> headers = request.getHeaders("x-forwarded-for");
+
+    	final String nullAddy = "0.0.0.0";
+        if (headers == null) {
+        	return nullAddy;
+        } else {
+            while (headers.hasMoreElements()) {
+                final String[] ips = headers.nextElement().split(",");
+                for (int i = 0; i < ips.length; i++) {
+                    final String proxy = ips[i].trim();
+                    if (!"unknown".equals(proxy) && !proxy.isEmpty()) {
+                        try {
+                            InetAddress proxyAddy = InetAddress.getByName(proxy);
+                            if(proxyAddy != null){
+                            	return proxyAddy.toString();
+                            } else {
+                            	return nullAddy;
+                            }
+                        } catch (UnknownHostException e) {
+                            logger.warn("ignoring host " + proxy + ": " + e.getClass().getName() + ": " + e.getMessage());
+                        }
+                    }
+                }
+            }
+        }
+
+        return request.getRemoteAddr();
+    }
+    
     @SuppressWarnings("unchecked")
     public static void LogScreenAccess(RunData data)
 	{
         if (!data.getScreen().equalsIgnoreCase(""))
         {
-    	    String text= TurbineUtils.getUser(data).getUsername() + " " + data.getRemoteAddr() + " SCREEN: " + data.getScreen();
+    	    String text= TurbineUtils.getUser(data).getUsername() + " " + GetRequestIp(data.getRequest()) + " SCREEN: " + data.getScreen();
 
 		    if(TurbineUtils.HasPassedParameter("search_element", data)){
 		    	text+=" "+TurbineUtils.GetPassedParameter("search_element", data);
@@ -84,7 +120,7 @@ public class AccessLogger {
 	{
         if (!data.getAction().equalsIgnoreCase(""))
         {
-		    String text= TurbineUtils.getUser(data).getUsername() + " " + data.getRemoteAddr() + " ACTION: " + data.getAction();
+		    String text= TurbineUtils.getUser(data).getUsername() + " " + GetRequestIp(data.getRequest()) + " ACTION: " + data.getAction();
 
 		    if(TurbineUtils.HasPassedParameter("xdataction", data)){
 		    	text+=" "+TurbineUtils.GetPassedParameter("xdataction", data);
@@ -121,7 +157,7 @@ public class AccessLogger {
 	{
         if (!data.getScreen().equalsIgnoreCase(""))
         {
-    	    String text= TurbineUtils.getUser(data).getUsername() + " " + data.getRemoteAddr() + " SCREEN: " + data.getScreen() + " " + message;
+    	    String text= TurbineUtils.getUser(data).getUsername() + " " + GetRequestIp(data.getRequest()) + " SCREEN: " + data.getScreen() + " " + message;
     	    
     		try {
     		    logger.error(text);
@@ -150,7 +186,7 @@ public class AccessLogger {
         if (!data.getAction().equalsIgnoreCase(""))
         {
 		    XDATUser user=TurbineUtils.getUser(data);
-        	String text= ((user!=null)?user.getUsername():"NULL") + " " + data.getRemoteAddr() + " ACTION: " + data.getAction() + " " + message;
+        	String text= ((user!=null)?user.getUsername():"NULL") + " " + GetRequestIp(data.getRequest()) + " ACTION: " + data.getAction() + " " + message;
 		    
 			try {
 			    logger.error(text);

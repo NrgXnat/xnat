@@ -46,8 +46,8 @@ public class Authorizer implements AuthorizerI{
 
 	private static final Map<String,List<String>> unsecured= 
 		new HashMap<String,List<String>>(){{
-			put(SecurityManager.READ,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
-			put(SecurityManager.EDIT,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
+			put(SecurityManager.READ,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup","xnat:investigatorData"));
+			put(SecurityManager.EDIT,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup","xnat:investigatorData"));
 			put(SecurityManager.DELETE,Arrays.asList("wrk:workflowData",XdatStoredSearch.SCHEMA_ELEMENT_NAME,"xnat:fieldDefinitionGroup"));
 		}};
 

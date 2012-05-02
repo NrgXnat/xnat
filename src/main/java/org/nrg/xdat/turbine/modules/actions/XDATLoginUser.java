@@ -94,7 +94,7 @@ public class XDATLoginUser extends VelocityAction{
 			java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
 			item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
 			item.setProperty("xdat:user_login.login_date",today);
-			item.setProperty("xdat:user_login.ip_address",data.getRemoteAddr());
+			item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
 			SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
 
 			

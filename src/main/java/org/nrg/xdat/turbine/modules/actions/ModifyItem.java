@@ -139,10 +139,19 @@ public class ModifyItem  extends SecureAction {
 
             XFTItem dbVersion = first.getCurrentDBVersion();
 
-			final PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), first,newEventInstance(data, EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(first.getXSIType(), dbVersion==null)));
-	    	EventMetaI c=wrk.buildEvent();
-            PersistentWorkflowUtils.save(wrk,c);
-
+            PersistentWorkflowI wrk=null;
+            if(first.instanceOf("xnat:experimentData") || first.instanceOf("xnat:subjectData")){
+    			wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), first,newEventInstance(data, EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(first.getXSIType(), dbVersion==null)));
+    	    	
+            }
+            
+            final EventMetaI c;
+            if(wrk!=null){
+            	c=wrk.buildEvent();
+            }else{
+            	c=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
+            }
+            
             boolean removedReference = false;
             Object[] keysArray = data.getParameters().getKeys();
             for (int i=0;i<keysArray.length;i++)
@@ -204,10 +213,12 @@ public class ModifyItem  extends SecureAction {
                         logger.error("",e);
                     }
                     save(first,data,context,c);
-                    PersistentWorkflowUtils.complete(wrk,c);
+                    if(wrk!=null)
+                    	PersistentWorkflowUtils.complete(wrk,c);
 					MaterializedView.DeleteByUser(TurbineUtils.getUser(data));
         		} catch (Exception e) {
-                    PersistentWorkflowUtils.fail(wrk,c);
+        			if(wrk!=null)
+                    	PersistentWorkflowUtils.fail(wrk,c);
                     handleException(data,first,error);
                     return;
         		}

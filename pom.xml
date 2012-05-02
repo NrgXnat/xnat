@@ -92,7 +92,6 @@
                     <artifactId>maven-surefire-plugin</artifactId>
                     <version>2.9</version>
                     <configuration>
-                        <junitArtifactName>org.junit:com.springsource.org.junit</junitArtifactName>
                         <includes>
                             <include>**/Test*.java</include>
                             <include>**/*Tests.java</include>
@@ -488,8 +487,8 @@
                 <version>${postgresql.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.junit</groupId>
-                <artifactId>com.springsource.org.junit</artifactId>
+                <groupId>junit</groupId>
+                <artifactId>junit</artifactId>
                 <version>${junit.version}</version>
                 <scope>test</scope>
             </dependency>

@@ -14,6 +14,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.TemporaryTokenStore;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -30,6 +31,9 @@ public class ChangePassword extends VelocitySecureScreen {
 	protected void doBuildTemplate(RunData data) throws Exception {
 		Context c = TurbineVelocity.getContext(data);
         String systemName = TurbineUtils.GetSystemName();
+        
+        c.put("showReason", XFT.SHOW_REASON);
+        c.put("requireReason", XFT.REQUIRE_REASON);
         c.put("turbineUtils",TurbineUtils.GetInstance());
         c.put("systemName",systemName);
         doBuildTemplate(data, c);

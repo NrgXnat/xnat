@@ -73,25 +73,28 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 	protected void doBuildTemplate(RunData data)
             throws Exception {
 	    try {
-            if (isAuthorized(data)) {
-                Context c = TurbineVelocity.getContext(data);
-                if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
-                    if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
-                        c.put("popup","true");
-                    }else{
-                        c.put("popup","false");
-                    }
+            Context c = TurbineVelocity.getContext(data);
+            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
+                if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
+                    c.put("popup","true");
                 }else{
                     c.put("popup","false");
                 }
+            }else{
+                c.put("popup","false");
+            }
 
-                String systemName = TurbineUtils.GetSystemName();
-                c.put("turbineUtils",TurbineUtils.GetInstance());
-                c.put("systemName",systemName);
-                
-                c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
-                
-                                
+            String systemName = TurbineUtils.GetSystemName();
+            c.put("turbineUtils",TurbineUtils.GetInstance());
+            c.put("systemName",systemName);
+            
+            c.put("showReason", XFT.SHOW_REASON);
+            c.put("requireReason", XFT.REQUIRE_REASON);
+            
+            c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
+            preserveVariables(data,c);
+            
+            if (isAuthorized(data)) {
                 SessionRegistry sessionRegistry = null;
                 sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
                 
@@ -105,23 +108,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 		data.setMessage("WARNING: Your account currently has " + sessionCount +" login sessions open. If you believe this is incorrect, please contact support.");
                 	}
                 }
-                preserveVariables(data,c);
                 doBuildTemplate(data, c);
             }else{
-                Context c = TurbineVelocity.getContext(data);
-                if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
-                    if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
-                        c.put("popup","true");
-                    }else{
-                        c.put("popup","false");
-                    }
-                }else{
-                    c.put("popup","false");
-                }
-                String systemName = TurbineUtils.GetSystemName();
-                c.put("turbineUtils",TurbineUtils.GetInstance());
-                c.put("systemName",systemName);
-                preserveVariables(data,c);
 
                 if (XFT.GetRequireLogin()) {
                 }else{

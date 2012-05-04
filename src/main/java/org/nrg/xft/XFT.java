@@ -57,6 +57,8 @@ public class XFT {
     private static String WEBAPP_NAME = null;
 
     public static boolean VERBOSE = false;
+    public static boolean REQUIRE_REASON = false;
+    public static boolean SHOW_REASON = false;
 //	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
 //	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 

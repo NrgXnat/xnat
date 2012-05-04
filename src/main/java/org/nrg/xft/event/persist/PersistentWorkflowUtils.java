@@ -6,6 +6,7 @@ import java.util.List;
 
 import org.apache.axis.utils.StringUtils;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
@@ -108,7 +109,7 @@ public class PersistentWorkflowUtils {
 			workflow.setComments(event.getComment());
 			workflow.setCategory(event.getCategory());
 			
-			if(StringUtils.isEmpty(event.getReason()) && requiresReason(xsiType, project_id)){
+			if( (XFT.REQUIRE_REASON && XFT.SHOW_REASON) && StringUtils.isEmpty(event.getReason()) && requiresReason(xsiType, project_id)){
 				throw new JustificationAbsent();
 			}
 			workflow.setJustification(event.getReason());

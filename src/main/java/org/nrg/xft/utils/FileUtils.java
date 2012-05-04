@@ -1045,12 +1045,17 @@ public  class FileUtils
 			return;
 		}
 		
+		if(s1.contains("\\")){
+			s1=s1.replace('\\', '/');
+		}
+		
 		ValidateUriAgainstRoot(s1, rootU, message);
 		
 		if(FileUtils.IsAbsolutePath(s1)){
 			try {
 				new URI(s1).normalize();
 			} catch (URISyntaxException e) {
+				logger.error("",e);
 				throw new InvalidValueException("Invalid URI: " + s1 + "\nCheck for occurrences of non-standard characters.");
 			}
 		}
@@ -1062,6 +1067,7 @@ public  class FileUtils
 			try {
 				u=new URI(s1).normalize();
 			} catch (URISyntaxException e) {
+				logger.error("",e);
 				throw new InvalidValueException("Invalid URI: " + s1 + "\nCheck for occurrences of non-standard characters.");
 			}
 			

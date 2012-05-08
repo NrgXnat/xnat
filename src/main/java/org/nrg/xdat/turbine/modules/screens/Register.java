@@ -6,6 +6,7 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.XFT;
 
 public class Register extends VelocitySecureScreen {
 
@@ -14,6 +15,9 @@ public class Register extends VelocitySecureScreen {
 	protected void doBuildTemplate(RunData data) throws Exception {
 		Context c = TurbineVelocity.getContext(data);
         String systemName = TurbineUtils.GetSystemName();
+        
+        c.put("showReason", XFT.SHOW_REASON);
+        c.put("requireReason", XFT.REQUIRE_REASON);
         c.put("turbineUtils",TurbineUtils.GetInstance());
         c.put("systemName",systemName);
         doBuildTemplate(data, c);

@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Map;
 
 import org.nrg.xdat.XDAT;
+import org.nrg.xft.XFT;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
 
@@ -37,6 +38,9 @@ public class Login extends VelocitySecureScreen {
                 }
         	}
         }
+        
+        c.put("showReason", XFT.SHOW_REASON);
+        c.put("requireReason", XFT.REQUIRE_REASON);
 
         c.put("login_methods", providerNames);
         doBuildTemplate(data, c);

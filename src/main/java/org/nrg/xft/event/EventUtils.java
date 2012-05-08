@@ -182,4 +182,5 @@ public class EventUtils {
 	public static final String REJECT_PROJECT_REQUEST="Reject Project Access Request";
 	public static final String APPROVE_PROJECT_REQUEST="Approve Project Access Request";
 	public static final String INVITE_USER_TO_PROJECT = "Invited new user to project";
+	public static final String UNKNOWN = "unknown action";
 }

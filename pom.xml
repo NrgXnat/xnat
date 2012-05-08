@@ -11,7 +11,7 @@
 		<version>1.0.0-SNAPSHOT</version>
 		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
-	
+
 	<artifactId>transaction</artifactId>
 	<version>1.0.0-SNAPSHOT</version>
 	<packaging>jar</packaging>
@@ -22,8 +22,8 @@
 	
 	<dependencies>
 		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>com.springsource.org.apache.commons.lang</artifactId>
+			<groupId>commons-lang</groupId>
+			<artifactId>commons-lang</artifactId>
 			<scope>compile</scope>
 		</dependency>
 		

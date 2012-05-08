@@ -54,33 +54,33 @@
             <artifactId>hibernate-core</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>com.springsource.org.apache.commons.logging</artifactId>
+            <groupId>commons-logging</groupId>
+            <artifactId>commons-logging</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.commons</groupId>
-            <artifactId>com.springsource.org.apache.commons.lang</artifactId>
+            <groupId>commons-lang</groupId>
+            <artifactId>commons-lang</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.apache.log4j</groupId>
-            <artifactId>com.springsource.org.apache.log4j</artifactId>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
         </dependency>
         <!-- This routes logging in Hibernate to ACL/JCL -->
         <dependency>
             <groupId>org.slf4j</groupId>
-            <artifactId>com.springsource.slf4j.jcl</artifactId>
+            <artifactId>slf4j-jcl</artifactId>
         </dependency>
         <dependency>
-            <groupId>net.sourceforge.cglib</groupId>
-            <artifactId>com.springsource.net.sf.cglib</artifactId>
+            <groupId>cglib</groupId>
+            <artifactId>cglib</artifactId>
         </dependency>
         <dependency>
-            <groupId>org.jboss.javassist</groupId>
-            <artifactId>com.springsource.javassist</artifactId>
+            <groupId>org.javassist</groupId>
+            <artifactId>javassist</artifactId>
         </dependency>
         <dependency>
             <groupId>javax.inject</groupId>
-            <artifactId>com.springsource.javax.inject</artifactId>
+            <artifactId>javax.inject</artifactId>
         </dependency>
         <dependency>
             <groupId>org.codehaus.jackson</groupId>

@@ -18,6 +18,7 @@ import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.XDATUser.PasswordComplexityException;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -79,6 +80,11 @@ public class ModifyUser extends SecureAction {
 		} catch (InvalidPermissionException e) {
 			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 			return;
+		} catch (PasswordComplexityException e){
+			data.setMessage( e.getMessage());
+			data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");
+			return;
+
 		} catch (Exception e) {
 			logger.error("Error Storing User", e);
 			return;

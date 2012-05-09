@@ -10,6 +10,8 @@
 package org.nrg.xdat.turbine.modules.screens;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+
+import java.util.Hashtable;
 import java.util.UUID;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
@@ -23,10 +25,13 @@ import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
+import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.search.TableSearch;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
@@ -100,12 +105,39 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 
                 if(sessionRegistry != null){
                 	int sessionCount = 0;
+            		Set<String> ip = new HashSet<String>();
+
                 	List<SessionInformation> l = sessionRegistry.getAllSessions(TurbineUtils.getUser(data), false);
                 	if(l != null){
+                		StringBuffer in = new StringBuffer("'");
                 		sessionCount = l.size();
+                		for(SessionInformation i:l){
+                			in.append(i.getSessionId()).append("','");
+                		}
+                		//notice the lazy hack to finish out the query.
+                		String query = "SELECT DISTINCT(ip_address) FROM xdat_user_login WHERE session_id in (" + in + "thisIsALazyHack')";
+       
+                		XDATUser user = TurbineUtils.getUser(data);
+                		try {
+                			PoolDBUtils dbUtils = new PoolDBUtils();
+                			XFTTable table = TableSearch.Execute(query, user.getDBName(), user.getUsername());
+                			table.resetRowCursor();
+                            while (table.hasMoreRows())
+                            {
+                            	final Hashtable row = table.nextRowHash();
+                                ip.add( (String)row.get("ip_address") );
+                            }
+                		} catch (Exception e){
+                			logger.error("problem looking for concurrent session IP addresses.", e);
+                		}
                 	}
-                	if(sessionCount > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest")){
-                		data.setMessage("WARNING: Your account currently has " + sessionCount +" login sessions open. If you believe this is incorrect, please contact support.");
+                	if(sessionCount > 100 || (sessionCount > 1 && ip.size() > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest"))){
+                		StringBuffer sessionWarning = new StringBuffer("WARNING: Your account currently has ").append(sessionCount).append(" login sessions open from ").append(ip.size()).append(" distinct IP addresses. If you believe this is incorrect, please take corrective action. The IP addresses are:");
+                		for(String i:ip){
+                			sessionWarning.append(i).append(" ");
+                		}
+                		c.put("sessionWarning", sessionWarning.toString() );
+                		
                 	}
                 }
                 doBuildTemplate(data, c);

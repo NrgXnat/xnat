@@ -1071,7 +1071,8 @@ public class XFTValidator {
 					if(!temp.equals(EMPTY))DateUtils.parseTime(temp);
 				}catch(Exception ex)
 				{
-					vr.addResult(vField,"Must Be A Valid Date", xmlPath,element);
+					if (!temp.equalsIgnoreCase("INF") && !temp.equalsIgnoreCase("NaN")&& !temp.equalsIgnoreCase("NULL"))
+						vr.addResult(vField,"Must Be A Valid Date", xmlPath,element);
 				}
 			}else if (type.equalsIgnoreCase(prefix+":date"))
 			{
@@ -1101,12 +1102,14 @@ public class XFTValidator {
 					if(!temp.equals(EMPTY))DateUtils.parseDate(temp);
 				}catch(Exception ex)
 				{
-					vr.addResult(vField,"Must Be A Valid Date", xmlPath,element);
+					if (!temp.equalsIgnoreCase("INF") && !temp.equalsIgnoreCase("NaN")&& !temp.equalsIgnoreCase("NULL"))
+						vr.addResult(vField,"Must Be A Valid Date", xmlPath,element);
 				}
 			}else if (type.equalsIgnoreCase(prefix+":dateTime"))
 			{
+				String temp = EMPTY;
 				try{
-					String temp = EMPTY;
+					
 					if (value == null)
 					{
 						temp = EMPTY;
@@ -1129,7 +1132,8 @@ public class XFTValidator {
 					if(!temp.equals(EMPTY))DateUtils.parseDateTime(temp);
 				}catch(Exception ex)
 				{
-					vr.addResult(vField,"Must Be A Valid Date", xmlPath,element);
+					if (!temp.equalsIgnoreCase("INF") && !temp.equalsIgnoreCase("NaN")&& !temp.equalsIgnoreCase("NULL"))
+						vr.addResult(vField,"Must Be A Valid Date", xmlPath,element);
 				}
 			}else if (type.equalsIgnoreCase(prefix+":IDREF"))
 			{

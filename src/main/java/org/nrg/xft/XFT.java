@@ -59,6 +59,9 @@ public class XFT {
     public static boolean VERBOSE = false;
     public static boolean REQUIRE_REASON = false;
     public static boolean SHOW_REASON = false;
+    
+
+    public static boolean REQUIRE_EVENT_NAME = false;//used to configure whether event names are required on modifications
 //	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
 //	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 

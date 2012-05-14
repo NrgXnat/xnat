@@ -115,10 +115,11 @@ public class PersistentWorkflowUtils {
 			}
 			workflow.setJustification(event.getReason());
 			if(StringUtils.isEmpty(event.getAction())){
-				//TODO: this was changed from an exception to unknown so the test suite could run.
-				//make this configurable in the project.
-				//throw new ActionNameAbsent();
-				workflow.setPipelineName(EventUtils.UNKNOWN);
+				if(XFT.REQUIRE_EVENT_NAME){
+					throw new ActionNameAbsent();
+				}else{
+					workflow.setPipelineName(EventUtils.UNKNOWN);
+				}
 			}else{
 				workflow.setPipelineName(event.getAction());
 			}

@@ -1,3 +1,4 @@
+//Copyright 2012 Radiologics, Inc.  All Rights Reserved
 package org.nrg.xft.utils;
 
 import java.text.ParseException;

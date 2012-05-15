@@ -18,6 +18,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.GregorianCalendar;
 import java.util.Iterator;
+import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
@@ -249,6 +250,8 @@ public abstract class SearchA extends SecureAction {
                         int c =0;
                         for(Object o : os){
                             String temp = (String)o;
+                            temp = temp.replace("/&lt;", "");
+                            temp = temp.replace("&gt;", "");
                             if(c++>0)osString +=",";
                             osString += temp;
                         }
@@ -270,7 +273,12 @@ public abstract class SearchA extends SecureAction {
                     }
                 }else if (type.equalsIgnoreCase("date"))
                 {
-                    if (TurbineUtils.HasPassedParameter(s + "_to_fulldate",data) || TurbineUtils.HasPassedParameter(s + "_from_fulldate",data))
+                	if(TurbineUtils.HasPassedParameter(s + "_equals",data) && Pattern.matches("^[0-9]{4}$", (String)TurbineUtils.GetPassedParameter(s + "_equals",data))){
+                		String to = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_equals",data));
+                        ds.setWebFormValue(s + "_equals",to);
+                        ds.addCriteria(ed.getElementName(),df.getId(),"=",to);
+                	}
+                	else if (TurbineUtils.HasPassedParameter(s + "_to_fulldate",data) || TurbineUtils.HasPassedParameter(s + "_from_fulldate",data))
                     {
                         if (TurbineUtils.HasPassedParameter(s + "_to_fulldate",data) && TurbineUtils.HasPassedParameter(s + "_from_fulldate",data))
                         {
@@ -290,7 +298,8 @@ public abstract class SearchA extends SecureAction {
                             cc.add(dc);
 
                             ds.addCriteria(cc);
-                        }else if ((TurbineUtils.HasPassedParameter(s + "_to_fulldate",data))){
+                        }
+                        else if ((TurbineUtils.HasPassedParameter(s + "_to_fulldate",data))){
                             String to = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(s + "_to_fulldate",data));
                             ds.setWebFormValue(s + "_to_fulldate",to);
                             Date toD = DateUtils.parseDate(to);
@@ -449,7 +458,7 @@ public abstract class SearchA extends SecureAction {
             }
 
 
-            int counter = 0;
+            int counter = 1;
             while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter, data)) != null)
             {
                 if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter, data)).length() == 0){counter++;continue;}
@@ -505,7 +514,7 @@ public abstract class SearchA extends SecureAction {
             }
         }
 
-        int counter = 0;
+        int counter = 1;
         while (TurbineUtils.HasPassedParameter("COMBO" +counter,data))
         {
             CriteriaCollection cc = new CriteriaCollection("OR");

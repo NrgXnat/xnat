@@ -2504,7 +2504,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                         .getStringProperty("primary_password");
                 if (!StringUtils.IsEmpty(tempPass)){
                 	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-                	if(validator.isValid(tempPass, authenticatedUser)){
+                	if(validator.isValid(tempPass, null)){
+                		//this is set to null instead of authenticatedUser because new users should be able to use any password even those that have recently been used by other users.
                 		found.setProperty("primary_password", XDATUser
                             .EncryptString(tempPass, "SHA-256"));
                 	} else {

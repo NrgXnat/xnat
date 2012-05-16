@@ -25,6 +25,10 @@ public class Login extends VelocitySecureScreen {
 	@Override
 	protected void doBuildTemplate(RunData data) throws Exception {
 		Context c = TurbineVelocity.getContext(data);
+		String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
+		if(failed!=null && failed.equals("true")){
+			data.setMessage("Login attempt failed. Please try again.");
+		}
         String systemName = TurbineUtils.GetSystemName();
         c.put("turbineUtils",TurbineUtils.GetInstance());
         c.put("systemName",systemName);

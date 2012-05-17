@@ -801,5 +801,24 @@ public class XFT {
     public static String GetConfDir(){
         return CONF_DIR;
     }
+    
+    private static String EnableCsrfToken = "";
+    public static boolean GetEnableCsrfToken()
+    {
+        if(XFT.EnableCsrfToken==null){
+            return true;
+        }else if(XFT.EnableCsrfToken.equalsIgnoreCase("false") || XFT.EnableCsrfToken.equalsIgnoreCase("1"))
+        {
+            return false;
+        }else{
+            return true;
+        }
+    }
+
+    public static void SetEnableCsrfToken(String s)
+    {
+        XFT.EnableCsrfToken=s;
+    }
+    
 }
 

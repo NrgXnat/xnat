@@ -158,6 +158,11 @@ public abstract class SecureAction extends VelocitySecureAction
     //if you change that behavior, look at every place this is used to be sure it actually
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(HttpServletRequest request, String clientToken, boolean strict) throws Exception {
+    	
+    	if(!XFT.GetEnableCsrfToken()){
+    		return true;
+    	}
+    	
     	//let anyone using something other than a browser ignore the token.
     	String userAgent = request.getHeader("User-Agent");
     	if(!strict && userAgent==null){

@@ -50,7 +50,7 @@ public class XFTTableSortTest {
 		
 		final Object[] o2=t.rows().get(0);
 		
-		if(o1.equals(o2)){
+		if(o1==o2){
 			fail("Objects should not be equal.");
 		}
 	}
@@ -86,7 +86,7 @@ public class XFTTableSortTest {
 		
 		final Object[] o2=t.rows().get(0);
 		
-		if(!o1.equals(o2)){
+		if(o1!=o2){
 			fail("Objects should be equal.");
 		}
 	}
@@ -104,7 +104,7 @@ public class XFTTableSortTest {
 		
 		final Object[] o2=t.rows().get(0);
 		
-		if(o1.equals(o2)){
+		if(o1==o2){
 			fail("Objects should not be equal.");
 		}
 		

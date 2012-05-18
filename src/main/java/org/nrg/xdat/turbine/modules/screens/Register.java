@@ -14,12 +14,7 @@ public class Register extends VelocitySecureScreen {
 	@Override
 	protected void doBuildTemplate(RunData data) throws Exception {
 		Context c = TurbineVelocity.getContext(data);
-        String systemName = TurbineUtils.GetSystemName();
-        
-        c.put("showReason", XFT.SHOW_REASON);
-        c.put("requireReason", XFT.REQUIRE_REASON);
-        c.put("turbineUtils",TurbineUtils.GetInstance());
-        c.put("systemName",systemName);
+        SecureScreen.loadAdditionalVariables(data, c);
         doBuildTemplate(data, c);
 	}
 

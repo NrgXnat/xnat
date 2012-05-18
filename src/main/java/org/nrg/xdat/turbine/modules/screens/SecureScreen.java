@@ -67,6 +67,27 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             context.put("project", TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data))));
         }
     }
+    
+    public static void loadAdditionalVariables(RunData data, Context c){
+    	if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
+            if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
+                c.put("popup","true");
+            }else{
+                c.put("popup","false");
+            }
+        }else{
+            c.put("popup","false");
+        }
+
+        String systemName = TurbineUtils.GetSystemName();
+        c.put("turbineUtils",TurbineUtils.GetInstance());
+        c.put("systemName",systemName);
+        
+        c.put("showReason", XFT.SHOW_REASON);
+        c.put("requireReason", XFT.REQUIRE_REASON);
+        
+        c.put("configProps", XFT.PROPS);        
+    }
 
 	/**
      * This method overrides the method in VelocitySecureScreen to
@@ -79,22 +100,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             throws Exception {
 	    try {
             Context c = TurbineVelocity.getContext(data);
-            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
-                if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
-                    c.put("popup","true");
-                }else{
-                    c.put("popup","false");
-                }
-            }else{
-                c.put("popup","false");
-            }
+            loadAdditionalVariables(data, c);
 
-            String systemName = TurbineUtils.GetSystemName();
-            c.put("turbineUtils",TurbineUtils.GetInstance());
-            c.put("systemName",systemName);
-            
-            c.put("showReason", XFT.SHOW_REASON);
-            c.put("requireReason", XFT.REQUIRE_REASON);
             
             c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
             preserveVariables(data,c);
@@ -303,7 +310,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     protected List<Properties> findTabs(String subfolder) throws FileNotFoundException {
         List<Properties> tabs = new ArrayList<Properties>();
         File tabsFolder = XDAT.getScreenTemplatesSubfolder(subfolder);
-        if (tabsFolder.exists()) {
+        if (tabsFolder!=null && tabsFolder.exists()) {
             File[] files = tabsFolder.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File folder, String name) {
@@ -315,54 +322,61 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             });
 
             for (File file: files) {
-                String fileName = file.getName();
-                String divName = fileName.substring(0, fileName.length() - 3);
-
-                // If there are no default tabs or if the defaultTabs doesn't exclude this divName...
-                if (_defaultTabs == null || !_defaultTabs.contains(divName)) {
-                    Properties metadata = new Properties();
-
-                    // Set default divName and title properties to start. These can be overridden during mix-in processing.
-                    metadata.setProperty("fileName", fileName);
-                    metadata.setProperty("divName", divName);
-                    metadata.setProperty("title", divName);
-
-                    boolean include = true;
-
-                    Scanner scanner = new Scanner(file);
-                    try {
-                        while (scanner.hasNextLine()) {
-                            String line = scanner.nextLine();
-                            Matcher matcher = _pattern.matcher(line);
-                            if (matcher.matches()) {
-                                String key = matcher.group(1);
-                                String value = matcher.group(2);
-                                if (key.equalsIgnoreCase("ignore") && value.equalsIgnoreCase("true")) {
-                                    if (_log.isDebugEnabled()) {
-                                        _log.debug("Found ignore = true in file: " + file.getName());
-                                    }
-                                    include = false;
-                                    break;
-                                }
-                                metadata.setProperty(key, value);
-                                if (_log.isDebugEnabled()) {
-                                    _log.debug("Came up with " + key + "[" + value + "] from file: " + file.getName());
-                                }
-                            }
-                        }
-                    } finally {
-                        if (scanner != null) {
-                            scanner.close();
-                        }
-    }
-
-                    if (include) {
-                        tabs.add(metadata);
-                    }
-                }
+                addProps(file,tabs,_defaultTabs,subfolder+"/"+file.getName());
             }
         }
         return tabs;
+    }
+    
+    public static void addProps(File file,List<Properties> screens, List<String> _defaultScreens, final String path) throws FileNotFoundException{
+    	String fileName = file.getName();
+        String divName = fileName.substring(0, fileName.length() - 3);
+
+        // If there are no default tabs or if the defaultTabs doesn't exclude this divName...
+        if (_defaultScreens == null || !_defaultScreens.contains(divName)) {
+            Properties metadata = new Properties();
+
+            // Set default divName and title properties to start. These can be overridden during mix-in processing.
+            metadata.setProperty("fileName", fileName);
+            metadata.setProperty("path", path);
+            metadata.setProperty("divName", divName);
+            metadata.setProperty("title", divName);
+
+            boolean include = true;
+
+            if(file.exists()){
+                Scanner scanner = new Scanner(file);
+                try {
+                    while (scanner.hasNextLine()) {
+                        String line = scanner.nextLine();
+                        Matcher matcher = _pattern.matcher(line);
+                        if (matcher.matches()) {
+                            String key = matcher.group(1);
+                            String value = matcher.group(2);
+                            if (key.equalsIgnoreCase("ignore") && value.equalsIgnoreCase("true")) {
+                                if (_log.isDebugEnabled()) {
+                                    _log.debug("Found ignore = true in file: " + file.getName());
+                                }
+                                include = false;
+                                break;
+                            }
+                            metadata.setProperty(key, value);
+                            if (_log.isDebugEnabled()) {
+                                _log.debug("Came up with " + key + "[" + value + "] from file: " + file.getName());
+                            }
+                        }
+                    }
+                } finally {
+                    if (scanner != null) {
+                        scanner.close();
+                    }
+                }
+
+                if (include) {
+                	screens.add(metadata);
+                }
+            }
+        }
     }
 
     /**

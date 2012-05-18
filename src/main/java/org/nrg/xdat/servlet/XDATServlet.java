@@ -45,6 +45,10 @@ public class XDATServlet extends HttpServlet{
             
 			XDAT.init(path,true,false);
             XDAT.setScreenTemplatesFolder(this.getServletContext().getRealPath("templates" + File.separator + "screens" + File.separator));
+            
+            XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath("templates" + File.separator + "screens" + File.separator));
+            XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath("xnat-templates" + File.separator + "screens" + File.separator));
+            XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath("xdat-templates" + File.separator + "screens" + File.separator));
 			
             Thread t = new DelayedSequenceChecker();
             t.start();

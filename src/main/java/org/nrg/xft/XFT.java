@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Iterator;
+import java.util.Properties;
 import java.util.Random;
 
 import org.apache.log4j.Appender;
@@ -65,7 +66,8 @@ public class XFT {
 //	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
 //	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 
-
+    public static Properties PROPS=null;
+    
     public static void init(String location,boolean allowDBAccess) throws ElementNotFoundException
     {
         init(location,allowDBAccess,true);

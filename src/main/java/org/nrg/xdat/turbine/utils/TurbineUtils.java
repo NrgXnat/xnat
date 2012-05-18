@@ -9,6 +9,9 @@
  */
 package org.nrg.xdat.turbine.utils;
 
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringReader;
 import java.net.URLDecoder;
@@ -17,16 +20,18 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
+import java.util.Comparator;
 import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.XDATUserDetails;
+import java.util.Properties;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -35,12 +40,15 @@ import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.om.XdatSecurity;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -873,6 +881,10 @@ public class TurbineUtils {
         	data.setScreenTemplate("DefaultReport.vm");
         }
 	}
+	
+	public Boolean toBoolean(String s){
+		return Boolean.valueOf(s);
+	}
     
     public String formatDate(Date d, String pattern){
     	final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);
@@ -942,6 +954,108 @@ public class TurbineUtils {
 		}
     	
     	return null;
+    }
+    
+    protected final Map<String,List<Properties>> cachedVMS=new Hashtable<String,List<Properties>>();
+    
+    
+    /**
+     * Note: much of this was copied from SecureScreen.  This version looks at the other templates directories (not just templates).  We may want to merge the two impls.
+     * @param subFolderAndPatttern : like topBar/admin
+     * @return
+     */
+    public List<Properties> getTemplates(String subFolder){
+    	//first see if the props have been cached.
+    	List<Properties> screens=cachedVMS.get(subFolder);
+    	List<String> _defaultScreens=new ArrayList<String>();
+    	if(screens==null){
+    		synchronized (this){
+    			//synchronized so that two calls don't overwrite eachother.  I only synchronized this chunk in hopes that when the screens list is cached, the block woudn't occur.
+	    		//need to build the list of props.
+	    		screens=new ArrayList<Properties>();
+	        	List<String> exists=new ArrayList<String>();
+	    		List<File> screensFolders = XDAT.getScreenTemplateFolders();
+	    		for(File screensFolder: screensFolders){
+	    	        if (screensFolder.exists()) {
+	    	        	File subFile=new File(screensFolder,subFolder);
+	    	        	if(subFile.exists()){
+	        	            File[] files = subFile.listFiles(new FilenameFilter() {
+	        	                @Override
+	        	                public boolean accept(File folder, String name) {
+	        	                    return name.endsWith(".vm");
+	        	                }
+	        	            });
+	        	            
+	        	            if(files!=null){
+	        	            	for(File f:files){
+	        	            		String path=subFolder+"/"+f.getName();
+	        	            		if(!exists.contains(path)){
+	            	            		try {
+											SecureScreen.addProps(f, screens, _defaultScreens,path);
+											exists.add(path);
+										} catch (FileNotFoundException e) {
+											//this shouldn't happen
+										}
+	        	            		}
+	        	            	}
+	        	            }
+	    	        	}
+	    	        }
+	    		}
+	    		
+	    		Collections.sort(screens, new Comparator<Properties>() {
+					@Override
+					public int compare(Properties arg0, Properties arg1) {
+						if(arg0.containsKey("Sequence") && arg1.containsKey("Sequence")){
+							try {
+								Integer sequence1=Integer.parseInt(arg0.getProperty("Sequence"));
+								Integer sequence2=Integer.parseInt(arg1.getProperty("Sequence"));
+								return sequence1.compareTo(sequence2);
+							} catch (NumberFormatException e) {
+								logger.error("Illegal sequence format.",e);
+								return 0;
+							}
+						}else if(arg0.containsKey("Sequence")){
+							return -1;
+						}else if(arg1.containsKey("Sequence")){
+							return 1;
+						}else{
+							return 0;
+						}
+					}
+				});
+	    		
+	    		cachedVMS.put(subFolder,screens);
+    		}
+    	}
+    	return screens;
+    }
+
+    /**
+     * Looks for templates in the give subFolder underneath the give dataType in the xdat-templatea, xnat-templates, or templates.
+     * dataType/subFolder
+     * 
+     * @param dataType
+     * @param subFolder
+     * @return
+     */
+    public List<Properties> getTemplates(String dataType, String subFolder){
+    	List<Properties> props= new ArrayList<Properties>();
+		try {
+			final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
+			
+			props.addAll(getTemplates(root.getSQLName()+"/"+subFolder));
+			
+			for(List<Object> primary: root.getExtendedElements()){
+				final GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
+				props.addAll(getTemplates(p.getSQLName()+"/"+subFolder));
+			}
+		} catch (XFTInitException e) {
+			logger.error("",e);
+		} catch (ElementNotFoundException e) {
+			logger.error("",e);
+		}
+		return props;
     }
     
     public String getTemplateName(String module,String dataType,String project,String subFolder){

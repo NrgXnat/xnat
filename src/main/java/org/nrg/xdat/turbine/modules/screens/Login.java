@@ -29,9 +29,7 @@ public class Login extends VelocitySecureScreen {
 		if(failed!=null && failed.equals("true")){
 			data.setMessage("Login attempt failed. Please try again.");
 		}
-        String systemName = TurbineUtils.GetSystemName();
-        c.put("turbineUtils",TurbineUtils.GetInstance());
-        c.put("systemName",systemName);
+        SecureScreen.loadAdditionalVariables(data, c);
         List<AuthenticationProvider> prov = XDAT.getContextService().getBean("customAuthenticationManager",ProviderManager.class).getProviders();
         List<String> providerNames = new ArrayList<String>();
         for(AuthenticationProvider p : prov){
@@ -42,9 +40,6 @@ public class Login extends VelocitySecureScreen {
                 }
         	}
         }
-        
-        c.put("showReason", XFT.SHOW_REASON);
-        c.put("requireReason", XFT.REQUIRE_REASON);
 
         c.put("login_methods", providerNames);
         doBuildTemplate(data, c);

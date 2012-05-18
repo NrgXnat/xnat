@@ -9,6 +9,12 @@
  */
 package org.nrg.xdat;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.List;
+
+import javax.sql.DataSource;
+
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -36,9 +42,6 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.sql.DataSource;
-import java.io.File;
-
 /**
  * @author Tim
  *
@@ -55,6 +58,7 @@ public class XDAT implements Initializable,Configurable{
     private static ConfigService _configurationService;
 	private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
+    private static List<File> _screenTemplatesFolders=new ArrayList<File>();
 
 	public static boolean isAuthenticated() {
 		return SecurityContextHolder.getContext().getAuthentication()
@@ -263,6 +267,15 @@ public class XDAT implements Initializable,Configurable{
         return _marshallerCacheService;
     }
 
+    
+    public static void addScreenTemplatesFolder(String screenTemplatesFolder) {
+        _screenTemplatesFolders.add(new File(screenTemplatesFolder));
+    }
+
+    public static List<File> getScreenTemplateFolders(){
+    	return _screenTemplatesFolders;
+    }
+    
     /**
      * Returns the folder containing screen templates. These are installed by custom datatypes, modules, and other
      * customizations that extend or override the default application behavior.
@@ -270,12 +283,12 @@ public class XDAT implements Initializable,Configurable{
      */
     public static String getScreenTemplatesFolder() {
         return _screenTemplatesFolder.getAbsolutePath();
-}
+    }
 
     public static void setScreenTemplatesFolder(String screenTemplatesFolder) {
         _screenTemplatesFolder = new File(screenTemplatesFolder);
     }
-
+    
     public static File getScreenTemplatesSubfolder(String subfolder) {
         if (StringUtils.isBlank(subfolder)) {
             return new File(getScreenTemplatesFolder());
@@ -287,10 +300,12 @@ public class XDAT implements Initializable,Configurable{
         for (String folder : subfolders) {
             current = new File(current, folder);
             if (!current.exists()) {
-                throw new NrgRuntimeException("The folder indicated by " + current.getAbsolutePath() + " doesn't exist.");
+                logger.error("",new NrgRuntimeException("The folder indicated by " + current.getAbsolutePath() + " doesn't exist."));
+                return null;
             }
             if (!current.isDirectory()) {
-                throw new NrgRuntimeException("The path indicated by " + current.getAbsolutePath() + " isn't a folder.");
+                logger.error("",new NrgRuntimeException("The path indicated by " + current.getAbsolutePath() + " isn't a folder."));
+                return null;
             }
         }
 

@@ -50,7 +50,12 @@ public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 		}
 	}
 
-	/**
+    @Override
+    public void sendMessage(MailMessage message, String username, String password) throws MessagingException {
+        sendMessage(message);
+    }
+
+    /**
 	 * Sets the {@link JavaMailSender} object on the service.
 	 * 
 	 * @param sender

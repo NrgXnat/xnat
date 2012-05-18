@@ -50,7 +50,7 @@ import org.springframework.web.client.RestTemplate;
  */
 public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
-    public RestBasedMailServiceImpl(String address, String username, String password) throws NrgServiceException {
+    public RestBasedMailServiceImpl(String address) throws NrgServiceException {
         super();
 
         try {
@@ -58,8 +58,6 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
         } catch (URISyntaxException exception) {
             throw new NrgServiceException(NrgServiceError.InvalidRestServiceParameters, "Invalid server address", exception);
         }
-        setUsername(username);
-        setPassword(password);
     }
 
     /**
@@ -94,6 +92,11 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
     @Override
     public void sendMessage(MailMessage message) throws MessagingException {
+        sendMessage(message, _username, _password);
+    }
+
+    @Override
+    public void sendMessage(MailMessage message, String username, String password) throws MessagingException {
         assert !StringUtils.isBlank(message.getFrom()) : "You must specify a from address for your email.";
         assert message.getTos() != null && message.getTos().size() > 0 : "You must specify at least one address to which to send an email.";
         assert message.getSubject() != null : "You must specify a subject for your email.";
@@ -143,7 +146,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
         HttpClient client = new HttpClient();
         client.getParams().setAuthenticationPreemptive(true);
-        Credentials credentials = new UsernamePasswordCredentials(_username, _password);
+        Credentials credentials = new UsernamePasswordCredentials(username, password);
         client.getState().setCredentials(new AuthScope(_address.getHost(), _address.getPort(), AuthScope.ANY_REALM), credentials);
         RestTemplate template = new RestTemplate(new CommonsClientHttpRequestFactory(client));
         template.setMessageConverters(Arrays.asList(messageConverters));

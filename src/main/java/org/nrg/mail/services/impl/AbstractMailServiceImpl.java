@@ -32,6 +32,20 @@ abstract public class AbstractMailServiceImpl implements MailService {
     public abstract void sendMessage(MailMessage message) throws MessagingException;
 
     /**
+     * Sends a {@link MailMessage}. The XDAT mail message class abstracts the plain-text, HTML,
+     * attachment, and other specialized logic away and leaves it to the implementation of this
+     * method to make the proper decisions about how the message should actually be dispatched.
+     * This includes a username and password to validate against the mail service being used.
+     * This method may be unimplemented in cases where the username and password aren't used
+     * or where the username and password are intended to be cached and used in a singleton.
+     *
+     * @param message     The mail message object to send.
+     * @param username    The username to use to validate against the mail service.
+     * @param password    The password to use to validate against the mail service.
+     */
+    public abstract void sendMessage(MailMessage message, String username, String password) throws MessagingException;
+
+    /**
      * Protected constructor.
      */
     protected AbstractMailServiceImpl() {

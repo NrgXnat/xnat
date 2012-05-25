@@ -165,7 +165,14 @@ public class XFTValidator {
 			if (type.equalsIgnoreCase(prefix+":string"))
 			{
 				try{
-					String temp = (String)value;
+					
+					String temp;
+					if(value!=null && !(value instanceof String)){
+						temp=value.toString();
+					}else{
+						temp = (String)value;
+					}
+					
 					if (temp == null)
 					{
 						temp = EMPTY;

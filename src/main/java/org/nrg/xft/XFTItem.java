@@ -4721,7 +4721,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             			        }else{
             						throw new FieldNotFoundException(xmlPath);
             			        }
-            			    }else if (secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("dateTime"))
+            			    }else if (secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("dateTime") || secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("string"))
             			    {
             			        if (xmlPath.equalsIgnoreCase("date")
             			                || xmlPath.equalsIgnoreCase("month")

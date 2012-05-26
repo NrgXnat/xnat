@@ -822,5 +822,13 @@ public class XFT {
         XFT.EnableCsrfToken=s;
     }
     
+    public static boolean getBooleanProperty(String key, String _default){
+    	return Boolean.valueOf(XFT.PROPS.getProperty(key, _default));
+    }
+    
+    public static boolean getBooleanProperty(String key, boolean _default){
+    	return getBooleanProperty(key, Boolean.toString(_default));
+    }
+    
 }
 

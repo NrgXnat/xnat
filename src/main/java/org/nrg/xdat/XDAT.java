@@ -25,6 +25,7 @@ import org.nrg.config.services.ConfigService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.MarshallerCacheService;
+import org.nrg.framework.services.PropertiesService;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
@@ -52,6 +53,7 @@ public class XDAT implements Initializable,Configurable{
     private static DataSource _dataSource;
 	private static MailService _mailService;
     private static NotificationService _notificationService;
+    private static PropertiesService _propertiesService;
     private static XftFieldExclusionService _exclusionService;
     private static MarshallerCacheService _marshallerCacheService;
 	private static XdatUserAuthService _xdatUserAuthService;
@@ -61,13 +63,11 @@ public class XDAT implements Initializable,Configurable{
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
 
 	public static boolean isAuthenticated() {
-		return SecurityContextHolder.getContext().getAuthentication()
-				.isAuthenticated();
+		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
 	}
 
 	public static XDATUserDetails getUserDetails() {
-		Authentication authentication = SecurityContextHolder.getContext()
-				.getAuthentication();
+		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		if (authentication != null && authentication.getPrincipal() != null
 				&& authentication.getPrincipal() instanceof XDATUserDetails) {
@@ -245,6 +245,17 @@ public class XDAT implements Initializable,Configurable{
 	    return _notificationService;
 	}
 	
+	/**
+	 * Returns an instance of the currently supported {@link NotificationService notification service}.
+	 * @return An instance of the {@link NotificationService notification service}.
+	 */
+	public static PropertiesService getPropertiesService() {
+	    if (_propertiesService == null) {
+            _propertiesService = getContextService().getBean(PropertiesService.class);
+	    }
+	    return _propertiesService;
+	}
+
 	/**
 	 * Returns an instance of the currently supported {@link XftFieldExclusionService exclusion service}.
 	 * @return An instance of the {@link XftFieldExclusionService exclusion service}.

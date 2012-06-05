@@ -46,9 +46,11 @@ public class DeleteAction extends SecureAction {
 				}
 				
 				try {
+                    preDelete(data, context);
 					SaveItemHelper.unauthorizedDelete(o.getItem(), TurbineUtils.getUser(data),ci);
-                    
-					if(wrk!=null)
+                    postDelete(data, context);
+
+                    if(wrk!=null)
 						PersistentWorkflowUtils.complete(wrk,ci);
                     data.setMessage("<p>Item Deleted.</p>");
     			  	data.setScreenTemplate("Index.vm");
@@ -67,6 +69,14 @@ public class DeleteAction extends SecureAction {
 			logger.error("DeleteAction",e);
 			data.setScreenTemplate("Error.vm");
 		}
+    }
+
+    protected void preDelete(final RunData data, final Context context) {
+        // Nothing.
+    }
+
+    protected void postDelete(final RunData data, final Context context) {
+        // Nothing.
     }
 
 }

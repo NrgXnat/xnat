@@ -64,7 +64,8 @@ public class StoreXML {
                 
                 SaveItemHelper.unauthorizedSave(item, user, false, allowDataDeletion,ci);
                 
-                PersistentWorkflowUtils.complete(wrk,ci);
+                if(wrk!=null)
+                	PersistentWorkflowUtils.complete(wrk,ci);
                 
                 SAXWriter writer = new SAXWriter(response.getOutputStream(),false);
                 writer.setWriteHiddenFields(true);

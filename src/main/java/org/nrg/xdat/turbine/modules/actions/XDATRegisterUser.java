@@ -5,11 +5,6 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.util.HashSet;
-import java.util.Set;
-import java.util.UUID;
-
-import javax.servlet.http.HttpSession;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
@@ -17,34 +12,32 @@ import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.entities.XdatUserAuth;
+import org.nrg.xdat.security.PasswordValidatorChain;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xdat.security.PasswordValidatorChain;
-import org.nrg.xdat.security.RegExpValidator;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
-import org.nrg.xft.security.UserI;
-import org.springframework.security.authentication.AuthenticationManager;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.springframework.mail.MailSendException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
-import org.springframework.security.authentication.AuthenticationProvider;
-import org.springframework.security.authentication.ProviderManager;
+
+import javax.servlet.http.HttpSession;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.UUID;
 
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
@@ -94,18 +87,16 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                    found.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name","DataManager");
 		                
 		                XDATUser newUser = new XDATUser(found);
-		               // newUser.initializePermissions();
-		                
-	                SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false,EventUtils.ADMIN_EVENT(newUser));
-		                TurbineUtils.setUser(data,newUser);
-		                
+
+	                    SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data), true, false, true, false, EventUtils.ADMIN_EVENT(newUser));
 		                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
 	                    XDAT.getXdatUserAuthService().create(newUserAuth);
 	
 		                if (autoApproval)
 		                {
-		
-		                    HttpSession session = data.getSession();
+                            TurbineUtils.setUser(data, newUser);
+
+                            HttpSession session = data.getSession();
 		                    session.setAttribute("user",newUser);
 		                    session.setAttribute("loggedin",true);
 		                    data.setMessage("User registration complete.");
@@ -124,11 +115,11 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
 		                    item.setProperty("xdat:user_login.login_date",today);
 		                    item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
-	                    SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
+	                        SaveItemHelper.authorizedSave(item, null, true, false, null);
 		                    
 							Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 		                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
-		    		    	Authentication authentication = new UsernamePasswordAuthenticationToken((String)found.getProperty("login"), tempPass, grantedAuthorities);
+		    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
 		    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
 		    		    	securityContext.setAuthentication(authentication);
 							
@@ -156,14 +147,18 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                    String lab = "";
 		                    if (TurbineUtils.HasPassedParameter("lab", data))
 		                        lab = (String)TurbineUtils.GetPassedParameter("lab", data);
-		                    
-		                    AdminUtils.sendNewUserRequestEmailMessage(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
-		                    
-		                    data.setRedirectURI(null);
-		                    data.setScreenTemplate("PostRegister.vm");
+
+                            try {
+                                AdminUtils.sendNewUserRequestEmailMessage(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
+                            } catch (MailSendException exception) {
+                                logger.error("Error occurred sending new user request email", exception);
+                            } finally {
+                                data.setRedirectURI(null);
+                                data.setScreenTemplate("PostRegister.vm");
+                            }
 		                }
 	                }else{
-		            	handleInvalidPassword(data, context, found, validator.getMessage());
+		            	handleInvalidPassword(data, context, validator.getMessage());
 	                }
 	            }else{
 	            	handleDuplicateEmail(data, context, found);
@@ -178,7 +173,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
         
     }
     
-    public void handleInvalidPassword(RunData data,Context context,ItemI found, String message){
+    public void handleInvalidPassword(RunData data, Context context, String message){
     	try {
 			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
 			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
@@ -187,7 +182,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			if(!StringUtils.isEmpty(par)){
 				context.put("par", par);
 			}
-			if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+			if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 				context.put("nextAction", nextAction);
 			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
 				context.put("nextPage", nextPage);
@@ -211,7 +206,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			if(!StringUtils.isEmpty(par)){
 				context.put("par", par);
 			}
-			if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+			if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 				context.put("nextAction", nextAction);
 			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
 				context.put("nextPage", nextPage);
@@ -235,7 +230,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			if(!StringUtils.isEmpty(par)){
 				context.put("par", par);
 			}
-			if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+			if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 				context.put("nextAction", nextAction);
 			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
 				context.put("nextPage", nextPage);
@@ -278,7 +273,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
         data.setScreenTemplate("Index.vm");
         
         if (XFT.GetUserRegistration()){
-         if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+         if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);
             VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
             action.doPerform(data, context);
@@ -292,5 +287,4 @@ public class XDATRegisterUser extends VelocitySecureAction {
     protected boolean isAuthorized(RunData data) throws Exception {
         return true;
     }
-
 }

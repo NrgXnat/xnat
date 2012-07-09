@@ -149,7 +149,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                        lab = (String)TurbineUtils.GetPassedParameter("lab", data);
 
                             try {
-                                AdminUtils.sendNewUserRequestEmailMessage(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
+                                AdminUtils.sendNewUserRequestNotification(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
                             } catch (MailSendException exception) {
                                 logger.error("Error occurred sending new user request email", exception);
                             } finally {

@@ -7,20 +7,19 @@ package org.nrg.xdat.turbine.utils;
 
 import java.io.StringWriter;
 import java.util.Calendar;
+import java.util.HashMap;
 import java.util.Iterator;
+import java.util.Map;
 
 import javax.mail.MessagingException;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
-import org.apache.velocity.exception.MethodInvocationException;
-import org.apache.velocity.exception.ParseErrorException;
-import org.apache.velocity.exception.ResourceNotFoundException;
+import org.nrg.mail.api.MailMessage;
 import org.nrg.xdat.XDAT;
 import org.nrg.mail.api.NotificationSubscriberProvider;
 import org.nrg.mail.api.NotificationType;
@@ -69,9 +68,9 @@ public class AdminUtils {
 	}
 
 	/**
-	 * Gets the Admin's Email Address.
+	 * Gets the administrator's email address.
 	 * 
-	 * @return admin email address
+	 * @return The administrator's email address.
 	 */
 	public static String getAdminEmailId() {
 		return XFT.GetAdminEmail();
@@ -132,41 +131,43 @@ public class AdminUtils {
 	/**
 	 * Sends the Welcome email to a new User
 	 * 
-	 * @param username
-	 * @param email
-	 * @param context 
+	 * @param username    The username of the new user.
+	 * @param email       The email of the new user.
+	 * @param context     The data context.
 	 * @throws Exception 
 	 */
-	public static void sendNewUserRequestEmailMessage(String username, String firstname, String lastname, String email, String comments, String phone, String lab, Context context) throws Exception {
+	public static void sendNewUserRequestNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
         context.put("time", Calendar.getInstance().getTime());
         context.put("server", TurbineUtils.GetFullServerPath());
         context.put("system", TurbineUtils.GetSystemName());
         context.put("username", username);
-        context.put("firstname", firstname);
-        context.put("lastname", lastname);
+        context.put("first", first);
+        context.put("last", last);
         context.put("email", email);
         context.put("comments", comments);
         context.put("phone", phone);
         context.put("lab", lab);
         
         String body = populateVmTemplate(context, "/screens/email/NewUserRequest.vm");
+        String subject = TurbineUtils.GetSystemName() + " New User Request: " + first + " " + last;
 
-        String subject = TurbineUtils.GetSystemName() + " New User Request: " + firstname + " " + lastname;
-		try {
-			XDAT.getMailService().sendHtmlMessage(getAdminEmailId(), getNewUserEmailIds(), subject, body);
-		} catch (MessagingException exception) {
-			logger.error("Error sending new user request email", exception);
-		}
+        // XDAT.getMailService().sendHtmlMessage(getAdminEmailId(), getNewUserEmailIds(), subject, body);
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put(MailMessage.PROP_FROM, getAdminEmailId());
+        properties.put(MailMessage.PROP_SUBJECT, subject);
+        properties.put(MailMessage.PROP_HTML, body);
+        XDAT.verifyNotificationType(NotificationType.NewUser);
+        XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
 	}
 
     /**
 	 * Sends the Welcome email to a new User
 	 * 
-	 * @param username
-	 * @param email
+	 * @param username    The username of the new user.
+	 * @param email       The email  of the new user.
 	 */
 
-	public static void sendNewUserEmailMessage(String username, String email, RunData data, Context context) throws Exception {
+	public static void sendNewUserEmailMessage(String username, String email, Context context) throws Exception {
         context.put("username", username);
         context.put("server", TurbineUtils.GetFullServerPath());
         context.put("system", TurbineUtils.GetSystemName());
@@ -188,7 +189,7 @@ public class AdminUtils {
 	 * @return body of authorization email
 	 */
 
-	public static String getAuthorizeRequestEmailBody(String UserName_AwaitingAuthorization, String login, RunData data) {
+	public static String getAuthorizeRequestEmailBody(String UserName_AwaitingAuthorization, String login) {
 		String msg = "Authorization for new or updated access privilege has been requested for <b>" + UserName_AwaitingAuthorization + "</b>";
 		msg += "<br><br> This user will not be able to access the requested resources until you have completed authorization. Please review the privileges <a href=\"" + TurbineUtils.GetFullServerPath()
 				+ "/app/action/DisplayItemAction/search_element/xdat:user/search_field/xdat:user.login/search_value/" + login + "/\">here</a>.";
@@ -199,16 +200,16 @@ public class AdminUtils {
 	/**
 	 * Sends the Authorization Request to Authorizer
 	 * 
-	 * @param UserId_AwaitingAuthrization
+	 * @param user    The user to be authorized.
 	 */
 
-	public static void sendAuthorizationEmailMessage(XDATUser user, RunData data) {
+	public static void sendAuthorizationEmailMessage(XDATUser user) {
 
 		String from = getAdminEmailId();
 		String[] tos = StringUtils.split(getAuthorizerEmailId(), ", ");
 		String[] ccs = AdminUtils.GetNewUserRegistrationsEmail() ? new String[] { from } : null;
 		String subject = TurbineUtils.GetSystemName() + ": Authorization Request";
-		String body = getAuthorizeRequestEmailBody(user.getFirstname() + " " + user.getLastname(), user.getUsername(), data);
+		String body = getAuthorizeRequestEmailBody(user.getFirstname() + " " + user.getLastname(), user.getUsername());
 		try {
 			XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subject, body);
 		} catch (MessagingException exception) {
@@ -220,12 +221,11 @@ public class AdminUtils {
 	 * Sends an email to the user saying Authorization complete and the user can
 	 * log on to system.
 	 * 
-	 * @param user
-	 * @param data
-	 * @param context
-	 * @throws Exception
+	 * @param user       The user being authorized.
+	 * @param context    The data context.
+	 * @throws Exception When an exception occurs.
 	 */
-	public static void sendUserAuthorizedEmailMessage(XDATUser user, RunData data, Context context) throws Exception {
+	public static void sendUserAuthorizedEmailMessage(XDATUser user, Context context) throws Exception {
 
 		String email = user.getEmail();
 		if (!StringUtils.isBlank(email)) {
@@ -258,7 +258,7 @@ public class AdminUtils {
 		return successful;
 	}
 
-	public static void sendErrorEmail(RunData data, String e, Context context) throws Exception {
+	public static void sendErrorNotification(RunData data, String message, Context context) throws Exception {
 		XDATUser user = TurbineUtils.getUser(data);
 		String email = user.getEmail();
 		if (!StringUtils.isBlank(email)) {
@@ -266,13 +266,19 @@ public class AdminUtils {
 		    context.put("system", TurbineUtils.GetSystemName());
 		    context.put("server", TurbineUtils.GetFullServerPath());
 		    context.put("user", user.getLogin() + " (" + user.getFirstname() + " " + user.getLastname() + ")");
-			context.put("error", e.toString());
+			context.put("error", message);
 
 			String body = populateVmTemplate(context, "/screens/email/ErrorReport.vm");
 
 			try {
-				XDAT.getMailService().sendHtmlMessage(getAdminEmailId(), getErrorEmailIds(), TurbineUtils.GetSystemName() + ": Error Thrown", body);
-			} catch (Exception e1) {
+				// XDAT.getMailService().sendHtmlMessage(getAdminEmailId(), getErrorEmailIds(), TurbineUtils.GetSystemName() + ": Error Thrown", body);
+                Map<String, Object> properties = new HashMap<String, Object>();
+                properties.put(MailMessage.PROP_FROM, getAdminEmailId());
+                properties.put(MailMessage.PROP_SUBJECT, TurbineUtils.GetSystemName() + ": Error Thrown");
+                properties.put(MailMessage.PROP_HTML, body);
+                XDAT.verifyNotificationType(NotificationType.Error);
+                XDAT.getNotificationService().createNotification(NotificationType.Error.toString(), properties);
+            } catch (Exception e1) {
 				logger.error("Unable to send mail", e1);
 			}
 		}
@@ -282,7 +288,7 @@ public class AdminUtils {
 		String admin = getAdminEmailId();
 		String qualifiedSubject = TurbineUtils.GetSystemName() + ": " + subject;
 
-		StringBuffer formattedMessage = new StringBuffer();
+		StringBuilder formattedMessage = new StringBuilder();
 		formattedMessage.append("HOST: ").append(TurbineUtils.GetFullServerPath()).append("<BR>");
 		if (user != null)
 			formattedMessage.append("USER: ").append(user.getUsername()).append("(").append(user.getFirstname()).append(" ").append(user.getLastname()).append(")").append("<BR>");
@@ -308,34 +314,10 @@ public class AdminUtils {
 	    _provider = provider;
 	}
 
-    private static String populateVmTemplate(Context context, String templatePath) throws ResourceNotFoundException, ParseErrorException, Exception, MethodInvocationException {
+    public static String populateVmTemplate(Context context, String templatePath) throws Exception {
         StringWriter writer = new StringWriter();
         Template template = Velocity.getTemplate(templatePath);
         template.merge(context, writer);
         return writer.toString();
-    }
-
-    private static String[] getErrorEmailIds() {
-        return getNotificationTypeAddresses(NotificationType.Error);
-    }
-
-    private static String[] getIssueEmailIds() {
-        return getNotificationTypeAddresses(NotificationType.Issue);
-    }
-    
-    private static String[] getNewUserEmailIds() {
-        return getNotificationTypeAddresses(NotificationType.NewUser);
-    }
-    
-    private static String[] getUpdateEmailIds() {
-        return getNotificationTypeAddresses(NotificationType.Update);
-    }
-    
-    private static String[] getNotificationTypeAddresses(NotificationType type) {
-        if (_provider == null) {
-            return new String[] { getAdminEmailId() };
-        }
-        String[] addresses = _provider.getSubscribers(type);
-        return ArrayUtils.isEmpty(addresses) ? new String[] { getAdminEmailId() } : addresses;
     }
 }

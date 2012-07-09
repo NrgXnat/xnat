@@ -26,7 +26,12 @@ import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.MarshallerCacheService;
 import org.nrg.framework.services.PropertiesService;
+import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
+import org.nrg.notify.api.CategoryScope;
+import org.nrg.notify.api.SubscriberType;
+import org.nrg.notify.entities.*;
+import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.entities.XDATUserDetails;
@@ -48,7 +53,8 @@ import org.springframework.security.core.context.SecurityContextHolder;
  *
  */
 public class XDAT implements Initializable,Configurable{
-	static Logger logger = Logger.getLogger(XDAT.class);
+
+    static Logger logger = Logger.getLogger(XDAT.class);
 	private static ContextService _contextService;
     private static DataSource _dataSource;
 	private static MailService _mailService;
@@ -58,7 +64,8 @@ public class XDAT implements Initializable,Configurable{
     private static MarshallerCacheService _marshallerCacheService;
 	private static XdatUserAuthService _xdatUserAuthService;
     private static ConfigService _configurationService;
-	private String instanceSettingsLocation = null;
+    public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
+    private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
 
@@ -352,5 +359,72 @@ public class XDAT implements Initializable,Configurable{
 		}
 		return _xdatUserAuthService;
 	}
-	
+
+    /**
+     * This verifies that a notification and subscriber exists for the indicated site-wide event. If the notification or
+     * subscriber does <i>not</i> exist, one is created using the primary administrative user.
+     * @param event    The site-wide event to be verified.
+     */
+    public static void verifyNotificationType(NotificationType event) {
+        final String adminEmail = XFT.GetAdminEmail();
+        final Channel channel = getHtmlMailChannel();
+        Category category = getNotificationService().getCategoryService().getCategoryByScopeAndEvent(CategoryScope.Site, event);
+        if (category == null) {
+            category = getNotificationService().getCategoryService().newEntity();
+            category.setScope(CategoryScope.Site);
+            category.setEvent(event);
+            getNotificationService().getCategoryService().create(category);
+        }
+        Definition definition;
+        List<Definition> definitions = getNotificationService().getDefinitionService().getDefinitionsForCategory(category);
+        if (definitions == null || definitions.size() == 0) {
+            definition = getNotificationService().getDefinitionService().newEntity();
+            definition.setCategory(category);
+            getNotificationService().getDefinitionService().create(definition);
+        } else {
+            definition = definitions.get(0);
+        }
+
+        Subscriber subscriber = getNotificationService().getSubscriberService().getSubscriberByName(ADMIN_USERNAME_FOR_SUBSCRIPTION);
+        if (subscriber == null) {
+            try {
+                subscriber = getNotificationService().getSubscriberService().createSubscriber(ADMIN_USERNAME_FOR_SUBSCRIPTION, adminEmail);
+            } catch (DuplicateSubscriberException exception) {
+                // This shouldn't happen, since we just checked for the subscriber's existence.
+            }
+        }
+
+        assert subscriber != null : "Unable to create or retrieve subscriber for the admin user";
+
+        List<Subscription> subs = getNotificationService().getSubscriptionService().getSubscriptionsForDefinition(definition);
+        boolean found = false;
+        for (Subscription sub : subs) {
+            List<Long> ids = new ArrayList<Long>();
+            for (Channel ch : sub.getChannels()) {
+                ids.add(ch.getId());
+            }
+            if (sub.getSubscriber().getId() == (subscriber.getId()) && sub.getSubscriberType().equals(SubscriberType.User) && ids.contains(channel.getId())) {
+                found = true;
+                break;
+            }
+        }
+        if (!found) {
+            getNotificationService().subscribe(subscriber, SubscriberType.User, definition, channel);
+        }
+    }
+
+    /**
+     * Retrieves the HTML mail channel to be used for default subscription configuration.
+     * @return The HTML mail channel definition.
+     */
+    private static Channel getHtmlMailChannel() {
+        Channel channel = getNotificationService().getChannelService().getChannel("htmlMail");
+        if (channel == null) {
+            channel = getNotificationService().getChannelService().newEntity();
+            channel.setName("htmlMail");
+            channel.setFormat("text/html");
+            getNotificationService().getChannelService().create(channel);
+        }
+        return channel;
+    }
 }

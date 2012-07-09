@@ -52,7 +52,7 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
                 if (enabled)
                 {
                     try {
-                        AdminUtils.sendNewUserEmailMessage(userI.getUsername(), userI.getEmail(),data,context);
+                        AdminUtils.sendNewUserEmailMessage(userI.getUsername(), userI.getEmail(), context);
                     } catch (Exception e) {
                         logger.error("",e);
                     }
@@ -68,7 +68,7 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
 			logger.error("Enable",e);
 			try {
 				doRedirect(data,"Index.vm");
-			} catch (Exception e1) {}
+			} catch (Exception ignored) {}
 		}
 	}
 }

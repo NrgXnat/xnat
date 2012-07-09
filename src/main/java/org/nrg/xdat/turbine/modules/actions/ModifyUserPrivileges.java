@@ -50,7 +50,7 @@ public class ModifyUserPrivileges extends SecureAction {
 	
 		if (tempUser.needsActivation())
 		{
-		    AdminUtils.sendAuthorizationEmailMessage(tempUser,data);
+		    AdminUtils.sendAuthorizationEmailMessage(tempUser);
 		}
 		
 		TurbineUtils.setDataItem(data,tempUser.getItem());

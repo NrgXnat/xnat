@@ -25,14 +25,16 @@ public interface SubscriptionService extends BaseHibernateService<Subscription> 
     public static String SERVICE_NAME = "SubscriptionService";
 
     /**
-     * @param definition
-     * @return
+     * Returns all subscriptions for the indicated definition.
+     * @param definition    The definition for which you wish to retrieve definitions.
+     * @return A list of the subscriptions for the indicated definition.
      */
     abstract public List<Subscription> getSubscriptionsForDefinition(Definition definition);
 
     /**
-     * @param definition
-     * @return
+     * Returns all subscriptions for the indicated definition, sorted into a map keyed by the subscriber object.
+     * @param definition    The definition for which you wish to retrieve definitions.
+     * @return A list of the subscriptions for the indicated definition.
      */
     abstract public Map<Subscriber, Subscription> getSubscriberMapOfSubscriptionsForDefinition(Definition definition);
 }

@@ -16,6 +16,7 @@ import javax.persistence.UniqueConstraint;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
+import org.nrg.mail.api.NotificationType;
 import org.nrg.notify.api.CategoryScope;
 
 /**
@@ -31,7 +32,7 @@ public class Category extends AbstractHibernateEntity {
     public Category() {
         super();
         setScope(CategoryScope.Default);
-        setEvent(null);
+        _event = null;
     }
     
     public CategoryScope getScope() {
@@ -50,6 +51,10 @@ public class Category extends AbstractHibernateEntity {
         _event = event;
     }
     
+    public void setEvent(NotificationType event) {
+        _event = event.toString();
+    }
+
     @Override
     public String toString() {
         return "[" + getId() + "] " + _scope + ": " + _event;

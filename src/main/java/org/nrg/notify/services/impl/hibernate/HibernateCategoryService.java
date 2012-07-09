@@ -14,6 +14,7 @@ import javax.inject.Inject;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.mail.api.NotificationType;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.daos.CategoryDAO;
 import org.nrg.notify.entities.Category;
@@ -41,13 +42,27 @@ public class HibernateCategoryService extends AbstractHibernateEntityService<Cat
      */
     @Override
     @Transactional
+    public Category getCategoryByScopeAndEvent(CategoryScope scope, NotificationType event) {
+        return getDao().getCategoryByScopeAndEvent(scope, event.toString());
+    }
+
+    /**
+     * Finds a currently enabled {@link Category category} with the indicated {@link CategoryScope scope} and
+     * event. If there is no currently enabled category that meets that criteria, this method returns <b>null</b>.
+     * @param scope Indicates the category scope.
+     * @param event Indicates the category event.
+     * @return The matching category if it exists, otherwise <b>null</b>.
+     * @see CategoryService#getCategoryByScopeAndEvent(CategoryScope, String)
+     */
+    @Override
+    @Transactional
     public Category getCategoryByScopeAndEvent(CategoryScope scope, String event) {
         return getDao().getCategoryByScopeAndEvent(scope, event);
     }
 
     /**
      * @return A new empty {@link Category} object.
-     * @see CategoryService#newCategory()
+     * @see org.nrg.notify.services.CategoryService#newEntity()
      */
     public Category newEntity() {
         _log.debug("Creating a new category object");
@@ -55,7 +70,7 @@ public class HibernateCategoryService extends AbstractHibernateEntityService<Cat
     }
 
     /**
-     * @return
+     * @return The category DAO.
      * @see AbstractHibernateEntityService#getDao()
      */
     @Override

@@ -67,7 +67,9 @@ public class ModifyUser extends SecureAction {
 		PopulateItem populater = PopulateItem.Populate(data,
 				org.nrg.xft.XFT.PREFIX + ":user", true);
 		ItemI found = populater.getItem();
-		
+		String emailWithWhite = found.getStringProperty("email");
+		String noWhiteEmail = emailWithWhite.trim();
+		found.setProperty("email", noWhiteEmail);
 		XDATUser authenticatedUser=TurbineUtils.getUser(data);
 		
 		if(found.getProperty("login")==null){

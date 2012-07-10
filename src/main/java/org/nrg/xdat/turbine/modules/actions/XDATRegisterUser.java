@@ -58,6 +58,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
             {
             	if(!found.getStringProperty("email").equals(AdminUtils.getAdminEmailId()))
             	{
+            		String emailWithWhite = found.getStringProperty("email");
+            		String noWhiteEmail = emailWithWhite.trim();
+            		found.setProperty("email", noWhiteEmail);
                     search = new ItemSearch();
                     search.setAllowMultiples(false);
                     search.setElement("xdat:user");

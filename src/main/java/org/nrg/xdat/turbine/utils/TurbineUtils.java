@@ -449,6 +449,11 @@ public class TurbineUtils {
 		XDAT.setUserDetails(new XDATUserDetails(user));
 	}
 	
+	public static void setNewUser(RunData data, XDATUser user, Context context) throws Exception
+	{
+		XDAT.setNewUserDetails(new XDATUserDetails(user), data, context);
+	}
+	
 	/**
 	 * @param data
 	 * @return

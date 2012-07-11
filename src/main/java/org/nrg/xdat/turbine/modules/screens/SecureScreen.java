@@ -138,13 +138,19 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 			logger.error("problem looking for concurrent session IP addresses.", e);
                 		}
                 	}
-                	if(sessionCount > 100 || (sessionCount > 1 && ip.size() > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest"))){
-                		StringBuffer sessionWarning = new StringBuffer("WARNING: Your account currently has ").append(sessionCount).append(" login sessions open from ").append(ip.size()).append(" distinct IP addresses. If you believe this is incorrect, please take corrective action. The IP addresses are:");
+                	//if(sessionCount > 100 || (sessionCount > 1 && ip.size() > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest"))){
+                	if(! TurbineUtils.getUser(data).getLogin().equals("guest")){
+                		StringBuffer sessionWarning = new StringBuffer(); //"WARNING: Your account currently has ").append(sessionCount).append(" login sessions open from ").append(ip.size()).append(" distinct IP addresses. If you believe this is incorrect, please take corrective action. The IP addresses are:");
                 		for(String i:ip){
-                			sessionWarning.append(i).append(" ");
+                			sessionWarning.append(i).append(", ");
                 		}
-                		c.put("sessionWarning", sessionWarning.toString() );
-                		
+                		//trim that last comma
+                		if(sessionWarning.length() > 2){
+                			sessionWarning.delete(sessionWarning.length() - 2, sessionWarning.length());
+                		}
+                		c.put("sessionCount", sessionCount);
+                		c.put("sessionIpCount", ip.size());
+                		c.put("sessionIpCsv", sessionWarning.toString());
                 	}
                 }
                 doBuildTemplate(data, c);

@@ -51,10 +51,6 @@ public class Category extends AbstractHibernateEntity {
         _event = event;
     }
     
-    public void setEvent(NotificationType event) {
-        _event = event.toString();
-    }
-
     @Override
     public String toString() {
         return "[" + getId() + "] " + _scope + ": " + _event;

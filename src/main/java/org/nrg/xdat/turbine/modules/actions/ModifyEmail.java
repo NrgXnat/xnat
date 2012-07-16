@@ -11,9 +11,13 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
+import org.apache.turbine.om.security.User;
 import org.apache.turbine.util.RunData;
+import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.ElementAction;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.PopulateItem;
@@ -111,6 +115,14 @@ public class ModifyEmail extends SecureAction {
                 XDATUser authenticatedUser=TurbineUtils.getUser(data);
                 try {
                 	XDATUser.ModifyUser(authenticatedUser, found,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
+                	XDATUser user = new XDATUser(authenticatedUser.getLogin());
+                	String newemail = user.getEmail();
+                	ItemI item = TurbineUtils.getUser(data);
+                	item.setProperty("xdat:user.email", newemail);
+                	
+                	
+                	
+                
                 } catch (InvalidPermissionException e) {
         			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
         			return;
@@ -120,11 +132,12 @@ public class ModifyEmail extends SecureAction {
         		}
                 
             }
-            
+         
             SchemaElementI se = SchemaElement.GetElement(first.getXSIType());
             if (se.getGenericXFTElement().getType().getLocalPrefix().equalsIgnoreCase("xdat"))
             {
                 ElementSecurity.refresh();
+                
             }
             data.setMessage("Email changed.");
             data.setScreenTemplate("Index.vm");

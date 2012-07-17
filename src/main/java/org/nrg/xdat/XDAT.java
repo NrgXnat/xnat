@@ -9,7 +9,7 @@
  */
 package org.nrg.xdat;
 
-import java.io.File;
+import java.io.*;
 import java.util.*;
 
 import javax.servlet.http.HttpSession;
@@ -23,6 +23,7 @@ import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.services.ContextService;
@@ -46,7 +47,6 @@ import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -74,9 +74,74 @@ public class XDAT implements Initializable,Configurable{
 	private static XdatUserAuthService _xdatUserAuthService;
     private static ConfigService _configurationService;
     public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
+    private static String _configFilesLocation = null;
     private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
+    private static boolean _hasRefreshedSiteConfiguration = false;
+
+    /**
+     * Gets the site configuration as a Java {@link Properties} object.
+     * @return The initialized Java {@link Properties} object.
+     * @throws ConfigServiceException Thrown when an error occurs resolving or accessing the configuration service.
+     */
+    public static Properties getSiteConfiguration() throws ConfigServiceException {
+        if (!_hasRefreshedSiteConfiguration) {
+            return refreshSiteConfiguration();
+        }
+
+        return convertStringToProperties(getConfigService().getConfig("site", "siteConfiguration").getContents());
+    }
+
+    /**
+     * Sets the site configuration from the submitted Java {@link Properties} object. This updates the data stored in the
+     * configuration service, but does not modify or update the source properties bundle stored on the local disk.
+     * @param properties    The initialized Java {@link Properties} object.
+     * @throws ConfigServiceException Thrown when an error occurs resolving or accessing the configuration service.
+     */
+    public static void setSiteConfiguration(Properties properties) throws ConfigServiceException {
+        setSiteConfiguration(properties, "Setting site configuration");
+    }
+
+    /**
+     * Refreshes the site configuration from the <b>siteConfiguration.properties</b> file. This should generally be done
+     * only once per application start-up.
+     * @throws ConfigServiceException Thrown when an error occurs resolving or accessing the configuration service.
+     */
+    public static Properties refreshSiteConfiguration() throws ConfigServiceException {
+        Properties properties = new Properties();
+        try {
+            String siteConfiguration = FileUtils.ReadFromFile(new File(_configFilesLocation, "siteConfiguration.properties"));
+            properties.load(new ByteArrayInputStream(siteConfiguration.getBytes()));
+        } catch (IOException exception) {
+            logger.error("Error occurred trying to load site configuration properties bundle from " + (new File(_configFilesLocation, "siteConfiguration.properties")).getAbsolutePath(), exception);
+        }
+
+        org.nrg.config.entities.Configuration configuration = getConfigService().getConfig("site", "siteConfiguration");
+        if (configuration == null) {
+            setSiteConfiguration(properties);
+        } else {
+            int hash = properties.hashCode();
+            properties.putAll(convertStringToProperties(configuration.getContents()));
+            if (hash != properties.hashCode()) {
+                setSiteConfiguration(properties);
+            }
+        }
+
+        _hasRefreshedSiteConfiguration = true;
+        return properties;
+    }
+
+    public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
+        Properties properties = getSiteConfiguration();
+        return properties.getProperty(property);
+    }
+
+    public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
+        Properties properties = getSiteConfiguration();
+        properties.setProperty(property, value);
+        setSiteConfiguration(properties, "Setting site configuration property value: " + property);
+    }
 
 	public static boolean isAuthenticated() {
 		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
@@ -179,13 +244,17 @@ public class XDAT implements Initializable,Configurable{
 	public static void init(String location,boolean allowDBAccess, boolean initLog4j) throws Exception
 	{
 		DisplayManager.clean();
+        if (StringUtils.isBlank(_configFilesLocation)) {
+            _configFilesLocation = FileUtils.AppendSlash(location);
+        }
+
 		if (initLog4j)
 		{
-			location = FileUtils.AppendSlash(location);
-			PropertyConfigurator.configure(location + "log4j.properties");
+			PropertyConfigurator.configure(_configFilesLocation + "log4j.properties");
 			initLog4j= false;
 		}
-		XFT.init(location, allowDBAccess, initLog4j);
+
+		XFT.init(_configFilesLocation, allowDBAccess, initLog4j);
 		//XFT.LogCurrentTime("XDAT INIT: 1","ERROR");
 		if (allowDBAccess)
 		{
@@ -362,7 +431,7 @@ public class XDAT implements Initializable,Configurable{
         for (String folder : subfolders) {
             current = new File(current, folder);
             if (!current.exists()) {
-                logger.error("",new NrgRuntimeException("The folder indicated by " + current.getAbsolutePath() + " doesn't exist."));
+                // This is actually OK, it just means there are no overrides, so return null.
                 return null;
             }
             if (!current.isDirectory()) {
@@ -475,5 +544,45 @@ public class XDAT implements Initializable,Configurable{
             getNotificationService().getChannelService().create(channel);
         }
         return channel;
+    }
+
+    private static void setSiteConfiguration(Properties properties, String message) throws ConfigServiceException {
+        XDATUserDetails user = getUserDetails();
+        String username = "";
+        if (user != null) {
+            username = user.getUsername();
+}
+
+        if (logger.isInfoEnabled()) {
+            if (user == null) {
+                logger.info(message + ", no user details available");
+            } else {
+                logger.info(message + ", user: " + username);
+            }
+        }
+
+        synchronized (XDAT.class) {
+            getConfigService().replaceConfig(username, message, "site", "siteConfiguration", convertPropertiesToString(properties, message));
+        }
+    }
+
+    private static String convertPropertiesToString(final Properties properties, String message) {
+        StringWriter writer = new StringWriter();
+        try {
+            properties.store(new PrintWriter(writer), message);
+        } catch (IOException ignored) {
+            // Ignore this, we're not writing to a file so it should be fine.
+        }
+        return writer.getBuffer().toString();
+    }
+
+    private static Properties convertStringToProperties(final String contents) {
+        Properties properties = new Properties();
+        try {
+            properties.load(new ByteArrayInputStream(contents.getBytes()));
+        } catch (IOException ignored) {
+            // We ignore this, it just can't happen since we're dealing with a flat string.
+        }
+        return properties;
     }
 }

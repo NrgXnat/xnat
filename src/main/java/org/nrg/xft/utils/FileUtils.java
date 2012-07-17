@@ -20,6 +20,9 @@ import java.io.OutputStream;
 import java.io.PrintWriter;
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -49,6 +52,22 @@ public  class FileUtils
 	public static final int LARGE_DOWNLOAD=1000*1024;
 	public static final int SMALL_DOWNLOAD=8*1024;
 	
+    public static String ReadFromFile(String path) throws IOException {
+        return ReadFromFile(new File(path));
+    }
+
+    public static String ReadFromFile(File file) throws IOException {
+        FileInputStream stream = new FileInputStream(file);
+        try {
+            FileChannel channel = stream.getChannel();
+            MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
+            return Charset.defaultCharset().decode(buffer).toString();
+        }
+        finally {
+            stream.close();
+        }
+    }
+
 	public static void OutputToFile(String content, String filePath)
 	{
 		File _outFile;
@@ -81,7 +100,6 @@ public  class FileUtils
 		catch ( IOException except )
 		{
 			logger.error("FileUtils::OutputToFile",except);
-			return;
 		}
 	}
 	public static void OutputToFile(String content, String filePath,boolean append)

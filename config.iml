@@ -3,10 +3,10 @@
   <component name="FacetManager">
     <facet type="Spring" name="Spring">
       <configuration>
-        <fileset id="fileset1" name="My Fileset" removed="false">
+        <fileset id="fileset1" name="Xml Application Context" removed="false">
           <file>file://$MODULE_DIR$/src/test/resources/org/nrg/config/TestDataSource-context.xml</file>
-          <file>file://$MODULE_DIR$/src/test/resources/org/nrg/config/ConfigPlatformTests-context.xml</file>
           <file>file://$MODULE_DIR$/src/main/resources/META-INF/configuration/nrg-config-context.xml</file>
+          <file>file://$MODULE_DIR$/src/test/resources/org/nrg/config/ConfigPlatformTests-context.xml</file>
         </fileset>
       </configuration>
     </facet>

@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.nrg</groupId>
     <artifactId>nrg</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>1.6</version>
     <packaging>pom</packaging>
     <name>NRG Parent POM</name>
     <url>http://nrg.wustl.edu</url>
@@ -16,10 +16,10 @@
         <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
         <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 
-        <xnat.version>1.6.0-SNAPSHOT</xnat.version>
-        <xdat.version>1.6.0-SNAPSHOT</xdat.version>
-        <nrg.config.version>1.0.0-SNAPSHOT</nrg.config.version>
-        <nrg.framework.version>1.0.0-SNAPSHOT</nrg.framework.version>
+        <xnat.version>1.6</xnat.version>
+        <xdat.version>1.6</xdat.version>
+        <nrg.config.version>1.6</nrg.config.version>
+        <nrg.framework.version>1.6</nrg.framework.version>
         <nrg.dicomedit.version>2.1.1</nrg.dicomedit.version>
         <nrg.dicomutils.version>1.2.0</nrg.dicomutils.version>
 
@@ -55,7 +55,7 @@
         <junit.version>4.8.2</junit.version>
         <log4j.version>1.2.16</log4j.version>
         <mockito.version>1.8.5</mockito.version>
-        <pipeline.version>1.6.0-SNAPSHOT</pipeline.version>
+        <pipeline.version>1.6</pipeline.version>
         <postgresql.version>9.0-801.jdbc4</postgresql.version>
         <restlet.version>1.1.10</restlet.version>
         <servlet-api.version>2.5</servlet-api.version>

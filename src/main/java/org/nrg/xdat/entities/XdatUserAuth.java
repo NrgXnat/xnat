@@ -18,7 +18,7 @@ import org.apache.commons.lang.StringUtils;
 
 @Auditable
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"authUser", "authMethod"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"authUser", "authMethodId"}))
 public class XdatUserAuth extends AbstractHibernateEntity{
 
 	private String xdatUsername;

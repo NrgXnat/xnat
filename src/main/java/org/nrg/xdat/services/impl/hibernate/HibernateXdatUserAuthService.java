@@ -111,13 +111,17 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	@Override
 	@Transactional
 	public XDATUserDetails getUserDetailsByNameAndAuth(String username, String auth, String id, String email) {
-		List<UserDetails> users = loadUsersByUsername(username, auth);
+		List<UserDetails> users = loadUsersByUsernameAndAuth(username, auth, id);
+		
+		XDATUserDetails userDetails = null;
 
         if (users.size() == 0 || users.get(0)==null) {
         	if(auth.equals(XdatUserAuthService.LDAP) && !isLDAPUserDisabled(username, id) &&!isLDAPUserLocked(username,id)){
-    			logger.debug("Adding LDAP user '" + username + "' to database.");
-
 	        	try{
+	        		String ldapUsername = username;
+	        		username = findUnusedLocalUsernameForNewLDAPUser(ldapUsername);
+	    			logger.debug("Adding LDAP user '" + username + "' to database.");
+
 	        		Map<String, String> newUserPrperties = new HashMap<String, String>();
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.login", username);
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.email", email);
@@ -135,18 +139,21 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	                
 	                XDATUser newUser = new XDATUser(item);
 	                
-	                SaveItemHelper.authorizedSave(newUser,XDAT.getUserDetails(),true,false,true,false,EventUtils.ADMIN_EVENT(newUser)); 
-	                XDAT.setUserDetails(new XDATUserDetails(newUser));
+	                SaveItemHelper.authorizedSave(newUser,XDAT.getUserDetails(),true,false,true,false,EventUtils.ADMIN_EVENT(newUser));
+	                XdatUserAuth newUserAuth = new XdatUserAuth(ldapUsername, XdatUserAuthService.LDAP, id, username, true, 0);
+	                XDAT.getXdatUserAuthService().create(newUserAuth);
+
+	                userDetails = new XDATUserDetails(newUser);
+	                userDetails.setAuthorization(newUserAuth);
+
+	                XDAT.setUserDetails(userDetails);
 	                
 	                if(users.size() == 0){
-	                	users.add(new XDATUserDetails(newUser));
+	                	users.add(userDetails);
 	                }
 	                else{
-		                users.set(0, new XDATUserDetails(newUser));
+		                users.set(0, userDetails);
 	                }
-	                
-	                XdatUserAuth newUserAuth = new XdatUserAuth(username, XdatUserAuthService.LDAP, id);
-	                XDAT.getXdatUserAuthService().create(newUserAuth);
 	        	}
 	        	catch(Exception e){
 	        		logger.error(e);
@@ -176,14 +183,22 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
                             new Object[] {username}, "User {0} has no GrantedAuthority"), username);
         }
 
-        return createUserDetails(username, user, dbAuths, auth, id);
+        if( userDetails == null )
+        {
+        	// If we just created a new user account above, the user_auth DB record won't yet be committed at this point.  
+        	// So we'll just return the object that was already created.
+        	// For subsequent logins, this code here will pull the auth record and set it.
+        	userDetails = createUserDetails(username, user, dbAuths, auth, id);
+        }
+        
+        return userDetails; 
 	}
 
 	public String getUsersByUsernameQuery() {
 		if(AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS>-1){
-			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS+"  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ?";
+			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS+"  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
 		}else{
-			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ?";
+			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
 		}
 		
     }
@@ -265,26 +280,29 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     	try {
 	    	XdatUserAuth userAuth = getUserByNameAndAuth(username, auth, id);
 			u = new XDATUserDetails(userAuth.getXdatUsername());
+			u.setAuthorization(userAuth);
 		} catch (Exception e) {
 			logger.error(e);
 		}
     	return u;
 	}
 
-	protected List<UserDetails> loadUsersByUsername(String username, String auth) {
+	protected List<UserDetails> loadUsersByUsernameAndAuth(String username, String auth, String id) {
+		id = (id == null) ? "" : id;
 		List<UserDetails> u = 
-        (new JdbcTemplate(_datasource)).query(getUsersByUsernameQuery(), new String[] {username,auth}, new RowMapper<UserDetails>() {
+        (new JdbcTemplate(_datasource)).query(getUsersByUsernameQuery(), new String[] {username,auth,id}, new RowMapper<UserDetails>() {
             public UserDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
                 String username = rs.getString(1);
                 String method = rs.getString(2);
                 String xdatUsername = rs.getString(3);
                 boolean enabled = rs.getBoolean(4);
                 Integer failedLoginAttempts = rs.getInt(5);
-                XdatUserAuth u = new XdatUserAuth(username, method, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, xdatUsername,failedLoginAttempts);
-                XDATUserDetails xdat;
-                xdat = null;
+                String methodId = rs.getString(6);
+                XdatUserAuth u = new XdatUserAuth(username, method, methodId, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, xdatUsername,failedLoginAttempts);
+                XDATUserDetails xdat = null;
 				try {
 					xdat = new XDATUserDetails(u.getXdatUsername());
+					xdat.setAuthorization(u);
 				} catch (Exception e) {
 					logger.error(e);
 				}
@@ -294,5 +312,36 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 		return u;
 	}
 	
-	
+	private String findUnusedLocalUsernameForNewLDAPUser( String ldapUsername )
+	{
+		// we will punt on this for now and just create a new user account if their is already a local account
+		// the Cadillac solution would be to link the two (assuming the user proves that they own the local account also)
+		
+		String usernameToTest = ldapUsername;
+		int testCount = -1;
+		List<String> existingLocalUsernames;
+		
+		do
+		{
+			if ( ++testCount > 0 )
+			{
+				usernameToTest = ldapUsername + "_" + String.format( "%02d", testCount );
+			}
+			else if ( testCount > 99 )
+			{
+				throw new RuntimeException( "Ran out of possible XNAT user ids to check (last one checked was " + usernameToTest + ")");
+			}
+			
+			existingLocalUsernames = (new JdbcTemplate(_datasource)).query("SELECT login FROM xdat_user WHERE login = ?", new String[] {usernameToTest}, new RowMapper<String>() 
+			{
+	            public String mapRow(ResultSet rs, int rowNum) throws SQLException 
+	            {
+	                return rs.getString(1);
+	            }
+		    });
+			
+		} while ( existingLocalUsernames.size() > 0 );
+		
+		return usernameToTest;
+	}
 }

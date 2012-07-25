@@ -21,30 +21,18 @@ import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.daos.XftFieldExclusionDAO;
-import org.nrg.xft.entities.XftFieldExclusion;
-import org.nrg.xft.entities.XftFieldExclusionScope;
+import org.nrg.xft.XFT;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.search.ItemSearch;
-import org.nrg.xft.services.XftFieldExclusionService;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.AuthUtils;
-import org.springframework.dao.DataAccessException;
+import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityMessageSource;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
-import org.springframework.security.core.context.SecurityContext;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
@@ -129,7 +117,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.lastname", null);
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.firstname", null);
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password.encrypt", "true");
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.enabled", "1");
+	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.enabled", newUserAccountsAreAutoEnabled().toString());
 	        		
 	        		PopulateItem populater = new PopulateItem(newUserPrperties,null,org.nrg.xft.XFT.PREFIX + ":user",true);
 	            	ItemI item = populater.getItem();
@@ -143,6 +131,18 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	                XdatUserAuth newUserAuth = new XdatUserAuth(ldapUsername, XdatUserAuthService.LDAP, id, username, true, 0);
 	                XDAT.getXdatUserAuthService().create(newUserAuth);
 
+	                // <HACK_ALERT>
+	                /*
+	                 * We must save enabled flag to DB as true above, because the administrator code for enabling a user account does not flip this flag
+	                 * (no time to mess with that now).
+	                 * But for purposes of determining whether or not the user can log in right now after we've just created their account,
+	                 * we use the system-wide auto-enable config setting.
+	                 * Must clone a new object to return, rather than modifying the existing, so that Hibernate still saves the desired values to the DB.
+	                 */
+	                newUserAuth = new XdatUserAuth(newUserAuth);
+	                newUserAuth.setEnabled(newUserAccountsAreAutoEnabled());
+	                // </HACK_ALERT>
+	                
 	                userDetails = new XDATUserDetails(newUser);
 	                userDetails.setAuthorization(newUserAuth);
 
@@ -196,9 +196,9 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 
 	public String getUsersByUsernameQuery() {
 		if(AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS>-1){
-			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS+"  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
+			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS+"  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
 		}else{
-			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.auth_user=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
+			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
 		}
 		
     }
@@ -344,4 +344,9 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 		
 		return usernameToTest;
 	}
+	
+    public Boolean newUserAccountsAreAutoEnabled()
+    {
+    	return XFT.GetUserRegistration();
+    }
 }

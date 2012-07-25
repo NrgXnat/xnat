@@ -78,22 +78,8 @@ public class StoreXML {
                 	    override = false;
                 	}
                     
-                	PersistentWorkflowI wrk=null;
-    				if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
-    					wrk=PersistentWorkflowUtils.buildOpenWorkflow(user,item.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
-    				}
-    				
-    				final EventMetaI ci;
-    				if(wrk!=null){
-    					ci=wrk.buildEvent();
-    				}else{
-    					ci=EventUtils.ADMIN_EVENT(user);
-    				}
+                    SaveItemHelper.unauthorizedSave(item, user, false,q,override,_allowDataDeletion.booleanValue(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
                     
-                    SaveItemHelper.unauthorizedSave(item, user, false,q,override,_allowDataDeletion.booleanValue(),ci);
-                    
-                    if(wrk!=null)
-                    	PersistentWorkflowUtils.complete(wrk,ci);
                     
                     sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
@@ -184,22 +170,8 @@ public class StoreXML {
                 	    override = false;
                 	}
                     
-                	PersistentWorkflowI wrk=null;
-    				if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
-    					wrk=PersistentWorkflowUtils.buildOpenWorkflow(user,item.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
-    				}
-    				
-    				final EventMetaI ci;
-    				if(wrk!=null){
-    					ci=wrk.buildEvent();
-    				}else{
-    					ci=EventUtils.ADMIN_EVENT(user);
-    				}
+                    SaveItemHelper.unauthorizedSave(item, user, false,q,override,_allowDataDeletion.booleanValue(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
                     
-                    SaveItemHelper.unauthorizedSave(item, user, false,q,override,_allowDataDeletion.booleanValue(),ci);
-                    
-                    if(wrk!=null)
-                    	PersistentWorkflowUtils.complete(wrk,ci);
                 	sb.append("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");	
                     AccessLogger.LogServiceAccess(session_id,"","StoreXML",item.getProperName() + " Successfully Stored");		

@@ -32,32 +32,18 @@ public class DeleteAction extends SecureAction {
 	    try {
 			o = TurbineUtils.GetItemBySearch(data,true);
 			if (o != null)
-			{		  
-				PersistentWorkflowI wrk=null;
-				if(o.getItem().instanceOf("xnat:experimentData") || o.getItem().instanceOf("xnat:subjectData")){
-					wrk=PersistentWorkflowUtils.buildOpenWorkflow(TurbineUtils.getUser(data),o.getItem(), this.newEventInstance(data, EventUtils.CATEGORY.DATA,"Deprecated Delete Action"));
-				}
-				
-				final EventMetaI ci;
-				if(wrk!=null){
-					ci=wrk.buildEvent();
-				}else{
-					ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
-				}
-				
+			{		  				
 				try {
-                    preDelete(data, context);
-					SaveItemHelper.unauthorizedDelete(o.getItem(), TurbineUtils.getUser(data),ci);
+					preDelete(data, context);
+			
+					SaveItemHelper.unauthorizedDelete(o.getItem(), TurbineUtils.getUser(data),this.newEventInstance(data, EventUtils.CATEGORY.DATA,"Deprecated Delete Action"));
                     postDelete(data, context);
 
-                    if(wrk!=null)
-						PersistentWorkflowUtils.complete(wrk,ci);
                     data.setMessage("<p>Item Deleted.</p>");
     			  	data.setScreenTemplate("Index.vm");
                 } catch (RuntimeException e1) {
                     logger.error("",e1);
                     data.setMessage(e1.getMessage());
-                    PersistentWorkflowUtils.fail(wrk,ci);
                 }
 			}else{
 			  	logger.error("No Item Found.");

@@ -45,6 +45,7 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
+import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.utils.StringUtils;
 /**

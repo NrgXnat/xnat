@@ -30,6 +30,12 @@ import org.nrg.xft.daos.XftFieldExclusionDAO;
 import org.nrg.xft.entities.XftFieldExclusion;
 import org.nrg.xft.entities.XftFieldExclusionScope;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils.ActionNameAbsent;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils.IDAbsent;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils.JustificationAbsent;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.services.XftFieldExclusionService;
 import org.nrg.xft.utils.SaveItemHelper;
@@ -122,41 +128,59 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	        		username = findUnusedLocalUsernameForNewLDAPUser(ldapUsername);
 	    			logger.debug("Adding LDAP user '" + username + "' to database.");
 
-	        		Map<String, String> newUserPrperties = new HashMap<String, String>();
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.login", username);
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.email", email);
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password", null);
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.lastname", null);
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.firstname", null);
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password.encrypt", "true");
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.enabled", "1");
-	        		
-	        		PopulateItem populater = new PopulateItem(newUserPrperties,null,org.nrg.xft.XFT.PREFIX + ":user",true);
-	            	ItemI item = populater.getItem();
-	                
-	                item.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name","SiteUser");
-	                item.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name","DataManager");
-	                
-	                XDATUser newUser = new XDATUser(item);
-	                
-	                SaveItemHelper.authorizedSave(newUser,XDAT.getUserDetails(),true,false,true,false,EventUtils.ADMIN_EVENT(newUser));
-	                XdatUserAuth newUserAuth = new XdatUserAuth(ldapUsername, XdatUserAuthService.LDAP, id, username, true, 0);
-	                XDAT.getXdatUserAuthService().create(newUserAuth);
+    			try {
+					PersistentWorkflowI wrk=PersistentWorkflowUtils.buildAdminWorkflow(null, "xdat:user", username, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "User created from LDAP", null, null));
+					
+					try{
+						Map<String, String> newUserPrperties = new HashMap<String, String>();
+						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.login", username);
+						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.email", email);
+						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password", null);
+						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.lastname", null);
+						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.firstname", null);
+						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password.encrypt", "true");
+						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.enabled", "1");
+						
+						PopulateItem populater = new PopulateItem(newUserPrperties,null,org.nrg.xft.XFT.PREFIX + ":user",true);
+						ItemI item = populater.getItem();
+					    
+					    item.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name","SiteUser");
+					    item.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name","DataManager");
+					    
+					    XDATUser newUser = new XDATUser(item);
+					    
+					    
+					    SaveItemHelper.authorizedSave(newUser,XDAT.getUserDetails(),true,false,true,false,wrk.buildEvent()); 
+					    wrk.setId(newUser.getStringProperty("xdat_user_id"));
 
 	                userDetails = new XDATUserDetails(newUser);
 	                userDetails.setAuthorization(newUserAuth);
 
 	                XDAT.setUserDetails(userDetails);
-	                
-	                if(users.size() == 0){
+					    
+					    if(users.size() == 0){
 	                	users.add(userDetails);
+					    }
+					    else{
 	                }
 	                else{
 		                users.set(0, userDetails);
-	                }
-	        	}
-	        	catch(Exception e){
-	        		logger.error(e);
+					    }
+					    
+					    PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
+					}
+					catch(Exception e){
+						logger.error(e);
+					    try {
+							PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
+						} catch (Exception e1) {
+							logger.error(e);
+						}
+					}
+				} catch (EventRequirementAbsent e) {
+					logger.error(e);
+				    throw new UsernameNotFoundException(
+		            		SpringSecurityMessageSource.getAccessor().getMessage("JdbcDaoImpl.notFound", new Object[]{username}, "Username {0} not found"), username);
 	        	}
         	}
         	else{

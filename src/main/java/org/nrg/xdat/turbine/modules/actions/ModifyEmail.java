@@ -113,8 +113,9 @@ public class ModifyEmail extends SecureAction {
                 ItemI found = (ItemI)iter.next();
                 
                 XDATUser authenticatedUser=TurbineUtils.getUser(data);
+                
                 try {
-                	XDATUser.ModifyUser(authenticatedUser, found,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
+                	XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modify User Email"));
                 	XDATUser user = new XDATUser(authenticatedUser.getLogin());
                 	String newemail = user.getEmail();
                 	ItemI item = TurbineUtils.getUser(data);

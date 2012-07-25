@@ -17,6 +17,7 @@ import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.PermissionCriteria;
 import org.nrg.xdat.security.PermissionItem;
@@ -31,11 +32,12 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
-import org.nrg.xft.utils.SaveItemHelper;
 /**
  * @author Tim
  *
@@ -147,22 +149,37 @@ public class ModifyUserPrivileges extends SecureAction {
 	{
 //	  TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		//parameter specifying elementAliass and elementNames
+		XDATUser authenticatedUser=TurbineUtils.getUser(data);
 		
+		//populate item from data parameters
 		final PopulateItem populater = PopulateItem.Populate(data,"xdat:user",true);
 		final ItemI found = populater.getItem();
 	    
 	    XDATUser tempUser = new XDATUser(found);
 	    
 		final String login = tempUser.getUsername();
-	    		
-	    EventMetaI ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
 	    
-	    try {
-	    	XDATUser.ModifyUser(tempUser, TurbineUtils.getUser(data),ci);
-		} catch (Exception e) {
-			logger.error("Error Storing User",e);
+		XdatUser oldUser=XdatUser.getXdatUsersByLogin(login, null, false);
+		
+		if(oldUser==null){
+			throw new Exception("User must already exist to make this modification");
 		}
 		
+		//create workflow entry to track action
+		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), found.getXSIType(),oldUser.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN,EventUtils.TYPE.WEB_FORM,"Modfiy User Permissions"));
+        		
+	    EventMetaI ci=wrk.buildEvent();
+	    
+	    //save passed modifications
+	    try {
+	    	XDATUser.ModifyUser(authenticatedUser, tempUser,ci);
+		} catch (Exception e) {
+			PersistentWorkflowUtils.fail(wrk,ci);
+			logger.error("Error Storing User",e);
+			return authenticatedUser;
+		}
+		
+		//clear out any roles that were removed
 		final ItemCollection items = ItemSearch.GetItems("xdat:user.login",login,TurbineUtils.getUser(data),false);
 	    if (items.size()>0)
 	    {
@@ -195,15 +212,16 @@ public class ModifyUserPrivileges extends SecureAction {
 		
 		tempUser = SetUserProperties(tempUser,props,TurbineUtils.getUser(data).getLogin());
 
-		XDATUser authenticatedUser=TurbineUtils.getUser(data);
 		//logger.error("4\n"+tempUser.getItem().toString());
 		try {
 			XDATUser.ModifyUser(authenticatedUser, tempUser.getItem(),ci);
 		} catch (InvalidPermissionException e) {
 			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+			PersistentWorkflowUtils.fail(wrk,ci);
 			return authenticatedUser;
 		} catch (Exception e) {
 			logger.error("Error Storing User", e);
+			PersistentWorkflowUtils.fail(wrk,ci);
 			return authenticatedUser;
 		}
 		
@@ -238,6 +256,9 @@ public class ModifyUserPrivileges extends SecureAction {
 		        }
 		    }
 		}
+		
+		PersistentWorkflowUtils.complete(wrk,ci);
+		
         PoolDBUtils.PerformUpdateTrigger(tempUser.getItem(), TurbineUtils.getUser(data).getLogin());
 		
 		if (bundleChange)

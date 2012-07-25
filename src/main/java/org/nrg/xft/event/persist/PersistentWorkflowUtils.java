@@ -7,6 +7,7 @@ import java.util.List;
 
 import org.apache.axis.utils.StringUtils;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventDetails;
@@ -18,6 +19,8 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 
 public class PersistentWorkflowUtils {
+	public static final String ADMIN_EXTERNAL_ID = "ADMIN";
+
 	final static org.apache.log4j.Logger logger = org.apache.log4j.Logger.getLogger(PersistentWorkflowUtils.class);
 	
 	private static PersistentWorkflowBuilderAbst builder=null;
@@ -131,6 +134,10 @@ public class PersistentWorkflowUtils {
 		}
 	}
 	
+	public static PersistentWorkflowI buildAdminWorkflow(final XDATUser user, final String xsiType, String id, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
+		return buildOpenWorkflow(user, xsiType, id, ADMIN_EXTERNAL_ID,event);
+	}
+	
 	public static PersistentWorkflowI buildOpenWorkflow(final XDATUser user, final XFTItem expt, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
 		try {
 			return buildOpenWorkflow(user, expt.getXSIType(), expt.getStringProperty("ID"), expt.getStringProperty("project"),event);
@@ -143,23 +150,26 @@ public class PersistentWorkflowUtils {
 		}
 	}
 	
+	public static String getExternalId(ItemI expt){
+		try {
+			if((!expt.getXSIType().startsWith("xdat:")) || expt.getStringProperty("project")!=null){
+				return expt.getStringProperty("project");
+			}else{
+				return ADMIN_EXTERNAL_ID;
+			}
+		} catch (Exception e) {
+			return ADMIN_EXTERNAL_ID;
+		}
+	}
+	
 	public static PersistentWorkflowI getOrCreateWorkflowData(Integer eventId, XDATUser user,XFTItem expt, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
 		PersistentWorkflowI ci=null;
 		if(eventId!=null){
 			ci=getWorkflowByEventId(user, eventId);
 		}
 		
-		try {
-			if(ci==null){
-				ci=buildOpenWorkflow(user, expt.getXSIType(), expt.getPKValueString(), (expt.getStringProperty("project")!=null)?expt.getStringProperty("project"):"ADMIN",event);
-			}
-
-		}catch (FieldNotFoundException e) {
-			return null;
-		} catch (XFTInitException e) {
-			return null;
-		} catch (ElementNotFoundException e) {
-			return null;
+		if(ci==null){
+			ci=buildOpenWorkflow(user, expt.getXSIType(), expt.getPKValueString(), getExternalId(expt),event);
 		}
 		
 		return ci;

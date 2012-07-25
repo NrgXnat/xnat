@@ -83,23 +83,8 @@ public class XMLUpload extends SecureAction {
                 	q = item.getGenericSchemaElement().isQuarantine();
                 	override = false;
                 	
-                	PersistentWorkflowI wrk=null;
-    				if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
-    					wrk=PersistentWorkflowUtils.buildOpenWorkflow(TurbineUtils.getUser(data),item.getItem(), newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XML));
-    				}
-    				
-    				final EventMetaI ci;
-    				if(wrk!=null){
-    					ci=wrk.buildEvent();
-    				}else{
-    					ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
-    				}
-
-                	SaveItemHelper.unauthorizedSave(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"),ci);
+                	SaveItemHelper.unauthorizedSave(item,TurbineUtils.getUser(data),false,q,override,allowDeletion.equalsIgnoreCase("true"),newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.STORE_XML));
                 	
-                	if(wrk!=null)
-                    	PersistentWorkflowUtils.complete(wrk,ci);
-
                 	if(XFT.VERBOSE)System.out.println("Item Successfully Stored.");
                     logger.info("Item Successfully Stored.");
 

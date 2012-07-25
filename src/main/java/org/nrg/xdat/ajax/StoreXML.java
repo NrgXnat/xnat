@@ -49,22 +49,8 @@ public class StoreXML {
             try {
 
                 XFTItem item = reader.parse(is);
-
-                PersistentWorkflowI wrk=null;
-				if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
-					wrk=PersistentWorkflowUtils.buildOpenWorkflow(user,item.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.SOAP, "Store XML", req.getParameter(EventUtils.EVENT_REASON), req.getParameter(EventUtils.EVENT_COMMENT)));
-				}
-				
-				final EventMetaI ci;
-				if(wrk!=null){
-					ci=wrk.buildEvent();
-				}else{
-					ci=EventUtils.ADMIN_EVENT(user);
-				}
                 
-                SaveItemHelper.unauthorizedSave(item, user, false, allowDataDeletion,ci);
-                
-                PersistentWorkflowUtils.complete(wrk,ci);
+				SaveItemHelper.unauthorizedSave(item, user, false, allowDataDeletion,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.SOAP, "Store XML", req.getParameter(EventUtils.EVENT_REASON), req.getParameter(EventUtils.EVENT_COMMENT)));
                 
                 SAXWriter writer = new SAXWriter(response.getOutputStream(),false);
                 writer.setWriteHiddenFields(true);

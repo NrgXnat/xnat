@@ -9,8 +9,21 @@
  */
 package org.nrg.xdat.security;
 
+import java.io.File;
+import java.io.Serializable;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 import java.util.TreeMap;
-import java.security.MessageDigest;
+
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -19,7 +32,11 @@ import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.nrg.xdat.om.*;
+import org.nrg.xdat.om.XdatElementAccess;
+import org.nrg.xdat.om.XdatFieldMapping;
+import org.nrg.xdat.om.XdatFieldMappingSet;
+import org.nrg.xdat.om.XdatUser;
+import org.nrg.xdat.om.XdatUserGroupid;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.QueryOrganizer;
@@ -32,26 +49,28 @@ import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.FavEntries;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
+import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.exception.*;
-import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
+import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.InvalidItemException;
+import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.exception.InvalidValueException;
+import org.nrg.xft.exception.MetaDataException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.layeredSequence.LayeredSequenceCollection;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
-import org.nrg.xft.utils.ValidationUtils.ValidationResults;
-
-import java.io.File;
-import java.io.Serializable;
-import java.sql.SQLException;
-import java.util.*;
 
 /**
  * @author Tim
@@ -2491,74 +2510,100 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     	return u;
     }
 
+    public static void ModifyUser(XDATUser authenticatedUser, ItemI found,EventDetails ci) throws InvalidPermissionException, Exception {
+    	String id;
+    	try {
+			id=(found.getStringProperty("xdat_user_id")==null)?found.getStringProperty("login"):found.getStringProperty("xdat_user_id");
+			
+			
+		} catch (Exception e1) {
+			id=found.getStringProperty("login");
+	    }
+		
+    	PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, found.getXSIType(),id,PersistentWorkflowUtils.getExternalId(found), ci);
+         
+    	try{
+	    	ModifyUser(authenticatedUser,found,wrk.buildEvent());
+	    	 
+	    	if(id.equals(found.getStringProperty("login"))){
+	    		wrk.setId(found.getStringProperty("xdat_user_id"));
+	    	}
+	    	
+			PersistentWorkflowUtils.complete(wrk,wrk.buildEvent());
+		} catch (Exception e) {
+			PersistentWorkflowUtils.fail(wrk,wrk.buildEvent());
+			throw e;
+		}
+    }
+    
     public static void ModifyUser(XDATUser authenticatedUser, ItemI found,EventMetaI ci) throws InvalidPermissionException, Exception {
         ItemSearch search = new ItemSearch();
         search.setAllowMultiples(false);
         search.setElement("xdat:user");
         search.addCriteria("xdat:user.login", found.getProperty("login"));
         ItemI temp = search.exec().getFirst();
-        if (temp == null) {
-            // NEW USER
-            if (authenticatedUser.checkRole("Administrator")) {
-                String tempPass = found
-                        .getStringProperty("primary_password");
-                if (!StringUtils.IsEmpty(tempPass)){
-                	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-                	if(validator.isValid(tempPass, null)){
-                		//this is set to null instead of authenticatedUser because new users should be able to use any password even those that have recently been used by other users.
-                		found.setProperty("primary_password", XDATUser
-                            .EncryptString(tempPass, "SHA-256"));
-                	} else {
-                		throw new PasswordComplexityException(validator.getMessage());
-                	}
-                }
-                found.setProperty(
-                        "xdat:user.assigned_roles.assigned_role[0].role_name",
-                        "SiteUser");
-                XDATUser newUser = new XDATUser(found);
-                // newUser.initializePermissions();
-                SaveItemHelper.authorizedSave(newUser, authenticatedUser, true, false, true, false,ci);
-                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
-                XDAT.getXdatUserAuthService().create(newUserAuth);
-            } else {
-                throw new InvalidPermissionException("Unauthorized user modification attempt");
-            }
-        } else {
-            // OLD USER
-            String tempPass = found.getStringProperty("primary_password");
-            String savedPass = temp.getStringProperty("primary_password");
-            if (StringUtils.IsEmpty(tempPass)
-                    && StringUtils.IsEmpty(savedPass)) {
+		if (temp == null) {
+			 // NEW USER
+		    if (authenticatedUser.checkRole("Administrator")) {
+		        String tempPass = found
+		                .getStringProperty("primary_password");
+		        if (!StringUtils.IsEmpty(tempPass)){
+		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
+		        	if(validator.isValid(tempPass, null)){
+		        		//this is set to null instead of authenticatedUser because new users should be able to use any password even those that have recently been used by other users.
+		        		found.setProperty("primary_password", XDATUser
+		                    .EncryptString(tempPass, "SHA-256"));
+		        	} else {
+		        		throw new PasswordComplexityException(validator.getMessage());
+		        	}
+		        }
+		        found.setProperty(
+		                "xdat:user.assigned_roles.assigned_role[0].role_name",
+		                "SiteUser");
+		        XDATUser newUser = new XDATUser(found);
+		        // newUser.initializePermissions();
+		        SaveItemHelper.authorizedSave(newUser, authenticatedUser, true, false, true, false,ci);
+		        XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
+		        XDAT.getXdatUserAuthService().create(newUserAuth);
+		    } else {
+		        throw new InvalidPermissionException("Unauthorized user modification attempt");
+		    }
+		} else {
+		    // OLD USER
+		    String tempPass = found.getStringProperty("primary_password");
+		    String savedPass = temp.getStringProperty("primary_password");
+		    if (StringUtils.IsEmpty(tempPass)
+		            && StringUtils.IsEmpty(savedPass)) {
 
-            } else if (StringUtils.IsEmpty(tempPass)) {
+		    } else if (StringUtils.IsEmpty(tempPass)) {
 
-            } else {
-                if (!tempPass.equals(savedPass)){
-                	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-                	if(validator.isValid(tempPass, authenticatedUser)){
-                    found.setProperty("primary_password", XDATUser
-                            .EncryptString(tempPass, "SHA-256"));
-                	} else {
-                		throw new PasswordComplexityException(validator.getMessage());
-                	}
-                }
-            }
+		    } else {
+		        if (!tempPass.equals(savedPass)){
+		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
+		        	if(validator.isValid(tempPass, authenticatedUser)){
+		            found.setProperty("primary_password", XDATUser
+		                    .EncryptString(tempPass, "SHA-256"));
+		        	} else {
+		        		throw new PasswordComplexityException(validator.getMessage());
+		        	}
+		        }
+		    }
 
-            if (authenticatedUser.checkRole("Administrator")) {
-                SaveItemHelper.authorizedSave(found, authenticatedUser, false, false,ci);
-            } else if (found.getProperty("login").equals(authenticatedUser.getLogin())) {
-                XFTItem toSave = XFTItem.NewItem("xdat:user", authenticatedUser);
-                toSave.setProperty("login", authenticatedUser.getLogin());
-                toSave.setProperty("primary_password", found.getProperty("primary_password"));
-                toSave.setProperty("email", found.getProperty("email"));
-                SaveItemHelper.authorizedSave(toSave, authenticatedUser, false, false,ci);
+		    if (authenticatedUser.checkRole("Administrator")) {
+		        SaveItemHelper.authorizedSave(found, authenticatedUser, false, false,ci);
+		    } else if (found.getProperty("login").equals(authenticatedUser.getLogin())) {
+		        XFTItem toSave = XFTItem.NewItem("xdat:user", authenticatedUser);
+		        toSave.setProperty("login", authenticatedUser.getLogin());
+		        toSave.setProperty("primary_password", found.getProperty("primary_password"));
+		        toSave.setProperty("email", found.getProperty("email"));
+		        SaveItemHelper.authorizedSave(toSave, authenticatedUser, false, false,ci);
 
-                authenticatedUser.setProperty("primary_password", found.getProperty("primary_password"));
-                authenticatedUser.setProperty("email", found.getProperty("email"));
-            } else {
-                throw new InvalidPermissionException("Unauthorized user modification attempt");
-            }
-        }
+		        authenticatedUser.setProperty("primary_password", found.getProperty("primary_password"));
+		        authenticatedUser.setProperty("email", found.getProperty("email"));
+		    } else {
+		        throw new InvalidPermissionException("Unauthorized user modification attempt");
+		    }
+		}
     }
 
     public Date getLastLogin() throws SQLException, Exception{

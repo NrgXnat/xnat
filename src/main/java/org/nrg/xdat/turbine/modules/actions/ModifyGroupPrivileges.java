@@ -24,6 +24,8 @@ import org.nrg.xft.event.Event;
 import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 public class ModifyGroupPrivileges extends AdminAction {
 	static Logger logger = Logger.getLogger(ModifyUserPrivileges.class);
@@ -125,18 +127,20 @@ public class ModifyGroupPrivileges extends AdminAction {
 		final ItemI found = populater.getItem();
 		XdatUsergroup tempGroup = new XdatUsergroup(found);
 		
-		EventMetaI ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
-		
+		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data),found.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modify group permissions"));
+        EventMetaI ci=wrk.buildEvent();
+        
 		try {
 			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), false, false,ci);
 		} catch (Exception e) {
 			logger.error("Error Storing User", e);
+			PersistentWorkflowUtils.fail(wrk, ci);
+			throw e;
 		}
 		tempGroup = new XdatUsergroup(found.getCurrentDBVersion());
 		// logger.error("3\n"+tempUser.getItem().toString());
 		final Map<String,String> props = TurbineUtils.GetDataParameterHash(data);
-		tempGroup = SetGroupProperties(tempGroup, props, TurbineUtils.getUser(
-				data).getLogin());
+		tempGroup = SetGroupProperties(tempGroup, props, TurbineUtils.getUser(data).getLogin());
 		// logger.error("4\n"+tempUser.getItem().toString());
 		try {
 			SaveItemHelper.authorizedSave(tempGroup.getItem(),TurbineUtils.getUser(data), true, false,ci);
@@ -144,6 +148,8 @@ public class ModifyGroupPrivileges extends AdminAction {
 			// tempUser = new XDATUser(temp);
 		} catch (Exception e) {
 			logger.error("Error Storing Group", e);
+			PersistentWorkflowUtils.fail(wrk, ci);
+			throw e;
 		}
 		try {
 			EventManager.Trigger(XdatUsergroup.SCHEMA_ELEMENT_NAME, tempGroup
@@ -151,6 +157,8 @@ public class ModifyGroupPrivileges extends AdminAction {
 		} catch (Exception e1) {
 			logger.error("", e1);
 		}
+
+		PersistentWorkflowUtils.complete(wrk, ci);
 		TurbineUtils.getUser(data).init();
 		return tempGroup;
 	}

@@ -6,14 +6,19 @@ import java.sql.SQLException;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.Authorizer;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.DBAction;
+import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
 
 public class SaveItemHelper {
+	private static final String ID_PLACEHOLDER = "NULL";
 	static Logger logger = Logger.getLogger(SaveItemHelper.class);
 	public static SaveItemHelper getInstance(){
 		return new SaveItemHelper();
@@ -121,6 +126,33 @@ public class SaveItemHelper {
 	}
 	
 	/**
+	 * Delete resource without additional security precautions.
+	 * @param i
+	 * @param user
+	 * @throws SQLException
+	 * @throws Exception
+	 */
+	public static void authorizedDelete(XFTItem i, UserI user,EventDetails c) throws SQLException, Exception{
+		if(i==null){
+			throw new NullPointerException();
+		}
+
+
+		Authorizer.getInstance().authorizeSave(i.getItem(), user);
+
+		PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow((XDATUser)user,i.getXSIType(),i.getPKValueString(),PersistentWorkflowUtils.getExternalId(i),c);
+		
+		try {
+			getInstance().delete(i, user,wrk.buildEvent());
+			
+			PersistentWorkflowUtils.complete(wrk,wrk.buildEvent());
+		} catch (Exception e) {
+			PersistentWorkflowUtils.fail(wrk,wrk.buildEvent());
+			throw e;
+		}
+	}
+	
+	/**
 	 * Delete resource with additional security precautions.
 	 * @param i
 	 * @param user
@@ -135,6 +167,32 @@ public class SaveItemHelper {
 		Authorizer.getInstance().authorizeSave(i.getItem(), user);
 
 		getInstance().delete(i, user,c);
+	}
+	
+	/**
+	 * Delete resource with additional security precautions.
+	 * @param i
+	 * @param user
+	 * @throws SQLException
+	 * @throws Exception
+	 */
+	public static void unauthorizedDelete(XFTItem i, UserI user,EventDetails c) throws SQLException, Exception{
+		if(i==null){
+			throw new NullPointerException();
+		}
+
+		Authorizer.getInstance().authorizeSave(i.getItem(), user);
+
+		PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow((XDATUser)user,i.getXSIType(),i.getPKValueString(),PersistentWorkflowUtils.getExternalId(i),c);
+		
+		try {
+			getInstance().delete(i, user,wrk.buildEvent());
+			
+			PersistentWorkflowUtils.complete(wrk,wrk.buildEvent());
+		} catch (Exception e) {
+			PersistentWorkflowUtils.fail(wrk,wrk.buildEvent());
+			throw e;
+		}
 	}
 	
 	/**
@@ -153,10 +211,55 @@ public class SaveItemHelper {
 		}
 
 		Authorizer.getInstance().authorizeSave(i.getItem(), user);
-		
+					
 		getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval,c);
 	}
 
+	/**
+	 * Save resource with additional security precautions.
+	 * @param i
+	 * @param user
+	 * @param overrideSecurity
+	 * @param quarantine
+	 * @param overrideQuarantine
+	 * @param allowItemRemoval
+	 * @param c
+	 * @throws Exception
+	 */
+	public static void unauthorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventDetails c) throws Exception {
+		if(i==null){
+			throw new NullPointerException();
+		}
+
+		Authorizer.getInstance().authorizeSave(i.getItem(), user);
+		
+		String id=i.getItem().getPKValueString();
+        if(id==null){
+        	id=ID_PLACEHOLDER;
+        }
+
+        PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow((XDATUser)user,i.getXSIType(),id,PersistentWorkflowUtils.getExternalId(i),c);
+			
+		final EventMetaI ci=wrk.buildEvent();
+        
+		try {
+			getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval,ci);
+			
+			if(id.equals(ID_PLACEHOLDER)){
+				wrk.setId(i.getItem().getPKValueString());
+			}
+			
+			PersistentWorkflowUtils.complete(wrk,ci);
+		} catch (Exception e) {
+			if(id.equals(ID_PLACEHOLDER)){
+				wrk.setId(i.getItem().getPKValueString());
+			}
+			
+			PersistentWorkflowUtils.fail(wrk,ci);
+			throw e;
+		}
+	}
+	
 	/**
 	 * Save resource without additional security precautions.
 	 * @param i
@@ -173,6 +276,48 @@ public class SaveItemHelper {
 		}
 		
 		getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval,c);
+	}
+	
+	/**
+	 * Save resource without additional security precautions.
+	 * @param i
+	 * @param user
+	 * @param overrideSecurity
+	 * @param quarantine
+	 * @param overrideQuarantine
+	 * @param allowItemRemoval
+	 * @throws Exception
+	 */
+	public static void authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventDetails c) throws Exception {
+		if(i==null){
+			throw new NullPointerException();
+		}
+		
+		String id=i.getItem().getPKValueString();
+        if(id==null){
+        	id=ID_PLACEHOLDER;
+        }
+
+        PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow((XDATUser)user,i.getXSIType(),id,PersistentWorkflowUtils.getExternalId(i),c);
+			
+		final EventMetaI ci=wrk.buildEvent();
+        
+		try {
+			getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval,ci);
+			
+			if(id.equals(ID_PLACEHOLDER)){
+				wrk.setId(i.getItem().getPKValueString());
+			}
+			
+			PersistentWorkflowUtils.complete(wrk,ci);
+		} catch (Exception e) {
+			if(id.equals(ID_PLACEHOLDER)){
+				wrk.setId(i.getItem().getPKValueString());
+			}
+			
+			PersistentWorkflowUtils.fail(wrk,ci);
+			throw e;
+		}
 	}
 
 	/**
@@ -191,6 +336,51 @@ public class SaveItemHelper {
 		Authorizer.getInstance().authorizeSave(i.getItem(), user);
 
 		return getInstance().save(i, user, overrideSecurity, allowItemRemoval,c);
+	}
+
+	/**
+	 * Save resource with additional security precautions.
+	 * @param i
+	 * @param user
+	 * @param overrideSecurity
+	 * @param allowItemRemoval
+	 * @throws Exception
+	 */
+	public static boolean unauthorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventDetails c) throws Exception {
+		if(i==null){
+			throw new NullPointerException();
+		}
+
+		Authorizer.getInstance().authorizeSave(i.getItem(), user);
+		
+		String id=i.getItem().getPKValueString();
+        if(id==null){
+        	id=ID_PLACEHOLDER;
+        }
+
+        PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow((XDATUser)user,i.getXSIType(),id,PersistentWorkflowUtils.getExternalId(i),c);
+			
+		final EventMetaI ci=wrk.buildEvent();
+        
+		try {
+			boolean _return=getInstance().save(i, user, overrideSecurity, allowItemRemoval,ci);
+			
+			if(_return){
+				if(id.equals(ID_PLACEHOLDER)){
+					wrk.setId(i.getItem().getPKValueString());
+				}
+				
+				PersistentWorkflowUtils.complete(wrk,ci);
+			}
+			return _return;
+		} catch (Exception e) {
+			if(id.equals(ID_PLACEHOLDER)){
+				wrk.setId(i.getItem().getPKValueString());
+			}
+			
+			PersistentWorkflowUtils.fail(wrk,ci);
+			throw e;
+		}
 	}
 
 	/**
@@ -229,5 +419,43 @@ public class SaveItemHelper {
 		}
 		
 		return getInstance().save(i, user, overrideSecurity, allowItemRemoval,c);
+			
+		
+	}
+	
+	public static boolean authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventDetails c) throws Exception {
+		if(i==null){
+			throw new NullPointerException();
+		}
+		
+		String id=i.getItem().getPKValueString();
+        if(id==null){
+        	id=ID_PLACEHOLDER;
+        }
+
+        PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow((XDATUser)user,i.getXSIType(),id,PersistentWorkflowUtils.getExternalId(i),c);
+			
+		final EventMetaI ci=wrk.buildEvent();
+        
+		try {
+			boolean _return=getInstance().save(i, user, overrideSecurity, allowItemRemoval,ci);
+			
+			if(_return){
+				if(id.equals(ID_PLACEHOLDER)){
+					wrk.setId(i.getItem().getPKValueString());
+				}
+				
+				PersistentWorkflowUtils.complete(wrk,ci);
+			}
+			return _return;
+		} catch (Exception e) {
+			if(id.equals(ID_PLACEHOLDER)){
+				wrk.setId(i.getItem().getPKValueString());
+			}
+			
+			PersistentWorkflowUtils.fail(wrk,ci);
+			throw e;
+		}
+		
 	}
 }

@@ -19,6 +19,8 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xdat.entities.AliasToken;
@@ -99,7 +101,6 @@ public class XDATForgotLogin extends VelocitySecureAction {
 						// String tempPass = newUser.getStringProperty("primary_password");
 						user.setProperty("primary_password", XDATUser.EncryptString(newPassword));
                     }
-                    SaveItemHelper.authorizedSave(user,null, true, false,EventUtils.ADMIN_EVENT(user));
                     
                     try {
                     	String to = user.getEmail();
@@ -117,6 +118,10 @@ public class XDATForgotLogin extends VelocitySecureAction {
                         data.setScreenTemplate("ForgotLogin.vm");
                         return;
                     }
+					
+                    //if it can't send an email, then it should save the modified user password.
+					SaveItemHelper.authorizedSave(user,null, true, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Password Reset"));
+					
                 }
             }else{
                 data.setScreenTemplate("ForgotLogin.vm");

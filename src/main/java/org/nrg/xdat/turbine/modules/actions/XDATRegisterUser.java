@@ -32,6 +32,8 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -95,9 +97,11 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                
 		                XDATUser newUser = new XDATUser(found);
 		               // newUser.initializePermissions();
+
+						
+						SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "User registration"));
 		                
-	                SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false,EventUtils.ADMIN_EVENT(newUser));
-		                TurbineUtils.setUser(data,newUser);
+	                	TurbineUtils.setUser(data,newUser);
 		                
 		                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
 	                    XDAT.getXdatUserAuthService().create(newUserAuth);
@@ -124,7 +128,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
 		                    item.setProperty("xdat:user_login.login_date",today);
 		                    item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
-	                    SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
+		                    SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
 		                    
 							Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 		                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));

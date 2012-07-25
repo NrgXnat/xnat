@@ -64,33 +64,6 @@ public class EventUtils {
 			
 		};
 	}
-	public static EventMetaI ADMIN_EVENT(final UserI u){
-		return new EventMetaI(){
-			final Date d= Calendar.getInstance().getTime();
-			final String t=FileUtils.getTimestamp(d);
-			
-			public String getMessage() {
-				return null;
-			}
-	
-			public Date getEventDate() {
-				return d;
-			}
-	
-			public String getTimestamp() {
-				return t;
-			}
-	
-			public UserI getUser() {
-				return u;
-			}
-			
-			public Integer getEventId(){
-				return null;
-			}
-			
-		};
-	}
 	
 	public static Date getEventDate(EventMetaI ea,boolean allowNull){
 		if(ea==null){
@@ -123,6 +96,10 @@ public class EventUtils {
 	
 	public static EventDetails newEventInstance(CATEGORY category, TYPE type, String action, String reason, String comment){
 		return new EventDetails(category,type,action,reason,comment);
+	}
+	
+	public static EventDetails newEventInstance(CATEGORY category, TYPE type, String action){
+		return new EventDetails(category,type,action,null,null);
 	}
 
 	

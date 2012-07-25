@@ -109,8 +109,9 @@ public class ModifyEmail extends SecureAction {
                 ItemI found = (ItemI)iter.next();
                 
                 XDATUser authenticatedUser=TurbineUtils.getUser(data);
+                
                 try {
-                	XDATUser.ModifyUser(authenticatedUser, found,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
+                	XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modify User Email"));
                 } catch (InvalidPermissionException e) {
         			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
         			return;

@@ -29,6 +29,8 @@ import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -89,7 +91,7 @@ public class CSVUpload2 extends SecureAction {
         }
     }
 
-    public void doStore(RunData data,Context context){
+    public void doStore(RunData data,Context context) throws Exception{
         preserveVariables(data,context);
         ArrayList rows = new ArrayList();
         rows = (ArrayList)data.getSession().getAttribute("rows");
@@ -102,8 +104,7 @@ public class CSVUpload2 extends SecureAction {
 
         String project = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
         
-        EventMetaI ci=EventUtils.DEFAULT_EVENT(TurbineUtils.getUser(data),"Spreadsheet upload");
-
+        
         ArrayList displaySummary = new ArrayList();
         List fields = fm.getFields();
         try {
@@ -268,11 +269,15 @@ public class CSVUpload2 extends SecureAction {
                     }
                 }
 
+                PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, item, this.newEventInstance(data, EventUtils.CATEGORY.DATA, "Spreadsheet Upload"));
+                
                 try {
-                	SaveItemHelper.unauthorizedSave(item,user, false, false,ci);
+                	SaveItemHelper.unauthorizedSave(item,user, false, false,wrk.buildEvent());
+                	PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
                     rowSummary.add("<font color='black'><b>Successful</b></font>");
                 } catch (Throwable e1) {
                     logger.error("",e1);
+                	PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
                     rowSummary.add("<font color='red'><b>Error</b>&nbsp;"+ e1.getMessage() + "</font>");
                 }
 

@@ -24,6 +24,8 @@ import org.nrg.xft.db.DBAction;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
 
@@ -52,21 +54,24 @@ public class ModifyUserGroups extends SecureAction {
             }
         }
         
-        EventMetaI ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
         
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
         ItemI found = populater.getItem();
-        try {
-            ItemSearch search = new ItemSearch();
-            search.setAllowMultiples(false);
-            search.setElement("xdat:user");
-            search.addCriteria("xdat:user.login",found.getProperty("login"));
-            
-            ItemI temp = search.exec().getFirst();
+        
+        ItemSearch search = new ItemSearch();
+        search.setAllowMultiples(false);
+        search.setElement("xdat:user");
+        search.addCriteria("xdat:user.login",found.getProperty("login"));
+        
+        ItemI temp = search.exec().getFirst();
 
-            XDATUser oldUser = new XDATUser(temp);
-            XDATUser newUser = new XDATUser(found);
-            
+        XDATUser oldUser = new XDATUser(temp);
+        XDATUser newUser = new XDATUser(found);
+
+        PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), found.getXSIType(),oldUser.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modify user settings"));
+        EventMetaI ci=wrk.buildEvent();
+        
+        try {
             if (oldUser.checkRole("Administrator")){
                 if (!newUser.checkRole("Administrator")){
                     Iterator iter= oldUser.getAssignedRoles_assignedRole().iterator();
@@ -100,10 +105,14 @@ public class ModifyUserGroups extends SecureAction {
             try {
     			XDATUser.ModifyUser(authenticatedUser, found,ci);
                 found.getItem().removeEmptyItems();
+                
+                PersistentWorkflowUtils.complete(wrk, ci);
     		} catch (InvalidPermissionException e) {
+                PersistentWorkflowUtils.fail(wrk, ci);
     			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
     			return;
     		} catch (Exception e) {
+                PersistentWorkflowUtils.fail(wrk, ci);
     			logger.error("Error Storing User", e);
     			return;
     		}
@@ -120,6 +129,7 @@ public class ModifyUserGroups extends SecureAction {
 //              
 //          }
         } catch (Exception e) {
+            PersistentWorkflowUtils.fail(wrk, ci);
             logger.error("Error Storing User",e);
         }
         

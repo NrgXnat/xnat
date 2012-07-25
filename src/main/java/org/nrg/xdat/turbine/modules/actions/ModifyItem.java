@@ -142,15 +142,11 @@ public class ModifyItem  extends SecureAction {
             PersistentWorkflowI wrk=null;
             if(first.instanceOf("xnat:experimentData") || first.instanceOf("xnat:subjectData")){
     			wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), first,newEventInstance(data, EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(first.getXSIType(), dbVersion==null)));
-    	    	
+            }else{
+            	wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), first,newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.getAddModifyAction(first.getXSIType(), dbVersion==null)));
             }
             
-            final EventMetaI c;
-            if(wrk!=null){
-            	c=wrk.buildEvent();
-            }else{
-            	c=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
-            }
+            final EventMetaI c=wrk.buildEvent();
             
             boolean removedReference = false;
             Object[] keysArray = data.getParameters().getKeys();

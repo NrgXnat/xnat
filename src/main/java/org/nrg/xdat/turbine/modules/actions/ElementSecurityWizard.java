@@ -12,6 +12,7 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.om.XdatElementSecurity;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.turbine.utils.PopulateItem;
@@ -20,6 +21,8 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.persist.PersistentWorkflowI;
+import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
@@ -239,11 +242,11 @@ public class ElementSecurityWizard extends AdminAction {
 		    
 		    boolean saved=false;
 		    try {
-		    	SaveItemHelper.authorizedSave(found,TurbineUtils.getUser(data),false,false,EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data)));
-				saved=true;
+		    	SaveItemHelper.authorizedSave(found,TurbineUtils.getUser(data),false,false,this.newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, "Registered new data-type"));
+		    	saved=true;
 			} catch (Exception e) {
 				logger.error("Error Storing " + found.getXSIType(),e);
-			}
+		    }
 
 			SchemaElementI se = SchemaElement.GetElement(found.getXSIType());
 			

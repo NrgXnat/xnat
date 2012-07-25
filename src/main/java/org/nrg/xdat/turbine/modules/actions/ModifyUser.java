@@ -17,6 +17,7 @@ import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.PasswordComplexityException;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -62,7 +63,6 @@ public class ModifyUser extends SecureAction {
 			}
 		}
 		
-		EventMetaI ci=EventUtils.ADMIN_EVENT(TurbineUtils.getUser(data));
 		
 		PopulateItem populater = PopulateItem.Populate(data,
 				org.nrg.xft.XFT.PREFIX + ":user", true);
@@ -70,13 +70,16 @@ public class ModifyUser extends SecureAction {
 		
 		XDATUser authenticatedUser=TurbineUtils.getUser(data);
 		
-		if(found.getProperty("login")==null){
+		String login=found.getStringProperty("login");
+		if(login==null){
 			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 			return;
 		}
 		
+		XdatUser oldUser=XdatUser.getXdatUsersByLogin(login, null, false);
+				
 		try {
-			XDATUser.ModifyUser(authenticatedUser, found,ci);
+			XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM,((oldUser==null))?"Add User "+login:"Modify User "+login));
 		} catch (InvalidPermissionException e) {
 			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 			return;

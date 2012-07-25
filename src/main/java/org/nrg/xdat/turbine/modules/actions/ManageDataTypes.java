@@ -32,8 +32,7 @@ public class ManageDataTypes extends AdminAction {
         
         ArrayList<XdatElementSecurity> ess=sec.getElementSecuritySet_elementSecurity();
         
-        EventMetaI ci = EventUtils.ADMIN_EVENT(user);
-        
+       
         for(XdatElementSecurity es : ess){
             if (es.getProperty("accessible")==null){
                 es.setAccessible("false");
@@ -47,7 +46,7 @@ public class ManageDataTypes extends AdminAction {
                 es.setBrowse("false");
             }
             
-            SaveItemHelper.authorizedSave(es,user, false, false,ci);
+            SaveItemHelper.authorizedSave(es,user, false, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified Data-type " +found.getStringProperty("element_name") + " (batch)" ));
         }
         
         ElementSecurity.refresh();

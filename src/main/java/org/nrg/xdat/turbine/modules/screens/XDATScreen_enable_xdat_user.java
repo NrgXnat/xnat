@@ -44,7 +44,7 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
 
                 XDATUser userI = new XDATUser(o);
                 				
-				XDATUser.ModifyUser(TurbineUtils.getUser(data), userI,EventUtils.ADMIN_EVENT(userI));
+				XDATUser.ModifyUser(TurbineUtils.getUser(data), userI,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, (enabled)?"User Enabled":"User Disabled"));
 
 				SchemaElementI se = SchemaElement.GetElement(o.getXSIType());
 				data = TurbineUtils.setDataItem(data,o);

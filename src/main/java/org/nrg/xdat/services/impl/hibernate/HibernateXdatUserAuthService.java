@@ -127,11 +127,10 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	        		String ldapUsername = username;
 	        		username = findUnusedLocalUsernameForNewLDAPUser(ldapUsername);
 	    			logger.debug("Adding LDAP user '" + username + "' to database.");
-
-    			try {
-					PersistentWorkflowI wrk=PersistentWorkflowUtils.buildAdminWorkflow(null, "xdat:user", username, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "User created from LDAP", null, null));
+	    			
+	    			PersistentWorkflowI wrk=PersistentWorkflowUtils.buildAdminWorkflow(null, "xdat:user", username, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "User created from LDAP", null, null));
 					
-					try{
+	    			try {
 						Map<String, String> newUserPrperties = new HashMap<String, String>();
 						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.login", username);
 						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.email", email);
@@ -153,18 +152,17 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 					    SaveItemHelper.authorizedSave(newUser,XDAT.getUserDetails(),true,false,true,false,wrk.buildEvent()); 
 					    wrk.setId(newUser.getStringProperty("xdat_user_id"));
 
-	                userDetails = new XDATUserDetails(newUser);
-	                userDetails.setAuthorization(newUserAuth);
+					    XdatUserAuth newUserAuth = new XdatUserAuth(ldapUsername, XdatUserAuthService.LDAP, id, username, true, 0);
+		                userDetails = new XDATUserDetails(newUser);
+		                userDetails.setAuthorization(newUserAuth);
 
-	                XDAT.setUserDetails(userDetails);
+		                XDAT.setUserDetails(userDetails);
 					    
 					    if(users.size() == 0){
-	                	users.add(userDetails);
+					    	users.add(userDetails);
 					    }
 					    else{
-	                }
-	                else{
-		                users.set(0, userDetails);
+					    	users.set(0, userDetails);
 					    }
 					    
 					    PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());

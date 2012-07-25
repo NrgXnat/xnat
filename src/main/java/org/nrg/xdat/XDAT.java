@@ -9,8 +9,17 @@
  */
 package org.nrg.xdat;
 
-import java.io.*;
-import java.util.*;
+import java.io.ByteArrayInputStream;
+import java.io.File;
+import java.io.IOException;
+import java.io.PrintWriter;
+import java.io.StringWriter;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.List;
+import java.util.Properties;
+import java.util.TimeZone;
+import java.util.UUID;
 
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
@@ -33,7 +42,11 @@ import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
-import org.nrg.notify.entities.*;
+import org.nrg.notify.entities.Category;
+import org.nrg.notify.entities.Channel;
+import org.nrg.notify.entities.Definition;
+import org.nrg.notify.entities.Subscriber;
+import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
@@ -47,6 +60,7 @@ import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
+import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -178,7 +192,7 @@ public class XDAT implements Initializable,Configurable{
 			item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
 			item.setProperty("xdat:user_login.login_date", today);
 			item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
-			SaveItemHelper.authorizedSave(item, null, true, false, null);
+			SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI)null);
 
 			HttpSession session = data.getSession();
 			session.setAttribute("user", user);

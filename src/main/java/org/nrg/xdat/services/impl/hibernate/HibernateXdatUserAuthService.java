@@ -87,18 +87,24 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     @Override
 	@Transactional
 	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth) {
-		return getUserDetailsByNameAndAuth(user, auth, "", null);
+		return getUserDetailsByNameAndAuth(user, auth, "", null, null, null);
 	}
     
 	@Override
 	@Transactional
 	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id) {
-		return getUserDetailsByNameAndAuth(user, auth, id, null);
+		return getUserDetailsByNameAndAuth(user, auth, id, null, null, null);
 	}
     
 	@Override
 	@Transactional
-	public XDATUserDetails getUserDetailsByNameAndAuth(String username, String auth, String id, String email) {
+	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id, String email) {
+		return getUserDetailsByNameAndAuth(user, auth, id, email, null, null);
+	}
+	
+	@Override
+	@Transactional
+	public XDATUserDetails getUserDetailsByNameAndAuth(String username, String auth, String id, String email, String lastname, String firstname) {
 		List<UserDetails> users = loadUsersByUsernameAndAuth(username, auth, id);
 		
 		XDATUserDetails userDetails = null;
@@ -114,8 +120,8 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.login", username);
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.email", email);
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password", null);
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.lastname", null);
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.firstname", null);
+	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.lastname", lastname);
+	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.firstname", firstname);
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password.encrypt", "true");
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.enabled", newUserAccountsAreAutoEnabled().toString());
 	        		

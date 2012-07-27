@@ -458,7 +458,7 @@ public abstract class SearchA extends SecureAction {
             }
 
 
-            int counter = 1;
+            int counter = 0;
             while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter, data)) != null)
             {
                 if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter, data)).length() == 0){counter++;continue;}
@@ -512,9 +512,60 @@ public abstract class SearchA extends SecureAction {
                     ds.addCriteria(cc);
                 }
             }
+            
+            if((((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO1", data)) != null) && (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO0", data)) == null) && (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO1", data)).length() > 0)){
+            	counter = 1;
+            	final CriteriaCollection cc = new CriteriaCollection("OR");
+                final String value = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter,data));
+                final String keys = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(ed.getElementName() + ".COMBO" + counter + "_FIELDS",data));
+
+                ds.setWebFormValue(ed.getElementName() + ".COMBO" + counter,value);
+                ds.setWebFormValue(ed.getElementName() + ".COMBO" + counter + "_FIELDS",keys);
+
+                String inClause = "";
+
+                Iterator keyIter = StringUtils.CommaDelimitedStringToArrayList(keys).iterator();
+                while (keyIter.hasNext())
+                {
+                    String key = (String)keyIter.next();
+                    if (key.endsWith("_in"))
+                    {
+                        key = key.substring(0,key.length()-3);
+
+                        if (inClause.equalsIgnoreCase(""))
+                            inClause += key;
+                        else
+                            inClause += "," + key;
+                    }else if(key.endsWith("_equals"))
+                    {
+                        key = key.substring(0,key.length()-7);
+                        
+                        final String elementName1 = StringUtils.GetRootElementName(key);
+
+                        final SchemaElement element = SchemaElement.GetElement(elementName1);
+                        final DisplayField df = DisplayField.getDisplayFieldForDFIdOrXPath(key);
+
+                        if (df.getDataType().equalsIgnoreCase("string"))
+                        {
+                            cc.addCriteria(SearchA.processStringData(value,ds,element.getDisplay(),df));
+                        }else{
+                            final CriteriaCollection sub=SearchA.processNumericData(value,ds,ed,df);
+                            if(sub.size()>0)
+                            	ds.addCriteria(sub);
+                        }
+                    }
+                }
+
+                if (!inClause.equalsIgnoreCase(""))
+                {
+                    ds.addInClause(inClause,value);
+                }else{
+                    ds.addCriteria(cc);
+                }
+            }
         }
 
-        int counter = 1;
+        int counter = 0;
         while (TurbineUtils.HasPassedParameter("COMBO" +counter,data))
         {
             CriteriaCollection cc = new CriteriaCollection("OR");
@@ -566,7 +617,59 @@ public abstract class SearchA extends SecureAction {
                 ds.addCriteria(cc);
             }
         }
+        
+        if((TurbineUtils.HasPassedParameter("COMBO1",data)) && (!TurbineUtils.HasPassedParameter("COMBO0",data))){
+        	counter = 1;
+            CriteriaCollection cc = new CriteriaCollection("OR");
+            String value = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("COMBO" + counter,data));
+            String keys = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("COMBO" + counter + "_FIELDS",data));
 
+            ds.setWebFormValue("COMBO" + counter,value);
+            ds.setWebFormValue("COMBO" + counter + "_FIELDS",keys);
+
+            String inClause = "";
+
+            Iterator keyIter = StringUtils.CommaDelimitedStringToArrayList(keys).iterator();
+            while (keyIter.hasNext())
+            {
+                String key = (String)keyIter.next();
+                if (key.endsWith("_in"))
+                {
+                    key = key.substring(0,key.length()-3);
+
+                    if (inClause.equalsIgnoreCase(""))
+                        inClause += key;
+                    else
+                        inClause += "," + key;
+                }else if(key.endsWith("_equals"))
+                {
+                	key = key.substring(0,key.length()-7);
+                    
+                    final String elementName1 = StringUtils.GetRootElementName(key);
+                    final SchemaElement element = SchemaElement.GetElement(elementName1);
+                    
+                    final DisplayField df = DisplayField.getDisplayFieldForDFIdOrXPath(key);
+
+                    if (df.getDataType().equalsIgnoreCase("string"))
+                    {
+                        cc.addCriteria(SearchA.processStringData(value,ds,element.getDisplay(),df));
+                    }else{
+                        CriteriaCollection sub=SearchA.processNumericData(value,ds,element.getDisplay(),df);
+                        if(sub.size()>0)
+                        	ds.addCriteria(sub);
+                    }
+                }
+            }
+
+            if (!inClause.equalsIgnoreCase(""))
+            {
+                ds.addInClause(inClause,value);
+            }else{
+                ds.addCriteria(cc);
+            }
+        }
+        
+        
         return ds;
     }
 

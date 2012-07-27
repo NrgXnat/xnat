@@ -146,6 +146,9 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 					    SaveItemHelper.authorizedSave(newUser,XDAT.getUserDetails(),true,false,true,false,wrk.buildEvent()); 
 					    wrk.setId(newUser.getStringProperty("xdat_user_id"));
 
+					    XdatUserAuth newUserAuth = new XdatUserAuth(ldapUsername, XdatUserAuthService.LDAP, id, username, true, 0);
+	 	                XDAT.getXdatUserAuthService().create(newUserAuth);
+	 
 	                // <HACK_ALERT>
 	                /*
 	                 * We must save enabled flag to DB as true above, because the administrator code for enabling a user account does not flip this flag
@@ -154,7 +157,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	                 * we use the system-wide auto-enable config setting.
 	                 * Must clone a new object to return, rather than modifying the existing, so that Hibernate still saves the desired values to the DB.
 	                 */
-	                newUserAuth = new XdatUserAuth(newUserAuth);
+					newUserAuth = new XdatUserAuth(newUserAuth);
 	                newUserAuth.setEnabled(newUserAccountsAreAutoEnabled());
 	                // </HACK_ALERT>
 	                

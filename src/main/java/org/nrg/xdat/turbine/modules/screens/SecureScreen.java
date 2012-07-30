@@ -10,9 +10,9 @@
 package org.nrg.xdat.turbine.modules.screens;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-
 import java.util.Hashtable;
 import java.util.UUID;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
@@ -86,7 +86,12 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         c.put("showReason", XFT.SHOW_REASON);
         c.put("requireReason", XFT.REQUIRE_REASON);
         
-        c.put("configProps", XFT.PROPS);        
+        c.put("configProps", XFT.PROPS);  
+        try{
+        	c.put("siteConfig", XDAT.getSiteConfiguration());
+        }catch(ConfigServiceException e){
+        	
+        }
     }
 
 	/**

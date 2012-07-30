@@ -32,9 +32,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="notify" />
-    <orderEntry type="module" module-name="mail" />
-    <orderEntry type="module" module-name="framework" />
+    <orderEntry type="library" name="Maven: org.nrg:notify:1.6" level="project" />
+    <orderEntry type="library" name="Maven: org.nrg:mail:1.6" level="project" />
+    <orderEntry type="library" name="Maven: org.nrg:framework:1.6" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-orm:3.0.5.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-beans:3.0.5.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-core:3.0.5.RELEASE" level="project" />
@@ -73,7 +73,7 @@
     <orderEntry type="library" name="Maven: cglib:cglib:2.2.2" level="project" />
     <orderEntry type="library" name="Maven: asm:asm:3.3.1" level="project" />
     <orderEntry type="library" name="Maven: org.javassist:javassist:3.16.1-GA" level="project" />
-    <orderEntry type="module" module-name="config" />
+    <orderEntry type="library" name="Maven: org.nrg:config:1.6" level="project" />
     <orderEntry type="library" name="Maven: commons-beanutils:commons-beanutils:1.7.0" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.security:spring-security-web:3.0.5.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.security:spring-security-core:3.0.5.RELEASE" level="project" />

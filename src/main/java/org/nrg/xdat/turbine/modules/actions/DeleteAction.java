@@ -8,8 +8,10 @@ package org.nrg.xdat.turbine.modules.actions;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.om.XdatElementSecurity;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.event.EventUtils;
@@ -39,7 +41,13 @@ public class DeleteAction extends SecureAction {
 					SaveItemHelper.unauthorizedDelete(o.getItem(), TurbineUtils.getUser(data),this.newEventInstance(data, EventUtils.CATEGORY.DATA,"Deprecated Delete Action"));
                     postDelete(data, context);
 
-                    data.setMessage("<p>Item Deleted.</p>");
+                    String message;
+                    if (o instanceof XFTItem && o.getXSIType().equals(XdatElementSecurity.SCHEMA_ELEMENT_NAME)) {
+                        message = String.format("<b>Data type %s deleted:</b> You should re-start your application server to clear cached session references to this data type.", ((XFTItem) o).getField("element_name"));
+                    } else {
+                        message = "<p>Item Deleted.</p>";
+                    }
+                    data.setMessage(message);
     			  	data.setScreenTemplate("Index.vm");
                 } catch (RuntimeException e1) {
                     logger.error("",e1);

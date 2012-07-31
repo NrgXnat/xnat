@@ -234,7 +234,7 @@ public class SaveItemHelper {
 		Authorizer.getInstance().authorizeSave(i.getItem(), user);
 		
 		String id=i.getItem().getPKValueString();
-        if(id==null){
+        if(StringUtils.IsEmpty(id)){
         	id=ID_PLACEHOLDER;
         }
 
@@ -294,7 +294,7 @@ public class SaveItemHelper {
 		}
 		
 		String id=i.getItem().getPKValueString();
-        if(id==null){
+        if(StringUtils.IsEmpty(id)){
         	id=ID_PLACEHOLDER;
         }
 
@@ -429,7 +429,7 @@ public class SaveItemHelper {
 		}
 		
 		String id=i.getItem().getPKValueString();
-        if(id==null){
+        if(StringUtils.IsEmpty(id)){
         	id=ID_PLACEHOLDER;
         }
 

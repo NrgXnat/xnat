@@ -309,13 +309,13 @@ public class SaveItemHelper {
 				wrk.setId(i.getItem().getPKValueString());
 			}
 			
-			PersistentWorkflowUtils.complete(wrk,ci);
+			PersistentWorkflowUtils.complete(wrk,ci,overrideSecurity);
 		} catch (Exception e) {
 			if(id.equals(ID_PLACEHOLDER)){
 				wrk.setId(i.getItem().getPKValueString());
 			}
 			
-			PersistentWorkflowUtils.fail(wrk,ci);
+			PersistentWorkflowUtils.fail(wrk,ci,overrideSecurity);
 			throw e;
 		}
 	}

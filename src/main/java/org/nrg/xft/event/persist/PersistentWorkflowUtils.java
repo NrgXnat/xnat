@@ -188,13 +188,23 @@ public class PersistentWorkflowUtils {
 		return ci;
 	}
 
+	public static void complete(PersistentWorkflowI wrk,EventMetaI c,boolean overrideSecurity) throws Exception{
+		wrk.setStatus(COMPLETE);
+		save(wrk,c,overrideSecurity);
+	}
+
+
 	public static void complete(PersistentWorkflowI wrk,EventMetaI c) throws Exception{
 		wrk.setStatus(COMPLETE);
 		save(wrk,c);
 	}
 
 	public static void save(PersistentWorkflowI wrk, EventMetaI c) throws Exception{
-		wrk.save((c==null)?null:c.getUser(), false, false, c);
+		save(wrk,c,false);
+	}
+
+	public static void save(PersistentWorkflowI wrk, EventMetaI c,boolean overrideSecurity) throws Exception{
+		wrk.save((c==null)?null:c.getUser(), overrideSecurity, false, c);
 	}
 
 	public static EventMetaI setStep(PersistentWorkflowI wrk, String s){
@@ -205,6 +215,11 @@ public class PersistentWorkflowUtils {
 	public static void fail(PersistentWorkflowI wrk,EventMetaI c) throws Exception{
 		wrk.setStatus(FAILED);
 		save(wrk,c);
+	}
+
+	public static void fail(PersistentWorkflowI wrk,EventMetaI c, boolean overrideSecurity) throws Exception{
+		wrk.setStatus(FAILED);
+		save(wrk,c,overrideSecurity);
 	}
 
 	public static final String FAILED = "Failed";

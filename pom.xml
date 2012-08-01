@@ -114,6 +114,12 @@
                 <artifactId>core</artifactId>
                 <version>${xdat.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.nrg.xdat</groupId>
+                <artifactId>beans</artifactId>
+                <version>${xdat.version}</version>
+            </dependency>
+
 
             <!-- XNAT dependency definitions -->
             <dependency>

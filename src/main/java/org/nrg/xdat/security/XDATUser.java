@@ -2514,19 +2514,25 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     	String id;
     	try {
 			id=(found.getStringProperty("xdat_user_id")==null)?found.getStringProperty("login"):found.getStringProperty("xdat_user_id");
-			
-			
 		} catch (Exception e1) {
 			id=found.getStringProperty("login");
 	    }
 		
     	PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, found.getXSIType(),id,PersistentWorkflowUtils.getExternalId(found), ci);
          
-    	try{
+    	try {
 	    	ModifyUser(authenticatedUser,found,wrk.buildEvent());
 	    	 
-	    	if(id.equals(found.getStringProperty("login"))){
-	    		wrk.setId(found.getStringProperty("xdat_user_id"));
+	    	if(id.equals(found.getStringProperty("login"))) {
+                String userId = found.getStringProperty("xdat_user_id");
+                if (org.apache.commons.lang.StringUtils.isBlank(userId)) {
+                    XdatUser user = XDATUser.getXdatUsersByLogin(id, null, false);
+                    userId = user.getXdatUserId().toString();
+                    if (org.apache.commons.lang.StringUtils.isBlank(userId)) {
+                        throw new Exception("Couldn't find a user for the indicated login: " + found.getStringProperty("login"));
+                    }
+                }
+                wrk.setId(userId);
 	    	}
 	    	
 			PersistentWorkflowUtils.complete(wrk,wrk.buildEvent());

@@ -1207,7 +1207,7 @@ public class XFTTable implements XFTTableI {
 							}else{
 								return 1;
 							}
-						}else if(o2==null){
+						}else if(o2[i]==null){
 							return -1;
 						}else{
 							int c=((Comparable)o1[i]).compareTo(((Comparable)o2[i]));

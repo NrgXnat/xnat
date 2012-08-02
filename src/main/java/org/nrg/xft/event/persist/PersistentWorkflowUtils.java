@@ -140,7 +140,12 @@ public class PersistentWorkflowUtils {
 	
 	public static PersistentWorkflowI buildOpenWorkflow(final XDATUser user, final XFTItem expt, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
 		try {
-			return buildOpenWorkflow(user, expt.getXSIType(), expt.getStringProperty("ID"), expt.getStringProperty("project"),event);
+
+			if(expt.getItem().instanceOf("xnat:experimentData") || expt.getItem().instanceOf("xnat:subjectData")){
+				return buildOpenWorkflow(user, expt.getXSIType(), expt.getStringProperty("ID"), expt.getStringProperty("project"),event);
+			}else{
+				return buildOpenWorkflow(user, expt.getXSIType(), expt.getPKValueString(), getExternalId(expt),event);
+			}
 		} catch (FieldNotFoundException e) {
 			return null;
 		} catch (XFTInitException e) {

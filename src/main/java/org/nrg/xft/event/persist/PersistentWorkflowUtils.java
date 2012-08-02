@@ -66,12 +66,27 @@ public class PersistentWorkflowUtils {
 		workflow.setExternalid(project_id);
 		workflow.setId(ID);
 		if(StringUtils.isEmpty(workflow.getId())){
-			throw new IDAbsent();
+			workflow.setId("NULL");
 		}
 		workflow.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
 		workflow.setLaunchTime(Calendar.getInstance().getTime());
 
 		return workflow;
+	}
+	
+	public static void confirmID(final XFTItem item, final PersistentWorkflowI wrk){
+		if(wrk.getId()==null || wrk.getId().equals("NULL")){
+			wrk.setId(getID(item));
+		}
+	}
+	
+	public static String getID(final XFTItem item){
+		String id=item.getPKValueString();
+		if(StringUtils.isEmpty(id)){
+			return "NULL";
+		}else{
+			return id;
+		}
 	}
 	
 	public static boolean requiresReason(final String xsiType,final String project_id){
@@ -209,6 +224,11 @@ public class PersistentWorkflowUtils {
 	}
 
 	public static void save(PersistentWorkflowI wrk, EventMetaI c,boolean overrideSecurity) throws Exception{
+		if(StringUtils.isEmpty(wrk.getId())){
+			logger.error("Error saving audit trail entry for workflow item",new Exception());
+			//set this to a value that is save-able... to prevent unnecessary failures.
+			wrk.setId("ERROR");
+		}
 		wrk.save((c==null)?null:c.getUser(), overrideSecurity, false, c);
 	}
 

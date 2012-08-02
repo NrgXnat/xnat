@@ -86,6 +86,9 @@ public abstract class SecureAction extends VelocitySecureAction
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data))!=null){
 			    path += "/project/" + URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)),encoding);
         }
+        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("topTab",data))!=null){
+			    path += "/topTab/" + URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("topTab",data)),encoding);
+        }
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("params",data))!=null){
 			    path += URLEncoder.encode(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("params",data)),encoding);
         }

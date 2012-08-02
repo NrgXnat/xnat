@@ -143,7 +143,7 @@ public class ModifyItem  extends SecureAction {
             if(first.instanceOf("xnat:experimentData") || first.instanceOf("xnat:subjectData")){
     			wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), first,newEventInstance(data, EventUtils.CATEGORY.DATA, EventUtils.getAddModifyAction(first.getXSIType(), dbVersion==null)));
             }else{
-            	wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), first,newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.getAddModifyAction(first.getXSIType(), dbVersion==null)));
+            	wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), first.getXSIType(),PersistentWorkflowUtils.getID(first),PersistentWorkflowUtils.getExternalId(first),newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.getAddModifyAction(first.getXSIType(), dbVersion==null)));
             }
             
             final EventMetaI c=wrk.buildEvent();
@@ -163,7 +163,6 @@ public class ModifyItem  extends SecureAction {
             	    if (items.size() > 0)
             	    {
             	        ItemI toRemove = items.getFirst();
-            	        DBAction.RemoveItemReference(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data),c);
             	        SaveItemHelper.unauthorizedRemoveChild(dbVersion.getItem(),null,toRemove.getItem(),TurbineUtils.getUser(data),c);
             	        first.removeItem(toRemove);
             	        removedReference = true;
@@ -209,12 +208,16 @@ public class ModifyItem  extends SecureAction {
                         logger.error("",e);
                     }
                     save(first,data,context,c);
-                    if(wrk!=null)
+                    if(wrk!=null){
+                    	PersistentWorkflowUtils.confirmID(first, wrk);
                     	PersistentWorkflowUtils.complete(wrk,c);
+                    }
 					MaterializedView.DeleteByUser(TurbineUtils.getUser(data));
         		} catch (Exception e) {
-        			if(wrk!=null)
+                    if(wrk!=null){
+                    	PersistentWorkflowUtils.confirmID(first, wrk);
                     	PersistentWorkflowUtils.fail(wrk,c);
+                    }
                     handleException(data,first,error);
                     return;
         		}

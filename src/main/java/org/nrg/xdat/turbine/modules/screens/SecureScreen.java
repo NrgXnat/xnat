@@ -127,7 +127,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 			in.append(i.getSessionId()).append("','");
                 		}
                 		//notice the lazy hack to finish out the query.
-                		String query = "SELECT DISTINCT(ip_address) FROM xdat_user_login WHERE session_id in (" + in + "thisIsALazyHack')";
+                		String query = "SELECT ip_address FROM xdat_user_login WHERE session_id in (" + in + "thisIsALazyHack')";
        
                 		XDATUser user = TurbineUtils.getUser(data);
                 		try {

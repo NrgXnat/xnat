@@ -117,7 +117,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 
                 if(sessionRegistry != null){
                 	int sessionCount = 0;
-            		Set<String> ip = new HashSet<String>();
+            		ArrayList<String> ip = new ArrayList<String>();
 
                 	List<SessionInformation> l = sessionRegistry.getAllSessions(TurbineUtils.getUser(data), false);
                 	if(l != null){

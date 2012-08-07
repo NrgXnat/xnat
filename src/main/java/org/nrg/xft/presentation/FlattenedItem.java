@@ -9,6 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.lang.BooleanUtils;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.compare.ItemComparator;
@@ -117,7 +118,7 @@ public class FlattenedItem extends FlattenedItemA{
 				}
 			}
 		}else{
-			FlattenedItemA.putValue(field.getXMLPathString(),field.getDisplayName(),item.getProperty(field.getId()),params);
+			FlattenedItemA.putValue(field.getXMLPathString(),field.getDisplayName(),parseProperty(field,item.getProperty(field.getId())),params);
 		}
 		
 		return params;
@@ -140,7 +141,7 @@ public class FlattenedItem extends FlattenedItemA{
 		
 	    for(GenericWrapperField field:root.getAllPrimaryKeys()) {
 	    	if(!params.getParams().containsKey(field.getXMLPathString())){
-				FlattenedItemA.putValue(field.getXMLPathString(),field.getName(),item.getProperty(field.getId()),params);
+				FlattenedItemA.putValue(field.getXMLPathString(),field.getName(),parseProperty(field,item.getProperty(field.getId())),params);
 	    	}
 	    }
 		
@@ -160,8 +161,22 @@ public class FlattenedItem extends FlattenedItemA{
 					}
 				}
 			}else{
-				FlattenedItemA.putValue(field.getXMLPathString(),field.getDisplayName(),item.getField(field.getId()),params);
+				FlattenedItemA.putValue(field.getXMLPathString(),field.getDisplayName(),parseProperty(field,item.getField(field.getId())),params);
 			}
+		}
+	}
+	
+	private static Object parseProperty(GenericWrapperField field,Object o){
+		if(field!=null && field.getXMLType()!=null && field.getXMLType().getLocalType()!=null && field.getXMLType().getLocalType().equals("boolean") && o!=null){
+			if(o.toString().equals("0")){
+				return "false";
+			}else if(o.toString().equals("1")){
+				return "true";
+			}else{
+				return o;
+			}
+		}else{
+			return o;
 		}
 	}
 

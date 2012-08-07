@@ -6,6 +6,7 @@ import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Date;
+import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -408,8 +409,17 @@ public abstract class FlattenedItemA implements FlattenedItemI{
 			this.objectId=objectId;
 			this.xsiType=xsiType;
 		}
+		
+		final public static Map<String,String> static_renaming=new HashMap<String,String>(){{
+			put("XDATUser","User");
+		}};
+		
 		public String getObjectHeader() {
-			return objectHeader;
+			if(static_renaming.containsKey(objectHeader)){
+				return static_renaming.get(objectHeader);
+			}else{
+				return objectHeader;
+			}
 		}
 		public Object getObjectLabel() {
 			return objectLabel;

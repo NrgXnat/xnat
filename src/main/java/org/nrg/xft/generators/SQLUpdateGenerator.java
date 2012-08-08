@@ -157,8 +157,11 @@ public class SQLUpdateGenerator {
                 lowerCaseColumns.add(t.getCellValue("col_name").toString().toLowerCase());
 
                 String type = t.getCellValue("typname").toString().toLowerCase();
+
                 if (type.equals("int4")) {
                     columnTypes.add("integer");
+                } else if (type.equals("int8")) {
+                	columnTypes.add("bigint");
                 } else if (type.equals("float8")) {
                     columnTypes.add("float");
                 } else {

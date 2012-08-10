@@ -79,7 +79,13 @@ public class GenericWrapperUtils {
                                         if (spec.getLocalKey()
                                                 .getAutoIncrement()
                                                 .equalsIgnoreCase("true")) {
-                                            sb.append(" serial").append(" ");
+                                        	
+                                        	
+                                        	if(field.getType(converter).equalsIgnoreCase("BIGINT")){
+                                        		sb.append(" bigserial").append(" ");
+                                        	} else {
+                                        		sb.append(" serial").append(" ");
+                                        	}
                                             //sb.append(" serial").append("
                                             // DEFAULT nextval('" +
                                             // input.getSQLName() + "_" +
@@ -260,8 +266,11 @@ public class GenericWrapperUtils {
                                             if (spec.getLocalKey()
                                                     .getAutoIncrement()
                                                     .equalsIgnoreCase("true")) {
-                                                sb.append(" serial")
-                                                        .append(" ");
+                                            	if(field.getType(converter).equalsIgnoreCase("BIGINT")){
+                                            		sb.append(" bigserial").append(" ");
+                                            	} else {
+                                            		sb.append(" serial").append(" ");
+                                            	}
                                                 if (spec.getLocalKey()
                                                         .isRequired()) {
                                                     sb.append(" NOT NULL ");
@@ -345,7 +354,11 @@ public class GenericWrapperUtils {
                             sb.append(field.getSQLName()).append(" ");
                             if (field.getAutoIncrement().equalsIgnoreCase(
                                     "true")) {
-                                sb.append(" serial").append(" ");
+                            	if(field.getType(converter).equalsIgnoreCase("BIGINT")){
+                            		sb.append(" bigserial").append(" ");
+                            	} else {
+                            		sb.append(" serial").append(" ");
+                            	}
                                 if (field.isRequired()) {
                                     sb.append(" NOT NULL ");
                                 }

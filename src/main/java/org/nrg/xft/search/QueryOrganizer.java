@@ -615,10 +615,10 @@ public class QueryOrganizer implements QueryOrganizerI{
 		addFieldToJoin(layer);
     }
 
-    protected String getRootQuery(String elementName,String sql_name,boolean activatedOnly)throws IllegalAccessException{
+    protected String getRootQuery(String elementName,String sql_name,String level)throws IllegalAccessException{
         try {
             GenericWrapperElement e = GenericWrapperElement.GetElement(elementName);
-            return getRootQuery(e,sql_name,activatedOnly);
+            return getRootQuery(e,sql_name,level);
         } catch (XFTInitException e) {
             logger.error("",e);
             return null;
@@ -628,7 +628,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         }
     }
 
-    protected String getRootQuery(GenericWrapperElement e,String sql_name,boolean activatedOnly)throws IllegalAccessException{
+    protected String getRootQuery(GenericWrapperElement e,String sql_name,String level)throws IllegalAccessException{
         QueryOrganizer securityQO = null;
         SQLClause coll = null;
 
@@ -661,14 +661,28 @@ public class QueryOrganizer implements QueryOrganizerI{
                         CriteriaCollection newColl = new CriteriaCollection("AND");
                         newColl.add(where);
                         newColl.add(coll);
-                        if (activatedOnly){
-                            newColl.addClause(e.getFullXMLName()+"/meta/status", ViewManager.ACTIVE);
+
+                        //add support for limited status reflected in search results
+                        if (!StringUtils.IsEmpty(level) && !level.equals(ViewManager.ALL)){
+                            CriteriaCollection inner = new CriteriaCollection("OR");
+                        	for(String l: StringUtils.CommaDelimitedStringToArrayList(level)){
+                            	inner.addClause(e.getFullXMLName()+"/meta/status", l);
+                        	}
+                            newColl.add(inner);
                         }
+                        
                         coll = newColl;
-                    }else if (activatedOnly){
+                    }else if (!StringUtils.IsEmpty(level) && !level.equals(ViewManager.ALL)){
                         CriteriaCollection newColl = new CriteriaCollection("AND");
                         newColl.add(coll);
-                        newColl.addClause(e.getFullXMLName()+"/meta/status", ViewManager.ACTIVE);
+                        
+                        //add support for limited status reflected in search results
+                        CriteriaCollection inner = new CriteriaCollection("OR");
+                    	for(String l: StringUtils.CommaDelimitedStringToArrayList(level)){
+                        	inner.addClause(e.getFullXMLName()+"/meta/status", l);
+                    	}
+                        newColl.add(inner);
+                                           
                         coll = newColl;
                     }
 
@@ -777,12 +791,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 		        if (rootElement.getFullXMLName().equalsIgnoreCase(elementName))
 		        {
 		            tables.put(tableString,layers[1]);
-		            if (this.getLevel().equalsIgnoreCase(ViewManager.ACTIVE))
-		            {
-			            joins.append(" FROM ").append(getRootQuery(elementName,layers[1],true)).append(" ").append(layers[1]);
-		            }else{
-		                joins.append(" FROM ").append(getRootQuery(elementName,layers[1],false)).append(" ").append(layers[1]);
-		            }
+		            joins.append(" FROM ").append(getRootQuery(elementName,layers[1],this.getLevel())).append(" ").append(layers[1]);
 		        }else{
 		            throw new Exception("Improper initialization of QueryOrganizer");
 		        }

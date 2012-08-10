@@ -229,7 +229,9 @@ public class PersistentWorkflowUtils {
 			//set this to a value that is save-able... to prevent unnecessary failures.
 			wrk.setId("ERROR");
 		}
-		wrk.save((c==null)?null:c.getUser(), overrideSecurity, false, c);
+		if(!wrk.getDataType().equals("wrk:workflowData")){//prevent recursive events (events of events)
+			wrk.save((c==null)?null:c.getUser(), overrideSecurity, false, c);
+		}
 	}
 
 	public static EventMetaI setStep(PersistentWorkflowI wrk, String s){

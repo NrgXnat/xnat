@@ -40,9 +40,11 @@ public class ViewManager {
 	public static final String ACTIVE = "active";
 	public static final String ALL = "all";
 	public static final String LOCKED = "locked";
+	public static final String OBSOLETE = "obsolete"; 
 	public static final String QUARANTINE = "quarantine";
 	public static final String DELETED = "deleted";
-	public final static String DEFAULT_LEVEL = QUARANTINE;
+	public final static String DEFAULT_LEVEL = ALL;
+	public final static String ACCESSIBLE=ViewManager.ACTIVE+","+ ViewManager.LOCKED+","+ ViewManager.QUARANTINE;
 	public final static boolean DEFAULT_MULTI = true;
 	
 	public static boolean PRE_LOAD_HISTORY = false;

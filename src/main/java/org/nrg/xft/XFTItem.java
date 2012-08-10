@@ -5694,7 +5694,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    return checkStatus(new Predicate(){
 			public boolean evaluate(Object arg0) {
 				if(arg0 !=null && arg0 instanceof String){
-					return (ViewManager.LOCKED.equals(arg0));
+					return (ViewManager.LOCKED.equals(arg0) || ViewManager.OBSOLETE.equals(arg0));
 				}
 				return false;
 			}},false);
@@ -6621,21 +6621,35 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         return null;
     }
 
-    public String getActivationUser()
+    private XdatUser activation_user=null;
+    public XdatUser getActivationUser()
     {
-        if (this.getMeta() != null)
-		{
-		    try {
-	            return (String) this.getMeta().getProperty("activation_user_login");
-	        } catch (XFTInitException e) {
-	            logger.error("",e);
-	        } catch (ElementNotFoundException e) {
-	            logger.error("",e);
-	        } catch (FieldNotFoundException e) {
-	            logger.error("",e);
-	        }
-		}
-        return null;
+    	if(activation_user==null)
+        {
+            if (this.getMeta() != null)
+            {
+                try {
+                    Integer i= (Integer)this.getMeta().getProperty("activation_user_xdat_user_id");
+
+                    if (i!=null){
+                    	activation_user = XdatUser.getXdatUsersByXdatUserId(i, user, false);
+                    }
+                } catch (XFTInitException e) {
+                    logger.error("",e);
+                } catch (ElementNotFoundException e) {
+                    logger.error("",e);
+                } catch (FieldNotFoundException e) {
+                    logger.error("",e);
+                }
+            }
+        }
+
+        if(activation_user==null)
+        {
+            return null;
+        }else{
+            return activation_user;
+        }
     }
 
     private XdatUserI insert_user = null;

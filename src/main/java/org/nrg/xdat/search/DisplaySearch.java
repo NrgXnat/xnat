@@ -59,6 +59,7 @@ import org.nrg.xft.utils.StringUtils;
  * @author Tim
  *
  */
+@SuppressWarnings({ "rawtypes", "unchecked" })
 public class DisplaySearch implements TableSearchI{
 	static org.apache.log4j.Logger logger = Logger.getLogger(DisplaySearch.class);
 	private SchemaElement rootElement = null;
@@ -96,7 +97,7 @@ public class DisplaySearch implements TableSearchI{
 
 	private XDATUser user = null;
 
-	private String level = ViewManager.DEFAULT_LEVEL;
+	private String level = ViewManager.ACCESSIBLE;
 
 	private Hashtable isMultipleRelationship = new Hashtable();
 

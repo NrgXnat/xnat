@@ -31,7 +31,9 @@ public class FlattenedItem extends FlattenedItemA{
 		
 		if(this.isHistory){
 			setChange_date(FlattenedItemA.parseDate(i.getProps().get("change_date")));
-			create_username=XDATUser.getUsername(i.getMeta().getProperty("insert_user_xdat_user_id"));
+			if(i.getMeta()!=null){
+				create_username=XDATUser.getUsername(i.getMeta().getProperty("insert_user_xdat_user_id"));
+			}
 			modified_username=XDATUser.getUsername(i.getProps().get("change_user"));
 			create_event_id=translateNumber(i.getProps().get("xft_version"));
 			if(isDeleted()){
@@ -40,7 +42,9 @@ public class FlattenedItem extends FlattenedItemA{
 			setPrevious_change_date(FlattenedItemA.parseDate(i.getProps().get("previous_change_date")));
 		}else{
 			create_event_id=translateNumber(i.getXFTVersion());
-			create_username=XDATUser.getUsername(i.getMeta().getProperty("insert_user_xdat_user_id"));
+			if(i.getMeta()!=null){
+				create_username=XDATUser.getUsername(i.getMeta().getProperty("insert_user_xdat_user_id"));
+			}
 		}
 
 		pks=root.getPkNames();

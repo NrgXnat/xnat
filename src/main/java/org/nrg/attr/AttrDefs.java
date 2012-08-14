@@ -3,13 +3,12 @@
  */
 package org.nrg.attr;
 
-import java.util.Collection;
+import java.util.Set;
 
 /**
  * Bundle of external attribute definitions
  * @author Kevin A. Archie <karchie@wustl.edu>
  */
 public interface AttrDefs<S,V> extends Iterable<ExtAttrDef<S,V>> {
-    ExtAttrDef<S,V> getExtAttrDef(String name);
-    Collection<S> getNativeAttrs();
+    Set<S> getNativeAttrs();
 }

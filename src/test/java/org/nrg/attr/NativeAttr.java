@@ -3,7 +3,6 @@
  */
 package org.nrg.attr;
 
-import java.util.Collection;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
@@ -76,7 +75,7 @@ public class NativeAttr implements Comparable<NativeAttr> {
                 addExtAttrDef(ead);
         }
 
-        public Collection<S> getNativeAttrs() {
+        public Set<S> getNativeAttrs() {
             return new HashSet<S>(nas);
         }
 

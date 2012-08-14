@@ -1,5 +1,5 @@
 /**
- * Copyright (c) 2007,2009-2011 Washington University
+ * Copyright (c) 2007-2012 Washington University
  */
 package org.nrg.attr;
 
@@ -17,6 +17,7 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
+import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -173,32 +174,35 @@ public class AbstractAttrAdapterTest {
     public final void testRemoveStringArray() {
         final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
         assertNotNull(aa.getDefs());
-        assertEquals(NativeAttr.fextA, aa.getDefs().getExtAttrDef("ext-A"));
+        assertTrue(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextA));
         aa.remove(new String[]{"ext-A"});
-        assertNull(aa.getDefs().getExtAttrDef("ext-A"));
-        assertEquals(NativeAttr.fextC_BA, aa.getDefs().getExtAttrDef("ext-C"));
+        assertFalse(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextA));
+        assertTrue(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextC_BA));
     }
 
     /**
      * Test method for {@link org.nrg.attr.AbstractAttrAdapter#remove(S[])}.
-     */
+     *
+     **/
     @SuppressWarnings("unchecked")
     @Test
     public final void testRemoveSArray() {
         final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
         assertNotNull(aa.getDefs());
-        assertEquals(NativeAttr.fextC_BA, aa.getDefs().getExtAttrDef("ext-C"));
+        assertTrue(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextC_BA));
         aa.remove(new NativeAttr[]{NativeAttr.C});
-        assertNull(aa.getDefs().getExtAttrDef("ext-C"));
-        assertEquals(NativeAttr.fextA, aa.getDefs().getExtAttrDef("ext-A"));
+        assertFalse(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextC_BA));
+        System.out.println("in aa: " + Iterables.toString(aa.getDefs()));
+        assertTrue(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextA));
         aa.remove(new NativeAttr[]{NativeAttr.A});
-        assertNull(aa.getDefs().getExtAttrDef("ext-A"));
+        assertFalse(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextA));
         assertTrue(aa.getDefs().getNativeAttrs().isEmpty());
 
         aa.add(NativeAttr.frads);
-        assertEquals(NativeAttr.fextA, aa.getDefs().getExtAttrDef("ext-A"));
-        assertEquals(NativeAttr.fextC_BA, aa.getDefs().getExtAttrDef("ext-C"));
+        assertTrue(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextA));
+        assertTrue(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextC_BA));
         aa.remove(new NativeAttr[]{NativeAttr.A});	// both ExtAttrDefs use A, so both will be removed.
+        assertTrue(Sets.newHashSet(aa.getDefs()).isEmpty());
         assertTrue(aa.getDefs().getNativeAttrs().isEmpty());
     }
 

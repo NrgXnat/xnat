@@ -1,19 +1,20 @@
 /**
- * Copyright (c) 2006-2010 Washington University
+ * Copyright (c) 2006-2012 Washington University
  */
 package org.nrg.attr;
 
 import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
-import java.util.Collection;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeSet;
 
 import com.google.common.collect.Iterators;
-import com.google.common.collect.Maps;
+import com.google.common.collect.LinkedHashMultimap;
+import com.google.common.collect.Multimap;
 
 
 /**
@@ -22,7 +23,7 @@ import com.google.common.collect.Maps;
  *
  */
 public class MutableAttrDefs<S,V> implements AttrDefs<S,V> {
-    final private Map<String,ExtAttrDef<S,V>> extAttrs = Maps.newLinkedHashMap();
+    final private Multimap<String,ExtAttrDef<S,V>> extAttrs = LinkedHashMultimap.create();
     final private Set<S> nativeAttrs;
 
     public MutableAttrDefs(final Comparator<S> comparator) {
@@ -65,12 +66,8 @@ public class MutableAttrDefs<S,V> implements AttrDefs<S,V> {
      * @param a external attribute specification
      */
     public ExtAttrDef<S,V> add(ExtAttrDef<S,V> a) {
-        final String name = a.getName();
-        if (extAttrs.containsKey(name)) {
-            throw new IllegalArgumentException("Redefined external attribute " + name);
-        }
-        synchronized (this) {
-            extAttrs.put(name, a);
+       synchronized (this) {
+            extAttrs.put(a.getName(), a);
             nativeAttrs.addAll(a.getAttrs());
         }
         return a;
@@ -122,7 +119,6 @@ public class MutableAttrDefs<S,V> implements AttrDefs<S,V> {
     public MutableAttrDefs<S,V> add(AttrDefs<S,V>...others) {
         for (final AttrDefs<S,V> other : others) {
             for (final ExtAttrDef<S,V> ea : other) {
-                assert !extAttrs.containsKey(ea.getName());
                 add(ea);
             }
 
@@ -145,7 +141,7 @@ public class MutableAttrDefs<S,V> implements AttrDefs<S,V> {
      * @return The number of attributes removed (1 if present, 0 otherwise)
      */
     public int remove(String name) {
-        return (null == extAttrs.remove(name)) ? 0 : 1;
+        return (null == extAttrs.removeAll(name)) ? 0 : 1;
     }
 
 
@@ -158,7 +154,7 @@ public class MutableAttrDefs<S,V> implements AttrDefs<S,V> {
         int count = 0;
 
         synchronized (this) {
-            for (final Iterator<Map.Entry<String,ExtAttrDef<S,V>>> i = extAttrs.entrySet().iterator(); i.hasNext(); ) {
+            for (final Iterator<Map.Entry<String,ExtAttrDef<S,V>>> i = extAttrs.entries().iterator(); i.hasNext(); ) {
                 final Map.Entry<String,ExtAttrDef<S,V>> e = i.next();
                 if (e.getValue().getAttrs().contains(attr)) {
                     i.remove();
@@ -183,16 +179,6 @@ public class MutableAttrDefs<S,V> implements AttrDefs<S,V> {
     public Iterator<ExtAttrDef<S,V>> iterator() {
         return Iterators.unmodifiableIterator(extAttrs.values().iterator());
     }
-
-
-    /**
-     * @param name name of an external attribute defined in this set
-     * @return attribute definition object
-     */
-    public ExtAttrDef<S,V> getExtAttrDef(final String name) {
-        return extAttrs.get(name);
-    }
-
 
     /**
      * Gets the tag values for all native attributes used in this set.

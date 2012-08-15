@@ -2206,7 +2206,7 @@ public class DBAction {
 				meta.setFieldValue("xft_version",cache.getChangeId());//added to track specific changes to this row
 								
 				if(!modifiable_status.contains(meta.getField("status"))){
-					throw new UnmodifiableStatusException();
+					throw new UnmodifiableStatusException(oldI.getXSIType() + ":"+ oldI.getPKValueString() + ":"+ meta.getField("status"));
 				}
 				
 				if (quarantine !=null){
@@ -2225,6 +2225,10 @@ public class DBAction {
 	
 	public static class UnmodifiableStatusException extends Exception{
 		private static final long serialVersionUID = 68282673755608498L;
+		
+		public UnmodifiableStatusException(String s){
+			super(s);
+		}
 	}
 	
 	/**

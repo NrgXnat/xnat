@@ -175,8 +175,8 @@ public abstract class ItemWrapper implements ItemI {
 
 	/**
 	 * Use the field's xmlName,sq
-	 * @param field_name
-	 * @return
+	 * @param xmlPath The path of the field to retrieve
+	 * @return A list of the child
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException

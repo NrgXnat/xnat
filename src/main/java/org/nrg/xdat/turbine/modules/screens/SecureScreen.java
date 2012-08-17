@@ -86,7 +86,6 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         c.put("showReason", XFT.SHOW_REASON);
         c.put("requireReason", XFT.REQUIRE_REASON);
         
-        c.put("configProps", XFT.PROPS);  
         try{
         	c.put("siteConfig", XDAT.getSiteConfiguration());
         }catch(ConfigServiceException e){

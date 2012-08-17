@@ -9,17 +9,14 @@
  */
 package org.nrg.xdat;
 
-import java.io.ByteArrayInputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.PrintWriter;
-import java.io.StringWriter;
+import java.io.*;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.UUID;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
@@ -77,7 +74,13 @@ import org.springframework.security.core.context.SecurityContextHolder;
  */
 public class XDAT implements Initializable,Configurable{
 
-    static Logger logger = Logger.getLogger(XDAT.class);
+    private static final Logger logger = Logger.getLogger(XDAT.class);
+    private static final Pattern CUSTOM_PROPERTIES_NAME = Pattern.compile("^.*-config\\.properties");
+    private static final FileFilter CUSTOM_PROPERTIES_FILTER = new FileFilter() {
+        public boolean accept(final File file) {
+            return file.exists() && file.isFile() && CUSTOM_PROPERTIES_NAME.matcher(file.getName()).matches();
+        }
+    };
 	private static ContextService _contextService;
     private static DataSource _dataSource;
 	private static MailService _mailService;
@@ -93,6 +96,7 @@ public class XDAT implements Initializable,Configurable{
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
     private static boolean _hasRefreshedSiteConfiguration = false;
+    private static Properties _siteConfiguration;
 
     /**
      * Gets the site configuration as a Java {@link Properties} object.
@@ -101,10 +105,10 @@ public class XDAT implements Initializable,Configurable{
      */
     public static Properties getSiteConfiguration() throws ConfigServiceException {
         if (!_hasRefreshedSiteConfiguration) {
-            return refreshSiteConfiguration();
+            refreshSiteConfiguration();
         }
 
-        return convertStringToProperties(getConfigService().getConfig("site", "siteConfiguration").getContents());
+        return _siteConfiguration;
     }
 
     /**
@@ -131,7 +135,7 @@ public class XDAT implements Initializable,Configurable{
             logger.error("Error occurred trying to load site configuration properties bundle from " + (new File(_configFilesLocation, "siteConfiguration.properties")).getAbsolutePath(), exception);
         }
 
-        org.nrg.config.entities.Configuration configuration = getConfigService().getConfig("site", "siteConfiguration");
+        org.nrg.config.entities.Configuration configuration = getPersistedSiteConfiguration();
         if (configuration == null) {
             setSiteConfiguration(properties);
         } else {
@@ -142,8 +146,34 @@ public class XDAT implements Initializable,Configurable{
             }
         }
 
+        processCustomProperties(properties);
+
         _hasRefreshedSiteConfiguration = true;
-        return properties;
+        return _siteConfiguration = properties;
+    }
+
+    private static org.nrg.config.entities.Configuration getPersistedSiteConfiguration() {
+        return getConfigService().getConfig("site", "siteConfiguration");
+    }
+
+    private static void processCustomProperties(final Properties properties) {
+        List<String> customConfigProperties = new ArrayList<String>();
+        File configFilesLocation = new File(_configFilesLocation);
+        for (File file : configFilesLocation.listFiles(CUSTOM_PROPERTIES_FILTER)) {
+            try {
+                Properties configProps = FileUtils.GetPropertiesFromFile(file);
+                for (String property : configProps.stringPropertyNames()) {
+                    if (customConfigProperties.contains(property)) {
+                        logger.warn("There appears to be duplicated values for the property: " + property + ". This is likely to cause unpredictable or undesired results.");
+                    } else {
+                        customConfigProperties.add(property);
+                        properties.setProperty(property, configProps.getProperty(property));
+                    }
+                }
+            } catch (IOException ignored) {
+                // TODO: This shouldn't happen.
+            }
+        }
     }
 
     public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
@@ -152,9 +182,10 @@ public class XDAT implements Initializable,Configurable{
     }
 
     public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
-        Properties properties = getSiteConfiguration();
+        Properties properties = convertStringToProperties(getPersistedSiteConfiguration().getContents());
         properties.setProperty(property, value);
         setSiteConfiguration(properties, "Setting site configuration property value: " + property);
+        _siteConfiguration.setProperty(property, value);
     }
 
 	public static boolean isAuthenticated() {

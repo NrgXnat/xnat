@@ -66,7 +66,7 @@ implements ExtAttrDef<S>,EvaluableAttrDef<S,V,A> {
      * @return ExtAttrValue representing the content
      * @throws ExtAttrException
      */
-    protected Iterable<ExtAttrValue> apply(final Double a) throws ExtAttrException {
+    protected Iterable<ExtAttrValue> applyDouble(final Double a) throws ExtAttrException {
         if (null == a) {
             throw new NoUniqueValueException(this.getName());
         } else {
@@ -80,7 +80,7 @@ implements ExtAttrDef<S>,EvaluableAttrDef<S,V,A> {
      * @return ExtAttrValue representing the content
      * @throws ExtAttrException
      */
-    protected Iterable<ExtAttrValue> apply(final Integer a) throws ExtAttrException {
+    protected Iterable<ExtAttrValue> applyInteger(final Integer a) throws ExtAttrException {
         if (null == a) {
             throw new NoUniqueValueException(this.getName());
         } else {

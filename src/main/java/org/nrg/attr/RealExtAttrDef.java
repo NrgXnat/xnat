@@ -19,9 +19,8 @@ public class RealExtAttrDef<S> extends NumericExtAttrDef<Double,S> {
      * (non-Javadoc)
      * @see org.nrg.attr.AbstractExtAttrDef#apply(java.lang.Double)
      */
-    @Override
     public final Iterable<ExtAttrValue> apply(final Double a) throws ExtAttrException {
-        return super.apply(a);
+        return applyDouble(a);
     }
     
     /*

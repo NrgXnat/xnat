@@ -19,9 +19,8 @@ public class IntegerExtAttrDef<S> extends NumericExtAttrDef<Integer, S> {
      * (non-Javadoc)
      * @see org.nrg.attr.AbstractExtAttrDef#apply(java.lang.Integer)
      */
-    @Override
     public Iterable<ExtAttrValue> apply(final Integer a) throws ExtAttrException {
-        return super.apply(a);
+        return applyInteger(a);
     }
     
     /*

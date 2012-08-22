@@ -49,7 +49,7 @@
   <artifactId>ExtAttr</artifactId>
   <packaging>jar</packaging>
   <name>External Attribute library</name>
-  <version>3.0.0</version>
+  <version>4.0.0</version>
   <description>
     Library for converting native image metadata formats (e.g., DICOM, ECAT) into a unified external format (usually XNAT).
   </description>

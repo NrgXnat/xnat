@@ -3,11 +3,13 @@
  */
 package org.nrg.attr;
 
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
 
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterators;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
@@ -62,16 +64,16 @@ public class NativeAttr implements Comparable<NativeAttr> {
     public static final NativeAttr C = new NativeAttr("NativeAttr C");
     public static final NativeAttr D = new NativeAttr("NativeAttr D");
 
-    public interface RWAttrDefSet<S,V> extends AttrDefs<S,V> {
-        public RWAttrDefSet<S,V> addExtAttrDef(ExtAttrDef<S,V> ead);
+    public interface RWAttrDefSet<S,V> extends AttrDefs<S> {
+        public RWAttrDefSet<S,V> addExtAttrDef(ExtAttrDef<S> ead);
     }
 
-    public static final class SampleAttrDefSet<S,V> implements AttrDefs<S,V> {
+    public static final class SampleAttrDefSet<S,V> implements AttrDefs<S> {
         private Set<S> nas = Sets.newHashSet();
-        private Map<String,ExtAttrDef<S,V>> defs = Maps.newLinkedHashMap();
+        private Map<String,ExtAttrDef<S>> defs = Maps.newLinkedHashMap();
 
-        public SampleAttrDefSet(ExtAttrDef<S,V>...eads) {
-            for (final ExtAttrDef<S,V> ead : eads)
+        public SampleAttrDefSet(ExtAttrDef<S>...eads) {
+            for (final ExtAttrDef<S> ead : eads)
                 addExtAttrDef(ead);
         }
 
@@ -79,25 +81,26 @@ public class NativeAttr implements Comparable<NativeAttr> {
             return new HashSet<S>(nas);
         }
 
-        public ExtAttrDef<S,V> getExtAttrDef(final String name) {
+        public ExtAttrDef<S> getExtAttrDef(final String name) {
             return defs.get(name);
         }
 
-        public Iterator<ExtAttrDef<S,V>> iterator() {
+        public Iterator<ExtAttrDef<S>> iterator() {
             return Iterators.unmodifiableIterator(defs.values().iterator());
         }
 
-        public SampleAttrDefSet<S,V> addExtAttrDef(final ExtAttrDef<S,V> ead) {
+        public SampleAttrDefSet<S,V> addExtAttrDef(final ExtAttrDef<S> ead) {
             defs.put(ead.getName(), ead);
             nas.addAll(ead.getAttrs());
             return this;
         }
     }
 
-    public static final ExtAttrDef<NativeAttr,Float> fextA = new ExtAttrDef.Text<NativeAttr,Float>("ext-A", NativeAttr.A);
-    public static final ExtAttrDef<NativeAttr,Float> fextC_BA =
-        new ExtAttrDef.TextWithAttributes<NativeAttr,Float>("ext-C", NativeAttr.C,
-                new String[]{"B", "A"}, new NativeAttr[]{NativeAttr.B, NativeAttr.A});
+    public static final ExtAttrDef<NativeAttr> fextA = new SingleValueTextAttr<NativeAttr>("ext-A", NativeAttr.A);
+    public static final ExtAttrDef<NativeAttr> fextC_BA =
+        new TextWithAttrsAttrDef<NativeAttr,String>("ext-C", NativeAttr.C,
+                ImmutableMap.of("B", NativeAttr.B, "A", NativeAttr.A), true,
+                Collections.<NativeAttr>emptySet());
 
     public static final SampleAttrDefSet<NativeAttr,Float> frads = new SampleAttrDefSet<NativeAttr,Float>(fextA, fextC_BA);
 

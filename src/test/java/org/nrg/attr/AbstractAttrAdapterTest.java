@@ -3,7 +3,11 @@
  */
 package org.nrg.attr;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -17,7 +21,6 @@ import java.util.regex.Pattern;
 
 import org.junit.Test;
 
-import com.google.common.collect.Iterables;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 
@@ -29,16 +32,15 @@ public class AbstractAttrAdapterTest {
     public static final class MapAttrAdapter<S,V> extends AbstractAttrAdapter<S,V> {
         final Map<String,Map<S,V>> vals = Maps.newHashMap();
 
-        public MapAttrAdapter(final MutableAttrDefs<S,V> ad, final AttrDefs<S,V>...attrs) {
+        public MapAttrAdapter(final MutableAttrDefs<S> ad, final AttrDefs<S>...attrs) {
             super(ad, attrs);
         }
 
         protected Collection<Map<S,V>> getUniqueCombinationsGivenValues(final Map<S,V> given,
-                final Collection<S> attrs, final Map<S,ConversionFailureException> failures)
-                throws ExtAttrException {
+                final Collection<S> attrs, final Map<S,ConversionFailureException> failures) {
             final Set<Map<S,V>> matching = Sets.newHashSet();
             FILES: for (final Map<S,V> data : vals.values()) {
-                for (Map.Entry<S,V> e : given.entrySet()) {
+                for (Map.Entry<? extends S,? extends V> e : given.entrySet()) {
                     if (!e.getValue().equals(data.get(e.getKey()))) {
                         continue FILES;
                     }
@@ -74,54 +76,6 @@ public class AbstractAttrAdapterTest {
         }
     }
 
-    private final static class BasicMultiplexedAttrDef<S,V>
-    extends ExtAttrDef.Text<S,V> implements ExtAttrDef.Multiplex<S,V> {
-        private final S dmIdx;
-        private final String format;
-
-        BasicMultiplexedAttrDef(final S attr, final S dmIdx, final String name, final String format) {
-            super(name, attr);
-            this.dmIdx = dmIdx;
-            this.format = format;
-        }
-
-        /*
-         * (non-Javadoc)
-         * @see org.nrg.attr.ExtAttrDef.Multiplex#getIndexAttribute()
-         */
-        public S getIndexAttribute() { return dmIdx; }
-
-        /*
-         * (non-Javadoc)
-         * @see org.nrg.attr.ExtAttrDef.Multiplex#demultiplex(java.util.Map)
-         */
-        public ExtAttrValue demultiplex(final Map<S,V> vals) throws ConversionFailureException {
-            assert vals.containsKey(dmIdx);
-            return new BasicExtAttrValue(String.format(format, vals.get(dmIdx)), convertText(vals));
-        }
-    }
-
-    private static class ConcatAttrDef<S,V>
-    extends ExtAttrDef.Abstract<S,V> {
-        ConcatAttrDef(final String name, final S...attrs) {
-            super(name, attrs);
-        }
-
-        public String convertText(final Map<S,V> vals) {
-            final StringBuilder sb = new StringBuilder("|");
-            for (final S attr: getAttrs()) {
-                sb.append(vals.get(attr));
-                sb.append("|");
-            }
-            return sb.toString();
-        }
-    }
-    
-    private static class OptionalConcatAttrDef<S,V> extends ConcatAttrDef<S,V> implements ExtAttrDef.Optional {
-        OptionalConcatAttrDef(final String name, final S...attrs) {
-            super(name, attrs);
-        }
-    }
 
     /**
      * Test method for {@link org.nrg.attr.AbstractAttrAdapter#AbstractAttrAdapter(org.nrg.attr.AttrDefSet, org.nrg.attr.ReadableAttrDefSet<S,V>[])}.
@@ -129,7 +83,7 @@ public class AbstractAttrAdapterTest {
     @SuppressWarnings("unchecked")
     @Test
     public final void testAbstractAttrAdapter() {
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
+        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.frads);
         assertEquals(NativeAttr.frads.getNativeAttrs(), aa.getDefs().getNativeAttrs());
     }
 
@@ -139,7 +93,7 @@ public class AbstractAttrAdapterTest {
     @SuppressWarnings("unchecked")
     @Test
     public final void testGetDefs() {
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
+        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.frads);
         assertEquals(NativeAttr.frads.getNativeAttrs(), aa.getDefs().getNativeAttrs());
     }
 
@@ -149,7 +103,7 @@ public class AbstractAttrAdapterTest {
     @SuppressWarnings("unchecked")
     @Test
     public final void testAddReadableAttrDefSetOfSVArray() {
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.emptyFrads);
+        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.emptyFrads);
         aa.add(NativeAttr.frads);
         assertEquals(NativeAttr.frads.getNativeAttrs(), aa.getDefs().getNativeAttrs());
     }
@@ -160,7 +114,7 @@ public class AbstractAttrAdapterTest {
     @SuppressWarnings("unchecked")
     @Test
     public final void testAddExtAttrDefOfSVArray() {
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.emptyFrads);
+        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.emptyFrads);
         aa.add(NativeAttr.fextA);
         aa.add(NativeAttr.fextC_BA);
         assertEquals(NativeAttr.frads.getNativeAttrs(), aa.getDefs().getNativeAttrs());
@@ -172,7 +126,7 @@ public class AbstractAttrAdapterTest {
     @SuppressWarnings("unchecked")
     @Test
     public final void testRemoveStringArray() {
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
+        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.frads);
         assertNotNull(aa.getDefs());
         assertTrue(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextA));
         aa.remove(new String[]{"ext-A"});
@@ -187,12 +141,11 @@ public class AbstractAttrAdapterTest {
     @SuppressWarnings("unchecked")
     @Test
     public final void testRemoveSArray() {
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
+        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.frads);
         assertNotNull(aa.getDefs());
         assertTrue(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextC_BA));
         aa.remove(new NativeAttr[]{NativeAttr.C});
         assertFalse(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextC_BA));
-        System.out.println("in aa: " + Iterables.toString(aa.getDefs()));
         assertTrue(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextA));
         aa.remove(new NativeAttr[]{NativeAttr.A});
         assertFalse(Sets.newHashSet(aa.getDefs()).contains(NativeAttr.fextA));
@@ -211,11 +164,11 @@ public class AbstractAttrAdapterTest {
      */
     @SuppressWarnings("unchecked")
     @Test
-    public final void testGetValues() {
+    public final void testGetValues() throws ExtAttrException {
         final String f1 = "file1";
         final String f2 = "file2";
 
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
+        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.frads);
         aa.put(f1, NativeAttr.A, 0.0f);
         aa.put(f2, NativeAttr.A, 0.0f);
         aa.put(f1, NativeAttr.B, 1.0f);
@@ -223,15 +176,10 @@ public class AbstractAttrAdapterTest {
         aa.put(f1, NativeAttr.C, 2.0f);
         aa.put(f2, NativeAttr.C, 2.0f);
 
-        final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures = Maps.newLinkedHashMap();
-        final Collection<ExtAttrValue> vals;
-        try {
-            vals = aa.getValues(failures);
-            assertTrue(failures.isEmpty());
-        } catch (Exception e) {
-            fail(e.getMessage());
-            return;
-        }
+        final Map<ExtAttrDef<NativeAttr>,Throwable> failures = Maps.newLinkedHashMap();
+        final Collection<ExtAttrValue> vals = aa.getValues(failures);
+        assertTrue(failures.isEmpty());
+
         final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
         final ExtAttrValue c2_b1a0 = new BasicExtAttrValue("ext-C", Float.toString(2.0f),
                 Utils.zipmap(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
@@ -250,8 +198,8 @@ public class AbstractAttrAdapterTest {
         try {
             aa.getValues(failures);
             assertEquals(1, failures.size());
-            final Iterator<Map.Entry<ExtAttrDef<NativeAttr,Float>,Exception>> mei = failures.entrySet().iterator();
-            final ExtAttrDef<NativeAttr,Float> failed = mei.next().getKey();
+            final Iterator<Map.Entry<ExtAttrDef<NativeAttr>,Throwable>> mei = failures.entrySet().iterator();
+            final ExtAttrDef<NativeAttr> failed = mei.next().getKey();
             assertEquals("ext-C", failed.getName());
             assertFalse(mei.hasNext());
         } catch (NoUniqueValueException e) {
@@ -262,7 +210,7 @@ public class AbstractAttrAdapterTest {
             fail(e.getMessage());
         }
 
-        final MapAttrAdapter<NativeAttr,Float> aam = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>());
+        final MapAttrAdapter<NativeAttr,Float> aam = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>());
         aam.put(f1, NativeAttr.A, 0.0f);
         aam.put(f2, NativeAttr.A, 0.0f);
         aam.put(f1, NativeAttr.B, 1.0f);
@@ -273,8 +221,7 @@ public class AbstractAttrAdapterTest {
         // This definition actually gives us funny-looking attribute names with floating point
         // detritus in.  The definition of multiplexed attr def for a particular native attribute
         // type will need to be made carefully.
-        final ExtAttrDef<NativeAttr,Float> extB = new BasicMultiplexedAttrDef<NativeAttr,Float>(NativeAttr.B,
-                NativeAttr.C, "extB_mp", "MultiB_%f");
+        final ExtAttrDef<NativeAttr> extB = new MultiplexTextAttrDef<NativeAttr,Float>("extB_mp", "MultiB_%f", NativeAttr.B, NativeAttr.C);
         final Pattern pattern = Pattern.compile("MultiB_(.*)");
         aam.add(extB);
 
@@ -305,12 +252,12 @@ public class AbstractAttrAdapterTest {
      */
     @SuppressWarnings("unchecked")
     @Test
-    public final void testGetValuesGiven() {
+    public final void testGetValuesGiven() throws ExtAttrException {
         final String f1 = "file1";
         final String f2 = "file2";
         final String f3 = "file3";
 
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
+        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.frads);
         aa.put(f1, NativeAttr.A, 0.0f);
         aa.put(f2, NativeAttr.A, 0.0f);
         aa.put(f3, NativeAttr.A, 0.0f);
@@ -321,17 +268,12 @@ public class AbstractAttrAdapterTest {
         aa.put(f2, NativeAttr.C, 2.0f);
         aa.put(f3, NativeAttr.C, 2.1f);
 
-        final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures = Maps.newLinkedHashMap();
+        final Map<ExtAttrDef<NativeAttr>,Throwable> failures = Maps.newLinkedHashMap();
         final Map<NativeAttr,Float> given = Maps.newHashMap();
         given.put(NativeAttr.C, 2.0f);
-        final Collection<ExtAttrValue> vals;
-        try {
-            vals = aa.getValuesGiven(given, failures);
-            assertTrue(failures.isEmpty());
-        } catch (Exception e) {
-            fail(e.getMessage());
-            return;
-        }
+        final Collection<ExtAttrValue> vals = aa.getValuesGiven(given, failures);
+        assertTrue(failures.isEmpty());
+
         final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
         final ExtAttrValue c2_b1a0 = new BasicExtAttrValue("ext-C", Float.toString(2.0f),
                 Utils.zipmap(new LinkedHashMap<String,String>(), new String[]{"B", "A"},
@@ -346,159 +288,155 @@ public class AbstractAttrAdapterTest {
     /**
      * Test method for {@link org.nrg.attr.AbstractAttrAdapter#getMultipleValuesGiven(java.util.Map)}.
      */
-    @SuppressWarnings("unchecked")
-    @Test
-    public final void testGetMultipleValuesGiven() {
-        final String f1 = "file1";
-        final String f2 = "file2";
-        final String f3 = "file3";
+    /*
+	@SuppressWarnings("unchecked")
+	@Test
+	public final void testGetMultipleValuesGiven() throws ExtAttrException {
+		final String f1 = "file1";
+		final String f2 = "file2";
+		final String f3 = "file3";
 
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
-        aa.put(f1, NativeAttr.A, 0.0f);
-        aa.put(f2, NativeAttr.A, 0.0f);
-        aa.put(f3, NativeAttr.A, 0.0f);
-        aa.put(f1, NativeAttr.B, 1.0f);
-        aa.put(f2, NativeAttr.B, 1.0f);
-        aa.put(f3, NativeAttr.B, 1.0f);
-        aa.put(f1, NativeAttr.C, 2.0f);
-        aa.put(f2, NativeAttr.C, 2.0f);
-        aa.put(f3, NativeAttr.C, 2.1f);
+		final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.frads);
+		aa.put(f1, NativeAttr.A, 0.0f);
+		aa.put(f2, NativeAttr.A, 0.0f);
+		aa.put(f3, NativeAttr.A, 0.0f);
+		aa.put(f1, NativeAttr.B, 1.0f);
+		aa.put(f2, NativeAttr.B, 1.0f);
+		aa.put(f3, NativeAttr.B, 1.0f);
+		aa.put(f1, NativeAttr.C, 2.0f);
+		aa.put(f2, NativeAttr.C, 2.0f);
+		aa.put(f3, NativeAttr.C, 2.1f);
 
-        final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures = Maps.newLinkedHashMap();
-        final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
-        given.put(NativeAttr.C, 2.0f);
-        final List<Set<ExtAttrValue>> vals;
-        try {
-            vals = aa.getMultipleValuesGiven(new HashMap<NativeAttr,Float>(), failures);
-            assertTrue(failures.isEmpty());
-        } catch (Exception e) {
-            fail(e.getMessage());
-            return;
-        }
-        final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
+		final Map<ExtAttrDef<NativeAttr>,Exception> failures = Maps.newLinkedHashMap();
+		final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
+		given.put(NativeAttr.C, 2.0f);
+		final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(new HashMap<NativeAttr,Float>(), failures);
+		assertTrue(failures.isEmpty());
+		final ExtAttrValue a0 = new BasicExtAttrValue("ext-A", Float.toString(0.0f));
 
-        final Iterator<Set<ExtAttrValue>> i = vals.iterator();
-        final Set<ExtAttrValue> a0_vals = i.next();
-        assertEquals(1, a0_vals.size());
-        assertEquals(a0, a0_vals.toArray(new ExtAttrValue[0])[0]);
-        final Set<ExtAttrValue> c2_b1a0_vals = i.next();
-        assertEquals(2, c2_b1a0_vals.size());
-        assertFalse(i.hasNext());
-    }
+		final Iterator<Set<ExtAttrValue>> i = vals.iterator();
+		final Set<ExtAttrValue> a0_vals = i.next();
+		assertEquals(1, a0_vals.size());
+		assertEquals(a0, a0_vals.toArray(new ExtAttrValue[0])[0]);
+		final Set<ExtAttrValue> c2_b1a0_vals = i.next();
+		assertEquals(2, c2_b1a0_vals.size());
+		assertFalse(i.hasNext());
+	}
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public final void testMissingSingleAttribute() throws ExtAttrException {
-        final String f1 = "file1";
+	@SuppressWarnings("unchecked")
+	@Test
+	public final void testMissingSingleAttribute() throws ExtAttrException {
+		final String f1 = "file1";
 
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>(), NativeAttr.frads);
-        aa.put(f1, NativeAttr.A, 0.0f);
-        aa.put(f1, NativeAttr.C, 2.0f);
+		final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>(), NativeAttr.frads);
+		aa.put(f1, NativeAttr.A, 0.0f);
+		aa.put(f1, NativeAttr.C, 2.0f);
 
-        final ExtAttrDef<NativeAttr,Float> extB = new ExtAttrDef.Text<NativeAttr,Float>("ext-B", NativeAttr.B);
-        aa.add(extB);
+		final ExtAttrDef<NativeAttr> extB = new SingleValueTextAttr<NativeAttr>("ext-B", NativeAttr.B);
+		aa.add(extB);
 
-        final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures = Maps.newLinkedHashMap();
-        final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
-        final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
-        final Set<String> names = Sets.newHashSet();
-        for (final Set<ExtAttrValue> vs : vals) {
-            for (final ExtAttrValue v : vs) {
-                assertFalse(v.equals(extB));
-                names.add(v.getName());
-            }
-        }
-        assertTrue(names.contains("ext-A"));
-        assertFalse(names.contains(extB.getName()));
-        assertFalse(names.contains("ext-C"));   // uses B in attributes
-        assertTrue(failures.containsKey(extB));
-    }
+		final Map<ExtAttrDef<NativeAttr>,Exception> failures = Maps.newLinkedHashMap();
+		final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
+		final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
+		final Set<String> names = Sets.newHashSet();
+		for (final Set<ExtAttrValue> vs : vals) {
+			for (final ExtAttrValue v : vs) {
+				assertFalse(v.equals(extB));
+				names.add(v.getName());
+			}
+		}
+		assertTrue(names.contains("ext-A"));
+		assertFalse(names.contains(extB.getName()));
+		assertFalse(names.contains("ext-C"));   // uses B in attributes
+		assertTrue(failures.containsKey(extB));
+	}
 
-    @SuppressWarnings("unchecked")
-    @Test
-    public final void testMissingComponent() throws ExtAttrException {
-        final String f1 = "file1";
+	@SuppressWarnings("unchecked")
+	@Test
+	public final void testMissingComponent() throws ExtAttrException {
+		final String f1 = "file1";
 
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>());
-        aa.put(f1, NativeAttr.A, 0.0f);
-        aa.put(f1, NativeAttr.C, 2.0f);
+		final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>());
+		aa.put(f1, NativeAttr.A, 0.0f);
+		aa.put(f1, NativeAttr.C, 2.0f);
 
-        final ExtAttrDef<NativeAttr,Float> concat = new ConcatAttrDef<NativeAttr,Float>("concat", NativeAttr.A, NativeAttr.B, NativeAttr.C);
-        aa.add(concat);
+		final ExtAttrDef<NativeAttr> concat = new ConcatAttrDef<NativeAttr,Float>("concat", NativeAttr.A, NativeAttr.B, NativeAttr.C);
+		aa.add(concat);
 
-        final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures = Maps.newLinkedHashMap();
-        final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
-        final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
-        for (final Set<ExtAttrValue> vs : vals) {
-            assertTrue(vs.isEmpty());
-        }
-        assertTrue(failures.containsKey(concat));
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Test
-    public final void testMissingComponentOptionalAttr() throws ExtAttrException {
-        final String f1 = "file1";
+		final Map<ExtAttrDef<NativeAttr>,Exception> failures = Maps.newLinkedHashMap();
+		final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
+		final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
+		for (final Set<ExtAttrValue> vs : vals) {
+			assertTrue(vs.isEmpty());
+		}
+		assertTrue(failures.containsKey(concat));
+	}
 
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>());
-        aa.put(f1, NativeAttr.A, 0.0f);
-        aa.put(f1, NativeAttr.C, 2.0f);
+	@SuppressWarnings("unchecked")
+	@Test
+	public final void testMissingComponentOptionalAttr() throws ExtAttrException {
+		final String f1 = "file1";
 
-        final ExtAttrDef<NativeAttr,Float> concat = new OptionalConcatAttrDef<NativeAttr,Float>("concat", NativeAttr.A, NativeAttr.B, NativeAttr.C);
-        aa.add(concat);
+		final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>());
+		aa.put(f1, NativeAttr.A, 0.0f);
+		aa.put(f1, NativeAttr.C, 2.0f);
 
-        final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures = Maps.newLinkedHashMap();
-        final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
-        final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
-        for (final Set<ExtAttrValue> vs : vals) {
-            assertTrue(vs.isEmpty());
-        }
-        assertFalse(failures.containsKey(concat));
-    }
+		final ExtAttrDef<NativeAttr> concat = new OptionalConcatAttrDef<NativeAttr,Float>("concat", NativeAttr.A, NativeAttr.B, NativeAttr.C);
+		aa.add(concat);
 
-    
-    @SuppressWarnings("unchecked")
-    @Test
-    public final void testMissingComponentNotRequired() throws ExtAttrException {
-        final String f1 = "file1";
+		final Map<ExtAttrDef<NativeAttr>,Exception> failures = Maps.newLinkedHashMap();
+		final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
+		final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
+		for (final Set<ExtAttrValue> vs : vals) {
+			assertTrue(vs.isEmpty());
+		}
+		assertFalse(failures.containsKey(concat));
+	}
 
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>());
-        aa.put(f1, NativeAttr.A, 0.0f);
-        aa.put(f1, NativeAttr.C, 2.0f);
 
-        final ExtAttrDef<NativeAttr,Float> concat = new ConcatAttrDef<NativeAttr,Float>("concat", NativeAttr.A, NativeAttr.B, NativeAttr.C);
-        aa.add(concat);
-        concat.makeOptional(NativeAttr.B);
+	@SuppressWarnings("unchecked")
+	@Test
+	public final void testMissingComponentNotRequired() throws ExtAttrException {
+		final String f1 = "file1";
 
-        final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures = Maps.newLinkedHashMap();
-        final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
-        final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
-        for (final Set<ExtAttrValue> vs : vals) {
-            assertFalse(vs.isEmpty());
-            
-        }
-        assertTrue(failures.isEmpty());
-    }
-    
-    @SuppressWarnings("unchecked")
-    @Test
-    public final void testNullConflict() throws ExtAttrException {
-        final String f1 = "file1", f2 = "file2";
-        final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr,Float>());
-        aa.put(f1, NativeAttr.A, 1.0f);
-        aa.put(f1, NativeAttr.C, 3.0f);
-        aa.put(f2, NativeAttr.A, 2.0f);
-        
-        final ExtAttrDef<NativeAttr,Float> concat = new ConcatAttrDef<NativeAttr,Float>("concat", NativeAttr.A, NativeAttr.C);
-        aa.add(concat);
-        
-        final Map<ExtAttrDef<NativeAttr,Float>,Exception> failures = Maps.newLinkedHashMap();
-        final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
-        final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
-        for (final Set<ExtAttrValue> vs : vals) {
-            assertFalse(vs.isEmpty());
-            
-        }
-        assertTrue(failures.isEmpty());
-    }
+		final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>());
+		aa.put(f1, NativeAttr.A, 0.0f);
+		aa.put(f1, NativeAttr.C, 2.0f);
+
+		final AbstractExtAttrDef<NativeAttr,Float,Map<NativeAttr,Float>> concat = new ConcatAttrDef<NativeAttr,Float>("concat", NativeAttr.A, NativeAttr.B, NativeAttr.C);
+		aa.add(concat);
+		concat.makeOptional(NativeAttr.B);
+
+		final Map<ExtAttrDef<NativeAttr>,Exception> failures = Maps.newLinkedHashMap();
+		final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
+		final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
+		for (final Set<ExtAttrValue> vs : vals) {
+			assertFalse(vs.isEmpty());
+
+		}
+		assertTrue(failures.isEmpty());
+	}
+
+	@SuppressWarnings("unchecked")
+	@Test
+	public final void testNullConflict() throws ExtAttrException {
+		final String f1 = "file1", f2 = "file2";
+		final MapAttrAdapter<NativeAttr,Float> aa = new MapAttrAdapter<NativeAttr,Float>(new MutableAttrDefs<NativeAttr>());
+		aa.put(f1, NativeAttr.A, 1.0f);
+		aa.put(f1, NativeAttr.C, 3.0f);
+		aa.put(f2, NativeAttr.A, 2.0f);
+
+		final ExtAttrDef<NativeAttr> concat = new ConcatAttrDef<NativeAttr,Float>("concat", NativeAttr.A, NativeAttr.C);
+		aa.add(concat);
+
+		final Map<ExtAttrDef<NativeAttr>,Exception> failures = Maps.newLinkedHashMap();
+		final Map<NativeAttr,Float> given = Maps.newLinkedHashMap();
+		final List<Set<ExtAttrValue>> vals = aa.getMultipleValuesGiven(given, failures);
+		for (final Set<ExtAttrValue> vs : vals) {
+			assertFalse(vs.isEmpty());
+
+		}
+		assertTrue(failures.isEmpty());
+	}
+     */
 }

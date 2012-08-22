@@ -9,6 +9,6 @@ import java.util.Set;
  * Bundle of external attribute definitions
  * @author Kevin A. Archie <karchie@wustl.edu>
  */
-public interface AttrDefs<S,V> extends Iterable<ExtAttrDef<S,V>> {
+public interface AttrDefs<S> extends Iterable<ExtAttrDef<S>> {
     Set<S> getNativeAttrs();
 }

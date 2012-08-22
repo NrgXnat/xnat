@@ -16,20 +16,20 @@ public interface AttrAdapter<S,V> {
      * Adds sets of attributes to the adapter
      * @param attrs AttributeSets for conversion
      */
-    void add(AttrDefs<S,V>...attrs);
+    void add(AttrDefs<S>...attrs);
 
     /**
      * Adds attributes to the adapter
      * @param attrs external attributes for conversion
      */
-    void add(ExtAttrDef<S,V>...attrs);
+    void add(ExtAttrDef<S>...attrs);
 
     /**
      * Adds attributes to the adapter
      * @param attrs external attributes for conversion
      */
-    void add(Iterable<? extends ExtAttrDef<S,V>> attrs);
-    
+    void add(Iterable<? extends ExtAttrDef<S>> attrs);
+
     /**
      * Removes the named attributes
      * @param attrNames names of attributes to remove
@@ -46,9 +46,11 @@ public interface AttrAdapter<S,V> {
      * @throws NoUniqueValueException if different datasets have different values for
      *   an attribute, or if no value was found for an attribute.
      */
-    List<ExtAttrValue> getValues(Map<ExtAttrDef<S,V>,Exception> failed) throws ExtAttrException;
+    List<ExtAttrValue> getValues(Map<ExtAttrDef<S>,Throwable> failed) throws ExtAttrException;
 
-    List<ExtAttrValue> getValuesGiven(Map<S,V> given, Map<ExtAttrDef<S,V>,Exception> failed) throws ExtAttrException;
+    List<ExtAttrValue> getValuesGiven(Map<S,V> given, Map<ExtAttrDef<S>,Throwable> failed) throws ExtAttrException;
 
-    List<Set<ExtAttrValue>> getMultipleValuesGiven(Map<S,V> given, Map<ExtAttrDef<S,V>,Exception> failed) throws ExtAttrException;
+    /*
+    List<Set<ExtAttrValue>> getMultipleValuesGiven(Map<S,V> given, Map<ExtAttrDef<S>,Exception> failed) throws ExtAttrException;
+     */
 }

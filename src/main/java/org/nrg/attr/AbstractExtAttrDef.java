@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.google.common.base.Joiner;
+import com.google.common.base.Strings;
 import com.google.common.collect.ImmutableSet;
 import com.google.common.collect.Sets;
 
@@ -53,7 +54,7 @@ implements ExtAttrDef<S>,EvaluableAttrDef<S,V,A> {
      * @return ExtAttrValue representing the content
      */
     protected Iterable<ExtAttrValue> applyString(final String value) throws ExtAttrException {
-        if (null == value) {
+        if (Strings.isNullOrEmpty(value)) {
             throw new NoUniqueValueException(getName());
         } else {
             return Collections.<ExtAttrValue>singleton(new BasicExtAttrValue(name, value));
@@ -104,6 +105,7 @@ implements ExtAttrDef<S>,EvaluableAttrDef<S,V,A> {
 
     public static <S,V> Iterable<ExtAttrValue> foldl(final ExtAttrDef<S> ea, final Iterable<? extends Map<? extends S,? extends V>> ms)
             throws ExtAttrException {
+        @SuppressWarnings("unchecked")
         final AbstractExtAttrDef<S,V,?> attr = (AbstractExtAttrDef<S,V,?>)ea;
         return attr.foldl(ms);
     }

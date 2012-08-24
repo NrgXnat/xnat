@@ -3,8 +3,11 @@ package org.nrg.xft.db;
 
 import java.sql.SQLException;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplaySearch;
@@ -15,6 +18,8 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.utils.StringUtils;
+
+import com.google.common.collect.Lists;
 
 public class MaterializedView {
 	static org.apache.log4j.Logger logger = Logger.getLogger(MaterializedView.class);
@@ -169,7 +174,23 @@ public class MaterializedView {
 	}
 	
 	public XFTTable getData(String sortBy,Integer offset, Integer limit) throws SQLException,Exception{
+		return getData(sortBy,offset,limit,null);
+	}
+	
+	public XFTTable getData(String sortBy,Integer offset, Integer limit,Map<String,Object> filters) throws SQLException,Exception{
 		String query="SELECT * FROM " + PoolDBUtils.search_schema_name + "." + this.table_name;
+		
+		if(filters!=null && filters.size()>0){
+			validateColumns(filters.keySet(),this);
+			
+			query+=" WHERE ";
+			int count=0;
+			for(Map.Entry<String,Object> entry:filters.entrySet()){
+				if(count++>0)query+=" AND ";
+				
+				query+=buildComparison(entry.getKey(),entry.getValue());
+			}
+		}
 		
 		if(sortBy!=null){
 			query+=" ORDER BY " + sortBy;
@@ -187,11 +208,117 @@ public class MaterializedView {
 		Thread thread = new MaterializedViewManager(this.table_name,user.getDBName());
 		thread.start();
 		
+		
 		return t;
+	}
+	
+	public static String buildComparison(String key, Object v){
+		List<String> values=StringUtils.CommaDelimitedStringToArrayList(v.toString());
+		List<String> validValues=Lists.newArrayList();
+		String clause="";
+		
+		int count=0;
+		for(String value:values){
+			if(!PoolDBUtils.HackCheck(value)){
+				if(value.equalsIgnoreCase("NULL")){
+					if(count++>0)clause+=" OR ";
+					clause+=" ("+ key +" IS NULL) ";
+				}else if(value.equalsIgnoreCase("NOT NULL")){
+					if(count++>0)clause+=" OR ";
+					clause+=" ("+ key +" IS NOT NULL) ";
+				}else if(value.contains("-")){
+					if(count++>0)clause+=" OR ";
+					
+					String value1=value.substring(0,value.indexOf("-"));
+					String value2=value.substring(value.indexOf("-")+1);
+					clause+=" ("+ key +" BETWEEN '" + value1 +"' AND '" + value2 +"') ";
+				}else if(value.startsWith("<=")){
+					if(count++>0)clause+=" OR ";
+					clause+=" ("+ key +" <= '"+ value.substring(2) +"') ";
+				}else if(value.startsWith("<")){
+					if(count++>0)clause+=" OR ";
+					clause+=" ("+ key +" < '"+ value.substring(1) +"') ";
+				}else if(value.startsWith(">=")){
+					if(count++>0)clause+=" OR ";
+					clause+=" ("+ key +" >= '"+ value.substring(2) +"') ";
+				}else if(value.startsWith(">")){
+					if(count++>0)clause+=" OR ";
+					clause+=" ("+ key +" > '"+ value.substring(1) +"') ";
+				}else{
+					validValues.add(value);
+				}
+			}
+		}
+		
+		if(validValues.size()>0){
+			if(clause.length()>0)clause+=" OR ";
+			
+			clause+=" (" + key + " IN (";
+			int inner=0;
+			for(String value:validValues){
+				if(inner++>0)clause+=",";
+				clause+="'"+ value +"'";
+			}
+			clause+=")) ";
+		}
+		
+		return clause;
+	}
+	
+	public static void validateColumns(Collection<String> columns, MaterializedView mv) throws SQLException, Exception{
+		List<String> all_columns=mv.getColumnNames();
+		
+		for(String column:columns){
+			if(!all_columns.contains(column)){
+				throw new Exception("Invalid column in request");
+			}
+		}
+	}
+	
+	public static void validateColumns(String columnName, MaterializedView mv) throws SQLException, Exception{
+		List<String> columns=StringUtils.CommaDelimitedStringToArrayList(columnName);
+		validateColumns(columns,mv);
+	}
+	
+	private List<String> cachedColumnNames=null;
+	public List<String> getColumnNames() throws SQLException,Exception{
+		if(cachedColumnNames==null){
+			String query="select LOWER(attname) as col_name from pg_attribute, pg_class,pg_type where attrelid = pg_class.oid AND atttypid=pg_type.oid AND attnum>0 and LOWER(relname) = '" + this.table_name.toLowerCase() + "';";
+			XFTTable t=XFTTable.Execute(query, user.getDBName(), user.getLogin());
+			cachedColumnNames=t.convertColumnToArrayList("col_name");
+		}
+		
+		return cachedColumnNames;
 	}
 	
 	public XFTTable getColumnValues(String column) throws SQLException,Exception{
 		String query="SELECT " + column +" AS VALUES,COUNT(*) FROM " + PoolDBUtils.search_schema_name + "." + this.table_name + " GROUP BY " + column + " ORDER BY " + column;
+		
+		XFTTable t=XFTTable.Execute(query + ";", user.getDBName(), user.getLogin());
+				
+		return t;
+	}
+	
+	public XFTTable getColumnsValues(String column) throws SQLException,Exception{
+		return getColumnsValues(column, null);
+	}
+	
+	public XFTTable getColumnsValues(String column,Map<String,Object> filters) throws SQLException,Exception{
+		String query="SELECT " + column +",COUNT(*) FROM " + PoolDBUtils.search_schema_name + "." + this.table_name;
+		
+		if(filters!=null && filters.size()>0){
+			validateColumns(filters.keySet(),this);
+			
+			query+=" WHERE ";
+			int count=0;
+			for(Map.Entry<String,Object> entry:filters.entrySet()){
+				if(count++>0)query+=" AND ";
+				
+				query+=buildComparison(entry.getKey(),entry.getValue());
+			}
+		}
+		
+		query+= " GROUP BY " + column + " ORDER BY " + column;
 		
 		XFTTable t=XFTTable.Execute(query + ";", user.getDBName(), user.getLogin());
 				

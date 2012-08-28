@@ -220,7 +220,17 @@ public class MaterializedView {
 		int count=0;
 		for(String value:values){
 			if(!PoolDBUtils.HackCheck(value)){
-				if(value.equalsIgnoreCase("NULL")){
+				if(value.equals("''")){
+					value="NULL";
+				}else if(value.equals("'NULL'")){
+					value="NULL";
+				}else if(value.equals("'NOT NULL'")){
+					value="NOT NULL";
+				}
+				
+				if(value.startsWith("'")&& value.endsWith("'")){
+					validValues.add(value.substring(1,value.length()-1));
+				}else if(value.equalsIgnoreCase("NULL")){
 					if(count++>0)clause+=" OR ";
 					clause+=" ("+ key +" IS NULL) ";
 				}else if(value.equalsIgnoreCase("NOT NULL")){
@@ -262,7 +272,7 @@ public class MaterializedView {
 			clause+=")) ";
 		}
 		
-		return clause;
+		return "("+clause+")";
 	}
 	
 	public static void validateColumns(Collection<String> columns, MaterializedView mv) throws SQLException, Exception{

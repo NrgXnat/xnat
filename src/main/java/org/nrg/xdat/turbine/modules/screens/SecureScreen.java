@@ -8,16 +8,33 @@
  *
  */
 package org.nrg.xdat.turbine.modules.screens;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.Scanner;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import java.util.Hashtable;
-import java.util.UUID;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XDATUser;
@@ -35,14 +52,6 @@ import org.nrg.xft.search.TableSearch;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
-
-import javax.servlet.http.HttpSession;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 /**
  * @author Tim
  *
@@ -103,6 +112,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 	protected void doBuildTemplate(RunData data)
             throws Exception {
 	    try {
+	    	attemptToPreventBrowserCachingOfHTML(data.getResponse());
             Context c = TurbineVelocity.getContext(data);
             loadAdditionalVariables(data, c);
 
@@ -408,6 +418,16 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         return false;
     }
 
+    private void attemptToPreventBrowserCachingOfHTML(ServletResponse resp) {
+    	if(resp != null && resp instanceof HttpServletResponse) {
+    		HttpServletResponse response = (HttpServletResponse) resp;
+	        response.setHeader("Expires", "Tue, 03 Jul 2001 06:00:00 GMT");
+	        response.setHeader("Last-Modified", new Date().toString());
+	        response.setHeader("Cache-Control", "no-store, no-cache, must-revalidate, max-age=0, post-check=0, pre-check=0");
+	        response.setHeader("Pragma", "no-cache");
+    	}
+    }
+    
     private static final Log _log = LogFactory.getLog(SecureScreen.class);
 
     private List<String> _defaultTabs;

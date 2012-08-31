@@ -5,15 +5,19 @@ import com.google.common.collect.Maps;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
+import org.apache.turbine.util.parser.CookieParser;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-
+import java.lang.Long;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 
+import javax.servlet.http.Cookie;
+import java.util.Date;
+import java.lang.String;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.springframework.security.authentication.AuthenticationProvider;
@@ -26,6 +30,27 @@ public class Login extends VelocitySecureScreen {
 	protected void doBuildTemplate(RunData data) throws Exception {
 		Context c = TurbineVelocity.getContext(data);
 		String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
+		Cookie[] cookies = data.getRequest().getCookies();
+        if (cookies != null) {
+            for (Cookie cookie : cookies) {
+                if (cookie.getName().equalsIgnoreCase("SESSION_TIMEOUT_TIME")) {
+                	String val = cookie.getValue();
+                	if(val!=null && (!val.equals("")) && (cookie.getValue()!=null)){
+                		Date logoutTime = (new Date(Long.parseLong(cookie.getValue())));
+                		Date currTime = new Date();
+                		//If their session timed out within the last 5 seconds, display a message to the user telling them that their session timed out.
+                		if((currTime.getTime()-logoutTime.getTime())<5000){
+                			data.setMessage("Session timed out at "+logoutTime.toString()+".");
+                		}
+                		else{
+                			data.setMessage("");
+                		}
+                	}
+                    break;
+                }
+            }
+        }
+
 		if(failed!=null && failed.equals("true")){
 			data.setMessage("Login attempt failed. Please try again.");
 		}

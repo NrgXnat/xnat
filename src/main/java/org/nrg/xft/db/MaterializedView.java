@@ -135,7 +135,23 @@ public class MaterializedView {
 	}
 	
 	public Long getSize() throws Exception{
-		return (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) AS RECORD_COUNT FROM " + PoolDBUtils.search_schema_name + "." + table_name  + ";","RECORD_COUNT",user.getDBName(),user.getLogin());
+		return getSize(null);
+	}
+	
+	public Long getSize(Map<String,Object> filters) throws Exception{
+		String query="SELECT COUNT(*) AS RECORD_COUNT FROM " + PoolDBUtils.search_schema_name + "." + table_name;
+		if(filters!=null && filters.size()>0){
+			validateColumns(filters.keySet(),this);
+			
+			query+=" WHERE ";
+			int count=0;
+			for(Map.Entry<String,Object> entry:filters.entrySet()){
+				if(count++>0)query+=" AND ";
+				
+				query+=buildComparison(entry.getKey(),entry.getValue());
+			}
+		}
+		return (Long) PoolDBUtils.ReturnStatisticQuery( query + ";","RECORD_COUNT",user.getDBName(),user.getLogin());
 	}
 
 	public synchronized static void VerifyManagerExistence(XDATUser user){

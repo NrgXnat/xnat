@@ -23,6 +23,8 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.spi.LoggerRepository;
+import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -66,8 +68,6 @@ public class XFT {
 //	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
 //	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 
-    public static Properties PROPS=null;
-    
     public static void init(String location,boolean allowDBAccess) throws ElementNotFoundException
     {
         init(location,allowDBAccess,true);
@@ -823,7 +823,16 @@ public class XFT {
     }
     
     public static boolean getBooleanProperty(String key, String _default){
-    	return Boolean.valueOf(XFT.PROPS.getProperty(key, _default));
+        try {
+            Object item = XDAT.getSiteConfigurationProperty(key);
+            if (item == null) {
+                return Boolean.getBoolean(_default);
+            } else {
+                return Boolean.getBoolean(item.toString());
+            }
+        } catch (ConfigServiceException e) {
+            throw new RuntimeException("Error accessing site configuration", e);
+        }
     }
     
     public static boolean getBooleanProperty(String key, boolean _default){

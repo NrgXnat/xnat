@@ -94,7 +94,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                XDATUser newUser = new XDATUser(found);
 
 						
-						SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "User registration"));
+						SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data),true,false,true,false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
 		                
 		                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), "localdb");
 	                    XDAT.getXdatUserAuthService().create(newUserAuth);

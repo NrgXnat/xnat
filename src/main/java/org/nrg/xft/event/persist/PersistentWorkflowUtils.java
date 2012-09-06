@@ -129,12 +129,12 @@ public class PersistentWorkflowUtils {
 			workflow.setComments(event.getComment());
 			workflow.setCategory(event.getCategory());
 			
-			if( (XFT.REQUIRE_REASON && XFT.SHOW_REASON) && StringUtils.isEmpty(event.getReason()) && requiresReason(xsiType, project_id)){
+			if( (XFT.getRequireChangeJustification() && XFT.getShowChangeJustification()) && StringUtils.isEmpty(event.getReason()) && requiresReason(xsiType, project_id)){
 				throw new JustificationAbsent();
 			}
 			workflow.setJustification(event.getReason());
 			if(StringUtils.isEmpty(event.getAction())){
-				if(XFT.REQUIRE_EVENT_NAME){
+				if(XFT.getRequireEventName()){
 					throw new ActionNameAbsent();
 				}else{
 					workflow.setPipelineName(EventUtils.UNKNOWN);

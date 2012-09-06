@@ -83,7 +83,7 @@ public class ModifyUser extends SecureAction {
 		XdatUser oldUser=XdatUser.getXdatUsersByLogin(login, null, false);
 				
 		try {
-			XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM,((oldUser==null))?"Add User "+login:"Modify User "+login));
+			XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM,((oldUser==null))?"Added User "+login:"Modified User "+login));
 		} catch (InvalidPermissionException e) {
 			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 			return;

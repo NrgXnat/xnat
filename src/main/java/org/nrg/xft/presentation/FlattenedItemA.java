@@ -609,7 +609,11 @@ public abstract class FlattenedItemA implements FlattenedItemI{
 				n=(Number)PoolDBUtils.ReturnStatisticQuery(String.format("SELECT event_id FROM xdat_change_info WHERE xdat_change_info_id=%s",key.toString()), "event_id", null, null);
 			} catch (Exception e) {}
 			
-			xft_version_map.put(key,n);
+			if(n==null && o instanceof Integer){
+				xft_version_map.put(key,o);
+			}else{
+				xft_version_map.put(key,n);
+			}
 			
 			return n;
 		}else{

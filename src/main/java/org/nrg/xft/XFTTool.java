@@ -242,7 +242,7 @@ public class XFTTool {
 		    q = item.getGenericSchemaElement().isQuarantine();
 		    override = false;
 		}
-    	SaveItemHelper.authorizedSave(item,user,false,q,override,allowItemRemoval,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+    	SaveItemHelper.authorizedSave(item,user,false,q,override,allowItemRemoval,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Stored XML", EventUtils.MODIFY_VIA_STORE_XML, null));
     	
 		return XMLWriter.ItemToDOM(item,true,false);
 	}
@@ -300,7 +300,7 @@ public class XFTTool {
 			}
 			
 						
-        	SaveItemHelper.authorizedSave(item,user,overrideSecurity,q,override,allowItemRemoval,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+        	SaveItemHelper.authorizedSave(item,user,overrideSecurity,q,override,allowItemRemoval,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Stored XML", EventUtils.MODIFY_VIA_STORE_XML, null));
 
 			//XFTItem temp = item.getCurrentDBVersion(true);
 			//XMLWriter.StoreXFTItemToXMLFile(temp,location.getAbsolutePath()+".stored.xml");

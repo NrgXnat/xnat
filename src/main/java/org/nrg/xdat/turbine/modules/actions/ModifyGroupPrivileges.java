@@ -127,7 +127,7 @@ public class ModifyGroupPrivileges extends AdminAction {
 		final ItemI found = populater.getItem();
 		XdatUsergroup tempGroup = new XdatUsergroup(found);
 		
-		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data),found.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modify group permissions"));
+		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data),found.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified permissions"));
         EventMetaI ci=wrk.buildEvent();
         
 		try {

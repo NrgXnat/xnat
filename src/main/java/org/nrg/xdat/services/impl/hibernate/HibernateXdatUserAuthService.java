@@ -122,7 +122,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	        		username = findUnusedLocalUsernameForNewLDAPUser(ldapUsername);
 	    			logger.debug("Adding LDAP user '" + username + "' to database.");
 	    			
-	    			PersistentWorkflowI wrk=PersistentWorkflowUtils.buildAdminWorkflow(null, "xdat:user", username, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "User created from LDAP", null, null));
+	    			PersistentWorkflowI wrk=PersistentWorkflowUtils.buildAdminWorkflow(null, "xdat:user", username, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Created user from LDAP", null, null));
 					
 	    			try {
 						Map<String, String> newUserPrperties = new HashMap<String, String>();

@@ -123,42 +123,42 @@ public class EventUtils {
 	
 	//pipelines
 	public static final String ARCPUT="ArcPut";
-	public static final String RENAME="Rename";
-	public static final String TRANSFER="Transfer";
-	public static final String TRIGGER_PIPELINES="Trigger Pipelines";
-	public static final String DICOM_PULL="Pull Data from DICOM";
+	public static final String RENAME="Renamed";
+	public static final String TRANSFER="Transferred";
+	public static final String TRIGGER_PIPELINES="Triggered Pipelines";
+	public static final String DICOM_PULL="Pulled Data from DICOM";
 	
 	//actions
 	public final static String CREATE_VIA_WEB_SERVICE="Added via web service";
-	public final static String MODIFY_VIA_WEB_SERVICE="Modify via web service";
-	public final static String SHARE_VIA_WEB_SERVICE="Share via web service";
-	public final static String CREATE_RESOURCE="Create resource";
-	public final static String UPLOAD_FILE="Upload File";
-	public final static String REMOVE_FILE="Remove File";
+	public final static String MODIFY_VIA_WEB_SERVICE="Modified via web service";
+	public final static String SHARE_VIA_WEB_SERVICE="Shared via web service";
+	public final static String CREATE_RESOURCE="Created resource";
+	public final static String UPLOAD_FILE="Uploaded File";
+	public final static String REMOVE_FILE="Removed File";
 	public final static String CREATE_VIA_WEB_FORM="Added via web form";
-	public final static String MODIFY_VIA_WEB_FORM="Modify via web form";
-	public static final String DELETE_VIA_WEB_SERVICE = "Removal via web service";
-	public static final String ADD_USER_TO_PROJECT = "Add user to project";
-	public static final String REMOVE_USER_TO_PROJECT = "Remove user from project";
-	public static final String MODIFY_VIA_STORE_XAR = "Modify via store xar";
+	public final static String MODIFY_VIA_WEB_FORM="Modified via web form";
+	public static final String DELETE_VIA_WEB_SERVICE = "Removed via web service";
+	public static final String ADD_USER_TO_PROJECT = "Added user to project";
+	public static final String REMOVE_USER_TO_PROJECT = "Removed user from project";
+	public static final String MODIFY_VIA_STORE_XAR = "Modified via store xar";
 	public static final String MODIFY_VIA_STORE_XML="Modified via store xml";
 	public static final String PIPELINE="Pipeline";
 	public static final String TAGGED_BASED_UPLOAD="Web-based Tagged file upload";
-	public static final String MODIFY_PROJECT_ACCESS="Modify Project accessibility";
-	public static final String REMOVE_CONFIGURED_PIPELINE="Remove configured pipeline";
-	public static final String MODIFY_CONFIGURED_PIPELINE="Modify configured pipelines";
+	public static final String MODIFY_PROJECT_ACCESS="Modified Project accessibility";
+	public static final String REMOVE_CONFIGURED_PIPELINE="Removed configured pipeline";
+	public static final String MODIFY_CONFIGURED_PIPELINE="Modified configured pipelines";
 	public static final String REMOVE_PIPELINE="Removed Pipeline from Project";
-	public static final String CONFIGURE_PROJECT_ACCESS="Configure project access";
+	public static final String CONFIGURE_PROJECT_ACCESS="Configured project access";
 	public static final String AUTO_CREATE_SUBJECT="Auto-created for experiment";
-	public static final String RENAME_IN_SHARED_PROJECT="Rename in shared project";
-	public static final String MODIFY_PROJECT="Modify project";
+	public static final String RENAME_IN_SHARED_PROJECT="Renamed in shared project";
+	public static final String MODIFY_PROJECT="Modified project";
 	public static final String CONFIGURED_PROJECT_SHARING="Configured project sharing";
 	public static final String ADDED_MISC_FILES="Added misc files";
-	public static final String STORE_XAR="Store XAR";
-	public static final String STORE_XML="Store XML";
-	public static final String REMOVE_CATALOG="Remove Resource Catalog";
-	public static final String REJECT_PROJECT_REQUEST="Reject Project Access Request";
-	public static final String APPROVE_PROJECT_REQUEST="Approve Project Access Request";
+	public static final String STORE_XAR="Stored XAR";
+	public static final String STORE_XML="Stored XML";
+	public static final String REMOVE_CATALOG="Removed Resource Catalog";
+	public static final String REJECT_PROJECT_REQUEST="Rejected Project Access Request";
+	public static final String APPROVE_PROJECT_REQUEST="Approved Project Access Request";
 	public static final String INVITE_USER_TO_PROJECT = "Invited new user to project";
 	public static final String UNKNOWN = "unknown action";
 }

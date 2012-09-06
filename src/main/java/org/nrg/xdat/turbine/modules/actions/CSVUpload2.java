@@ -269,7 +269,7 @@ public class CSVUpload2 extends SecureAction {
                     }
                 }
 
-                PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, item, this.newEventInstance(data, EventUtils.CATEGORY.DATA, "Spreadsheet Upload"));
+                PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, item, this.newEventInstance(data, EventUtils.CATEGORY.DATA, "Upload Spreadsheet"));
                 
                 try {
                 	SaveItemHelper.unauthorizedSave(item,user, false, false,wrk.buildEvent());

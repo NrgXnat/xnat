@@ -92,8 +92,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         c.put("turbineUtils",TurbineUtils.GetInstance());
         c.put("systemName",systemName);
         
-        c.put("showReason", XFT.SHOW_REASON);
-        c.put("requireReason", XFT.REQUIRE_REASON);
+        c.put("showReason", XFT.getShowChangeJustification());
+        c.put("requireReason", XFT.getRequireChangeJustification());
         
         try{
         	c.put("siteConfig", XDAT.getSiteConfiguration());

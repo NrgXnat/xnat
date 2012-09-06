@@ -68,7 +68,7 @@ public class ModifyUserGroups extends SecureAction {
         XDATUser oldUser = new XDATUser(temp);
         XDATUser newUser = new XDATUser(found);
 
-        PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), found.getXSIType(),oldUser.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modify user settings"));
+        PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), found.getXSIType(),oldUser.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified user settings"));
         EventMetaI ci=wrk.buildEvent();
         
         try {

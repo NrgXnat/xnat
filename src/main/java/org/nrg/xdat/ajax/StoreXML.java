@@ -50,7 +50,7 @@ public class StoreXML {
 
                 XFTItem item = reader.parse(is);
                 
-				SaveItemHelper.unauthorizedSave(item, user, false, allowDataDeletion,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.SOAP, "Store XML", req.getParameter(EventUtils.EVENT_REASON), req.getParameter(EventUtils.EVENT_COMMENT)));
+				SaveItemHelper.unauthorizedSave(item, user, false, allowDataDeletion,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.SOAP, "Stored XML", req.getParameter(EventUtils.EVENT_REASON), req.getParameter(EventUtils.EVENT_COMMENT)));
                 
                 SAXWriter writer = new SAXWriter(response.getOutputStream(),false);
                 writer.setWriteHiddenFields(true);

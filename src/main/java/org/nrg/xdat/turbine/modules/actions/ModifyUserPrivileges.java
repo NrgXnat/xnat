@@ -166,7 +166,7 @@ public class ModifyUserPrivileges extends SecureAction {
 		}
 		
 		//create workflow entry to track action
-		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), found.getXSIType(),oldUser.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN,EventUtils.TYPE.WEB_FORM,"Modfiy User Permissions"));
+		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), found.getXSIType(),oldUser.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN,EventUtils.TYPE.WEB_FORM,"Modified User Permissions"));
         		
 	    EventMetaI ci=wrk.buildEvent();
 	    

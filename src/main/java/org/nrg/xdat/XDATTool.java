@@ -195,9 +195,9 @@ public class XDATTool {
 			EventMetaI ci=null;
 			try {
 				if(item.getItem().instanceOf("xnat:experimentData") || item.getItem().instanceOf("xnat:subjectData")){
-					wrk=PersistentWorkflowUtils.buildOpenWorkflow(user,item.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+					wrk=PersistentWorkflowUtils.buildOpenWorkflow(user,item.getItem(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Stored XML", EventUtils.MODIFY_VIA_STORE_XML, null));
 				}else{
-					wrk=PersistentWorkflowUtils.buildAdminWorkflow(user,item.getXSIType(),item.getPKValueString(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Store XML", EventUtils.MODIFY_VIA_STORE_XML, null));
+					wrk=PersistentWorkflowUtils.buildAdminWorkflow(user,item.getXSIType(),item.getPKValueString(),EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.STORE_XML, "Stored XML", EventUtils.MODIFY_VIA_STORE_XML, null));
 				}
 				
 				ci = wrk.buildEvent();

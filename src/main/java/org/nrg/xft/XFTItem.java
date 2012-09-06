@@ -4684,9 +4684,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             			                }
             			            }
 
-            			            if (date==null)
-            			            {
-            			                GregorianCalendar cal = new GregorianCalendar(2012,1,1);
+                                    if (date==null) {
+                                        GregorianCalendar cal = new GregorianCalendar(2012, 0, 1);
             			    			date= cal.getTime();
             			            }
 

@@ -585,52 +585,44 @@ public class XFTValidator {
 				}
 			}else if (type.equalsIgnoreCase(prefix+":long"))
 			{
-                String temp = EMPTY;
-                if (value == null)
-                {
-                    temp = EMPTY;
-                }else
-                {
-                    temp = value.toString();
-                }
-				try{
-					if (rule[0].equalsIgnoreCase(REQUIRED))
-					{
-						if (rule[1].equalsIgnoreCase(TRUE))
-						{
-							if (temp.equals(EMPTY))
-							{
-								vr.addResult(vField,"Required Field", xmlPath,element);
-								break;
-							}
-						}
-					}
-					if (!temp.equals(EMPTY))
-					{
-						Integer num = Integer.valueOf(temp);
+                final String temp = null == value ? null : value.toString();
+                try {
+                    if (rule[0].equalsIgnoreCase(REQUIRED)
+                            && rule[1].equalsIgnoreCase(TRUE)
+                            && EMPTY.equals(temp)) {
+                        vr.addResult(vField,"Required Field", xmlPath,element);
+                        break;
+                    }
 
-						if (rule[0].equalsIgnoreCase(MAX_LENGTH))
-						{
-							int max = Integer.valueOf(rule[1]).intValue();
-							if (num.intValue() > max)
-							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
-							}
-						}
-						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
-						{
-							int min = Integer.valueOf(rule[1]).intValue();
-							if (num.intValue() < min)
-							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
-							}
-						}
-					}
-				}catch(Exception ex)
-				{
-                    if (!temp.equalsIgnoreCase("INF") && !temp.equalsIgnoreCase("NaN")&& !temp.equalsIgnoreCase("NULL"))
-                        vr.addResult(vField,"Must Be A Valid Integer", xmlPath,element);
-				}
+                    if (!temp.equals(EMPTY)) {
+                        final long num = Long.parseLong(temp);
+                        // valid constraining facets:
+                        // totalDigits
+                        // fractionDigits
+                        // pattern
+                        // whiteSpace
+                        // enumeration
+                        // maxInclusive
+                        // maxExclusive
+                        // minInclusive
+                        // minExclusive
+                        if (rule[0].equalsIgnoreCase(MAX_LENGTH)) { // TODO: invalid constraining facet for xs:long
+                            final long max = Long.parseLong(rule[1]);
+                            if (num > max) {
+                                vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+                            }
+                        } else if (rule[0].equalsIgnoreCase(MIN_LENGTH)) {// TODO: invalid contraining facet for xs:long
+                            long min = Long.parseLong(rule[1]);
+                            if (num < min) {
+                                vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+                            }
+                        }
+                    }
+                } catch(Exception ex) {
+                    if (!temp.equalsIgnoreCase("INF") && !temp.equalsIgnoreCase("NaN")&& !temp.equalsIgnoreCase("NULL")) {
+                        vr.addResult(vField,"Must Be A Valid Long Integer", xmlPath,element);
+                    }
+                }
 			}else if (type.equalsIgnoreCase(prefix+":int"))
 			{
                 String temp = EMPTY;

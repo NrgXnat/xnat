@@ -13,6 +13,7 @@ import java.util.Iterator;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -589,12 +590,12 @@ public class XFTValidator {
                 try {
                     if (rule[0].equalsIgnoreCase(REQUIRED)
                             && rule[1].equalsIgnoreCase(TRUE)
-                            && EMPTY.equals(temp)) {
+                            && StringUtils.isEmpty(temp)) {
                         vr.addResult(vField,"Required Field", xmlPath,element);
                         break;
                     }
 
-                    if (!temp.equals(EMPTY)) {
+                    if (StringUtils.isNotEmpty(temp)) {
                         final long num = Long.parseLong(temp);
                         // valid constraining facets:
                         // totalDigits

@@ -611,11 +611,11 @@ public abstract class FlattenedItemA implements FlattenedItemI{
 			
 			if(n==null && o instanceof Integer){
 				xft_version_map.put(key,o);
+				return o;
 			}else{
 				xft_version_map.put(key,n);
+				return n;
 			}
-			
-			return n;
 		}else{
 			return n;
 		}

@@ -46,7 +46,7 @@ public class ManageDataTypes extends AdminAction {
                 es.setBrowse("false");
             }
             
-            SaveItemHelper.authorizedSave(es,user, false, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified Data-type " +found.getStringProperty("element_name") + " (batch)" ));
+            SaveItemHelper.authorizedSave(es,user, false, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified Data-type (batch)" ));
         }
         
         ElementSecurity.refresh();

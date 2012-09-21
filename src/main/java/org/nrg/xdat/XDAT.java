@@ -9,14 +9,13 @@
  */
 package org.nrg.xdat;
 
-import java.io.*;
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 import java.util.Properties;
 import java.util.TimeZone;
 import java.util.UUID;
-import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
@@ -31,6 +30,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
+import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.MarshallerCacheService;
@@ -75,12 +75,6 @@ import org.springframework.security.core.context.SecurityContextHolder;
 public class XDAT implements Initializable,Configurable{
 
     private static final Logger logger = Logger.getLogger(XDAT.class);
-    private static final Pattern CUSTOM_PROPERTIES_NAME = Pattern.compile("^.*-config\\.properties");
-    private static final FileFilter CUSTOM_PROPERTIES_FILTER = new FileFilter() {
-        public boolean accept(final File file) {
-            return file.exists() && file.isFile() && CUSTOM_PROPERTIES_NAME.matcher(file.getName()).matches();
-        }
-    };
 	private static ContextService _contextService;
     private static DataSource _dataSource;
 	private static MailService _mailService;
@@ -90,103 +84,12 @@ public class XDAT implements Initializable,Configurable{
     private static MarshallerCacheService _marshallerCacheService;
 	private static XdatUserAuthService _xdatUserAuthService;
     private static ConfigService _configurationService;
+    private static SiteConfigurationService _siteConfigurationService;
     public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
     private static String _configFilesLocation = null;
     private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
-    private static boolean _hasRefreshedSiteConfiguration = false;
-    private static Properties _siteConfiguration;
-
-    /**
-     * Gets the site configuration as a Java {@link Properties} object.
-     * @return The initialized Java {@link Properties} object.
-     * @throws ConfigServiceException Thrown when an error occurs resolving or accessing the configuration service.
-     */
-    public static Properties getSiteConfiguration() throws ConfigServiceException {
-        if (!_hasRefreshedSiteConfiguration) {
-            refreshSiteConfiguration();
-        }
-
-        return _siteConfiguration;
-    }
-
-    /**
-     * Sets the site configuration from the submitted Java {@link Properties} object. This updates the data stored in the
-     * configuration service, but does not modify or update the source properties bundle stored on the local disk.
-     * @param properties    The initialized Java {@link Properties} object.
-     * @throws ConfigServiceException Thrown when an error occurs resolving or accessing the configuration service.
-     */
-    public static void setSiteConfiguration(Properties properties) throws ConfigServiceException {
-        setSiteConfiguration(properties, "Setting site configuration");
-    }
-
-    /**
-     * Refreshes the site configuration from the <b>siteConfiguration.properties</b> file. This should generally be done
-     * only once per application start-up.
-     * @throws ConfigServiceException Thrown when an error occurs resolving or accessing the configuration service.
-     */
-    public static Properties refreshSiteConfiguration() throws ConfigServiceException {
-        Properties properties = new Properties();
-        try {
-            String siteConfiguration = FileUtils.ReadFromFile(new File(_configFilesLocation, "siteConfiguration.properties"));
-            properties.load(new ByteArrayInputStream(siteConfiguration.getBytes()));
-        } catch (IOException exception) {
-            logger.error("Error occurred trying to load site configuration properties bundle from " + (new File(_configFilesLocation, "siteConfiguration.properties")).getAbsolutePath(), exception);
-        }
-
-        org.nrg.config.entities.Configuration configuration = getPersistedSiteConfiguration();
-        if (configuration == null) {
-            setSiteConfiguration(properties);
-        } else {
-            int hash = properties.hashCode();
-            properties.putAll(convertStringToProperties(configuration.getContents()));
-            if (hash != properties.hashCode()) {
-                setSiteConfiguration(properties);
-            }
-        }
-
-        processCustomProperties(properties);
-
-        _hasRefreshedSiteConfiguration = true;
-        return _siteConfiguration = properties;
-    }
-
-    private static org.nrg.config.entities.Configuration getPersistedSiteConfiguration() {
-        return getConfigService().getConfig("site", "siteConfiguration");
-    }
-
-    private static void processCustomProperties(final Properties properties) {
-        List<String> customConfigProperties = new ArrayList<String>();
-        File configFilesLocation = new File(_configFilesLocation);
-        for (File file : configFilesLocation.listFiles(CUSTOM_PROPERTIES_FILTER)) {
-            try {
-                Properties configProps = FileUtils.GetPropertiesFromFile(file);
-                for (String property : configProps.stringPropertyNames()) {
-                    if (customConfigProperties.contains(property)) {
-                        logger.warn("There appears to be duplicated values for the property: " + property + ". This is likely to cause unpredictable or undesired results.");
-                    } else {
-                        customConfigProperties.add(property);
-                        properties.setProperty(property, configProps.getProperty(property));
-                    }
-                }
-            } catch (IOException ignored) {
-                // TODO: This shouldn't happen.
-            }
-        }
-    }
-
-    public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
-        Properties properties = getSiteConfiguration();
-        return properties.getProperty(property);
-    }
-
-    public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
-        Properties properties = convertStringToProperties(getPersistedSiteConfiguration().getContents());
-        properties.setProperty(property, value);
-        setSiteConfiguration(properties, "Setting site configuration property value: " + property);
-        _siteConfiguration.setProperty(property, value);
-    }
 
 	public static boolean isAuthenticated() {
 		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
@@ -500,6 +403,29 @@ public class XDAT implements Initializable,Configurable{
 	}
 
 	/**
+	 * Returns an instance of the currently supported site configuration service.
+	 * @return An instance of the {@link SiteConfigurationService} service.
+	 */
+	private static SiteConfigurationService getSiteConfigurationService() {
+	    if (_siteConfigurationService == null) {
+	    	_siteConfigurationService = getContextService().getBean(SiteConfigurationService.class);
+	    }
+	    return _siteConfigurationService;
+	}
+
+    public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
+        return getSiteConfigurationService().getSiteConfigurationProperty(property);
+    }
+    
+    public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
+        getSiteConfigurationService().setSiteConfigurationProperty(getUserDetails().getUsername(), property, value);
+    }
+    
+    public static Properties getSiteConfiguration() throws ConfigServiceException {
+    	return getSiteConfigurationService().getSiteConfiguration(); 
+    }
+    
+    /**
 	 * Returns an instance of the currently supported data source.
 	 * @return An instance of the {@link DataSource} bean.
 	 */
@@ -589,45 +515,5 @@ public class XDAT implements Initializable,Configurable{
             getNotificationService().getChannelService().create(channel);
         }
         return channel;
-    }
-
-    private static void setSiteConfiguration(Properties properties, String message) throws ConfigServiceException {
-        XDATUserDetails user = getUserDetails();
-        String username = "";
-        if (user != null) {
-            username = user.getUsername();
-}
-
-        if (logger.isInfoEnabled()) {
-            if (user == null) {
-                logger.info(message + ", no user details available");
-            } else {
-                logger.info(message + ", user: " + username);
-            }
-        }
-
-        synchronized (XDAT.class) {
-            getConfigService().replaceConfig(username, message, "site", "siteConfiguration", convertPropertiesToString(properties, message));
-        }
-    }
-
-    private static String convertPropertiesToString(final Properties properties, String message) {
-        StringWriter writer = new StringWriter();
-        try {
-            properties.store(new PrintWriter(writer), message);
-        } catch (IOException ignored) {
-            // Ignore this, we're not writing to a file so it should be fine.
-        }
-        return writer.getBuffer().toString();
-    }
-
-    private static Properties convertStringToProperties(final String contents) {
-        Properties properties = new Properties();
-        try {
-            properties.load(new ByteArrayInputStream(contents.getBytes()));
-        } catch (IOException ignored) {
-            // We ignore this, it just can't happen since we're dealing with a flat string.
-        }
-        return properties;
     }
 }

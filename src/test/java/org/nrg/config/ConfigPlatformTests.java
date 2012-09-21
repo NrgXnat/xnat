@@ -1,11 +1,11 @@
 package org.nrg.config;
 
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.fail;
-import static org.junit.Assert.assertFalse;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -19,8 +19,6 @@ import java.util.Collections;
 import java.util.List;
 
 import javax.inject.Inject;
-import javax.inject.Named;
-import javax.sql.DataSource;
 
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
@@ -30,7 +28,7 @@ import org.junit.runner.RunWith;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
-
+import org.nrg.config.util.TestDBUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -85,22 +83,9 @@ public class ConfigPlatformTests {
 	}
 	*/
 	
-	//used for tests that would rather have an empty DB.
-	private void cleanDb(){
-		try {
-			Connection connection = _dataSource.getConnection();
-	        Statement statement = connection.createStatement();
-	        statement.execute("DELETE FROM XHBM_CONFIGURATION;");  //FYI: this will fail if the table name changes...
-	        statement.execute("DELETE FROM XHBM_CONFIGURATION_DATA;");
-	        statement.close();
-		} catch (SQLException e){
-			fail();
-		}
-	}
-	
 	@Before
 	public void setup() throws ConfigServiceException {	
-		cleanDb();
+		_testDBUtils.cleanDb();
 		//nothing wrong with putting some garbage in the database to start up. 
 		//this helps us know if there is any problems with a random set of configs.
         _configService.replaceConfig("frank", "new script", "franksTool", "/some/sort/of/path", "thisisfranksscript", encode("SOP"));	
@@ -121,8 +106,7 @@ public class ConfigPlatformTests {
      */
     @Test
     public void testDataSource() throws SQLException {
-        assertNotNull(_dataSource);
-        Connection connection = _dataSource.getConnection();
+        Connection connection = _testDBUtils.getConnection();
         Statement statement = connection.createStatement();
         statement.execute("DROP TABLE IF EXISTS TEST");
         statement.execute("CREATE TABLE TEST(ID INT PRIMARY KEY, NAME VARCHAR(255))");
@@ -144,7 +128,7 @@ public class ConfigPlatformTests {
     @Test
     public void testGetAll() throws ConfigServiceException {
     	//clean up from the @before
-    	cleanDb();
+		_testDBUtils.cleanDb();
     	
     	ArrayList<String> paths = new ArrayList<String>();
     	paths.add(path);
@@ -184,7 +168,7 @@ public class ConfigPlatformTests {
     
     @Test
     public void testGetTools() throws ConfigServiceException {
-    	cleanDb();
+		_testDBUtils.cleanDb();
     	ArrayList<String> tools = new ArrayList<String>();
     	tools.add(toolName);
     	tools.add("Frank");
@@ -246,7 +230,7 @@ public class ConfigPlatformTests {
     
     @Test
     public void testGetProjects() throws ConfigServiceException {
-    	cleanDb();
+		_testDBUtils.cleanDb();
     	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, contents, encode(project));
     	_configService.replaceConfig(xnatUser, reasonCreated, "Frank", path, contents, encode(project));
     	_configService.replaceConfig(xnatUser, reasonCreated, "Bill", path, contents, encode("NOTPROJECT"));
@@ -368,7 +352,7 @@ public class ConfigPlatformTests {
     private int countRows(String sql) {
     	int index = 0;
     	try {
-	        Connection connection = _dataSource.getConnection();
+	        Connection connection = _testDBUtils.getConnection();
 	        Statement statement = connection.createStatement();
 	        statement.execute(sql);  
 	        ResultSet results = statement.getResultSet();  
@@ -386,7 +370,7 @@ public class ConfigPlatformTests {
     
     @Test
     public void testDuplicateConfigurations() throws ConfigServiceException{
-    	cleanDb();
+		_testDBUtils.cleanDb();
     	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, contents, encode(project));
     	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, contents, encode(project));
     	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, contents, encode(project));
@@ -424,7 +408,7 @@ public class ConfigPlatformTests {
 
     @Test
     public void testNullContents() throws ConfigServiceException {
-    	cleanDb();
+		_testDBUtils.cleanDb();
     	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, contents, encode(project));
     	assertNotNull(_configService.getConfig(toolName, path, encode(project)).getContents());
     	_configService.replaceConfig(xnatUser, "nulling config", toolName, path, null, encode(project));
@@ -503,8 +487,7 @@ public class ConfigPlatformTests {
     }
     
     @Inject
-    @Named("dataSource")
-    private DataSource _dataSource;
+    private TestDBUtils _testDBUtils;
     
     @Autowired
     private ConfigService _configService;

@@ -115,16 +115,21 @@ public class ModifyEmail extends SecureAction {
                 
                 XDATUser authenticatedUser=TurbineUtils.getUser(data);
                 
-                try {
+                try {                	
                 	if(found.getProperty("email")!=null &&  !found.getProperty("email").equals(authenticatedUser.getEmail())){
+                		String newemail = found.getStringProperty("email");
+                		if(!newemail.contains("@")){
+                			data.setMessage("Please enter a valid email address.");
+                			data.setScreenTemplate("XDATScreen_MyXNAT.vm");
+                			return;
+                		}
+                		
                 		String old=authenticatedUser.getEmail();
 	                	XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));
-	                	XDATUser user = new XDATUser(authenticatedUser.getLogin());
-	                	String newemail = user.getEmail();
 	                	ItemI item = TurbineUtils.getUser(data);
 	                	item.setProperty("xdat:user.email", newemail);
                 	
-	                	AdminUtils.sendUserHTMLEmail("Email address changed.", "Your email address was successfully changed to "+found.getProperty("email"), true, new String[]{old,newemail});
+	                	AdminUtils.sendUserHTMLEmail("Email address changed.", "Your email address was successfully changed to "+found.getProperty("email") + ".", true, new String[]{old,newemail});
                 	}else{
                         data.setMessage("Email address unchanged.");
                         data.setScreenTemplate("Index.vm");

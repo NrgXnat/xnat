@@ -118,7 +118,6 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
 
     private void processCustomProperties(final Properties properties) {
         Map<String, File> customConfigPropertiesFileNames = new HashMap<String, File>();
-        Map<String, String> customConfigProperties = new HashMap<String, String>();
         for(String configFilesLocationPath: _configFilesLocations) {
 	        File configFilesLocation = new File(configFilesLocationPath);
 	        if(configFilesLocation.exists() && configFilesLocation.isDirectory()) {
@@ -131,19 +130,29 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
 				        customConfigPropertiesFileNames.put(file.getName(), file);
 				        
 		                Properties configProps = getPropertiesFromFile(file);
-		                for (String property : configProps.stringPropertyNames()) {
-		                    if (customConfigProperties.containsKey(property)) {
-		                    	throw new DuplicateConfigurationDetectedException(property);
+		                for (String rawPropertyName : configProps.stringPropertyNames()) {
+		                	String propertyName = rawPropertyName;
+		                	if(! Boolean.valueOf(properties.getProperty("allowCustomPropertiesWithDefaultNamespace"))) {
+		                		String namespace = getNamespaceForCustomPropertyFile(file);
+		                		if(! rawPropertyName.startsWith(namespace)) {
+		                			propertyName = namespace + "." + propertyName;
+		                		}
+		                	}
+		                    if (properties.containsKey(propertyName)) {
+		                    	throw new DuplicateConfigurationDetectedException(propertyName);
 		                    } 
 		                    else {
-		                        customConfigProperties.put(property, property);
-		                        properties.setProperty(property, configProps.getProperty(property));
+		                        properties.setProperty(propertyName, configProps.getProperty(rawPropertyName));
 		                    }
 		                }
 		        	}
 		        }
 	        }
         }
+    }
+    
+    private String getNamespaceForCustomPropertyFile(File f) {
+    	return f.getName().substring(0, f.getName().indexOf("-"));
     }
     
     private File findSiteConfigurationFile() {

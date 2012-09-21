@@ -349,25 +349,6 @@ public class ConfigPlatformTests {
     	assertEquals(replaceReasonString, ((Configuration)list.get(1)).getReason());
     }
     
-    private int countRows(String sql) {
-    	int index = 0;
-    	try {
-	        Connection connection = _testDBUtils.getConnection();
-	        Statement statement = connection.createStatement();
-	        statement.execute(sql);  
-	        ResultSet results = statement.getResultSet();  
-	    	
-	        while(results.next()) {
-	            index++;
-	        }
-	        results.close();
-	        statement.close();
-    	} catch (SQLException e){
-    		fail();
-    	}
-    	return index;
-    }
-    
     @Test
     public void testDuplicateConfigurations() throws ConfigServiceException{
 		_testDBUtils.cleanDb();
@@ -378,7 +359,7 @@ public class ConfigPlatformTests {
     	//we should wind up with 3 configurations, 1 config file
     	List<Configuration> list = _configService.getHistory(toolName, path, encode(project));
     	assertEquals(3,list.size());
-        assertEquals(1, countRows("SELECT * FROM XHBM_CONFIGURATION_DATA"));  //FYI:  This will fail when the table name changes.
+        assertEquals(1, _testDBUtils.countConfigurationDataRows());  //FYI:  This will fail when the table name changes.
   
         
         //Make sure enabling and disabling does not create a new script each time. 
@@ -391,19 +372,19 @@ public class ConfigPlatformTests {
         _configService.enable(xnatUser, "updatingStatus", toolName, path, encode(project));
         
         //1 config file, 9 configurations
-        assertEquals(1,countRows("SELECT * FROM XHBM_CONFIGURATION_DATA"));  //FYI:  This will fail when the table name changes.
-        assertEquals(9, countRows("SELECT * FROM XHBM_CONFIGURATION"));  //FYI:  This will fail when the table name changes.
+        assertEquals(1,_testDBUtils.countConfigurationDataRows());  //FYI:  This will fail when the table name changes.
+        assertEquals(9, _testDBUtils.countConfigurationRows());  //FYI:  This will fail when the table name changes.
   
         
         //change the contents and assure there are 2 rows in config data
         _configService.replaceConfig(xnatUser, reasonCreated, toolName, path, contents +"change", encode(project));
-        assertEquals(2, countRows("SELECT * FROM XHBM_CONFIGURATION_DATA"));  //FYI:  This will fail when the table name changes.
+        assertEquals(2, _testDBUtils.countConfigurationDataRows());  //FYI:  This will fail when the table name changes.
 
         
         //add the same configuration to a different tool. 
         //configs aren't shared between tools so we should end up with three rows in config data.
         _configService.replaceConfig(xnatUser, reasonCreated, "DIFFERENT TOOL", path, contents, encode(project));
-        assertEquals(3, countRows("SELECT * FROM XHBM_CONFIGURATION_DATA"));  //FYI:  This will fail when the table name changes.
+        assertEquals(3, _testDBUtils.countConfigurationDataRows());  //FYI:  This will fail when the table name changes.
      }
 
     @Test
@@ -412,8 +393,8 @@ public class ConfigPlatformTests {
     	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, contents, encode(project));
     	assertNotNull(_configService.getConfig(toolName, path, encode(project)).getContents());
     	_configService.replaceConfig(xnatUser, "nulling config", toolName, path, null, encode(project));
-        assertEquals(2,countRows("SELECT * FROM XHBM_CONFIGURATION_DATA"));  //FYI:  This will fail when the table name changes.
-        assertEquals(2, countRows("SELECT * FROM XHBM_CONFIGURATION"));  //FYI:  This will fail when the table name changes.    	
+        assertEquals(2,_testDBUtils.countConfigurationDataRows());  //FYI:  This will fail when the table name changes.
+        assertEquals(2, _testDBUtils.countConfigurationRows());  //FYI:  This will fail when the table name changes.    	
     	assertNull(_configService.getConfig(toolName, path, encode(project)).getContents());
     }
     

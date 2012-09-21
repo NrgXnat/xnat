@@ -57,7 +57,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
         _siteConfiguration = siteConfiguration;
     }
 
-    private Configuration getPersistedSiteConfiguration() {
+    public Configuration getPersistedSiteConfiguration() {
         return _service.getConfig("site", "siteConfiguration");
     }
 
@@ -97,26 +97,28 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     }
 
     private synchronized void refreshSiteConfiguration() throws ConfigServiceException {
-        Properties properties = getPropertiesFromFile(findSiteConfigurationFile());
+        Properties persistentProperties = getPropertiesFromFile(findSiteConfigurationFile());
+        Properties transientProperties = new Properties();
+
+        processCustomProperties(persistentProperties, transientProperties);
 
         Configuration configuration = getPersistedSiteConfiguration();
         if (configuration == null) {
-            setPersistedSiteConfiguration(SYSTEM_STARTUP_CONFIG_REFRESH_USER, properties, "Setting site configuration");
+            setPersistedSiteConfiguration(SYSTEM_STARTUP_CONFIG_REFRESH_USER, persistentProperties, "Setting site configuration");
         } else {
-            int hash = properties.hashCode();
-            properties.putAll(convertStringToProperties(configuration.getContents()));
-            if (hash != properties.hashCode()) {
-                setPersistedSiteConfiguration(SYSTEM_STARTUP_CONFIG_REFRESH_USER, properties, "Setting site configuration");
+            int hash = persistentProperties.hashCode();
+            persistentProperties.putAll(convertStringToProperties(configuration.getContents()));
+            if (hash != persistentProperties.hashCode()) {
+                setPersistedSiteConfiguration(SYSTEM_STARTUP_CONFIG_REFRESH_USER, persistentProperties, "Setting site configuration");
             }
         }
 
-        processCustomProperties(properties);
-
-        // make sure to include the custom properties
-        _siteConfiguration = properties;
+        persistentProperties.putAll(transientProperties);
+        
+        _siteConfiguration = persistentProperties;
     }
 
-    private void processCustomProperties(final Properties properties) {
+    private void processCustomProperties(final Properties persistentProperties, final Properties transientProperties) {
         Map<String, File> customConfigPropertiesFileNames = new HashMap<String, File>();
         for(String configFilesLocationPath: _configFilesLocations) {
 	        File configFilesLocation = new File(configFilesLocationPath);
@@ -129,20 +131,28 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
 		        	else {
 				        customConfigPropertiesFileNames.put(file.getName(), file);
 				        
+                		String namespace = getNamespaceForCustomPropertyFile(file);
 		                Properties configProps = getPropertiesFromFile(file);
 		                for (String rawPropertyName : configProps.stringPropertyNames()) {
-		                	String propertyName = rawPropertyName;
-		                	if(! Boolean.valueOf(properties.getProperty("allowCustomPropertiesWithDefaultNamespace"))) {
-		                		String namespace = getNamespaceForCustomPropertyFile(file);
+		                	String polishedPropertyName = rawPropertyName;
+		                	if(! Boolean.valueOf(persistentProperties.getProperty("allowCustomPropertiesWithDefaultNamespace"))) {
 		                		if(! rawPropertyName.startsWith(namespace)) {
-		                			propertyName = namespace + "." + propertyName;
+		                			polishedPropertyName = qualifyPropertyName(namespace, rawPropertyName);
 		                		}
 		                	}
-		                    if (properties.containsKey(propertyName)) {
-		                    	throw new DuplicateConfigurationDetectedException(propertyName);
-		                    } 
+		                    if (persistentProperties.containsKey(polishedPropertyName) || transientProperties.containsKey(polishedPropertyName)) {
+		                    	throw new DuplicateConfigurationDetectedException(polishedPropertyName);
+		                    }
+		                    else if(polishedPropertyName.equals(CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME) 
+		                    		|| polishedPropertyName.equals(qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME)) 
+		                    ) {
+		                    	// ignore
+		                    }
+		                    else if(propertiesArePersistent(namespace, configProps)) {
+		                        persistentProperties.setProperty(polishedPropertyName, configProps.getProperty(rawPropertyName));
+		                    }
 		                    else {
-		                        properties.setProperty(propertyName, configProps.getProperty(rawPropertyName));
+		                        transientProperties.setProperty(polishedPropertyName, configProps.getProperty(rawPropertyName));
 		                    }
 		                }
 		        	}
@@ -151,8 +161,37 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
         }
     }
     
+    /**
+     * Allow them to specify transience as
+     * persist=false
+     * OR
+     * mynamespace.persist=false
+     * 
+     * You really shouldn't have both in the same file, but if you do, the namespaced one will take precedence.
+     */
+    private boolean propertiesArePersistent(String namespace, Properties props) {
+    	boolean persistent = true;
+		
+    	if(propertyExistsAndIsFalse(props, qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME))) {
+    		persistent = false;
+    	}
+    	else if(propertyExistsAndIsFalse(props, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME)) {
+    		persistent = false;
+    	}
+    	
+    	return persistent;
+    }
+    
     private String getNamespaceForCustomPropertyFile(File f) {
     	return f.getName().substring(0, f.getName().indexOf("-"));
+    }
+    
+    private String qualifyPropertyName(String namespace, String unqualifiedPropertyName) {
+    	return namespace + "." + unqualifiedPropertyName;
+    }
+    
+    private boolean propertyExistsAndIsFalse(Properties props, String propName) {
+    	return props.getProperty(propName) != null && props.getProperty(propName).equalsIgnoreCase("FALSE");
     }
     
     private File findSiteConfigurationFile() {
@@ -239,6 +278,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     };
     private static final Log _log = LogFactory.getLog(DefaultSiteConfigurationService.class);
     private static final String SYSTEM_STARTUP_CONFIG_REFRESH_USER = "admin";
+    private static final String CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME = "persist";
     private Properties _siteConfiguration;
     private boolean _initialized;
 }

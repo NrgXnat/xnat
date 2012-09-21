@@ -3,6 +3,8 @@ package org.nrg.config;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -15,6 +17,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.exceptions.DuplicateConfigurationDetectedException;
 import org.nrg.config.exceptions.SiteConfigurationFileNotFoundException;
@@ -48,7 +51,15 @@ public class DefaultSiteConfigurationServiceTests {
     	assertEquals("val1", props.getProperty("prop1"));
     	assertEquals("fooval1", props.getProperty("foo.prop1"));
     	assertEquals("fooval2", props.getProperty("foo.prop2"));
+    	assertEquals("val1", props.getProperty("dontpersist1.dontpersistprop1"));
     	assertNull(props.getProperty("foo.prop3"));
+    	Configuration persistedConfig = ((DefaultSiteConfigurationService) _service).getPersistedSiteConfiguration();
+    	assertTrue(persistedConfig.getContents().contains("foo.prop1"));
+    	assertTrue(persistedConfig.getContents().contains("foo.prop2"));
+    	assertTrue(persistedConfig.getContents().contains("foo.prop1"));
+    	assertFalse(persistedConfig.getContents().contains("dontpersistprop1"));
+    	assertFalse(persistedConfig.getContents().contains("dontpersistprop2"));
+    	assertFalse(persistedConfig.getContents().contains("persist"));
     }
     
     @Test
@@ -60,6 +71,17 @@ public class DefaultSiteConfigurationServiceTests {
     	((DefaultSiteConfigurationService) _service).setConfigFilesLocations(mockConfigFileLocations);
    		props = _service.getSiteConfiguration();
     	assertNotNull(props.getProperty("prop2"));
+    	assertEquals(2, _testDBUtils.countConfigurationDataRows());
+    }
+    
+    @Test
+    public void initSiteConfigurationSuccessWithNoAdditionalPropertiesOnSecondLaunch() throws ConfigServiceException {
+    	_service.getSiteConfiguration();
+    	List<String> mockConfigFileLocations = new ArrayList<String>(savedConfigFileLocations);
+    	((DefaultSiteConfigurationService) _service).setConfigFilesLocations(mockConfigFileLocations);
+    	// it shouldn't be writing the config to DB again, since nothing's changed
+   		_service.getSiteConfiguration();
+    	assertEquals(1, _testDBUtils.countConfigurationDataRows());
     }
     
     @Test

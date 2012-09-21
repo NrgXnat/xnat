@@ -3,6 +3,7 @@ package org.nrg.config.util;
 import static org.junit.Assert.fail;
 
 import java.sql.Connection;
+import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
 
@@ -32,6 +33,33 @@ public final class TestDBUtils {
         return _dataSource.getConnection();
 	}
 
+    public int countConfigurationRows() {
+    	return countRows("SELECT * FROM XHBM_CONFIGURATION");
+    }
+    
+    public int countConfigurationDataRows() {
+    	return countRows("SELECT * FROM XHBM_CONFIGURATION_DATA");
+    }
+    
+    private int countRows(String sql) {
+    	int index = 0;
+    	try {
+	        Connection connection = getConnection();
+	        Statement statement = connection.createStatement();
+	        statement.execute(sql);  
+	        ResultSet results = statement.getResultSet();  
+	    	
+	        while(results.next()) {
+	            index++;
+	        }
+	        results.close();
+	        statement.close();
+    	} catch (SQLException e){
+    		fail();
+    	}
+    	return index;
+    }
+    
     @Inject
     @Named("dataSource")
     private DataSource _dataSource;

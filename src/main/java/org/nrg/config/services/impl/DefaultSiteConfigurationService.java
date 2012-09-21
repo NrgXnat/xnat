@@ -120,6 +120,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
 
     private void processCustomProperties(final Properties persistentProperties, final Properties transientProperties) {
         Map<String, File> customConfigPropertiesFileNames = new HashMap<String, File>();
+        File overrideConfigFile = null;
         for(String configFilesLocationPath: _configFilesLocations) {
 	        File configFilesLocation = new File(configFilesLocationPath);
 	        if(configFilesLocation.exists() && configFilesLocation.isDirectory()) {
@@ -130,35 +131,52 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
 		        	}
 		        	else {
 				        customConfigPropertiesFileNames.put(file.getName(), file);
-				        
-                		String namespace = getNamespaceForCustomPropertyFile(file);
-		                Properties configProps = getPropertiesFromFile(file);
-		                for (String rawPropertyName : configProps.stringPropertyNames()) {
-		                	String polishedPropertyName = rawPropertyName;
-		                	if(! Boolean.valueOf(persistentProperties.getProperty("allowCustomPropertiesWithDefaultNamespace"))) {
-		                		if(! rawPropertyName.startsWith(namespace)) {
-		                			polishedPropertyName = qualifyPropertyName(namespace, rawPropertyName);
-		                		}
-		                	}
-		                    if (persistentProperties.containsKey(polishedPropertyName) || transientProperties.containsKey(polishedPropertyName)) {
-		                    	throw new DuplicateConfigurationDetectedException(polishedPropertyName);
-		                    }
-		                    else if(polishedPropertyName.equals(CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME) 
-		                    		|| polishedPropertyName.equals(qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME)) 
-		                    ) {
-		                    	// ignore
-		                    }
-		                    else if(propertiesArePersistent(namespace, configProps)) {
-		                        persistentProperties.setProperty(polishedPropertyName, configProps.getProperty(rawPropertyName));
-		                    }
-		                    else {
-		                        transientProperties.setProperty(polishedPropertyName, configProps.getProperty(rawPropertyName));
-		                    }
-		                }
+
+				        if(getNamespaceForCustomPropertyFile(file).equals("override")) {
+				        	overrideConfigFile = file;	// save this guy for last, he trumps all
+				        }
+				        else {
+				        	processSingleCustomPropertyFile(persistentProperties, transientProperties, file);
+				        }
 		        	}
 		        }
 	        }
         }
+        if(overrideConfigFile != null) {
+        	processOverrideCustomPropertyFile(transientProperties, overrideConfigFile);
+        }
+    }
+    
+    private void processSingleCustomPropertyFile(final Properties persistentProperties, final Properties transientProperties, File file) {
+		String namespace = getNamespaceForCustomPropertyFile(file);
+        Properties customProperties = getPropertiesFromFile(file);
+        for (String rawPropertyName : customProperties.stringPropertyNames()) {
+        	String polishedPropertyName = rawPropertyName;
+        	if(! Boolean.valueOf(persistentProperties.getProperty("allowCustomPropertiesWithDefaultNamespace"))) {
+        		if(! rawPropertyName.startsWith(namespace)) {
+        			polishedPropertyName = qualifyPropertyName(namespace, rawPropertyName);
+        		}
+        	}
+            if (persistentProperties.containsKey(polishedPropertyName) || transientProperties.containsKey(polishedPropertyName)) {
+            	throw new DuplicateConfigurationDetectedException(polishedPropertyName);
+            }
+            else if(polishedPropertyName.equals(CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME) 
+            		|| polishedPropertyName.equals(qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME)) 
+            ) {
+            	// this is a meta-property: ignore
+            }
+            else if(propertiesArePersistent(namespace, customProperties)) {
+                persistentProperties.setProperty(polishedPropertyName, customProperties.getProperty(rawPropertyName));
+            }
+            else {
+                transientProperties.setProperty(polishedPropertyName, customProperties.getProperty(rawPropertyName));
+            }
+        }
+    }
+
+    private void processOverrideCustomPropertyFile(final Properties transientProperties, File file) {
+        Properties properties = getPropertiesFromFile(file);
+        transientProperties.putAll(properties);
     }
     
     /**

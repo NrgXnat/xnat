@@ -50,8 +50,10 @@ public class DefaultSiteConfigurationServiceTests {
     	assertNotNull(props);
     	assertEquals("val1", props.getProperty("prop1"));
     	assertEquals("fooval1", props.getProperty("foo.prop1"));
-    	assertEquals("fooval2", props.getProperty("foo.prop2"));
+    	assertEquals("overrideval2", props.getProperty("foo.prop2"));
     	assertEquals("val1", props.getProperty("dontpersist1.dontpersistprop1"));
+    	assertEquals("true", props.getProperty("boolprop2"));
+    	assertNotNull(props.getProperty("override.prop1"));
     	assertNull(props.getProperty("foo.prop3"));
     	Configuration persistedConfig = ((DefaultSiteConfigurationService) _service).getPersistedSiteConfiguration();
     	assertTrue(persistedConfig.getContents().contains("foo.prop1"));
@@ -60,6 +62,7 @@ public class DefaultSiteConfigurationServiceTests {
     	assertFalse(persistedConfig.getContents().contains("dontpersistprop1"));
     	assertFalse(persistedConfig.getContents().contains("dontpersistprop2"));
     	assertFalse(persistedConfig.getContents().contains("persist"));
+    	assertFalse(persistedConfig.getContents().contains("override.prop1"));
     }
     
     @Test

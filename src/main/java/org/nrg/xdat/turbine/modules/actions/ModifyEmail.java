@@ -20,6 +20,7 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementAction;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
@@ -115,14 +116,19 @@ public class ModifyEmail extends SecureAction {
                 XDATUser authenticatedUser=TurbineUtils.getUser(data);
                 
                 try {
-                	XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));
-                	XDATUser user = new XDATUser(authenticatedUser.getLogin());
-                	String newemail = user.getEmail();
-                	ItemI item = TurbineUtils.getUser(data);
-                	item.setProperty("xdat:user.email", newemail);
+                	if(found.getProperty("email")!=null &&  !found.getProperty("email").equals(authenticatedUser.getEmail())){
+                		String old=authenticatedUser.getEmail();
+	                	XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));
+	                	XDATUser user = new XDATUser(authenticatedUser.getLogin());
+	                	String newemail = user.getEmail();
+	                	ItemI item = TurbineUtils.getUser(data);
+	                	item.setProperty("xdat:user.email", newemail);
                 	
-                	
-                	
+	                	AdminUtils.sendUserHTMLEmail("Email address changed.", "Your email address was successfully changed to "+found.getProperty("email"), true, new String[]{old,newemail});
+                	}else{
+                        data.setMessage("Email address unchanged.");
+                        data.setScreenTemplate("Index.vm");
+                	}
                 
                 } catch (InvalidPermissionException e) {
         			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");

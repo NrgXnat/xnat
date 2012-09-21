@@ -258,6 +258,23 @@ public class AdminUtils {
 		return successful;
 	}
 
+	public static boolean sendUserHTMLEmail(String subject, String message, boolean ccAdmin, String[] email_addresses) {
+		boolean successful = false;
+		if (email_addresses.length>0) {
+			String from = getAdminEmailId();
+			try {
+				XDAT.getMailService().sendHtmlMessage(from, email_addresses, ccAdmin ? new String[] { from } : null, null, subject, message);
+			} catch (MessagingException exception) {
+				logger.error("Unable to send mail", exception);
+				successful = false;
+			}
+		} else {
+			successful = false;
+		}
+
+		return successful;
+	}
+
 	public static void sendErrorNotification(RunData data, String message, Context context) throws Exception {
 		XDATUser user = TurbineUtils.getUser(data);
 		String email = user.getEmail();

@@ -98,7 +98,7 @@ public class DefaultSiteConfigurationServiceTests {
     
     @Test(expected=SiteConfigurationFileNotFoundException.class)
     public void initSiteConfigurationFailsWhenNoSiteConfigIsFound() throws ConfigServiceException {
-    	List<String> mockConfigFileLocations = Arrays.asList("/bridge/to/nowhere");
+    	List<String> mockConfigFileLocations = Arrays.asList("/bridge/to/nowhere", "/foo/bar", "/baz");
     	((DefaultSiteConfigurationService) _service).setConfigFilesLocations(mockConfigFileLocations);
    		_service.getSiteConfiguration();
     }

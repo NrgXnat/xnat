@@ -220,7 +220,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     	int numberOfSiteConfigFilesFound = 0;
     	
     	for(String configFilesLocationPath: _configFilesLocations) {
-        	File potentialSiteConfigFile = new File(configFilesLocationPath, "siteConfiguration.properties");
+        	File potentialSiteConfigFile = new File(configFilesLocationPath, SITE_CONFIGURATION_PROPERTIES_FILENAME);
         	if(potentialSiteConfigFile.exists()) {
         		if(++numberOfSiteConfigFilesFound > 1) {
             		throw new DuplicateConfigurationDetectedException(siteConfigFile, potentialSiteConfigFile);
@@ -232,7 +232,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
         }
     	
     	if(0 == numberOfSiteConfigFilesFound) {
-    		throw new SiteConfigurationFileNotFoundException();
+    		throw new SiteConfigurationFileNotFoundException(SITE_CONFIGURATION_PROPERTIES_FILENAME, _configFilesLocations);
     	}
     	else {
     		return siteConfigFile;
@@ -329,6 +329,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     private static final Log _log = LogFactory.getLog(DefaultSiteConfigurationService.class);
     private static final String SYSTEM_STARTUP_CONFIG_REFRESH_USER = "admin";
     private static final String CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME = "persist";
+    private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME = "siteConfiguration.properties";
     private Properties _siteConfiguration;
     private boolean _initialized;
 }

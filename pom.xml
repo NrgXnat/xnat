@@ -17,6 +17,7 @@
     </parent>
 
     <artifactId>config</artifactId>
+    <version>1.6.1</version>
 
     <scm>
         <url>http://bitbucket.org/nrg/nrg_config</url>

@@ -18,7 +18,7 @@
 
         <xnat.version>1.6</xnat.version>
         <xdat.version>1.6</xdat.version>
-        <nrg.config.version>1.6</nrg.config.version>
+        <nrg.config.version>1.6.1</nrg.config.version>
         <nrg.framework.version>1.6</nrg.framework.version>
         <nrg.dicomedit.version>2.3.0</nrg.dicomedit.version>
         <nrg.dicomutils.version>1.2.0</nrg.dicomutils.version>

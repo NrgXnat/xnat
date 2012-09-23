@@ -48,4 +48,16 @@ public interface SiteConfigurationService {
      * @throws ConfigServiceException
      */
     public abstract void setSiteConfigurationProperty(String username, String property, String value) throws ConfigServiceException;
+    
+    /**
+     * The absolute path to prepend to any paths in the injected configFilesLocations that are relative.
+     * @param configFilesLocationRoot
+     */
+    public abstract String getConfigFilesLocationsRoot();
+    
+    /**
+     * The absolute path to prepend to any paths in the injected configFilesLocations that are relative.
+     * @param configFilesLocationRoot
+     */
+    public abstract void setConfigFilesLocationsRoot(String configFilesLocationRoot);
 }

@@ -42,6 +42,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
 	
 	public DefaultSiteConfigurationService() {
 		_initialized = false;
+		_configFilesLocationsRoot = "";
 	}
 
     @Override
@@ -97,6 +98,8 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     }
 
     private synchronized void refreshSiteConfiguration() throws ConfigServiceException {
+    	prependConfigFilesLocationsRootToAllConfigFilesLocations();    	
+    	
         Properties persistentProperties = getPropertiesFromFile(findSiteConfigurationFile());
         Properties transientProperties = new Properties();
 
@@ -282,8 +285,37 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     	_initialized = false;
     }
     
+	@Override
+	public String getConfigFilesLocationsRoot() {
+		return _configFilesLocationsRoot;
+	}
+
+	@Override
+	public void setConfigFilesLocationsRoot(String configFilesLocationRoot) {
+		_configFilesLocationsRoot = configFilesLocationRoot;
+		_initialized = false;
+	}
+	
+	/**
+	 * We won't know the servlet path until runtime, so this can't be done via Spring.
+	 * Servlet will set the root and then we'll update the location list here.
+	 */
+	private void prependConfigFilesLocationsRootToAllConfigFilesLocations() {
+		if(StringUtils.isNotBlank(_configFilesLocationsRoot)) {
+			for(int i = 0; i < _configFilesLocations.size(); ++i) {
+				File configFilesLocation = new File(_configFilesLocations.get(i));
+				if(!configFilesLocation.isAbsolute()) {
+					String absoluteConfigFilesLocation = getConfigFilesLocationsRoot() + File.separator + _configFilesLocations.get(i);
+					_configFilesLocations.set(i, absoluteConfigFilesLocation);
+				}
+			}
+		}
+	}
+	
     @Resource(name="configFilesLocations")
     private List<String> _configFilesLocations;
+    
+    private String _configFilesLocationsRoot;
 
     @Inject
     private ConfigService _service;

@@ -22,7 +22,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
-import java.util.TreeMap;
+import java.util.Map.Entry;
 
 import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.log4j.Logger;
@@ -2482,25 +2482,16 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     	}
     }
     
-    private static Map<Integer,String> users=null;
     public static String getUsername(Integer xdat_user_id){
     	if(xdat_user_id==null)return null;
     	
-    	if(users==null){
-    		try {
-				users= XFTTable.Execute("select xdat_user_id,login FROM xdat_user ORDER BY xdat_user_id;", null, null).toHashtable("xdat_user_id", "login");
-			} catch (Exception e) {
-				logger.error("",e);
-				users=new TreeMap<Integer,String>();
-			}
-    	}
-    	
-    	String u=users.get(xdat_user_id);
+    	String u=getCachedUserIds().get(xdat_user_id);
     	if(u==null){
+    		//check if it was added since init
     		try {
 				u=(String)PoolDBUtils.ReturnStatisticQuery("select login FROM xdat_user WHERE xdat_user_id="+xdat_user_id, "login", null, null);
 				if(u!=null){
-					users.put(xdat_user_id,u);
+					getCachedUserIds().put(xdat_user_id,u);
 				}
 			} catch (Exception e) {
 				logger.error("",e);
@@ -2508,6 +2499,47 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     	}
     	
     	return u;
+    }
+    public static Integer getUserid(String username){
+    	if(username==null)return null;
+    	
+    	//retrieve cached id
+    	for(Entry<Integer,String> entry:getCachedUserIds().entrySet()){
+    		if(username.equals(entry.getValue())){
+    			return entry.getKey();
+    		}
+    	}
+    	
+		//check if it was added since init
+    	Integer u;
+		try {
+			u=(Integer)PoolDBUtils.ReturnStatisticQuery("select xdat_user_id FROM xdat_user WHERE login="+username, "xdat_user_id", null, null);
+			if(u!=null){
+				getCachedUserIds().put(u,username);
+			}
+		} catch (Exception e) {
+			logger.error("",e);
+			u=null;
+		}
+			
+    	return u;
+    }
+    
+    private static Object usercache=new Object();
+    private static Map<Integer,String> users=null;
+    private static Map<Integer,String> getCachedUserIds(){
+    	if(users==null){
+    		synchronized (usercache){
+				users=new Hashtable<Integer,String>();
+	    		//initialize database users, only done once per server restart
+	    		try {
+					users.putAll(XFTTable.Execute("select xdat_user_id,login FROM xdat_user ORDER BY xdat_user_id;", null, null).toHashtable("xdat_user_id", "login"));
+				} catch (Exception e) {
+					logger.error("",e);
+				}
+    		}
+    	}
+    	return users;
     }
 
     public static void ModifyUser(XDATUser authenticatedUser, ItemI found,EventDetails ci) throws InvalidPermissionException, Exception {

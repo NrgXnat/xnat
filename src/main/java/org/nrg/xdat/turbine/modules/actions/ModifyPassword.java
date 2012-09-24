@@ -10,11 +10,15 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.PasswordValidatorChain;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.PasswordComplexityException;
 import org.nrg.xdat.turbine.utils.PopulateItem;
@@ -125,7 +129,30 @@ public class ModifyPassword extends SecureAction {
 				
 				XDATUser authenticatedUser=TurbineUtils.getUser(data);
 				try {
-					XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Password"));
+					String newPass=found.getStringProperty("primary_password");
+					XDATUser submitted=new XDATUser(found);
+					if(StringUtils.isNotEmpty(newPass)){
+						PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
+						if(validator.isValid(newPass, submitted)){
+							XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Password"));
+							
+							//need to update password expiration
+							XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(found.getStringProperty("login"), "localdb", "");
+							auth.setPasswordUpdated(new java.util.Date());
+							XDAT.getXdatUserAuthService().update(auth);
+							data.getSession().setAttribute("expired",new Boolean(false));
+						}else{
+							data.setMessage(validator.getMessage());
+							data.setScreenTemplate("XDATScreen_MyXNAT.vm");
+							return;
+						}
+						
+					}else{
+					    data.setMessage("Password unchanged.");
+					    data.setScreenTemplate("Index.vm");
+					    return;
+					}
+					
 				} catch (InvalidPermissionException e) {
 					notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 					return;

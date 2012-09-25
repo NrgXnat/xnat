@@ -31,7 +31,6 @@ import java.util.Properties;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.collections.ComparatorUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -40,6 +39,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.om.XdatSecurity;
@@ -892,8 +892,80 @@ public class TurbineUtils {
 	}
     
     public String formatDate(Date d, String pattern){
-    	final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);
-        return formatter.format(d);
+	    	final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);
+	        return formatter.format(d);
+    }
+    
+    public String formatDate(Date d){
+    	synchronized (getDateFormatter()){
+    		return getDateFormatter().format(d);
+    	}
+    }
+    
+    private static java.text.SimpleDateFormat default_date_format=null;
+    public static java.text.SimpleDateFormat getDateFormatter(){
+    	if(default_date_format==null){
+    		try {
+				default_date_format= new java.text.SimpleDateFormat (XDAT.getSiteConfigurationProperty("UI.date-format","MM/dd/yyyy"));
+			} catch (ConfigServiceException e) {
+				default_date_format= new java.text.SimpleDateFormat ("MM/dd/yyyy");
+			}
+    	}
+    	return default_date_format;
+    }
+    
+    public String formatDateTime(Date d){
+    	synchronized (getDateTimeFormatter()){
+    		return getDateTimeFormatter().format(d);
+    	}
+    }
+    
+    private static java.text.SimpleDateFormat default_date_time_format=null;
+    public static java.text.SimpleDateFormat getDateTimeFormatter(){
+    	if(default_date_time_format==null){
+    		try {
+    			default_date_time_format= new java.text.SimpleDateFormat (XDAT.getSiteConfigurationProperty("UI.date-time-format","MM/dd/yyyy HH:mm:ss"));
+			} catch (ConfigServiceException e) {
+				default_date_time_format= new java.text.SimpleDateFormat ("MM/dd/yyyy HH:mm:ss");
+			}
+    	}
+    	return default_date_time_format;
+    }
+    
+    public String formatDateTimeSeconds(Date d){
+    	synchronized (getDateTimeSecondsFormatter()){
+    		return getDateTimeSecondsFormatter().format(d);
+    	}
+    }
+    
+    private static java.text.SimpleDateFormat default_date_time_seconds_format=null;
+    public static java.text.SimpleDateFormat getDateTimeSecondsFormatter(){
+    	if(default_date_time_seconds_format==null){
+    		try {
+    			default_date_time_seconds_format= new java.text.SimpleDateFormat (XDAT.getSiteConfigurationProperty("UI.date-time-seconds-format","MM/dd/yyyy HH:mm:ss.SSS"));
+			} catch (ConfigServiceException e) {
+				default_date_time_seconds_format= new java.text.SimpleDateFormat ("MM/dd/yyyy HH:mm:ss.SSS");
+			}
+    	}
+    	return default_date_time_seconds_format;
+    }
+    
+    public String formatTime(Date d){
+    	synchronized (getTimeFormatter()){
+    		return getTimeFormatter().format(d);
+    	}
+    }
+    
+    private static java.text.SimpleDateFormat default_time_format=null;
+    public static java.text.SimpleDateFormat getTimeFormatter(){
+    	if(default_time_format==null){
+    		try {
+    			default_time_format= new java.text.SimpleDateFormat (XDAT.getSiteConfigurationProperty("UI.time-format","HH:mm:ss"));
+			} catch (ConfigServiceException e) {
+				default_time_format= new java.text.SimpleDateFormat ("HH:mm:ss");
+			}
+    	}
+    	return default_time_format;
     }
     
     public boolean templateExists(String screen){

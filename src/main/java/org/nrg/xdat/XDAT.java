@@ -181,6 +181,15 @@ public class XDAT implements Initializable,Configurable{
         return properties.getProperty(property);
     }
 
+    public static String getSiteConfigurationProperty(String property,String _default) throws ConfigServiceException {
+    	Properties properties = getSiteConfiguration();
+        if(properties.containsKey(property)){
+        	return properties.getProperty(property);
+        }else{
+        	return _default;
+        }
+    }
+
     public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
         Properties properties = convertStringToProperties(getPersistedSiteConfiguration().getContents());
         properties.setProperty(property, value);

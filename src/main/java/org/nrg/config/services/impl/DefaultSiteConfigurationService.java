@@ -93,10 +93,19 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     @Override
     public void setSiteConfigurationProperty(String username, String property, String value) throws ConfigServiceException {
     	initSiteConfiguration();
-        Properties properties = convertStringToProperties(getPersistedSiteConfiguration().getContents());
-        properties.setProperty(property, value);
-        setPersistedSiteConfiguration(username, properties, "Setting site configuration property value: " + property);
-        _siteConfiguration.setProperty(property, value);
+        if(propertyIsDirty(property, value)) {
+            Properties properties = convertStringToProperties(getPersistedSiteConfiguration().getContents());
+	        properties.setProperty(property, value);
+	        setPersistedSiteConfiguration(username, properties, "Setting site configuration property value: " + property);
+	        _siteConfiguration.setProperty(property, value);
+        }
+    }
+    
+    private boolean propertyIsDirty(String property, String value) {
+        return (
+        		_siteConfiguration.getProperty(property) == null && value != null)
+        		|| (_siteConfiguration.getProperty(property) != null && ! _siteConfiguration.getProperty(property).equals(value)
+        );
     }
 
     private synchronized void refreshSiteConfiguration() throws ConfigServiceException {

@@ -160,6 +160,9 @@ public class DefaultSiteConfigurationServiceTests {
     	assertEquals("fooval1", _service.getSiteConfigurationProperty("foo.prop1"));
     	_service.setSiteConfigurationProperty(ADMIN_USER, "foo.prop1", "fooval2");
     	assertEquals("fooval2", _service.getSiteConfigurationProperty("foo.prop1"));
+    	assertNull(_service.getSiteConfigurationProperty("foo.prop3"));
+    	_service.setSiteConfigurationProperty(ADMIN_USER, "foo.prop3", "fooval3");
+    	assertEquals("fooval3", _service.getSiteConfigurationProperty("foo.prop3"));
     }
     
     @Inject

@@ -166,11 +166,9 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
         Properties customProperties = getPropertiesFromFile(file);
         for (String rawPropertyName : customProperties.stringPropertyNames()) {
         	String polishedPropertyName = rawPropertyName;
-        	if(! Boolean.valueOf(persistentProperties.getProperty("allowCustomPropertiesWithDefaultNamespace"))) {
-        		if(! rawPropertyName.startsWith(namespace)) {
-        			polishedPropertyName = qualifyPropertyName(namespace, rawPropertyName);
-        		}
-        	}
+    		if(! rawPropertyName.startsWith(namespace)) {
+    			polishedPropertyName = qualifyPropertyName(namespace, rawPropertyName);
+    		}
             if (persistentProperties.containsKey(polishedPropertyName) || transientProperties.containsKey(polishedPropertyName)) {
             	throw new DuplicateConfigurationDetectedException(polishedPropertyName);
             }

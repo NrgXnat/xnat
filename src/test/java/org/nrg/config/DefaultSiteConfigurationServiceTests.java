@@ -87,15 +87,6 @@ public class DefaultSiteConfigurationServiceTests {
     	assertEquals(1, _testDBUtils.countConfigurationDataRows());
     }
     
-    @Test
-    public void initSiteConfigurationSuccessAllowCustomPropertiesWithDefaultNamespace() throws ConfigServiceException {
-    	List<String> mockConfigFileLocations = new ArrayList<String>(savedConfigFileLocations);
-    	mockConfigFileLocations.set(0, mockConfigFileLocations.get(0).concat("/allowCustomPropertiesWithDefaultNamespaceProperties"));
-    	((DefaultSiteConfigurationService) _service).setConfigFilesLocations(mockConfigFileLocations);
-   		Properties props = _service.getSiteConfiguration();
-    	assertNotNull(props.getProperty("prop2"));
-    }
-    
     @Test(expected=SiteConfigurationFileNotFoundException.class)
     public void initSiteConfigurationFailsWhenNoSiteConfigIsFound() throws ConfigServiceException {
     	List<String> mockConfigFileLocations = Arrays.asList("/bridge/to/nowhere", "/foo/bar", "/baz");

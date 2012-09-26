@@ -139,6 +139,16 @@ public class DefaultSiteConfigurationServiceTests {
     }
     
     @Test
+    public void getSiteConfigurationReturnedPropertiesShouldBeReadOnly() throws ConfigServiceException {
+    	
+    	Properties props = _service.getSiteConfiguration();
+    	assertNull(props.getProperty("foo.prop3"));
+    	props.setProperty("foo.prop3", "fooval3");
+    	props = _service.getSiteConfiguration();
+    	assertNull(props.getProperty("foo.prop3"));
+    }
+    
+    @Test
     public void getSiteConfigurationProperty() throws ConfigServiceException {
     	
     	assertEquals(_service.getSiteConfigurationProperty("foo.prop1"), "fooval1");

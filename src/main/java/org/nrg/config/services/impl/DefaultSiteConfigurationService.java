@@ -48,7 +48,9 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     @Override
     public Properties getSiteConfiguration() throws ConfigServiceException {
     	initSiteConfiguration();
-        return _siteConfiguration;
+    	Properties siteConfigurationCopy = new Properties();
+    	siteConfigurationCopy.putAll(_siteConfiguration);
+        return siteConfigurationCopy;
     }
 
     @Override

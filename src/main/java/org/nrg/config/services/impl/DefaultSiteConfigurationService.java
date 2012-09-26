@@ -32,7 +32,9 @@ import org.apache.commons.logging.LogFactory;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.exceptions.DuplicateConfigurationDetectedException;
+import org.nrg.config.exceptions.InvalidSiteConfigurationPropertyChangedListenerException;
 import org.nrg.config.exceptions.SiteConfigurationFileNotFoundException;
+import org.nrg.config.interfaces.SiteConfigurationPropertyChangedListener;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.SiteConfigurationService;
 import org.springframework.stereotype.Service;
@@ -98,6 +100,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
 	        properties.setProperty(property, value);
 	        setPersistedSiteConfiguration(username, properties, "Setting site configuration property value: " + property);
 	        _siteConfiguration.setProperty(property, value);
+	        notifyListeners(property, value);
         }
     }
     
@@ -107,7 +110,71 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
         		|| (_siteConfiguration.getProperty(property) != null && ! _siteConfiguration.getProperty(property).equals(value)
         );
     }
+    
+    private void notifyListeners(String property, String value) {
+    	notifySiteLevelListener(property, value);
+    	notifyNamespaceLevelListener(property, value);
+    	notifyPropertyLevelListener(property, value);
+    }
+    
+    private void notifySiteLevelListener(String property, String value) {
+    	notifyListener(PROPERTY_CHANGED_LISTENER_PROPERTY, property, value);
+    }
+    
+    private void notifyNamespaceLevelListener(String property, String value) {
+    	String namespace = getNamespaceForCustomProperty(property);
+    	notifyNamespaceLevelListener(namespace, property, value);
+    }
+    
+    private void notifyNamespaceLevelListener(String namespace, String property, String value) {
+    	if(! StringUtils.isBlank(namespace)) {
+	    	notifyListener(namespace + "." + PROPERTY_CHANGED_LISTENER_PROPERTY, property, value);
+    	}
+    }
 
+    private void notifyPropertyLevelListener(String property, String value) {
+    	notifyListener(property + "." + PROPERTY_CHANGED_LISTENER_PROPERTY, property, value);
+    }
+    
+    private void notifyListener(String listenerPropertyName, String property, String value) {
+    	String listenerClassName = _siteConfiguration.getProperty(listenerPropertyName);
+    	if(! StringUtils.isBlank(listenerClassName)) {
+    		Class<?> listenerClass = null;
+    		try {
+				listenerClass = Class.forName(listenerClassName);
+				SiteConfigurationPropertyChangedListener listener = null; 
+				try { 
+					listener = (SiteConfigurationPropertyChangedListener) listenerClass.newInstance();
+				}
+	    		catch(IllegalAccessException e) {
+	    			throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' did not have a public no-arg constructor to call.", listenerClassName), e);
+	    		}
+	    		catch(InstantiationException e) {
+	    			throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' is not an instantiable type.", listenerClassName), e);
+	    		}
+				catch(Exception e) {
+	    			throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' failed in the constructor.", listenerClassName), e);
+				}
+				
+				try {
+					listener.siteConfigurationPropertyChanged(property, value);
+				}
+	    		catch(Exception e) {
+	    			throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Something went wrong while invoking listener '%s'.", listener.getClass().getName()), e);
+	    		}
+    		}
+    		catch(ClassNotFoundException e) {
+    			throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' was not found.", listenerClassName), e);
+    		}
+    		catch(ExceptionInInitializerError e) {
+    			throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' failed in a static initializer.", listenerClassName), e);
+    		}
+    		catch(ClassCastException e) {
+    			throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' was not of type '%s'.", listenerClass.getName(), SiteConfigurationPropertyChangedListener.class.getName()), e);
+    		}
+    	}
+    }
+    
     private synchronized void refreshSiteConfiguration() throws ConfigServiceException {
     	prependConfigFilesLocationsRootToAllConfigFilesLocations();    	
     	
@@ -214,6 +281,15 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     
     private String getNamespaceForCustomPropertyFile(File f) {
     	return f.getName().substring(0, f.getName().indexOf("-"));
+    }
+    
+    private String getNamespaceForCustomProperty(String propertyName) {
+    	if(-1 == propertyName.indexOf(".")) {
+    		return null;
+    	}
+    	else {
+    		return propertyName.substring(0, propertyName.indexOf("."));
+    	}
     }
     
     private String qualifyPropertyName(String namespace, String unqualifiedPropertyName) {
@@ -339,6 +415,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     private static final String SYSTEM_STARTUP_CONFIG_REFRESH_USER = "admin";
     private static final String CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME = "persist";
     private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME = "siteConfiguration.properties";
+    private static final String PROPERTY_CHANGED_LISTENER_PROPERTY = "property.changed.listener";
     private Properties _siteConfiguration;
     private boolean _initialized;
 }

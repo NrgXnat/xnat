@@ -21,6 +21,10 @@ import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.exceptions.DuplicateConfigurationDetectedException;
 import org.nrg.config.exceptions.SiteConfigurationFileNotFoundException;
+import org.nrg.config.listeners.DefaultNamespacePropertyLevelListener;
+import org.nrg.config.listeners.FooNamespaceLevelListener;
+import org.nrg.config.listeners.FooPropertyLevelListener;
+import org.nrg.config.listeners.SiteLevelListener;
 import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.config.services.impl.DefaultSiteConfigurationService;
 import org.nrg.config.util.TestDBUtils;
@@ -148,12 +152,20 @@ public class DefaultSiteConfigurationServiceTests {
     @Test
     public void setSiteConfigurationProperty() throws ConfigServiceException {
     	
+    	_service.setSiteConfigurationProperty(ADMIN_USER, "prop1", "newprop1Val");
+    	assertEquals(1, DefaultNamespacePropertyLevelListener.getInvokedCount());
     	assertEquals("fooval1", _service.getSiteConfigurationProperty("foo.prop1"));
     	_service.setSiteConfigurationProperty(ADMIN_USER, "foo.prop1", "fooval2");
     	assertEquals("fooval2", _service.getSiteConfigurationProperty("foo.prop1"));
+    	assertEquals(1, FooNamespaceLevelListener.getInvokedCount());
+    	assertEquals(1, FooPropertyLevelListener.getInvokedCount());
     	assertNull(_service.getSiteConfigurationProperty("foo.prop3"));
     	_service.setSiteConfigurationProperty(ADMIN_USER, "foo.prop3", "fooval3");
     	assertEquals("fooval3", _service.getSiteConfigurationProperty("foo.prop3"));
+    	assertEquals(2, FooNamespaceLevelListener.getInvokedCount());
+    	assertEquals(1, FooPropertyLevelListener.getInvokedCount());
+    	assertEquals(1, DefaultNamespacePropertyLevelListener.getInvokedCount());
+    	assertEquals(3, SiteLevelListener.getInvokedCount());
     }
     
     @Inject

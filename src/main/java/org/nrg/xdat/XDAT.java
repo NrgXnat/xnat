@@ -90,6 +90,7 @@ public class XDAT implements Initializable,Configurable{
     private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
+    
     public static String getSiteConfigurationProperty(String property,String _default) throws ConfigServiceException {
     	Properties properties = getSiteConfiguration();
         if(properties.containsKey(property)){
@@ -98,7 +99,19 @@ public class XDAT implements Initializable,Configurable{
         	return _default;
         }
     }
-
+    
+    public static boolean getBoolSiteConfigurationProperty(String property,boolean _default) {
+    	try {
+			Properties properties = getSiteConfiguration();
+			if(properties.containsKey(property)){
+				return Boolean.valueOf(properties.getProperty(property));
+			}else{
+				return _default;
+			}
+		} catch (ConfigServiceException e) {
+			return _default;
+		}
+    }
 
 	public static boolean isAuthenticated() {
 		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();

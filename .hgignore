@@ -1,2 +1,7 @@
 glob:bin/*
 glob:target/*
+
+syntax: regexp
+^\.project$
+^\.classpath$
+^\.settings$

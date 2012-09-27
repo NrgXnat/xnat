@@ -12,12 +12,11 @@
     <parent>
         <groupId>org.nrg</groupId>
         <artifactId>nrg</artifactId>
-        <version>1.6</version>
+        <version>1.6.1</version>
         <relativePath>../nrg/pom.xml</relativePath>
     </parent>
 
     <artifactId>config</artifactId>
-    <version>1.6.1</version>
 
     <scm>
         <url>http://bitbucket.org/nrg/nrg_config</url>

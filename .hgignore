@@ -7,8 +7,8 @@ syntax: glob
 .settings
 update_deploy
 build.properties
-plugin-resources/repository/xdat/jars/xdat-beans-1.0-source.jar
-plugin-resources/repository/xdat/jars/xdat-beans-1.0.jar
+plugin-resources/repository/xdat/jars/xdat-beans-*-source.jar
+plugin-resources/repository/xdat/jars/xdat-beans-*.jar
 plugin-resources/repository/javax.persistence/jars/persistence-api-1.0.2.jar
 plugin-resources/repository/javax.persistence/jars/persistence-api-1.0.2.jar.md5
 plugin-resources/repository/org.apache.directory.installers/jars/apacheds-noarch-installer-1.5.7.jar

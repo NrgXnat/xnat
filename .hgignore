@@ -9,4 +9,6 @@ glob:target*
 syntax: regexp
 .*\.log
 .*\.orig
-
+^\.project$
+^\.classpath$
+^\.settings$

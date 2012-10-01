@@ -2,11 +2,14 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import com.google.common.collect.Maps;
+import org.apache.commons.lang.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
+import org.apache.turbine.services.rundata.DefaultTurbineRunData;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.CookieParser;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import java.lang.Long;
 import java.lang.reflect.InvocationTargetException;
@@ -22,6 +25,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
+import org.springframework.security.web.WebAttributes;
 
 
 public class Login extends VelocitySecureScreen {
@@ -29,8 +33,17 @@ public class Login extends VelocitySecureScreen {
 	@Override
 	protected void doBuildTemplate(RunData data) throws Exception {
 		Context c = TurbineVelocity.getContext(data);
+        XDATUserDetails user;
+        final Object attribute = data.getSession().getAttribute("user");
+        if (attribute != null) {
+            user = (XDATUserDetails) attribute;
+            if (user.getUsername().equalsIgnoreCase("guest")) {
+                data.getSession().removeAttribute(WebAttributes.SAVED_REQUEST);
+            }
+        }
 		String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
-		Cookie[] cookies = data.getRequest().getCookies();
+        String message = data.getMessage();
+        Cookie[] cookies = data.getRequest().getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if (cookie.getName().equalsIgnoreCase("SESSION_TIMEOUT_TIME")) {
@@ -42,8 +55,10 @@ public class Login extends VelocitySecureScreen {
                 		if((currTime.getTime()-logoutTime.getTime())<5000){
                 			data.setMessage("Session timed out at "+logoutTime.toString()+".");
                 		}
-                		else{
-                			data.setMessage("");
+                		else {
+                            if (!StringUtils.isBlank(message) && message.startsWith("Session timed out at")) {
+                			    data.setMessage("");
+                            }
                 		}
                 	}
                     break;

@@ -5,26 +5,23 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 
-import javax.mail.MessagingException;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowI;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xdat.services.AliasTokenService;
+
 import javax.mail.MessagingException;
 
 public class XDATForgotLogin extends VelocitySecureAction {
@@ -51,7 +48,6 @@ public class XDATForgotLogin extends VelocitySecureAction {
             if (temp==null){
                 data.setMessage("Unknown email address.");
                 data.setScreenTemplate("ForgotLogin.vm");
-                return;
             }else{
 				XDATUser user = new XDATUser(temp, false);
                 
@@ -71,7 +67,6 @@ public class XDATForgotLogin extends VelocitySecureAction {
 					logger.error(exception);
 					data.setMessage("Due to a technical difficulty, we are unable to send you the email containing your information.  Please contact our technical support.");
 					data.setScreenTemplate("ForgotLogin.vm");
-					return;
                 }
             }
 		} else if (!StringUtils.isBlank(username)) {
@@ -85,7 +80,6 @@ public class XDATForgotLogin extends VelocitySecureAction {
                 if (temp==null){
                     data.setMessage("Unknown username.");
                     data.setScreenTemplate("ForgotLogin.vm");
-                    return;
                 }else{
                 	XDATUser user = new XDATUser(temp, false);
 
@@ -104,7 +98,6 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     
                     try {
                     	String to = user.getEmail();
-				        String url=TurbineUtils.GetFullServerPath() + "/app/action/XDATActionRouter/xdataction/MyXNAT";
 				        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user,true,null);
 				        String text = "Dear " + user.getFirstname() + " " + user.getLastname() + ",<br/>\r\n" + "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "/app/template/ChangePassword.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
 				        XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
@@ -120,12 +113,10 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     }
 					
                     //if it can't send an email, then it should save the modified user password.
-					SaveItemHelper.authorizedSave(user,null, true, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Password Reset"));
-					
+					SaveItemHelper.authorizedSave(user, user, true, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Password Reset"));
                 }
             }else{
                 data.setScreenTemplate("ForgotLogin.vm");
-                return;
             }
         }
 
@@ -134,8 +125,6 @@ public class XDATForgotLogin extends VelocitySecureAction {
         return true;
     }
 
-	// TODO: This should be converted to use a Velocity template or property in
-	// a resource bundle.
+	// TODO: This should be converted to use a Velocity template or property in a resource bundle.
 	private static final String USERNAME_REQUEST = "<html><body>\nYou requested your username, which is: %s\n<br><br><br>Please login to the site for additional user information <a href=\"%s\">%s</a>.\n</body></html>";
-	private static final String PASSWORD_RESET = "<html><body>\nYour password has been reset to:<br>%s\n<br><br><br>Please login to the site and create a new password in the <a href=\"%s\">account settings</a>.\n</body></html>";
 }

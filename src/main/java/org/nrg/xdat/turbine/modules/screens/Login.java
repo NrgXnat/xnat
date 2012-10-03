@@ -89,16 +89,23 @@ public class Login extends VelocitySecureScreen {
         String name = provider.toString();
         if (!_providers.containsKey(name)) {
             Method[] methods = provider.getClass().getMethods();
+            Method foundMethod = null;
             for (Method method : methods) {
                 if (method.getName().equals("isVisible")) {
+                    foundMethod = method;
+                }
+            }
+            if (foundMethod != null) {
                     try {
-                        _providers.put(name, (Boolean) method.invoke(provider));
+                    _providers.put(name, (Boolean) foundMethod.invoke(provider));
                     } catch (IllegalAccessException exception) {
                         log.warn("Strange provider found with isVisible() method both accessible and inaccessible", exception);
                     } catch (InvocationTargetException exception) {
                         log.warn("Error invoking isVisible() method on provider", exception);
                     }
-                }
+            } else {
+                // We default to assuming that, if a provider without isVisible() was added, that it's implicit, so don't show it.
+                _providers.put(name, false);
             }
         }
         return _providers.get(name);

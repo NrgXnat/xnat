@@ -21,6 +21,7 @@ import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.PasswordValidatorChain;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XDATUser.PasswordComplexityException;
+import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
@@ -137,7 +138,7 @@ public class ModifyPassword extends SecureAction {
 							XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Password"));
 							
 							//need to update password expiration
-							XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(found.getStringProperty("login"), "localdb", "");
+							XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(found.getStringProperty("login"), XdatUserAuthService.LOCALDB, "");
 							auth.setPasswordUpdated(new java.util.Date());
 							XDAT.getXdatUserAuthService().update(auth);
 							data.getSession().setAttribute("expired",new Boolean(false));

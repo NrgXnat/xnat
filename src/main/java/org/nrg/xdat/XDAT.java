@@ -58,6 +58,7 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -67,6 +68,14 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
+import org.nrg.xdat.turbine.utils.PopulateItem;
+import org.nrg.xft.ItemI;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.context.SecurityContext;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * @author Tim
@@ -112,7 +121,7 @@ public class XDAT implements Initializable,Configurable{
 			return _default;
 		}
     }
-
+    
 	public static boolean isAuthenticated() {
 		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
 	}
@@ -537,5 +546,32 @@ public class XDAT implements Initializable,Configurable{
             getNotificationService().getChannelService().create(channel);
         }
         return channel;
+    }
+    
+    public static boolean loginUser(RunData data, XDATUser user, boolean forcePasswordChange) throws Exception{
+    	PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
+    	ItemI found = populater.getItem();
+    	String tempPass = found.getStringProperty("primary_password");
+    	
+    	TurbineUtils.setUser(data, user);
+
+        HttpSession session = data.getSession();
+        session.setAttribute("user",user);
+        session.setAttribute("loggedin",true);
+        session.setAttribute("forcePasswordChange",forcePasswordChange);
+        session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
+        XFTItem item = XFTItem.NewItem("xdat:user_login",user);
+        java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
+        item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
+        item.setProperty("xdat:user_login.login_date",today);
+        item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
+        SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
+        
+		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
+        grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
+    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
+    	SecurityContext securityContext = SecurityContextHolder.getContext();
+    	securityContext.setAuthentication(authentication);
+        return true;
     }
 }

@@ -2,14 +2,11 @@
 package org.nrg.xdat.turbine.modules.screens;
 
 import com.google.common.collect.Maps;
-import org.apache.commons.lang.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
-import org.apache.turbine.services.rundata.DefaultTurbineRunData;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.CookieParser;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import java.lang.Long;
 import java.lang.reflect.InvocationTargetException;
@@ -18,6 +15,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Map;
 
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.Cookie;
 import java.util.Date;
 import java.lang.String;
@@ -25,25 +23,34 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.authentication.ProviderManager;
-import org.springframework.security.web.WebAttributes;
-
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.session.SessionInformation;
+import org.springframework.security.core.session.SessionRegistry;
+import org.springframework.security.core.session.SessionRegistryImpl;
 
 public class Login extends VelocitySecureScreen {
 
 	@Override
 	protected void doBuildTemplate(RunData data) throws Exception {
-		Context c = TurbineVelocity.getContext(data);
-        XDATUserDetails user;
-        final Object attribute = data.getSession().getAttribute("user");
-        if (attribute != null) {
-            user = (XDATUserDetails) attribute;
-            if (user.getUsername().equalsIgnoreCase("guest")) {
-                data.getSession().removeAttribute(WebAttributes.SAVED_REQUEST);
-            }
+		
+		//If a user goes to the login page while already logged in, this logs them out.
+		HttpSession session = data.getRequest().getSession(false);
+        if (session != null) {
+            session.invalidate();
+        }	
+        if(XDAT.getContextService()!=null && XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class)!=null){
+	        SessionInformation si = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class).getSessionInformation(session.getId());
+	        if (si!=null) {
+	            si.expireNow();
+	        }
         }
+        SecurityContextHolder.clearContext();
+        
+		Context c = TurbineVelocity.getContext(data);
 		String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
-        String message = data.getMessage();
-        Cookie[] cookies = data.getRequest().getCookies();
+		String message = data.getMessage();
+		Cookie[] cookies = data.getRequest().getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {
                 if (cookie.getName().equalsIgnoreCase("SESSION_TIMEOUT_TIME")) {
@@ -56,10 +63,12 @@ public class Login extends VelocitySecureScreen {
                 			data.setMessage("Session timed out at "+logoutTime.toString()+".");
                 		}
                 		else {
-                            if (!StringUtils.isBlank(message) && message.startsWith("Session timed out at")) {
-                			    data.setMessage("");
-                            }
+                			if (!StringUtils.isBlank(message) && message.startsWith("Session timed out at")) {
+                				//If the message still says "Session timed out at ...", but they did not time out recently, reset it
+                				data.setMessage("");
+                			}
                 		}
+
                 	}
                     break;
                 }

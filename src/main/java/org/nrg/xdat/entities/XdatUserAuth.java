@@ -6,15 +6,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
-import javax.persistence.*;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.Temporal;
+import javax.persistence.TemporalType;
+import javax.persistence.Transient;
+import javax.persistence.UniqueConstraint;
 
+import org.apache.commons.lang.StringUtils;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
-import org.springframework.security.core.userdetails.UserDetails;
-import org.apache.commons.lang.StringUtils;
 
 @Auditable
 @Entity
@@ -30,8 +33,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 	private boolean credentialsNonExpired;
 	private Date passwordUpdated;
 	private Integer failedLoginAttempts;
-	
-	private static final long serialVersionUID = 1L;
+	private Date lastSuccessfulLogin;
 	
 	public XdatUserAuth() {
 	}
@@ -152,6 +154,14 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		this.failedLoginAttempts = count;
 	}
 
+	public Date getLastSuccessfulLogin() {
+		return lastSuccessfulLogin;
+	}
+
+	public void setLastSuccessfulLogin(Date lastSuccessfulLogin) {
+		this.lastSuccessfulLogin = lastSuccessfulLogin;
+	}
+
     @Temporal(TemporalType.TIMESTAMP)
     public Date getPasswordUpdated() {
         return passwordUpdated;
@@ -198,5 +208,4 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 	public boolean isCredentialsNonExpired() {
 		return credentialsNonExpired;
 	}
-
 }

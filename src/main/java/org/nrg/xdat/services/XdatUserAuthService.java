@@ -17,5 +17,6 @@ public interface XdatUserAuthService extends BaseHibernateService<XdatUserAuth>{
 	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id);
 	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id, String email);
 	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id, String email, String lastname, String firstname);
+	public XDATUserDetails getUserDetailsByUsernameAndMostRecentSuccessfulLogin(String username);
 	public List<XdatUserAuth> getUsersByName(String user);
 }

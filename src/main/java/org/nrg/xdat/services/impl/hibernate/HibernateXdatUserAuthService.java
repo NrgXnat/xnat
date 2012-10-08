@@ -3,6 +3,7 @@ package org.nrg.xdat.services.impl.hibernate;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Date;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.List;
@@ -12,6 +13,7 @@ import java.util.Set;
 import javax.inject.Inject;
 import javax.sql.DataSource;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -27,10 +29,7 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils.ActionNameAbsent;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils.IDAbsent;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils.JustificationAbsent;
 import org.nrg.xft.utils.AuthUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -62,7 +61,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 		XdatUserAuth example = new XdatUserAuth();
 	        example.setAuthUser(user);
 	        example.setAuthMethod(auth);
-	        if(!id.equals("")){
+	        if(! StringUtils.isBlank(id)){
 	        	example.setAuthMethodId(id);
 	        }
 	        List<XdatUserAuth> auths =  _dao.findByExample(example, EXCLUSION_PROPERTIES);
@@ -111,8 +110,23 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	@Override
 	@Transactional
 	public XDATUserDetails getUserDetailsByNameAndAuth(String username, String auth, String id, String email, String lastname, String firstname) {
-		List<UserDetails> users = loadUsersByUsernameAndAuth(username, auth, id);
+		List<XDATUserDetails> users = loadUsersByUsernameAndAuth(username, auth, id);
+		return getUserDetailsForUserList(users, username, auth, id, email, lastname, firstname);
+	}
 		
+	@Override
+	@Transactional
+	public XDATUserDetails getUserDetailsByUsernameAndMostRecentSuccessfulLogin(String username) {
+		List<XDATUserDetails> users = loadUsersByUsernameAndMostRecentSuccessfulLogin(username);
+		String auth = null, id = null;
+		if(users.size() > 0 && users.get(0) != null) {
+			auth = users.get(0).getAuthorization().getAuthMethod();
+			id = users.get(0).getAuthorization().getAuthMethodId();
+		}
+		return getUserDetailsForUserList(users, username, auth, id, null, null, null);
+	}
+		
+	private XDATUserDetails getUserDetailsForUserList(List<XDATUserDetails> users, String username, String auth, String id, String email, String lastname, String firstname) {
 		XDATUserDetails userDetails = null;
 
         if (users.size() == 0 || users.get(0)==null) {
@@ -224,15 +238,21 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return userDetails; 
 	}
 
-	public String getUsersByUsernameQuery() {
-		if(AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS>-1){
-			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS+"  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
-		}else{
-			return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
-		}
-		
+	private String getUsersByUsernameAndAuthQuery() {
+		return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ getMaxLoginAttemptsForQuery() +"  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
     }
 	
+	private String getUsersByXDATUsernameAndMostRecentSuccessfulLoginQuery() {
+		return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ getMaxLoginAttemptsForQuery() +"  and xhbm_xdat_user_auth.xdat_username = ? ORDER BY last_successful_login DESC";
+    }
+	
+	private Integer getMaxLoginAttemptsForQuery() {
+		Integer maxFailedLoginAttempts = AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS;
+		if(maxFailedLoginAttempts <= -1) {
+			maxFailedLoginAttempts = Integer.MAX_VALUE;
+		}
+		return maxFailedLoginAttempts;
+	}
 
 	public List<GrantedAuthority> loadUserAuthorities(String username) {
         return (new JdbcTemplate(_datasource)).query("SELECT login as username, 'ROLE_USER' as authority FROM xdat_user WHERE login = ?", new String[] {username}, new RowMapper<GrantedAuthority>() {
@@ -317,18 +337,27 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     	return u;
 	}
 
-	protected List<UserDetails> loadUsersByUsernameAndAuth(String username, String auth, String id) {
+	private List<XDATUserDetails> loadUsersByUsernameAndAuth(String username, String auth, String id) {
 		id = (id == null) ? "" : id;
-		List<UserDetails> u = 
-        (new JdbcTemplate(_datasource)).query(getUsersByUsernameQuery(), new String[] {username,auth,id}, new RowMapper<UserDetails>() {
-            public UserDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
+		return loadUsersByQuery(getUsersByUsernameAndAuthQuery(), username, auth, id);
+	}
+		
+	private List<XDATUserDetails> loadUsersByUsernameAndMostRecentSuccessfulLogin(String username) {
+		return loadUsersByQuery(getUsersByXDATUsernameAndMostRecentSuccessfulLoginQuery(), username);
+	}
+		
+	private List<XDATUserDetails> loadUsersByQuery(String query, String... params) {
+		List<XDATUserDetails> u = 
+        (new JdbcTemplate(_datasource)).query(query, params, new RowMapper<XDATUserDetails>() {
+            public XDATUserDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
                 String username = rs.getString(1);
                 String method = rs.getString(2);
                 String xdatUsername = rs.getString(3);
                 boolean enabled = rs.getBoolean(4);
                 Integer failedLoginAttempts = rs.getInt(5);
                 String methodId = rs.getString(6);
-                XdatUserAuth u = new XdatUserAuth(username, method, methodId, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, xdatUsername,failedLoginAttempts);
+                Date lastSuccessfulLogin = rs.getDate(7);
+                XdatUserAuth u = new XdatUserAuth(username, method, methodId, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, xdatUsername,failedLoginAttempts, lastSuccessfulLogin);
                 XDATUserDetails xdat = null;
 				try {
 					xdat = new XDATUserDetails(u.getXdatUsername());

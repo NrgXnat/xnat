@@ -83,7 +83,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		this.failedLoginAttempts=failedLoginAttempts;
 	}
 	
-	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts) {
+	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts, Date lastSuccessfulLogin) {
 		this.authUser = user;
 		this.authMethod = method;
 		this.authMethodId = methodId;
@@ -94,6 +94,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		this.xdatUsername = xdatUsername;
 		passwordUpdated = new Date();
 		this.failedLoginAttempts=failedLoginAttempts;
+		this.lastSuccessfulLogin = lastSuccessfulLogin;
 	}
 	
 	public XdatUserAuth(XdatUserAuth other)
@@ -108,6 +109,7 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		this.xdatUsername = other.xdatUsername;
 		passwordUpdated = other.passwordUpdated;
 		this.failedLoginAttempts = other.failedLoginAttempts;
+		this.lastSuccessfulLogin = other.lastSuccessfulLogin;
 	}
 
 	public String getXdatUsername() {

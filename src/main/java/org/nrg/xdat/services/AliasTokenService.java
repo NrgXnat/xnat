@@ -13,9 +13,21 @@ import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.entities.AliasToken;
 
+import java.util.List;
 import java.util.Set;
 
 public interface AliasTokenService extends BaseHibernateService<AliasToken> {
+    /**
+     * Finds all active tokens for a particular user.
+     * @param xdatUserId    The user ID from the XdatUser table.
+     * @return An list of the {@link AliasToken alias tokens} issued to the indicated user.
+     */
+    abstract public List<AliasToken> findTokensForUser(String xdatUserId);
+    /**
+     * Finds and deactivates all active tokens for a particular user.
+     * @param xdatUserId    The user ID from the XdatUser table.
+     */
+    abstract public void deactivateAllTokensForUser(String xdatUserId);
     /**
      * Issues a token to the user with the indicated name.
      *

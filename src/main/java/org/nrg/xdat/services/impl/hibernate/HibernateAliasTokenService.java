@@ -23,6 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 import java.lang.Override;
 import java.lang.String;
+import java.util.List;
 import java.util.Set;
 
 @Service
@@ -34,6 +35,30 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
     @Override
     public AliasToken newEntity() {
         return new AliasToken();
+    }
+
+    /**
+     * Finds all active tokens for a particular user.
+     * @param xdatUserId    The user ID from the XdatUser table.
+     * @return An list of the {@link AliasToken alias tokens} issued to the indicated user.
+     */
+    @Override
+    @Transactional
+    public List<AliasToken> findTokensForUser(String xdatUserId) {
+        return getDao().findByXdatUserId(xdatUserId);
+
+    }
+    /**
+     * Finds and deactivates all active tokens for a particular user.
+     * @param xdatUserId    The user ID from the XdatUser table.
+     */
+    @Override
+    @Transactional
+    public void deactivateAllTokensForUser(String xdatUserId) {
+        List<AliasToken> tokens = findTokensForUser(xdatUserId);
+        for(AliasToken token : tokens) {
+            token.setEnabled(false);
+        }
     }
 
     @Override

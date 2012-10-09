@@ -41,7 +41,7 @@ public class AliasTokenDAO extends AbstractHibernateDAO<AliasToken> {
 
     public List<AliasToken> findByXdatUserId(String xdatUserId, boolean includeDisabled) {
         Criteria criteria = getSession().createCriteria(getParameterizedType());
-        criteria.add(Restrictions.eq("xdat_user_id", xdatUserId));
+        criteria.add(Restrictions.eq("xdatUserId", xdatUserId));
         if (!includeDisabled) {
             criteria.add(Restrictions.eq("enabled", true));
         }

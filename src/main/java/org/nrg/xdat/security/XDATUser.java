@@ -158,7 +158,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public boolean login(String password) throws PasswordAuthenticationException, Exception {
         loggedIn = false;
 
-
         if (!this.isEnabled()) {
             throw new EnabledException(this.getUsername());
         }
@@ -258,6 +257,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     ;
+    
+    public static class VerifiedException extends FailedLoginException {
+        public VerifiedException(String login) {
+            super("User (" + login + ") Account is unverified.", login);
+        }
+    }
+
+    ;
 
     public static class ActivationException extends FailedLoginException {
         public ActivationException(String login) {
@@ -295,7 +302,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     public boolean isEnabled() {
         try {
-            return this.getItem().getBooleanProperty("enabled", false);
+            return this.getItem().getBooleanProperty("enabled", true);
+        } catch (Exception e) {
+            return false;
+        }
+    }
+    
+    public boolean isVerified() {
+        try {
+            return this.getItem().getBooleanProperty("verified", true);
         } catch (Exception e) {
             return false;
         }
@@ -2635,10 +2650,23 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		        toSave.setProperty("login", authenticatedUser.getLogin());
 		        toSave.setProperty("primary_password", found.getProperty("primary_password"));
 		        toSave.setProperty("email", found.getProperty("email"));
+		        if(found.getProperty("verified")!=null && !(found.getProperty("verified").equals(""))){
+		        	toSave.setProperty("verified", found.getProperty("verified"));
+		        }
+		        if(found.getProperty("enabled")!=null && !(found.getProperty("enabled").equals(""))){
+		        	toSave.setProperty("enabled", found.getProperty("enabled"));
+		        }
 		        SaveItemHelper.authorizedSave(toSave, authenticatedUser, false, false,ci);
 
 		        authenticatedUser.setProperty("primary_password", found.getProperty("primary_password"));
 		        authenticatedUser.setProperty("email", found.getProperty("email"));
+		        if(found.getProperty("verified")!=null && !(found.getProperty("verified").equals(""))){
+		        	authenticatedUser.setProperty("verified", found.getProperty("verified"));
+		        }
+		        if(found.getProperty("enabled")!=null && !(found.getProperty("enabled").equals(""))){
+		        	authenticatedUser.setProperty("enabled", found.getProperty("enabled"));
+		        }
+		        
 		    } else {
 		        throw new InvalidPermissionException("Unauthorized user modification attempt");
 		    }

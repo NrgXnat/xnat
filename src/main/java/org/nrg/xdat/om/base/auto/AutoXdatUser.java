@@ -412,6 +412,35 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 		_Enabled=null;
 		} catch (Exception e1) {logger.error(e1);}
 	}
+	
+	//FIELD
+
+	private Boolean _Verified=null;
+
+	/**
+	 * @return Returns the verified.
+	 */
+	public Boolean getVerified() {
+		try{
+			if (_Verified==null){
+				_Verified=getBooleanProperty("verified");
+				return _Verified;
+			}else {
+				return _Verified;
+			}
+		} catch (Exception e1) {logger.error(e1);return null;}
+	}
+
+	/**
+	 * Sets the value for verified.
+	 * @param v Value to Set.
+	 */
+	public void setVerified(Object v){
+		try{
+		setBooleanProperty(SCHEMA_ELEMENT_NAME + "/verified",v);
+		_Verified=null;
+		} catch (Exception e1) {logger.error(e1);}
+	}
 
 	//FIELD
 

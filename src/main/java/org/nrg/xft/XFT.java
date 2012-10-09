@@ -778,6 +778,23 @@ public class XFT {
         XFT.RequireLogin=s;
     }
 
+    private static String EmailVerification = "";
+    public static boolean GetEmailVerification()
+    {
+        if(XFT.EmailVerification==null){
+            return false;
+        }else if(XFT.EmailVerification.equalsIgnoreCase("false") || XFT.EmailVerification.equalsIgnoreCase("1"))
+        {
+            return false;
+        }else{
+            return true;
+        }
+    }
+
+    public static void SetEmailVerification(String s)
+    {
+        XFT.EmailVerification=s;
+    }    
 
     private static String UserRegistration = "";
     public static boolean GetUserRegistration()

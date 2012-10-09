@@ -18,6 +18,7 @@ import org.nrg.xdat.om.XdatUserGroupid;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
@@ -28,6 +29,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xdat.services.AliasTokenService;
 
 public class ModifyUserGroups extends SecureAction {
 
@@ -139,6 +141,11 @@ public class ModifyUserGroups extends SecureAction {
         data.getParameters().setString("search_value",found.getProperty(org.nrg.xft.XFT.PREFIX + ":user" + XFT.PATH_SEPERATOR + "login").toString());
         data.setAction("DisplayItemAction");
         VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance("DisplayItemAction");
+        
+        if(found.getStringProperty("enabled").equals("false")){
+        	//When a user is disabled, deactivate all their AliasTokens
+        	XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(found.getStringProperty("login"));
+        }
         action.doPerform(data, context);
     }
 

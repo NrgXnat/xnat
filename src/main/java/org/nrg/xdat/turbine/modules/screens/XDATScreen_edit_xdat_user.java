@@ -27,6 +27,7 @@ public class XDATScreen_edit_xdat_user extends AdminScreen {
 				try {
 					item = XFTItem.NewItem(org.nrg.xft.XFT.PREFIX + ":user",TurbineUtils.getUser(data));
 					item.setProperty("enabled",Boolean.FALSE);
+					item.setProperty("verified",Boolean.FALSE);
 					context.put("item",item);
 					context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
 					context.put("search_element",org.nrg.xft.XFT.PREFIX + ":user");
@@ -58,4 +59,3 @@ public class XDATScreen_edit_xdat_user extends AdminScreen {
 		}
 	}
 }
-

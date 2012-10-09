@@ -128,6 +128,17 @@ public interface XdatUserI {
 	 * @param v Value to Set.
 	 */
 	public void setEnabled(Object v);
+	
+	/**
+	 * @return Returns the verified.
+	 */
+	public Boolean getVerified();
+
+	/**
+	 * Sets the value for verified.
+	 * @param v Value to Set.
+	 */
+	public void setVerified(Object v);
 
 	/**
 	 * @return Returns the xdat_user_id.

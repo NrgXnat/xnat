@@ -23,6 +23,7 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventUtils;
@@ -30,6 +31,8 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.services.AliasTokenService;
 
 public class ModifyEmail extends SecureAction {
 
@@ -123,13 +126,12 @@ public class ModifyEmail extends SecureAction {
                 			data.setScreenTemplate("XDATScreen_MyXNAT.vm");
                 			return;
                 		}
-                		
                 		String old=authenticatedUser.getEmail();
 	                	XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));
 	                	ItemI item = TurbineUtils.getUser(data);
 	                	item.setProperty("xdat:user.email", newemail);
-                	
 	                	AdminUtils.sendUserHTMLEmail("Email address changed.", "Your email address was successfully changed to "+found.getProperty("email") + ".", true, new String[]{old,newemail});
+	                	data.setMessage("Email address changed.");
                 	}else{
                         data.setMessage("Email address unchanged.");
                         data.setScreenTemplate("Index.vm");
@@ -151,7 +153,6 @@ public class ModifyEmail extends SecureAction {
                 ElementSecurity.refresh();
                 
             }
-            data.setMessage("Email changed.");
             data.setScreenTemplate("Index.vm");
         }
     }

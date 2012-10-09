@@ -8,9 +8,10 @@ package org.nrg.xdat.turbine.modules.actions;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.UUID;
-
+import javax.mail.MessagingException;
 import javax.servlet.http.HttpSession;
-
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.services.AliasTokenService;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
@@ -34,7 +35,6 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.springframework.mail.MailSendException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -59,7 +59,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
             
             if (temp==null)
             {
-            	if(!found.getStringProperty("email").equals(AdminUtils.getAdminEmailId()))
+            	if(found.getStringProperty("email")==null || (!found.getStringProperty("email").equals(AdminUtils.getAdminEmailId())))
             	{
             		String emailWithWhite = found.getStringProperty("email");
             		String noWhiteEmail = emailWithWhite.trim();
@@ -84,10 +84,18 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                
 		                if (autoApproval)
 		                {
-		                    found.setProperty("enabled","true");
+		                	if(XDAT.verificationOn()){
+		                		found.setProperty("enabled","false");
+		                	}
+		                	else{
+		                		found.setProperty("enabled","true");
+		                	}
+		                    
 		                }else{
 		                    found.setProperty("enabled","false");
 		                }
+		                
+		                found.setProperty("verified","false");
 		                
 		                found.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name","SiteUser");
 	                    found.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name","DataManager");
@@ -102,41 +110,65 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	
 		                if (autoApproval)
 		                {
-                            TurbineUtils.setUser(data, newUser);
+                            if(XDAT.verificationOn()){
+                            	try {
+                            		String subject = TurbineUtils.GetSystemName() + " Email Verification";
+                            		String admin = AdminUtils.getAdminEmailId();
+                                	String to = newUser.getEmail();
+            				        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(newUser,true,null);
+            				        String text = "Dear " + newUser.getFirstname() + " " + newUser.getLastname() + ",<br/>\r\n" + "Please click this link to verify your email address: " + TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
+                                    XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
+            				        context.put("emailTo", to);
+            				        context.put("emailUsername", (String)found.getProperty("login"));
+            				        data.setRedirectURI(null);
+                                    data.setScreenTemplate("VerificationSent.vm");
+                                } catch (MessagingException e) {
+                                    logger.error("Unable to send mail",e);
+                                    System.out.println("Error sending Email");
 
-                            HttpSession session = data.getSession();
-		                    session.setAttribute("user",newUser);
-		                    session.setAttribute("loggedin",true);
-		                    data.setMessage("User registration complete.");
-		                    
-		                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-		                    
-		                    String sub = "New User Created: " + newUser.getUsername();
-		                    String msg = this.getAutoApprovalTextMsg(data,newUser);
-		                    
-		                    
-		                    if (AdminUtils.GetNewUserRegistrationsEmail())
-		                        AdminUtils.sendAdminEmail(sub, msg);
-		
-		                    XFTItem item = XFTItem.NewItem("xdat:user_login",newUser);
-		                    java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-		                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
-		                    item.setProperty("xdat:user_login.login_date",today);
-		                    item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
-		                    SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
-		                    
-							Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
-		                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
-		    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
-		    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
-		    		    	securityContext.setAuthentication(authentication);
-							
-		                    try{
-		                    	directRequest(data,context,newUser);
-		                    }catch(Exception e){
-		                        logger.error(e);
-		                    }
-		                }else{
+                                    data.setMessage("Due to a technical difficulty, we are unable to send you the verification email. Please contact our technical support.");
+                                    data.setScreenTemplate("Login.vm");
+                                    return;
+                                }
+                            }
+                            else{
+	                            TurbineUtils.setUser(data, newUser);
+	
+	                            HttpSession session = data.getSession();
+			                    session.setAttribute("user",newUser);
+			                    session.setAttribute("loggedin",true);
+			                    data.setMessage("User registration complete.");
+			                    
+			                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
+			                    
+			                    String sub = "New User Created: " + newUser.getUsername();
+			                    String msg = this.getAutoApprovalTextMsg(data,newUser);
+			                    
+			                    
+			                    if (AdminUtils.GetNewUserRegistrationsEmail())
+			                        AdminUtils.sendAdminEmail(sub, msg);
+			
+			                    XFTItem item = XFTItem.NewItem("xdat:user_login",newUser);
+			                    java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
+			                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
+			                    item.setProperty("xdat:user_login.login_date",today);
+			                    item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
+			                    SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
+			                    
+								Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
+			                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
+			    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
+			    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
+			    		    	securityContext.setAuthentication(authentication);
+								
+			                    try{
+			                    	directRequest(data,context,newUser);
+			                    }catch(Exception e){
+			                        logger.error(e);
+			                    }
+                            }
+		                }
+                        else{
 		                    
 		                    try{
 		                    	directRequest(data,context,newUser);
@@ -156,9 +188,23 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                    if (TurbineUtils.HasPassedParameter("lab", data))
 		                        lab = (String)TurbineUtils.GetPassedParameter("lab", data);
 
-                            try {
-                                AdminUtils.sendNewUserRequestNotification(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
-                            } catch (MailSendException exception) {
+		                    try {
+                                if(XDAT.verificationOn()){
+                            		String subject = TurbineUtils.GetSystemName() + " Login Request";
+                            		String admin = AdminUtils.getAdminEmailId();
+                                	String to = newUser.getEmail();
+            				        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(newUser,true,null);
+            				        String text = "Dear " + newUser.getFirstname() + " " + newUser.getLastname() + ",<br/>\r\n" + "Please click this link to verify your email address: " + TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
+            				        XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
+            				        context.put("emailTo", to);
+            				        context.put("emailUsername", (String)found.getProperty("login"));
+            				        data.setRedirectURI(null);
+                                    data.setScreenTemplate("VerificationSent.vm");
+                                }
+                                else{// If verification is on, the user must verify their email before the admin gets emailed.
+                                	AdminUtils.sendNewUserRequestNotification(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
+                                }
+                            } catch (MessagingException exception) {
                                 logger.error("Error occurred sending new user request email", exception);
                             } finally {
                                 data.setRedirectURI(null);
@@ -280,7 +326,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
         data.setScreenTemplate("Index.vm");
         
-        if (XFT.GetUserRegistration()){
+        if (XFT.GetUserRegistration() && !XDAT.verificationOn()){
          if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);
             VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);

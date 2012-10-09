@@ -46,8 +46,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class HibernateXdatUserAuthService extends AbstractHibernateEntityService<XdatUserAuth> implements XdatUserAuthService {
 
-    private static final String[] EXCLUSION_PROPERTIES = new String[] {"xdatUsername", "id", "enabled", "created", "timestamp", "disabled","failedLoginAttempts" };
-    private static final String[] EXCLUSION_PROPERTIES_USERNAME = new String[] {"xdatUsername", "id", "enabled", "created", "timestamp", "disabled","authMethodId","failedLoginAttempts"};
+    private static final String[] EXCLUSION_PROPERTIES = new String[] {"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled","failedLoginAttempts" };
+    private static final String[] EXCLUSION_PROPERTIES_USERNAME = new String[] {"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled","authMethodId","failedLoginAttempts"};
 
     protected final Log logger = LogFactory.getLog(getClass());
     
@@ -146,6 +146,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.lastname", lastname);
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.firstname", firstname);
 						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password.encrypt", "true");
+						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.verified", "false");
 	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.enabled", newUserAccountsAreAutoEnabled().toString());
 						
 						PopulateItem populater = new PopulateItem(newUserPrperties,null,org.nrg.xft.XFT.PREFIX + ":user",true);

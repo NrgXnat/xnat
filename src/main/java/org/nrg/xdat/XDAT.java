@@ -122,6 +122,10 @@ public class XDAT implements Initializable,Configurable{
 		}
     }
     
+	public static boolean verificationOn() {
+		return getBoolSiteConfigurationProperty("emailVerification",false);
+	}
+	
 	public static boolean isAuthenticated() {
 		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
 	}

@@ -48,7 +48,7 @@ public class EmailAction extends SecureAction {
 		sendMessage(data, context);
 	}
 
-	private void sendMessage(RunData data, Context context) {
+	public void sendMessage(RunData data, Context context) {
 
 		if (!StringUtils.isBlank(toAddress) || !StringUtils.isBlank(ccAddress) || !StringUtils.isBlank(bccAddress)) {
 			if (AdminUtils.GetPageEmail()) {

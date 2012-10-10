@@ -59,17 +59,14 @@ public class XDATRegisterUser extends VelocitySecureAction {
             
             if (temp==null)
             {
-            	if(found.getStringProperty("email")==null || (!found.getStringProperty("email").equals(AdminUtils.getAdminEmailId())))
-            	{
-            		String emailWithWhite = found.getStringProperty("email");
-            		String noWhiteEmail = emailWithWhite.trim();
-            		found.setProperty("email", noWhiteEmail);
-                    search = new ItemSearch();
-                    search.setAllowMultiples(false);
-                    search.setElement("xdat:user");
-                    search.addCriteria("xdat:user.email",found.getProperty("email"));
-                    temp = search.exec().getFirst();
-            	}
+            	String emailWithWhite = found.getStringProperty("email");
+        		String noWhiteEmail = emailWithWhite.trim();
+        		found.setProperty("email", noWhiteEmail);
+                search = new ItemSearch();
+                search.setAllowMultiples(false);
+                search.setElement("xdat:user");
+                search.addCriteria("xdat:user.email",found.getProperty("email"));
+                temp = search.exec().getFirst();
 
                 if (temp==null)
                 {
@@ -190,6 +187,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
 		                    try {
                                 if(XDAT.verificationOn()){
+                                	// If verification is on, the user must verify their email before the admin gets emailed.
                             		String subject = TurbineUtils.GetSystemName() + " Login Request";
                             		String admin = AdminUtils.getAdminEmailId();
                                 	String to = newUser.getEmail();
@@ -201,14 +199,13 @@ public class XDATRegisterUser extends VelocitySecureAction {
             				        data.setRedirectURI(null);
                                     data.setScreenTemplate("VerificationSent.vm");
                                 }
-                                else{// If verification is on, the user must verify their email before the admin gets emailed.
+                                else{
                                 	AdminUtils.sendNewUserRequestNotification(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
+	                            	data.setRedirectURI(null);
+	                                data.setScreenTemplate("PostRegister.vm");
                                 }
                             } catch (MessagingException exception) {
                                 logger.error("Error occurred sending new user request email", exception);
-                            } finally {
-                                data.setRedirectURI(null);
-                                data.setScreenTemplate("PostRegister.vm");
                             }
 		                }
 	                }else{

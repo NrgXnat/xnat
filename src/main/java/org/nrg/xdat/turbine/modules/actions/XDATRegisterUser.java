@@ -152,17 +152,21 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			                    item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
 			                    SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
 			                    
-								Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
-			                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
-			    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
-			    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
-			    		    	securityContext.setAuthentication(authentication);
+								//Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
+			                    //grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
+			    		    	//Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
+			    		    	//SecurityContext securityContext = SecurityContextHolder.getContext();
+			    		    	//securityContext.setAuthentication(authentication);
 								
-			                    try{
-			                    	directRequest(data,context,newUser);
-			                    }catch(Exception e){
-			                        logger.error(e);
-			                    }
+			                    //try{
+			                    //	directRequest(data,context,newUser);
+			                    //}catch(Exception e){
+			                    //    logger.error(e);
+			                    //}
+			                    
+			                    //Due to bug that was causing users to not be logged in correctly after registration, we redirect users to the login page after registration.
+			                    data.setMessage("Registration successful. Please log in.");
+                                data.setScreenTemplate("Login.vm");
                             }
 		                }
                         else{

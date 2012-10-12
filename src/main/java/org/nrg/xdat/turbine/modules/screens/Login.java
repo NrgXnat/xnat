@@ -34,23 +34,26 @@ public class Login extends VelocitySecureScreen {
 
 	@Override
 	protected void doBuildTemplate(RunData data) throws Exception {
+		String message = data.getMessage();
 		
-		//If a user goes to the login page while already logged in, this logs them out.
-		HttpSession session = data.getRequest().getSession(false);
-        if (session != null) {
-            session.invalidate();
-        }	
-        if(XDAT.getContextService()!=null && XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class)!=null){
-	        SessionInformation si = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class).getSessionInformation(session.getId());
-	        if (si!=null) {
-	            si.expireNow();
+		if (!StringUtils.isBlank(message) && (message.startsWith("Password changed") || message.startsWith("Registration successful"))) {
+		//If a user goes to the login page after changing their password, this logs them out.
+			HttpSession session = data.getRequest().getSession(false);
+	        if (session != null) {
+	            session.invalidate();
+	            if(XDAT.getContextService()!=null && XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class)!=null){
+			        SessionInformation si = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class).getSessionInformation(session.getId());
+			        if (si!=null) {
+			            si.expireNow();
+			        }
+		        }
 	        }
-        }
-        SecurityContextHolder.clearContext();
-        
+	        SecurityContextHolder.clearContext();	
+		}
+		
 		Context c = TurbineVelocity.getContext(data);
 		String failed = (String)TurbineUtils.GetPassedParameter("failed", data);
-		String message = data.getMessage();
+		
 		Cookie[] cookies = data.getRequest().getCookies();
         if (cookies != null) {
             for (Cookie cookie : cookies) {

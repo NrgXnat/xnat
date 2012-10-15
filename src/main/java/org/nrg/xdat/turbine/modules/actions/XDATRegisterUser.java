@@ -188,7 +188,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                    try {
                                 if(XDAT.verificationOn()){
                                 	// If verification is on, the user must verify their email before the admin gets emailed.
-                            		String subject = TurbineUtils.GetSystemName() + " Login Request";
+                            		String subject = TurbineUtils.GetSystemName() + " Email Verification";
                             		String admin = AdminUtils.getAdminEmailId();
                                 	String to = newUser.getEmail();
             				        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(newUser,true,null);

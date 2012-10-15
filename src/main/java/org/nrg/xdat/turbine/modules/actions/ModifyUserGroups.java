@@ -30,6 +30,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 
 public class ModifyUserGroups extends SecureAction {
 
@@ -145,6 +146,14 @@ public class ModifyUserGroups extends SecureAction {
         if(found.getStringProperty("enabled").equals("false")){
         	//When a user is disabled, deactivate all their AliasTokens
         	XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(found.getStringProperty("login"));
+        }
+        else if (found.getStringProperty("enabled").equals("true")){
+        	//When a user is enabled, notify the administrator
+        	try {
+                AdminUtils.sendNewUserEmailMessage(oldUser.getUsername(), oldUser.getEmail(), context);
+            } catch (Exception e) {
+                logger.error("",e);
+            }
         }
         action.doPerform(data, context);
     }

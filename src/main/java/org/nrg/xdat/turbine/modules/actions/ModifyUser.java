@@ -79,11 +79,33 @@ public class ModifyUser extends SecureAction {
 			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 			return;
 		}
+		
 		XdatUser oldUser=XdatUser.getXdatUsersByLogin(login, null, false);
+		
+		if(oldUser!=null && found.getProperty("xdat_user_id")==null){
+			data.setMessage("User " + login + " already exists");
+			data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");
+			return;
+		}
+		
+		if(found.getProperty("xdat_user_id")!=null){
+			XdatUser byId=XdatUser.getXdatUsersByXdatUserId(found.getProperty("xdat_user_id"), authenticatedUser, false);
+			if(!byId.getLogin().equals(login)){
+				data.setMessage("Unable to rename user accounts");
+				data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");
+				return;
+			}
+		}
+		
 		String newPassword=found.getStringProperty("primary_password");
-		if(newPassword!=null && !newPassword.equals("")){
+		if(StringUtils.isNotEmpty(newPassword)){
 			found.setProperty("verified", "1");
-		}	
+		}else{
+			data.setMessage("Password cannot be empty.");
+			data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");
+			return;
+		}
+		
 		try {
 			XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM,((oldUser==null))?"Added User "+login:"Modified User "+login));
 		} catch (InvalidPermissionException e) {

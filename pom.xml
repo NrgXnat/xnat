@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.nrg</groupId>
     <artifactId>nrg</artifactId>
@@ -98,18 +98,18 @@
                 <version>${nrg.config.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.nrg</groupId>
-                <artifactId>transaction</artifactId>
+        	    <groupId>org.nrg</groupId>
+            	<artifactId>transaction</artifactId>
                 <version>${nrg.config.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.nrg</groupId>
-                <artifactId>DicomEdit</artifactId>
+        	    <groupId>org.nrg</groupId>
+            	<artifactId>DicomEdit</artifactId>
                 <version>${nrg.dicomedit.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.nrg</groupId>
-                <artifactId>DicomUtils</artifactId>
+        	    <groupId>org.nrg</groupId>
+            	<artifactId>DicomUtils</artifactId>
                 <version>${nrg.dicomutils.version}</version>
             </dependency>
 
@@ -213,8 +213,8 @@
                 <version>${hibernate.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.0-api</artifactId>
+            	<groupId>org.hibernate.javax.persistence</groupId>
+            	<artifactId>hibernate-jpa-2.0-api</artifactId>
                 <version>${hibernate-jpa.version}</version>
             </dependency>
             <dependency>
@@ -256,12 +256,12 @@
                 <groupId>commons-httpclient</groupId>
                 <artifactId>commons-httpclient</artifactId>
                 <version>${commons-httpclient.version}</version>
-                <exclusions>
-                    <exclusion>
-                        <groupId>commons-codec</groupId>
-                        <artifactId>commons-codec</artifactId>
-                    </exclusion>
-                </exclusions>
+    			<exclusions>
+	    			<exclusion>
+		    			<groupId>commons-codec</groupId>
+		    			<artifactId>commons-codec</artifactId>
+				    </exclusion>
+    			</exclusions>
             </dependency>
             <dependency>
                 <groupId>commons-lang</groupId>
@@ -293,17 +293,17 @@
                 <artifactId>commons-io</artifactId>
                 <version>${commons-io.version}</version>
             </dependency>
-            <dependency>
-                <groupId>dcm4che</groupId>
-                <artifactId>dcm4che-core</artifactId>
+	    	<dependency>
+    			<groupId>dcm4che</groupId>
+    			<artifactId>dcm4che-core</artifactId>
                 <version>${dcm4che.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>dcm4che</groupId>
-                <artifactId>dcm4che-iod</artifactId>
-                <version>${dcm4che.version}</version>
-            </dependency>
-            <dependency>
+		    </dependency>
+    		<dependency>
+	    		<groupId>dcm4che</groupId>
+		    	<artifactId>dcm4che-iod</artifactId>
+    			<version>${dcm4che.version}</version>
+	    	</dependency>
+		    <dependency>
                 <groupId>org.apache.xmlbeans</groupId>
                 <artifactId>xmlbeans</artifactId>
                 <version>${xmlbeans.version}</version>
@@ -319,10 +319,10 @@
                 <version>${xmlbeans.version}</version>
             </dependency>
             <dependency>
-                <groupId>com.google.guava</groupId>
-                <artifactId>guava</artifactId>
+			    <groupId>com.google.guava</groupId>
+    			<artifactId>guava</artifactId>
                 <version>${guava.version}</version>
-            </dependency>
+    		</dependency>
             <dependency>
                 <groupId>gnu.getopt</groupId>
                 <artifactId>java-getopt</artifactId>
@@ -436,11 +436,11 @@
                 <artifactId>ant</artifactId>
                 <version>${ant.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.antlr</groupId>
-                <artifactId>antlr-runtime</artifactId>
+    		<dependency>
+	    		<groupId>org.antlr</groupId>
+		    	<artifactId>antlr-runtime</artifactId>
                 <version>${antlr.version}</version>
-            </dependency>
+    		</dependency>
             <dependency>
                 <groupId>turbine</groupId>
                 <artifactId>turbine</artifactId>

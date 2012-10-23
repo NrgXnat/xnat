@@ -5,7 +5,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>org.nrg</groupId>
     <artifactId>nrg</artifactId>
-    <version>1.6.1</version>
+    <version>1.6.2-SNAPSHOT</version>
     <packaging>pom</packaging>
     <name>NRG Parent POM</name>
     <url>http://nrg.wustl.edu</url>
@@ -19,7 +19,7 @@
         <xnat.version>1.6.1</xnat.version>
         <xdat.version>1.6.1</xdat.version>
         <nrg.config.version>1.6.1</nrg.config.version>
-        <nrg.framework.version>1.6.1</nrg.framework.version>
+        <nrg.framework.version>1.6.2-SNAPSHOT</nrg.framework.version>
         <nrg.dicomedit.version>2.3.0</nrg.dicomedit.version>
         <nrg.dicomutils.version>1.2.0</nrg.dicomutils.version>
 

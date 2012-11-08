@@ -17,6 +17,8 @@ import java.util.Iterator;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.collections.DisplayFieldCollection;
 import org.nrg.xdat.collections.DisplayFieldRefCollection;
 import org.nrg.xdat.schema.SchemaElement;
@@ -1120,5 +1122,59 @@ public class DisplayManager {
             return elementName;
         }
 	}
+
+    public String getSingularDisplayNameForElement(String elementName) {
+	try {
+	    SchemaElement se = SchemaElement.GetElement(elementName);
+	    return se.getSingularDescription();
+	} catch (Exception e) {
+	    return elementName;
+	}
+    }
+
+    public String getPluralDisplayNameForElement(String elementName) {
+	try {
+	    SchemaElement se = SchemaElement.GetElement(elementName);
+	    return se.getPluralDescription();
+	} catch (Exception e) {
+	    return elementName;
+	}
+    }
+
+    public String getSingularDisplayNameForProject() {
+	return getSingularDisplayNameForElement("xnat:projectData");
+    }
+
+    public String getPluralDisplayNameForProject() {
+	return getPluralDisplayNameForElement("xnat:projectData");
+    }
+
+    public String getSingularDisplayNameForSubject() {
+	return getSingularDisplayNameForElement("xnat:subjectData");
+    }
+
+    public String getPluralDisplayNameForSubject() {
+	return getPluralDisplayNameForElement("xnat:subjectData");
+    }
+
+    /**
+     * xnat:imageSessionData is not an instantiable data type, and it seems silly to make it so just to reference the
+     * singular/plural display names, so we'll just use a site config property for this one.
+     */
+    public String getSingularDisplayNameForImageSession() throws ConfigServiceException {
+	return XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.singular");
+    }
+
+    public String getPluralDisplayNameForImageSession() throws ConfigServiceException {
+	return XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.plural");
+    }
+
+    public String getSingularDisplayNameForMRSession() {
+	return getSingularDisplayNameForElement("xnat:mrSessionData");
+    }
+
+    public String getPluralDisplayNameForMRSession() {
+	return getPluralDisplayNameForElement("xnat:mrSessionData");
+    }
 }
 

@@ -1162,11 +1162,13 @@ public class DisplayManager {
      * singular/plural display names, so we'll just use a site config property for this one.
      */
     public String getSingularDisplayNameForImageSession() throws ConfigServiceException {
-	return XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.singular");
+	return org.apache.commons.lang.StringUtils.defaultIfEmpty(
+		XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.singular"), "Session");
     }
 
     public String getPluralDisplayNameForImageSession() throws ConfigServiceException {
-	return XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.plural");
+	return org.apache.commons.lang.StringUtils.defaultIfEmpty(
+		XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.plural"), "Sessions");
     }
 
     public String getSingularDisplayNameForMRSession() {

@@ -668,10 +668,15 @@ public class PoolDBUtils {
             {
                 GenericWrapperField sf = (GenericWrapperField)keyIter.next();
                 Object id = item.getProperty(sf);
-                if (count++>0)ids+=",";
+
                 try {
+	                if(id==null){
+	                	id=item.getProperty(sf.getXMLPathString(item.getGenericSchemaElement().getXSIType()));
+	                }
+	                
+	                if (count++>0)ids+=",";
 					ids+=DBAction.ValueParser(id, sf,true);
-				} catch (InvalidValueException e) {
+				} catch (Exception e) {
 					logger.error("",e);
 				}
             }
@@ -684,8 +689,6 @@ public class PoolDBUtils {
 
             logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + login + "): " + StringUtils.ReplaceStr(query,"\n"," "));
 
-        } catch (XFTInitException e) {
-            logger.error("",e);
         } catch (ElementNotFoundException e) {
             logger.error(query);
         } catch (SQLException e) {

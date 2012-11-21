@@ -36,6 +36,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -90,6 +91,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
         String systemName = TurbineUtils.GetSystemName();
         c.put("turbineUtils",TurbineUtils.GetInstance());
+	c.put("displayManager", DisplayManager.GetInstance());
         c.put("systemName",systemName);
         
         c.put("showReason", XFT.getShowChangeJustification());

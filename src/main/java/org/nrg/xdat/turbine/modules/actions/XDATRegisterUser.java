@@ -228,11 +228,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
     	try {
 			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
 			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
-			String par = (String)TurbineUtils.GetPassedParameter("par",data);
-			
-			if(!StringUtils.isEmpty(par)){
-				context.put("par", par);
-			}
+
+            preserveVariables(data, context);
+
 			if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 				context.put("nextAction", nextAction);
 			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
@@ -252,11 +250,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
     	try {
 			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
 			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
-			String par = (String)TurbineUtils.GetPassedParameter("par",data);
-			
-			if(!StringUtils.isEmpty(par)){
-				context.put("par", par);
-			}
+
+            preserveVariables(data, context);
+
 			if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 				context.put("nextAction", nextAction);
 			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
@@ -276,11 +272,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
     	try {
 			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
 			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
-			String par = (String)TurbineUtils.GetPassedParameter("par",data);
-			
-			if(!StringUtils.isEmpty(par)){
-				context.put("par", par);
-			}
+
+            preserveVariables(data, context);
+
 			if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 				context.put("nextAction", nextAction);
 			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
@@ -294,6 +288,30 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		}finally{
 			data.setScreenTemplate("Register.vm");
 		}
+    }
+
+    private void preserveVariables(RunData data,Context context){
+        String username = TurbineUtils.HasPassedParameter("xdat:user.login", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.login", data)):"";
+        String email = TurbineUtils.HasPassedParameter("xdat:user.email", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.email", data)):"";
+        String firstName = TurbineUtils.HasPassedParameter("xdat:user.firstname", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.firstname", data)):"";
+        String lastName = TurbineUtils.HasPassedParameter("xdat:user.lastname", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.lastname", data)):"";
+        String par = (String)TurbineUtils.GetPassedParameter("par",data);
+
+        if(!StringUtils.isEmpty(username)){
+            context.put("username", username);
+        }
+        if(!StringUtils.isEmpty(email)){
+            context.put("email", email);
+        }
+        if(!StringUtils.isEmpty(firstName)){
+            context.put("firstName", firstName);
+        }
+        if(!StringUtils.isEmpty(lastName)){
+            context.put("lastName", lastName);
+        }
+        if(!StringUtils.isEmpty(par)){
+            context.put("par", par);
+        }
     }
     
     public String getAutoApprovalTextMsg(RunData data, XDATUser newUser){

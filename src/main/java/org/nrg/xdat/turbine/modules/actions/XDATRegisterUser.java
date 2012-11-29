@@ -35,6 +35,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.springframework.mail.MailSendException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -119,12 +120,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
             				        context.put("emailUsername", (String)found.getProperty("login"));
             				        data.setRedirectURI(null);
                                     data.setScreenTemplate("VerificationSent.vm");
-                                } catch (MessagingException e) {
-                                    logger.error("Unable to send mail",e);
-                                    System.out.println("Error sending Email");
-
-                                    data.setMessage("Due to a technical difficulty, we are unable to send you the verification email. Please contact our technical support.");
-                                    data.setScreenTemplate("Login.vm");
+                                } catch (Exception e) {
+                                    logger.error("Error occurred sending new user email", e);
+                                    handleInvalid(data, context, "We are unable to send you the verification email. If you entered a valid email address, please contact our technical support.");
                                     return;
                                 }
                             }
@@ -162,6 +160,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			                    	directRequest(data,context,newUser);
 			                    }catch(Exception e){
 			                        logger.error(e);
+                                    handleInvalid(data, context, "Error directing request after new user was registered.");
 			                    }
                             }
 		                }
@@ -204,90 +203,51 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                            	data.setRedirectURI(null);
 	                                data.setScreenTemplate("PostRegister.vm");
                                 }
-                            } catch (MessagingException exception) {
-                                logger.error("Error occurred sending new user request email", exception);
+                            } catch (Exception exception) {
+                                //Email send failed
+                                logger.error("Error occurred sending new user email", exception);
+                                handleInvalid(data, context, "Email send failed. If you are unable to log in to your account, please contact an administrator or create an account with a different email address.");
                             }
 		                }
 	                }else{
-		            	handleInvalidPassword(data, context, validator.getMessage());
+                        //Invalid Password
+		            	handleInvalid(data, context, validator.getMessage());
 	                }
 	            }else{
-	            	handleDuplicateEmail(data, context, found);
+                    //Duplicate Email
+                    handleInvalid(data, context, "Email (" + found.getProperty("email") + ") already exists.");
                 }
             }else{
-            	handleDuplicateLogin(data, context, found);
+                //Duplicate Login
+                handleInvalid(data, context, "Username (" + found.getProperty("login") + ") already exists.");
             }
         } catch (Exception e) {
+            //Other Error
             logger.error("Error Storing User",e);
+            handleInvalid(data, context, "Error Storing User.");
         }
-        
-        
     }
-    
-    public void handleInvalidPassword(RunData data, Context context, String message){
-    	try {
-			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
-			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
+
+    public void handleInvalid(RunData data, Context context, String message)  {
+        try {
+            String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
+            String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 
             preserveVariables(data, context);
 
-			if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
-				context.put("nextAction", nextAction);
-			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
-				context.put("nextPage", nextPage);
-			}
-			// OLD USER
-			data.setMessage(message);
-		} catch (Exception e) {
-            logger.error("Error adding user without complex enough password",e);
-			data.setMessage(message);
-		}finally{
-			data.setScreenTemplate("Register.vm");
-		}
-    }
-    
-    public void handleDuplicateEmail(RunData data,Context context,ItemI found){
-    	try {
-			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
-			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
-
-            preserveVariables(data, context);
-
-			if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
-				context.put("nextAction", nextAction);
-			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
-				context.put("nextPage", nextPage);
-			}
-			// OLD USER
-			data.setMessage("Email (" + found.getProperty("email") + ") already exists.");
-		} catch (Exception e) {
-            logger.error("Error handling duplicate login",e);
-			data.setMessage("Email already exists.");
-		}finally{
-			data.setScreenTemplate("Register.vm");
-		}
-    }
-    
-    public void handleDuplicateLogin(RunData data,Context context,ItemI found){
-    	try {
-			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
-			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
-
-            preserveVariables(data, context);
-
-			if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
-				context.put("nextAction", nextAction);
-			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
-				context.put("nextPage", nextPage);
-			}
-			// OLD USER
-			data.setMessage("Username (" + found.getProperty("login") + ") already exists.");
-		} catch (Exception e) {
-            logger.error("Error handling duplicate login",e);
-			data.setMessage("Username already exists.");
-		}finally{
-			data.setScreenTemplate("Register.vm");
-		}
+            if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+                context.put("nextAction", nextAction);
+            }else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
+                context.put("nextPage", nextPage);
+            }
+            // OLD USER
+            data.setMessage(message);
+        } catch (Exception e) {
+            logger.error(message,e);
+            data.setMessage(message);
+        }finally{
+            data.setScreenTemplate("Register.vm");
+        }
     }
 
     private void preserveVariables(RunData data,Context context){
@@ -296,7 +256,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
         String firstName = TurbineUtils.HasPassedParameter("xdat:user.firstname", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.firstname", data)):"";
         String lastName = TurbineUtils.HasPassedParameter("xdat:user.lastname", data)?((String)TurbineUtils.GetPassedParameter("xdat:user.lastname", data)):"";
         String par = (String)TurbineUtils.GetPassedParameter("par",data);
-
+        //phone, lab, and comments should already be preserved
         if(!StringUtils.isEmpty(username)){
             context.put("username", username);
         }

@@ -33,6 +33,7 @@ import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.SchemaFieldI;
+import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizerI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
@@ -852,6 +853,15 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 
         return "multi-leveled";
     }
+    
+    private CriteriaCollection buildStatusCriteria(SchemaElement e,String level){
+    	//add support for limited status reflected in search results
+        CriteriaCollection inner = new CriteriaCollection("OR");
+    	for(String l: StringUtils.CommaDelimitedStringToArrayList(level)){
+        	inner.addClause(e.getFullXMLName()+"/meta/status", l);
+    	}
+    	return inner;
+    }
 
     private String getArcJoinCount(ArcDefinition arcDefine,SchemaElement foreign) throws Exception
     {
@@ -875,6 +885,9 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 			DisplayField df2 = foreign.getDisplayField(foreignField);
 			DisplayFieldElement dfe2 =(DisplayFieldElement)df2.getElements().get(0);
 			qo.addField(dfe2.getSchemaElementName());
+			
+             
+         	qo.setWhere(buildStatusCriteria(foreign,level));
 
 			String query = qo.buildQuery();
 
@@ -906,6 +919,8 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 			DisplayFieldElement dfe2 =(DisplayFieldElement)df2.getElements().get(0);
 			qo.addField(dfe2.getSchemaElementName());
 
+         	qo.setWhere(buildStatusCriteria(foreign,level));
+         	
 			String query = qo.buildQuery();
 
 			String foreignCol = qo.translateXMLPath(dfe2.getSchemaElementName(),foreign.getSQLName() +"_COUNT");
@@ -942,6 +957,8 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 			sb.append(") ").append(arcTableName).append(" ON ").append(getTableAndFieldSQL(rDF.getPrimarySchemaField())).append("=").append(arcTableName);
 			sb.append(".").append(rootElement.getSQLName()).append("_").append(distinctField);
 
+         	qo.setWhere(buildStatusCriteria(foreign,level));
+         	
 			String query = qo.buildQuery();
 			sb.append(" LEFT JOIN (").append(query);
 			sb.append(") AS ").append(foreign.getSQLName()).append(" ON ").append(arcTableName);

@@ -46,170 +46,151 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class HibernateXdatUserAuthService extends AbstractHibernateEntityService<XdatUserAuth> implements XdatUserAuthService {
 
-    private static final String[] EXCLUSION_PROPERTIES = new String[] {"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled","failedLoginAttempts" };
-    private static final String[] EXCLUSION_PROPERTIES_USERNAME = new String[] {"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled","authMethodId","failedLoginAttempts"};
-
-    protected final Log logger = LogFactory.getLog(getClass());
-    
     @Override
     public XdatUserAuth newEntity() {
         return new XdatUserAuth();
     }
 
-	@Transactional
-	public XdatUserAuth getUserByNameAndAuth(String user, String auth, String id) {
-		XdatUserAuth example = new XdatUserAuth();
-	        example.setAuthUser(user);
-	        example.setAuthMethod(auth);
-	        if(! StringUtils.isBlank(id)){
-	        	example.setAuthMethodId(id);
-	        }
-	        List<XdatUserAuth> auths =  _dao.findByExample(example, EXCLUSION_PROPERTIES);
-	        if(auths==null || auths.size()==0){
-	        	return null;
-	        }
-	        return auths.get(0);
-	}
+    @Transactional
+    public XdatUserAuth getUserByNameAndAuth(String user, String auth, String id) {
+        XdatUserAuth example = new XdatUserAuth();
+        example.setAuthUser(user);
+        example.setAuthMethod(auth);
+        if (!StringUtils.isBlank(id)) {
+            example.setAuthMethodId(id);
+        }
+        List<XdatUserAuth> auths = _dao.findByExample(example, EXCLUSION_PROPERTIES);
+        if (auths == null || auths.size() == 0) {
+            return null;
+        }
+        return auths.get(0);
+    }
 
-	@Transactional
-	public List<XdatUserAuth> getUsersByName(String user) {
-		XdatUserAuth example = new XdatUserAuth();
-	        example.setAuthUser(user);
-	        return  _dao.findByExample(example, EXCLUSION_PROPERTIES_USERNAME);
-	}
-	
+    @Transactional
+    public List<XdatUserAuth> getUsersByName(String user) {
+        XdatUserAuth example = new XdatUserAuth();
+        example.setAuthUser(user);
+        return _dao.findByExample(example, EXCLUSION_PROPERTIES_USERNAME);
+    }
+
     @Override
     protected XdatUserAuthDAO getDao() {
         return _dao;
     }
-    
-    @Inject
-    private XdatUserAuthDAO _dao;
 
-    @Inject
-    private DataSource _datasource;
-    
     @Override
-	@Transactional
-	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth) {
-		return getUserDetailsByNameAndAuth(user, auth, "", null, null, null);
-	}
-    
-	@Override
-	@Transactional
-	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id) {
-		return getUserDetailsByNameAndAuth(user, auth, id, null, null, null);
-	}
-    
-	@Override
-	@Transactional
-	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id, String email) {
-		return getUserDetailsByNameAndAuth(user, auth, id, email, null, null);
-	}
-	
-	@Override
-	@Transactional
-	public XDATUserDetails getUserDetailsByNameAndAuth(String username, String auth, String id, String email, String lastname, String firstname) {
-		List<XDATUserDetails> users = loadUsersByUsernameAndAuth(username, auth, id);
-		return getUserDetailsForUserList(users, username, auth, id, email, lastname, firstname);
-	}
-		
-	@Override
-	@Transactional
-	public XDATUserDetails getUserDetailsByUsernameAndMostRecentSuccessfulLogin(String username) {
-		List<XDATUserDetails> users = loadUsersByUsernameAndMostRecentSuccessfulLogin(username);
-		String auth = null, id = null;
-		if(users.size() > 0 && users.get(0) != null) {
-			auth = users.get(0).getAuthorization().getAuthMethod();
-			id = users.get(0).getAuthorization().getAuthMethodId();
-		}
-		return getUserDetailsForUserList(users, username, auth, id, null, null, null);
-	}
-		
-	private XDATUserDetails getUserDetailsForUserList(List<XDATUserDetails> users, String username, String auth, String id, String email, String lastname, String firstname) {
-		XDATUserDetails userDetails = null;
+    @Transactional
+    public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth) {
+        return getUserDetailsByNameAndAuth(user, auth, "", null, null, null);
+    }
 
-        if (users.size() == 0 || users.get(0)==null) {
-        	if(auth.equals(XdatUserAuthService.LDAP) && !isLDAPUserDisabled(username, id) &&!isLDAPUserLocked(username,id)){
-	        	try{
-	        		String ldapUsername = username;
-	        		username = findUnusedLocalUsernameForNewLDAPUser(ldapUsername);
-	    			logger.debug("Adding LDAP user '" + username + "' to database.");
-	    			
-	    			PersistentWorkflowI wrk=PersistentWorkflowUtils.buildAdminWorkflow(null, "xdat:user", username, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Created user from LDAP", null, null));
-					
-	    			try {
-						Map<String, String> newUserPrperties = new HashMap<String, String>();
-						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.login", username);
-						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.email", email);
-						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password", null);
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.lastname", lastname);
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.firstname", firstname);
-						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.primary_password.encrypt", "true");
-						newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.verified", "false");
-	        		newUserPrperties.put(org.nrg.xft.XFT.PREFIX + ":user.enabled", newUserAccountsAreAutoEnabled().toString());
-						
-						PopulateItem populater = new PopulateItem(newUserPrperties,null,org.nrg.xft.XFT.PREFIX + ":user",true);
-						ItemI item = populater.getItem();
-					    
-					    item.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name","SiteUser");
-					    item.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name","DataManager");
-					    
-					    XDATUser newUser = new XDATUser(item);
-					    
-					    
-					    SaveItemHelper.authorizedSave(newUser,XDAT.getUserDetails(),true,false,true,false,wrk.buildEvent()); 
-					    wrk.setId(newUser.getStringProperty("xdat_user_id"));
+    @Override
+    @Transactional
+    public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id) {
+        return getUserDetailsByNameAndAuth(user, auth, id, null, null, null);
+    }
 
-					    XdatUserAuth newUserAuth = new XdatUserAuth(ldapUsername, XdatUserAuthService.LDAP, id, username, true, 0);
-	 	                XDAT.getXdatUserAuthService().create(newUserAuth);
-	 
-	                // <HACK_ALERT>
-	                /*
-	                 * We must save enabled flag to DB as true above, because the administrator code for enabling a user account does not flip this flag
-	                 * (no time to mess with that now).
-	                 * But for purposes of determining whether or not the user can log in right now after we've just created their account,
-	                 * we use the system-wide auto-enable config setting.
-	                 * Must clone a new object to return, rather than modifying the existing, so that Hibernate still saves the desired values to the DB.
-	                 */
-					newUserAuth = new XdatUserAuth(newUserAuth);
-	                newUserAuth.setEnabled(newUserAccountsAreAutoEnabled());
-	                // </HACK_ALERT>
-	                
-		                userDetails = new XDATUserDetails(newUser);
-		                userDetails.setAuthorization(newUserAuth);
+    @Override
+    @Transactional
+    public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id, String email) {
+        return getUserDetailsByNameAndAuth(user, auth, id, email, null, null);
+    }
 
-		                XDAT.setUserDetails(userDetails);
-					    
-					    if(users.size() == 0){
-					    	users.add(userDetails);
-					    }
-					    else{
-					    	users.set(0, userDetails);
-					    }
-					    
-					    PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
-					}
-					catch(Exception e){
-						logger.error(e);
-					    try {
-							PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
-						} catch (Exception e1) {
-							logger.error(e);
-						}
-					}
-				} catch (EventRequirementAbsent e) {
-					logger.error(e);
-				    throw new UsernameNotFoundException(
-		            		SpringSecurityMessageSource.getAccessor().getMessage("JdbcDaoImpl.notFound", new Object[]{username}, "Username {0} not found"), username);
-	        	}
-        	}
-        	else{
-	            logger.debug("Query returned no results for user '" + username + "'");
-	
-	            throw new UsernameNotFoundException(
-	            		SpringSecurityMessageSource.getAccessor().getMessage("JdbcDaoImpl.notFound", new Object[]{username}, "Username {0} not found"), username);
-        	}
+    @Override
+    @Transactional
+    public XDATUserDetails getUserDetailsByNameAndAuth(String username, String auth, String id, String email, String lastname, String firstname) {
+        List<XDATUserDetails> users = loadUsersByUsernameAndAuth(username, auth, id);
+        return getUserDetailsForUserList(users, username, auth, id, email, lastname, firstname);
+    }
+
+    @Override
+    @Transactional
+    public XDATUserDetails getUserDetailsByUsernameAndMostRecentSuccessfulLogin(String username) {
+        List<XDATUserDetails> users = loadUsersByUsernameAndMostRecentSuccessfulLogin(username);
+        String auth = null, id = null;
+        if (users.size() > 0 && users.get(0) != null) {
+            auth = users.get(0).getAuthorization().getAuthMethod();
+            id = users.get(0).getAuthorization().getAuthMethodId();
+        }
+        return getUserDetailsForUserList(users, username, auth, id, null, null, null);
+    }
+
+    public List<GrantedAuthority> loadUserAuthorities(String username) {
+        return (new JdbcTemplate(_datasource)).query("SELECT login as username, 'ROLE_USER' as authority FROM xdat_user WHERE login = ?", new String[]{username}, new RowMapper<GrantedAuthority>() {
+            public GrantedAuthority mapRow(ResultSet rs, int rowNum) throws SQLException {
+                String roleName = rs.getString(2);
+                GrantedAuthorityImpl authority = new GrantedAuthorityImpl(roleName);
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Found authority: " + authority.getAuthority() + " for role name: " + roleName);
+                }
+                return authority;
+            }
+        });
+    }
+
+    public boolean isLDAPUserDisabled(final String username, final String id) {
+        List<Boolean> enabled = (new JdbcTemplate(_datasource)).query("SELECT enabled FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP + "' AND auth_method_id = ?", new String[]{username, id}, new RowMapper<Boolean>() {
+            public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
+                boolean enabled = rs.getBoolean(1);
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Found user " + username + (enabled ? " is" : " is not") + " enabled.");
+                }
+
+                return enabled;
+            }
+        });
+        return !enabled.get(0);
+    }
+
+    public Boolean newUserAccountsAreAutoEnabled() {
+        return XFT.GetUserRegistration();
+    }
+
+    protected XDATUserDetails createUserDetails(String username, String auth, String id) {
+        XDATUserDetails u = null;
+        try {
+            XdatUserAuth userAuth = getUserByNameAndAuth(username, auth, id);
+            u = new XDATUserDetails(userAuth.getXdatUsername());
+            u.setAuthorization(userAuth);
+        } catch (Exception e) {
+            _log.error(e);
+        }
+        return u;
+    }
+
+    private boolean isLDAPUserLocked(final String username, final String id) {
+            List<Integer> count = (new JdbcTemplate(_datasource)).query("SELECT failed_login_attempts FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP + "' AND auth_method_id = ?", new String[]{username, id}, new RowMapper<Integer>() {
+                public Integer mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    Integer count = rs.getInt(1);
+                    if (_log.isDebugEnabled()) {
+                        _log.debug("Found " + count + " failed login attempts for user " + username);
+                    }
+
+                    return count;
+                }
+            });
+        final boolean locked = count.get(0) >= AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS;
+        if (_log.isDebugEnabled()) {
+            _log.debug("User login attempts (" + count.get(0) + ") " + (locked ? "have" : "have not") + " exceeded the max failed login attempt limit of " + AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS);
+        }
+        return locked;
+    }
+
+    private XDATUserDetails getUserDetailsForUserList(List<XDATUserDetails> users, String username, String auth, String id, String email, String lastname, String firstname) {
+        XDATUserDetails userDetails = null;
+
+        if (users.size() == 0 || users.get(0) == null) {
+            if (auth.equals(XdatUserAuthService.LDAP) && !isLDAPUserDisabled(username, id) && !isLDAPUserLocked(username, id)) {
+                userDetails = handleNewLdapUser(id, username, email, firstname, lastname);
+                if (users.size() == 0) {
+                    users.add(userDetails);
+                } else {
+                    users.set(0, userDetails);
+                }
+            } else {
+                _log.debug("Query returned no results for user '" + username + "'");
+                throw new UsernameNotFoundException(SpringSecurityMessageSource.getAccessor().getMessage("JdbcDaoImpl.notFound", new Object[]{username}, "Username {0} not found"));
+            }
         }
 
         UserDetails user = users.get(0); // contains no GrantedAuthority[]
@@ -221,192 +202,181 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         List<GrantedAuthority> dbAuths = new ArrayList<GrantedAuthority>(dbAuthsSet);
 
         if (dbAuths.size() == 0) {
-            logger.debug("User '" + username + "' has no authorities and will be treated as 'not found'");
-
-            throw new UsernameNotFoundException(
-            		SpringSecurityMessageSource.getAccessor().getMessage("JdbcDaoImpl.noAuthority",
-                            new Object[] {username}, "User {0} has no GrantedAuthority"), username);
+            _log.debug("User '" + username + "' has no authorities and will be treated as 'not found'");
+            throw new UsernameNotFoundException(SpringSecurityMessageSource.getAccessor().getMessage("JdbcDaoImpl.noAuthority", new Object[]{username}, "User {0} has no GrantedAuthority"));
         }
 
-        if( userDetails == null )
-        {
-        	// If we just created a new user account above, the user_auth DB record won't yet be committed at this point.  
-        	// So we'll just return the object that was already created.
-        	// For subsequent logins, this code here will pull the auth record and set it.
-        	userDetails = createUserDetails(username, user, dbAuths, auth, id);
+        if (userDetails == null) {
+            // If we just created a new user account above, the user_auth DB record won't yet be committed at this point.
+            // So we'll just return the object that was already created.
+            // For subsequent logins, this code here will pull the auth record and set it.
+            userDetails = createUserDetails(username, auth, id);
         }
-        
-        return userDetails; 
-	}
 
-	private String getUsersByUsernameAndAuthQuery() {
-		return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ getMaxLoginAttemptsForQuery() +"  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
+        return userDetails;
     }
-	
-	private String getUsersByXDATUsernameAndMostRecentSuccessfulLoginQuery() {
-		return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<"+ getMaxLoginAttemptsForQuery() +"  and xhbm_xdat_user_auth.xdat_username = ? ORDER BY last_successful_login DESC";
-    }
-	
-	private Integer getMaxLoginAttemptsForQuery() {
-		Integer maxFailedLoginAttempts = AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS;
-		if(maxFailedLoginAttempts <= -1) {
-			maxFailedLoginAttempts = Integer.MAX_VALUE;
-		}
-		return maxFailedLoginAttempts;
-	}
 
-	public List<GrantedAuthority> loadUserAuthorities(String username) {
-        return (new JdbcTemplate(_datasource)).query("SELECT login as username, 'ROLE_USER' as authority FROM xdat_user WHERE login = ?", new String[] {username}, new RowMapper<GrantedAuthority>() {
-            public GrantedAuthority mapRow(ResultSet rs, int rowNum) throws SQLException {
-                String roleName = rs.getString(2);
-                GrantedAuthorityImpl authority = new GrantedAuthorityImpl(roleName);
+    private XDATUserDetails handleNewLdapUser(final String id, String username, String email, String firstName, String lastName) {
+        XDATUserDetails userDetails = null;
 
-                return authority;
+        try {
+            String ldapUsername = username;
+            username = findUnusedLocalUsernameForNewLDAPUser(ldapUsername);
+            _log.debug("Adding LDAP user '" + username + "' to database.");
+
+            PersistentWorkflowI wrk = PersistentWorkflowUtils.buildAdminWorkflow(null, "xdat:user", username, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Created user from LDAP", null, null));
+
+            try {
+                XDATUser newUser = createXDATUser(username, email, firstName, lastName);
+
+                SaveItemHelper.authorizedSave(newUser, XDAT.getUserDetails(), true, false, true, false, wrk.buildEvent());
+                wrk.setId(newUser.getStringProperty("xdat_user_id"));
+
+                XdatUserAuth newUserAuth = new XdatUserAuth(ldapUsername, XdatUserAuthService.LDAP, id, username, true, 0);
+                XDAT.getXdatUserAuthService().create(newUserAuth);
+
+                // <HACK_ALERT>
+                /*
+                * We must save enabled flag to DB as true above, because the administrator code for enabling a user account does not flip this flag
+                * (no time to mess with that now).
+                * But for purposes of determining whether or not the user can log in right now after we've just created their account,
+                * we use the system-wide auto-enable config setting.
+                * Must clone a new object to return, rather than modifying the existing, so that Hibernate still saves the desired values to the DB.
+                */
+                newUserAuth = new XdatUserAuth(newUserAuth);
+                newUserAuth.setEnabled(newUserAccountsAreAutoEnabled());
+                // </HACK_ALERT>
+
+                userDetails = new XDATUserDetails(newUser);
+                userDetails.setAuthorization(newUserAuth);
+
+                XDAT.setUserDetails(userDetails);
+
+                PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
+            } catch (Exception e) {
+                _log.error(e);
+                try {
+                    PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
+                } catch (Exception e1) {
+                    _log.error(e);
+                }
             }
-        });
+        } catch (EventRequirementAbsent exception) {
+            _log.error(exception);
+            throw new UsernameNotFoundException(SpringSecurityMessageSource.getAccessor().getMessage("JdbcDaoImpl.notFound", new Object[]{username}, "Username {0} not found"));
+        }
+
+        return userDetails;
     }
 
-	public boolean isLDAPUserDisabled(String username) {
-		boolean isDisabled = false;
-		try{
-			List<Boolean> enabled = (new JdbcTemplate(_datasource)).query("SELECT enabled FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP+"'", new String[] {username}, new RowMapper<Boolean>() {
-            public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
-                boolean enabled = rs.getBoolean(1);
-                return enabled;
-            }
-        });
-			if(enabled.get(0).equals(false)){
-				isDisabled=true;
-			}
-		}
-		catch(Exception e){
-			
-		}
-		return isDisabled;
-    }
-	
-	private boolean isLDAPUserLocked(String username, String id) {
-		boolean isLocked = false;
-		try{
-			List<Integer> count = (new JdbcTemplate(_datasource)).query("SELECT failed_login_attempts FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP+"' AND auth_method_id = ?", new String[] {username, id}, new RowMapper<Integer>() {
-            public Integer mapRow(ResultSet rs, int rowNum) throws SQLException {
-            	Integer count = rs.getInt(1);
-                return count;
-            }
-        });
-			if(count.get(0)>=AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS){
-				isLocked=true;
-			}
-		}
-		catch(Exception e){
-			
-		}
-		return isLocked;
-	}
-	
-	public boolean isLDAPUserDisabled(String username, String id) {
-		boolean isDisabled = false;
-		try{
-			List<Boolean> enabled = (new JdbcTemplate(_datasource)).query("SELECT enabled FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP+"' AND auth_method_id = ?", new String[] {username, id}, new RowMapper<Boolean>() {
-            public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
-                boolean enabled = rs.getBoolean(1);
-                return enabled;
-            }
-        });
-			if(enabled.get(0).equals(false)){
-				isDisabled=true;
-			}
-		}
-		catch(Exception e){
-			
-		}
-		return isDisabled;
+    private XDATUser createXDATUser(final String username, final String email, final String firstName, final String lastName) throws Exception {
+        Map<String, String> newUserProperties = new HashMap<String, String>();
+        newUserProperties.put(XFT.PREFIX + ":user.login", username);
+        newUserProperties.put(XFT.PREFIX + ":user.email", email);
+        newUserProperties.put(XFT.PREFIX + ":user.primary_password", null);
+        newUserProperties.put(XFT.PREFIX + ":user.firstname", firstName);
+        newUserProperties.put(XFT.PREFIX + ":user.lastname", lastName);
+        newUserProperties.put(XFT.PREFIX + ":user.primary_password.encrypt", "true");
+        // TODO: Need to add ability to verify email address in cases where we may not completely trust LDAP repo.
+        newUserProperties.put(XFT.PREFIX + ":user.verified", "true");
+        newUserProperties.put(XFT.PREFIX + ":user.enabled", newUserAccountsAreAutoEnabled().toString());
+
+        PopulateItem populater = new PopulateItem(newUserProperties, null, XFT.PREFIX + ":user", true);
+        ItemI item = populater.getItem();
+
+        item.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name", "SiteUser");
+        item.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name", "DataManager");
+
+        return new XDATUser(item);
     }
 
-	protected XDATUserDetails createUserDetails(String username,
-			UserDetails userFromUserQuery,
-			List<GrantedAuthority> combinedAuthorities,
-			String auth, String id) {
-    	XDATUserDetails u = null;
-    	try {
-	    	XdatUserAuth userAuth = getUserByNameAndAuth(username, auth, id);
-			u = new XDATUserDetails(userAuth.getXdatUsername());
-			u.setAuthorization(userAuth);
-		} catch (Exception e) {
-			logger.error(e);
-		}
-    	return u;
-	}
-
-	private List<XDATUserDetails> loadUsersByUsernameAndAuth(String username, String auth, String id) {
-		id = (id == null) ? "" : id;
-		return loadUsersByQuery(getUsersByUsernameAndAuthQuery(), username, auth, id);
-	}
-		
-	private List<XDATUserDetails> loadUsersByUsernameAndMostRecentSuccessfulLogin(String username) {
-		return loadUsersByQuery(getUsersByXDATUsernameAndMostRecentSuccessfulLoginQuery(), username);
-	}
-		
-	private List<XDATUserDetails> loadUsersByQuery(String query, String... params) {
-		List<XDATUserDetails> u = 
-        (new JdbcTemplate(_datasource)).query(query, params, new RowMapper<XDATUserDetails>() {
-            public XDATUserDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
-                String username = rs.getString(1);
-                String method = rs.getString(2);
-                String xdatUsername = rs.getString(3);
-                boolean enabled = rs.getBoolean(4);
-                Integer failedLoginAttempts = rs.getInt(5);
-                String methodId = rs.getString(6);
-                Date lastSuccessfulLogin = rs.getDate(7);
-                XdatUserAuth u = new XdatUserAuth(username, method, methodId, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, xdatUsername,failedLoginAttempts, lastSuccessfulLogin);
-                XDATUserDetails xdat = null;
-				try {
-					xdat = new XDATUserDetails(u.getXdatUsername());
-					xdat.setAuthorization(u);
-				} catch (Exception e) {
-					logger.error(e);
-				}
-                return xdat;
-            }
-        });
-		return u;
-	}
-	
-	private String findUnusedLocalUsernameForNewLDAPUser( String ldapUsername )
-	{
-		// we will punt on this for now and just create a new user account if their is already a local account
-		// the Cadillac solution would be to link the two (assuming the user proves that they own the local account also)
-		
-		String usernameToTest = ldapUsername;
-		int testCount = -1;
-		List<String> existingLocalUsernames;
-		
-		do
-		{
-			if ( ++testCount > 0 )
-			{
-				usernameToTest = ldapUsername + "_" + String.format( "%02d", testCount );
-			}
-			else if ( testCount > 99 )
-			{
-				throw new RuntimeException( "Ran out of possible XNAT user ids to check (last one checked was " + usernameToTest + ")");
-			}
-			
-			existingLocalUsernames = (new JdbcTemplate(_datasource)).query("SELECT login FROM xdat_user WHERE login = ?", new String[] {usernameToTest}, new RowMapper<String>() 
-			{
-	            public String mapRow(ResultSet rs, int rowNum) throws SQLException 
-	            {
-	                return rs.getString(1);
-	            }
-		    });
-			
-		} while ( existingLocalUsernames.size() > 0 );
-		
-		return usernameToTest;
-	}
-	
-    public Boolean newUserAccountsAreAutoEnabled()
-    {
-    	return XFT.GetUserRegistration();
+    private String getUsersByUsernameAndAuthQuery() {
+        return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<" + getMaxLoginAttemptsForQuery() + "  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
     }
+
+    private String getUsersByXDATUsernameAndMostRecentSuccessfulLoginQuery() {
+        return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<" + getMaxLoginAttemptsForQuery() + "  and xhbm_xdat_user_auth.xdat_username = ? ORDER BY last_successful_login DESC";
+    }
+
+    private Integer getMaxLoginAttemptsForQuery() {
+        Integer maxFailedLoginAttempts = AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS;
+        if (maxFailedLoginAttempts <= -1) {
+            maxFailedLoginAttempts = Integer.MAX_VALUE;
+        }
+        return maxFailedLoginAttempts;
+    }
+
+    private List<XDATUserDetails> loadUsersByUsernameAndAuth(String username, String auth, String id) {
+        id = (id == null) ? "" : id;
+        return loadUsersByQuery(getUsersByUsernameAndAuthQuery(), username, auth, id);
+    }
+
+    private List<XDATUserDetails> loadUsersByUsernameAndMostRecentSuccessfulLogin(String username) {
+        return loadUsersByQuery(getUsersByXDATUsernameAndMostRecentSuccessfulLoginQuery(), username);
+    }
+
+    private List<XDATUserDetails> loadUsersByQuery(String query, String... params) {
+        List<XDATUserDetails> u =
+                (new JdbcTemplate(_datasource)).query(query, params, new RowMapper<XDATUserDetails>() {
+                    public XDATUserDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
+                        String username = rs.getString(1);
+                        String method = rs.getString(2);
+                        String xdatUsername = rs.getString(3);
+                        boolean enabled = rs.getBoolean(4);
+                        Integer failedLoginAttempts = rs.getInt(5);
+                        String methodId = rs.getString(6);
+                        Date lastSuccessfulLogin = rs.getDate(7);
+                        XdatUserAuth u = new XdatUserAuth(username, method, methodId, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, xdatUsername, failedLoginAttempts, lastSuccessfulLogin);
+                        XDATUserDetails xdat = null;
+                        try {
+                            xdat = new XDATUserDetails(u.getXdatUsername());
+                            xdat.setAuthorization(u);
+                        } catch (Exception e) {
+                            _log.error(e);
+                        }
+                        return xdat;
+                    }
+                });
+        if (_log.isDebugEnabled()) {
+            _log.debug("Found " + u.size() + " results for the submitted user query");
+        }
+        return u;
+    }
+
+    private String findUnusedLocalUsernameForNewLDAPUser(String ldapUsername) {
+        // we will punt on this for now and just create a new user account if their is already a local account
+        // the Cadillac solution would be to link the two (assuming the user proves that they own the local account also)
+
+        String usernameToTest = ldapUsername;
+        int testCount = -1;
+        List<String> existingLocalUsernames;
+
+        do {
+            if (++testCount > 0) {
+                usernameToTest = ldapUsername + "_" + String.format("%02d", testCount);
+            } else if (testCount > 99) {
+                throw new RuntimeException("Ran out of possible XNAT user ids to check (last one checked was " + usernameToTest + ")");
+            }
+
+            existingLocalUsernames = (new JdbcTemplate(_datasource)).query("SELECT login FROM xdat_user WHERE login = ?", new String[]{usernameToTest}, new RowMapper<String>() {
+                public String mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    return rs.getString(1);
+                }
+            });
+
+        } while (existingLocalUsernames.size() > 0);
+
+        return usernameToTest;
+    }
+
+    private static final String[] EXCLUSION_PROPERTIES = new String[]{"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "failedLoginAttempts"};
+    private static final String[] EXCLUSION_PROPERTIES_USERNAME = new String[]{"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "authMethodId", "failedLoginAttempts"};
+
+    private static final Log _log = LogFactory.getLog(HibernateXdatUserAuthService.class);
+
+    @Inject
+    private XdatUserAuthDAO _dao;
+
+    @Inject
+    private DataSource _datasource;
 }

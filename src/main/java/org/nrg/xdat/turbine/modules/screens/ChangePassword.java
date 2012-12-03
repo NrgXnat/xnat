@@ -31,7 +31,8 @@ public class ChangePassword extends VelocitySecureScreen {
         try {
             if (data != null && TurbineUtils.getUser(data) != null &&
                     !StringUtils.isBlank(TurbineUtils.getUser(data).getUsername()) &&
-                    !TurbineUtils.getUser(data).getUsername().equalsIgnoreCase("guest")) {
+                    !TurbineUtils.getUser(data).getUsername().equalsIgnoreCase("guest") &&
+                    !TurbineUtils.HasPassedParameter("a", data) && !TurbineUtils.HasPassedParameter("s", data)) {
                 context.put("login", TurbineUtils.getUser(data).getUsername());
                 context.put("topMessage", "Your password has expired. Please choose a new one.");
             } else {

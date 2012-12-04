@@ -2023,6 +2023,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             }
         }
     }
+    
+    public boolean isSiteAdmin(){
+    	try {
+			return this.checkRole("Administrator");
+		} catch (Exception e) {
+			return false;
+		}
+    }
 
     public UserGroup getGroup(String id) {
         return (UserGroup) getGroups().get(id);

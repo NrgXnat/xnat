@@ -329,6 +329,17 @@ public class FlattenedItem extends FlattenedItemA{
 			
 			return temp;
 		}
+
+
+		public Number getCreateEventId() {
+			if(getCreate_event_id()==null) return (getStartDate()==null)?null:getStartDate().getTime();
+			return getCreate_event_id();
+		}
+
+		public Number getModifiedEventId() {
+			if(getModified_event_id()==null) return (getEndDate()==null)?null:getEndDate().getTime();
+			return getModified_event_id();
+		}
 	}
 
 

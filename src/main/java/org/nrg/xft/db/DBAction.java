@@ -2180,8 +2180,11 @@ public class DBAction {
 	{
 		XFTItem meta=StoreHistoryAndMeta(oldI, user, quarantine, cache);
 		
-		if(newI!=null && meta!=null)
+		
+		if(newI!=null && meta!=null){
+			newI.setProperty("meta.meta_data_id",meta.getProperty("meta_data_id"));
 			newI.setProperty("meta.status",meta.getProperty("status"));
+		}
 	}
 	
 	private static final List<String> modifiable_status=Arrays.asList(ViewManager.ACTIVE,ViewManager.QUARANTINE);

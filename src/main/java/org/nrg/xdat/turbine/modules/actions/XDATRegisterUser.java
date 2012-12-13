@@ -108,7 +108,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	
 		                if (autoApproval)
 		                {
-                            if(XDAT.verificationOn()){
+                            if(!hasPAR(data) && XDAT.verificationOn()){
                             	try {
                             		String subject = TurbineUtils.GetSystemName() + " Email Verification";
                             		String admin = AdminUtils.getAdminEmailId();
@@ -226,6 +226,14 @@ public class XDATRegisterUser extends VelocitySecureAction {
             logger.error("Error Storing User",e);
             handleInvalid(data, context, "Error Storing User.");
         }
+    }
+    
+    public boolean hasPAR(RunData data){
+    	if(data.getParameters().containsKey("par") || data.getSession().getAttribute("par")!=null){
+    		return true;
+    	}else{
+    		return false;
+    	}
     }
 
     public void handleInvalid(RunData data, Context context, String message)  {

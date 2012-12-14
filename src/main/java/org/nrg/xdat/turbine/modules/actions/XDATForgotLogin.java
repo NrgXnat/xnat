@@ -88,32 +88,31 @@ public class XDATForgotLogin extends VelocitySecureAction {
                     }catch(Exception e){
                         logger.error(e);
                     }
-                	
-                    String newPassword = XFT.CreateRandomAlphaNumeric(10);
-					if (user.getBooleanProperty("primary_password.encrypt", true)) {
-						// This tempPass was never used, but wanted to make sure I wasn't missing something...
-						// String tempPass = newUser.getStringProperty("primary_password");
-						user.setProperty("primary_password", XDATUser.EncryptString(newPassword));
-                    }
-                    
-                    try {
-                    	String to = user.getEmail();
-				        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user,true,null);
-				        String text = "Dear " + user.getFirstname() + " " + user.getLastname() + ",<br/>\r\n" + "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "/app/template/ChangePassword.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
-				        XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
-				        data.setMessage("You have been sent an email with a link to reset your password. Please check your email.");
-				        data.setScreenTemplate("Login.vm");
-                    } catch (MessagingException e) {
-                        logger.error("Unable to send mail",e);
-                        System.out.println("Error sending Email");
 
-                        data.setMessage("Due to a technical difficulty, we are unable to send you the email containing your information.  Please contact our technical support.");
-                        data.setScreenTemplate("ForgotLogin.vm");
-                        return;
+                    // If the user is enabled, go ahead and do this stuff.
+                    if (user.isEnabled()) {
+                        try {
+                            String to = user.getEmail();
+                            AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user,true,null);
+                            String text = "Dear " + user.getFirstname() + " " + user.getLastname() + ",<br/>\r\n" + "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "/app/template/ChangePassword.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
+                            XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
+                            data.setMessage("You have been sent an email with a link to reset your password. Please check your email.");
+                            data.setScreenTemplate("Login.vm");
+                        } catch (MessagingException e) {
+                            logger.error("Unable to send mail",e);
+                            System.out.println("Error sending Email");
+
+                            data.setMessage("Due to a technical difficulty, we are unable to send you the email containing your information.  Please contact our technical support.");
+                            data.setScreenTemplate("ForgotLogin.vm");
+                        }
+                    } else {
+                        // If the user is NOT enabled, notify administrator(s).
+                        final String message = "Disabled user attempted to reset password: " + user.getUsername();
+                        logger.warn(message);
+                        AdminUtils.sendAdminEmail(user, "Possible hack attempt", "Someone attempted reset the password for the account " + user.getUsername() + ", but this account is currently disabled. You can contact the registered account owner through the email address: " + user.getEmail() + ".");
+                        data.setMessage("Your account is currently disabled. Please contact the system administrator.");
+                        data.setScreenTemplate("Login.vm");
                     }
-					
-                    //if it can't send an email, then it should save the modified user password.
-					SaveItemHelper.authorizedSave(user, user, true, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Password Reset"));
                 }
             }else{
                 data.setScreenTemplate("ForgotLogin.vm");

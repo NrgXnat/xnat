@@ -2,7 +2,11 @@ package org.nrg.xdat.entities;
 
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.nrg.xdat.security.XDATUser;
+import org.springframework.security.authentication.CredentialsExpiredException;
+import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -13,8 +17,6 @@ import java.util.Set;
 
 @SuppressWarnings("unchecked")
 public class XDATUserDetails extends XDATUser implements UserDetails {
-
-    private XdatUserAuth authorization;
 
     public XDATUserDetails() {
         //
@@ -64,13 +66,21 @@ public class XDATUserDetails extends XDATUser implements UserDetails {
     }
 
     public boolean isCredentialsNonExpired() {
-        return true;
+        return super.isVerified();
     }
 
     public boolean isEnabled() {
-        return true;
+        return super.isEnabled();
     }
     
+    public void validateUserLogin() {
+        if (!isEnabled()) {
+            throw new DisabledException("Attempted login to disabled account: " + getUsername(), this);
+        }
+        if (!isVerified() || !isAccountNonLocked()) {
+            throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + getUsername(), this);
+        }
+    }
     
     //necessary for spring security session management
 	public int hashCode() {
@@ -96,4 +106,7 @@ public class XDATUserDetails extends XDATUser implements UserDetails {
             isEquals();
     }
 
+    private static final Log _log = LogFactory.getLog(XDATUserDetails.class);
+
+    private XdatUserAuth authorization;
 }

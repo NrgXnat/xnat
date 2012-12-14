@@ -8,6 +8,7 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.CookieParser;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import java.lang.Long;
 import java.lang.reflect.InvocationTargetException;
@@ -31,7 +32,6 @@ import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 
 public class Login extends VelocitySecureScreen {
-
 	@Override
 	protected void doBuildTemplate(RunData data) throws Exception {
 		String message = data.getMessage();
@@ -80,7 +80,7 @@ public class Login extends VelocitySecureScreen {
         }
 
 		if(failed!=null && failed.equals("true")){
-			data.setMessage("Login attempt failed. Please try again.");
+			data.setMessage(AdminUtils.GetLoginFailureMessage());
 		}
         SecureScreen.loadAdditionalVariables(data, c);
         List<AuthenticationProvider> prov = XDAT.getContextService().getBean("customAuthenticationManager",ProviderManager.class).getProviders();

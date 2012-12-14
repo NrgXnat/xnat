@@ -50,7 +50,7 @@ public class ChangePassword extends VelocitySecureScreen {
             	    		XDAT.loginUser(data, user, forcePasswordChange);
             	    	}
             	    	else{
-            	        	invalidInformation(data, context, "Invalid token.");
+            	        	invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");
             	        }
 
             		}

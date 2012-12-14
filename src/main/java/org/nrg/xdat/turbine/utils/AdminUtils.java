@@ -19,6 +19,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.xdat.XDAT;
 import org.nrg.mail.api.NotificationSubscriberProvider;
@@ -44,11 +45,25 @@ public class AdminUtils {
 	private static boolean PAGE_EMAIL = true;
     private static NotificationSubscriberProvider _provider;
 
+    private static String login_failure_message=null;
+    
 	/**
      * 
      */
 	public AdminUtils() {
 		super();
+	}
+	
+	public static String GetLoginFailureMessage(){
+		if(login_failure_message==null){
+			try {
+				login_failure_message=XDAT.getSiteConfigurationProperty("UI.login_failure_message", "Login attempt failed. Please try again.");
+			} catch (ConfigServiceException e) {
+				logger.error("",e);
+				login_failure_message="Login attempt failed. Please try again.";
+			}
+		}
+		return login_failure_message;
 	}
 
 	public static void SetNewUserRegistrationsEmail(boolean b) {

@@ -35,56 +35,65 @@ public class ChangePassword extends VelocitySecureScreen {
                 context.put("login", TurbineUtils.getUser(data).getUsername());
                 context.put("topMessage", "Your password has expired. Please choose a new one.");
             } else {
-                String alias = (String) TurbineUtils.GetPassedParameter("a", data);
-                String secret = (String) TurbineUtils.GetPassedParameter("s", data);
-                
-                if(alias!=null && secret!=null){
-                	String userID="";
-            		try
-            		{
-            			userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,Long.parseLong(secret));
-            	    	if(userID!=null){
-            	    		XDATUser user = new XDATUser(userID);
-                            if (!user.isEnabled()) {
-                                throw new Exception("User is not enabled: " + userID);
-                            }
-                            if (!user.isVerified()) {
-                                throw new Exception("User is not verified: " + userID);
-                            }
-            	    		boolean forcePasswordChange = true;
-            	    		XDAT.loginUser(data, user, forcePasswordChange);
-            	    	}
-            	    	else{
-            	        	invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");
-            	        }
+                XDATUser user = (XDATUser) data.getSession().getAttribute("user");
 
-            		}
-            		catch (Exception e)
-            		{
-                        log.error("",e);
+                // If the user isn't already logged in...
+                if(user == null || user.getUsername().equals("guest")) {
+                    String alias = (String) TurbineUtils.GetPassedParameter("a", data);
+                    String secret = (String) TurbineUtils.GetPassedParameter("s", data);
 
-                        AccessLogger.LogActionAccess(data, "Failed Login by alias '" + alias +"': " +e.getMessage());
-                        
-                        if(userID.toLowerCase().contains("script"))
+                    if(alias != null && secret != null) {
+                        String userID="";
+                        try
                         {
-                        	e= new Exception("Illegal username &lt;script&gt; usage.");
-            				AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml(userID));
-                        	log.error("",e);
-                            data.setScreenTemplate("Error.vm");
-                            data.getParameters().setString("exception", e.toString());
-                            return;
+                            userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,Long.parseLong(secret));
+                            if(userID!=null){
+                                user = new XDATUser(userID);
+                                boolean forcePasswordChange = true;
+                                XDAT.loginUser(data, user, forcePasswordChange);
+                            }
+                            else{
+                                invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");
+                            }
                         }
+                        catch (Exception e)
+                        {
+                            log.error("",e);
 
-            				// Set Error Message and clean out the user.
-                        if(e instanceof SQLException){
-            				data.setMessage("An error has occurred.  Please contact a site administrator for assistance.");
-                        }else{
-            				data.setMessage(e.getMessage());
+                            AccessLogger.LogActionAccess(data, "Failed Login by alias '" + alias +"': " +e.getMessage());
+
+                            if(userID.toLowerCase().contains("script"))
+                            {
+                                e= new Exception("Illegal username &lt;script&gt; usage.");
+                                AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml(userID));
+                                log.error("",e);
+                                data.setScreenTemplate("Error.vm");
+                                data.getParameters().setString("exception", e.toString());
+                                return;
+                            }
+
+                                // Set Error Message and clean out the user.
+                            if(e instanceof SQLException){
+                                data.setMessage("An error has occurred.  Please contact a site administrator for assistance.");
+                            }else{
+                                data.setMessage(e.getMessage());
+                            }
                         }
-            		}
+                    }
                 }
-                
-                context.put("topMessage", "Please choose a new password.");
+
+                if (!user.isEnabled()) {
+                    throw new Exception("User is not enabled: " + user.getUsername());
+                }
+                if (!user.isVerified()) {
+                    throw new Exception("User is not verified: " + user.getUsername());
+                }
+
+                String message = data.getMessage();
+                if (StringUtils.isBlank(message)) {
+                    message = "Please choose a new password.";
+                }
+                context.put("topMessage", "Enter a new password.");
             }
         } catch (Exception e) {
             log.error(e);

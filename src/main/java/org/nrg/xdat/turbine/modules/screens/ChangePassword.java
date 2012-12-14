@@ -1,21 +1,20 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.turbine.modules.screens;
 
-import java.sql.SQLException;
-
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xdat.services.AliasTokenService;
+
+import java.sql.SQLException;
 
 public class ChangePassword extends VelocitySecureScreen {
 
@@ -46,6 +45,12 @@ public class ChangePassword extends VelocitySecureScreen {
             			userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,Long.parseLong(secret));
             	    	if(userID!=null){
             	    		XDATUser user = new XDATUser(userID);
+                            if (!user.isEnabled()) {
+                                throw new Exception("User is not enabled: " + userID);
+                            }
+                            if (!user.isVerified()) {
+                                throw new Exception("User is not verified: " + userID);
+                            }
             	    		boolean forcePasswordChange = true;
             	    		XDAT.loginUser(data, user, forcePasswordChange);
             	    	}
@@ -100,7 +105,7 @@ public class ChangePassword extends VelocitySecureScreen {
     			if(!StringUtils.isEmpty(par)){
     				context.put("par", par);
     			}
-    			if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+            if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))) {
     				context.put("nextAction", nextAction);
     			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
     				context.put("nextPage", nextPage);

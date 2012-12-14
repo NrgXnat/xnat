@@ -291,11 +291,11 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     }
 
     private String getUsersByUsernameAndAuthQuery() {
-        return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<" + getMaxLoginAttemptsForQuery() + "  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
+        return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xhbm_xdat_user_auth.failed_login_attempts<" + getMaxLoginAttemptsForQuery() + "  and xhbm_xdat_user_auth.auth_user = ? and xhbm_xdat_user_auth.auth_method = ? and COALESCE(xhbm_xdat_user_auth.auth_method_id, '') = ?";
     }
 
     private String getUsersByXDATUsernameAndMostRecentSuccessfulLoginQuery() {
-        return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xdat_user.enabled=1 and xhbm_xdat_user_auth.enabled=TRUE and xhbm_xdat_user_auth.failed_login_attempts<" + getMaxLoginAttemptsForQuery() + "  and xhbm_xdat_user_auth.xdat_username = ? ORDER BY last_successful_login DESC";
+        return "select xhbm_xdat_user_auth.auth_user,xhbm_xdat_user_auth.auth_method,xhbm_xdat_user_auth.xdat_username,xhbm_xdat_user_auth.enabled,xhbm_xdat_user_auth.failed_login_attempts,xhbm_xdat_user_auth.auth_method_id, xhbm_xdat_user_auth.last_successful_login from xhbm_xdat_user_auth JOIN xdat_user ON xhbm_xdat_user_auth.xdat_username=xdat_user.login where xhbm_xdat_user_auth.failed_login_attempts<" + getMaxLoginAttemptsForQuery() + "  and xhbm_xdat_user_auth.xdat_username = ? ORDER BY last_successful_login DESC";
     }
 
     private Integer getMaxLoginAttemptsForQuery() {

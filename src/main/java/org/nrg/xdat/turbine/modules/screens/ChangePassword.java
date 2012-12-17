@@ -16,6 +16,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 
 import java.sql.SQLException;
 
+@SuppressWarnings("UnusedDeclaration")
 public class ChangePassword extends VelocitySecureScreen {
 
     @Override
@@ -54,6 +55,7 @@ public class ChangePassword extends VelocitySecureScreen {
                             }
                             else{
                                 invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");
+                                context.put("hideChangePasswordForm", true);
                             }
                         }
                         catch (Exception e)
@@ -89,10 +91,6 @@ public class ChangePassword extends VelocitySecureScreen {
                     throw new Exception("User is not verified: " + user.getUsername());
                 }
 
-                String message = data.getMessage();
-                if (StringUtils.isBlank(message)) {
-                    message = "Please choose a new password.";
-                }
                 context.put("topMessage", "Enter a new password.");
             }
         } catch (Exception e) {

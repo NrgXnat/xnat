@@ -33,6 +33,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.AuthUtils;
 
 /**
  * @author Tim
@@ -58,6 +59,14 @@ public class AdminUtils {
 		if(login_failure_message==null){
 			try {
 				login_failure_message=XDAT.getSiteConfigurationProperty("UI.login_failure_message", "Login attempt failed. Please try again.");
+                if (!StringUtils.isBlank(login_failure_message) && login_failure_message.contains("%d")) {
+                    if (AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS > 0) {
+                        login_failure_message = String.format(login_failure_message, AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS);
+                    } else {
+                        logger.warn("Found login error message that contained a %d format placeholder, but the max failed login attempts is zero or less. Using the default login failure message instead.");
+                        login_failure_message = "Login attempt failed. Please try again.";
+                    }
+                }
 			} catch (ConfigServiceException e) {
 				logger.error("",e);
 				login_failure_message="Login attempt failed. Please try again.";

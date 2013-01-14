@@ -1,10 +1,9 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Mar 26, 2004
+ * XFTItem
+ * Copyright (c) 2013. Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD License
  */
 package org.nrg.xft;
 import java.io.ByteArrayOutputStream;
@@ -106,7 +105,8 @@ import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-/***
+
+/**
  * This is a generic element used to store and manage data in XFT.
  * Each item corresponds to an data type in the schema and to a table in the database.
  *
@@ -117,6 +117,7 @@ import org.w3c.dom.Node;
  * references are defined for that data type in the schema.
  *
  * @author Tim
+ * @since 24 March 2004
  */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
@@ -133,7 +134,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	private static final String XDAT_META_ELEMENT = "xdat:meta_element";
 	private static final String STATUS = _STATUS;
 	private static final String META_STATUS = "meta/status";
-	static org.apache.log4j.Logger logger = Logger.getLogger(XFTItem.class);
+	private static final Logger logger = Logger.getLogger(XFTItem.class);
 	private static Hashtable PRE_FORMATTED_ITEMS = new Hashtable();
 	public static Comparator COMPARATOR= null;
 	public final static String EXTENDED_FIELD_NAME = "extension";
@@ -3426,7 +3427,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         return item;
 	}
 
-	public static XFTItem PopulateItemFromFlatString(String s,UserI user) throws ElementNotFoundException,Exception
+	public static XFTItem PopulateItemFromFlatString(String s,UserI user) throws Exception
 	{
 	    return PopulateItemFromFlatString(s, user, false);
 	}
@@ -3440,48 +3441,46 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @param name
 	 * @return
 	 */
-	public static XFTItem PopulateItemsFromQueryOrganizer(QueryOrganizer qo,GenericWrapperElement e, ArrayList parents, Hashtable row) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,Exception
-	{
-		XFTItem item = XFTItem.NewItem(e,qo.getUser());
-		try {
-			if (! parents.contains(e.getFullXMLName()))
-			{
-					//org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::1  (" + name + ")");
-					Iterator possibleFieldNames = qo.getAllFields().iterator();
-					//org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::4");
-					Hashtable hash = ViewManager.GetFieldMap(e,ViewManager.DEFAULT_LEVEL,true,true);
-					//org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::5");
-					while (possibleFieldNames.hasNext())
-					{
+    public static XFTItem PopulateItemsFromQueryOrganizer(QueryOrganizer qo, GenericWrapperElement e, ArrayList parents, Hashtable row) throws ElementNotFoundException, XFTInitException, FieldNotFoundException, Exception {
+        XFTItem item = XFTItem.NewItem(e, qo.getUser());
+            if (!parents.contains(e.getFullXMLName())) {
+                //org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::1  (" + name + ")");
+                Iterator possibleFieldNames = qo.getAllFields().iterator();
+                //org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::4");
+                Hashtable hash = ViewManager.GetFieldMap(e, ViewManager.DEFAULT_LEVEL, true, true);
+                //org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::5");
+                while (possibleFieldNames.hasNext()) {
 
-					    //org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::1");
-						String key = (String)possibleFieldNames.next();
-						//org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::2");
-					    String colName = (String)hash.get(key.toLowerCase());
-					    if (colName==null)
-					    {
-					        colName = (String)qo.translateXMLPath(key);
-					    }
-					    //String colName = (String)qo.translateXMLPath(key);
-					    // org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::3");
+                    //org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::1");
+                    String key = (String) possibleFieldNames.next();
+                    //org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::2");
+                    String colName = (String) hash.get(key.toLowerCase());
+                    if (colName == null) {
+                        colName = (String) qo.translateXMLPath(key);
+                    }
 
-						Object v = row.get(colName.toLowerCase());
-					   // org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::2");
-						if (v != null)
-						{
-						 //   org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::" + key);
-							item.setProperty(key,v);
-						 //   org.nrg.xft.XFT.LogCurrentTime("END SET PROPERTY");
-						}
-					}
-					//org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::6");
-			}
-		} catch (ElementNotFoundException ex) {
-			ex.printStackTrace();
-		}
+                    //String colName = (String)qo.translateXMLPath(key);
+                    // org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::3");
 
-		return item;
-	}
+                    Object v = row.get(colName.toLowerCase());
+                    // org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::2");
+
+                    //fix for when labels get close to 64 characters.
+                    if (v == null && colName.length() > 62) {
+                        v = row.get(StringUtils.Last62Chars(colName.toLowerCase()));
+                    }
+
+                    if (v != null) {
+                        //   org.nrg.xft.XFT.LogCurrentTime("BEGIN SET PROPERTY::" + key);
+                        item.setProperty(key, v);
+                        //   org.nrg.xft.XFT.LogCurrentTime("END SET PROPERTY");
+                    }
+                }
+                //org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::6");
+            }
+
+        return item;
+    }
 //
 //	/**
 //	 * If any fields in this Object array have matching header values, then those fields are put into

@@ -3680,7 +3680,7 @@ public class DBAction {
 						Object current = PoolDBUtils.ReturnStatisticQuery("SELECT last_value AS LAST_COUNT from "+sequenceName,"LAST_COUNT",input.getDbName(),null);
 						if (o == null)
 						{
-						    o =new Integer(1);
+						    o = 1;
 						}
 						
 						if (current == null)
@@ -3688,29 +3688,28 @@ public class DBAction {
                             System.out.println("Adjusting missing sequence (" + input.getFullXMLName() +");");
 							PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+ sequenceName +"',"+o+")",input.getDbName(),null);
 						}else{
-						    Integer i1 = (Integer)o;
+                            int i1 = o instanceof Integer ? (Integer) o : (o instanceof Long ? ((Long) o).intValue() : Integer.parseInt(o.toString()));
 						    Long i2 = (Long)current;
-						    if (i1.intValue()>i2.intValue()){
+						    if (i1 > i2.intValue()){
                                 System.out.println("Adjusting invalid sequence (" + input.getFullXMLName() +");");
 						        PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+ sequenceName +"',"+o+")",input.getDbName(),null);
 						    }
 						}
 					}
 				}
-				
-				Iterator mappingTables = XFTReferenceManager.GetInstance().getUniqueMappings().iterator();
-				while (mappingTables.hasNext())
+
+				for (Object object : XFTReferenceManager.GetInstance().getUniqueMappings())
 				{
-					XFTManyToManyReference map = (XFTManyToManyReference)mappingTables.next();
+                    XFTManyToManyReference map = (XFTManyToManyReference) object;
 					String sequenceName = DBAction.getSequenceName(map.getMappingTable(),map.getMappingTable() + "_id",map.getElement1().getDbName());
 					Object o = PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + map.getMappingTable() + "_id) AS MAX_COUNT from "+map.getMappingTable(),"MAX_COUNT",map.getElement1().getDbName(),null);
 					//PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+ sequenceName +"',"+o+")",map.getElement1().getDbName(),null);
                     Object current = PoolDBUtils.ReturnStatisticQuery("SELECT last_value AS LAST_COUNT from "+sequenceName,"LAST_COUNT",map.getElement1().getDbName(),null);
                     if (o == null)
                     {
-                        o =new Integer(1);
+                        o = 1;
                     }
-                    
+
                     if (current == null)
                     {
                         System.out.println("Adjusting missing mapping sequence (" + map.getMappingTable() +");");

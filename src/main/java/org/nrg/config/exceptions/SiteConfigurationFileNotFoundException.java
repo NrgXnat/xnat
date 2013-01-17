@@ -16,10 +16,10 @@ public final class SiteConfigurationFileNotFoundException extends
 	public SiteConfigurationFileNotFoundException(String configFileName, List<String> configFilesLocations) {
 		super(String.format("The file '%s' was not found in any of the following locations:\n%s"
 				, configFileName
-				, Joiner.on("\n").join(configFilesLocations)		
+				, Joiner.on("\n").join(configFilesLocations)
 		));
 	}
-	
+
 	@SuppressWarnings("unused")
 	private SiteConfigurationFileNotFoundException() {}
 }

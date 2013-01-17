@@ -623,13 +623,27 @@ public class TextFunctionGenerator {
     	sb.append("\n           END;");
 	}
 	
+	private static String BuildLocalColumnArguments(String prefix,XFTSuperiorReference supRef){
+		StringBuffer sb=new StringBuffer();
+		Iterator refsCols = supRef.getKeyRelations().iterator();
+    	int count = 0;
+        while (refsCols.hasNext()) {
+            XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+                    .next();
+            if (count++ > 0)
+                sb.append(", ");
+            sb.append(prefix).append(spec.getLocalCol());
+        }
+        return sb.toString();
+	}
+	
 	private static void DefaultReferenceCall(GenericWrapperElement primary_input,GenericWrapperElement surrogate_input, StringBuffer sb, String isRoot,XFTSuperiorReference supRef,String preventLoop,GenericWrapperField field,boolean isHistory,GenericWrapperElement foreign, String allowMultiples) {
-		sb.append("\n -- 277");
+
 		
         if (!(primary_input.getName().endsWith("meta_data"))) {
             if(isHistory && (surrogate_input.getExtensionFieldName().equalsIgnoreCase(field.getName()))){
                 HistoricalReferenceBegin(sb, foreign, supRef);
-                
+        		sb.append("\n -- 632");                
             	sb.append("\n           	   tempText := ie_");
             	sb.append(foreign.getFormattedName());
             	sb.append("_history(ext_row.history_id, child_count,$3,false,false);");
@@ -637,48 +651,66 @@ public class TextFunctionGenerator {
                                 + (field.getSQLName() + "_" + field
                                         .getXMLType()
                                         .getLocalType())
-                                        .toLowerCase() + ":XFTItem)='';");
-            	sb.append("\n           	      fullText := fullText || ''('' || tempText || '')'';");
+                                        .toLowerCase() + ":XFTItem)=('' || tempText || '')'';");
             	
             	HistoricalReferenceEnd(sb);
             	
             }else{
-                sb.append("\n           child_count := child_count+1;");
-                sb.append("\n           tempText := NULL;");
-            	if (surrogate_input.getExtensionFieldName().equalsIgnoreCase(field.getName()))
+        		String prefix=null;
+        		if (surrogate_input.getExtensionFieldName().equalsIgnoreCase(field.getName()))
                 {
-                    sb.append("\n           tempText := " + GenericWrapperUtils.TXT_EXT_FUNCTION);
+                    prefix=GenericWrapperUtils.TXT_EXT_FUNCTION;
                 }else{
-                    sb.append("\n           tempText := " + GenericWrapperUtils.TXT_FUNCTION);
+                    prefix=GenericWrapperUtils.TXT_FUNCTION;
                 }
-
-            	sb.append(foreign.getFormattedName());
-            	if(isHistory && !(foreign.getXSIType().equals("xdat:meta_element") || foreign.getXSIType().endsWith("_meta_data")))sb.append("_history");
-            	sb.append("(");
-            	
-            	Iterator refsCols = supRef.getKeyRelations().iterator();
-            	int count = 0;
-                while (refsCols.hasNext()) {
-                    XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
-                            .next();
-                    if (count++ > 0)
-                        sb.append(", ");
-                    sb.append("current_row.").append(
-                            spec.getLocalCol());
-                }
-                sb.append(", child_count," + allowMultiples + ",false," + field.getPreventLoop());
-               // if(isHistory)sb.append(",current_row.xft_version");
-                sb.append(");");
-                sb.append("\n              fullText := fullText || ''("
-                                + (field.getSQLName() + "_" + field
-                                        .getXMLType()
-                                        .getLocalType())
-                                        .toLowerCase() + ":XFTItem)='';");
-                sb.append("\n              fullText := fullText || ''('' || tempText || '')'';");
+            	if(isHistory && !(foreign.getXSIType().equals("xdat:meta_element") || foreign.getXSIType().endsWith("_meta_data"))){
+            		sb.append("\n -- 661");
+            		
+            		sb.append("\n           DECLARE"); 
+            		sb.append("\n           mapping_row RECORD; "); 
+            		sb.append("\n           loop_count int4:=0; "); 
+            		sb.append("\n           BEGIN "); 
+            		sb.append("\n           	FOR mapping_row IN SELECT * FROM "+foreign.getSQLName()+"_history WHERE  ");
+            		Iterator refsCols = supRef.getKeyRelations().iterator();
+                	int count = 0;
+                    while (refsCols.hasNext()) {
+                        XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+                                .next();
+                        if (count++ > 0)
+                            sb.append(", ");
+                        sb.append(spec.getForeignCol()).append("=").append("current_row.").append(spec.getLocalCol());
+                    }
+            		sb.append(" AND xft_version=current_row.xft_version LIMIT 1"); 
+                    sb.append("\n           	LOOP");        
+                    
+                    RetrieveItemI(prefix,foreign.getFormattedName()+"_history","mapping_row.history_id",allowMultiples,field,sb);
+                	
+                    sb.append("\n           	END LOOP;"); 
+            		sb.append("\n           END; "); 
+            	}else{
+            		sb.append("\n -- 693");
+            		RetrieveItemI(prefix,foreign.getFormattedName(),BuildLocalColumnArguments("current_row.",supRef),allowMultiples,field,sb);
+            	}
             }
             
         }
 		
+	}
+	
+	private static void RetrieveItemI(String prefix, String xsiType,String localCols,String allowMultiples, GenericWrapperField field, StringBuffer sb){
+		sb.append("\n           child_count := child_count+1;");
+	    sb.append("\n           tempText := NULL;");
+		sb.append("\n           tempText := " + prefix);
+	
+		sb.append(xsiType);
+		
+	    sb.append("("+localCols +", child_count," + allowMultiples + ",false," + field.getPreventLoop()+");");
+	   // if(isHistory)sb.append(",current_row.xft_version");
+	    sb.append("\n              fullText := fullText || ''("
+	                    + (field.getSQLName() + "_" + field
+	                            .getXMLType()
+	                            .getLocalType())
+	                            .toLowerCase() + ":XFTItem)=('' || tempText || '')'';");
 	}
 	
 	private static void EndIf(StringBuffer sb){

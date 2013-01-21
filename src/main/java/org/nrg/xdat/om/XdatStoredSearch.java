@@ -112,14 +112,28 @@ public class XdatStoredSearch extends BaseXdatStoredSearch {
                 String f = sf.getFieldId();
                 String h = sf.getHeader();
                 if(sf.getValue()!=null){
-                     int i =f.indexOf("="+sf.getValue());
-                     if (i>0){
-                         f = f.substring(0,i);
-                     }
+                	//remove value if it is appended to the field ID (deprecated value method)
+                	if(f.indexOf("="+sf.getValue())>-1){
+	                    int i =f.indexOf("="+sf.getValue());
+	                    if (i>0){
+	                         f = f.substring(0,i);
+	                    }
+                	}else if(f.indexOf("."+sf.getValue())>-1){
+                		int i =f.indexOf("."+sf.getValue());
+                        if (i>0){
+                            f = f.substring(0,i);
+                        }            		
+                	}
+                     
                 }else{
+                	//handle value passed by deprecated method
                 	if(f.indexOf("=")>-1){
                 		sf.setValue(f.substring(f.indexOf("=")+1));
                 		f=f.substring(0,f.indexOf("="));
+                	}
+                	if(f.indexOf('.')>-1){
+                		sf.setValue(f.substring(f.indexOf('.')+1));
+                		f=f.substring(0,f.indexOf('.'));
                 	}
                 }
                 

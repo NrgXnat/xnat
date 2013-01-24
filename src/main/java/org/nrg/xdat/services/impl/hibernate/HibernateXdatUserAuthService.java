@@ -128,20 +128,6 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         });
     }
 
-    public boolean isLDAPUserDisabled(final String username, final String id) {
-        List<Boolean> enabled = (new JdbcTemplate(_datasource)).query("SELECT enabled FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP + "' AND auth_method_id = ?", new String[]{username, id}, new RowMapper<Boolean>() {
-            public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
-                boolean enabled = rs.getBoolean(1);
-                if (_log.isDebugEnabled()) {
-                    _log.debug("Found user " + username + (enabled ? " is" : " is not") + " enabled.");
-                }
-
-                return enabled;
-            }
-        });
-        return !enabled.get(0);
-    }
-
     public Boolean newUserAccountsAreAutoEnabled() {
         return XFT.GetUserRegistration();
     }
@@ -158,29 +144,12 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return u;
     }
 
-    private boolean isLDAPUserLocked(final String username, final String id) {
-            List<Integer> count = (new JdbcTemplate(_datasource)).query("SELECT failed_login_attempts FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = '" + XdatUserAuthService.LDAP + "' AND auth_method_id = ?", new String[]{username, id}, new RowMapper<Integer>() {
-                public Integer mapRow(ResultSet rs, int rowNum) throws SQLException {
-                    Integer count = rs.getInt(1);
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Found " + count + " failed login attempts for user " + username);
-                    }
-
-                    return count;
-                }
-            });
-        final boolean locked = count.get(0) >= AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS;
-        if (_log.isDebugEnabled()) {
-            _log.debug("User login attempts (" + count.get(0) + ") " + (locked ? "have" : "have not") + " exceeded the max failed login attempt limit of " + AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS);
-        }
-        return locked;
-    }
-
-    private XDATUserDetails getUserDetailsForUserList(List<XDATUserDetails> users, String username, String auth, String id, String email, String lastname, String firstname) {
+    private XDATUserDetails getUserDetailsForUserList(List<XDATUserDetails> users, String username, String auth,
+	    String id, String email, String lastname, String firstname) {
         XDATUserDetails userDetails = null;
 
-        if (users.size() == 0 || users.get(0) == null) {
-            if (auth.equals(XdatUserAuthService.LDAP) && !isLDAPUserDisabled(username, id) && !isLDAPUserLocked(username, id)) {
+	if (users.size() == 0) {
+	    if (auth.equals(XdatUserAuthService.LDAP)) {
                 userDetails = handleNewLdapUser(id, username, email, firstname, lastname);
                 if (users.size() == 0) {
                     users.add(userDetails);

@@ -2,12 +2,7 @@
 package org.nrg.xft.db;
 
 import java.sql.SQLException;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplaySearch;
@@ -189,11 +184,11 @@ public class MaterializedView {
         }
 	}
 	
-	public XFTTable getData(String sortBy,Integer offset, Integer limit) throws SQLException,Exception{
+	public XFTTable getData(String sortBy,Integer offset, Integer limit) throws Exception{
 		return getData(sortBy,offset,limit,null);
 	}
 	
-	public XFTTable getData(String sortBy,Integer offset, Integer limit,Map<String,Object> filters) throws SQLException,Exception{
+	public XFTTable getData(String sortBy,Integer offset, Integer limit,Map<String,Object> filters) throws Exception{
 		String query="SELECT * FROM " + PoolDBUtils.search_schema_name + "." + this.table_name;
 		
 		if(filters!=null && filters.size()>0){
@@ -291,23 +286,26 @@ public class MaterializedView {
 		return "("+clause+")";
 	}
 	
-	public static void validateColumns(Collection<String> columns, MaterializedView mv) throws SQLException, Exception{
+	public static void validateColumns(Collection<String> columns, MaterializedView mv) throws Exception{
 		List<String> all_columns=mv.getColumnNames();
-		
+		List<String> badColumns = new ArrayList<String>();
 		for(String column:columns){
 			if(!all_columns.contains(column)){
-				throw new Exception("Invalid column in request");
+                badColumns.add(column);
 			}
 		}
+        if (badColumns.size() > 0) {
+            throw new Exception("Invalid column in request: " + org.apache.commons.lang.StringUtils.join(badColumns, ", "));
+        }
 	}
 	
-	public static void validateColumns(String columnName, MaterializedView mv) throws SQLException, Exception{
+	public static void validateColumns(String columnName, MaterializedView mv) throws Exception{
 		List<String> columns=StringUtils.CommaDelimitedStringToArrayList(columnName);
 		validateColumns(columns,mv);
 	}
 	
 	private List<String> cachedColumnNames=null;
-	public List<String> getColumnNames() throws SQLException,Exception{
+	public List<String> getColumnNames() throws Exception{
 		if(cachedColumnNames==null){
 			String query="select LOWER(attname) as col_name from pg_attribute, pg_class,pg_type where attrelid = pg_class.oid AND atttypid=pg_type.oid AND attnum>0 and LOWER(relname) = '" + this.table_name.toLowerCase() + "';";
 			XFTTable t=XFTTable.Execute(query, user.getDBName(), user.getLogin());
@@ -325,11 +323,11 @@ public class MaterializedView {
 		return t;
 	}
 	
-	public XFTTable getColumnsValues(String column) throws SQLException,Exception{
+	public XFTTable getColumnsValues(String column) throws Exception{
 		return getColumnsValues(column, null);
 	}
 	
-	public XFTTable getColumnsValues(String column,Map<String,Object> filters) throws SQLException,Exception{
+	public XFTTable getColumnsValues(String column,Map<String,Object> filters) throws Exception{
 		String query="SELECT " + column +",COUNT(*) FROM " + PoolDBUtils.search_schema_name + "." + this.table_name;
 		
 		if(filters!=null && filters.size()>0){
@@ -352,7 +350,7 @@ public class MaterializedView {
 	}
 	
 	
-	public void delete() throws SQLException,Exception{
+	public void delete() throws Exception{
 		String drop = "DROP TABLE " + PoolDBUtils.search_schema_name + "." +table_name + ";";
 		String delete = "DELETE FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE table_name='" + table_name+"';";
 		
@@ -360,7 +358,7 @@ public class MaterializedView {
 		PoolDBUtils.ExecuteNonSelectQuery(delete, user.getDBName(), user.getLogin());
 	}
 	
-	public void save() throws SQLException,Exception{		
+	public void save() throws Exception{
 		if(search_sql==null){
 			throw new NullPointerException();
 		}
@@ -413,7 +411,7 @@ public class MaterializedView {
 		PoolDBUtils.ExecuteNonSelectQuery(create, user.getDBName(), user.getLogin());
 		PoolDBUtils.ExecuteNonSelectQuery(insert, user.getDBName(), user.getLogin());
 		} catch (Exception e) {
-			if(e.getMessage().indexOf("pg_type_typname_nsp_index")>-1){
+			if(e.getMessage().contains("pg_type_typname_nsp_index")){
 				//retry
 				logger.info("Duplicate materialized view.");
 				if(XFT.VERBOSE)System.out.println("Duplicate materialized view.");
@@ -446,7 +444,7 @@ public class MaterializedView {
 		}
 	}
 	
-	public static void DeleteBySearchID(String search_id, XDATUser user)throws DBPoolException, SQLException,Exception{
+	public static void DeleteBySearchID(String search_id, XDATUser user)throws Exception{
 		MaterializedView.VerifyManagerExistence(user);
 		XFTTable t = XFTTable.Execute("SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE search_id='" + search_id+"';", user.getDBName(), user.getLogin());
 		if(t.size()>0){
@@ -455,7 +453,7 @@ public class MaterializedView {
 		}
 	}
 	
-	public static void DeleteByUser(XDATUser user)throws DBPoolException, SQLException,Exception{
+	public static void DeleteByUser(XDATUser user)throws Exception{
 		MaterializedView.VerifyManagerExistence(user);
 		XFTTable t = XFTTable.Execute("SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE username='" + user.getLogin() + "';", user.getDBName(), user.getLogin());
 		if(t.size()>0){
@@ -488,7 +486,7 @@ public class MaterializedView {
 		@Override
 		public void run() {
 			try {
-				String query=null;
+				String query;
 				if(currentView!=null){
 					query = "UPDATE " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " SET last_access=NOW() WHERE table_name='" + currentView + "';";
 					PoolDBUtils.ExecuteNonSelectQuery(query, dbname, "system");
@@ -518,7 +516,7 @@ public class MaterializedView {
 	}
 	
 	public DisplaySearch getDisplaySearch(XDATUser user)throws Exception{
-		XFTItem item = item = XFTItem.PopulateItemFromFlatString(this.getSearch_xml(),user,true); 
+		XFTItem item = XFTItem.PopulateItemFromFlatString(this.getSearch_xml(),user,true);
 		XdatStoredSearch search = new XdatStoredSearch(item);
 		
 		return search.getDisplaySearch(user);

@@ -238,6 +238,7 @@ public class MailMessage {
     
     public SimpleMailMessage asSimpleMailMessage() {
         SimpleMailMessage message = new SimpleMailMessage();
+	message.setFrom(_from);
         message.setTo(_tos.toArray(new String[_tos.size()]));
         if (_ccs.size() > 0) {
             message.setCc(_ccs.toArray(new String[_ccs.size()]));

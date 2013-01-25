@@ -742,12 +742,14 @@ public  class FileUtils
             		dest.delete();
             }
     
-            if (!moved)
-            {
-            	org.apache.commons.io.FileUtils.moveFile(src,dest);
-            }
-            
-            if(deleteDIR){
+    	if (!moved) {
+    	    if (dest.exists()) {
+    		org.apache.commons.io.FileUtils.forceDelete(dest);
+    	    }
+    	    org.apache.commons.io.FileUtils.moveFile(src, dest);
+    	}
+
+	if(deleteDIR){
             	CleanEmptyDirectories(src.getParentFile());
             }
 	}

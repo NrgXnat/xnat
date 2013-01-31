@@ -467,6 +467,29 @@ public class ConfigPlatformTests {
     	assertEquals(v1.getVersion(), v1Check.getVersion());
     }
     
+    @Test
+    public void testUnversionedConfig()throws ConfigServiceException {
+        // First call defines this as unversioned.
+    	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, true, "version1", encode(project));
+    	Configuration v1 = _configService.getConfig(toolName, path, encode(project));
+    	assertEquals(1, v1.getVersion());
+        assertEquals("version1", v1.getContents());
+
+        // Second call it should remain unversioned.
+    	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, "version2", encode(project));
+    	Configuration v2 = _configService.getConfig(toolName, path, encode(project));
+    	assertEquals(1, v2.getVersion());
+        assertEquals("version2", v2.getContents());
+
+    	Configuration v2Check = _configService.getConfigByVersion(toolName, path, 2, encode(project));
+    	assertNull(v2Check);
+
+    	Configuration v1Check = _configService.getConfigByVersion(toolName, path, 1, encode(project));
+    	assertEquals(v2.getContents(), v1Check.getContents());
+    	assertEquals(v2.getVersion(), v1Check.getVersion());
+    	assertEquals(v1.getVersion(), v1Check.getVersion());
+    }
+
     @Inject
     private TestDBUtils _testDBUtils;
     

@@ -60,7 +60,10 @@ public interface ConfigService{
 	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents) throws ConfigServiceException;
 	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Long projectID) throws ConfigServiceException;
 	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Callable<Long> projectID) throws ConfigServiceException;
-	
+	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents) throws ConfigServiceException;
+	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Long projectID) throws ConfigServiceException;
+	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Callable<Long> projectID) throws ConfigServiceException;
+
 	//return the status property for the configuration specified by the parameters.
 	public String getStatus(String toolName, String path);
 	public String getStatus(String toolName, String path, Long projectID);

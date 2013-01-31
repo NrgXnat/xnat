@@ -6,15 +6,4 @@ import org.springframework.stereotype.Repository;
 
 @Repository
 public class ConfigurationDataDAO  extends AbstractHibernateDAO<ConfigurationData>{
-
-	//ConfigurationDatas are immutable, so override delete and update
-	@Override
-    public void delete(ConfigurationData entity) {
-		throw new UnsupportedOperationException();
-    }
-	
-	@Override
-    public void update(ConfigurationData entity) {
-		throw new UnsupportedOperationException();
-    }
 }

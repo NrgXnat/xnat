@@ -51,13 +51,13 @@ public interface SiteConfigurationService {
     
     /**
      * The absolute path to prepend to any paths in the injected configFilesLocations that are relative.
-     * @param configFilesLocationRoot
+     * @return The root location for configuration files.
      */
     public abstract String getConfigFilesLocationsRoot();
     
     /**
      * The absolute path to prepend to any paths in the injected configFilesLocations that are relative.
-     * @param configFilesLocationRoot
+     * @param configFilesLocationRoot    The path to set as the root location for configuration files.
      */
     public abstract void setConfigFilesLocationsRoot(String configFilesLocationRoot);
 }

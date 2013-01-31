@@ -14,19 +14,23 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 	//Configurations are immutable, so override delete and update
     @Override
     public void delete(Configuration entity) {
-    	throw new UnsupportedOperationException();
+        if (entity.isUnversioned()) {
+            super.delete(entity);
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
     
     @Override
     public void update(Configuration entity) {
-    	throw new UnsupportedOperationException();
+    	if (entity.isUnversioned()) {
+            super.update(entity);
+        } else {
+            throw new UnsupportedOperationException();
+        }
     }
-    
-	public void deleteAll(){
-		throw new UnsupportedOperationException();
-	}
-	
-	//HEY, YOU. every method in here will return null
+
+    //HEY, YOU. every method in here will return null
 	//if nothing found... even for LIST<T> return
 	//types. that makes it easy to know if nothing came back... no need to test the size.
 	

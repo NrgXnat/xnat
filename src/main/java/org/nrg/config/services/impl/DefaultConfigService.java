@@ -32,22 +32,25 @@ public class DefaultConfigService implements ConfigService {
 	private ConfigurationDataDAO configurationDataDAO;
 	
 	@Transactional
+    @Override
 	public List<Configuration> getAll(){
 		return configurationDAO.getAll();
 	}	
 	
-	@Override
 	@Transactional
+    @Override
 	public Configuration getById(Long id){
 		return configurationDAO.findById(id);
 	}
-	
+
 	@Transactional
+    @Override
 	public List<Long> getProjects(){
 		return getProjects(null);
 	}
-	
+
 	@Transactional
+    @Override
 	public List<Long> getProjects(String toolName){
 		return configurationDAO.getProjects(toolName);
 	}
@@ -71,7 +74,7 @@ public class DefaultConfigService implements ConfigService {
 			return null;
 		} else {
 			Collections.sort(list,ConfigComparatorByCreateDate);
-			return ((Configuration) list.get(list.size()-1));
+			return list.get(list.size()-1);
 		}
 	}
 	
@@ -84,7 +87,7 @@ public class DefaultConfigService implements ConfigService {
 			return null;
 		} else {
 			Collections.sort(list,ConfigComparatorByCreateDate);
-			return ((Configuration) list.get(list.size()-1)).getContents();
+			return list.get(list.size()-1).getContents();
 		}
 	}
 	
@@ -116,7 +119,7 @@ public class DefaultConfigService implements ConfigService {
 			return null;
 		} else {
 			Collections.sort(list,ConfigComparatorByVersion);
-			Configuration ret = ((Configuration) list.get(version-1));
+			Configuration ret = list.get(version-1);
 			//this will only fail if something truly stupid happened. Still should check, though.
 			if(ret.getVersion() == version){
 				return ret;
@@ -133,39 +136,67 @@ public class DefaultConfigService implements ConfigService {
 	}
 	
 	@Transactional
-	private Configuration replaceConfigImpl(String xnatUser, String reason, String toolName, String path, String contents, Long projectID) throws ConfigServiceException{
+	private Configuration replaceConfigImpl(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Long projectID) throws ConfigServiceException{
 		
 		if(contents != null && contents.length() > ConfigService.MAX_FILE_LENGTH){
 			throw new ConfigServiceException("file size must be less than " + ConfigService.MAX_FILE_LENGTH + " characters.");
 		}
 		
-		int version = 1;
-		ConfigurationData configData = null;
-		
 		//if a current config exists and the contents are the same as the previous version, share the config data
 		Configuration oldConfig = getConfig(toolName, path, projectID);
 
-		if(oldConfig != null && oldConfig.getConfigData()!= null && contents != null && contents.equals(oldConfig.getConfigData().getContents() ) ){
-			configData = oldConfig.getConfigData();
+        // We will do versioning if:
+        //  Case1) There is no config and unversioned is not specified (defaults to versioning) or unversioned is false
+        //  Case2) There is a config, but unversioned is specified and false (parameter overrides current configuration, so we don't need  to check)
+        //  Case3) NOT(There is a config, unversioned is either not specified or is true, and  the config is set to unversioned)
+        boolean doVersion = (oldConfig == null && (unversioned == null || !unversioned)) || (oldConfig != null && ((unversioned != null && !unversioned) || !(oldConfig.isUnversioned() && (unversioned == null || unversioned))));
+
+        Configuration c;
+        boolean update;
+        // If these things...
+        if(oldConfig != null && !doVersion) {
+            // We're going to update a non-versioned configuration.
+            update = true;
+            c = oldConfig;
+            // If the contents have changed in a non-versioned configuration, delete the existing configuration data.
+            if (c.getConfigData() != null && !StringUtils.equals(contents, c.getConfigData().getContents())) {
+                configurationDataDAO.delete(c.getConfigData());
+                c.setConfigData(null);
+            }
 		} else {
-			configData = new ConfigurationData();
-			configData.setContents(contents);
-			configurationDataDAO.create(configData);
-		}
-		if(oldConfig != null){
-			version += oldConfig.getVersion();
-		}
-		Configuration c = new Configuration();
-		c.setTool(toolName);
-		c.setConfigData(configData);
+            // But if not those things, we're creating a new (possibly versioned or non-versioned, we don't care) configuration
+            update = false;
+            c = new Configuration();
+        }
+
+        // If we have contents and there are no contents set for the configuration...
+        if (c.getConfigData() == null) {
+            // If the old configuration data doesn't differ, we'll just re-use that.
+            if (oldConfig != null && oldConfig.getConfigData() != null && StringUtils.equals(contents, oldConfig.getConfigData().getContents())) {
+                c.setConfigData(oldConfig.getConfigData());
+            } else {
+                // But if it doesn't, we need to create a new configuration data. For non-versioned configurations, we
+                // already deleted the existing configuration data.
+                c.setConfigData(new ConfigurationData());
+                c.getConfigData().setContents(contents);
+                configurationDataDAO.create(c.getConfigData());
+            }
+        }
+
+        c.setTool(toolName);
 		c.setPath(path);
 		c.setProject(projectID);
 		c.setXnatUser(xnatUser);
 		c.setReason(reason);
 		c.setStatus(Configuration.ENABLED_STRING);
-		c.setVersion(version);
+		c.setVersion(1 + ((oldConfig != null && doVersion) ? oldConfig.getVersion() : 0));
+		c.setUnversioned(!doVersion);
 
-		configurationDAO.create(c);
+		if (update) {
+            configurationDAO.update(c);
+        } else {
+            configurationDAO.create(c);
+        }
 		return c;
 	}
 	
@@ -175,7 +206,7 @@ public class DefaultConfigService implements ConfigService {
 		List<Configuration> list = configurationDAO.findByToolPathProject(toolName, path, projectID);
 		if(list == null || list.size() == 0) return null;
 		Collections.sort(list,ConfigComparatorByCreateDate);
-		return ((Configuration) list.get(list.size()-1)).getStatus();
+		return list.get(list.size()-1).getStatus();
 	}
 	
 	
@@ -185,7 +216,7 @@ public class DefaultConfigService implements ConfigService {
 	private void setStatus(String xnatUser, String reason, String toolName, String path, String status, Long projectID) {
 
 		if(status == null){
-			throw new UnsupportedOperationException("Unable to set a config's status to null");
+			throw new UnsupportedOperationException("Unable to set a configuration's status to null");
 		}
 
 		List<Configuration> list = configurationDAO.findByToolPathProject(toolName, path, projectID);
@@ -194,23 +225,25 @@ public class DefaultConfigService implements ConfigService {
 			return;
 		}
 		Collections.sort(list,ConfigComparatorByCreateDate);
-		Configuration entity = ((Configuration) list.get(list.size()-1));
+		Configuration entity = list.get(list.size()-1);
 		
-		if(status.equals(entity.getStatus())){
-			return;
-		} else {
-			//changing and existing Configuration is a no-no. We have to create a new Configuration with a new xnatUser and reason
+		if(!entity.isUnversioned() && !status.equals(entity.getStatus())) {
+			//changing an existing versioned Configuration is a no-no. We have to create a new Configuration with a new xnatUser and reason
 			Configuration newConfig = new Configuration();
 			newConfig.setProject(entity.getProject());
 			newConfig.setTool(entity.getTool());
 			newConfig.setPath( entity.getPath());
 			newConfig.setConfigData(entity.getConfigData());
-			
 			newConfig.setStatus(status);
 			newConfig.setXnatUser(xnatUser);
 			newConfig.setReason(reason);
 			configurationDAO.create(newConfig);
-		}
+		} else {
+            entity.setStatus(status);
+            entity.setStatus(xnatUser);
+            entity.setStatus(reason);
+            configurationDAO.update(entity);
+        }
 	}
 	
 	@SuppressWarnings("unchecked")
@@ -234,11 +267,13 @@ public class DefaultConfigService implements ConfigService {
 	 * 
 	 */	
 	@Transactional
+    @Override
 	public List<String> getTools(){
 		return getToolsImpl(null);
 	}
 	
 	@Transactional
+    @Override
 	public List<String> getTools(Callable<Long> projectID){
 		if(projectID == null){
 			return getToolsImpl(null);
@@ -250,21 +285,25 @@ public class DefaultConfigService implements ConfigService {
 		}
 	}
 	@Transactional
+    @Override
 	public List<String> getTools(Long projectID){
 		return getToolsImpl(projectID);
 	}
 		
 	@Transactional
+    @Override
 	public List<Configuration> getConfigsByTool(String toolName){
 		return getConfigsByToolImpl(toolName, null);
 	}
 
 	@Transactional
+    @Override
 	public List<Configuration> getConfigsByTool(String toolName, Long projectID){
 		return getConfigsByToolImpl(toolName, projectID);
 	}
 
 	@Transactional
+    @Override
 	public List<Configuration> getConfigsByTool(String toolName, Callable<Long> projectID){
 		if(projectID == null ){
 			return getConfigsByToolImpl(toolName, null);
@@ -277,11 +316,13 @@ public class DefaultConfigService implements ConfigService {
 	}
 	
 	@Transactional
+    @Override
 	public Configuration getConfig(String toolName, String path){
 		return getConfigImpl(toolName, path, null);	
 	}
 	
 	@Transactional
+    @Override
 	public Configuration getConfig(String toolName, String path, Callable<Long> projectID){
 		if(projectID == null){
 			return getConfigImpl(toolName, path, null);
@@ -294,16 +335,19 @@ public class DefaultConfigService implements ConfigService {
 	}
 	
 	@Transactional
+    @Override
 	public Configuration getConfig(String toolName, String path, Long projectID){
 		return getConfigImpl(toolName, path, projectID);
 	}
 	
 	@Transactional
+    @Override
 	public String getConfigContents(String toolName, String path){
 		return getConfigContentsImpl(toolName, path, null);	
 	}
 	
 	@Transactional
+    @Override
 	public String getConfigContents(String toolName, String path, Callable<Long> projectID){
 		if(projectID == null){
 			return getConfigContentsImpl(toolName, path, null);
@@ -316,16 +360,19 @@ public class DefaultConfigService implements ConfigService {
 	}
 
 	@Transactional
+    @Override
 	public String getConfigContents(String toolName, String path, Long projectID){
 		return getConfigContentsImpl(toolName, path, projectID);
 	}
 	
 	@Transactional
+    @Override
 	public Configuration getConfigById(String toolName, String path, String id){
 		return getConfigByIdImpl(toolName, path, id, null);
 	}
 	
 	@Transactional
+    @Override
 	public Configuration getConfigById(String toolName, String path, String id, Callable<Long> projectID){
 		if(projectID == null){
 			return getConfigByIdImpl(toolName, path, id, null);
@@ -338,16 +385,19 @@ public class DefaultConfigService implements ConfigService {
 	}
 	
 	@Transactional
+    @Override
 	public Configuration getConfigById(String toolName, String path, String id, Long projectID){
 		return getConfigByIdImpl(toolName, path, id, projectID);
 	}	
 
 	@Transactional
+    @Override
 	public Configuration getConfigByVersion(String toolName, String path, int version){
 		return getConfigByVersionImpl(toolName, path, version, null);
 	}
 	
 	@Transactional
+    @Override
 	public Configuration getConfigByVersion(String toolName, String path, int version, Callable<Long> projectID){
 		if(projectID == null){
 			return getConfigByVersionImpl(toolName, path, version, null);
@@ -360,38 +410,62 @@ public class DefaultConfigService implements ConfigService {
 	}
 	
 	@Transactional
+    @Override
 	public Configuration getConfigByVersion(String toolName, String path, int version, Long projectID){
 		return getConfigByVersionImpl(toolName, path, version, projectID);
 	}
 	
 	@Transactional
+    @Override
 	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents) throws ConfigServiceException{
-		return replaceConfigImpl(xnatUser, reason, toolName, path,contents, null);
-	}
-	
-	@Transactional
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Callable<Long> projectID) throws ConfigServiceException{
-		if(projectID == null){
-			return replaceConfigImpl(xnatUser, reason,toolName,path,contents,null);
-		}
-		try {
-			return replaceConfigImpl(xnatUser,reason,toolName,path,contents,projectID.call());
-		} catch (Exception e){
-			return null;
-		}
+        return replaceConfig(xnatUser, reason, toolName, path, null, contents);
 	}
 
-	@Transactional
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Long projectID) throws ConfigServiceException{
-		return replaceConfigImpl(xnatUser,reason,toolName,path,contents,projectID);
+    @Transactional
+    @Override
+    public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Long projectID) throws ConfigServiceException{
+        return replaceConfig(xnatUser,reason,toolName,path,null,contents,projectID);
+    }
+
+    @Transactional
+    @Override
+	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Callable<Long> projectID) throws ConfigServiceException{
+        return replaceConfig(xnatUser, reason,toolName,path,null,contents,projectID);
 	}
-	
+
+    @Transactional
+    @Override
+    public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final Boolean unversioned, final String contents) throws ConfigServiceException {
+        return replaceConfigImpl(xnatUser, reason, toolName, path, unversioned, contents, null);
+    }
+
+    @Transactional
+    @Override
+    public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final Boolean unversioned, final String contents, final Long projectID) throws ConfigServiceException {
+        return replaceConfigImpl(xnatUser, reason, toolName, path, unversioned, contents, projectID);
+    }
+
+    @Transactional
+    @Override
+    public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final Boolean unversioned, final String contents, final Callable<Long> projectID) throws ConfigServiceException {
+        if(projectID == null){
+            return replaceConfigImpl(xnatUser, reason,toolName,path,unversioned,contents,null);
+        }
+        try {
+            return replaceConfigImpl(xnatUser,reason,toolName,path,unversioned,contents,projectID.call());
+        } catch (Exception e){
+            return null;
+        }
+    }
+
 	@Transactional
+    @Override
 	public String getStatus(String toolName, String path){
 		return getStatusImpl(toolName, path, null);
 	}
 	
 	@Transactional
+    @Override
 	public String getStatus(String toolName, String path, Callable<Long> projectID){
 		if(projectID == null){
 			return getStatusImpl(toolName, path, null);
@@ -404,62 +478,70 @@ public class DefaultConfigService implements ConfigService {
 	}
 	
 	@Transactional
+    @Override
 	public String getStatus(String toolName, String path, Long projectID){
 		return getStatusImpl(toolName, path, projectID);
 	}
 	
 	@Transactional
+    @Override
 	public void enable(String xnatUser, String reason, String toolName, String path) {
 		setStatus(xnatUser,reason, toolName, path, Configuration.ENABLED_STRING, null);
 	}
 	
 	@Transactional
+    @Override
 	public void enable(String xnatUser, String reason, String toolName, String path, Callable<Long> projectID) {
 		if(projectID == null){
 			setStatus(xnatUser,reason, toolName, path, Configuration.ENABLED_STRING, null);
 		}
 		try {
 			setStatus(xnatUser,reason, toolName, path, Configuration.ENABLED_STRING, projectID.call());
-		} catch (Exception e){
+		} catch (Exception ignored){
 		}
 	}
 	
 	//fail silently if the configuration does not exist...
 	@Transactional
+    @Override
 	public void enable(String xnatUser, String reason, String toolName, String path, Long projectID) {
 		setStatus(xnatUser,reason, toolName, path, Configuration.ENABLED_STRING, projectID);
 	}
 
 	//fail silently if the configuration does not exist...
 	@Transactional
+    @Override
 	public void disable(String xnatUser, String reason, String toolName, String path) {
 		setStatus(xnatUser,reason, toolName, path, Configuration.DISABLED_STRING, null);
 	}
 
 	@Transactional
+    @Override
 	public void disable(String xnatUser, String reason, String toolName, String path, Callable<Long> projectID) {
 		if(projectID == null){
 			setStatus(xnatUser,reason, toolName, path, Configuration.DISABLED_STRING, null);
 		}
 		try {
 			setStatus(xnatUser,reason, toolName, path, Configuration.DISABLED_STRING, projectID.call());
-		} catch (Exception e){
-			return;
-		}
+		} catch (Exception ignored){
+        }
 	}
 
 	//fail silently if the configuration does not exist...
 	@Transactional
+    @Override
 	public void disable(String xnatUser, String reason, String toolName, String path, Long projectID) {
 		setStatus(xnatUser,reason, toolName, path, Configuration.DISABLED_STRING, projectID);
 	}
 	
 	@Transactional
+    @Override
 	public List<Configuration> getHistory(String toolName, String path){
 		return getHistoryImpl(toolName, path, null);
 	}
 	
 	@Transactional
+    @Override
 	public List<Configuration> getHistory(String toolName, String path, Callable<Long> projectID){
 		if(projectID == null){
 			return getHistoryImpl(toolName, path, null);
@@ -472,26 +554,8 @@ public class DefaultConfigService implements ConfigService {
 	}
 	
 	@Transactional
+    @Override
 	public List<Configuration> getHistory(String toolName, String path, Long projectID){
 		return getHistoryImpl(toolName, path, projectID);
-	}
-
-	
-	/* Setters and Getters */
-	
-	public ConfigurationDAO getConfigurationDAO() {
-		return configurationDAO;
-	}
-	
-	public void setConfigurationDataDAO(ConfigurationDataDAO configurationDataDAO) {
-		this.configurationDataDAO = configurationDataDAO;
-	}
-	
-	public ConfigurationDataDAO getConfigurationDataDAO() {
-		return configurationDataDAO;
-	}
-	
-	public void setConfigurationDAO(ConfigurationDAO configurationDAO) {
-		this.configurationDAO = configurationDAO;
 	}
 }

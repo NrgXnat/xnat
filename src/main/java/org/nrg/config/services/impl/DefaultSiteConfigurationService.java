@@ -113,7 +113,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
 	 * Servlet will set the root and then we'll update the location list here.
 	 */
 	private void prependConfigFilesLocationsRootToAllConfigFilesLocations() {
-		if(StringUtils.isNotBlank(_configFilesLocationsRoot)) {
+		if(StringUtils.isNotBlank(getConfigFilesLocationsRoot())) {
 			for(int i = 0; i < _configFilesLocations.size(); ++i) {
 				File configFilesLocation = new File(_configFilesLocations.get(i));
 				if(!configFilesLocation.isAbsolute()) {

@@ -1,9 +1,6 @@
 package org.nrg.config.entities;
 
-import javax.persistence.CascadeType;
-import javax.persistence.Entity;
-import javax.persistence.ManyToOne;
-import javax.persistence.Transient;
+import javax.persistence.*;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -101,6 +98,7 @@ public class Configuration extends AbstractHibernateEntity {
 		this.version = version;
 	}
 
+    @Column(columnDefinition="boolean default false")
     public boolean isUnversioned() {
         return unversioned;
     }

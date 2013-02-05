@@ -16,6 +16,7 @@ import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.search.QueryOrganizerI;
 import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.search.SearchCriteria;
@@ -110,46 +111,91 @@ public class DisplayCriteria implements SQLClause{
 					where.append(getComparisonType());
 				    where.append(getValue().toString());
             	}
-			}else if (df.needsSQLQuotes())
-			{
-			    if (getComparisonType().indexOf("LIKE") == -1)
+			}else{
+				if (getComparisonType().indexOf("LIKE") == -1)
 			    {
-			    	if(v.trim().equals("") && getComparisonType().trim().equals("=")){
-						where.append(this.getSQLContent(df, qo));
-                        where.append(" IS NULL");
-                        where.append(" OR ");
-        				where.append(this.getSQLContent(df, qo));
-                        where.append(getComparisonType());
-                        where.append("''");
-                    }else if (v.trim().equals("*"))
-                    {
-                        return " (" + this.getSQLContent(df, qo) + " IS NOT NULL)";
-                    }else{
-        				where.append(this.getSQLContent(df, qo));
-                        where.append(getComparisonType());
-                        where.append("'").append(v).append("'");
-                    }
+					where.append(handleValues(v,df,qo,df.needsSQLQuotes()));
 			    }else{
 					where.append("LOWER(" + this.getSQLContent(df, qo) + ")");
 					where.append(getComparisonType());
 					where.append("'").append(getValue().toString().toLowerCase()).append("'");
                 }
-			}else{
-				if(v.trim().equals("") && getComparisonType().trim().equals("=")){
-                    where.append(this.getSQLContent(df, qo));
-                    where.append(" IS NULL");
-                }else if (v.trim().equals("*"))
-                {
-                    return " (" + this.getSQLContent(df, qo) + " IS NOT NULL)";
-                }else{
-                    where.append(this.getSQLContent(df, qo));
-                    where.append(getComparisonType());
-                    where.append(getValue().toString());
-                }
 			}
 			where.append(")");
 			return where.toString();
 	    }
+	}
+	
+	private String handleValues(String v, DisplayField df, QueryOrganizerI qo,boolean needsQuotes) throws Exception{
+		if(v.trim().equals("") && getComparisonType().trim().equals("=")){
+			StringBuffer where=new StringBuffer();
+			where.append(this.getSQLContent(df, qo));
+            where.append(" IS NULL");
+            if(needsQuotes){
+	            where.append(" OR ");
+				where.append(this.getSQLContent(df, qo));
+	            where.append(getComparisonType());
+	            where.append("''");
+            }
+    		return where.toString();
+        }else if (v.trim().equals("*"))
+        {
+            return " (" + this.getSQLContent(df, qo) + " IS NOT NULL)";
+        }else if (getComparisonType().trim().equals("IN"))
+        {
+        	String values="";
+        	String[] tokens = v.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
+            org.apache.commons.lang.StringUtils.stripAll(tokens,"'\"");
+        	int c=0;
+            for(String t : tokens) {
+                if(c++>0){
+                	values+=",";
+                };
+                if(!PoolDBUtils.HackCheck(t)){
+                	if(needsQuotes){
+                		values+="'"+t+"'";
+                	}else{
+                		values+=t;
+                	}
+                }
+            }
+
+        	return " (" + this.getSQLContent(df, qo) + " IN ("+ values +"))";
+        }else if (getComparisonType().trim().equals("BETWEEN"))
+        {
+        	int and=v.toUpperCase().indexOf(" AND ");
+        	if(and==-1){
+        		throw new InvalidValueException("BETWEEN clauses require an AND to separate values");
+        	}
+        	
+        	String v1=v.substring(0,and);
+        	String v2=v.substring(and+5);
+        	
+        	//remove any user quotes from beginning and end
+        	org.apache.commons.lang.StringUtils.strip(v1,"'\"");
+        	org.apache.commons.lang.StringUtils.strip(v2,"'\"");
+        	
+        	if(!PoolDBUtils.HackCheck(v1) && !PoolDBUtils.HackCheck(v2)){
+            	return " (" + this.getSQLContent(df, qo) + " BETWEEN '"+ v1 +"' AND '"+ v2 +"')";//it appears to be OK to use quotes here even with numeric data
+            }else{
+            	throw new InvalidValueException("Invalid BETWEEN values");
+            }
+
+        }else{
+        	if(PoolDBUtils.HackCheck(v)){
+            	throw new InvalidValueException("Invalid BETWEEN values");
+            }
+        	
+        	StringBuffer where=new StringBuffer();
+    		where.append(this.getSQLContent(df, qo));
+            where.append(getComparisonType());
+            if(needsQuotes){
+                where.append("'").append(v).append("'");
+            }else{
+                where.append(v);
+            }
+    		return where.toString();
+        }
 	}
 
     ArrayList schemaFields =null;

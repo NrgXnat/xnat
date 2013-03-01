@@ -1208,7 +1208,26 @@ public class TurbineUtils {
     
     public static Object escapeParam(Object o){
     	if(o instanceof String)
-    		return (o==null)?null:StringEscapeUtils.escapeXml((String)o);
+    		return escapeParam((String) o);
+    	else
+    		return o;
+    }
+    
+    public static String unescapeParam(String o){
+    	return (o==null)?null:StringEscapeUtils.unescapeXml(o);
+    }
+    
+    /**
+     * If a value is placed into a form field via JavaScript, it must be unescaped first, 
+     * otherwise the value will be XML-encoded, and it will be double-encoded on re-tranmission to the server.
+     * (e.g. "&quot;" will become "&amp;quot;"). 
+     * This is not necessary for form fields populated via HTML, as the browser will automatically decode the entities.
+     * @param o
+     * @return The input string, with any XML entities decoded.
+     */
+    public static Object unescapeParam(Object o){
+    	if(o instanceof String)
+    		return unescapeParam((String) o);
     	else
     		return o;
     }

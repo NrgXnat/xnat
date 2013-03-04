@@ -1073,6 +1073,8 @@ public  class FileUtils
 			try {
 				new URI(s1).normalize();
 			} catch (URISyntaxException e) {
+				logger.error("Expected Path: "+s1);
+				logger.error("Current Path: "+root);
 				logger.error("",e);
 				throw new InvalidValueException("Invalid URI: " + s1 + "\nCheck for occurrences of non-standard characters.");
 			}

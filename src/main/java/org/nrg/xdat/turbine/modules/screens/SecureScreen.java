@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
+ * XDAT ï¿½ Extensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*
@@ -148,7 +148,10 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                             while (table.hasMoreRows())
                             {
                             	final Hashtable row = table.nextRowHash();
-                                ip.add( (String)row.get("ip_address") );
+                                String newIP = (String)row.get("ip_address");
+                                if(!ip.contains(newIP)){
+                                    ip.add( (String)row.get("ip_address") );
+                                }
                             }
                 		} catch (Exception e){
                 			logger.error("problem looking for concurrent session IP addresses.", e);

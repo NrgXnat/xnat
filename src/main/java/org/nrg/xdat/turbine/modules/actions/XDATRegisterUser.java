@@ -148,6 +148,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			                    item.setProperty("xdat:user_login.user_xdat_user_id",newUser.getID());
 			                    item.setProperty("xdat:user_login.login_date",today);
 			                    item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
+			                    item.setProperty("xdat:user_login.session_id", data.getSession().getId());  
 			                    SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
 			                    
 								Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();

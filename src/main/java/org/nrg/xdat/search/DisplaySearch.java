@@ -333,7 +333,7 @@ public class DisplaySearch implements TableSearchI{
 		   try {
 		       DisplayField df=dfw.getDisplayField();
 		       if(df instanceof SQLQueryField){
-		    	   if(dfw.getValue().equals("{XDAT_USER_ID}")){
+		    	   if(dfw.getValue()!=null && dfw.getValue().equals("{XDAT_USER_ID}")){
 		    		   dfw.setValue(user.getXdatUserId());
 		    	   }
 		       }
@@ -465,10 +465,9 @@ public class DisplaySearch implements TableSearchI{
                 }
 
                 if (df instanceof SQLQueryField){
-                    if (dfw.getValue()!=null){
 //System.out.println("SUBQUERY_" + df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() +"." + StringUtils.ReplaceStr(StringUtils.ReplaceStr((dfw).getValue().toString(), ",", "_com_"),":", "_col_"));
-                        qo.addField("SUBQUERY_" + df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() +"." + (dfw).getValue().toString());
-                    }
+                	String df_value=(dfw.getValue()==null)?"NULL":dfw.getValue().toString();
+                	qo.addField("SUBQUERY_" + df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() +"." + df_value);
                 }
 	        } catch (DisplayFieldNotFoundException e) {
 	            if (dfw.getType()!=null)
@@ -528,18 +527,22 @@ public class DisplaySearch implements TableSearchI{
 		       DisplayField df=dfr.getDisplayField();
                String alias = df.getId();
                if (df instanceof SQLQueryField){
-            	   if(dfr.getValue().equals("{XDAT_USER_ID}")){
-            		   dfr.setValue(user.getXdatUserId());
+            	   if(dfr.getValue()!=null){
+            		   if(dfr.getValue().equals("{XDAT_USER_ID}")){
+                		   dfr.setValue(user.getXdatUserId());
+                	   }
+                       alias = df.getId() +"_" + cleanColumnName((dfr).getValue().toString());
             	   }
-                   alias = df.getId() +"_" + cleanColumnName((dfr).getValue().toString());
                }
                
                if (!added.contains(dfr.getElementName() + alias))
                {
             	   String content = this.getSQLContent(df,qo);
-                   if (df instanceof SQLQueryField){
+                   if (df instanceof SQLQueryField ){
                        String xmlPath = "";
-                       content= qo.getFieldAlias(df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() +"." + (dfr).getValue().toString());
+                       String df_value=(dfr.getValue()==null)?"NULL":dfr.getValue().toString();
+                   	
+                       content= qo.getFieldAlias(df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() +"." + df_value);
 
                    }
 
@@ -675,9 +678,12 @@ public class DisplaySearch implements TableSearchI{
                                break;
                            }
                         }
-                        if (matched)
-                            content= qo.getFieldAlias(df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() +"." + (dfr).getValue().toString());
-                        else{
+                        
+                        if (matched){
+                        	String df_value=(dfr.getValue()==null)?"NULL":dfr.getValue().toString();
+                        	
+                            content= qo.getFieldAlias(df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() +"." + df_value);
+                        }else{
                             content="1";
                         }
 

@@ -17,6 +17,7 @@ import java.util.Properties;
 import java.util.TimeZone;
 import java.util.UUID;
 
+import javax.jms.Destination;
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
@@ -65,6 +66,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.services.XftFieldExclusionService;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
@@ -578,4 +580,11 @@ public class XDAT implements Initializable,Configurable{
     	securityContext.setAuthentication(authentication);
         return true;
     }
+
+    public static void sendJmsRequest(final Object request) {
+        final String simpleName = request.getClass().getSimpleName();
+        final String queue = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
+        final Destination destination = XDAT.getContextService().getBean(queue, Destination.class);
+        XDAT.getContextService().getBean(JmsTemplate.class).convertAndSend(destination, request);
+}
 }

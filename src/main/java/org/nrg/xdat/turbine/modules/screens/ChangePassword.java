@@ -87,7 +87,7 @@ public class ChangePassword extends VelocitySecureScreen {
                 if (!user.isEnabled()) {
                     throw new Exception("User is not enabled: " + user.getUsername());
                 }
-                if (!user.isVerified()) {
+                if (XDAT.verificationOn() && !user.isVerified()) {
                     throw new Exception("User is not verified: " + user.getUsername());
                 }
 

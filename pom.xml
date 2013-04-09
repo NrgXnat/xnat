@@ -21,7 +21,7 @@
         <nrg.config.version>1.6.2-SNAPSHOT</nrg.config.version>
         <nrg.framework.version>1.6.2-SNAPSHOT</nrg.framework.version>
         <nrg.dicomedit.version>3.0.1</nrg.dicomedit.version>
-        <nrg.dicomutils.version>1.2.0</nrg.dicomutils.version>
+        <nrg.dicomutils.version>1.3.0</nrg.dicomutils.version>
 
         <ant.version>1.6.1</ant.version>
         <antlr.version>3.4</antlr.version>

@@ -593,6 +593,19 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
     };
 
+    private final static Comparator PluralDescriptionComparator = new Comparator() {
+        public int compare(Object mr1, Object mr2) throws ClassCastException {
+            try {
+                String value1 = ((ElementDisplay) mr1).getSchemaElement().getPluralDescription();
+                String value2 = ((ElementDisplay) mr2).getSchemaElement().getPluralDescription();
+
+                return value1.compareToIgnoreCase(value2);
+            } catch (Exception ex) {
+                throw new ClassCastException("Error Comparing Sequence");
+            }
+        }
+    };
+
     /**
      * ArrayList of ElementDisplays which this user could edit
      *
@@ -1565,6 +1578,18 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     ArrayList<ElementDisplay> searchable = null;
 
     public ArrayList<ElementDisplay> getSearchableElementDisplays() {
+        return getSearchableElementDisplays(NameComparator);
+    }
+
+    public ArrayList<ElementDisplay> getSearchableElementDisplaysByDesc() {
+        return getSearchableElementDisplays(DescriptionComparator);
+    }
+
+    public ArrayList<ElementDisplay> getSearchableElementDisplaysByPluralDesc() {
+        return getSearchableElementDisplays(PluralDescriptionComparator);
+    }
+
+    public ArrayList<ElementDisplay> getSearchableElementDisplays(Comparator comp) {
         if (searchable == null) {
             searchable = new ArrayList<ElementDisplay>();
             Hashtable counts = this.getReadableCounts();
@@ -1586,7 +1611,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             }
             searchable.trimToSize();
 
-            Collections.sort(searchable, NameComparator);
+            Collections.sort(searchable, comp);
         }
 
         return searchable;

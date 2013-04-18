@@ -10,7 +10,7 @@ import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.userdetails.UserDetails;
-
+import org.nrg.xdat.XDAT;
 import java.util.Collection;
 import java.util.HashSet;
 import java.util.Set;
@@ -66,7 +66,7 @@ public class XDATUserDetails extends XDATUser implements UserDetails {
     }
 
     public boolean isCredentialsNonExpired() {
-        return super.isVerified();
+        return true;
     }
 
     public boolean isEnabled() {
@@ -77,7 +77,7 @@ public class XDATUserDetails extends XDATUser implements UserDetails {
         if (!isEnabled()) {
             throw new DisabledException("Attempted login to disabled account: " + getUsername(), this);
         }
-        if (!isVerified() || !isAccountNonLocked()) {
+        if ( (XDAT.verificationOn() && !isVerified()) || !isAccountNonLocked()) {
             throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + getUsername(), this);
         }
     }

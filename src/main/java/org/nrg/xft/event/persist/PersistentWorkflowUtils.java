@@ -231,6 +231,7 @@ public class PersistentWorkflowUtils {
 		}
 		if(!wrk.getDataType().equals("wrk:workflowData")){//prevent recursive events (events of events)
 			wrk.save((c==null)?null:c.getUser(), overrideSecurity, false, c);
+			wrk.postSave();
 		}
 	}
 

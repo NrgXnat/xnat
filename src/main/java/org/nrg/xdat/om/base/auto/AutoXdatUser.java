@@ -514,7 +514,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 		return al;
 	}
 
-	public static XdatUser getXdatUsersByXdatUserId(Object value, org.nrg.xft.security.UserI user,boolean preLoad)
+	public static XdatUser getXdatUsersByXdatUserId(Integer value, org.nrg.xft.security.UserI user,boolean preLoad)
 	{
 		try {
 			org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems("xdat:user/xdat_user_id",value,user,preLoad);
@@ -530,7 +530,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 		return null;
 	}
 
-	public static XdatUser getXdatUsersByLogin(Object value, org.nrg.xft.security.UserI user,boolean preLoad)
+	public static XdatUser getXdatUsersByLogin(String value, org.nrg.xft.security.UserI user,boolean preLoad)
 	{
 		try {
 			org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems("xdat:user/login",value,user,preLoad);

@@ -66,11 +66,20 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return auths.get(0);
     }
 
+    @Override
     @Transactional
     public List<XdatUserAuth> getUsersByName(String user) {
         XdatUserAuth example = new XdatUserAuth();
         example.setAuthUser(user);
         return _dao.findByExample(example, EXCLUSION_PROPERTIES_USERNAME);
+    }
+
+    @Override
+    @Transactional
+    public List<XdatUserAuth> getUsersByXdatUsername(String xdatUser) {
+        XdatUserAuth example = new XdatUserAuth();
+        example.setXdatUsername(xdatUser);
+        return _dao.findByExample(example, EXCLUSION_PROPERTIES_XDATUSER);
     }
 
     @Override
@@ -340,6 +349,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 
     private static final String[] EXCLUSION_PROPERTIES = new String[]{"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "failedLoginAttempts"};
     private static final String[] EXCLUSION_PROPERTIES_USERNAME = new String[]{"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "authMethodId", "failedLoginAttempts"};
+    private static final String[] EXCLUSION_PROPERTIES_XDATUSER = new String[]{"authUser", "id", "enabled", "verified", "created", "timestamp", "disabled", "authMethodId", "failedLoginAttempts"};
 
     private static final Log _log = LogFactory.getLog(HibernateXdatUserAuthService.class);
 

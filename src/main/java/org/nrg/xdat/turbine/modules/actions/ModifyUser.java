@@ -88,8 +88,19 @@ public class ModifyUser extends SecureAction {
 			return;
 		}
 		
-		if(found.getProperty("xdat_user_id")!=null){
-			XdatUser byId=XdatUser.getXdatUsersByXdatUserId(found.getProperty("xdat_user_id"), authenticatedUser, false);
+        final Object xdatUserId = found.getProperty("xdat_user_id");
+		if (xdatUserId != null) {
+            int parsedId;
+            if (xdatUserId instanceof Integer) {
+                parsedId = (Integer) xdatUserId;
+            } else {
+                try {
+                    parsedId = Integer.parseInt(xdatUserId.toString());
+                } catch (NumberFormatException exception) {
+                    throw new RuntimeException("You must submit a valid integer as a user ID, invalid value: " + xdatUserId);
+                }
+            }
+            XdatUser byId=XdatUser.getXdatUsersByXdatUserId(parsedId, authenticatedUser, false);
 			if(!byId.getLogin().equals(login)){
 				data.setMessage("Unable to rename user accounts");
 				data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");

@@ -51,6 +51,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return new XdatUserAuth();
     }
 
+    @Override
     @Transactional
     public XdatUserAuth getUserByNameAndAuth(String user, String auth, String id) {
         XdatUserAuth example = new XdatUserAuth();
@@ -60,6 +61,22 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
             example.setAuthMethodId(id);
         }
         List<XdatUserAuth> auths = _dao.findByExample(example, EXCLUSION_PROPERTIES);
+        if (auths == null || auths.size() == 0) {
+            return null;
+        }
+        return auths.get(0);
+    }
+
+    @Override
+    @Transactional
+    public XdatUserAuth getUserByXdatUsernameAndAuth(String user, String auth, String id) {
+        XdatUserAuth example = new XdatUserAuth();
+        example.setXdatUsername(user);
+        example.setAuthMethod(auth);
+        if (!StringUtils.isBlank(id)) {
+            example.setAuthMethodId(id);
+        }
+        List<XdatUserAuth> auths = _dao.findByExample(example, EXCLUSION_PROPERTIES_XDAT_USER_DETAILS);
         if (auths == null || auths.size() == 0) {
             return null;
         }
@@ -141,24 +158,26 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return XFT.GetUserRegistration();
     }
 
-    protected XDATUserDetails createUserDetails(String username, String auth, String id) {
-        XDATUserDetails u = null;
+    protected XDATUserDetails getUserDetails(String username, String auth, String id) {
+        XDATUserDetails userDetails = null;
         try {
             XdatUserAuth userAuth = getUserByNameAndAuth(username, auth, id);
-            u = new XDATUserDetails(userAuth.getXdatUsername());
-            u.setAuthorization(userAuth);
-        } catch (Exception e) {
-            _log.error(e);
+            if (userAuth == null) {
+                userAuth = getUserByXdatUsernameAndAuth(username, auth, id);
+            }
+            userDetails = new XDATUserDetails(userAuth.getXdatUsername());
+            userDetails.setAuthorization(userAuth);
+        } catch (Exception exception) {
+            _log.error(exception);
         }
-        return u;
+        return userDetails;
     }
 
-    private XDATUserDetails getUserDetailsForUserList(List<XDATUserDetails> users, String username, String auth,
-	    String id, String email, String lastname, String firstname) {
+    private XDATUserDetails getUserDetailsForUserList(List<XDATUserDetails> users, String username, String auth, String id, String email, String lastname, String firstname) {
         XDATUserDetails userDetails = null;
 
-	if (users.size() == 0) {
-	    if (auth.equals(XdatUserAuthService.LDAP)) {
+        if (users.size() == 0) {
+            if (auth.equals(XdatUserAuthService.LDAP)) {
                 userDetails = handleNewLdapUser(id, username, email, firstname, lastname);
                 if (users.size() == 0) {
                     users.add(userDetails);
@@ -188,7 +207,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
             // If we just created a new user account above, the user_auth DB record won't yet be committed at this point.
             // So we'll just return the object that was already created.
             // For subsequent logins, this code here will pull the auth record and set it.
-            userDetails = createUserDetails(username, auth, id);
+            userDetails = getUserDetails(username, auth, id);
         }
 
         return userDetails;
@@ -347,9 +366,10 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return usernameToTest;
     }
 
-    private static final String[] EXCLUSION_PROPERTIES = new String[]{"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "failedLoginAttempts"};
-    private static final String[] EXCLUSION_PROPERTIES_USERNAME = new String[]{"xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "authMethodId", "failedLoginAttempts"};
-    private static final String[] EXCLUSION_PROPERTIES_XDATUSER = new String[]{"authUser", "id", "enabled", "verified", "created", "timestamp", "disabled", "authMethodId", "failedLoginAttempts"};
+    private static final String[] EXCLUSION_PROPERTIES                      = new String[] { "xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "failedLoginAttempts"};
+    private static final String[] EXCLUSION_PROPERTIES_XDAT_USER_DETAILS    = new String[] { "authUser", "id", "enabled", "verified", "created", "timestamp", "disabled", "failedLoginAttempts"};
+    private static final String[] EXCLUSION_PROPERTIES_USERNAME             = new String[] { "xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "authMethodId", "failedLoginAttempts"};
+    private static final String[] EXCLUSION_PROPERTIES_XDATUSER             = new String[] { "authUser",     "id", "enabled", "verified", "created", "timestamp", "disabled", "authMethodId", "failedLoginAttempts"};
 
     private static final Log _log = LogFactory.getLog(HibernateXdatUserAuthService.class);
 

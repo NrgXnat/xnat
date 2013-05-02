@@ -13,7 +13,8 @@ public interface XdatUserAuthService extends BaseHibernateService<XdatUserAuth>{
 	public static final String OPENID = "openid";
 	public static final String TOKEN = "token";
 	public XdatUserAuth getUserByNameAndAuth(String user, String auth, String id);
-	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth);
+    public XdatUserAuth getUserByXdatUsernameAndAuth(String user, String auth, String id);
+    public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth);
 	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id);
 	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id, String email);
 	public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id, String email, String lastname, String firstname);

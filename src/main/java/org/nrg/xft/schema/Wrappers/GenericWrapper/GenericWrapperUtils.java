@@ -9,6 +9,7 @@
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xdat.security.SecurityManager;
@@ -2016,7 +2017,7 @@ public class GenericWrapperUtils {
 	                }
 	
 	                if (!input.getFullXMLName().equalsIgnoreCase(extensionType)) {
-	                    if (foreign.getAddin().equalsIgnoreCase("")) {
+	                    if (foreign.getAddin().equalsIgnoreCase("") && !("xdat:user".equals(input.getFullXMLName()) && ("xdat:change_info".equals(foreign.getFullXMLName())))) {
 	                        XFTReferenceI ref = gwf.getXFTReference();
 	                        if (ref.isManyToMany()) {
 	                            String mappingTable = ((XFTManyToManyReference) ref)
@@ -2111,46 +2112,48 @@ public class GenericWrapperUtils {
 	                                sb.append("\n        END IF;");
 	                            } else {
 	                                //FOREIGN has the fk column
-	                                sb
-	                                        .append("\n\n        --PROCESS SUPERIOR RELATION "
-	                                                + xmlPath);
-	                                sb.append("\n        DECLARE ");
-	                                sb.append("\n        parent_row RECORD; ");
-	                                sb.append("\n        BEGIN ");
-	                                sb
-	                                        .append("\n        FOR parent_row IN SELECT * FROM "
-	                                                + foreign.getSQLName()
-	                                                + " WHERE ");
-	
-	                                Iterator refsCols = supRef
-	                                        .getKeyRelations().iterator();
-	                                int count = 0;
-	                                while (refsCols.hasNext()) {
-	                                    XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
-	                                            .next();
-	                                    if (count++ > 0)
-	                                        sb.append(" AND ");
-	                                    sb.append(spec.getLocalCol()).append(
-	                                            "=current_row.").append(
-	                                            spec.getForeignCol());
-	                                }
-	
-	                                sb.append("\n        LOOP");
-	                                sb.append("\n        PERFORM update_ls_")
-	                                        .append(foreign.getFormattedName())
-	                                        .append("(");
-	                                Object[][] foreignKeyArray = foreign
-	                                        .getSQLKeys();
-	                                for (int i = 0; i < foreignKeyArray.length; i++) {
-	                                    if (i > 0)
-	                                        sb.append(", ");
-	                                    sb.append(" parent_row.").append(
-	                                            foreignKeyArray[i][0]);
-	                                }
-	                                sb.append(", ").append(userVariable)
-	                                        .append(");");
-	                                sb.append("\n        END LOOP;");
-	                                sb.append("\n        END;");
+	                            	if (!("xdat:user".equals(input.getFullXMLName()) && ("xdat:user_login".equals(foreign.getFullXMLName())))) {
+		                                sb
+		                                        .append("\n\n        --PROCESS SUPERIOR RELATION "
+		                                                + xmlPath);
+		                                sb.append("\n        DECLARE ");
+		                                sb.append("\n        parent_row RECORD; ");
+		                                sb.append("\n        BEGIN ");
+		                                sb
+		                                        .append("\n        FOR parent_row IN SELECT * FROM "
+		                                                + foreign.getSQLName()
+		                                                + " WHERE ");
+		
+		                                Iterator refsCols = supRef
+		                                        .getKeyRelations().iterator();
+		                                int count = 0;
+		                                while (refsCols.hasNext()) {
+		                                    XFTRelationSpecification spec = (XFTRelationSpecification) refsCols
+		                                            .next();
+		                                    if (count++ > 0)
+		                                        sb.append(" AND ");
+		                                    sb.append(spec.getLocalCol()).append(
+		                                            "=current_row.").append(
+		                                            spec.getForeignCol());
+		                                }
+		
+		                                sb.append("\n        LOOP");
+		                                sb.append("\n        PERFORM update_ls_")
+		                                        .append(foreign.getFormattedName())
+		                                        .append("(");
+		                                Object[][] foreignKeyArray = foreign
+		                                        .getSQLKeys();
+		                                for (int i = 0; i < foreignKeyArray.length; i++) {
+		                                    if (i > 0)
+		                                        sb.append(", ");
+		                                    sb.append(" parent_row.").append(
+		                                            foreignKeyArray[i][0]);
+		                                }
+		                                sb.append(", ").append(userVariable)
+		                                        .append(");");
+		                                sb.append("\n        END LOOP;");
+		                                sb.append("\n        END;");
+		                            	}
 	                            }
 	                        }
 	                    }

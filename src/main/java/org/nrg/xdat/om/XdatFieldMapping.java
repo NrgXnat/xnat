@@ -38,5 +38,17 @@ public class XdatFieldMapping extends BaseXdatFieldMapping {
 	{
 		super(properties,user);
 	}
+	
+	public void init(String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate){
+		this.setField(psf);
+		this.setFieldValue(value);
+
+		this.setCreateElement(create);
+		this.setReadElement(read);
+		this.setEditElement(edit);
+		this.setDeleteElement(delete);
+		this.setActiveElement(activate);
+		this.setComparisonType("equals");
+	}
 
 }

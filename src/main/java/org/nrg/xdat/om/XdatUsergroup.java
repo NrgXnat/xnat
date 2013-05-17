@@ -141,6 +141,27 @@ public class XdatUsergroup extends BaseXdatUsergroup {
             logger.error("",e);
         }
     }
+    
+    public void init(String elementName, String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate) throws Exception{
+    	XdatElementAccess ea=new XdatElementAccess((UserI)this.getUser());
+        ea.setElementName(elementName);
+        this.setElementAccess(ea);
+        
+        //container for field mapping settings
+        XdatFieldMappingSet fms = new XdatFieldMappingSet((UserI)this.getUser());
+        fms.setMethod("OR");
+        ea.setPermissions_allowSet(fms);
+                            
+        //access permissions for owned data
+        XdatFieldMapping fm= new XdatFieldMapping((UserI)this.getUser());
+        fm.init( elementName + "/project", value, create,read,delete,edit,activate);
+        fms.setAllow(fm);
+
+        //access permissions for shared data
+        fm= new XdatFieldMapping((UserI)this.getUser());
+        fm.init( elementName + "/sharing/share/project", value, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE);
+        fms.setAllow(fm);
+    }
 
 
     public boolean setPermissions(String elementName, String psf,String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges, XDATUser user, boolean includesModification,EventMetaI c) throws Exception
@@ -207,15 +228,8 @@ public class XdatUsergroup extends BaseXdatUsergroup {
                     return false;
                 }
 
-                fm.setField(psf);
-                fm.setFieldValue(value);
-
-                fm.setCreateElement(create);
-                fm.setReadElement(read);
-                fm.setEditElement(edit);
-                fm.setDeleteElement(delete);
-                fm.setActiveElement(activate);
-                fm.setComparisonType("equals");
+                fm.init(psf, value, create, read, delete, edit, activate);
+                
                 fms.setAllow(fm);
 
                 if (fms.getXdatFieldMappingSetId()!=null)

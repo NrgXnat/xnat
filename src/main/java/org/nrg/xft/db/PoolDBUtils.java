@@ -922,6 +922,10 @@ public class PoolDBUtils {
 				throw e;
 			}
 		}
+		
+		if(getTimeDiff(start,Calendar.getInstance().getTime())>1000){
+			logger.error(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
+		}
 
 		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
     }

@@ -5,9 +5,9 @@
 
     <modelVersion>4.0.0</modelVersion>
 
-    <name>NRG Config</name>
+    <name>NRG Configuration Service</name>
     <url>http://nrg.wustl.edu</url>
-    <description>Implements Configuration Mgmnt for XNAT</description>
+    <description>Implements configuration management for XNAT</description>
 
     <parent>
         <groupId>org.nrg</groupId>

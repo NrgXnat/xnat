@@ -6,8 +6,10 @@ import java.util.concurrent.Callable;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.entities.ConfigurationData;
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.framework.services.NrgService;
 
-public interface ConfigService{
+
+public interface ConfigService extends NrgService {
 	
 	public static final int MAX_FILE_LENGTH = ConfigurationData.MAX_FILE_LENGTH;
 	

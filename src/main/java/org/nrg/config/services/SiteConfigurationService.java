@@ -12,11 +12,12 @@ package org.nrg.config.services;
 import java.util.Properties;
 
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.framework.services.NrgService;
 
 /**
  * Defines the interface for the site configuration service.
  */
-public interface SiteConfigurationService {
+public interface SiteConfigurationService extends NrgService {
 
     /**
      * Gets the site configuration as a Java {@link java.util.Properties} object.

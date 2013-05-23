@@ -92,7 +92,7 @@ public class TarUtils implements ZipI {
             {
                 if(destPath.exists() && !overwrite){
                 	throw new IOException("File already exists"+destPath.getCanonicalPath());
-                }else{
+                }else if(destPath.exists()){
                 	FileUtils.MoveToHistory(destPath,EventUtils.getTimestamp(ci));
                 }
                 

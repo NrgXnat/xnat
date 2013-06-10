@@ -84,7 +84,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private boolean loggedIn = false;
     private Hashtable<String, ElementAccessManager> accessManagers = null;
     private Hashtable actions = null;
-    private Hashtable<String, UserGroup> groups = null;
+    private Hashtable<String, UserGroup> groups = new Hashtable<String, UserGroup>();
     private boolean extended = false;
     private ArrayList roleNames = null;
     private ArrayList<XdatStoredSearch> stored_searches = null;
@@ -205,7 +205,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             accessManagers.put(eam.getElement(), eam);
         }
 
-        this.groups = null;
+        this.groups.clear();
         this.stored_searches = null;
         this.clearLocalCache();
 
@@ -1990,13 +1990,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public void initGroups() {
-        groups = null;
+        groups.clear();
     }
 
     public Hashtable<String, UserGroup> getGroups() {
-        if (groups == null) {
-            groups = new Hashtable<String, UserGroup>();
-
+        if (groups.size() == 0) {
             try {
                 XFTTable t = XFTTable.Execute("SELECT * FROM xdat_user_groupid WHERE groups_groupid_xdat_user_xdat_user_id=" + this.getXdatUserId(), this.getDBName(), this.getLogin());
 
@@ -2014,13 +2012,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             } catch (DBPoolException e) {
                 logger.error("", e);
             }
-
         }
 
         return groups;
     }
 
     public void replaceGroup(String id, UserGroup g) {
+        Hashtable<String, UserGroup> groups = getGroups();
         if (groups.containsKey(id)) {
             groups.remove(groups.get(id));
             groups.put(id, g);
@@ -2030,7 +2028,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public void addGroup(String id) {
         UserGroup g = UserGroupManager.GetGroup(id);
         if (g != null) {
-            groups.put(id, g);
+            getGroups().put(id, g);
         }
     }
 
@@ -2040,6 +2038,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public void refreshGroup(String id) {
+        Hashtable<String, UserGroup> groups = getGroups();
         if (groups.containsKey(id)) {
             UserGroup g = UserGroupManager.GetGroup(id);
             if (g != null) {
@@ -2058,7 +2057,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public UserGroup getGroup(String id) {
-        return (UserGroup) getGroups().get(id);
+        return getGroups().get(id);
     }
 
     public ArrayList getRecentItems(String elementName, int limit) {

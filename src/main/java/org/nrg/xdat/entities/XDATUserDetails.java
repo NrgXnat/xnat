@@ -5,6 +5,7 @@ import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.UserGroup;
 import org.nrg.xdat.security.XDATUser;
 import org.springframework.security.authentication.CredentialsExpiredException;
@@ -30,7 +31,7 @@ public class XDATUserDetails extends XDATUser implements UserDetails {
         }
     }
 
-    public XDATUserDetails(XDATUser user) throws Exception {
+    public XDATUserDetails(XdatUser user) throws Exception {
         super(user);
         if (_log.isDebugEnabled()) {
             _log.debug("Called constructor with XDATUser arg: " + user.getLogin());

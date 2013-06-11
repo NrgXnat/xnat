@@ -225,22 +225,25 @@ public class DefaultConfigService implements ConfigService {
         Collections.sort(list, ConfigComparatorByCreateDate);
         Configuration entity = list.get(list.size() - 1);
 
-        if (!entity.isUnversioned() && !status.equals(entity.getStatus())) {
-            //changing an existing versioned Configuration is a no-no. We have to create a new Configuration with a new xnatUser and reason
-            Configuration newConfig = new Configuration();
-            newConfig.setProject(entity.getProject());
-            newConfig.setTool(entity.getTool());
-            newConfig.setPath(entity.getPath());
-            newConfig.setConfigData(entity.getConfigData());
-            newConfig.setStatus(status);
-            newConfig.setXnatUser(xnatUser);
-            newConfig.setReason(reason);
-            configurationDAO.create(newConfig);
-        } else {
-            entity.setStatus(status);
-            entity.setStatus(xnatUser);
-            entity.setStatus(reason);
-            configurationDAO.update(entity);
+        // Only change the status if the status is actually changing.
+        if (!status.equals(entity.getStatus())) {
+            if (!entity.isUnversioned()) {
+                //changing an existing versioned Configuration is a no-no. We have to create a new Configuration with a new xnatUser and reason
+                Configuration newConfig = new Configuration();
+                newConfig.setProject(entity.getProject());
+                newConfig.setTool(entity.getTool());
+                newConfig.setPath(entity.getPath());
+                newConfig.setConfigData(entity.getConfigData());
+                newConfig.setStatus(status);
+                newConfig.setXnatUser(xnatUser);
+                newConfig.setReason(reason);
+                configurationDAO.create(newConfig);
+            } else {
+                entity.setStatus(status);
+                entity.setStatus(xnatUser);
+                entity.setStatus(reason);
+                configurationDAO.update(entity);
+            }
         }
     }
 

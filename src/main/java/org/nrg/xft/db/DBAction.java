@@ -2166,10 +2166,9 @@ public class DBAction {
 				else
 				    q = oldI.getGenericSchemaElement().isQuarantine(quarantine);
 				
-				if (q)
+				if (q){
 				    oldMeta.setFieldValue("status",ViewManager.QUARANTINE);
-				else
-				    oldMeta.setFieldValue("status",ViewManager.ACTIVE);
+				}
 				UpdateItem(oldMeta,user,cache,false);
 			}
             oldI.modified=true;

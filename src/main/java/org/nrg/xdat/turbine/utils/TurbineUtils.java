@@ -890,6 +890,10 @@ public class TurbineUtils {
 	public Boolean toBoolean(String s){
 		return Boolean.valueOf(s);
 	}
+	
+	public String[] toList(String s){
+		return s.split(",");
+	}
     
     public String formatDate(Date d, String pattern){
 	    	final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);

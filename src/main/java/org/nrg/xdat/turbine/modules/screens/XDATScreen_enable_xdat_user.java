@@ -12,8 +12,10 @@ package org.nrg.xdat.turbine.modules.screens;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xdat.turbine.modules.actions.DisplayItemAction;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -43,8 +45,8 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
 				}
 
                 XDATUser userI = new XDATUser(o);
-                				
 				XDATUser.ModifyUser(TurbineUtils.getUser(data), userI,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, (enabled)?"Enabled User":"Disabled User"));
+                XDAT.getContextService().getBean(UserRegistrationDataService.class).clearUserRegistrationData(userI);
 
 				SchemaElementI se = SchemaElement.GetElement(o.getXSIType());
 				data = TurbineUtils.setDataItem(data,o);
@@ -72,4 +74,3 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
 		}
 	}
 }
-

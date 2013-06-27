@@ -24,7 +24,10 @@ import org.nrg.mail.api.MailMessage;
 import org.nrg.xdat.XDAT;
 import org.nrg.mail.api.NotificationSubscriberProvider;
 import org.nrg.mail.api.NotificationType;
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.ItemCollection;
@@ -183,6 +186,33 @@ public class AdminUtils {
         XDAT.verifyNotificationType(NotificationType.NewUser);
         XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
 	}
+	
+   public static void sendNewUserVerificationEmail(XdatUser user) throws Exception {
+      // If the Item is null, don't continue.
+      if(user == null){ throw new Exception("Unable to send verification email. Required User is null."); }
+      sendNewUserVerificationEmail(user.getEmail(), user.getFirstname(), user.getLastname(), user.getLogin());
+   }
+   
+   public static void sendNewUserVerificationEmail(ItemI i) throws Exception {
+      // If the Item is null, don't continue.
+      if(i == null){ throw new Exception("Unable to send verification email. Required Item is null."); }
+      sendNewUserVerificationEmail((String)i.getProperty("email"), (String)i.getProperty("firstName"), 
+                                   (String)i.getProperty("lastName"), (String)i.getProperty("login"));
+   }
+   
+   public static void sendNewUserVerificationEmail(String email, String firstName, String lastName, String userName) throws Exception{
+
+       if((email == null || email.equals("")) || (firstName == null || firstName.equals("")) ||
+          (lastName == null || lastName.equals("")) || (userName == null || userName.equals("")))
+       {
+          throw new Exception("Unable to send verification email. One or more required fields is empty.");
+       }
+       
+       AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(userName);
+       String subject = TurbineUtils.GetSystemName() + " Email Verification";
+       String text = "Dear " + firstName + " " + lastName + ",<br/>\r\n" + "Please click this link to verify your email address: " + TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
+       XDAT.getMailService().sendHtmlMessage(AdminUtils.getAdminEmailId(), email, subject, text);
+   }
 
     /**
 	 * Sends the Welcome email to a new User

@@ -103,13 +103,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                if (autoApproval) {
                             if (!hasPAR(data) && XDAT.verificationOn()) {
                             	try {
-                            		String subject = TurbineUtils.GetSystemName() + " Email Verification";
-                            		String admin = AdminUtils.getAdminEmailId();
-                                	String to = newUser.getEmail();
-            				        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(newUser,true,null);
-            				        String text = "Dear " + newUser.getFirstname() + " " + newUser.getLastname() + ",<br/>\r\n" + "Please click this link to verify your email address: " + TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
-                                    XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
-            				        context.put("emailTo", to);
+                                    AdminUtils.sendNewUserVerificationEmail(newUser);
+            				        context.put("emailTo", newUser.getEmail());
             				        context.put("emailUsername", found.getProperty("login"));
             				        data.setRedirectURI(null);
                                     data.setScreenTemplate("VerificationSent.vm");
@@ -169,14 +164,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                    try {
                                 cacheRegistrationData(newUser, comments, phone, lab);
                                 if (XDAT.verificationOn()) {
-                                	// If verification is on, the user must verify their email before the admin gets emailed.
-                            		String subject = TurbineUtils.GetSystemName() + " Email Verification";
-                            		String admin = AdminUtils.getAdminEmailId();
-                                	String to = newUser.getEmail();
-            				        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(newUser, true, null);
-            				        String text = "Dear " + newUser.getFirstname() + " " + newUser.getLastname() + ",<br/>\r\n" + "Please click this link to verify your email address: " + TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
-            				        XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
-            				        context.put("emailTo", to);
+                                    // If verification is on, the user must verify their email before the admin gets emailed.
+                                    AdminUtils.sendNewUserVerificationEmail(newUser);
+            				        context.put("emailTo", newUser.getEmail());
             				        context.put("emailUsername", found.getProperty("login"));
             				        data.setRedirectURI(null);
                                     data.setScreenTemplate("VerificationSent.vm");

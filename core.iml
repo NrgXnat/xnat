@@ -4,10 +4,10 @@
     <facet type="Spring" name="Spring">
       <configuration>
         <fileset id="fileset" name="Spring Application Context" removed="false">
-          <file>file://$MODULE_DIR$/src/main/resources/META-INF/configuration/xdat-core-context.xml</file>
-          <file>file://$MODULE_DIR$/src/test/resources/org/nrg/xdat/services/TestXdatUserAuthService-context.xml</file>
-          <file>file://$MODULE_DIR$/src/test/resources/org/nrg/xft/services/TestXftFieldExclusionService-context.xml</file>
           <file>file://$MODULE_DIR$/src/test/resources/TestDataSource-context.xml</file>
+          <file>file://$MODULE_DIR$/src/main/resources/META-INF/configuration/xdat-core-context.xml</file>
+          <file>file://$MODULE_DIR$/src/test/resources/org/nrg/xft/services/TestXftFieldExclusionService-context.xml</file>
+          <file>file://$MODULE_DIR$/src/test/resources/org/nrg/xdat/services/TestXdatUserAuthService-context.xml</file>
         </fileset>
       </configuration>
     </facet>
@@ -24,9 +24,9 @@
     </content>
     <orderEntry type="inheritedJdk" />
     <orderEntry type="sourceFolder" forTests="false" />
-    <orderEntry type="module" module-name="notify" />
-    <orderEntry type="module" module-name="mail" />
-    <orderEntry type="module" module-name="framework" />
+    <orderEntry type="library" name="Maven: org.nrg:notify:1.6.2" level="project" />
+    <orderEntry type="library" name="Maven: org.nrg:mail:1.6.2" level="project" />
+    <orderEntry type="library" name="Maven: org.nrg:framework:1.6.2" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-orm:3.0.7.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-beans:3.0.7.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-core:3.0.7.RELEASE" level="project" />
@@ -69,7 +69,7 @@
     <orderEntry type="library" name="Maven: cglib:cglib:2.2.2" level="project" />
     <orderEntry type="library" name="Maven: asm:asm:3.3.1" level="project" />
     <orderEntry type="library" name="Maven: org.javassist:javassist:3.16.1-GA" level="project" />
-    <orderEntry type="module" module-name="config" />
+    <orderEntry type="library" name="Maven: org.nrg:config:1.6.2" level="project" />
     <orderEntry type="library" name="Maven: commons-beanutils:commons-beanutils:1.8.3" level="project" />
     <orderEntry type="library" name="Maven: org.springframework:spring-jms:3.0.7.RELEASE" level="project" />
     <orderEntry type="library" name="Maven: org.springframework.security:spring-security-web:3.0.8.RELEASE" level="project" />

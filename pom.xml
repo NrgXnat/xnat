@@ -2,18 +2,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
 
-    <name>NRG Notification Service</name>
-    <url>http://nrg.wustl.edu</url>
-    <description>Defines the NRG notification service.</description>
-
 	<parent>
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
-		<version>1.6.2-SNAPSHOT</version>
+		<version>1.6.2</version>
 		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 
     <artifactId>notify</artifactId>
+
+    <name>NRG Notification Service</name>
+    <url>http://nrg.wustl.edu</url>
+    <description>Defines the NRG notification service.</description>
 
 	<scm>
 		<url>http://bitbucket.org/nrg/nrg_notify</url>

@@ -2,18 +2,18 @@
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 
-	<name>NRG Mail Services</name>
-    <url>http://nrg.wustl.edu</url>
-	<description>Implements mail services for the NRG code framework.</description>
-
 	<parent>
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
-		<version>1.6.2-SNAPSHOT</version>
+		<version>1.6.2</version>
 		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 
 	<artifactId>mail</artifactId>
+
+	<name>NRG Mail Services</name>
+    <url>http://nrg.wustl.edu</url>
+	<description>Implements mail services for the NRG code framework.</description>
 
 	<scm>
 		<url>http://bitbucket.org/nrg/nrg_mail</url>

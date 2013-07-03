@@ -2,19 +2,18 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
 	
-	<name>Transaction</name>
-	<url>http://nrg.wustl.edu</url>
-	<description>Provide chainable transactions that can be run and rolled back.</description>
-	
 	<parent>
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
-		<version>1.6.2-SNAPSHOT</version>
+		<version>1.6.2</version>
 		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 	
 	<artifactId>transaction</artifactId>
-	<packaging>jar</packaging>
+	
+	<name>Transaction</name>
+	<url>http://nrg.wustl.edu</url>
+	<description>Provide chainable transactions that can be run and rolled back.</description>
 	
 	<scm>
 		<url>http://bitbucket.org/nrg/nrg_transaction</url>

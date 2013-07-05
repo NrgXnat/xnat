@@ -101,7 +101,8 @@ public class EmailAction extends SecureAction {
 	}
 
 	public String getSubject(RunData data, Context context) {
-		return ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("subject",data));
+        String returnVal = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("subject",data));
+		return returnVal != null ? returnVal : "";
 	}
 
 	public String getMessage(RunData data, Context context) {

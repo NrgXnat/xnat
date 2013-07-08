@@ -5,50 +5,16 @@ syntax: glob
 .externalToolBuilders
 *.DS_Store
 .settings
-update_deploy
+*.iml
 build.properties
-plugin-resources/repository/xdat/jars/xdat-beans-*-source.jar
-plugin-resources/repository/xdat/jars/xdat-beans-*.jar
-plugin-resources/repository/javax.persistence/jars/persistence-api-1.0.2.jar
-plugin-resources/repository/javax.persistence/jars/persistence-api-1.0.2.jar.md5
-plugin-resources/repository/org.apache.directory.installers/jars/apacheds-noarch-installer-1.5.7.jar
-plugin-resources/repository/org.apache.directory.installers/jars/apacheds-noarch-installer-1.5.7.jar.md5
-plugin-resources/repository/org.apache.directory.server/jars/apacheds-all-1.5.5.jar
-plugin-resources/repository/org.apache.directory.server/jars/apacheds-all-1.5.5.jar.md5
-plugin-resources/misc/template2.*
 Thumbs.db
 out
-
+ide-bin
+target
 work
-pom.xml
-plugin-resources/plugins/maven-turbine-plugin/maven-turbine-plugin/project.xml
-plugin-resources/plugins/maven-turbine-plugin
-hs_err_pid3120.log
-hs_err_pid1144.log
-classes/XNATTool.class
-classes/ValidateJavaBean.class
-classes/BuildCatalog.class
-StoreXML.launch
+
 syntax: regexp
-^classes/org
-^deployments
-^ide-bin
-^lib
-^pipeline
-^plugin-resources/cache
-^projects
 # ignore emacs backups
 ~$
-# ignore generated bean files, but not ones in the sub directories
-^src/org/nrg/xdat/bean/[^/]*\.java
-# all auto-generated launch scripts start with capital letters
-^bin/[A-Z].+
-glob:plugin-resources/webapp/xnat/java/org/nrg/xnat/restlet/resources/SubjAssessmentAbst.java.rej
-glob:src/org/nrg/xdat/model/*
-glob:work/java/*
-glob:work/templates/*
-glob:plugin-resources/repository/commons-lang/jars/commons-lang-2.0.jar*
-glob:target*
-build.properties.sample
 ^.*\.log
 .*\.orig

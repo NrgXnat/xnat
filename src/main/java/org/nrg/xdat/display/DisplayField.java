@@ -475,6 +475,32 @@ public class DisplayField implements Identifier,SequentialObject {
 	{
 		return MapTypesForQuotes(getDataType());
 	}
+
+    // empty quote comparisons do not work for dates and timestamps
+    public static boolean MapTypesForEmptyQuotes(String type)
+    {
+        if (type != null)
+        {
+            if (type.equalsIgnoreCase("CHAR")){
+                return true;
+            }else if(type.equalsIgnoreCase("VARCHAR"))
+            {
+                return true;
+            }else if(type.equalsIgnoreCase("STRING"))
+            {
+                return true;
+            }else{
+                return false;
+            }
+        }else{
+            return false;
+        }
+    }
+
+    public boolean needsSQLEmptyQuotes()
+    {
+        return MapTypesForEmptyQuotes(getDataType());
+    }
 	
 	private String deriveType()
 	{

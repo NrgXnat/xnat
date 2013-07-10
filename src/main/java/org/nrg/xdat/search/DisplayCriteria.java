@@ -95,13 +95,13 @@ public class DisplayCriteria implements SQLClause{
             		tV=tV.trim().toUpperCase();
             	}
             	if((tCT.equals("IS NULL")) || (tCT.equals("IS") && tV.equals("NULL"))){
-            		if(df.needsSQLQuotes()){
+            		if(df.needsSQLEmptyQuotes()){
             			where.append(" (" + this.getSQLContent(df, qo) + " IS NULL OR " + this.getSQLContent(df, qo) + "='')");
                    	}else{
                    		where.append(" (" + this.getSQLContent(df, qo) + " IS NULL)");
                     }
             	}else if((tCT.equals("IS NOT NULL")) || (tCT.equals("IS NOT") && tV.equals("NULL")) || (tCT.equals("IS") && tV.equals("NOT NULL"))){
-            		if(df.needsSQLQuotes()){
+            		if(df.needsSQLEmptyQuotes()){
             			where.append(" NOT(" + this.getSQLContent(df, qo) + " IS NULL OR " + this.getSQLContent(df, qo) + "='')");
         	        }else{
                    		where.append(" NOT(" + this.getSQLContent(df, qo) + " IS NULL)");

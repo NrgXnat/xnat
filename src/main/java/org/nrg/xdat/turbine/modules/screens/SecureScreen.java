@@ -1,35 +1,17 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT  Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Jan 17, 2005
+ * org.nrg.xdat.turbine.modules.screens.SecureScreen
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/10/13 7:44 PM
  */
+
 package org.nrg.xdat.turbine.modules.screens;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
-import org.apache.log4j.Logger;
+import com.google.common.base.Joiner;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
@@ -45,21 +27,33 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.collections.ItemCollection;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
+
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 /**
  * @author Tim
  *
  */
 public abstract class SecureScreen extends VelocitySecureScreen {
-	public final static Logger logger = Logger.getLogger(SecureScreen.class);
+	public final static Logger logger = LoggerFactory.getLogger(SecureScreen.class);
     private static Pattern _pattern = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
+    List<String> _whitelistedIPs;
 
     public String getReason(RunData data){
     	return (String)TurbineUtils.GetPassedParameter(EventUtils.EVENT_REASON, data);
@@ -73,14 +67,14 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
     protected void preserveVariables(RunData data, Context context){
         if (data.getParameters().containsKey("project")){
-        	if(XFT.VERBOSE)System.out.println(this.getClass().getName() + ": maintaining project '" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data)) +"'");
-            context.put("project", TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data))));
+        	if(XFT.VERBOSE)System.out.println(this.getClass().getName() + ": maintaining project '" + TurbineUtils.GetPassedParameter("project",data) +"'");
+            context.put("project", TurbineUtils.escapeParam(((String)TurbineUtils.GetPassedParameter("project",data))));
         }
     }
     
     public static void loadAdditionalVariables(RunData data, Context c){
-    	if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data))!=null){
-            if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
+    	if (TurbineUtils.GetPassedParameter("popup",data) !=null){
+            if(((String)TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
                 c.put("popup","true");
             }else{
                 c.put("popup","false");
@@ -99,7 +93,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         
         try{
         	c.put("siteConfig", XDAT.getSiteConfiguration());
-        }catch(ConfigServiceException e){
+        }catch(ConfigServiceException ignored){
         	
         }
     }
@@ -123,34 +117,40 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             preserveVariables(data,c);
             
             if (isAuthorized(data)) {
-                SessionRegistry sessionRegistry = null;
-                sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
+                SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
                 
                 if(sessionRegistry != null){
-                	int sessionCount = 0;
-            		ArrayList<String> ip = new ArrayList<String>();
+                    List<String> uniqueIPs = new ArrayList<String>();
+                    List<String> sessionIds = new ArrayList<String>();
+                    for (SessionInformation session : sessionRegistry.getAllSessions(TurbineUtils.getUser(data), false)) {
+                        sessionIds.add(session.getSessionId());
+                    }
 
-                	List<SessionInformation> l = sessionRegistry.getAllSessions(TurbineUtils.getUser(data), false);
-                	if(l != null){
-                		StringBuffer in = new StringBuffer("'");
-                		sessionCount = l.size();
-                		for(SessionInformation i:l){
-                			in.append(i.getSessionId()).append("','");
-                		}
-                		//notice the lazy hack to finish out the query.
-                		String query = "SELECT ip_address FROM xdat_user_login WHERE session_id in (" + in + "thisIsALazyHack')";
+                    if (sessionIds.size() > 0) {
+                        String query = "SELECT session_id, ip_address FROM xdat_user_login WHERE session_id in ('" + Joiner.on("','").join(sessionIds) + "')";
        
                 		XDATUser user = TurbineUtils.getUser(data);
+                        _whitelistedIPs = XDAT.getWhitelistedIPs(user);
+
                 		try {
-                			PoolDBUtils dbUtils = new PoolDBUtils();
                 			XFTTable table = TableSearch.Execute(query, user.getDBName(), user.getUsername());
                 			table.resetRowCursor();
-                            while (table.hasMoreRows())
-                            {
+                            while (table.hasMoreRows()) {
                             	final Hashtable row = table.nextRowHash();
-                                String newIP = (String)row.get("ip_address");
-                                if(!ip.contains(newIP)){
-                                    ip.add( (String)row.get("ip_address") );
+                                String ipAddress = (String) row.get("ip_address");
+                                if (!uniqueIPs.contains(ipAddress)) {
+                                    if (!isExcludedIp(ipAddress)) {
+                                        uniqueIPs.add(ipAddress);
+                                    } else {
+                                        // If the session is at an excluded IP...
+                                        for (String sessionId : sessionIds) {
+                                            // Then we need to disregard the session ID as well.
+                                            if (sessionId.equals(row.get("session_id"))) {
+                                                sessionIds.remove(sessionId);
+                                                break;
+                                            }
+                                        }
+                                    }
                                 }
                             }
                 		} catch (Exception e){
@@ -159,24 +159,22 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 	}
                 	//if(sessionCount > 100 || (sessionCount > 1 && ip.size() > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest"))){
                 	if(! TurbineUtils.getUser(data).getLogin().equals("guest")){
-                		StringBuffer sessionWarning = new StringBuffer(); //"WARNING: Your account currently has ").append(sessionCount).append(" login sessions open from ").append(ip.size()).append(" distinct IP addresses. If you believe this is incorrect, please take corrective action. The IP addresses are:");
-                		for(String i:ip){
+                        StringBuilder sessionWarning = new StringBuilder(); //"WARNING: Your account currently has ").append(sessionCount).append(" login sessions open from ").append(ip.size()).append(" distinct IP addresses. If you believe this is incorrect, please take corrective action. The IP addresses are:");
+                        for (String i : uniqueIPs) {
                 			sessionWarning.append(i).append(", ");
                 		}
                 		//trim that last comma
                 		if(sessionWarning.length() > 2){
                 			sessionWarning.delete(sessionWarning.length() - 2, sessionWarning.length());
                 		}
-                		c.put("sessionCount", sessionCount);
-                		c.put("sessionIpCount", ip.size());
+                        c.put("sessionCount", sessionIds.size());
+                        c.put("sessionIpCount", uniqueIPs.size());
                 		c.put("sessionIpCsv", sessionWarning.toString());
                 	}
                 }
                 doBuildTemplate(data, c);
             }else{
-
-                if (XFT.GetRequireLogin()) {
-                }else{
+                if (!XFT.GetRequireLogin()) {
                     data.setScreenTemplate("Login.vm");
                 }
             }
@@ -184,28 +182,29 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         } catch (RuntimeException e) {
             logger.error("",e);
             data.setScreenTemplate("Error.vm");
-            return;
+        } catch (ConfigServiceException e) {
+            logger.error("An error occurred accessing the configuration service", e);
+            data.setScreenTemplate("Error.vm");
         }
 	}
 
+    private boolean isExcludedIp(final String newIP) throws ConfigServiceException {
+        for (String ip : _whitelistedIPs) {
+            if (newIP.startsWith(ip)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
 	/**
-	 * Overide this method to perform the security check needed.
+	 * Override this method to perform the security check needed.
 	 *
 	 * @param data Turbine information.
 	 * @return True if the user is authorized to access the screen.
      * @throws Exception, a generic exception.
 	 */
     protected boolean isAuthorized(RunData data) throws Exception {
-		
-//		String method = data.getRequest().getMethod();
-//	There are places where a secure screen gets a POST or a PUT. that's a problem. uncomment this to see where that happens.
-//    	if("POST".equalsIgnoreCase(method) || "PUT".equalsIgnoreCase(method)){
-//    		if(!"XDATLoginUser".equalsIgnoreCase(data.getAction())){
-//    			System.out.println("SOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\nSOME HOW WE'RE GETTING A POST/PUT IN SECURE SSCRRREEENNNNNN!!!!!\n it was in:" + data.getAction());
-//    		}
-//    	}
-		
-	    //TurbineUtils.OutputDataParameters(data);
         if (XFT.GetRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
 	        logger.debug("isAuthorized() Login Required:true");
             TurbineVelocity.getContext(data).put("logout","true");
@@ -221,15 +220,15 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 					data.getParameters().add("nextAction",data.getAction());
 				else
 					data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
-				//System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
+				//System.out.println("nextPage::" + ((String)TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
 				doRedirect(data,org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
 
             } else {
 
 		        //logger.debug("isAuthorized() Login Required:true user:found");
 				isAuthorized = true;
-				if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)) != null){
-					if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
+				if (TurbineUtils.GetPassedParameter("popup",data) != null){
+					if (((String)TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
 						data.getTemplateInfo().setLayoutTemplate("/Popup.vm");
 					}
                 } else {
@@ -275,7 +274,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                         data.getParameters().add("nextAction",data.getAction());
                     else
                         data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
-                    //System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
+                    //System.out.println("nextPage::" + ((String)TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
 
 				}
 			}else{
@@ -284,8 +283,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 }
             }
 
-            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)) != null){
-                if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
+            if (TurbineUtils.GetPassedParameter("popup",data) != null){
+                if (((String)TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
                     data.getTemplateInfo().setLayoutTemplate("/Popup.vm");
                 }
             } else {
@@ -301,7 +300,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     data.getParameters().add("nextAction",data.getAction());
                 else
                     data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
-                //System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
+                //System.out.println("nextPage::" + ((String)TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)TurbineUtils.GetPassedParameter("nextAction",data)) + "\n");
                 doRedirect(data,org.apache.turbine.Turbine.getConfiguration().getString("template.login"));
 
             }
@@ -339,8 +338,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             File[] files = tabsFolder.listFiles(new FilenameFilter() {
                 @Override
                 public boolean accept(File folder, String name) {
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Testing the name: " + name + " in folder: " + folder.getAbsolutePath());
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Testing the name: " + name + " in folder: " + folder.getAbsolutePath());
                     }
                     return name.endsWith(".vm");
                 }
@@ -379,23 +378,21 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                             String key = matcher.group(1);
                             String value = matcher.group(2);
                             if (key.equalsIgnoreCase("ignore") && value.equalsIgnoreCase("true")) {
-                                if (_log.isDebugEnabled()) {
-                                    _log.debug("Found ignore = true in file: " + file.getName());
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("Found ignore = true in file: " + file.getName());
                                 }
                                 include = false;
                                 break;
                             }
                             metadata.setProperty(key, value);
-                            if (_log.isDebugEnabled()) {
-                                _log.debug("Came up with " + key + "[" + value + "] from file: " + file.getName());
+                            if (logger.isDebugEnabled()) {
+                                logger.debug("Came up with " + key + "[" + value + "] from file: " + file.getName());
                             }
                         }
                     }
                 } finally {
-                    if (scanner != null) {
                         scanner.close();
                     }
-                }
 
                 if (include) {
                 	screens.add(metadata);
@@ -433,8 +430,6 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     	}
     }
     
-    private static final Log _log = LogFactory.getLog(SecureScreen.class);
-
     private List<String> _defaultTabs;
 }
 

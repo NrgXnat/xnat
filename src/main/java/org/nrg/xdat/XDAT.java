@@ -1,26 +1,26 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Jan 3, 2005
+ * org.nrg.xdat.XDAT
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
 package org.nrg.xdat;
 
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
-import java.util.TimeZone;
-import java.util.UUID;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
+import java.util.*;
 
 import javax.jms.Destination;
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
+import com.google.common.base.Joiner;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -76,14 +76,14 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.context.SecurityContext;
-import java.util.HashSet;
-import java.util.Set;
 
 /**
  * @author Tim
- *
  */
 public class XDAT implements Initializable,Configurable{
+
+    public static final String IP_WHITELIST_TOOL = "ipWhitelist";
+    public static final String IP_WHITELIST_PATH = "/system/ipWhitelist";
 
     private static final Logger logger = Logger.getLogger(XDAT.class);
 	private static ContextService _contextService;
@@ -102,6 +102,18 @@ public class XDAT implements Initializable,Configurable{
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
     
+    public static List<String> getWhitelistedIPs(XDATUser user) throws ConfigServiceException {
+        return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
+    }
+
+    public static String getWhitelistConfiguration(XDATUser user) throws ConfigServiceException {
+        org.nrg.config.entities.Configuration whitelist = XDAT.getConfigService().getConfig(IP_WHITELIST_TOOL, IP_WHITELIST_PATH);
+        if (whitelist == null || StringUtils.isBlank(whitelist.getContents())) {
+            whitelist = createDefaultWhitelist(user);
+        }
+        return whitelist.getContents();
+    }
+
     public static String getSiteConfigurationProperty(String property,String _default) throws ConfigServiceException {
     	Properties properties = getSiteConfiguration();
         if(properties.containsKey(property)){
@@ -589,4 +601,39 @@ public class XDAT implements Initializable,Configurable{
         final Destination destination = XDAT.getContextService().getBean(queue, Destination.class);
         XDAT.getContextService().getBean(JmsTemplate.class).convertAndSend(destination, request);
 }
+
+    private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(XDATUser user) throws ConfigServiceException {
+        String username = user.getLogin();
+        String reason = user.isSiteAdmin() ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
+        return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
+}
+
+    public static List<String> getLocalhostIPs() {
+        try {
+            InetAddress[] addresses = InetAddress.getAllByName(InetAddress.getLocalHost().getHostName());
+            List<String> localhostIPs = new ArrayList<String>(addresses.length);
+            for (InetAddress address : addresses) {
+                String hostAddress = address.getHostAddress();
+                if (hostAddress.contains("%")) {
+                    hostAddress = hostAddress.substring(0, hostAddress.indexOf("%"));
+                }
+                localhostIPs.add(hostAddress);
+            }
+            if (!localhostIPs.contains(IP_LOCALHOST_V4)) {
+                localhostIPs.add(IP_LOCALHOST_V4);
+            }
+            if (!localhostIPs.contains(IP_LOCALHOST_V6)) {
+                localhostIPs.add(IP_LOCALHOST_V6);
+            }
+            return localhostIPs;
+        } catch (UnknownHostException e) {
+            if (logger.isInfoEnabled()) {
+                logger.info("Localhost is an unknown host... Wha?", e);
+            }
+        }
+        return null;
+    }
+
+    private static final String IP_LOCALHOST_V4 = "127.0.0.1";
+    private static final String IP_LOCALHOST_V6 = "0:0:0:0:0:0:0:1";
 }

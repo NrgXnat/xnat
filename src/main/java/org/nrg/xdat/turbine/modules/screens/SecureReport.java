@@ -1,12 +1,14 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT  Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Mar 9, 2005
+ * org.nrg.xdat.turbine.modules.screens.SecureReport
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
 package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
@@ -17,7 +19,6 @@ import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
-import org.nrg.xft.event.EventUtils;
 
 /**
  * @author Tim
@@ -34,11 +35,11 @@ public abstract class SecureReport extends SecureScreen {
 
     public abstract void finalProcessing(RunData data, Context context);
     public void noItemError(RunData data, Context context){
-    	StringBuffer sb=new StringBuffer();
+    	StringBuilder sb=new StringBuilder();
     	XDATUser u=TurbineUtils.getUser(data);
     	sb.append("We are unable to provide the requested data. Either you have encountered a link to erroneous data, or ");
     	if(u!=null){
-        	sb.append("this user account (<b>" + u.getUsername() + "</b>) does not have access to this data.");
+        	sb.append("this user account (<b>").append(u.getUsername()).append("</b>) does not have access to this data.");
     	}else{
         	sb.append("this user account does not have access to this data.");
     	}
@@ -50,8 +51,8 @@ public abstract class SecureReport extends SecureScreen {
     }
 
     /**
-     * Return null to use the defualt settings (which are configured in xdat:element_security).  Otherwise, true will force a pre-load of the item.
-     * @return
+     * Return null to use the default settings (which are configured in xdat:element_security).  Otherwise, true will force a pre-load of the item.
+     * @return Default preload setting.
      */
     public Boolean preLoad()
     {
@@ -73,15 +74,14 @@ public abstract class SecureReport extends SecureScreen {
 		{
 		    //System.out.println("No data item passed... looking for item passed by variables");
 			try {
-				ItemI temp = TurbineUtils.GetItemBySearch(data,preLoad());
-			    item = temp;
+                item = TurbineUtils.GetItemBySearch(data,preLoad());
 			} catch (IllegalAccessException e1) {
-                logger.error(e1);
+                logger.error("", e1);
 			    data.setMessage(e1.getMessage());
 				noItemError(data,context);
 				return;
 			} catch (Exception e1) {
-                logger.error(e1);
+                logger.error("", e1);
                 data.setMessage(e1.getMessage());
                 data.setScreenTemplate("Error.vm");
                 noItemError(data,context);
@@ -95,25 +95,25 @@ public abstract class SecureReport extends SecureScreen {
 			noItemError(data,context);
 		}else{
 			try {
-				if(XFT.VERBOSE)System.out.println("Creating report: " + getClass());;
+				if(XFT.VERBOSE)System.out.println("Creating report: " + getClass());
 			    context.put("item",item.getItem());
 			    if(XFT.VERBOSE)System.out.println("Loaded item object (org.nrg.xft.ItemI) as context parameter 'item'.");
 			    context.put("user",TurbineUtils.getUser(data));
 			    if(XFT.VERBOSE)System.out.println("Loaded user object (org.nrg.xdat.security.XDATUser) as context parameter 'user'.");
 
             	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
-            	if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data))!=null)
-					context.put("search_element",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));
+            	if(TurbineUtils.GetPassedParameter("search_element",data) !=null)
+					context.put("search_element", TurbineUtils.GetPassedParameter("search_element",data));
 				else
 					context.put("search_element", item.getXSIType());
 
-				if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data))!=null)
-					context.put("search_field",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)));
+				if(TurbineUtils.GetPassedParameter("search_field",data) !=null)
+					context.put("search_field", TurbineUtils.GetPassedParameter("search_field",data));
 				else
 					context.put("search_field", item.getXSIType() + ".ID");
 
-				if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data))!=null)
-					context.put("search_value",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)));
+				if(TurbineUtils.GetPassedParameter("search_value",data) !=null)
+					context.put("search_value", TurbineUtils.GetPassedParameter("search_value",data));
 				else
             		context.put("search_value", item.getProperty("ID"));
 
@@ -136,8 +136,8 @@ public abstract class SecureReport extends SecureScreen {
 	{
 	    String message="";
         try {
-            message = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data));
-            message +=" " + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data));
+            message = ((String) TurbineUtils.GetPassedParameter("search_element",data));
+            message +=" " + TurbineUtils.GetPassedParameter("search_value",data);
         } catch (Exception e) {
             logger.error("",e);
         }

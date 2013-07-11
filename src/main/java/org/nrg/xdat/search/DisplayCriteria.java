@@ -131,13 +131,27 @@ public class DisplayCriteria implements SQLClause{
 			StringBuffer where=new StringBuffer();
 			where.append(this.getSQLContent(df, qo));
             where.append(" IS NULL");
-            if(needsQuotes){
+            if(df.needsSQLEmptyQuotes()){
 	            where.append(" OR ");
 				where.append(this.getSQLContent(df, qo));
 	            where.append(getComparisonType());
 	            where.append("''");
             }
     		return where.toString();
+        }else if (getComparisonType().trim().equals("!=")){
+            StringBuffer where=new StringBuffer();
+            where.append("(");
+            where.append(this.getSQLContent(df, qo));
+            where.append(getComparisonType());
+            if(needsQuotes){
+                where.append("'").append(v).append("'");
+            }else{
+                where.append(v);
+            }
+            where.append(" OR ");
+            where.append(this.getSQLContent(df, qo));
+            where.append(" IS NULL)");
+            return where.toString();
         }else if (v.trim().equals("*"))
         {
             return " (" + this.getSQLContent(df, qo) + " IS NOT NULL)";

@@ -2254,7 +2254,7 @@ public class JavaFileGenerator {
         sb.append("\n$page.setVlinkColor($ui.vlink)");
         sb.append("\n#set($months = [\"January\", \"February\", \"March\", \"April\", \"May\", \"June\", \"July\", \"August\", \"September\", \"October\", \"November\", \"December\"])");
         sb.append("\n#set($days = [ 1..31 ])");
-        sb.append("\n#set($years = [ 2010..1900])");
+        sb.append("\n#set($years = [ $!turbineUtils.getYear()..1900])");
         sb.append("\n#if ($data.message)");
         sb.append("\n<font color=\"red\" size=\"3\">$data.message</font>");
         sb.append("\n#end");

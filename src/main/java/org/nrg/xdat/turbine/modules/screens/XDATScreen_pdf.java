@@ -65,6 +65,7 @@ public class XDATScreen_pdf extends SecureScreen {
                  HttpServletResponse response = data.getResponse();
                  //We have to set the size to workaround a bug in IE (see com.lowagie iText FAQ)
                  data.getResponse().setContentLength(baos.size());
+                 data.getResponse().setContentType(getContentType(data));
                  ServletOutputStream out = response.getOutputStream();
                  baos.writeTo(out);
                  out.close();

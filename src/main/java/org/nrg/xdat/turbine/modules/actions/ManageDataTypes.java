@@ -47,7 +47,7 @@ public class ManageDataTypes extends AdminAction {
             }
 
             if (es.getProperty("searchable")==null){
-                es.setBrowse("false");
+                es.setSearchable("false");
             }
             
             SaveItemHelper.authorizedSave(es,user, false, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified Data-type (batch)" ));

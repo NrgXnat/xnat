@@ -1,22 +1,39 @@
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
+/*
+ * org.nrg.xdat.turbine.modules.actions.XDATSudoLogin
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/30/13 4:46 PM
+ */
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.context.SecurityContextImpl;
 
 public class XDATSudoLogin extends SecureAction{
 
 	@Override
 	public void doPerform(RunData data, Context context) throws Exception {
 		XDATUser user = TurbineUtils.getUser(data);
-		if (user.checkRole("Administrator"))
-		{
+        if (user.checkRole("Administrator")) {
 			String login = (String)TurbineUtils.GetPassedParameter("sudo_login", data);
-			XDATUser temp = new XDATUser(login);
-			
+            XDATUserDetails temp = new XDATUserDetails(login);
 			TurbineUtils.setNewUser(data, temp, context);
+            SecurityContextImpl securityContext = new SecurityContextImpl();
+            UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(temp, login, temp.getAuthorities());
+            authentication.setDetails(SecurityContextHolder.getContext().getAuthentication().getDetails());
+            securityContext.setAuthentication(authentication);
+            data.getSession().setAttribute("SPRING_SECURITY_CONTEXT", securityContext);
 		}else{
 			notifyAdmin(user, data, 403, "Non-admin sudo attempt", "User attempted to sudo to another user account.");
 		}

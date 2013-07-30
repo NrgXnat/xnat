@@ -609,9 +609,9 @@ public class XDAT implements Initializable,Configurable{
 }
 
     public static List<String> getLocalhostIPs() {
+        List<String> localhostIPs = new ArrayList<String>();
         try {
             InetAddress[] addresses = InetAddress.getAllByName(InetAddress.getLocalHost().getHostName());
-            List<String> localhostIPs = new ArrayList<String>(addresses.length);
             for (InetAddress address : addresses) {
                 String hostAddress = address.getHostAddress();
                 if (hostAddress.contains("%")) {
@@ -619,6 +619,9 @@ public class XDAT implements Initializable,Configurable{
                 }
                 localhostIPs.add(hostAddress);
             }
+        } catch (UnknownHostException exception) {
+            logger.error("Localhost is unknown host... Wha?", exception);
+        }
             if (!localhostIPs.contains(IP_LOCALHOST_V4)) {
                 localhostIPs.add(IP_LOCALHOST_V4);
             }
@@ -626,12 +629,6 @@ public class XDAT implements Initializable,Configurable{
                 localhostIPs.add(IP_LOCALHOST_V6);
             }
             return localhostIPs;
-        } catch (UnknownHostException e) {
-            if (logger.isInfoEnabled()) {
-                logger.info("Localhost is an unknown host... Wha?", e);
-            }
-        }
-        return null;
     }
 
     private static final String IP_LOCALHOST_V4 = "127.0.0.1";

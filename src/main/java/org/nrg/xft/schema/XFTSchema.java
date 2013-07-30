@@ -84,7 +84,7 @@ public class XFTSchema {
 	 * Constructs an XFTSchema object from the XML DOM Document. Stores each root level node
 	 * in the XML DOM Document as a NodeWrapper. All import nodes are added as additional 
 	 * XFTDataModels. Every root level node of type element, group, complexType, and
-	 * attributeGroup will become a XFTElement if it contains more then a simple reference.
+	 * attributeGroup will become a XFTElement if it contains more than a simple reference.
 	 * @param doc XML DOM Document
 	 * @param dir Directory of the xsd document
 	 * @param data parent

@@ -310,7 +310,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 	}
 
 	/**
-	 * If the size is not defined and the type is a string then '255' is returned.  If the size is greater then 256, then an empty string is returned.  Else the defined size is returned.
+	 * If the size is not defined and the type is a string then '255' is returned.  If the size is greater than 256, then an empty string is returned.  Else the defined size is returned.
 	 * @return
 	 */
 	public String getAdjustedSize()

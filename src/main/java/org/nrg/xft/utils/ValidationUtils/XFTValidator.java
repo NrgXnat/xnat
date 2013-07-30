@@ -194,7 +194,7 @@ public class XFTValidator {
 						int max = Integer.valueOf(rule[1]).intValue();
 						if (temp.length() > max)
 						{
-							vr.addResult(vField,"Must Be Less Then " + max + " Characters : Current Length (" + temp.length() + ")", xmlPath,element);
+							vr.addResult(vField,"Must Be Less Than " + max + " Characters : Current Length (" + temp.length() + ")", xmlPath,element);
 						}
 					}
 					if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -202,7 +202,7 @@ public class XFTValidator {
 						int min = Integer.valueOf(rule[1]).intValue();
 						if (temp.length() < min)
 						{
-							vr.addResult(vField,"Must Be More Then " + min + " Characters", xmlPath,element);
+							vr.addResult(vField,"Must Be More Than " + min + " Characters", xmlPath,element);
 						}
 					}
 					if (rule[0].equalsIgnoreCase("mask"))
@@ -305,7 +305,7 @@ public class XFTValidator {
 							int max = Float.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -313,7 +313,7 @@ public class XFTValidator {
 							int min = Float.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -352,7 +352,7 @@ public class XFTValidator {
 							int max = Double.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -360,7 +360,7 @@ public class XFTValidator {
 							int min = Double.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -426,7 +426,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -434,7 +434,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -473,7 +473,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -481,7 +481,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -520,7 +520,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -528,7 +528,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -567,7 +567,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -575,7 +575,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -610,12 +610,12 @@ public class XFTValidator {
                         if (rule[0].equalsIgnoreCase(MAX_LENGTH)) { // TODO: invalid constraining facet for xs:long
                             final long max = Long.parseLong(rule[1]);
                             if (num > max) {
-                                vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+                                vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
                             }
                         } else if (rule[0].equalsIgnoreCase(MIN_LENGTH)) {// TODO: invalid contraining facet for xs:long
                             long min = Long.parseLong(rule[1]);
                             if (num < min) {
-                                vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+                                vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
                             }
                         }
                     }
@@ -654,7 +654,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -662,7 +662,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -701,7 +701,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -709,7 +709,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -748,7 +748,7 @@ public class XFTValidator {
 							int max = Byte.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -756,7 +756,7 @@ public class XFTValidator {
 							int min = Byte.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -794,7 +794,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -802,7 +802,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -841,7 +841,7 @@ public class XFTValidator {
 							int max = Float.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -849,7 +849,7 @@ public class XFTValidator {
 							int min = Float.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -888,7 +888,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -896,7 +896,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -935,7 +935,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -943,7 +943,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -982,7 +982,7 @@ public class XFTValidator {
 							int max = Byte.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -990,7 +990,7 @@ public class XFTValidator {
 							int min = Byte.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}
@@ -1028,7 +1028,7 @@ public class XFTValidator {
 							int max = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() > max)
 							{
-								vr.addResult(vField,"Must Be Less Then " + max, xmlPath,element);
+								vr.addResult(vField,"Must Be Less Than " + max, xmlPath,element);
 							}
 						}
 						if (rule[0].equalsIgnoreCase(MIN_LENGTH))
@@ -1036,7 +1036,7 @@ public class XFTValidator {
 							int min = Integer.valueOf(rule[1]).intValue();
 							if (num.intValue() < min)
 							{
-								vr.addResult(vField,"Must Be More Then " + min, xmlPath,element);
+								vr.addResult(vField,"Must Be More Than " + min, xmlPath,element);
 							}
 						}
 					}

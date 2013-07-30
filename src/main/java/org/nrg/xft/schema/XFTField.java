@@ -803,7 +803,7 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	}
 
 	/**
-	 * recursive method which checks to see if this Node is more then a single reference to another node.
+	 * recursive method which checks to see if this Node is more than a single reference to another node.
 	 * @param n Node to search
 	 * @param prefix XMLNS
 	 * @param s parent schema

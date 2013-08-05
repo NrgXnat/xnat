@@ -70,6 +70,7 @@ public class DateUtils {
 		
 
 		dateTimes.add(new SimpleDateFormat("EEE MMM dd HH:mm:ss z yyyy", Locale.US));
+		dateTimes.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.US));
 		dateTimes.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.S", Locale.US));
 		dateTimes.add(new SimpleDateFormat("yyyy-MM-dd HH:mm:ss", Locale.US));
 		dateTimes.add(new SimpleDateFormat("EEE MMM dd HH:mm:ss.S", Locale.US));

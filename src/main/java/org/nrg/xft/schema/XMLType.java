@@ -333,7 +333,7 @@ public class XMLType {
 	        }else if (type.equalsIgnoreCase(DATE_TIME))
 	        {
 	            try {
-		               return org.nrg.xft.utils.DateUtils.parseDate(o.toString());
+		               return org.nrg.xft.utils.DateUtils.parseDateTime(o.toString());
 		            } catch (ParseException e) {
 		                return o;
 		            }

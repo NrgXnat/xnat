@@ -5,7 +5,7 @@
 	<parent>
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
-		<version>1.6.2</version>
+		<version>1.6.3</version>
 		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 
@@ -234,8 +234,8 @@
 			<scope>test</scope>
 		</dependency>
 		<dependency>
-			<groupId>postgresql</groupId>
-			<artifactId>postgresql</artifactId>
+			<groupId>com.h2database</groupId>
+			<artifactId>h2</artifactId>
 			<scope>test</scope>
 		</dependency>
 

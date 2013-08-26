@@ -8,6 +8,7 @@ glob:target*
 
 syntax: regexp
 .*\.log
+.*\.iml
 .*\.orig
 ^\.project$
 ^\.classpath$

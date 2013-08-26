@@ -3,12 +3,8 @@
 	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p"
 	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">
 
-	<bean id="h2DataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"
-		p:driverClassName="org.h2.Driver" p:url="jdbc:h2:mem:test"
-		p:username="sa" p:password="sa" />
-
-	<bean id="postgresqlDataSource" class="org.springframework.jdbc.datasource.DriverManagerDataSource"
-		p:driverClassName="org.postgresql.Driver" p:url="jdbc:postgresql://localhost/xnat_test"
-		p:username="xnat" p:password="xnat" />
+    <bean id="dataSource" class="org.springframework.jdbc.datasource.SimpleDriverDataSource"
+          p:driverClass="org.h2.Driver" p:url="jdbc:h2:mem:test;MODE=PostgreSQL;DB_CLOSE_DELAY=-1;DB_CLOSE_ON_EXIT=FALSE"
+          p:username="sa" p:password="" />
 		
 </beans>

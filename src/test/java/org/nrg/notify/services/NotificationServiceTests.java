@@ -27,6 +27,7 @@ import org.apache.commons.logging.LogFactory;
 import org.hibernate.Hibernate;
 import org.junit.After;
 import org.junit.Before;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.mail.api.MailMessage;
@@ -219,6 +220,7 @@ public class NotificationServiceTests {
     }
 
     @Test
+    @Ignore("Ignored because requires working SMTP server. Set SMTP address in test.properties to test.")
     public void testSubscribersAndSubscriptions() throws DuplicateDefinitionException, DuplicateSubscriberException, IOException {
         Subscriber subscriber1 = _service.getSubscriberService().createSubscriber("Subscriber 1", "subscriber1@rickherrick.com");
         Subscriber subscriber2 = _service.getSubscriberService().createSubscriber("Subscriber 2", "subscriber2@rickherrick.com");

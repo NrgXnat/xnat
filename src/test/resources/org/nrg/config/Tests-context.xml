@@ -11,20 +11,16 @@
     <!--  <bean id="namingStrategy" class="org.hibernate.cfg.ImprovedNamingStrategy" />  -->
     <bean id="namingStrategy" class="org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy" p:prefix="xhbm" />
 
-    <bean id="postgresqlHibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+    <bean id="hibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
         <property name="properties">
             <props>
-                <prop key="hibernate.dialect">org.hibernate.dialect.PostgreSQLDialect</prop>
+                <prop key="hibernate.dialect">org.hibernate.dialect.H2Dialect</prop>
                 <prop key="hibernate.hbm2ddl.auto">create</prop>
                 <prop key="hibernate.show_sql">true</prop>
             </props>
         </property>
     </bean>
 
-    <!-- Switch between H2 and PostgreSQL by changing the parent of the dataSource and hibernateProperties beans. -->
-    <bean id="dataSource" parent="postgresqlDataSource" />
-    <bean id="hibernateProperties" parent="postgresqlHibernateProperties" />
-    
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean"
         p:dataSource-ref="dataSource"
         p:hibernateProperties-ref="hibernateProperties"
@@ -33,7 +29,6 @@
 
     <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager"
         p:sessionFactory-ref="sessionFactory" />
-
 
     <tx:annotation-driven />
 

@@ -10,5 +10,6 @@ glob:target*
 
 syntax: regexp
 .*\.log
+.*\.iml
 .*\.orig
 

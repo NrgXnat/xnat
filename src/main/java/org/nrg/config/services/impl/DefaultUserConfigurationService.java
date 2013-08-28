@@ -1,9 +1,12 @@
 /*
- * DefaultUserConfigurationService
- * Copyright (c) 2013. Washington University School of Medicine
+ * org.nrg.config.services.impl.DefaultUserConfigurationService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 5:30 PM
  */
 
 package org.nrg.config.services.impl;
@@ -18,12 +21,6 @@ import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 
-/**
- * DefaultUserConfigurationService
- *
- * @author rherri01
- * @since 1/31/13
- */
 @Service
 public class DefaultUserConfigurationService implements UserConfigurationService {
 

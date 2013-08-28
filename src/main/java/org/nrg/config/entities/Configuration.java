@@ -1,13 +1,26 @@
+/*
+ * org.nrg.config.entities.Configuration
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 5:30 PM
+ */
 package org.nrg.config.entities;
 
 import javax.persistence.*;
 
 import org.apache.commons.lang.builder.ToStringBuilder;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
-@Entity
 @Auditable
+@Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgConfig")
 public class Configuration extends AbstractHibernateEntity {
 
 	public static final String ENABLED_STRING = "enabled";

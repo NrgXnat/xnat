@@ -1,10 +1,15 @@
+/*
+ * org.nrg.config.interfaces.SiteConfigurationPropertyChangedListener
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 5:30 PM
+ */
 package org.nrg.config.interfaces;
 
-/**
- * Allows creators of custom properties to specify a callback that's invoked when a property it's interested in is changed.
- * @author ehaas01
- *
- */
 public interface SiteConfigurationPropertyChangedListener {
 	
 	void siteConfigurationPropertyChanged(String propertyName, String newPropertyValue);

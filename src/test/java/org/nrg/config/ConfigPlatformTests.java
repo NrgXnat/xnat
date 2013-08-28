@@ -1,3 +1,13 @@
+/*
+ * org.nrg.config.ConfigPlatformTests
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 5:30 PM
+ */
 package org.nrg.config;
 
 import static org.junit.Assert.assertArrayEquals;
@@ -33,10 +43,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
-/**
- * Tests various platform attributes to ensure that they're working, e.g. connection
- * to the data source.
- */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 public class ConfigPlatformTests {

@@ -1,9 +1,12 @@
 /*
- * UseConfigurationService
- * Copyright (c) 2013. Washington University School of Medicine
+ * org.nrg.config.services.UserConfigurationService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 5:30 PM
  */
 
 package org.nrg.config.services;
@@ -11,12 +14,6 @@ package org.nrg.config.services;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.services.NrgService;
 
-/**
- * UserConfigurationService
- *
- * @author rherri01
- * @since 1/31/13
- */
 public interface UserConfigurationService extends NrgService {
     /**
      * Gets the user configuration

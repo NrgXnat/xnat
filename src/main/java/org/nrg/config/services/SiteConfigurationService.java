@@ -14,9 +14,6 @@ import java.util.Properties;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.services.NrgService;
 
-/**
- * Defines the interface for the site configuration service.
- */
 public interface SiteConfigurationService extends NrgService {
 
     /**

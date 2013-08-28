@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ D:/Development/XNAT-1.6/nrg_config/src/test/resources/org/nrg/config/Tests-context.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2013, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 8/26/13 1:31 PM
+  -->
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p" xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
 		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
@@ -17,15 +27,20 @@
                 <prop key="hibernate.dialect">org.hibernate.dialect.H2Dialect</prop>
                 <prop key="hibernate.hbm2ddl.auto">create</prop>
                 <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.cache.use_second_level_cache">true</prop>
+                <prop key="hibernate.cache.use_query_cache">true</prop>
             </props>
         </property>
     </bean>
 
+    <bean id="cacheRegionFactory" class="net.sf.ehcache.hibernate.SingletonEhCacheRegionFactory">
+        <constructor-arg index="0" ref="hibernateProperties"/>
+    </bean>
+
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean"
-        p:dataSource-ref="dataSource"
-        p:hibernateProperties-ref="hibernateProperties"
-        p:packagesToScan-ref="nrgConfigEntityPackages"
-        p:namingStrategy-ref="namingStrategy" />
+          p:cacheRegionFactory-ref="cacheRegionFactory" p:dataSource-ref="dataSource"
+          p:hibernateProperties-ref="hibernateProperties" p:packagesToScan-ref="nrgConfigEntityPackages"
+          p:namingStrategy-ref="namingStrategy" />
 
     <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager"
         p:sessionFactory-ref="sessionFactory" />
@@ -35,4 +50,5 @@
     <util:list id="configFilesLocations" value-type="java.lang.String">
 	    <value>src/test/resources/org/nrg/config</value>
 	</util:list>
+
 </beans>

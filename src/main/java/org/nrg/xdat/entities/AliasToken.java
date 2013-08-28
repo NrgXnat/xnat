@@ -15,6 +15,8 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.commons.net.util.SubnetUtils;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 import javax.persistence.*;
@@ -25,6 +27,7 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "xdatCore")
 public class AliasToken extends AbstractHibernateEntity {
     public AliasToken() {
         _alias = UUID.randomUUID().toString();

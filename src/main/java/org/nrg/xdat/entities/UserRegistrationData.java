@@ -9,6 +9,8 @@
  */
 package org.nrg.xdat.entities;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -23,6 +25,7 @@ import javax.persistence.Entity;
  * @author rherri01
  */
 @Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "xdatCore")
 public class UserRegistrationData extends AbstractHibernateEntity {
 
     /**

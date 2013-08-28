@@ -14,6 +14,8 @@ import javax.persistence.Transient;
 import javax.persistence.UniqueConstraint;
 
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.springframework.security.core.GrantedAuthority;
@@ -22,6 +24,7 @@ import org.springframework.security.core.authority.GrantedAuthorityImpl;
 @Auditable
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"authUser", "authMethodId"}))
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "xdatCore")
 public class XdatUserAuth extends AbstractHibernateEntity{
 
 	private String xdatUsername;

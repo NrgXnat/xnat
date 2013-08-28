@@ -29,6 +29,7 @@ import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.hibernate.cache.RegionFactory;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.SiteConfigurationService;
@@ -59,7 +60,6 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -96,6 +96,7 @@ public class XDAT implements Initializable,Configurable{
 	private static XdatUserAuthService _xdatUserAuthService;
     private static ConfigService _configurationService;
     private static SiteConfigurationService _siteConfigurationService;
+    private static RegionFactory _cacheRegionFactory;
     public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
     private static String _configFilesLocation = null;
     private String instanceSettingsLocation = null;
@@ -189,9 +190,8 @@ public class XDAT implements Initializable,Configurable{
 		} catch (Exception exception) {
             logger.error("Error performing su operation", exception);
 		}
-		XDATLoginUser newlogin = new XDATLoginUser();
 		try {
-			newlogin.doRedirect(data, context, userDetails);
+            new XDATLoginUser().doRedirect(data, context, userDetails);
 		} catch (Exception exception) {
 			logger.error("Error performing su redirect", exception);
 		}
@@ -474,7 +474,18 @@ public class XDAT implements Initializable,Configurable{
     public static Properties getSiteConfiguration() throws ConfigServiceException {
     	return getSiteConfigurationService().getSiteConfiguration(); 
     }
-    
+
+    /**
+     * Returns an instance of the currently supported site configuration service.
+     * @return An instance of the {@link SiteConfigurationService} service.
+     */
+     public static RegionFactory getCacheRegionFactory() {
+        if (_cacheRegionFactory == null) {
+            _cacheRegionFactory = getContextService().getBean(RegionFactory.class);
+        }
+        return _cacheRegionFactory;
+    }
+
     /**
 	 * Returns an instance of the currently supported data source.
 	 * @return An instance of the {@link DataSource} bean.

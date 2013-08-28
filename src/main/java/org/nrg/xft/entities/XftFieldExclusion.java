@@ -9,6 +9,8 @@ import javax.persistence.UniqueConstraint;
 import javax.xml.bind.annotation.XmlRootElement;
 
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
@@ -24,6 +26,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 @XmlRootElement
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"scope", "targetId", "pattern"}))
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "xdatCore")
 public class XftFieldExclusion extends AbstractHibernateEntity {
 
     public void setScope(XftFieldExclusionScope scope) {

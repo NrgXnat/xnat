@@ -8,7 +8,7 @@ syntax: glob
 Thumbs.db
 glob:target*
 
+*.iml
 syntax: regexp
 .*\.log
 .*\.orig
-

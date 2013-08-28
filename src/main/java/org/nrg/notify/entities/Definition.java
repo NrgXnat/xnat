@@ -16,6 +16,8 @@ import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 import javax.persistence.OneToMany;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
@@ -24,6 +26,7 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
  */
 @Auditable
 @Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
 public class Definition extends AbstractHibernateEntity {
     @ManyToOne(fetch = FetchType.EAGER)
     public Category getCategory() {

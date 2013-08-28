@@ -1,10 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p" xmlns:tx="http://www.springframework.org/schema/tx"
-    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd"
->
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd">
 
-<import resource="classpath:/org/nrg/notify/TestDataSource-context.xml" />
+    <tx:annotation-driven />
+
+    <import resource="classpath:/org/nrg/notify/TestDataSource-context.xml" />
     <import resource="classpath:/META-INF/configuration/nrg-notify-context.xml" />
 
     <bean id="namingStrategy" class="org.hibernate.cfg.ImprovedNamingStrategy" />
@@ -15,22 +18,25 @@
                 <prop key="hibernate.dialect">org.hibernate.dialect.H2Dialect</prop>
                 <prop key="hibernate.hbm2ddl.auto">create</prop>
                 <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.cache.use_second_level_cache">true</prop>
+                <prop key="hibernate.cache.use_query_cache">true</prop>
             </props>
         </property>
     </bean>
 
+    <bean id="cacheRegionFactory" class="net.sf.ehcache.hibernate.SingletonEhCacheRegionFactory">
+        <constructor-arg index="0" ref="hibernateProperties" />
+    </bean>
+
     <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean"
-        p:dataSource-ref="dataSource"
-        p:hibernateProperties-ref="hibernateProperties"
-        p:packagesToScan-ref="nrgNotificationEntityPackages"
-        p:namingStrategy-ref="namingStrategy" />
+          p:cacheRegionFactory-ref="cacheRegionFactory" p:dataSource-ref="dataSource"
+          p:hibernateProperties-ref="hibernateProperties" p:packagesToScan-ref="nrgNotificationEntityPackages"
+          p:namingStrategy-ref="namingStrategy" />
 
     <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager"
-        p:sessionFactory-ref="sessionFactory" />
+          p:sessionFactory-ref="sessionFactory" />
 
     <!-- TODO: This is required to satisfy the @Inject dependency for the ChannelRendererService. May need to do something to make this unnecessary.-->
     <bean id="rendererProvider" class="org.nrg.notify.entities.ChannelRendererProvider"/>
-
-    <tx:annotation-driven />
 
 </beans>

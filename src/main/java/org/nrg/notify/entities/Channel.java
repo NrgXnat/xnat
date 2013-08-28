@@ -12,6 +12,8 @@ package org.nrg.notify.entities;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
 /**
@@ -20,6 +22,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
  * through a variety of means, such as email, IM, REST API calls, and so on.
  */
 @Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
 public class Channel extends AbstractHibernateEntity {
 
     @Column(unique=true, nullable=false) 

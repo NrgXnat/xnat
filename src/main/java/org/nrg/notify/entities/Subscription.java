@@ -18,6 +18,8 @@ import javax.persistence.ManyToMany;
 import javax.persistence.ManyToOne;
 import javax.persistence.Transient;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.hibernate.annotations.LazyCollection;
 import org.hibernate.annotations.LazyCollectionOption;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
@@ -33,6 +35,7 @@ import org.nrg.notify.api.SubscriberType;
  * <a href="http://stackoverflow.com/questions/4334970/hibernate-cannot-simultaneously-fetch-multiple-bags">Stack Overflow</a>. 
  */
 @Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
 public class Subscription extends AbstractHibernateEntity {
     /**
      * Gets the {@link Definition definition} associated with this subscription. The
@@ -56,7 +59,7 @@ public class Subscription extends AbstractHibernateEntity {
     /**
      * Each subscription maps a {@link #getDefinition() definition} to a single
      * {@link Subscriber subscriber}.
-     * @return
+     * @return The {@link Subscriber subscriber} associated with this subscription.
      */
     @ManyToOne
     @LazyCollection(LazyCollectionOption.FALSE)
@@ -66,7 +69,8 @@ public class Subscription extends AbstractHibernateEntity {
 
     /**
      * Sets the {@link Subscriber subscriber} with which this subscription is associated.
-     * @param subscriber
+     * @param subscriber    The {@link Subscriber subscriber} to be associated with this subscription.
+
      */
     public void setSubscriber (Subscriber subscriber) {
         _subscriber = subscriber;
@@ -104,7 +108,7 @@ public class Subscription extends AbstractHibernateEntity {
 
     /**
      * Sets the list of channels for this subscription.
-     * @param channels
+     * @param channels    The {@link Channel channels} to associated with this subscription.
      */
     public void setChannels(List<Channel> channels) {
         _channels = channels;

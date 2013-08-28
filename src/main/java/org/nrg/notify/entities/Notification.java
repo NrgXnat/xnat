@@ -9,12 +9,13 @@
  */
 package org.nrg.notify.entities;
 
-
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.FetchType;
 import javax.persistence.ManyToOne;
 
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
@@ -23,6 +24,7 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
  */
 @Auditable
 @Entity
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
 public class Notification extends AbstractHibernateEntity {
     @ManyToOne(fetch = FetchType.LAZY)
     public Definition getDefinition() {

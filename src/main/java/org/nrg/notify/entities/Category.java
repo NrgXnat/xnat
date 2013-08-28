@@ -9,15 +9,16 @@
  */
 package org.nrg.notify.entities;
 
+import org.apache.commons.lang.StringUtils;
+import org.hibernate.annotations.Cache;
+import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
+import org.nrg.framework.orm.hibernate.annotations.Auditable;
+import org.nrg.notify.api.CategoryScope;
+
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
-
-import org.apache.commons.lang.StringUtils;
-import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import org.nrg.framework.orm.hibernate.annotations.Auditable;
-import org.nrg.mail.api.NotificationType;
-import org.nrg.notify.api.CategoryScope;
 
 /**
  * The Category supports notification categories. These are basically a {@link CategoryScope scope} (e.g.
@@ -28,6 +29,7 @@ import org.nrg.notify.api.CategoryScope;
 @Auditable
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"scope", "event", "enabled", "disabled"}))
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
 public class Category extends AbstractHibernateEntity {
     public Category() {
         super();

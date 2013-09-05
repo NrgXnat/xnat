@@ -31,12 +31,12 @@ public class SubscriptionDAO extends AbstractHibernateDAO<Subscription> {
 
     /**
      * Returns all of the subscriptions for a particular {@link Definition definition}.
-     * @param subscriber The subscriber.
-     * @return The subscriptions for the subscriber.
+     * @param definition    The definition on which to search.
+     * @return The subscriptions for the indicated definition.
      */
     @SuppressWarnings("unchecked")
     public List<Subscription> getSubscriptionsForDefinition(Definition definition) {
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("definition", definition));
         criteria.add(Restrictions.eq("enabled", true));
         return criteria.list();

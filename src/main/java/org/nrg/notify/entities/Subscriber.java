@@ -28,8 +28,10 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
  * The Class Subscriber.
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Subscriber extends AbstractHibernateEntity {
+    private static final long serialVersionUID = 6707256690115392905L;
+
     public String getName() {
         return _name;
     }

@@ -39,7 +39,7 @@ public class DefinitionDAO extends AbstractHibernateDAO<Definition> {
      */
     @SuppressWarnings("unchecked")
     public List<Definition> getDefinitionsForCategory(Category category) {
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("category", category));
         criteria.add(Restrictions.eq("enabled", true));
         return criteria.list();
@@ -53,7 +53,7 @@ public class DefinitionDAO extends AbstractHibernateDAO<Definition> {
      * @throws DuplicateDefinitionException When multiple definitions for the given scope, event, and entity association exist.
      */
     public Definition getDefinitionForCategoryAndEntity(Category category, long entity) throws DuplicateDefinitionException {
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("category", category));
         criteria.add(Restrictions.eq("entity", entity));
         criteria.add(Restrictions.eq("enabled", true));

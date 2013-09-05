@@ -37,7 +37,7 @@ public class CategoryDAO extends AbstractHibernateDAO<Category> {
      * @return A matching category, if it exists.
      */
     public Category getCategoryByScopeAndEvent(CategoryScope scope, String event) {
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("enabled", true));
         criteria.add(Restrictions.eq("scope", scope));
         criteria.add(Restrictions.eq("event", event));

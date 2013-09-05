@@ -24,8 +24,10 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
  */
 @Auditable
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Notification extends AbstractHibernateEntity {
+    private static final long serialVersionUID = -8178787179582506271L;
+
     @ManyToOne(fetch = FetchType.LAZY)
     public Definition getDefinition() {
         return _definition;

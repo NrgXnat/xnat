@@ -34,7 +34,7 @@ public class ChannelDAO extends AbstractHibernateDAO<Channel> {
      * @return The retrieved channel, or <b>null</b> if the channel isn't found.
      */
     public Channel getChannelByName(String name) {
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("name", name));
         criteria.add(Restrictions.eq("enabled", true));
         @SuppressWarnings("unchecked")

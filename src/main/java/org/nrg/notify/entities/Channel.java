@@ -22,10 +22,12 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
  * through a variety of means, such as email, IM, REST API calls, and so on.
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Channel extends AbstractHibernateEntity {
 
-    @Column(unique=true, nullable=false) 
+    private static final long serialVersionUID = -729108847898106370L;
+
+    @Column(unique=true, nullable=false)
     public String getName() {
         return _name;
     }

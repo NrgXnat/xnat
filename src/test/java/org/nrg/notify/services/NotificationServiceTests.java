@@ -176,7 +176,7 @@ public class NotificationServiceTests {
         assertNotNull(category1);
         assertEquals(CategoryScope.Default, category1.getScope());
         assertNull(category1.getEvent());
-        category1.setEvent("event1");
+        category1.setEvent("eventA");
         category1.setScope(CategoryScope.Project);
         _service.getCategoryService().create(category1);
         Category retrievedCat1 = _service.getCategoryService().retrieve(category1.getId());
@@ -199,7 +199,7 @@ public class NotificationServiceTests {
         assertEquals(definition12, retrievedDef2);
         
         Category category2 = _service.getCategoryService().newEntity();
-        category2.setEvent("event2");
+        category2.setEvent("eventB");
         category2.setScope(CategoryScope.Project);
         _service.getCategoryService().create(category2);
 

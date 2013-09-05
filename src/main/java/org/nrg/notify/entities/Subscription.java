@@ -35,8 +35,10 @@ import org.nrg.notify.api.SubscriberType;
  * <a href="http://stackoverflow.com/questions/4334970/hibernate-cannot-simultaneously-fetch-multiple-bags">Stack Overflow</a>. 
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Subscription extends AbstractHibernateEntity {
+    private static final long serialVersionUID = -5390321566529122884L;
+
     /**
      * Gets the {@link Definition definition} associated with this subscription. The
      * definition essentially defines the event to which the {@link Subscriber subscriber}

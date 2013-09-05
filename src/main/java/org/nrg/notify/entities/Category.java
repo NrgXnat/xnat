@@ -29,8 +29,10 @@ import javax.persistence.UniqueConstraint;
 @Auditable
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"scope", "event", "enabled", "disabled"}))
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgNotify")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Category extends AbstractHibernateEntity {
+    private static final long serialVersionUID = -7531258253666109922L;
+
     public Category() {
         super();
         setScope(CategoryScope.Default);

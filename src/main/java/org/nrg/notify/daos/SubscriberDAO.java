@@ -34,7 +34,7 @@ public class SubscriberDAO extends AbstractHibernateDAO<Subscriber> {
      * @return The requested subscriber if found, <b>null</b> otherwise.
      */
     public Subscriber getSubscriberByName(String name) {
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("name", name));
         criteria.add(Restrictions.eq("enabled", true));
         @SuppressWarnings("unchecked")

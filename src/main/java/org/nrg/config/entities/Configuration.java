@@ -20,13 +20,14 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
 @Auditable
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgConfig")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Configuration extends AbstractHibernateEntity {
 
 	public static final String ENABLED_STRING = "enabled";
 	public static final String DISABLED_STRING = "disabled";
+    private static final long serialVersionUID = -8112028990905366714L;
 
-	private Long project;
+    private Long project;
 	private String tool;
 	private String path;
 	private ConfigurationData configData;

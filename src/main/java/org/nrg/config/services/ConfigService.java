@@ -34,6 +34,7 @@ public interface ConfigService extends NrgService {
 	
 	//retrieve a Configuration by the ID set by the persistence mechanism
 	public Configuration getById(Long id);
+	public Configuration getById(Long id, boolean preload);
 
 	//retrieve a String list of all tools (and project) that have configurations. 
 	public List<String> getTools();

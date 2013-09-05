@@ -23,12 +23,13 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
 @Auditable
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrgConfig")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class ConfigurationData  extends AbstractHibernateEntity{
 	
-	public static final int MAX_FILE_LENGTH = 10485760; //max size for postgres, see htup.h #define MaxAttrSize (10 * 1024 * 1024) 
-	
-	private Set<Configuration> configurations;
+	public static final int MAX_FILE_LENGTH = 10485760; //max size for postgres, see htup.h #define MaxAttrSize (10 * 1024 * 1024)
+    private static final long serialVersionUID = -4349275622581910917L;
+
+    private Set<Configuration> configurations;
 
 	private String contents;
 	

@@ -12,6 +12,7 @@ package org.nrg.config.services.impl;
 
 import org.apache.commons.beanutils.BeanComparator;
 import org.apache.commons.lang.StringUtils;
+import org.hibernate.Hibernate;
 import org.nrg.config.daos.ConfigurationDAO;
 import org.nrg.config.daos.ConfigurationDataDAO;
 import org.nrg.config.entities.Configuration;
@@ -47,7 +48,17 @@ public class DefaultConfigService implements ConfigService {
     @Transactional
     @Override
     public Configuration getById(Long id) {
-        return configurationDAO.findById(id);
+        return getById(id, false);
+    }
+
+    @Transactional
+    @Override
+    public Configuration getById(Long id, boolean preload) {
+        Configuration configuration = configurationDAO.findById(id);
+        if (preload) {
+            Hibernate.initialize(configuration);
+        }
+        return configuration;
     }
 
     @Transactional

@@ -27,8 +27,10 @@ import java.util.UUID;
 import java.util.regex.Pattern;
 
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "xdatCore")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class AliasToken extends AbstractHibernateEntity {
+    private static final long serialVersionUID = 4092063619908333740L;
+
     public AliasToken() {
         _alias = UUID.randomUUID().toString();
         _secret = new Date().getTime();

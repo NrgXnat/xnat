@@ -26,8 +26,10 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 @XmlRootElement
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"scope", "targetId", "pattern"}))
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "xdatCore")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class XftFieldExclusion extends AbstractHibernateEntity {
+
+    private static final long serialVersionUID = 3198994247860829365L;
 
     public void setScope(XftFieldExclusionScope scope) {
         _scope = scope;

@@ -24,7 +24,7 @@ public class AliasTokenDAO extends AbstractHibernateDAO<AliasToken> {
     }
 
     public AliasToken findByAlias(String alias, boolean includeDisabled) {
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("alias", alias));
         if (!includeDisabled) {
             criteria.add(Restrictions.eq("enabled", true));
@@ -40,7 +40,7 @@ public class AliasTokenDAO extends AbstractHibernateDAO<AliasToken> {
 }
 
     public List<AliasToken> findByXdatUserId(String xdatUserId, boolean includeDisabled) {
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("xdatUserId", xdatUserId));
         if (!includeDisabled) {
             criteria.add(Restrictions.eq("enabled", true));

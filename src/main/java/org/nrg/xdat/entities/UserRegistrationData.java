@@ -17,6 +17,7 @@ import org.slf4j.LoggerFactory;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
+import java.io.Serializable;
 
 /**
  * This class allows persistence of user registration data through the email verification and administrative approval
@@ -25,8 +26,10 @@ import javax.persistence.Entity;
  * @author rherri01
  */
 @Entity
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "xdatCore")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class UserRegistrationData extends AbstractHibernateEntity {
+
+    private static final long serialVersionUID = 6837523294464366339L;
 
     /**
      * The login name of the user. This maps directly to the {@link org.nrg.xdat.security.XDATUser#getLogin()} property.

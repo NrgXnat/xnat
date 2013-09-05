@@ -33,7 +33,7 @@ public class UserRegistrationDataDAO extends AbstractHibernateDAO<UserRegistrati
         if (_log.isDebugEnabled()) {
             _log.debug("Looking for " + (includeDisabled ? "any" : "enabled") + " user with login name of: " + login);
         }
-        Criteria criteria = getSession().createCriteria(getParameterizedType());
+        Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("login", login));
         if (!includeDisabled) {
             criteria.add(Restrictions.eq("enabled", true));

@@ -24,10 +24,11 @@ import org.springframework.security.core.authority.GrantedAuthorityImpl;
 @Auditable
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"authUser", "authMethodId"}))
-@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "xdatCore")
+@Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class XdatUserAuth extends AbstractHibernateEntity{
 
-	private String xdatUsername;
+    private static final long serialVersionUID = -1590002660142544162L;
+    private String xdatUsername;
 	private String authUser;
 	private String authMethod;
 	private String authMethodId;

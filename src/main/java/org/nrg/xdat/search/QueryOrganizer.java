@@ -1123,8 +1123,19 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 		}
 		return sb.toString();
     }
+    
+    public String buildQuery() throws Exception{
+    	return buildQuery(true);
+    }
 
-    public String buildQuery() throws Exception
+    /**
+     * The big mamba jamba.
+     * This method will build the SQL query that can be executed on the database to retrieve the requested data.
+     * @param distinct : should a distinct clause be added to the root of the query
+     * @return
+     * @throws Exception
+     */
+    public String buildQuery(boolean distinct) throws Exception
     {
         StringBuffer sb = new StringBuffer();
 
@@ -1357,161 +1368,13 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
         }
 
         sb.append(join);
-//        if (securityClause!=null)
-//        {
-//
-//            if (getAddOns().size()>0)
-//            {
-//                String select = "SELECT ";
-//
-//                if (!isMappingTable)
-//                {
-//                    select +="DISTINCT ON (";
-//                    keys = rootElement.getAllPrimaryKeys().iterator();
-//                    int keyCounter = 0;
-//        			while (keys.hasNext())
-//        			{
-//        			    SchemaFieldI sf = (SchemaFieldI)keys.next();
-//        			    String field = sf.getXMLPathString(rootElement.getFullXMLName());
-//        			    String alias = (String)fieldAliases.get(field.toLowerCase());
-//        			    if (keyCounter++==0)
-//        			    {
-//        			        select += alias;
-//        			    }else{
-//        			        select += "," + alias;
-//        			    }
-//        			}
-//        			select += ")";
-//                }
-//
-//    			select +=" *";
-//    			ArrayList orderBys = getOrderBys(rootFilterField);
-//    			Iterator oBIter = orderBys.iterator();
-//    			while (oBIter.hasNext())
-//    			{
-//    			    String[] s = (String[])oBIter.next();
-//    			    if (! selected.contains(s[0].toLowerCase()))
-//    			    {
-//    			        if (! fieldAliases.values().contains(s[0]))
-//    			        {
-//        			        select += ", " + s[0] + " AS " + s[2];
-//    			        }
-//    			    }
-//    			}
-//
-//                String query = "";
-//                if (securityQO !=null)
-//                {
-//                    keys = rootElement.getAllPrimaryKeys().iterator();
-//                    ArrayList keyXMLFields = new ArrayList();
-//                    while (keys.hasNext())
-//                    {
-//                        SchemaFieldI sf = (SchemaFieldI)keys.next();
-//                        String key =sf.getXMLPathString(rootElement.getFullXMLName());
-//                        keyXMLFields.add(key);
-//                        securityQO.addField(key);
-//                    }
-//                    String subQuery = securityQO.buildQuery();
-//                    String securityQuery = "SELECT DISTINCT ON (";
-//
-//                    for (int i=0;i<keyXMLFields.size();i++){
-//                        if (i>0)securityQuery +=", ";
-//                        securityQuery+=securityQO.getFieldAlias((String)keyXMLFields.get(i));
-//                    }
-//
-//                    securityQuery +=") * FROM (" + subQuery + ") SECURITY WHERE ";
-//                    securityQuery +=securityClause.getSQLClause(securityQO);
-//
-//                    query = "SELECT SEARCH.* FROM ("+ securityQuery +") SECURITY LEFT JOIN (" + sb.toString() + ") SEARCH ON ";
-//
-//                        keys = rootElement.getAllPrimaryKeys().iterator();
-//                        int keyCounter=0;
-//                    while (keys.hasNext())
-//                    {
-//                        SchemaFieldI sf = (SchemaFieldI)keys.next();
-//                        String key =sf.getXMLPathString(rootElement.getFullXMLName());
-//                        if (keyCounter++>0){
-//                            query += " AND ";
-//                        }
-//                        query +="SECURITY." + securityQO.getFieldAlias(key) + "=SEARCH." + this.getFieldAlias(key);
-//
-//                    }
-//
-//                }else{
-//                    query = sb.toString();
-//                }
-//
-//    			select +=" FROM (";
-//    			select += query;
-//    			select += ") SEARCH  ORDER BY ";
-//
-//    			oBIter = orderBys.iterator();
-//    			int oBcounter = 0;
-//    			while (oBIter.hasNext())
-//    			{
-//    			    String[] s = (String[])oBIter.next();
-//    			    if (oBcounter++==0)
-//    			    {
-//    			        select += s[0];
-//    			        if (s[1]!=null)
-//    			            select+=" " + s[1];
-//    			    }else{
-//        			    select += ", " + s[0];
-//    			        if (s[1]!=null)
-//    			            select+=" " + s[1];
-//    			    }
-//    			}
-//
-//    			return select;
-//            }else{
-//                if (securityQO !=null)
-//                {
-//                    keys = rootElement.getAllPrimaryKeys().iterator();
-//                    ArrayList keyXMLFields = new ArrayList();
-//                    while (keys.hasNext())
-//                    {
-//                        SchemaFieldI sf = (SchemaFieldI)keys.next();
-//                        String key =sf.getXMLPathString(rootElement.getFullXMLName());
-//                        keyXMLFields.add(key);
-//                        securityQO.addField(key);
-//                    }
-//                    String subQuery = securityQO.buildQuery();
-//                    String securityQuery = "SELECT DISTINCT ON (";
-//
-//                    for (int i=0;i<keyXMLFields.size();i++){
-//                        if (i>0)securityQuery +=", ";
-//                        securityQuery+=securityQO.getFieldAlias((String)keyXMLFields.get(i));
-//                    }
-//
-//                    securityQuery +=") * FROM (" + subQuery + ") SECURITY WHERE ";
-//                    securityQuery +=securityClause.getSQLClause(securityQO);
-//
-//                    String query = "SELECT SEARCH.* FROM ("+ securityQuery +") SECURITY LEFT JOIN (" + sb.toString() + ") SEARCH ON ";
-//
-//                    keys = rootElement.getAllPrimaryKeys().iterator();
-//                    int keyCounter=0;
-//                    while (keys.hasNext())
-//                    {
-//                        SchemaFieldI sf = (SchemaFieldI)keys.next();
-//                        String key =sf.getXMLPathString(rootElement.getFullXMLName());
-//                        if (keyCounter++>0){
-//                            query += " AND ";
-//                        }
-//                        query +="SECURITY." + securityQO.getFieldAlias(key) + "=SEARCH." + this.getFieldAlias(key);
-//
-//                    }
-//
-//                    return query;
-//                }else{
-//                    return "SELECT * FROM (" + sb.toString() + ") SEARCH WHERE " +securityClause.getSQLClause(this);
-//                }
-//            }
-//        }else{
+        
             if (getAddOns().size()>0)
             {
                 String select = "SELECT ";
 
-                if (!isMappingTable)
+                //the distinct clause is optional depending on usage
+                if (distinct && !isMappingTable)
                 {
                     select +="DISTINCT ON (";
                     keys = rootElement.getAllPrimaryKeys().iterator();

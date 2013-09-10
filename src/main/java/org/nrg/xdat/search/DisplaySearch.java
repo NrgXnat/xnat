@@ -736,7 +736,7 @@ public class DisplaySearch implements TableSearchI{
                 whereqo.addField(key);
             }
 
-            String subQuery = whereqo.buildQuery();
+            String subQuery = whereqo.buildQuery(false);
 
             int whereCounter = 0;
             criteriaIter = criteria.iterator();

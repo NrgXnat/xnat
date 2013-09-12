@@ -46,15 +46,7 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 	//if nothing found... even for LIST<T> return
 	//types. that makes it easy to know if nothing came back... no need to test the size.
 	
-	@SuppressWarnings("unchecked")
-	public List<Configuration> getAll(){
-        Criteria criteria = getCriteriaForType();
-        @SuppressWarnings("rawtypes")
-        List list = criteria.list();
-        return (list == null || list.size() == 0) ? null : list;
-	}
-
-    //I wanted to use hibernate's findByExample, but it ignores null parameters... so I had to write findBy.... methods:
+    //I wanted to use Hibernate's findByExample, but it ignores null parameters... so I had to write findBy.... methods:
 	@SuppressWarnings("unchecked")
 	public List<Configuration> findByToolPathProject(String tool, String path, Long project){
         Criteria criteria = getCriteriaForType();

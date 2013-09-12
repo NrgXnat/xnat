@@ -13,12 +13,13 @@ package org.nrg.config.services;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.entities.ConfigurationData;
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.framework.services.NrgService;
 
 import java.util.List;
 
 
-public interface ConfigService extends NrgService {
+public interface ConfigService extends BaseHibernateService<Configuration> {
 	
 	public static final int MAX_FILE_LENGTH = ConfigurationData.MAX_FILE_LENGTH;
 	
@@ -73,12 +74,12 @@ public interface ConfigService extends NrgService {
 	public String getStatus(String toolName, String path, Long projectID);
 	
 	//set the configuration's status property to "enabled"
-	public void enable(String xnatUser, String reason, String toolName, String path);
-	public void enable(String xnatUser, String reason, String toolName, String path, Long projectID);
+	public void enable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
+	public void enable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
 
 	//set the configuration's status property to "disabled"
-	public void disable(String xnatUser, String reason, String toolName, String path);
-	public void disable(String xnatUser, String reason, String toolName, String path, Long projectID);
+	public void disable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
+	public void disable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
 	
 	//return a list of all configurations specified by the path ordered by date uploaded.
 	public List<Configuration> getHistory(String toolName, String path);

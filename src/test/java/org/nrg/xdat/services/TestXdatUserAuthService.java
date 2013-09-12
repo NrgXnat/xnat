@@ -1,21 +1,16 @@
 package org.nrg.xdat.services;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-
-import javax.inject.Inject;
-
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.ExpectedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import javax.inject.Inject;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -44,7 +39,7 @@ public class TestXdatUserAuthService {
     }
     
     @Test
-    @ExpectedException(DataIntegrityViolationException.class)
+    @ExpectedException(ConstraintViolationException.class)
     public void testConstraints() {
     	XdatUserAuth userAuth1 = _service.newEntity();
         userAuth1.setAuthUser("mmckay");

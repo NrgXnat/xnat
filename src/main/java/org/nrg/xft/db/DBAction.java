@@ -51,6 +51,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
+
 /**
  * Class used to store XFTItems to the database.
  * 
@@ -63,16 +64,22 @@ import org.nrg.xft.utils.StringUtils;
  */
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class DBAction {
-	static org.apache.log4j.Logger logger = Logger.getLogger(DBAction.class);
-	
+	private static final Logger logger = Logger.getLogger(DBAction.class);
 	private static boolean ADJUSTED_SEQUENCES = false;
-	
 	private static Hashtable sequences = new Hashtable();
-	/**
+
+    private static final String QUERY_FIND_SEQLESS_TABLES = "SELECT table_name FROM information_schema.columns WHERE table_name LIKE 'xhbm_%' AND column_name = 'id' AND (column_default NOT LIKE 'nextval%' OR column_default IS NULL)";
+    private static final String QUERY_CREATE_SEQUENCE = "CREATE SEQUENCE %s_id_seq";
+    private static final String QUERY_SET_ID_DEFAULT = "ALTER TABLE %s ALTER COLUMN id SET DEFAULT nextval('%s_id_seq')";
+    private static final String QUERY_SET_ID_NOT_NULL = "ALTER TABLE %s ALTER COLUMN id SET NOT NULL";
+    private static final String QUERY_SET_SEQUENCE_OWNER = "ALTER SEQUENCE %s_id_seq OWNED BY %s.id";
+    private static final String QUERY_SET_SEQUENCE_VALUE = "SELECT setval('%s_id_seq', (SELECT (MAX(id) + 1) FROM %s)) AS value";
+
+    /**
 	 * This method is used to insert/update an item into the database.
-	 * 
-	 * <BR><BR>First, if the item has an extended field, then the extended field is populated with 
-	 * the extension name.  Next, it stores the single-reference items.  The pk values of those items 
+	 *
+	 * <BR><BR>First, if the item has an extended field, then the extended field is populated with
+	 * the extension name.  Next, it stores the single-reference items.  The pk values of those items
 	 * are then copied into this item as foreign-keys.  If this item is a single column item then its pk
 	 * is set manually using the nextVal().  If the item has its primary key, then a select is performed
 	 * to verify if the record already exists based on its pks.  If so, then it is an UPDATE statement.
@@ -80,12 +87,12 @@ public class DBAction {
 	 * set, then a select is performed to see if there are any rows in the table that have all of the
 	 * item's field values.  If one is found, then it is assumed that this item is a duplicate of that
 	 * row.  Otherwise, a new row is INSERTed.
-	 * 
+	 *
 	 * @param item
 	 * @return updated XFTItem
 	 */
 	public static boolean StoreItem(XFTItem item, UserI user,boolean checkForDuplicates,boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite,SecurityManagerI securityManager,EventMetaI c) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,SQLException,Exception
-	{	    
+	{
        long totalStartTime= Calendar.getInstance().getTimeInMillis();
        long localStartTime= Calendar.getInstance().getTimeInMillis();
 	   DBItemCache cache =  new DBItemCache(user,c);
@@ -93,16 +100,16 @@ public class DBAction {
 
        logger.debug("prepare-sql: "+(Calendar.getInstance().getTimeInMillis()-localStartTime) + " ms");
        localStartTime= Calendar.getInstance().getTimeInMillis();
-       
+
 	   if (!cache.getSQL().equals("") && !cache.getSQL().equals("[]"))
 	   {
 	       Quarantine(item,user,quarantine,overrideQuarantine,cache);
-	       
+
 	       logger.debug("quarantine-sql: "+(Calendar.getInstance().getTimeInMillis()-localStartTime) + " ms");
 	       localStartTime= Calendar.getInstance().getTimeInMillis();
-	       
+
 		   XFT.LogInsert(cache.getSQL(),item);
-		   
+
 		   PoolDBUtils con = null;
 			try {
 				String username = null;
@@ -121,23 +128,23 @@ public class DBAction {
                 	PerformUpdateTriggers(cache,username,xdat_user_id,false);
                 }
                 //PerformUpdateTriggers(cache,username,xdat_user_id,(cache.getRemoved().size()>0)?false:true);
-                
+
                 logger.debug("pre-triggers: "+(Calendar.getInstance().getTimeInMillis()-localStartTime) + " ms");
                 localStartTime= Calendar.getInstance().getTimeInMillis();
 
-				con = new PoolDBUtils();				
+				con = new PoolDBUtils();
 				con.sendBatch(cache,item.getDBName(),username);
 				if(XFT.VERBOSE)System.out.println("Item modifications stored. " + cache.getDBTriggers().size() + " modified elements. " + cache.getStatements().size() + " SQL statements.");
 
-                
+
                 logger.debug("store: "+(Calendar.getInstance().getTimeInMillis()-localStartTime) + " ms");
                 localStartTime= Calendar.getInstance().getTimeInMillis();
 
                 PerformUpdateTriggers(cache,username,xdat_user_id,false);
-                
+
                 logger.debug("post-triggers: "+(Calendar.getInstance().getTimeInMillis()-localStartTime) + " ms");
                 localStartTime= Calendar.getInstance().getTimeInMillis();
-                
+
                 logger.debug("Total: "+(Calendar.getInstance().getTimeInMillis()-totalStartTime) + " ms");
                 return true;
 			} catch (SQLException e) {
@@ -150,12 +157,12 @@ public class DBAction {
 	       if(XFT.VERBOSE)System.out.println("Pre-existing item found without modifications");
            return false;
        }
-	   
+
 	}
-	
+
 	public static void executeCache(final DBItemCache cache, final UserI user, final String db, final String logFileName) throws Exception{
 		 	XFT.LogInsert(cache.getSQL(),logFileName);
-		   
+
 		    PoolDBUtils con = null;
 			try {
 				String username = null;
@@ -169,24 +176,24 @@ public class DBAction {
                 if(cache.getRemoved().size()>0){
                 	PerformUpdateTriggers(cache,username,xdat_user_id,false);
                 }
-                
-                con = new PoolDBUtils();				
+
+                con = new PoolDBUtils();
 				con.sendBatch(cache,db,username);
-				
+
 				PerformUpdateTriggers(cache,username,xdat_user_id,false);
-                
+
 			} catch (SQLException e) {
 				throw e;
 			} catch (Exception e) {
 				throw e;
 			}
 	}
-	
+
 	/**
 	 * This method is used to insert/update an item into the database.
-	 * 
-	 * <BR><BR>First, if the item has an extended field, then the extended field is populated with 
-	 * the extension name.  Next, it stores the single-reference items.  The pk values of those items 
+	 *
+	 * <BR><BR>First, if the item has an extended field, then the extended field is populated with
+	 * the extension name.  Next, it stores the single-reference items.  The pk values of those items
 	 * are then copied into this item as foreign-keys.  If this item is a single column item then its pk
 	 * is set manually using the nextVal().  If the item has its primary key, then a select is performed
 	 * to verify if the record already exists based on its pks.  If so, then it is an UPDATE statement.
@@ -194,22 +201,22 @@ public class DBAction {
 	 * set, then a select is performed to see if there are any rows in the table that have all of the
 	 * item's field values.  If one is found, then it is assumed that this item is a duplicate of that
 	 * row.  Otherwise, a new row is INSERTed.
-	 * 
+	 *
 	 * @param item
 	 * @return updated XFTItem
 	 */
 	public static DBItemCache StoreItem(XFTItem item, UserI user,boolean checkForDuplicates,boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite,SecurityManagerI securityManager, DBItemCache cache) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,SQLException,Exception
-	{	    
+	{
 	   StoreItem(item,user,checkForDuplicates,new ArrayList(),quarantine,overrideQuarantine,allowItemOverwrite,cache,securityManager,false);
 
 	   return cache;
 	}
-    
+
     /**
      * This method is used to insert/update an item into the database.
-     * 
-     * <BR><BR>First, if the item has an extended field, then the extended field is populated with 
-     * the extension name.  Next, it stores the single-reference items.  The pk values of those items 
+     *
+     * <BR><BR>First, if the item has an extended field, then the extended field is populated with
+     * the extension name.  Next, it stores the single-reference items.  The pk values of those items
      * are then copied into this item as foreign-keys.  If this item is a single column item then its pk
      * is set manually using the nextVal().  If the item has its primary key, then a select is performed
      * to verify if the record already exists based on its pks.  If so, then it is an UPDATE statement.
@@ -217,7 +224,7 @@ public class DBAction {
      * set, then a select is performed to see if there are any rows in the table that have all of the
      * item's field values.  If one is found, then it is assumed that this item is a duplicate of that
      * row.  Otherwise, a new row is INSERTed.
-     * 
+     *
      * @param item
      * @return updated XFTItem
      */
@@ -227,9 +234,9 @@ public class DBAction {
     }
 	/**
 	 * This method is used to insert/update an item into the database.
-	 * 
-	 * <BR><BR>First, if the item has an extended field, then the extended field is populated with 
-	 * the extension name.  Next, it stores the single-reference items.  The pk values of those items 
+	 *
+	 * <BR><BR>First, if the item has an extended field, then the extended field is populated with
+	 * the extension name.  Next, it stores the single-reference items.  The pk values of those items
 	 * are then copied into this item as foreign-keys.  If this item is a single column item then its pk
 	 * is set manually using the nextVal().  If the item has its primary key, then a select is performed
 	 * to verify if the record already exists based on its pks.  If so, then it is an UPDATE statement.
@@ -237,7 +244,7 @@ public class DBAction {
 	 * set, then a select is performed to see if there are any rows in the table that have all of the
 	 * item's field values.  If one is found, then it is assumed that this item is a duplicate of that
 	 * row.  Otherwise, a new row is INSERTed.
-	 * 
+	 *
 	 * @param item
 	 * @return updated XFTItem
 	 */
@@ -245,18 +252,18 @@ public class DBAction {
     	{
             boolean isNew = true;
     		try {
-    
+
     			String login = null;
     			if (user != null)
     			{
     			    login = user.getUsername();
     			}
-    			
+
                 if (item.hasExtendedField())
                 {
                 	item.setExtenderName();
                 }
-                
+
                 if (item.getGenericSchemaElement().isExtension())
                 {
                 	item.setExtenderName();
@@ -291,12 +298,12 @@ public class DBAction {
                 		}
                 	}
                 }
-                
+
                 //Check if the primary key for this item is set.
                 boolean hasPK = item.hasPK();
-                
+
                 boolean itemAlreadyStoredInCache = false;
-                
+
                 if (hasPK)
                 {
                 	//HAS ASSIGNED PK
@@ -313,12 +320,12 @@ public class DBAction {
                 			}else{
                     			logger.info(output);
                 			}
-                			
+
                 			if (hasOneColumnTable)
         					{
                 			    DBAction.ImportNoIdentifierFKs(item,sub);
         					}
-                			
+
                 			if (HasNewFields(sub,item,allowItemOverwrite))
                 			{
                 				logger.debug("OLD\n" + sub.toString());
@@ -327,18 +334,18 @@ public class DBAction {
                 			}else{
                 			    item.importNonItemFields(sub,allowItemOverwrite);
                 			}
-                			
+
             				cache.getPreexisting().add(item);
-                			
+
                 			if (hasOneColumnTable)
         					{
                 			    sub.importNonItemFields(item,false);
         						StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
-                				
+
         						if (HasNewFields(sub,item,allowItemOverwrite))
                     			{
                     				item = UpdateItem(sub,item,user,localQuarantine,overrideQuarantine,cache,false);
-                    				
+
                     			}
         					}
                 		}else
@@ -357,12 +364,12 @@ public class DBAction {
                         			}else{
                             			logger.info(output);
                         			}
-                					
+
                         			if (hasOneColumnTable)
                 					{
                         			    DBAction.ImportNoIdentifierFKs(item,duplicate);
                 					}
-                        			
+
                 					if (HasNewFields(duplicate,item,allowItemOverwrite))
                 					{
                 						logger.debug("OLD\n" + duplicate.toString());
@@ -370,20 +377,20 @@ public class DBAction {
                 						item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,allowItemOverwrite);
                 					}else{
                 					    item.importNonItemFields(duplicate,allowItemOverwrite);
-                        			    
+
                 					}
-                					
+
                     				cache.getPreexisting().add(item);
-                					
+
                 					if (hasOneColumnTable)
                 					{
                         			    duplicate.importNonItemFields(item,false);
                 						StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
-                        				
+
                 						if (HasNewFields(duplicate,item,allowItemOverwrite))
                             			{
                             				item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,false);
-                            				
+
                             			}
                 					}
                 				}else
@@ -393,12 +400,12 @@ public class DBAction {
                 				        itemAlreadyStoredInCache = true;
                 	                    XFTItem duplicate = (XFTItem)cache.getSaved().findByPK(item,false);
                         				item.importNonItemFields(duplicate,false);
-                        				
+
                         				if (HasNewFields(duplicate,item,false))
                     					{
                         				    item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,false);
                     					}
-                        				
+
                 						if (hasOneColumnTable)
                 						{
                             			    DBAction.ImportNoIdentifierFKs(item,duplicate);
@@ -414,7 +421,7 @@ public class DBAction {
                     					{
                         				    item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,false);
                     					}
-                        				
+
                 						if (hasOneColumnTable)
                 						{
                             			    DBAction.ImportNoIdentifierFKs(item,duplicate);
@@ -430,11 +437,11 @@ public class DBAction {
                 							{
                 								meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 								StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
-                								
+
                 								GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-                								
+
                 								item.setChild(ref,meta,true);
-                								
+
                 								Iterator refIter = ref.getLocalRefNames().iterator();
                 								while (refIter.hasNext())
                 								{
@@ -444,7 +451,7 @@ public class DBAction {
                 									Object value = meta.getProperty(foreignKey.getId());
                 									if (value != null)
                 									{
-                										
+
                 										if (!item.setFieldValue(localKey,value)){
                 											 throw new FieldNotFoundException(item.getXSIType() + "/" + localKey.toLowerCase());
                 										 }
@@ -455,17 +462,17 @@ public class DBAction {
                 								meta.setDirectProperty("last_modified",cache.getModTime());
                 							}
                 						}
-                						
+
                 						if (hasOneColumnTable)
                 						{
                 							StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 						}
-                						
+
                 						item = InsertItem(item,login,cache,false);
                 				    }
-                				    
+
                 				}
-                				
+
                 			}else{
                 			    if (!cache.getSaved().containsByPK(item,false))
             	                {
@@ -478,11 +485,11 @@ public class DBAction {
             							{
                 							meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 							StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
-                							
+
                 							GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-                							
+
                 							item.setChild(ref,meta,true);
-                							
+
                 							Iterator refIter = ref.getLocalRefNames().iterator();
                 							while (refIter.hasNext())
                 							{
@@ -502,12 +509,12 @@ public class DBAction {
             								meta.setDirectProperty("last_modified",cache.getModTime());
             							}
                 					}
-    
+
             						if (hasOneColumnTable)
             						{
             							StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
             						}
-                					
+
                 					item = InsertItem(item,login,cache,false);
             	                }else{
             				        itemAlreadyStoredInCache = true;
@@ -518,7 +525,7 @@ public class DBAction {
                 					{
                     				    item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,false);
                 					}
-                    				
+
             						if (hasOneColumnTable)
             						{
                         			    DBAction.ImportNoIdentifierFKs(item,duplicate);
@@ -527,7 +534,7 @@ public class DBAction {
             	                }
                 			}
                 		}
-                    
+
                 }else
                 {
                 	//HAS NO PK
@@ -545,34 +552,34 @@ public class DBAction {
                 			}else{
                     			logger.info(output);
                 			}
-        					
+
                 			if (hasOneColumnTable)
         					{
                 			    DBAction.ImportNoIdentifierFKs(item,duplicate);
         					}
-                			
+
                 			if (HasNewFields(duplicate,item,allowItemOverwrite))
                 			{
                 				logger.debug("OLD\n" + duplicate.toString());
                 				logger.debug("NEW\n" + item.toString());
                 				item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,allowItemOverwrite);
-                				
+
                 			}else{
                 			    item.importNonItemFields(duplicate,allowItemOverwrite);
-                			    
+
                 			}
-                			
+
             				cache.getPreexisting().add(item);
-                			
+
                 			if (hasOneColumnTable)
         					{
                 			    duplicate.importNonItemFields(item,false);
         						StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
-                				
+
         						if (HasNewFields(duplicate,item,allowItemOverwrite))
                     			{
                     				item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,false);
-                    				
+
                     			}
         					}
                 		}else
@@ -588,11 +595,11 @@ public class DBAction {
         							{
                 						meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 						StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
-                						
+
                 						GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-                						
+
                 						item.setChild(ref,meta,true);
-                						
+
                 						Iterator refIter = ref.getLocalRefNames().iterator();
                 						while (refIter.hasNext())
                 						{
@@ -612,12 +619,12 @@ public class DBAction {
         								meta.setDirectProperty("last_modified",cache.getModTime());
         							}
                 				}
-    
+
                 				if (hasOneColumnTable)
                 				{
                 					StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 				}
-                				
+
                 				item = InsertItem(item,login,cache,false);
         	                }else{
         				        itemAlreadyStoredInCache = true;
@@ -628,15 +635,15 @@ public class DBAction {
             					{
                 				    item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,false);
             					}
-                				
-        	                    
+
+
                 				if (hasOneColumnTable)
                 				{
                     			    DBAction.ImportNoIdentifierFKs(item,duplicate);
                 					StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 				}
         	                }
-                				
+
                 		}
                 	}else if (item.getGenericSchemaElement().matchByValues() && allowFieldMatching){
                 	    ItemCollection temp = item.getExtFieldsMatches(true);
@@ -651,30 +658,30 @@ public class DBAction {
                 			}else{
                     			logger.info(output);
                 			}
-        					
+
                 			if (hasOneColumnTable)
         					{
                 			    DBAction.ImportNoIdentifierFKs(item,duplicate);
         					}
-                			
+
                 			if (HasNewFields(duplicate,item,allowItemOverwrite))
                 			{
                 				logger.debug("OLD\n" + duplicate.toString());
                 				logger.debug("NEW\n" + item.toString());
                 				item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,allowItemOverwrite);
-                				
+
                 			}else{
                 			    item.importNonItemFields(duplicate,allowItemOverwrite);
-                			    
+
                 			}
-                			
+
             				cache.getPreexisting().add(item);
-                			
+
                 			if (hasOneColumnTable)
         					{
                 			    duplicate.importNonItemFields(item,false);
         						StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
-                				
+
         						if (HasNewFields(duplicate,item,allowItemOverwrite))
                     			{
                     				item = UpdateItem(duplicate,item,user,localQuarantine,overrideQuarantine,cache,false);
@@ -691,11 +698,11 @@ public class DBAction {
     							{
                 					meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 					StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
-                					
+
                 					GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-                					
+
                 					item.setChild(ref,meta,true);
-                					
+
                 					Iterator refIter = ref.getLocalRefNames().iterator();
                 					while (refIter.hasNext())
                 					{
@@ -715,12 +722,12 @@ public class DBAction {
     								meta.setDirectProperty("last_modified",cache.getModTime());
     							}
                 			}
-    
+
                 			if (hasOneColumnTable)
                 			{
                 				StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 			}
-                			
+
                 			item = InsertItem(item,login,cache,false);
                 		}
                 	}else{
@@ -733,11 +740,11 @@ public class DBAction {
     							{
     								meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),localQuarantine,cache.getModTime(),cache.getChangeId());
                 					StoreItem(meta,user,true,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
-                					
+
                 					GenericWrapperField ref = item.getGenericSchemaElement().getField("meta");
-                					
+
                 					item.setChild(ref,meta,true);
-                					
+
                 					Iterator refIter = ref.getLocalRefNames().iterator();
                 					while (refIter.hasNext())
                 					{
@@ -757,20 +764,20 @@ public class DBAction {
     								meta.setDirectProperty("last_modified",cache.getModTime());
     							}
                 			}
-    
+
                 			if (hasOneColumnTable)
                 			{
                 				StoreSingleRefs(item,true,user,localQuarantine,overrideQuarantine,allowItemOverwrite, cache,securityManager,(!isNew));
                 			}
-                			
+
                 			item = InsertItem(item,login,cache,false);
                 	}
                 }
-                
+
                 if(!itemAlreadyStoredInCache) {
                     StoreMultipleRefs(item,user,localQuarantine,overrideQuarantine, allowItemOverwrite,cache,securityManager);
                 }
-                
+
                //StoreDuplicateRelationships(item,user,storedRelationships,localQuarantine,overrideQuarantine);
             } catch (ElementNotFoundException e) {
                 logger.error("Error saving item: \n"+ item.toString());
@@ -792,12 +799,12 @@ public class DBAction {
                 throw e;
             }
 
-            
+
             if(item.modified && !isNew){
 	            if(item.getGenericSchemaElement().isExtension()){
 	            	//add extensions to the history (if they weren't already)
 	            	confirmExtensionHistory(item,cache,user);
-	            	
+
 	            	//confirm that item has history has been modified
 	            	if(!cache.getModified().contains(item,false)){
     	        		StoreHistoryAndMeta(item,user,null,cache);
@@ -805,16 +812,16 @@ public class DBAction {
             		}
 	            }
             }
-            
+
             if ((item.modified || item.child_modified) && item.getGenericSchemaElement().canBeRoot()){
             	if (!cache.getDBTriggers().contains(item, false)){
                     cache.getDBTriggers().add(item);
                 }
             }
-            
+
     		return item;
     	}
-    	
+
     	/**
     	 * if this item is an extension of another item, and this item was modified, then add history rows for the extended item.
     	 * @param i
@@ -828,7 +835,7 @@ public class DBAction {
     	private static void confirmExtensionHistory(XFTItem i,DBItemCache cache, UserI user) throws ElementNotFoundException, XFTInitException, FieldNotFoundException, Exception{
             if(i.getGenericSchemaElement().isExtension()){
 	    		final XFTItem extension=i.getExtensionItem();
-	
+
 	        	//add history rows for this if extended row modified
 	        	if(!cache.getModified().contains(extension,false)){
 	        		//extended item was not modified... but this one was.
@@ -836,11 +843,11 @@ public class DBAction {
 	        		StoreHistoryAndMeta(extension,user,null,cache);
 	    			cache.getModified().add(extension);
 	        	}
-	        	
+
 	        	confirmExtensionHistory(extension, cache, user);
             }
     	}
-	
+
 	/**
 	 * @param oldI
 	 * @param newI
@@ -852,7 +859,7 @@ public class DBAction {
 	{
 
 	    boolean b = false;
-		
+
 		Hashtable newHash = newI.getProps();
 		Hashtable oldHashClone = (Hashtable)oldI.getProps().clone();
 		Enumeration enumer = newHash.keys();
@@ -881,7 +888,7 @@ public class DBAction {
                     }else{
                         if (newObject.toString().equals("NULL") || newObject.toString()=="")
                         {
-                            
+
                         }else{
                             logger.info("OLD:NULL NEW:" + newObject);
                         	return true;
@@ -905,9 +912,9 @@ public class DBAction {
                 	return true;
                 }
 			}
-			
+
 		}
-		
+
 		if (allowItemOverwrite)
 		{
 			enumer = oldHashClone.keys();
@@ -938,9 +945,9 @@ public class DBAction {
 				{
 				    if (!oldI.getGenericSchemaElement().isHiddenFK(field))
 				    {
-					    
+
 					    GenericWrapperElement e = (GenericWrapperElement)gwf.getReferenceElement();
-	
+
 						Object newObject = oldHashClone.get(field);
 						if (e.getAddin().equals(""))
 						{
@@ -984,13 +991,13 @@ public class DBAction {
 							}
 					    }
 				    }
-					
+
 				}
 			}
 		}
 		return b;
 	}
-	
+
     public static boolean IsNewValue(String type,String oldValue,String newValue){
         if (type == null)
         {
@@ -1003,7 +1010,7 @@ public class DBAction {
             {
                 newValue = newValue.substring(1,newValue.lastIndexOf("'"));
             }
-            
+
             if (! oldValue.equals(newValue))
             {
                 logger.info("OLD:" + oldValue + " NEW:" + newValue);
@@ -1023,7 +1030,7 @@ public class DBAction {
                 {
                     Integer o1 = Integer.valueOf(oldValue);
                     Integer o2 = Integer.valueOf(newValue);
-                    
+
                     if (! o1.equals(o2))
                     {
                         logger.info("OLD:" + oldValue + " NEW:" + newValue);
@@ -1033,7 +1040,7 @@ public class DBAction {
                 {
                     Boolean o1 = null;
                     Boolean o2 = null;
-                    
+
                     if (oldValue.equalsIgnoreCase("true") || oldValue.equalsIgnoreCase("1"))
                     {
                         o1=Boolean.TRUE;
@@ -1041,7 +1048,7 @@ public class DBAction {
                     {
                         o1=Boolean.FALSE;
                     }
-                    
+
                     if (newValue.equalsIgnoreCase("true") || newValue.equalsIgnoreCase("1"))
                     {
                         o2=Boolean.TRUE;
@@ -1049,7 +1056,7 @@ public class DBAction {
                     {
                         o2=Boolean.FALSE;
                     }
-                    
+
                     if (! o1.equals(o2))
                     {
                         logger.info("OLD:" + oldValue + " NEW:" + newValue);
@@ -1062,7 +1069,7 @@ public class DBAction {
                     }
                     if (newValue.equalsIgnoreCase("NaN")){
                         newValue="'NaN'";
-                    } 
+                    }
                     if (oldValue.equalsIgnoreCase("INF")){
                         oldValue="'Infinity'";
                     }
@@ -1085,7 +1092,7 @@ public class DBAction {
                     }else{
                         Float o1 = Float.valueOf(oldValue);
                         Float o2 = Float.valueOf(newValue);
-                        
+
                         if (! o1.equals(o2))
                         {
                             logger.info("OLD:" + oldValue + " NEW:" + newValue);
@@ -1125,7 +1132,7 @@ public class DBAction {
                     }else{
                         Double o1 = Double.valueOf(oldValue);
                         Double o2 = Double.valueOf(newValue);
-                        
+
                         if (! o1.equals(o2))
                         {
                             logger.info("OLD:" + oldValue + " NEW:" + newValue);
@@ -1162,7 +1169,7 @@ public class DBAction {
                     }else{
                         Float o1 = Float.valueOf(oldValue);
                         Float o2 = Float.valueOf(newValue);
-                        
+
                         if (! o1.equals(o2))
                         {
                             logger.info("OLD:" + oldValue + " NEW:" + newValue);
@@ -1174,7 +1181,7 @@ public class DBAction {
                     try {
                         Date o1= DateUtils.parseDate(oldValue);
                         Date o2= DateUtils.parseDate(newValue);
-                        
+
                         if (! o1.equals(o2))
                         {
                             logger.info("OLD:" + oldValue + " NEW:" + newValue);
@@ -1190,7 +1197,7 @@ public class DBAction {
                     try {
                         Date o1= DateUtils.parseDateTime(oldValue);
                         Date o2= DateUtils.parseDateTime(newValue);
-                        
+
                         if (! o1.equals(o2))
                         {
                             logger.info("OLD:" + oldValue + " NEW:" + newValue);
@@ -1206,7 +1213,7 @@ public class DBAction {
                     try {
                         Date o1= DateUtils.parseTime(oldValue);
                         Date o2= DateUtils.parseTime(newValue);
-                        
+
                         if (! o1.equals(o2))
                         {
                             logger.info("OLD:" + oldValue + " NEW:" + newValue);
@@ -1228,7 +1235,7 @@ public class DBAction {
         }
         return false;
     }
-    
+
 	private static XFTItem ImportNoIdentifierFKs(XFTItem item, XFTItem dbVersion)
 	{
 		try {
@@ -1240,16 +1247,16 @@ public class DBAction {
             	    boolean isNoIdentifierTable = false;
             	    try {
                         Object o = item.getProperty(ref.getId());
-                        
+
                         if (o != null && o instanceof XFTItem)
                         {
                         	XFTItem temp = (XFTItem)o;
-                        	
+
                         	//check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
                         	// a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
                         	String keyName = "";
                         	if (temp != null)
-                        	{				
+                        	{
                         		if (temp.getPossibleFieldNames().size() == 1)
                         		{
                         			keyName =(String)((Object[])temp.getPossibleFieldNames().get(0))[0];
@@ -1262,14 +1269,14 @@ public class DBAction {
                                         logger.error("",e1);
                                     }
                         		}
-                        		
+
                         		if (! temp.getGenericSchemaElement().hasUniqueIdentifiers())
                         		{
                         		    isNoIdentifierTable =true;
                         		}
                         	}
                         }
-                        
+
                         if (isNoIdentifierTable)
                         {
                             try {
@@ -1322,7 +1329,7 @@ public class DBAction {
         }
         return item;
 	}
-	
+
 		private static boolean StoreSingleRefs(XFTItem item,boolean storeSubItems, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemOverwrite,DBItemCache cache,SecurityManagerI securityManager,boolean allowFieldMatching) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,Exception
     	{
     		boolean hasNoIdentifier = false;
@@ -1335,17 +1342,17 @@ public class DBAction {
     			if (!item.getGenericSchemaElement().getExtensionFieldName().equalsIgnoreCase(ref.getName()))
     			{
         			Object o = item.getProperty(ref.getId());
-        			
+
         			if (o != null && o instanceof XFTItem)
         			{
         				XFTItem temp = (XFTItem)o;
-        				
+
         				//check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
         				// a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
         				boolean isNoIdentifierTable = false;
         				String keyName = "";
         				if (temp != null)
-        				{				
+        				{
         					if (temp.getPossibleFieldNames().size() == 1)
         					{
         						keyName =(String)((Object[])temp.getPossibleFieldNames().get(0))[0];
@@ -1355,13 +1362,13 @@ public class DBAction {
         							hasNoIdentifier = true;
         						}
         					}
-        					
+
         					if (! temp.getGenericSchemaElement().hasUniqueIdentifiers())
         					{
         					    isNoIdentifierTable =true;
         					    hasNoIdentifier = true;
         					}
-        		
+
         					if ((! isNoIdentifierTable) && (! storeSubItems))
         					{
         						//Store this item.
@@ -1374,7 +1381,7 @@ public class DBAction {
                 						StoreItem(temp,user,false,quarantine,overrideQuarantine,false, cache,securityManager,true);
         					        }
         					    }
-        						
+
         						XFTSuperiorReference supRef = (XFTSuperiorReference)ref.getXFTReference();
         						//Set foreign keys based on saved values.
         						Iterator iterator = supRef.getKeyRelations().iterator();
@@ -1390,7 +1397,7 @@ public class DBAction {
 										 }
         							  }
         						  }
-                                  
+
                                   if (temp.modified || temp.child_modified){
                                       item.child_modified=true;
                                   }
@@ -1400,7 +1407,7 @@ public class DBAction {
         						String localKey = (String)refName.get(0);
         						GenericWrapperField foreignKey = (GenericWrapperField)refName.get(1);
         						Object rootFKValue = item.getProperty(localKey);
-        
+
         						if (rootFKValue != null)
         						{
         							if (keyName.equals(""))
@@ -1434,7 +1441,7 @@ public class DBAction {
             					    }else{
                 						StoreItem(temp,user,false,quarantine,overrideQuarantine,false, cache,securityManager,true);
             					    }
-        	
+
         							 //Set foreign keys based on saved values.
         							 ref.getLocalRefNames().iterator();
         							 Object value = temp.getProperty(foreignKey.getId());
@@ -1444,7 +1451,7 @@ public class DBAction {
 											 throw new FieldNotFoundException(item.getXSIType() + "/" + localKey.toLowerCase());
 										 }
         							 }
-        						 
+
         						}
         						if (temp.modified || temp.child_modified){
                                     item.child_modified=true;
@@ -1457,23 +1464,23 @@ public class DBAction {
     			    ext = ref;
     			}
     		}
-    		
+
     		//STORE EXTENSION AFTER OTHER REFERENCES
     		if (ext != null)
     		{
     		    GenericWrapperField ref = ext;
     		    Object o = item.getProperty(ref.getId());
-    			
+
     			if (o != null && o instanceof XFTItem)
     			{
     				XFTItem temp = (XFTItem)o;
-    				
+
     				//check for one column table (if found, see if root item is already stored.  If, the item already was stored and has
     				// a fk value for this table that should be used. Else, this ref item will be stored and the root item will be updated with the fk value
     				boolean isNoIdentifierTable = false;
     				String keyName = "";
     				if (temp != null)
-    				{				
+    				{
     					if (temp.getPossibleFieldNames().size() == 1)
     					{
     						keyName =(String)((Object[])temp.getPossibleFieldNames().get(0))[0];
@@ -1483,13 +1490,13 @@ public class DBAction {
     							hasNoIdentifier = true;
     						}
     					}
-    					
+
     					if (! temp.getGenericSchemaElement().hasUniqueIdentifiers() && !temp.getGenericSchemaElement().matchByValues())
     					{
     					    isNoIdentifierTable =true;
     					    hasNoIdentifier = true;
     					}
-    		
+
     					if ((! isNoIdentifierTable) && (! storeSubItems))
     					{
     						//Store this item.
@@ -1500,7 +1507,7 @@ public class DBAction {
     					        //
         						//StoreItem(temp,user,false,quarantine,overrideQuarantine,false, cache,securityManager,allowFieldMatching);
     					    }
-    						
+
     						XFTSuperiorReference supRef = (XFTSuperiorReference)ref.getXFTReference();
     						//Set foreign keys based on saved values.
     						Iterator iterator = supRef.getKeyRelations().iterator();
@@ -1516,7 +1523,7 @@ public class DBAction {
 										 }
     							  }
     						  }
-                              
+
                               if (temp.modified){
                                   item.modified=true;
                               }
@@ -1526,7 +1533,7 @@ public class DBAction {
     						String localKey = (String)refName.get(0);
     						GenericWrapperField foreignKey = (GenericWrapperField)refName.get(1);
     						Object rootFKValue = item.getProperty(localKey);
-    
+
     						if (rootFKValue != null)
     						{
     							if (keyName.equals(""))
@@ -1560,7 +1567,7 @@ public class DBAction {
         					    }else{
             						StoreItem(temp,user,false,quarantine,overrideQuarantine,false, cache,securityManager,allowFieldMatching);
         					    }
-    	
+
     							 //Set foreign keys based on saved values.
     							 ref.getLocalRefNames().iterator();
     							 Object value = temp.getProperty(foreignKey.getId());
@@ -1570,9 +1577,9 @@ public class DBAction {
 										 throw new FieldNotFoundException(item.getXSIType() + "/" + localKey);
 									 }
     							 }
-    						 
+
     						}
-                            
+
                             if (temp.modified){
                                 item.modified=true;
                             }
@@ -1582,7 +1589,7 @@ public class DBAction {
     		}
     		return hasNoIdentifier;
     	}
-	
+
 	private static ItemI StoreMultipleRefs(XFTItem item, UserI user, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,DBItemCache cache,SecurityManagerI securityManager) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,Exception
 	{
 //		save multiple refs
@@ -1598,14 +1605,14 @@ public class DBAction {
 		  {
 			  try {
 				  GenericWrapperField ref = (GenericWrapperField)mRefs.next();
-			
+
 				  XFTReferenceI xftRef = ref.getXFTReference();
 				  if (xftRef.isManyToMany())
 				  {
 				      GenericWrapperElement foreignElement = (GenericWrapperElement)ref.getReferenceElement();
 
 					  XFTManyToManyReference many = (XFTManyToManyReference)xftRef;
-					  
+
 				      if (!foreignElement.hasUniqueIdentifiers() && (!foreignElement.matchByValues()))
 					  {
 				          //if allowItemRemoval then removes pre-existing non-identified rows
@@ -1618,12 +1625,12 @@ public class DBAction {
 						      if (dbVersion != null)
 						      {
 							      ItemCollection items = dbVersion.getChildItemCollection(ref);
-							      
+
 							      Iterator itemsToRemove = items.iterator();
 							      while (itemsToRemove.hasNext())
 							      {
 							          XFTItem itemToRemove = (XFTItem)itemsToRemove.next();
-							          
+
 							          boolean found = false;
 							          Iterator children = item.getChildItems(ref).iterator();
 									  while (children.hasNext())
@@ -1643,20 +1650,20 @@ public class DBAction {
                                                   }
                                               }
                                           }
-                                          
+
 									  }
-							          
+
 									  if(!found){
-                                          
+
 									      DBAction.RemoveItemReference(dbVersion,ref.getXMLPathString(item.getXSIType()),itemToRemove,user,cache,false,false);
-                                          
+
                                           item.child_modified=true;
 									  }
 							      }
 						      }
 					      }
 					  }
-				      
+
 					  int counter = 0;
 					  Iterator children = item.getChildItems(ref).iterator();
 					  while (children.hasNext())
@@ -1666,18 +1673,18 @@ public class DBAction {
 						  item.setFieldValue(ref.getSQLName().toLowerCase()+ (counter),temp);
 						  counter = counter+1;
 
-                          
+
 						  if (temp.modified || temp.child_modified){
                               item.child_modified=true;
                           }
 					  }
-				
+
 					  counter = 0;
 					 children = item.getChildItems(ref).iterator();
 					 while (children.hasNext())
 					 {
 						 XFTItem temp = (XFTItem)children.next();
-					
+
 						  CriteriaCollection search = new CriteriaCollection("AND");
 						  //SET MAPPING VALUES
 						  Iterator iter = many.getMappingColumns().iterator();
@@ -1693,7 +1700,7 @@ public class DBAction {
 									  c.setField_name(col.getLocalSqlName());
 									  c.setValue(item.getProperty(col.getForeignKey().getId()));
 									  c.setCleanedType(col.getXmlType().getLocalType());
-								
+
 									  search.add(c);
 								  }
 							  }else{
@@ -1704,17 +1711,17 @@ public class DBAction {
 									  c.setField_name(col.getLocalSqlName());
 									  c.setValue(temp.getProperty(col.getForeignKey().getId()));
 									  c.setCleanedType(col.getXmlType().getLocalType());
-								
+
 									  search.add(c);
 								  }
 							  }
 						  }
-					
+
 						  if (StoreMapping(many,search,login,cache)){
 						      item.child_modified=true;
 						  }
 					  }
-					 
+
 					 if (foreignElement.hasUniqueIdentifiers() && (!foreignElement.matchByValues()))
 					  {
 				          //if allowItemRemoval then removes pre-existing non-identified rows
@@ -1727,12 +1734,12 @@ public class DBAction {
 						      if (dbVersion != null)
 						      {
 							      ItemCollection items = dbVersion.getChildItemCollection(ref);
-							      
+
 							      Iterator itemsToRemove = items.iterator();
 							      while (itemsToRemove.hasNext())
 							      {
 							          XFTItem itemToRemove = (XFTItem)itemsToRemove.next();
-							          
+
 							          boolean found = false;
 							          children = item.getChildItems(ref).iterator();
 									  while (children.hasNext())
@@ -1753,7 +1760,7 @@ public class DBAction {
                                               }
                                           }
 									  }
-							          
+
 									  if(!found){
 									      DBAction.RemoveItemReference(dbVersion,ref.getXMLPathString(item.getXSIType()),itemToRemove,user,cache,false,false);
                                           item.child_modified=true;
@@ -1762,7 +1769,7 @@ public class DBAction {
 						      }
 					      }
 					  }
-				
+
 				  }else{
 					  GenericWrapperElement foreignElement = (GenericWrapperElement)ref.getReferenceElement();
 
@@ -1777,12 +1784,12 @@ public class DBAction {
 						      if (dbVersion != null)
 						      {
 							      ItemCollection items = dbVersion.getChildItemCollection(ref);
-							      
+
 							      Iterator itemsToRemove = items.iterator();
 							      while (itemsToRemove.hasNext())
 							      {
 							          XFTItem itemToRemove = (XFTItem)itemsToRemove.next();
-							          
+
 							          boolean found = false;
 							          Iterator children = item.getChildItems(ref).iterator();
 									  while (children.hasNext())
@@ -1803,25 +1810,25 @@ public class DBAction {
                                               }
                                           }
 									  }
-							          
+
 									  if(!found){
-                                          
+
 									      DBAction.RemoveItemReference(dbVersion,ref.getXMLPathString(item.getXSIType()),itemToRemove,user,cache,false,false);
-                                          
+
                                           item.child_modified=true;
                                       }
 							      }
 						      }
 					      }
 					  }
-					  
+
 					  XFTSuperiorReference supRef = (XFTSuperiorReference)xftRef;
-					  
+
 					  Iterator children = item.getChildItems(ref).iterator();
 					  while (children.hasNext())
 					  {
 						  XFTItem temp = (XFTItem)children.next();
-	
+
 						  Iterator iterator = supRef.getKeyRelations().iterator();
 						  while (iterator.hasNext())
 						  {
@@ -1836,19 +1843,19 @@ public class DBAction {
 								 }
 							  }
 						  }
-				
+
 						  if (temp != null)
 						  {
 							  temp = StoreItem(temp,user,false,quarantine,overrideQuarantine,allowItemRemoval, cache,securityManager,true);
 
-                              
+
 							  if (temp.modified || temp.child_modified){
 	                              item.child_modified=true;
 	                          }
-							  
-						  }			
+
+						  }
 					  }
-					  
+
 
 					  if (allowItemRemoval)
 				      {
@@ -1859,12 +1866,12 @@ public class DBAction {
 					      if (dbVersion !=null)
 					      {
 						      ItemCollection items = dbVersion.getChildItemCollection(ref);
-						      
+
 						      Iterator dbItems = items.iterator();
 						      while (dbItems.hasNext())
 						      {
 						          XFTItem itemToRemove = (XFTItem)dbItems.next();
-						          
+
 						          boolean found = false;
 						          children = item.getChildItems(ref).iterator();
 								  while (children.hasNext())
@@ -1885,7 +1892,7 @@ public class DBAction {
                                           }
                                       }
 								  }
-						          
+
 								  if(!found)
 								  {
 								      DBAction.RemoveItemReference(dbVersion,ref.getXMLPathString(item.getXSIType()),itemToRemove,user,cache,false,false);
@@ -1895,20 +1902,20 @@ public class DBAction {
 					      }
 				      }
 				  }
-			
+
 			  } catch (Exception e) {
 				  throw e;
 			  }
 		  }
-		  
+
 		  return item;
 	}
-	
+
 	private static boolean StoreMapping(XFTManyToManyReference mapping,CriteriaCollection criteria,String login,DBItemCache cache) throws DBPoolException,java.sql.SQLException,ElementNotFoundException,XFTInitException,Exception
 	{
-		
+
 		XFTTable table = TableSearch.GetMappingTable(mapping,criteria,login);
-		
+
 		if (table.getNumRows() > 0)
 		{
 			logger.info("Duplicate mapping table row found in '" + mapping.getMappingTable() + "'");
@@ -1956,7 +1963,7 @@ public class DBAction {
             return true;
 		}
 	}
-	
+
 	public static XFTItem CheckMetaData(XFTItem item,UserI user,boolean quarantine)
 	{
 		try {
@@ -1964,16 +1971,16 @@ public class DBAction {
 			if(item.getProperty(f) == null)
 			{
 				XFTItem meta = XFTItem.NewMetaDataElement(user,item.getXSIType(),quarantine,Calendar.getInstance().getTime(),null);
-				
+
 				item.setChild(f,meta,true);
 			}
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
-		
+
 		return item;
 	}
-	
+
 	/**
 	 * @param item
 	 * @return
@@ -1998,12 +2005,12 @@ public class DBAction {
 				}
 			}
 		}
-		
+
 		query += element.getSQLName() + " (";
-		
+
 		String fields ="";
 		String values ="";
-		
+
 		Hashtable props = item.getProps();
 		Enumeration enumer = props.keys();
 		int counter = 0;
@@ -2061,29 +2068,29 @@ public class DBAction {
 		{
 			con.insertItem(query,element.getDbName(),login,cache);
 		}
-		
+
 		if (!element.getFullXMLName().toLowerCase().startsWith("xdat"))
 		{
-			logger.info(element.getFullXMLName() +" stored.");	
+			logger.info(element.getFullXMLName() +" stored.");
 		}
-		
+
 		return item;
 	}
 
-	
-	public static String getSequenceName(GenericWrapperElement e) 
+
+	public static String getSequenceName(GenericWrapperElement e)
 	{
 	    if (sequences.get(e.getSQLName().toLowerCase()) == null)
 	    {
 	        String col_name = null;
 
 		    GenericWrapperField key = (GenericWrapperField)e.getAllPrimaryKeys().get(0);
-			
+
 			String newQuery = "SELECT pg_get_serial_sequence('"+ e.getSQLName() + "','"+ key.getSQLName() + "') AS col_name";
 			try {
 			    Object o =(String)PoolDBUtils.ReturnStatisticQuery(newQuery,"col_name",e.getDbName(),null);
 			    col_name = o.toString();
-	            
+
 	        } catch (Exception e1) {
 	            col_name = e.getSQLName() + "_" + key.getSQLName() + "_seq";
 	            newQuery = "SELECT * FROM " + col_name;
@@ -2105,16 +2112,16 @@ public class DBAction {
                 }
 
 	        }
-	        
+
 	        if (col_name != null)
 	        {
 	            sequences.put(e.getSQLName().toLowerCase(),col_name);
 	        }
 	    }
-		
+
 		return (String)sequences.get(e.getSQLName().toLowerCase());
 	}
-	
+
 	public static String getSequenceName(String table, String key, String dbName)
 	{
 	    String col_name = "";
@@ -2122,7 +2129,7 @@ public class DBAction {
 		try {
 		    Object o =(String)PoolDBUtils.ReturnStatisticQuery(newQuery,"col_name",dbName,null);
 		    col_name = o.toString();
-            
+
         } catch (Exception e1) {
             col_name = table + "_" + key + "_seq";
             newQuery = "SELECT * FROM " + col_name;
@@ -2146,7 +2153,7 @@ public class DBAction {
         }
         return col_name;
 	}
-	
+
 	private static void Quarantine(XFTItem oldI,UserI user, boolean quarantine, boolean overrideQuarantine,DBItemCache cache) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,Exception
 	{
 		// MARK MODIFIED AS TRUE
@@ -2159,13 +2166,13 @@ public class DBAction {
 				oldMeta.setFieldValue("meta_data_id",metaDataId);
                 oldMeta.setFieldValue("modified","1");
                 oldMeta.setFieldValue("last_modified",Calendar.getInstance().getTime());
-				
+
 				boolean q;
 				if (overrideQuarantine)
 				    q = quarantine;
 				else
 				    q = oldI.getGenericSchemaElement().isQuarantine(quarantine);
-				
+
 				if (q){
 				    oldMeta.setFieldValue("status",ViewManager.QUARANTINE);
 				}
@@ -2173,21 +2180,21 @@ public class DBAction {
 			}
             oldI.modified=true;
 	    }
-        
+
 	}
 	private static void StoreHistoryAndMeta(XFTItem oldI, XFTItem newI,UserI user,Boolean quarantine,DBItemCache cache) throws Exception
 	{
 		XFTItem meta=StoreHistoryAndMeta(oldI, user, quarantine, cache);
-		
-		
+
+
 		if(newI!=null && meta!=null){
 			newI.setProperty("meta.meta_data_id",meta.getProperty("meta_data_id"));
 			newI.setProperty("meta.status",meta.getProperty("status"));
 		}
 	}
-	
+
 	private static final List<String> modifiable_status=Arrays.asList(ViewManager.ACTIVE,ViewManager.QUARANTINE);
-	
+
 	private static XFTItem StoreHistoryAndMeta(XFTItem oldI, UserI user,Boolean quarantine,DBItemCache cache) throws Exception
 	{
 		if (oldI.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
@@ -2199,43 +2206,41 @@ public class DBAction {
 				StoreHistoryItem(oldI,user,cache,oldI.getRowLastModified());
 			} catch (ElementNotFoundException e) {
 			}
-	    	
+
 			if (meta != null)
 			{
 				meta.setFieldValue("modified","1");
 				meta.setFieldValue("last_modified",cache.getModTime());//other processes may change this as well, like modifications to a child element
 				meta.setFieldValue("row_last_modified",cache.getModTime());//added to track specific changes to this row
 				meta.setFieldValue("xft_version",cache.getChangeId());//added to track specific changes to this row
-								
+
 				if(!modifiable_status.contains(meta.getField("status"))){
 					throw new UnmodifiableStatusException(oldI.getXSIType() + ":"+ oldI.getPKValueString() + ":"+ meta.getField("status"));
 				}
-				
+
 				if (quarantine !=null){
 					if(quarantine)
 						meta.setFieldValue("status",ViewManager.QUARANTINE);
 					else
 						meta.setFieldValue("status",ViewManager.ACTIVE);
 				}
-				
+
 				UpdateItem(meta,user,cache,false);
 			}
 			return meta;
 	    }
 		return null;
 	}
-	
+
 	public static class UnmodifiableStatusException extends Exception{
 		private static final long serialVersionUID = 68282673755608498L;
-		
+
 		public UnmodifiableStatusException(String s){
 			super(s);
 		}
 	}
-	
+
 	/**
-	 * @param item
-	 * @return
 	 */
 	private static XFTItem UpdateItem(XFTItem oldI, XFTItem newI, UserI user,boolean quarantine, boolean overrideQuarantine,DBItemCache cache,boolean storeNULLS) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,Exception
 	{
@@ -2245,24 +2250,24 @@ public class DBAction {
 		    q = quarantine;
 		else
 		    q = oldI.getGenericSchemaElement().isQuarantine(quarantine);
-		
+
 		// MARK MODIFIED AS TRUE
 	    StoreHistoryAndMeta(oldI, newI, user, q, cache);
-					
+
 		//COPY PK VALUES INTO NEW ITEM
 		newI.getProps().putAll(oldI.getPkValues());
-		
+
 		//UPDATE ITEM
 		newI = UpdateItem(newI,user,cache,storeNULLS);
 
 		cache.getModified().add(newI);
-				
+
         oldI.modified=true;
         newI.modified=true;
-        
+
 		return newI;
 	}
-	
+
 	public static void StoreHistoryItem(XFTItem oldI,UserI user,final DBItemCache cache,final Date previousChangeDate) throws ElementNotFoundException,Exception
 	{
 		String login = null;
@@ -2283,7 +2288,7 @@ public class DBAction {
 			}
 			history.setDirectProperty("change_date",cache.getModTime());
 			history.setDirectProperty("xft_version",oldI.getXFTVersion());
-			
+
 			Hashtable pkHash = (Hashtable)oldI.getPkValues();
 			Enumeration pks = pkHash.keys();
 			while (pks.hasMoreElements())
@@ -2291,12 +2296,12 @@ public class DBAction {
 				String name = (String)pks.nextElement();
 				history.setFieldValue("new_row_" + name,pkHash.get(name));
 			}
-			
+
 			//INSERT HISTORY ITEM
 			InsertItem(history,login,cache,true);
 		}
 	}
-	
+
 	/**
 	 * @param item
 	 * @return
@@ -2310,9 +2315,9 @@ public class DBAction {
 		}
 		String query = "UPDATE ";
 		GenericWrapperElement element = item.getGenericSchemaElement();
-		
+
 		query += element.getSQLName() + " SET ";
-		
+
 		Hashtable props = item.getProps();
 		int counter = 0;
 		Iterator iter = item.getPossibleFieldNames().iterator();
@@ -2330,13 +2335,13 @@ public class DBAction {
 		                if (!item.getGenericSchemaElement().isHiddenFK(key))
 					    {
 						    GenericWrapperField field = element.getNonMultipleDataField(key);
-						
+
 			                if (! element.getExtensionFieldName().equalsIgnoreCase(field.getName()))
 			                {
 			                    if (field.isReference())
 			                    {
 			                        GenericWrapperElement e = (GenericWrapperElement)field.getReferenceElement();
-	
+
 			    					if (e.getAddin().equals(""))
 			    					{
 						                if (counter++ == 0)
@@ -2375,7 +2380,7 @@ public class DBAction {
 			}
 		}
 		query += " WHERE ";
-		
+
 		counter = 0;
 		iter = item.getPkNames().iterator();
 		while (iter.hasNext())
@@ -2391,13 +2396,13 @@ public class DBAction {
 			}
 		}
 		query += ";";
-		
+
 		//logger.debug(query);
 		PoolDBUtils con = null;
 		try {
 			con = new PoolDBUtils();
 			con.updateItem(query,element.getDbName(),login,cache);
-			
+
 			if (!element.getFullXMLName().toLowerCase().startsWith("xdat"))
 			{
 				logger.info(element.getFullXMLName() +" updated.");
@@ -2408,18 +2413,18 @@ public class DBAction {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
-		}	
-		
+		}
+
         item.modified=true;
-        
+
 		return item;
 	}
-	
+
 	private static String buildType(GenericWrapperField field){
 		return field.getXMLType().getLocalType();
 	}
-	
-	
+
+
 	/**
 	 * Formats the object to a string for SQL interaction based on the XMLType of the field.
 	 * @param o
@@ -2484,7 +2489,7 @@ public class DBAction {
 			}
 		}
 	}
-	
+
 	/**
 	 * Formats the object to a string for SQL interaction based on the submitted type.
 	 * @param o
@@ -2502,7 +2507,7 @@ public class DBAction {
 	    }else{
 	        return "";
 	    }
-	    
+
 		if (type.equalsIgnoreCase("string"))
 		{
 			if (o !=null && o.getClass().getName().equalsIgnoreCase("[B"))
@@ -2538,7 +2543,7 @@ public class DBAction {
 					if(s.contains("<") && s.contains(">") && (upper.contains("SCRIPT") || ((upper.contains("IMG") || upper.contains("IMAGE")) && (upper.contains("JAVASCRIPT"))))){
 						if(!allowInvalidValues){
 							AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", s);
-							throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");						
+							throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");
 						}
 					}
 					return "'" + StringUtils.CleanForSQLValue(s) + "'";
@@ -2776,10 +2781,10 @@ public class DBAction {
                     }
                 }
             }
-            
+
             if (d!=null){
                 SimpleDateFormat df = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS");
-                
+
                 return "'" + df.format(d) + "'";
             }else{
                 return "'" + StringUtils.CleanForSQLValue(o.toString()) + "'";
@@ -2789,7 +2794,7 @@ public class DBAction {
 			return o.toString();
 		}
 	}
-		
+
 	/**
 	 * @param item
 	 * @param toRemove
@@ -2799,7 +2804,7 @@ public class DBAction {
 	{
 	    DBItemCache cache =  new DBItemCache(user,c);
 	    RemoveItemReference((XFTItem)item,xmlPath,(XFTItem)toRemove,user,cache,false,false);
-	    
+
 	    PoolDBUtils con = null;
 		try {
 			if (!cache.getSQL().equals("") && !cache.getSQL().equals("[]"))
@@ -2813,13 +2818,13 @@ public class DBAction {
 				    username = user.getUsername();
 				    xdat_user_id=user.getID();
 				}
-    			
+
                 if (!cache.getDBTriggers().contains(item, false)){
                     cache.getDBTriggers().add(item);
                 }
-                            
+
                 PerformUpdateTriggers(cache, username,xdat_user_id,false);
-                
+
     			con = new PoolDBUtils();
     			con.sendBatch(cache,item.getDBName(),username);
 
@@ -2832,9 +2837,9 @@ public class DBAction {
 		} catch (Exception e) {
 			throw e;
 		}
-        
+
 	}
-	
+
 	/**
 	 * @param item
 	 * @param toRemove
@@ -2847,11 +2852,11 @@ public class DBAction {
 		{
 		    login = user.getUsername();
 		}
-		
+
 		if(cache!=null){
 			cache.getRemoved().add(toRemove);
 		}
-		
+
 	    try {
             GenericWrapperElement root = item.getGenericSchemaElement();
 
@@ -2879,16 +2884,16 @@ public class DBAction {
                                 break;
                             }
                         }
-                        
+
                         if (foundField)
                         {
                             break;
-                        } 
+                        }
                     }
                 }
             }
-            
-            
+
+
             if (field!=null)
             {
                 //GenericWrapperElement foreign = (GenericWrapperElement)field.getReferenceElement();
@@ -2903,7 +2908,7 @@ public class DBAction {
                     }else{
                         referenceCount = XFTReferenceManager.NumberOfReferences(toRemove);
                     }
-                    
+
                     if (field.isMultiple())
                     {
                         //CHECK TO SEE IF OTHER ELEMENTS REFERENCE THIS ONE
@@ -2925,7 +2930,7 @@ public class DBAction {
                                     al.add(DBAction.ValueParser(o,spec.getXmlType().getLocalType(),true));
                                     values.add(al);
                                 }
-                                
+
                                 refCols = ref.getMappingColumnsForElement(root).iterator();
                                 while (refCols.hasNext())
                                 {
@@ -2936,14 +2941,14 @@ public class DBAction {
                                     al.add(DBAction.ValueParser(o,spec.getXmlType().getLocalType(),true));
                                     values.add(al);
                                 }
-                                
+
                                 if(values.size()>1){
-                                    DBAction.DeleteMappings(ref,root.getDbName(),values,login,cache,noHistory);                            
+                                    DBAction.DeleteMappings(ref,root.getDbName(),values,login,cache,noHistory);
                                 }else{
                                     throw new Exception("Failed to identify both ids for the mapping table.");
                                 }
-                                
-                            }else{  
+
+                            }else{
 
                                 GenericWrapperElement gwe = null;
                         		XFTSuperiorReference ref = (XFTSuperiorReference)field.getXFTReference();
@@ -2953,8 +2958,8 @@ public class DBAction {
                                     XFTRelationSpecification spec = (XFTRelationSpecification)refsCols.next();
                                     GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." +spec.getLocalCol());
                                     gwe = f.getParentElement().getGenericXFTElement();
-                                } 
-                        		
+                                }
+
                                 XFTItem updateItem = toRemove;
                                 if (!gwe.getFullXMLName().equalsIgnoreCase(updateItem.getXSIType()))
                                 {
@@ -2964,7 +2969,7 @@ public class DBAction {
                                         updateItem = toRemove;
                                     }
                                 }
-                                
+
                                 if (!noHistory)
                                 {
                                     try {
@@ -2976,14 +2981,14 @@ public class DBAction {
                             			}
                             		}
                                 }
-                                
+
                                 refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext())
                                 {
                                     XFTRelationSpecification spec = (XFTRelationSpecification)refsCols.next();
                                     updateItem.setProperty(updateItem.getXSIType() + "." +spec.getLocalCol(),"NULL");
                                 }
-                                
+
                         		//UPDATE ITEM
                                 toRemove = UpdateItem(updateItem,user,cache,true);
                         		item.removeItem(toRemove);
@@ -3002,7 +3007,7 @@ public class DBAction {
                                     al.add(DBAction.ValueParser(o,spec.getXmlType().getLocalType(),true));
                                     values.add(al);
                                 }
-                                
+
                                 ArrayList<XFTMappingColumn> localCols = ref.getMappingColumnsForElement(root);
                                 for (XFTMappingColumn spec:localCols)
                                 {
@@ -3012,18 +3017,18 @@ public class DBAction {
                                     al.add(DBAction.ValueParser(o,spec.getXmlType().getLocalType(),true));
                                     values.add(al);
                                 }
-                                
+
                                 if(values.size()>1){
-                                    
-                                    DBAction.DeleteMappings(ref,root.getDbName(),values,login,cache,noHistory);  
-                                   
+
+                                    DBAction.DeleteMappings(ref,root.getDbName(),values,login,cache,noHistory);
+
                             		DeleteItem(toRemove,user,cache,noHistory,field.isPossibleLoop());
                             		item.removeItem(toRemove);
                                 }else{
                                     throw new Exception("Failed to identify both ids for the mapping table.");
                                 }
                             }else{
-                        		
+
                         		DeleteItem(toRemove,user,cache,noHistory,field.isPossibleLoop());
                         		item.removeItem(toRemove);
                             }
@@ -3035,7 +3040,7 @@ public class DBAction {
                             {
                                 GenericWrapperElement gwe = null;
         	            		XFTSuperiorReference ref = (XFTSuperiorReference)field.getXFTReference();
-        	            		
+
         	            		//FIND EXTENSION LEVEL FOR UPDATE
                                 Iterator refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext())
@@ -3044,7 +3049,7 @@ public class DBAction {
                                     GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." +spec.getLocalCol());
                                     gwe = f.getParentElement().getGenericXFTElement();
                                 }
-                                
+
                                 //FIND CORRECT EXTENSION LEVEL ITEM
                                 XFTItem updateItem = item;
                                 if (!gwe.getFullXMLName().equalsIgnoreCase(updateItem.getXSIType()))
@@ -3067,7 +3072,7 @@ public class DBAction {
             	            			}
             	            		}
                                 }
-                                
+
                                 //UPDATE REFERENCE
                                 refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext())
@@ -3075,8 +3080,8 @@ public class DBAction {
                                     XFTRelationSpecification spec = (XFTRelationSpecification)refsCols.next();
                                     updateItem.setProperty(updateItem.getXSIType() + "." +spec.getLocalCol(),"NULL");
                                 }
-                                
-        	            		
+
+
         	            		//UPDATE ITEM
                                 updateItem = UpdateItem(updateItem,user,cache,false);
                             }
@@ -3086,7 +3091,7 @@ public class DBAction {
                             {
                                 GenericWrapperElement gwe = null;
         	            		XFTSuperiorReference ref = (XFTSuperiorReference)field.getXFTReference();
-        	            		
+
         	            		//FIND EXTENSION LEVEL FOR UPDATE
                                 Iterator refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext())
@@ -3095,7 +3100,7 @@ public class DBAction {
                                     GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." +spec.getLocalCol());
                                     gwe = f.getParentElement().getGenericXFTElement();
                                 }
-                                
+
                                 //FIND CORRECT EXTENSION LEVEL ITEM
                                 XFTItem updateItem = item;
                                 if (!gwe.getFullXMLName().equalsIgnoreCase(updateItem.getXSIType()))
@@ -3118,7 +3123,7 @@ public class DBAction {
             	            			}
             	            		}
                                 }
-                                
+
                                 //UPDATE REFERENCE
                                 refsCols = ref.getKeyRelations().iterator();
                                 while (refsCols.hasNext())
@@ -3126,13 +3131,13 @@ public class DBAction {
                                     XFTRelationSpecification spec = (XFTRelationSpecification)refsCols.next();
                                     updateItem.setProperty(updateItem.getXSIType() + "." +spec.getLocalCol(),"NULL");
                                 }
-                                
-        	            		
+
+
         	            		//UPDATE ITEM
                                 updateItem = UpdateItem(updateItem,user,cache,false);
                             }
     	            		item.removeItem(toRemove);
-    	            		
+
                     		DeleteItem(toRemove,user,cache,noHistory,field.isPossibleLoop());
                         }
                     }
@@ -3153,7 +3158,7 @@ public class DBAction {
                                 al.add(DBAction.ValueParser(o,spec.getXmlType().getLocalType(),true));
                                 values.add(al);
                             }
-                            
+
                             refCols = ref.getMappingColumnsForElement(root).iterator();
                             while (refCols.hasNext())
                             {
@@ -3164,17 +3169,17 @@ public class DBAction {
                                 al.add(DBAction.ValueParser(o,spec.getXmlType().getLocalType(),true));
                                 values.add(al);
                             }
-                            
+
                             if(values.size()>1){
-                        	DBAction.DeleteMappings(ref,root.getDbName(),values,login,cache,noHistory);  
-                           
+                        	DBAction.DeleteMappings(ref,root.getDbName(),values,login,cache,noHistory);
+
                     		DeleteItem(toRemove,user,cache,noHistory,field.isPossibleLoop());
                     		item.removeItem(toRemove);
                             }else{
                                 throw new Exception("Failed to identify both ids for the mapping table.");
                             }
                         }else{
-                    		
+
                     		DeleteItem(toRemove,user,cache,noHistory,field.isPossibleLoop());
                     		item.removeItem(toRemove);
                         }
@@ -3186,10 +3191,10 @@ public class DBAction {
                             {
                                 throw new Exception("Unable to delete REQUIRED " + toRemove.getXSIType() + ". The entire parent " + item.getXSIType() + " must be deleted.");
                             }
-                            
+
                             GenericWrapperElement gwe = null;
     	            		XFTSuperiorReference ref = (XFTSuperiorReference)field.getXFTReference();
-    	            		
+
     	            		//FIND EXTENSION LEVEL FOR UPDATE
                             Iterator refsCols = ref.getKeyRelations().iterator();
                             while (refsCols.hasNext())
@@ -3198,7 +3203,7 @@ public class DBAction {
                                 GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(toRemove.getXSIType() + "." +spec.getLocalCol());
                                 gwe = f.getParentElement().getGenericXFTElement();
                             }
-                            
+
                             //FIND CORRECT EXTENSION LEVEL ITEM
                             XFTItem updateItem = item;
                             if (!gwe.getFullXMLName().equalsIgnoreCase(updateItem.getXSIType()))
@@ -3221,7 +3226,7 @@ public class DBAction {
         	            			}
         	            		}
                             }
-                            
+
                             //UPDATE REFERENCE
                             refsCols = ref.getKeyRelations().iterator();
                             while (refsCols.hasNext())
@@ -3229,14 +3234,14 @@ public class DBAction {
                                 XFTRelationSpecification spec = (XFTRelationSpecification)refsCols.next();
                                 updateItem.setProperty(updateItem.getXSIType() + "." +spec.getLocalCol(),"NULL");
                             }
-                            
-    	            		
+
+
     	            		//UPDATE ITEM
                             updateItem = UpdateItem(updateItem,user,cache,false);
                         }
-                        
+
 	            		item.removeItem(toRemove);
-	            		
+
                 		DeleteItem(toRemove,user,cache,noHistory,field.isPossibleLoop());
                     }
                 }
@@ -3252,13 +3257,10 @@ public class DBAction {
             throw e;
         }
 	}
-	
 
-	
+
+
 	/**
-	 * @param mappingName
-	 * @param dbName
-	 * @param cc
 	 * @throws Exception
 	 */
 	private static void DeleteMappings(XFTManyToManyReference mapping, String dbName, ArrayList values,String login,DBItemCache cache, boolean noHistory) throws Exception
@@ -3276,13 +3278,13 @@ public class DBAction {
 				{
 				    query = "INSERT INTO " + mapping.getHistoryTableName();
 					query += " (";
-					  
+
 					counter =0;
 					keys = values.iterator();
 					while (keys.hasNext())
 					{
 					    ArrayList key = (ArrayList)keys.next();
-					    
+
 					    if (counter++!=0)
 					    {
 					        query +=", ";
@@ -3290,13 +3292,13 @@ public class DBAction {
 					    query += key.get(0);
 					}
 					query += ") VALUES (";
-					
+
 					counter =0;
 					keys = values.iterator();
 					while (keys.hasNext())
 					{
 					    ArrayList key = (ArrayList)keys.next();
-					    
+
 					    if (counter++!=0)
 					    {
 					        query +=", ";
@@ -3305,25 +3307,25 @@ public class DBAction {
 					}
 					query +=");";
 
-					logger.debug(query);		        
+					logger.debug(query);
 					con.updateItem(query,dbName,login,cache);
 				}
-				    
+
 				query = "DELETE FROM " + mapping.getMappingTable() + " WHERE ";
 				counter =0;
 				keys = values.iterator();
 				while (keys.hasNext())
 				{
 				    ArrayList key = (ArrayList)keys.next();
-				    
+
 				    if (counter++!=0)
 				    {
 				        query +=" AND ";
 				    }
 				    query += key.get(0) + "=" + key.get(1);
 				}
-				
-				logger.debug(query);		        
+
+				logger.debug(query);
 				con.updateItem(query,dbName,login,cache);
 				logger.info(mapping.getMappingTable() +" removed.");
 			} catch (ClassNotFoundException e) {
@@ -3332,22 +3334,19 @@ public class DBAction {
 				e.printStackTrace();
 			} catch (Exception e) {
 				e.printStackTrace();
-			}	
+			}
 	    }
 	}
-	
+
 	/**
-	 * @param item
-	 * @param toRemove
-	 * @param user
 	 */
 	public static void DeleteItem(XFTItem item,UserI user,EventMetaI c) throws SQLException,Exception
 	{
 	    DBItemCache cache =  new DBItemCache(user,c);
 	    DeleteItem(item,user,cache,false,false);
-	    
+
         XFT.LogInsert(cache.getSQL(),item);
-        
+
 	    PoolDBUtils con = null;
 		try {
 
@@ -3358,13 +3357,13 @@ public class DBAction {
 			    username = user.getUsername();
 			    xdat_user_id=user.getID();
 			}
-			
+
             if (!cache.getDBTriggers().contains(item, false)){
                 cache.getDBTriggers().add(item);
             }
-            
+
             PerformUpdateTriggers(cache, username,xdat_user_id,false);
-            
+
 			con = new PoolDBUtils();
 			con.sendBatch(cache,item.getDBName(),username);
 
@@ -3375,11 +3374,8 @@ public class DBAction {
 			throw e;
 		}
 	}
-	
+
 	/**
-	 * @param item
-	 * @param toRemove
-	 * @param user
 	 */
 	public static void CleanDeleteItem(XFTItem item,UserI user,EventMetaI c) throws SQLException,Exception
 	{
@@ -3398,13 +3394,13 @@ public class DBAction {
 			    username = user.getUsername();
 			    xdat_user_id=user.getID();
 			}
-			
+
             if (!cache.getDBTriggers().contains(item, false)){
                 cache.getDBTriggers().add(item);
             }
 
             PerformUpdateTriggers(cache, username,xdat_user_id,false);
-            
+
 			con = new PoolDBUtils();
 			con.sendBatch(cache,item.getDBName(),username);
 
@@ -3415,7 +3411,7 @@ public class DBAction {
 			throw e;
 		}
 	}
-	
+
 	private static void DeleteItem(XFTItem item,UserI user,DBItemCache cache,boolean cleanHistory, boolean possibleLoop) throws XFTInitException,ElementNotFoundException,Exception
 	{
 		String login = null;
@@ -3423,14 +3419,14 @@ public class DBAction {
 		{
 		    login = user.getUsername();
 		}
-		
+
 		if(user!=null)
 		{
 			if(!user.canDelete(item)){
 				throw new org.nrg.xdat.exceptions.IllegalAccessException("Unable to delete "+ item.getXSIType());
 			}
 		}
-		
+
 		if (!cleanHistory)
 		{
 		    try {
@@ -3447,30 +3443,30 @@ public class DBAction {
 				}
 			}
 		}
-		
+
 		XFTItem extensionItem = null;
 		if (item.getGenericSchemaElement().isExtension())
 		{
 		    extensionItem = item.getExtensionItem();
 		}
-		
+
 		//DELETE RELATIONS
 		//allowExtension set to true to delete xnat:demographicData when deleting xnat:subjectData (otherwise only deletes xnat:abstactDemographicdata)
 		item = item.getCurrentDBVersion(false,false);
-		
+
 		if(item!=null){
 			Iterator refs = item.getGenericSchemaElement().getReferenceFields(true).iterator();
 			while (refs.hasNext())
 			{
 			    GenericWrapperField ref = (GenericWrapperField)refs.next();
 			    String xmlPath = ref.getXMLPathString(item.getXSIType());
-			    
+
 	            if (!ref.getPreventLoop() || !possibleLoop){
 	    		    Iterator children = item.getChildItems(xmlPath).iterator();
 	    		    while (children.hasNext())
 	    		    {
 	    		        XFTItem child = (XFTItem)children.next();
-	    		        
+
 	    		        if (child.getGenericSchemaElement().getAddin().equalsIgnoreCase(""))
 	    			    {
 	    			        if (extensionItem==null || (! XFTItem.CompareItemsByPKs(child,extensionItem)))
@@ -3481,7 +3477,7 @@ public class DBAction {
 	    		    }
 	            }
 			}
-			
+
 			if (cleanHistory)
 			{
 				//CLEAN HISTORY
@@ -3496,7 +3492,7 @@ public class DBAction {
 				    }
 			    }
 			}
-			
+
 
 			try {
 	            // MARK META_DATA to DELETED
@@ -3514,31 +3510,31 @@ public class DBAction {
 	        } catch (Exception e) {
 	            logger.error("",e);
 	        }
-			
+
 			//DELETE
 			DeleteItem(item,login,cache);
-			
+
 			if (extensionItem !=null)
 			{
 			    DeleteItem(extensionItem,user,cache,cleanHistory,false);
 			}
 		}
 	}
-	
+
 	private static void DeleteHistoryItem(XFTItem history, GenericWrapperElement parentElement,String login, DBItemCache cache) throws Exception
 	{
 	    //DELETE OTHER HISTORY ITEMS
-	    
+
 	    DeleteItem(history,login,cache);
 	}
-	
+
 	private static void DeleteItem(XFTItem item,String login,DBItemCache cache) throws Exception
 	{
 		String query = "DELETE FROM ";
 		GenericWrapperElement element = item.getGenericSchemaElement();
-		
+
 		query += element.getSQLName() + " WHERE ";
-		
+
 		Hashtable props = (Hashtable)item.getPkValues();
 		Enumeration enumer = props.keys();
 		int counter = 0;
@@ -3559,7 +3555,7 @@ public class DBAction {
 			}
 		}
 		query += ";";
-		
+
 		logger.debug(query);
 		PoolDBUtils con = null;
 		try {
@@ -3572,9 +3568,9 @@ public class DBAction {
 			e.printStackTrace();
 		} catch (Exception e) {
 			e.printStackTrace();
-		}	
+		}
 	}
-	
+
 	public static void InsertMetaDatas()
 	{
 		try {
@@ -3589,7 +3585,7 @@ public class DBAction {
 			e.printStackTrace();
 		}
 	}
-	
+
 	public static void InsertMetaDatas(String elementName)
 	{
 	    try {
@@ -3611,7 +3607,7 @@ public class DBAction {
             if (t.size()> 0){
                 System.out.println(e.getFullXMLName() + " missing " + t.size() + " meta rows.");
                 t.resetRowCursor();
-                while(t.hasMoreRows()){     
+                while(t.hasMoreRows()){
                     Object[] row = t.nextRow();
                     XFTItem meta = XFTItem.NewMetaDataElement(null,e.getXSIType(),false,Calendar.getInstance().getTime(),null);
                     StoreItem(meta,null,true,false,false,false, cache,null,true);
@@ -3624,11 +3620,11 @@ public class DBAction {
                         keyString += key.getSQLName() + "=" + DBAction.ValueParser(row[count++], key,true);
                      }
                     String st = "UPDATE " + e.getSQLName() + " SET " + e.getMetaDataFieldName() + "=" + meta.getProperty("meta_data_id") + " WHERE " + keyString;
-                    
+
                     cache.addStatement(st);
-                    
+
                 }
-                
+
             }
             else{
                 System.out.println(e.getFullXMLName() + " has all meta rows.");
@@ -3639,63 +3635,70 @@ public class DBAction {
                 try {
                     con = new PoolDBUtils();
                     con.sendBatch(cache,e.getDbName(),null);
-                     
+
                 } catch (SQLException ex) {
                     throw ex;
                 } catch (Exception ex) {
                     throw ex;
                 }
-           }else{
-            }
+           }
 		} catch (Exception e) {
-			logger.error(e);
+			logger.error("", e);
             System.out.println("FAILED: " + elementName);
-            
+
 		}
 	}
-	
 
-	
+
+
 	public static void AdjustSequences()
 	{
         long startTime = Calendar.getInstance().getTimeInMillis();
 	    if (!ADJUSTED_SEQUENCES)
 	    {
 			try {
+                XFTTable tables = XFTTable.Execute(QUERY_FIND_SEQLESS_TABLES, PoolDBUtils.getDefaultDBName(), null);
+                if (tables.size() > 0) {
+                    for (Object table : tables.convertColumnToArrayList("table_name")) {
+                        ArrayList<String> queries = new ArrayList<String>();
+                        queries.add(String.format(QUERY_CREATE_SEQUENCE, table));
+                        queries.add(String.format(QUERY_SET_ID_DEFAULT, table, table));
+                        queries.add(String.format(QUERY_SET_ID_NOT_NULL, table));
+                        queries.add(String.format(QUERY_SET_SEQUENCE_OWNER, table, table));
+                        PoolDBUtils.ExecuteBatch(queries, PoolDBUtils.getDefaultDBName(), null);
+                        PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_SET_SEQUENCE_VALUE, table, table), "value", PoolDBUtils.getDefaultDBName(), null);
+                    }
+                }
+
                 ArrayList dbs= new ArrayList();
-				Iterator iter = XFTManager.GetInstance().getAllElements().iterator();
-				while (iter.hasNext())
-				{
-					GenericWrapperElement input =(GenericWrapperElement)iter.next();
-					if (input.isAutoIncrement() && !input.getSQLName().equalsIgnoreCase("xdat_history") && !input.getSQLName().equalsIgnoreCase("xdat_meta_data"))
-					{
+                for (final Object o1 : XFTManager.GetInstance().getAllElements()) {
+                    GenericWrapperElement input = (GenericWrapperElement) o1;
+                    if (input.isAutoIncrement() && !input.getSQLName().equalsIgnoreCase("xdat_history") && !input.getSQLName().equalsIgnoreCase("xdat_meta_data")) {
                         String dbName = input.getDbName();
-                        if (!dbs.contains(dbName)){
+                        if (!dbs.contains(dbName)) {
                             dbs.add(dbName);
                         }
-						GenericWrapperField pk = (GenericWrapperField)input.getAllPrimaryKeys().get(0);
-						String sequenceName = input.getSequenceName();
-						Object o = PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + pk.getSQLName() + ") AS MAX_COUNT from "+input.getSQLName(),"MAX_COUNT",input.getDbName(),null);
-						Object current = PoolDBUtils.ReturnStatisticQuery("SELECT last_value AS LAST_COUNT from "+sequenceName,"LAST_COUNT",input.getDbName(),null);
-						if (o == null)
-						{
-						    o = 1;
-						}
-						
-						if (current == null)
-						{
-                            System.out.println("Adjusting missing sequence (" + input.getFullXMLName() +");");
-							PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+ sequenceName +"',"+o+")",input.getDbName(),null);
-						}else{
+                        GenericWrapperField pk = input.getAllPrimaryKeys().get(0);
+                        String sequenceName = input.getSequenceName();
+                        Object o = PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + pk.getSQLName() + ") AS MAX_COUNT from " + input.getSQLName(), "MAX_COUNT", input.getDbName(), null);
+                        Object current = PoolDBUtils.ReturnStatisticQuery("SELECT last_value AS LAST_COUNT from " + sequenceName, "LAST_COUNT", input.getDbName(), null);
+                        if (o == null) {
+                            o = 1;
+                        }
+
+                        if (current == null) {
+                            System.out.println("Adjusting missing sequence (" + input.getFullXMLName() + ");");
+                            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + o + ")", input.getDbName(), null);
+                        } else {
                             int i1 = o instanceof Integer ? (Integer) o : (o instanceof Long ? ((Long) o).intValue() : Integer.parseInt(o.toString()));
-						    Long i2 = (Long)current;
-						    if (i1 > i2.intValue()){
-                                System.out.println("Adjusting invalid sequence (" + input.getFullXMLName() +");");
-						        PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+ sequenceName +"',"+o+")",input.getDbName(),null);
-						    }
-						}
-					}
-				}
+                            Long i2 = (Long) current;
+                            if (i1 > i2.intValue()) {
+                                System.out.println("Adjusting invalid sequence (" + input.getFullXMLName() + ");");
+                                PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + o + ")", input.getDbName(), null);
+                            }
+                        }
+                    }
+                }
 
 				for (Object object : XFTReferenceManager.GetInstance().getUniqueMappings())
 				{
@@ -3722,24 +3725,24 @@ public class DBAction {
                         }
                     }
 				}
-			} catch (Exception e) {
+            } catch (Exception e) {
 				e.printStackTrace();
 			}
 	        ADJUSTED_SEQUENCES = true;
             if(XFT.VERBOSE)System.out.println("Finished db sequence check " + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
 	    }
 	}
-	
+
 	public static Long CountInstancesOfFieldValues(String tableName,String db,CriteriaCollection al) throws Exception
 	{
 	    String query = " SELECT COUNT(*) AS INSTANCE_COUNT FROM " + tableName;
 	    query += " WHERE " + al.getSQLClause(null) + ";";
-	    
+
 	    return (Long)PoolDBUtils.ReturnStatisticQuery(query,"INSTANCE_COUNT",db,null);
 	}
-	
+
 	public static XFTItem SelectItemByID(String query, String functionName, GenericWrapperElement element, UserI user,boolean allowMultiples) throws Exception
-	{    
+	{
 	    String login = null;
 	    if (user != null)
 	    {
@@ -3754,7 +3757,7 @@ public class DBAction {
 	    s = null;
 	    return item;
 	}
-	
+
 	public static XFTItem SelectItemByIDs(GenericWrapperElement element, Object[] ids, UserI user, boolean allowMultiples,boolean preventLoop) throws Exception
 	{
 	    String functionName = element.getTextFunctionName();
@@ -3765,57 +3768,55 @@ public class DBAction {
 	        functionCall+=ids[i];
 	    }
 		functionCall+=",0," + allowMultiples + ",FALSE," + preventLoop +");";
-	    
+
 	    return SelectItemByID(functionCall,functionName,element,user,allowMultiples);
 	}
-	
+
 	public static void PerformUpdateTriggers(DBItemCache cache,String userName,Integer xdat_user_id,boolean asynchronous){
         long localStartTime= Calendar.getInstance().getTimeInMillis();
         ArrayList<String> cmds= new ArrayList<String>();
         try{
             //process modification triggers
             if (cache.getDBTriggers().size()>0){
-            	
+
                 ArrayList<XFTItem> items=cache.getDBTriggers().items();
-                
+
                 if(asynchronous)cmds.add("SET LOCAL synchronous_commit TO OFF;");
-                
+
                 String dbname=null;
-                
+
                 for (XFTItem mod : items){
                 	int count =0;
                     String ids = "";
                     ArrayList keys = mod.getGenericSchemaElement().getAllPrimaryKeys();
-                    Iterator keyIter = keys.iterator();
-                    while (keyIter.hasNext())
-                    {
-                        GenericWrapperField sf = (GenericWrapperField)keyIter.next();
+                    for (final Object key : keys) {
+                        GenericWrapperField sf = (GenericWrapperField) key;
                         Object id = mod.getProperty(sf);
-                        if (count++>0)ids+=",";
-                        ids+=DBAction.ValueParser(id, sf,true);
+                        if (count++ > 0) ids += ",";
+                        ids += DBAction.ValueParser(id, sf, true);
                     }
 
                     dbname=mod.getDBName();
 
                 	PoolDBUtils.CreateCache(dbname,userName);
-                    cmds.add(String.format("SELECT update_ls_%s(%s,%s)", new Object[]{mod.getGenericSchemaElement().getFormattedName(),ids,(xdat_user_id==null)?"NULL":xdat_user_id}));
+                    cmds.add(String.format("SELECT update_ls_%s(%s,%s)", mod.getGenericSchemaElement().getFormattedName(), ids, (xdat_user_id==null) ? "NULL" : xdat_user_id));
                 }
-                
+
                 if(asynchronous)cmds.add("SET LOCAL synchronous_commit TO ON;");
-                
+
                 //PoolDBUtils.ExecuteBatch(cmds, dbname, userName);
-                
+
                 for(String s:cmds){
                 	try {
 						PoolDBUtils.ExecuteNonSelectQuery(s, dbname, userName);
-					} catch (RuntimeException e) {
+					} catch (RuntimeException ignored) {
 					}
                 }
             }
         } catch (SQLException e) {
-            logger.error(e);
+            logger.error("", e);
         } catch (Exception e) {
-            logger.error(e);
+            logger.error("", e);
         }
         if(XFT.VERBOSE)System.out.println("triggers (" + cmds.size() + "): "+(Calendar.getInstance().getTimeInMillis()-localStartTime) + " ms");
 	}

@@ -1,21 +1,18 @@
 package org.nrg.xft.services;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
-
-import java.util.List;
-
-import javax.inject.Inject;
-
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.xft.entities.XftFieldExclusion;
 import org.nrg.xft.entities.XftFieldExclusionScope;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.ExpectedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import javax.inject.Inject;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -48,7 +45,7 @@ public class TestXftFieldExclusionService {
     }
 
     @Test
-    @ExpectedException(DataIntegrityViolationException.class)
+    @ExpectedException(ConstraintViolationException.class)
     public void testConstraints() {
         XftFieldExclusion exclusion1 = _service.newEntity();
         exclusion1.setScope(XftFieldExclusionScope.Project);

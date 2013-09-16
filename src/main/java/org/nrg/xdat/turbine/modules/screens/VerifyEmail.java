@@ -1,6 +1,8 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.turbine.modules.screens;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -16,11 +18,12 @@ import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventUtils;
-
-import java.sql.SQLException;
+import org.nrg.xft.search.ItemSearch;
 
 public class VerifyEmail extends VelocitySecureScreen {
 	private static final Logger logger = Logger.getLogger(VerifyEmail.class);
@@ -47,39 +50,82 @@ public class VerifyEmail extends VelocitySecureScreen {
             String secret = (String) TurbineUtils.GetPassedParameter("s", data);
 			String userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias, Long.parseLong(secret));
 	    	if (userID!=null) {
-	    		XDATUser user = new XDATUser(userID);
-	    		XFTItem toSave = XFTItem.NewItem("xdat:user", user);
-                toSave.setProperty("login", user.getLogin());
-                toSave.setProperty("primary_password", user.getProperty("primary_password"));
-                toSave.setProperty("email", user.getProperty("email"));
-                toSave.setProperty("verified", "1");
-                // If auto-approval is true, the user is enabled
-				if(XFT.GetUserRegistration()){
-					toSave.setProperty("enabled", "1");
-				}
-				try {
-					XDATUser.ModifyUser(user, toSave, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Verify User Email"));
+	    		XDATUser u = new XDATUser(userID);
+	    		ItemCollection users = getAllUsersWithEmail(u.getEmail());
+	    		ArrayList<XDATUser> verified = new ArrayList<XDATUser>();
+
+	    		for(ItemI i : users.getItems()){
+	    			XDATUser curUser = new XDATUser(i.getItem(),false);
+	    			if(!curUser.getVerified()){
+	    				XFTItem toSave = XFTItem.NewItem("xdat:user", curUser);
+	    				toSave.setProperty("login", curUser.getLogin());
+	    				toSave.setProperty("primary_password", curUser.getProperty("primary_password"));
+	    				toSave.setProperty("email", curUser.getProperty("email"));
+	    				toSave.setProperty("verified", "1");
+	    			
+	    				// If auto-approval is true, the user is enabled
+	    				if(XFT.GetUserRegistration()){
+	    					toSave.setProperty("enabled", "1");
+	    				}
+	    				
+	    				try {
+	    					// Save the user, and add the user to the list of verified users.
+	    					XDATUser.ModifyUser(curUser, toSave, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Verify User Email"));
+	    					verified.add(curUser);
+	    				} catch (Exception e) {
+	    					invalidInformation(data, context, e.getMessage());
+	    					logger.error("Error Verifying User", e);
+	    				}
+	    			}
+	    		}
+	    		
+				try{
+					// Default message if we didn't verify any users. (Changed below if verified.size > 0)
+					String userMessage = "All users with the email, " + u.getEmail() + ", have been previously verified.";
 					
-					//After their email is verified, if auto-approval is false, the admin should get a notification
-					if(!XFT.GetUserRegistration()){
-						try{
-                            UserRegistrationData regData = XDAT.getContextService().getBean(UserRegistrationDataService.class).getUserRegistrationData(user);
-                            String phone = regData.getPhone();
-                            String organization = regData.getOrganization();
-                            String comments = regData.getComments();
-		                    data.setMessage("Your email has been verified.");
-				    		AdminUtils.sendNewUserRequestNotification(user.getUsername(), user.getFirstname(), user.getLastname(), user.getEmail(), comments, phone, organization, context);
-				        } catch (Exception exception) {
-				            logger.error("Error occurred sending new user request email", exception);
-				        } finally {
-				            data.setRedirectURI(null);
-				            data.setScreenTemplate("PostRegister.vm");
-				        }
+					// If we verified any of the above users.
+					if(verified.size() > 0){
+						// Build the user message
+						StringBuilder msgBuilder = new StringBuilder();
+						msgBuilder.append(u.getEmail()).append(" has been verified for the following users: ");
+						for(XDATUser uv : verified){ 
+							// Append a list of user names that we have verified.
+							if(verified.get(verified.size() - 1) == uv){
+								msgBuilder.append(uv.getUsername()); // Don't append comma if it's the last in the list.
+							}else{
+								msgBuilder.append(uv.getUsername()).append(", ");
+							}
+							
+							//If auto approval is false, send a notification to the administrator for each user we just verified.
+							if(!XFT.GetUserRegistration()){
+								// Get phone, organization, and comments from the users registration data
+								UserRegistrationData regData = XDAT.getContextService().getBean(UserRegistrationDataService.class).getUserRegistrationData(uv);
+								String comments = "";
+								String phone = "";
+								String organization = "";
+								
+								// regData will be null if the user was created by an admin (via admin > users > add user)
+								if(null != regData){ 
+									phone = regData.getPhone();
+									organization = regData.getOrganization();
+									comments = regData.getComments();
+								}
+							
+								// Send admin email
+								AdminUtils.sendNewUserRequestNotification(uv.getUsername(), uv.getFirstname(), uv.getLastname(), uv.getEmail(), comments, phone, organization, context);
+							}
+						}
+						// Set the user message.
+						userMessage = msgBuilder.toString();
 					}
-					
-				} catch (Exception e) {
-					invalidInformation(data, context, e.getMessage());
-					logger.error("Error Verifying User", e);
+					// Set message to display to the user
+					data.setMessage(userMessage);
+				} 
+				catch (Exception exception) {
+					logger.error("Error occurred sending new user request email", exception);
+				} finally {
+					data.setRedirectURI(null);
+					data.setScreenTemplate("PostRegister.vm");
 				}
 	    	} else {
 	        	invalidInformation(data, context, "Invalid token. Your email could not be verified.");
@@ -134,4 +180,17 @@ public class VerifyEmail extends VelocitySecureScreen {
     			data.setScreen(Turbine.getConfiguration().getString("screen.login"));
     		}
       }
+    
+    /**
+     * Function looks up all users with the given email.
+     * @param String email - the email we are searching on. 
+     * @return ItemCollection containing all users with the given email 
+     */
+    private ItemCollection getAllUsersWithEmail(String email) throws Exception{
+        ItemSearch search = new ItemSearch();
+        search.setAllowMultiples(false);
+        search.setElement("xdat:user");
+        search.addCriteria("xdat:user.email",email);
+        return search.exec();
+     }
 }

@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Oct 20, 2004
+ * org.nrg.xft.db.DBAction
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2013, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 9/16/13 2:28 PM
  */
 package org.nrg.xft.db;
+
 import java.io.IOException;
 import java.sql.SQLException;
 import java.text.ParseException;
@@ -52,16 +55,6 @@ import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
 
-/**
- * Class used to store XFTItems to the database.
- * 
- * <BR><BR>To insert or update an item into the db, the StoredItem method is used.  If the item has
- * a specified pk (not usually defined in xml) then it is assumed to be an update.  If it doesn't have
- * a pk, then a select is performed to see if there are any rows where all of the item's properties match.
- * If so, then this is assumed to be the same row.  Otherwise, a new row is generated.
- * 
- * @author Tim
- */
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class DBAction {
 	private static final Logger logger = Logger.getLogger(DBAction.class);
@@ -73,7 +66,8 @@ public class DBAction {
     private static final String QUERY_SET_ID_DEFAULT = "ALTER TABLE %s ALTER COLUMN id SET DEFAULT nextval('%s_id_seq')";
     private static final String QUERY_SET_ID_NOT_NULL = "ALTER TABLE %s ALTER COLUMN id SET NOT NULL";
     private static final String QUERY_SET_SEQUENCE_OWNER = "ALTER SEQUENCE %s_id_seq OWNED BY %s.id";
-    private static final String QUERY_SET_SEQUENCE_VALUE = "SELECT setval('%s_id_seq', (SELECT (MAX(id) + 1) FROM %s)) AS value";
+    private static final String QUERY_GET_SEQUENCE_START = "SELECT (MAX(id) + 1) AS value FROM %s";
+    private static final String QUERY_SET_SEQUENCE_VALUE = "SELECT setval('%s_id_seq', %d) AS value";
 
     /**
 	 * This method is used to insert/update an item into the database.
@@ -3660,13 +3654,21 @@ public class DBAction {
                 XFTTable tables = XFTTable.Execute(QUERY_FIND_SEQLESS_TABLES, PoolDBUtils.getDefaultDBName(), null);
                 if (tables.size() > 0) {
                     for (Object table : tables.convertColumnToArrayList("table_name")) {
+                        logger.error("Preparing to convert table " + table + " to use sequence for default value.");
                         ArrayList<String> queries = new ArrayList<String>();
                         queries.add(String.format(QUERY_CREATE_SEQUENCE, table));
                         queries.add(String.format(QUERY_SET_ID_DEFAULT, table, table));
                         queries.add(String.format(QUERY_SET_ID_NOT_NULL, table));
                         queries.add(String.format(QUERY_SET_SEQUENCE_OWNER, table, table));
+                        logger.error("Queries prepared for conversion:");
+                        for (String query : queries) {
+                            logger.error(" *** " + query);
+                        }
                         PoolDBUtils.ExecuteBatch(queries, PoolDBUtils.getDefaultDBName(), null);
-                        PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_SET_SEQUENCE_VALUE, table, table), "value", PoolDBUtils.getDefaultDBName(), null);
+                        long start = (Long) PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_GET_SEQUENCE_START, table), "value", PoolDBUtils.getDefaultDBName(), null);
+                        logger.error("Ran the query " + String.format(QUERY_GET_SEQUENCE_START, table) + " and got the value " + start);
+                        logger.error("Now preparing to run the query: " + String.format(QUERY_SET_SEQUENCE_VALUE, table, start));
+                        PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_SET_SEQUENCE_VALUE, table, start), "value", PoolDBUtils.getDefaultDBName(), null);
                     }
                 }
 

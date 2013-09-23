@@ -31,6 +31,9 @@ import java.util.Properties;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.collections.Predicate;
+import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -65,6 +68,9 @@ import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.utils.StringUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
+
+import com.google.common.collect.Collections2;
+import com.google.common.collect.Lists;
 /**
  * @author Tim
  *
@@ -1107,6 +1113,29 @@ public class TurbineUtils {
     	}
     	return screens;
     }
+    
+    private boolean containsPropByProperty(final List<Properties> props, final Properties prop, final String property){
+    	if(!prop.containsKey(property)){
+    		return false;
+    	}
+		return (CollectionUtils.find(props, new Predicate(){
+			@Override
+			public boolean evaluate(Object arg0) {
+				if(((Properties)arg0).getProperty(property)!=null){
+					return ObjectUtils.equals(prop.getProperty(property), ((Properties)arg0).getProperty(property));
+				}else{
+					return false;
+				}
+			}})!=null);
+    }
+    
+    private void mergePropsNoOverwrite(final List<Properties> props, final List<Properties> add, final String property){
+    	for(final Properties p:add){
+			if(!containsPropByProperty(props,p,property)){
+				props.add(p);
+			}
+		}
+    }
 
     /**
      * Looks for templates in the give subFolder underneath the give dataType in the xdat-templatea, xnat-templates, or templates.
@@ -1117,15 +1146,16 @@ public class TurbineUtils {
      * @return
      */
     public List<Properties> getTemplates(String dataType, String subFolder){
-    	List<Properties> props= new ArrayList<Properties>();
+    	List<Properties> props= Lists.newArrayList();
 		try {
 			final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
 			
 			props.addAll(getTemplates(root.getSQLName()+"/"+subFolder));
+			mergePropsNoOverwrite(props,getTemplates(root.getSQLName()+"/"+subFolder),"fileName");
 			
 			for(List<Object> primary: root.getExtendedElements()){
 				final GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
-				props.addAll(getTemplates(p.getSQLName()+"/"+subFolder));
+				mergePropsNoOverwrite(props,getTemplates(p.getSQLName()+"/"+subFolder),"fileName");
 			}
 		} catch (XFTInitException e) {
 			logger.error("",e);

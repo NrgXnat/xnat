@@ -124,13 +124,17 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
         List<String> ccs = message.getCcs();
         if (ccs != null && ccs.size() > 0) {
             for (String cc : ccs) {
-                parameters.add("cc", cc);
+                if (cc != null) {
+                    parameters.add("cc", cc);
+                }
             }
         }
         List<String> bccs = message.getBccs();
         if (bccs != null && bccs.size() > 0) {
             for (String bcc : bccs) {
-                parameters.add("bcc", bcc);
+                if (bcc != null) {
+                    parameters.add("bcc", bcc);
+                }
             }
         }
         parameters.add("subject", message.getSubject());

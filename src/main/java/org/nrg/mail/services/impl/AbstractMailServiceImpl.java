@@ -58,9 +58,9 @@ abstract public class AbstractMailServiceImpl implements MailService {
      *            The address from which the email will be sent.
      * @param to
      *            A list of addresses to which to send the email.
-     * @param cc
+     * @param ccs
      *            A list of addresses to which to copy the email.
-     * @param bcc
+     * @param bccs
      *            A list of addresses to which to blind-copy the email.
      * @param subject
      *            The subject of the email.
@@ -72,7 +72,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * @see #sendMessage(String, String, String, String)
      */
     @Override
-    public void sendMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String body) throws MessagingException {
+    public void sendMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String body) throws MessagingException {
         Assert.notNull(to, "To address array must not be null");
         Assert.notNull(from, "From address must not be null");
 
@@ -94,10 +94,12 @@ abstract public class AbstractMailServiceImpl implements MailService {
 
         MailMessage message = new MailMessage();
         message.setTos(to);
-        if (cc != null)
-            message.setCcs(cc);
-        if (bcc != null)
-            message.setBccs(bcc);
+        if (ccs != null) {
+            message.setCcs(ccs);
+        }
+        if (bccs != null) {
+            message.setBccs(bccs);
+        }
         message.setFrom(from);
         message.setSubject(subject);
         message.setText(body);
@@ -125,7 +127,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendMessage(String from, String[] to, String[] ccs, String subject, String message) throws MessagingException {
-        sendMessage(from, to, ccs, new String[] {}, subject, message);
+        sendMessage(from, to, ccs, null, subject, message);
     }
 
     /**
@@ -146,7 +148,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendMessage(String from, String[] to, String subject, String message) throws MessagingException {
-        sendMessage(from, to, new String[] {}, new String[] {}, subject, message);
+        sendMessage(from, to, null, null, subject, message);
     }
 
     /**
@@ -167,7 +169,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendMessage(String from, String to, String subject, String message) throws MessagingException {
-        sendMessage(from, new String[] { to }, new String[] {}, new String[] {}, subject, message);
+        sendMessage(from, new String[] { to }, null, null, subject, message);
     }
 
     /**
@@ -182,9 +184,9 @@ abstract public class AbstractMailServiceImpl implements MailService {
      *            The address from which the email will be sent.
      * @param to
      *            A list of addresses to which to send the email.
-     * @param cc
+     * @param ccs
      *            A list of addresses to which to copy the email.
-     * @param bcc
+     * @param bccs
      *            A list of addresses to which to blind-copy the email.
      * @param subject
      *            The subject of the email.
@@ -213,7 +215,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * @see #sendHtmlMessage(String, String, String, String)
      */
     @Override
-    public void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, File> attachments, Map<String, String> headers) throws MessagingException {
+    public void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text, Map<String, File> attachments, Map<String, String> headers) throws MessagingException {
         Assert.notNull(to, "To address array must not be null");
         Assert.notNull(from, "From address must not be null");
 
@@ -236,10 +238,12 @@ abstract public class AbstractMailServiceImpl implements MailService {
         MailMessage message = new MailMessage();
         message.setFrom(from);
         message.setTos(to);
-        if (cc != null && cc.length > 0)
-            message.setCcs(cc);
-        if (bcc != null && bcc.length > 0)
-            message.setBccs(bcc);
+        if (ccs != null && ccs.length > 0) {
+            message.setCcs(ccs);
+        }
+        if (bccs != null && bccs.length > 0) {
+            message.setBccs(bccs);
+        }
         message.setSubject(subject);
         if (!StringUtils.isBlank(text)) {
             message.setText(text);
@@ -262,9 +266,9 @@ abstract public class AbstractMailServiceImpl implements MailService {
      *            The address from which the email will be sent.
      * @param to
      *            A list of addresses to which to send the email.
-     * @param cc
+     * @param ccs
      *            A list of addresses to which to copy the email.
-     * @param bcc
+     * @param bccs
      *            A list of addresses to which to blind-copy the email.
      * @param subject
      *            The subject of the email.
@@ -285,8 +289,8 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * @see #sendHtmlMessage(String, String, String, String)
      */
     @Override
-    public void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, File> attachments) throws MessagingException {
-        sendHtmlMessage(from, to, cc, bcc, subject, html, text, attachments, null);
+    public void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text, Map<String, File> attachments) throws MessagingException {
+        sendHtmlMessage(from, to, ccs, bccs, subject, html, text, attachments, null);
     }
 
     /**
@@ -298,9 +302,9 @@ abstract public class AbstractMailServiceImpl implements MailService {
      *            The address from which the email will be sent.
      * @param to
      *            A list of addresses to which to send the email.
-     * @param cc
+     * @param ccs
      *            A list of addresses to which to copy the email.
-     * @param bcc
+     * @param bccs
      *            A list of addresses to which to blind-copy the email.
      * @param subject
      *            The subject of the email.
@@ -321,8 +325,8 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * @see #sendHtmlMessage(String, String, String, String)
      */
     @Override
-    public void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text) throws MessagingException {
-        sendHtmlMessage(from, to, cc, bcc, subject, html, text, null);
+    public void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text) throws MessagingException {
+        sendHtmlMessage(from, to, ccs, bccs, subject, html, text, null);
     }
 
     /**
@@ -333,9 +337,9 @@ abstract public class AbstractMailServiceImpl implements MailService {
      *            The address from which the email will be sent.
      * @param to
      *            A list of addresses to which to send the email.
-     * @param cc
+     * @param ccs
      *            A list of addresses to which to copy the email.
-     * @param bcc
+     * @param bccs
      *            A list of addresses to which to blind-copy the email.
      * @param subject
      *            The subject of the email.
@@ -354,8 +358,8 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * @see #sendHtmlMessage(String, String, String, String)
      */
     @Override
-    public void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html) throws MessagingException {
-        sendHtmlMessage(from, to, cc, bcc, subject, html, null, null);
+    public void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html) throws MessagingException {
+        sendHtmlMessage(from, to, ccs, bccs, subject, html, null, null);
     }
 
     /**
@@ -366,7 +370,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      *            The address from which the email will be sent.
      * @param to
      *            A list of addresses to which to send the email.
-     * @param cc
+     * @param ccs
      *            A list of addresses to which to copy the email.
      * @param subject
      *            The subject of the email.
@@ -386,8 +390,8 @@ abstract public class AbstractMailServiceImpl implements MailService {
      * @see #sendHtmlMessage(String, String, String, String)
      */
     @Override
-    public void sendHtmlMessage(String from, String[] to, String[] cc, String subject, String html) throws MessagingException {
-        sendHtmlMessage(from, to, cc, new String[] {}, subject, html, null, null);
+    public void sendHtmlMessage(String from, String[] to, String[] ccs, String subject, String html) throws MessagingException {
+        sendHtmlMessage(from, to, ccs, null, subject, html, null, null);
     }
 
     /**
@@ -418,7 +422,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendHtmlMessage(String from, String[] to, String subject, String html) throws MessagingException {
-        sendHtmlMessage(from, to, new String[] {}, new String[] {}, subject, html, null, null);
+        sendHtmlMessage(from, to, null, null, subject, html, null, null);
     }
 
     /**
@@ -452,7 +456,9 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendHtmlMessage(String from, String to, String cc, String bcc, String subject, String html) throws MessagingException {
-        sendHtmlMessage(from, new String[] { to }, new String[] { cc }, new String[] { bcc }, subject, html, null, null);
+        String[] ccs = cc == null ? null : new String[] {cc};
+        String[] bccs = bcc == null ? null : new String[] {bcc};
+        sendHtmlMessage(from, new String[] { to }, ccs, bccs, subject, html, null, null);
     }
 
     /**
@@ -484,7 +490,8 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendHtmlMessage(String from, String to, String cc, String subject, String html) throws MessagingException {
-        sendHtmlMessage(from, new String[] { to }, new String[] { cc }, new String[] {}, subject, html, null, null);
+        String[] ccs = cc == null ? null : new String[] {cc};
+        sendHtmlMessage(from, new String[] { to }, ccs, null, subject, html, null, null);
     }
 
     /**
@@ -514,7 +521,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendHtmlMessage(String from, String to, String subject, String html) throws MessagingException {
-        sendHtmlMessage(from, new String[] { to }, new String[] {}, new String[] {}, subject, html, null, null);
+        sendHtmlMessage(from, new String[] { to }, null, null, subject, html, null, null);
     }
 
    private static final Log _log = LogFactory.getLog(AbstractMailServiceImpl.class);

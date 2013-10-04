@@ -25,7 +25,7 @@ import org.nrg.mail.api.MailMessage;
 
  */
 public interface MailService extends NrgService {
-    public static String SERVICE_NAME = "MailService"; 
+    public static String SERVICE_NAME = "MailService";
     
     /**
      * The prefix to be used for attachments that are intended as inline attachments
@@ -62,9 +62,9 @@ public interface MailService extends NrgService {
 	 *            The address from which the email will be sent.
      * @param to
 	 *            A list of addresses to which to send the email.
-     * @param cc
+     * @param ccs
 	 *            A list of addresses to which to copy the email.
-     * @param bcc
+     * @param bccs
 	 *            A list of addresses to which to blind-copy the email.
      * @param subject
 	 *            The subject of the email.
@@ -76,7 +76,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String, String, String)
      * @throws javax.mail.MessagingException When a message error occurs.
 	 */
-	public abstract void sendMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String body) throws MessagingException;
+	public abstract void sendMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String body) throws MessagingException;
 
 	/**
 	 * Send a simple mail message. This supports multiple addresses on the to
@@ -85,7 +85,7 @@ public interface MailService extends NrgService {
 	 *            The address from which the email will be sent.
 	 * @param to
 	 *            A list of addresses to which to send the email.
-	 * @param cc  A list of addresses to which to copy the email.
+	 * @param ccs A list of addresses to which to copy the email.
      * @param subject
 	 *            The subject of the email.
 	 * @param message
@@ -96,7 +96,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String, String, String)
      * @throws javax.mail.MessagingException When a message error occurs.
 	 */
-	public abstract void sendMessage(String from, String[] to, String[]cc, String subject, String message) throws MessagingException;
+	public abstract void sendMessage(String from, String[] to, String[] ccs, String subject, String message) throws MessagingException;
 
 	/**
 	 * Send a simple mail message. This supports multiple addresses on the to
@@ -148,9 +148,9 @@ public interface MailService extends NrgService {
      *            The address from which the email will be sent.
      * @param to
      *            A list of addresses to which to send the email.
-     * @param cc
+     * @param ccs
      *            A list of addresses to which to copy the email.
-     * @param bcc
+     * @param bccs
      *            A list of addresses to which to blind-copy the email.
      * @param subject
      *            The subject of the email.
@@ -178,7 +178,7 @@ public interface MailService extends NrgService {
      * @see #sendHtmlMessage(String, String, String, String, String, String)
      * @see #sendHtmlMessage(String, String, String, String)
      */
-    void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, File> attachments, Map<String, String> headers) throws MessagingException;
+    void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text, Map<String, File> attachments, Map<String, String> headers) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method takes both an HTML-formatted
@@ -192,9 +192,9 @@ public interface MailService extends NrgService {
      *            The address from which the email will be sent.
      * @param to
      *            A list of addresses to which to send the email.
-     * @param cc
+     * @param ccs
      *            A list of addresses to which to copy the email.
-     * @param bcc
+     * @param bccs
      *            A list of addresses to which to blind-copy the email.
      * @param subject
      *            The subject of the email.
@@ -217,7 +217,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text, Map<String, File> attachments) throws MessagingException;
+	public abstract void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text, Map<String, File> attachments) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method takes both an HTML-formatted
@@ -228,9 +228,9 @@ public interface MailService extends NrgService {
 	 *            The address from which the email will be sent.
 	 * @param to
 	 *            A list of addresses to which to send the email.
-	 * @param cc
+	 * @param ccs
 	 *            A list of addresses to which to copy the email.
-	 * @param bcc
+	 * @param bccs
 	 *            A list of addresses to which to blind-copy the email.
 	 * @param subject
 	 *            The subject of the email.
@@ -251,7 +251,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html, String text) throws MessagingException;
+	public abstract void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -261,9 +261,9 @@ public interface MailService extends NrgService {
 	 *            The address from which the email will be sent.
 	 * @param to
 	 *            A list of addresses to which to send the email.
-	 * @param cc
+	 * @param ccs
 	 *            A list of addresses to which to copy the email.
-	 * @param bcc
+	 * @param bccs
 	 *            A list of addresses to which to blind-copy the email.
 	 * @param subject
 	 *            The subject of the email.
@@ -281,7 +281,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String[] cc, String[] bcc, String subject, String html) throws MessagingException;
+	public abstract void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -291,7 +291,7 @@ public interface MailService extends NrgService {
 	 *            The address from which the email will be sent.
 	 * @param to
 	 *            A list of addresses to which to send the email.
-	 * @param cc
+	 * @param ccs
 	 *            A list of addresses to which to copy the email.
 	 * @param subject
 	 *            The subject of the email.
@@ -308,7 +308,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String[] cc, String subject, String html) throws MessagingException;
+	public abstract void sendHtmlMessage(String from, String[] to, String[] ccs, String subject, String html) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -344,9 +344,9 @@ public interface MailService extends NrgService {
 	 *            The address from which the email will be sent.
 	 * @param to
 	 *            An address to which to send the email.
-	 * @param cc
+	 * @param ccs
 	 *            An address to which to copy the email.
-	 * @param bcc
+	 * @param bccs
 	 *            An address to which to blind-copy the email.
 	 * @param subject
 	 *            The subject of the email.
@@ -363,7 +363,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String to, String cc, String bcc, String subject, String html) throws MessagingException;
+	public abstract void sendHtmlMessage(String from, String to, String ccs, String bccs, String subject, String html) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -373,7 +373,7 @@ public interface MailService extends NrgService {
 	 *            The address from which the email will be sent.
 	 * @param to
 	 *            An address to which to send the email.
-	 * @param cc
+	 * @param ccs
 	 *            An address to which to copy the email.
 	 * @param subject
 	 *            The subject of the email.
@@ -390,7 +390,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String to, String cc, String subject, String html) throws MessagingException;
+	public abstract void sendHtmlMessage(String from, String to, String ccs, String subject, String html) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter

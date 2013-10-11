@@ -28,6 +28,7 @@ import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -162,6 +163,8 @@ public abstract class SecureAction extends VelocitySecureAction
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(HttpServletRequest request, String clientToken, boolean strict) throws Exception {
     	
+    	boolean csrfEmailEnabled = XDAT.getBoolSiteConfigurationProperty("enableCsrfEmail",true);
+    	
     	if(!XFT.GetEnableCsrfToken()){
     		return true;
     	}
@@ -182,7 +185,9 @@ public abstract class SecureAction extends VelocitySecureAction
 
     	if(serverToken == null){
     		String errorMessage = csrfTokenErrorMessage(request);
-    		AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
+    		if(csrfEmailEnabled){
+    			AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
+    		}
     		throw new Exception("Invalid submit value (" + errorMessage + ")");
     	}
     	
@@ -194,7 +199,9 @@ public abstract class SecureAction extends VelocitySecureAction
     			return true;
     		} else {
     			String errorMessage = csrfTokenErrorMessage(request);
-    			AdminUtils.sendAdminEmail("Possible CSRF Attempt", errorMessage);
+    			if(csrfEmailEnabled){
+    				AdminUtils.sendAdminEmail("Possible CSRF Attempt", errorMessage);
+    			}
 	    		throw new Exception("Invalid submit value (" + errorMessage + ")");
     		}
     			

@@ -84,7 +84,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private boolean loggedIn = false;
     private Hashtable<String, ElementAccessManager> accessManagers = null;
     private Hashtable actions = null;
-    private Hashtable<String, UserGroup> groups = new Hashtable<String, UserGroup>();
+    private final Hashtable<String, UserGroup> groups = new Hashtable<String, UserGroup>();
     private boolean extended = false;
     private ArrayList roleNames = null;
     private ArrayList<XdatStoredSearch> stored_searches = null;
@@ -1990,32 +1990,38 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public void initGroups() {
-        groups.clear();
+        synchronized (groups) {
+            groups.clear();
+            getGroups();
+        }
     }
-
+ 
     public Hashtable<String, UserGroup> getGroups() {
-        if (groups.size() == 0) {
-            try {
-                XFTTable t = XFTTable.Execute("SELECT * FROM xdat_user_groupid WHERE groups_groupid_xdat_user_xdat_user_id=" + this.getXdatUserId(), this.getDBName(), this.getLogin());
-
-                ArrayList groupids = t.convertColumnToArrayList("groupid");
-
-                for (int i = 0; i < groupids.size(); i++) {
-                    String groupID = (String) groupids.get(i);
-                    UserGroup group = UserGroupManager.GetGroup(groupID);
-                    if (group != null) {
-                        groups.put(groupID, group);
+        synchronized (groups) {
+            if (groups.size() == 0) {
+                try {
+                    XFTTable t = XFTTable.Execute("SELECT * FROM xdat_user_groupid WHERE groups_groupid_xdat_user_xdat_user_id=" + this.getXdatUserId(), this.getDBName(), this.getLogin());
+ 
+                    ArrayList groupids = t.convertColumnToArrayList("groupid");
+ 
+                    for (int i = 0; i < groupids.size(); i++) {
+                        String groupID = (String) groupids.get(i);
+                        UserGroup group = UserGroupManager.GetGroup(groupID);
+                        if (group != null) {
+                            groups.put(groupID, group);
+                        }
                     }
+                } catch (SQLException e) {
+                    logger.error("", e);
+                } catch (DBPoolException e) {
+                    logger.error("", e);
                 }
-            } catch (SQLException e) {
-                logger.error("", e);
-            } catch (DBPoolException e) {
-                logger.error("", e);
             }
         }
-
+ 
         return groups;
     }
+
 
     public void replaceGroup(String id, UserGroup g) {
         Hashtable<String, UserGroup> groups = getGroups();

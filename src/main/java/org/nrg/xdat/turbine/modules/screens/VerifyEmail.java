@@ -78,11 +78,12 @@ public class VerifyEmail extends VelocitySecureScreen {
 	    				}
 	    			}
 	    		}
-	    		
-				try{
-					// Default message if we didn't verify any users. (Changed below if verified.size > 0)
-					String userMessage = "All users with the email, " + u.getEmail() + ", have been previously verified.";
-					
+
+                // Default message if we didn't verify any users. (Changed below if verified.size > 0)
+                String userMessage = "All users with the email, " + u.getEmail() + ", have been previously verified.";
+
+                try{
+
 					// If we verified any of the above users.
 					if(verified.size() > 0){
 						// Build the user message
@@ -118,15 +119,21 @@ public class VerifyEmail extends VelocitySecureScreen {
 						// Set the user message.
 						userMessage = msgBuilder.toString();
 					}
-					// Set message to display to the user
-					data.setMessage(userMessage);
 				} 
 				catch (Exception exception) {
-					logger.error("Error occurred sending new user request email", exception);
-				} finally {
-					data.setRedirectURI(null);
-					data.setScreenTemplate("PostRegister.vm");
+					logger.error("Error occurred sending admin email to enable newly verified accounts", exception);
 				}
+                if(!XFT.GetUserRegistration()){
+                    //data.setRedirectURI(null);
+                    data.setMessage("Thank you for your interest in our site. Your user account will be reviewed and enabled by the site administrator. When this is complete, you will receive an email inviting you to login to the site.");
+                    redirectToLogin(data);
+				}
+                else{
+                    // Set message to display to the user. You do not need a message informing you of the accounts that were verified if all you did was register and you did not click a verify email link.
+                    //data.setRedirectURI(null);
+                    data.setMessage(userMessage);
+                    redirectToLogin(data);
+                }
 	    	} else {
 	        	invalidInformation(data, context, "Invalid token. Your email could not be verified.");
 	        }
@@ -141,15 +148,8 @@ public class VerifyEmail extends VelocitySecureScreen {
             } else {
 				data.setMessage(e.getMessage());
             }
-            
-			String loginTemplate =  org.apache.turbine.Turbine.getConfiguration().getString("template.login");
 
-			if (StringUtils.isNotEmpty(loginTemplate)) {
-				// We're running in a templating solution
-				data.setScreenTemplate(loginTemplate);
-			} else {
-				data.setScreen(Turbine.getConfiguration().getString("screen.login"));
-			}
+            redirectToLogin(data);
 		}
     }
 
@@ -193,4 +193,15 @@ public class VerifyEmail extends VelocitySecureScreen {
         search.addCriteria("xdat:user.email",email);
         return search.exec();
      }
+
+    private void redirectToLogin(final RunData data){
+        String loginTemplate =  org.apache.turbine.Turbine.getConfiguration().getString("template.login");
+
+        if (StringUtils.isNotEmpty(loginTemplate)) {
+            // We're running in a templating solution
+            data.setScreenTemplate(loginTemplate);
+        } else {
+            data.setScreen(Turbine.getConfiguration().getString("screen.login"));
+        }
+    }
 }

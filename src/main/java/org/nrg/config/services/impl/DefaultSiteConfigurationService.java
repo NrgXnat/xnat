@@ -22,6 +22,7 @@ import java.util.regex.Pattern;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
+import javax.servlet.ServletContext;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
@@ -35,14 +36,10 @@ import org.nrg.config.interfaces.SiteConfigurationPropertyChangedListener;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.SiteConfigurationService;
 import org.springframework.stereotype.Service;
+import org.springframework.web.context.ServletContextAware;
 
 @Service
-public class DefaultSiteConfigurationService implements SiteConfigurationService {
-	
-	public DefaultSiteConfigurationService() {
-		_initialized = false;
-		_configFilesLocationsRoot = "";
-	}
+public class DefaultSiteConfigurationService implements SiteConfigurationService, ServletContextAware {
 
     @Override
     public Properties getSiteConfiguration() throws ConfigServiceException {
@@ -82,6 +79,11 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
         }
     }
     
+    @Override
+    public void setServletContext(final ServletContext context) {
+        _context = context;
+    }
+
     /**
      * Exposed so unit test can inject alternative locations
      */
@@ -99,16 +101,23 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     
 	@Override
 	public String getConfigFilesLocationsRoot() {
-		return _configFilesLocationsRoot;
+            if (_configFilesLocationsRoot == null && _context != null) {
+                _configFilesLocationsRoot = _context.getRealPath("/");
+            }
+            return _configFilesLocationsRoot;
 	}
 
-	@Override
-	public void setConfigFilesLocationsRoot(String configFilesLocationRoot) {
-		_configFilesLocationsRoot = configFilesLocationRoot;
-		_initialized = false;
-	}
-	
-	/**
+    /**
+     * Provided to allow for config file location root overrides. This is mainly preserved for testing purposes.
+     * @param configFilesLocationRoot    The root to use for locating configuration files.
+     */
+    @SuppressWarnings("unused")
+    public void setConfigFilesLocationsRoot(final String configFilesLocationRoot) {
+        _configFilesLocationsRoot = configFilesLocationRoot;
+        _initialized = false;
+    }
+
+    /**
 	 * We won't know the servlet path until runtime, so this can't be done via Spring.
 	 * Servlet will set the root and then we'll update the location list here.
 	 */
@@ -209,6 +218,7 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
                 throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' failed in a static initializer.", listenerClassName), e);
             }
             catch(ClassCastException e) {
+                assert listenerClass != null;
                 throw new InvalidSiteConfigurationPropertyChangedListenerException(String.format("Listener '%s' was not of type '%s'.", listenerClass.getName(), SiteConfigurationPropertyChangedListener.class.getName()), e);
             }
         }
@@ -274,14 +284,19 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
             String polishedPropertyName = rawPropertyName;
             if(! rawPropertyName.startsWith(namespace)) {
                 polishedPropertyName = qualifyPropertyName(namespace, rawPropertyName);
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Processing property: " + polishedPropertyName);
+                }
             }
             if (persistentProperties.containsKey(polishedPropertyName) || transientProperties.containsKey(polishedPropertyName)) {
                 throw new DuplicateConfigurationDetectedException(polishedPropertyName);
-            }
-            else if(polishedPropertyName.equals(CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME)
+            } else if (polishedPropertyName.equals(CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME)
                     || polishedPropertyName.equals(qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME))
                     ) {
                 // this is a meta-property: ignore
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Found persistence setting, ignoring meta-property");
+                }
             }
             else if(propertiesArePersistent(namespace, customProperties)) {
                 persistentProperties.setProperty(polishedPropertyName, customProperties.getProperty(rawPropertyName));
@@ -409,22 +424,24 @@ public class DefaultSiteConfigurationService implements SiteConfigurationService
     @Resource(name="configFilesLocations")
     private List<String> _configFilesLocations;
     
-    private String _configFilesLocationsRoot;
-
     @Inject
     private ConfigService _service;
 
+    private static final Log _log = LogFactory.getLog(DefaultSiteConfigurationService.class);
+
     private static final Pattern CUSTOM_PROPERTIES_NAME = Pattern.compile("^.*-config\\.properties");
+    private static final String SYSTEM_STARTUP_CONFIG_REFRESH_USER = "admin";
+    private static final String CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME = "persist";
+    private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME = "siteConfiguration.properties";
+    private static final String PROPERTY_CHANGED_LISTENER_PROPERTY = "property.changed.listener";
     private static final FileFilter CUSTOM_PROPERTIES_FILTER = new FileFilter() {
         public boolean accept(final File file) {
             return file.exists() && file.isFile() && CUSTOM_PROPERTIES_NAME.matcher(file.getName()).matches();
         }
     };
-    private static final Log _log = LogFactory.getLog(DefaultSiteConfigurationService.class);
-    private static final String SYSTEM_STARTUP_CONFIG_REFRESH_USER = "admin";
-    private static final String CUSTOM_PROPERTIES_PERSISTENCE_SETTING_PROPNAME = "persist";
-    private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME = "siteConfiguration.properties";
-    private static final String PROPERTY_CHANGED_LISTENER_PROPERTY = "property.changed.listener";
+
+    private ServletContext _context;
     private Properties _siteConfiguration;
     private boolean _initialized;
+    private String _configFilesLocationsRoot;
 }

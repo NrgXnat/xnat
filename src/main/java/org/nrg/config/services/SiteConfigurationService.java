@@ -52,10 +52,4 @@ public interface SiteConfigurationService extends NrgService {
      * @return The root location for configuration files.
      */
     public abstract String getConfigFilesLocationsRoot();
-    
-    /**
-     * The absolute path to prepend to any paths in the injected configFilesLocations that are relative.
-     * @param configFilesLocationRoot    The path to set as the root location for configuration files.
-     */
-    public abstract void setConfigFilesLocationsRoot(String configFilesLocationRoot);
 }

@@ -12,13 +12,10 @@ import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.hibernate.SessionException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.PasswordValidatorChain;
 import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -28,7 +25,6 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
@@ -41,7 +37,6 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.servlet.http.HttpSession;
-import java.sql.ResultSet;
 import java.util.*;
 
 public class XDATRegisterUser extends VelocitySecureAction {
@@ -99,8 +94,12 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                
 		                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), XdatUserAuthService.LOCALDB);
 	                    XDAT.getXdatUserAuthService().create(newUserAuth);
-	
-		                if (autoApproval) {
+
+                        final String comments = TurbineUtils.HasPassedParameter("comments", data) ? (String) TurbineUtils.GetPassedParameter("comments", data) : "";
+                        final String phone = TurbineUtils.HasPassedParameter("phone", data) ? (String) TurbineUtils.GetPassedParameter("phone", data) : "";
+                        final String lab = TurbineUtils.HasPassedParameter("lab", data) ? (String) TurbineUtils.GetPassedParameter("lab", data) : "";
+
+                        if (autoApproval) {
                             if (!hasPAR(data) && XDAT.verificationOn()) {
                             	try {
                                     AdminUtils.sendNewUserVerificationEmail(newUser);
@@ -127,6 +126,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			                    
 			                    if (AdminUtils.GetNewUserRegistrationsEmail()) {
 			                        AdminUtils.sendAdminEmail(sub, msg);
+                                    AdminUtils.sendNewUserNotification(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
                                 }
 			
 			                    XFTItem item = XFTItem.NewItem("xdat:user_login",newUser);
@@ -157,10 +157,6 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                        logger.error(e);
 		                    }
 		                	
-		                    final String comments = TurbineUtils.HasPassedParameter("comments", data) ? (String) TurbineUtils.GetPassedParameter("comments", data) : "";
-                            final String phone = TurbineUtils.HasPassedParameter("phone", data) ? (String) TurbineUtils.GetPassedParameter("phone", data) : "";
-                            final String lab = TurbineUtils.HasPassedParameter("lab", data) ? (String) TurbineUtils.GetPassedParameter("lab", data) : "";
-
 		                    try {
                                 cacheRegistrationData(newUser, comments, phone, lab);
                                 if (XDAT.verificationOn()) {

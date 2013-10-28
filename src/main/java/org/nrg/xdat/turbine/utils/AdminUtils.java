@@ -156,12 +156,15 @@ public class AdminUtils {
 	}
 
 	/**
-	 * Sends the Welcome email to a new User
+	 * Sends an email to subscribers for the {@link NotificationType#NewUser new user event} indicating that a new user
+     * account registration has been requested. This notification is sent when a new user is created but auto-enable is
+     * turned off.
 	 * 
 	 * @param username    The username of the new user.
 	 * @param email       The email of the new user.
 	 * @param context     The data context.
-	 * @throws Exception 
+	 * @throws Exception
+     * @see #sendNewUserNotification(String, String, String, String, String, String, String, org.apache.velocity.context.Context)
 	 */
 	public static void sendNewUserRequestNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
         context.put("time", Calendar.getInstance().getTime());
@@ -186,7 +189,40 @@ public class AdminUtils {
         XDAT.verifyNotificationType(NotificationType.NewUser);
         XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
 	}
-	
+
+	/**
+     * Sends an email to subscribers for the {@link NotificationType#NewUser new user event} indicating that a new user
+     * account registration has been created. This notification is sent when a new user is created but auto-enable is
+     * turned on.
+	 *
+	 * @param username    The username of the new user.
+	 * @param email       The email of the new user.
+	 * @param context     The data context.
+	 * @throws Exception
+	 */
+	public static void sendNewUserNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
+        context.put("time", Calendar.getInstance().getTime());
+        context.put("server", TurbineUtils.GetFullServerPath());
+        context.put("system", TurbineUtils.GetSystemName());
+        context.put("username", username);
+        context.put("first", first);
+        context.put("last", last);
+        context.put("email", email);
+        context.put("comments", comments);
+        context.put("phone", phone);
+        context.put("lab", lab);
+
+        String body = populateVmTemplate(context, "/screens/email/NewUserNotification.vm");
+        String subject = TurbineUtils.GetSystemName() + " New User Created: " + first + " " + last;
+
+        Map<String, Object> properties = new HashMap<String, Object>();
+        properties.put(MailMessage.PROP_FROM, getAdminEmailId());
+        properties.put(MailMessage.PROP_SUBJECT, subject);
+        properties.put(MailMessage.PROP_HTML, body);
+        XDAT.verifyNotificationType(NotificationType.NewUser);
+        XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
+	}
+
    public static void sendNewUserVerificationEmail(XdatUser user) throws Exception {
       // If the Item is null, don't continue.
       if(user == null){ throw new Exception("Unable to send verification email. Required User is null."); }

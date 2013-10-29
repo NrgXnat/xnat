@@ -1,8 +1,6 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.turbine.modules.screens;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -11,10 +9,8 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.UserRegistrationData;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.AliasTokenService;
-import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -24,6 +20,9 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
+
+import java.sql.SQLException;
+import java.util.ArrayList;
 
 public class VerifyEmail extends VelocitySecureScreen {
 	private static final Logger logger = Logger.getLogger(VerifyEmail.class);
@@ -96,25 +95,10 @@ public class VerifyEmail extends VelocitySecureScreen {
 							}else{
 								msgBuilder.append(uv.getUsername()).append(", ");
 							}
-							
-							//If auto approval is false, send a notification to the administrator for each user we just verified.
-							if(!XFT.GetUserRegistration()){
-								// Get phone, organization, and comments from the users registration data
-								UserRegistrationData regData = XDAT.getContextService().getBean(UserRegistrationDataService.class).getUserRegistrationData(uv);
-								String comments = "";
-								String phone = "";
-								String organization = "";
-								
-								// regData will be null if the user was created by an admin (via admin > users > add user)
-								if(null != regData){ 
-									phone = regData.getPhone();
-									organization = regData.getOrganization();
-									comments = regData.getComments();
-								}
-							
-								// Send admin email
-								AdminUtils.sendNewUserRequestNotification(uv.getUsername(), uv.getFirstname(), uv.getLastname(), uv.getEmail(), comments, phone, organization, context);
-							}
+                            // If this user has never logged in, they're new, send the appropriate notification.
+                            if (uv.getLastLogin() == null) {
+                                AdminUtils.sendNewUserNotification(uv, context);
+                            }
 						}
 						// Set the user message.
 						userMessage = msgBuilder.toString();
@@ -183,7 +167,7 @@ public class VerifyEmail extends VelocitySecureScreen {
     
     /**
      * Function looks up all users with the given email.
-     * @param String email - the email we are searching on. 
+     * @param email    The email we are searching on.
      * @return ItemCollection containing all users with the given email 
      */
     private ItemCollection getAllUsersWithEmail(String email) throws Exception{

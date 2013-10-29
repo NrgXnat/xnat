@@ -121,14 +121,10 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			                    
 			                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 			                    
-			                    String sub = "New User Created: " + newUser.getUsername();
-			                    String msg = this.getAutoApprovalTextMsg(data,newUser);
-			                    
 			                    if (AdminUtils.GetNewUserRegistrationsEmail()) {
-			                        AdminUtils.sendAdminEmail(sub, msg);
-                                    AdminUtils.sendNewUserNotification(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
+                                    AdminUtils.sendNewUserNotification(newUser, comments, phone, lab, context);
                                 }
-			
+
 			                    XFTItem item = XFTItem.NewItem("xdat:user_login",newUser);
 			                    Date today = Calendar.getInstance(TimeZone.getDefault()).getTime();
 			                    item.setProperty("xdat:user_login.user_xdat_user_id", newUser.getID());
@@ -167,7 +163,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
             				        data.setRedirectURI(null);
                                     data.setScreenTemplate("VerificationSent.vm");
                                 } else {
-                                	AdminUtils.sendNewUserRequestNotification(newUser.getUsername(), newUser.getFirstname(), newUser.getLastname(), newUser.getEmail(), comments, phone, lab, context);
+                                	AdminUtils.sendNewUserNotification(newUser, comments, phone, lab, context);
 	                            	data.setRedirectURI(null);
 	                                data.setScreenTemplate("PostRegister.vm");
                                 }
@@ -249,23 +245,6 @@ public class XDATRegisterUser extends VelocitySecureAction {
         if(!StringUtils.isEmpty(par)){
             context.put("par", par);
         }
-    }
-    
-    public String getAutoApprovalTextMsg(RunData data, XDATUser newUser){
-    	String msg="New User Created: " + newUser.getUsername();
-        msg +="<br>Firstname: " + newUser.getFirstname();
-        msg +="<br>Lastname: " + newUser.getLastname();
-        msg +="<br>Email: " + newUser.getEmail();
-        if (TurbineUtils.HasPassedParameter("comments", data))
-            msg +="<br>Comments: " + TurbineUtils.GetPassedParameter("comments", data);
-        
-        if (TurbineUtils.HasPassedParameter("phone", data))
-            msg +="<br>Phone: " + TurbineUtils.GetPassedParameter("phone", data);
-        
-        if (TurbineUtils.HasPassedParameter("lab", data))
-            msg +="<br>Lab: " + TurbineUtils.GetPassedParameter("lab", data);
-        
-        return msg;
     }
     
     public boolean autoApproval(RunData data, Context context)throws Exception{

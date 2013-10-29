@@ -6,10 +6,7 @@
 package org.nrg.xdat.turbine.utils;
 
 import java.io.StringWriter;
-import java.util.Calendar;
-import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Map;
+import java.util.*;
 
 import javax.mail.MessagingException;
 
@@ -25,9 +22,11 @@ import org.nrg.xdat.XDAT;
 import org.nrg.mail.api.NotificationSubscriberProvider;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.entities.UserRegistrationData;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.ItemCollection;
@@ -116,12 +115,12 @@ public class AdminUtils {
 				if (items.size() > 0) {
 					int count = 0;
 					@SuppressWarnings("rawtypes")
-					Iterator iter = items.getItemIterator();
-					while (iter.hasNext()) {
+					Iterator iterator = items.getItemIterator();
+					while (iterator.hasNext()) {
 						if (count++ == 0)
-							authorizerEmailAddress = ((ItemI) iter.next()).getStringProperty("email");
+							authorizerEmailAddress = ((ItemI) iterator.next()).getStringProperty("email");
 						else {
-							authorizerEmailAddress += "," + ((ItemI) iter.next()).getStringProperty("email");
+							authorizerEmailAddress += "," + ((ItemI) iterator.next()).getStringProperty("email");
 						}
 					}
 				} else {
@@ -160,13 +159,14 @@ public class AdminUtils {
      * account registration has been requested. This notification is sent when a new user is created but auto-enable is
      * turned off.
 	 * 
-	 * @param username    The username of the new user.
-	 * @param email       The email of the new user.
-	 * @param context     The data context.
-	 * @throws Exception
-     * @see #sendNewUserNotification(String, String, String, String, String, String, String, org.apache.velocity.context.Context)
+	 *
+     * @param username    The username of the new user.
+     * @param email       The email of the new user.
+     * @param context     The data context.
+     * @throws Exception
+     * @see #sendNewUserCreationNotification(String, String, String, String, String, String, String, org.apache.velocity.context.Context)
 	 */
-	public static void sendNewUserRequestNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
+	private static void sendNewUserRequestNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
         context.put("time", Calendar.getInstance().getTime());
         context.put("server", TurbineUtils.GetFullServerPath());
         context.put("system", TurbineUtils.GetSystemName());
@@ -177,11 +177,12 @@ public class AdminUtils {
         context.put("comments", comments);
         context.put("phone", phone);
         context.put("lab", lab);
-        
+
         String body = populateVmTemplate(context, "/screens/email/NewUserRequest.vm");
         String subject = TurbineUtils.GetSystemName() + " New User Request: " + first + " " + last;
 
-        // XDAT.getMailService().sendHtmlMessage(getAdminEmailId(), getNewUserEmailIds(), subject, body);
+        AdminUtils.sendAdminEmail(subject, body);
+
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put(MailMessage.PROP_FROM, getAdminEmailId());
         properties.put(MailMessage.PROP_SUBJECT, subject);
@@ -195,12 +196,13 @@ public class AdminUtils {
      * account registration has been created. This notification is sent when a new user is created but auto-enable is
      * turned on.
 	 *
-	 * @param username    The username of the new user.
-	 * @param email       The email of the new user.
-	 * @param context     The data context.
-	 * @throws Exception
+	 *
+     * @param username    The username of the new user.
+     * @param email       The email of the new user.
+     * @param context     The data context.
+     * @throws Exception
 	 */
-	public static void sendNewUserNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
+	private static void sendNewUserCreationNotification(String username, String first, String last, String email, String comments, String phone, String lab, Context context) throws Exception {
         context.put("time", Calendar.getInstance().getTime());
         context.put("server", TurbineUtils.GetFullServerPath());
         context.put("system", TurbineUtils.GetSystemName());
@@ -215,6 +217,8 @@ public class AdminUtils {
         String body = populateVmTemplate(context, "/screens/email/NewUserNotification.vm");
         String subject = TurbineUtils.GetSystemName() + " New User Created: " + first + " " + last;
 
+        AdminUtils.sendAdminEmail(subject, body);
+
         Map<String, Object> properties = new HashMap<String, Object>();
         properties.put(MailMessage.PROP_FROM, getAdminEmailId());
         properties.put(MailMessage.PROP_SUBJECT, subject);
@@ -222,6 +226,36 @@ public class AdminUtils {
         XDAT.verifyNotificationType(NotificationType.NewUser);
         XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
 	}
+
+    public static void sendNewUserNotification(final XDATUser user, final Context context) throws Exception {
+        UserRegistrationData regData = XDAT.getContextService().getBean(UserRegistrationDataService.class).getUserRegistrationData(user);
+        String comments = "";
+        String phone = "";
+        String organization = "";
+
+        // regData will be null if the user was created by an admin (via admin > users > add user)
+        if(null != regData){
+            phone = regData.getPhone();
+            organization = regData.getOrganization();
+            comments = regData.getComments();
+        }
+        sendNewUserNotification(user, comments, phone, organization, context);
+    }
+
+    public static void sendNewUserNotification(final XDATUser user, final String comments, final String phone, final String organization, final Context context) throws Exception {
+        final String username = user.getUsername();
+        final String firstName = user.getFirstname();
+        final String lastName = user.getLastname();
+        final String email = user.getEmail();
+
+        //If auto approval is false, send a notification to the administrator for each user we just verified.
+        if(!XFT.GetUserRegistration()){
+            // Send admin email
+            AdminUtils.sendNewUserRequestNotification(username, firstName, lastName, email, comments, phone, organization, context);
+        } else {
+            AdminUtils.sendNewUserCreationNotification(username, firstName, lastName, email, comments, phone, organization, context);
+        }
+    }
 
    public static void sendNewUserVerificationEmail(XdatUser user) throws Exception {
       // If the Item is null, don't continue.
@@ -274,7 +308,7 @@ public class AdminUtils {
 	}
 
 	/**
-	 * Constructs the body of the email sent to an Authorizer
+	 * Constructs the body of the email sent to an authorizer
 	 * 
 	 * @return body of authorization email
 	 */
@@ -288,7 +322,7 @@ public class AdminUtils {
 	}
 
 	/**
-	 * Sends the Authorization Request to Authorizer
+	 * Sends the Authorization Request to authorizer
 	 * 
 	 * @param user    The user to be authorized.
 	 */
@@ -307,48 +341,7 @@ public class AdminUtils {
 		}
 	}
 
-	/**
-	 * Sends an email to the user saying Authorization complete and the user can
-	 * log on to system.
-	 * 
-	 * @param user       The user being authorized.
-	 * @param context    The data context.
-	 * @throws Exception When an exception occurs.
-	 */
-	public static void sendUserAuthorizedEmailMessage(XDATUser user, Context context) throws Exception {
-
-		String email = user.getEmail();
-		if (!StringUtils.isBlank(email)) {
-			String from = getAdminEmailId();
-			String subject = TurbineUtils.GetSystemName() + ": Authorization Complete";
-		    context.put("username", user.getUsername());
-	        context.put("server", TurbineUtils.GetFullServerPath());
-	        context.put("system", TurbineUtils.GetSystemName());
-	        context.put("admin_email", AdminUtils.getAdminEmailId());
-	        String body = populateVmTemplate(context, "/screens/email/user_authorization.vm");
-			XDAT.getMailService().sendHtmlMessage(from, email, subject, body);
-		}
-	}
-
-	public static boolean sendUserHTMLEmail(String subject, String message, boolean ccAdmin, RunData data) {
-		boolean successful = false;
-		String email = TurbineUtils.getUser(data).getEmail();
-		if (StringUtils.isBlank(email)) {
-			String from = getAdminEmailId();
-			try {
-				XDAT.getMailService().sendHtmlMessage(from, new String[] { email }, ccAdmin ? new String[] { from } : null, null, subject, message);
-			} catch (MessagingException exception) {
-				logger.error("Unable to send mail", exception);
-				successful = false;
-			}
-		} else {
-			successful = false;
-		}
-
-		return successful;
-	}
-
-	public static boolean sendUserHTMLEmail(String subject, String message, boolean ccAdmin, String[] email_addresses) {
+    public static boolean sendUserHTMLEmail(String subject, String message, boolean ccAdmin, String[] email_addresses) {
 		boolean successful = false;
 		if (email_addresses.length>0) {
 			String from = getAdminEmailId();

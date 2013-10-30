@@ -14,6 +14,7 @@ import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
+import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -279,8 +280,12 @@ public class AdminUtils {
        }
        
        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(userName);
+       Context context = new VelocityContext();
+       context.put("name", firstName + lastName);
+       context.put("verifyEmailLink", TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret());
+
        String subject = TurbineUtils.GetSystemName() + " Email Verification";
-       String text = "Dear " + firstName + " " + lastName + ",<br/>\r\n" + "Please click this link to verify your email address: " + TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
+       String text = populateVmTemplate(context, "/screens/email/NewUserVerification.vm");
        XDAT.getMailService().sendHtmlMessage(AdminUtils.getAdminEmailId(), email, subject, text);
    }
 

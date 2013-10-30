@@ -9,6 +9,7 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -18,8 +19,10 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
+import org.springframework.security.core.userdetails.UserDetails;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -55,7 +58,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 
 	    		for(ItemI i : users.getItems()){
 	    			XDATUser curUser = new XDATUser(i.getItem(),false);
-	    			if(!curUser.getVerified()){
+	    			if(!curUser.getVerified() || disabledDueToInactivity(curUser)){
 	    				XFTItem toSave = XFTItem.NewItem("xdat:user", curUser);
 	    				toSave.setProperty("login", curUser.getLogin());
 	    				toSave.setProperty("primary_password", curUser.getProperty("primary_password"));
@@ -164,6 +167,29 @@ public class VerifyEmail extends VelocitySecureScreen {
     			data.setScreen(Turbine.getConfiguration().getString("screen.login"));
     		}
       }
+
+    private boolean disabledDueToInactivity(XDATUser user) {
+        try {
+            XDATUserDetails xdatUserDetails = (XDATUserDetails) user;
+            if (!xdatUserDetails.isEnabled()) {
+                String query = "SELECT COUNT(*) AS count " +
+                        "FROM xdat_user_history " +
+                        "WHERE xdat_user_id=" + xdatUserDetails.getXdatUserId() + " " +
+                        "AND change_user=" + xdatUserDetails.getXdatUserId() + " " +
+                        "AND change_date = (SELECT MAX(change_date) " +
+                        "FROM xdat_user_history " +
+                        "WHERE xdat_user_id=" + xdatUserDetails.getXdatUserId() + " " +
+                        "AND enabled=1)";
+                Long result = (Long) PoolDBUtils.ReturnStatisticQuery(query, "count", xdatUserDetails.getDBName(), xdatUserDetails.getUsername());
+
+                return result > 0;
+            }
+        } catch (Exception e) {
+            logger.error(e.getMessage());
+        }
+
+        return false;
+    }
     
     /**
      * Function looks up all users with the given email.

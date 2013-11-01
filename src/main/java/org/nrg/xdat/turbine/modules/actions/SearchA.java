@@ -250,8 +250,6 @@ public abstract class SearchA extends SecureAction {
                         int c =0;
                         for(Object o : os){
                             String temp = (String)o;
-                            temp = temp.replace("/&lt;", "");
-                            temp = temp.replace("&gt;", "");
                             if(c++>0)osString +=",";
                             osString += temp;
                         }
@@ -1250,6 +1248,9 @@ public abstract class SearchA extends SecureAction {
                 cc.add(subCC);
             }else{
                 String s= integer;
+                
+                s=StringEscapeUtils.unescapeXml(s);
+                
                 if (s.indexOf("-")==-1)
                 {
                     if (s.startsWith(">="))

@@ -961,6 +961,7 @@ public class XFTTable implements XFTTableI {
         if (rowNumber>= rows.size()){
             throw new Exception("XFTTable index undefined.");
         }else{
+            numRows--;
             return (Object[])rows.remove(rowNumber);
         }
     }

@@ -40,9 +40,21 @@ public class XDATScreen_email extends SecureScreen {
             String ln1 = (String) object1.getField("lastname");
             String fn2 = (String) object2.getField("firstname");
             String ln2 = (String) object2.getField("lastname");
+            if(fn1==null){
+                return 1;
+            }
+            if(fn2==null){
+                return -1;
+            }
             int c = fn1.compareTo(fn2);
             if(c!=0){
                 return c;
+            }
+            if(ln1==null){
+                return 1;
+            }
+            if(ln2==null){
+                return -1;
             }
             return ln1.compareTo(ln2);
         }

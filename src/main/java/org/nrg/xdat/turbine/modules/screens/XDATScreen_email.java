@@ -46,7 +46,7 @@ public class XDATScreen_email extends SecureScreen {
             if(fn2==null){
                 return -1;
             }
-            int c = fn1.compareTo(fn2);
+            int c = fn1.toUpperCase().compareTo(fn2.toUpperCase());
             if(c!=0){
                 return c;
             }
@@ -56,7 +56,7 @@ public class XDATScreen_email extends SecureScreen {
             if(ln2==null){
                 return -1;
             }
-            return ln1.compareTo(ln2);
+            return ln1.toUpperCase().compareTo(ln2.toUpperCase());
         }
     }
 }

@@ -2353,8 +2353,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
                     String idField = qo.translateXMLPath("xnat:projectData/ID");
 
-                    Long sub_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
-                    readable_counts.put("xnat:projectData", sub_count);
+                    Long proj_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
+                    readable_counts.put("xnat:projectData", proj_count);
 
                     //subjects
                     qo = new org.nrg.xft.search.QueryOrganizer("xnat:subjectData", this, ViewManager.ALL);
@@ -2364,8 +2364,19 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
                     idField = qo.translateXMLPath("xnat:subjectData/ID");
 
-                    sub_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
+                    Long sub_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
                     readable_counts.put("xnat:subjectData", sub_count);
+
+                    //workflows
+                    qo = new org.nrg.xft.search.QueryOrganizer("wrk:workflowData", this, ViewManager.ALL);
+                    qo.addField("wrk:workflowData/ID");
+
+                    query = qo.buildQuery();
+
+                    idField = qo.translateXMLPath("wrk:workflowData/ID");
+
+                    Long wrk_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
+                    readable_counts.put("wrk:workflowData", wrk_count);
 
                     //experiments
                     query = StringUtils.ReplaceStr(query, idField, "id");

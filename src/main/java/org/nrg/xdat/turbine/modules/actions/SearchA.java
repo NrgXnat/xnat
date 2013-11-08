@@ -466,58 +466,64 @@ public abstract class SearchA extends SecureAction {
     
     public static void addComboFields(String comboID, DisplaySearch ds, RunData data) throws DisplayFieldNotFoundException, Exception{
     	for(int counter=0;counter<10;counter++){
-            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(comboID + counter, data)) != null)
-            {
-                if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(comboID + counter, data)).length() == 0){counter++;continue;}
+            Collection<String> values = org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedStrings(comboID + counter, data);
+                if(values == null || values.size() == 0){
+                   continue;
+                }
+                final CriteriaCollection outer = new CriteriaCollection("OR");
+                for(String value : values){
+                    if(value == null || value.length() == 0){ continue; }
+                    final CriteriaCollection cc = new CriteriaCollection("OR");
+                    final String keys = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(comboID + counter + "_FIELDS",data));
 
-                final CriteriaCollection cc = new CriteriaCollection("OR");
-                final String value = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(comboID + counter,data));
-                final String keys = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(comboID + counter + "_FIELDS",data));
+                    ds.setWebFormValue(comboID + counter,value);
+                    ds.setWebFormValue(comboID + counter + "_FIELDS",keys);
+                    String inClause = "";
 
-                ds.setWebFormValue(comboID + counter,value);
-                ds.setWebFormValue(comboID + counter + "_FIELDS",keys);
-
-                String inClause = "";
-
-                Iterator keyIter = StringUtils.CommaDelimitedStringToArrayList(keys).iterator();
-                while (keyIter.hasNext())
-                {
-                    String key = (String)keyIter.next();
-                    if (key.endsWith("_in"))
+                    Iterator<String> keyIter = StringUtils.CommaDelimitedStringToArrayList(keys).iterator();
+                    while (keyIter.hasNext())
                     {
-                        key = key.substring(0,key.length()-3);
-
-                        if (inClause.equalsIgnoreCase(""))
-                            inClause += key;
-                        else
-                            inClause += "," + key;
-                    }else if(key.endsWith("_equals"))
-                    {
-                        key = key.substring(0,key.length()-7);
-                        
-                        final String elementName1 = StringUtils.GetRootElementName(key);
-
-                        final SchemaElement element = SchemaElement.GetElement(elementName1);
-                        final DisplayField df = DisplayField.getDisplayFieldForDFIdOrXPath(key);
-
-                        if (df.getDataType().equalsIgnoreCase("string"))
+                        String key = (String)keyIter.next();
+                        if (key.endsWith("_in"))
                         {
-                            cc.addCriteria(SearchA.processStringData(value,ds,element.getDisplay(),df));
-                        }else{
-                            final CriteriaCollection sub=SearchA.processNumericData(value,ds,element.getDisplay(),df);
-                            if(sub.size()>0)
-                            	ds.addCriteria(sub);
+                            key = key.substring(0,key.length()-3);
+
+                            if (inClause.equalsIgnoreCase(""))
+                                inClause += key;
+                            else
+                                inClause += "," + key;
+                        }else if(key.endsWith("_equals"))
+                        {
+                            key = key.substring(0,key.length()-7);
+                            
+                            final String elementName1 = StringUtils.GetRootElementName(key);
+
+                            final SchemaElement element = SchemaElement.GetElement(elementName1);
+                            final DisplayField df = DisplayField.getDisplayFieldForDFIdOrXPath(key);
+
+                            if (df.getDataType().equalsIgnoreCase("string"))
+                            {
+                                cc.addCriteria(SearchA.processStringData(value,ds,element.getDisplay(),df));
+                            }else{
+                                final CriteriaCollection sub=SearchA.processNumericData(value,ds,element.getDisplay(),df);
+                                if(sub.size()>0)
+                                {
+                                   outer.addCriteria(sub);
+                                }
+                            }
                         }
                     }
-                }
 
-                if (!inClause.equalsIgnoreCase(""))
-                {
-                    ds.addInClause(inClause,value);
-                }else{
-                    ds.addCriteria(cc);
+                    if (!inClause.equalsIgnoreCase(""))
+                    {
+                        ds.addInClause(inClause,value);
+                    }else{
+                        outer.addCriteria(cc);
+                    }
                 }
-            }
+                if(outer.numClauses() > 0){
+                   ds.addCriteria(outer);
+                }
         }
     }
 

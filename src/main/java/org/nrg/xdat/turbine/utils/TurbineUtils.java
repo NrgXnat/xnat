@@ -19,6 +19,7 @@ import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -848,6 +849,20 @@ public class TurbineUtils {
 			}
 		}
 		return v;
+	}
+
+	public static Collection<String> GetPassedStrings(String s, RunData data)
+	{
+		final Collection<String> _ret = Lists.newArrayList();
+		final String[] v=data.getParameters().getStrings(s);
+		if(v!=null){
+			for(int i=0;i<v.length;i++){
+				if(!StringUtils.IsEmpty(v[i]) && !StringUtils.IsEmpty(TurbineUtils.escapeParam(v[i]))){
+					_ret.add(TurbineUtils.escapeParam(v[i]));
+				}
+			}
+		}
+		return _ret;
 	}
 	
 	public static Object GetPassedParameter(String s, RunData data, Object defualt)

@@ -2186,7 +2186,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 
 	/**
-	 * If this element does not correspond to a unique XML node then it's isANoChildElement will be true.
+	 * If this element does not correspond to a unique XML node then its isANoChildElement will be true.
 	 * @return
 	 */
 	public boolean isANoChildElement() {
@@ -2194,7 +2194,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
@@ -2206,7 +2206,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 	
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
@@ -2219,7 +2219,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 	
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
@@ -2232,7 +2232,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 	
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
@@ -2603,15 +2603,15 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	private static boolean ENABLE_XPATH_TABLE_CACHING=true;
 	
 	/**
-	 * Translates a XML Dot Syntax name into the matching table element names (seperated by periods).
+	 * Translates a XML Dot Syntax name into the matching table element names (separated by periods).
 	 * String[]{
-	 * 	0:string of element names, seperated by .
+	 * 	0:string of element names, separated by .
 	 * 	1:string of field/element_names for SQL alias
 	 *  2:field's SQL name
 	 *  3:string of field names.
 	 * }
 	 * 
-	 * Its hard to understate the importance of this ugly mess of code.  Its at the heart of XFT's search engine, which is at the heart of XFT.  
+	 * It's hard to understate the importance of this ugly mess of code.  Its at the heart of XFT's search engine, which is at the heart of XFT.
 	 * The functionality really isn't that complicated, but the frankenstein mess of modifications over the years has turned it into a rabbit hole of complicated code.  Enter at your own risk, and leave a trail of breadcrumbs to get back out.
 	 * This would be signficantly refactored in the next round of search engine improvements, if it ends up happening.
 	 * 
@@ -2845,9 +2845,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	}
 	
 	/**
-	 * Translates a XML Dot Syntax name into the matching table element names (seperated by periods).
+	 * Translates a XML Dot Syntax name into the matching table element names (separated by periods).
 	 * String[]{
-	 * 	0:string of element names, seperated by .
+	 * 	0:string of element names, separated by .
 	 * 	1:string of field/element_names for SQL alias
 	 *  2:field's SQL name
 	 *  3:string of field names.

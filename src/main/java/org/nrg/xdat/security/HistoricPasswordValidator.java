@@ -29,7 +29,7 @@ public class HistoricPasswordValidator implements PasswordValidator {
 		String dbName = user.getDBName();
 		String query = "SELECT count(login) as prevPasswords from (SELECT login FROM xdat_user_history WHERE change_date > '" + lastYearsTimestamp + "' and (primary_password='" + encrypted + "' OR primary_password='" + password + "') and login='" + userId + "' UNION SELECT login FROM xdat_user WHERE (primary_password='" + encrypted + "' OR primary_password='" + password + "') and login='" + userId + "') LOGINS;";
 		try{
-			//moved current password comparison into SQL statement (sometimes the user object is passed in with the already modified password).  Its whats in the db that matters.
+			//moved current password comparison into SQL statement (sometimes the user object is passed in with the already modified password).  It's whats in the db that matters.
 			
 			Long count = (Long)PoolDBUtils.ReturnStatisticQuery(query, "prevPasswords", dbName,null);
 

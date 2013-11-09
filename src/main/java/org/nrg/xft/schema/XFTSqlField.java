@@ -13,7 +13,7 @@ import org.nrg.xft.utils.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 /**
- * This class stores additional details about a XFTField which relate to a it's
+ * This class stores additional details about a XFTField which relate to its
  * db representation.
  * 
  * @author Tim

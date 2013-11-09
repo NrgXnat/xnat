@@ -41,13 +41,13 @@ import org.w3c.dom.Node;
  * name of the element, and its schema's target namespace prefix are used to generate a XMLType which
  * is used to uniquely identify an element.
  *
- * <BR><BR>If the element is an extension of another element, then it's extension is true and the
+ * <BR><BR>If the element is an extension of another element, then its extension is true and the
  * extended elements XMLType is stored in the exstensionType element.  If this element is extended
  * by another element then its isExtended field is true.  If it is extended and is not an extension
  * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
  * will be true.
  *
- * <BR><BR>If this element does not correspond to a unique XML node then it's isANoChildElement will be true.
+ * <BR><BR>If this element does not correspond to a unique XML node then its isANoChildElement will be true.
  *
  * <BR><BR>If this element was not defined at the root level of the schema, but was instead defined as a child
  * of another element (usually with maxOccurs &#62;1), then its createdChild property will be true.
@@ -122,7 +122,7 @@ public class XFTElement extends XFTNode{
 	private boolean ignoreWarnings = false;
 	private boolean storeHistory = true;
 	/**
-	 * Creates an empty XFTElement for the given XFTSchema.  It's webAppElement and sqlElement are
+	 * Creates an empty XFTElement for the given XFTSchema.  Its webAppElement and sqlElement are
 	 * instanciated with default constructors.
 	 * @param s
 	 */
@@ -761,7 +761,7 @@ public class XFTElement extends XFTNode{
 	}
 
 	/**
-	 * If this element does not correspond to a unique XML node then it's isANoChildElement will be true.
+	 * If this element does not correspond to a unique XML node then its isANoChildElement will be true.
 	 * @return
 	 */
 	public boolean isANoChildElement() {
@@ -769,7 +769,7 @@ public class XFTElement extends XFTNode{
 	}
 
 	/**
-	 * If this element does not correspond to a unique XML node then it's isANoChildElement will be true.
+	 * If this element does not correspond to a unique XML node then its isANoChildElement will be true.
 	 * @param b
 	 */
 	public void setANoChildElement(boolean b) {
@@ -777,7 +777,7 @@ public class XFTElement extends XFTNode{
 	}
 
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
@@ -789,7 +789,7 @@ public class XFTElement extends XFTNode{
 	}
 
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
@@ -802,7 +802,7 @@ public class XFTElement extends XFTNode{
 
 
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
@@ -814,7 +814,7 @@ public class XFTElement extends XFTNode{
 	}
 
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
@@ -826,7 +826,7 @@ public class XFTElement extends XFTNode{
 	}
 
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
@@ -838,7 +838,7 @@ public class XFTElement extends XFTNode{
 	}
 
 	/**
-	 * If the element is an extension of another element, then it's extension is true and the
+	 * If the element is an extension of another element, then its extension is true and the
 	 * extended elements XMLType is stored in the exstensionType element.  If this element is extended
 	 * by another element then its isExtended field is true.  If it is extended and is not an extension
 	 * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement

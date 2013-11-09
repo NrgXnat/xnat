@@ -202,12 +202,12 @@ public class XDATTool {
 				
 				ci = wrk.buildEvent();
 			} catch (Throwable e) {
-				// THIS IS SO UGLY...  But its a chicken and egg problem
+				// THIS IS SO UGLY...  But it's a chicken and egg problem
 				// if a StoreXML is called outside of the full xnat context (i.e. command line), XNAT may not have access to the WrkWorkflowdata, if those classes aren't present
-				// in general we should try to avoid this problem, but until the generated classes are properly jar'd, its a challenge.
+				// in general we should try to avoid this problem, but until the generated classes are properly jar'd, it's a challenge.
 				// for now we'll allow this to proceed with out the valid audit event (which uses WrkWorkflowdata)
 				// this means that StoreXML events which are called from the command line and do not go through the webapp, will not have registered events describing the change (though the changes themselves are still audited).
-				// I'm doing this here, rather then deeper in the code, because other save attempts should require audit events.  Its only because this one is for command line calls that we'll ignore the exceptions.
+				// I'm doing this here, rather then deeper in the code, because other save attempts should require audit events.  It's only because this one is for command line calls that we'll ignore the exceptions.
 				// We should either move the audit event persistence to use hibernate, or jar up the generated classes from xft so that they can be easily added to the classpath for the storeXML.
 			}
             

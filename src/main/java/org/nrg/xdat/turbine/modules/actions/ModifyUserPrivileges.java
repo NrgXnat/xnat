@@ -273,7 +273,7 @@ public class ModifyUserPrivileges extends SecureAction {
 	public void doPrint(RunData data, Context context)
 	   throws Exception
 	{
-		if(XFT.VERBOSE)System.out.println("ModifyUserPriviledges doPrint()"); 
+		if(XFT.VERBOSE)System.out.println("ModifyUserPrivileges doPrint()");
 		final XDATUser tempUser = storeChanges(data,context,(String)TurbineUtils.GetPassedParameter("message",data));
 		ElementSecurity.refresh();
 		

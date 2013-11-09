@@ -103,7 +103,7 @@ public class XdatCriteria extends BaseXdatCriteria {
         
 		//the ordering here was questionable.  What we really need is different type of Criteria objects ElementCriteria vs DisplayCriteria.
         // instead we only have one type XdatCriteriaSet which needs to be mapped to one of those types.  This should be adjusted in the proposed search refactoring.
-        // In the meantime, we can move this into seperate methods to pinpoint which Criteria type should be tried first.
+        // In the meantime, we can move this into separate methods to pinpoint which Criteria type should be tried first.
 
         try {
             final String rootElement = StringUtils.GetRootElementName(schema_field);
@@ -168,7 +168,7 @@ public class XdatCriteria extends BaseXdatCriteria {
         
 		//the ordering here was questionable.  What we really need is different type of Criteria objects ElementCriteria vs DisplayCriteria.
         // instead we only have one type XdatCriteriaSet which needs to be mapped to one of those types.  This should be adjusted in the proposed search refactoring.
-        // In the meantime, we can move this into seperate methods to pinpoint which Criteria type should be tried first.
+        // In the meantime, we can move this into separate methods to pinpoint which Criteria type should be tried first.
         try {
             final ElementCriteria ec = new ElementCriteria();
             ec.setOverrideFormatting(overrideValueFormatting.booleanValue());

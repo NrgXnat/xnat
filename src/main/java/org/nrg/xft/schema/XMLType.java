@@ -26,7 +26,7 @@ import org.nrg.xft.utils.StringUtils;
  * localPrefix.  For a generated type, if the data type was defined in the 
  * same schema then its localPrefix and foreignPrefix will be the XFTSchema's
  * targetNamespacePrefix.  If the generated type refers to a foreign data type 
- * (defined in a seperate namespace) then the localPrefix will define the local
+ * (defined in a separate namespace) then the localPrefix will define the local
  * schema's version of the data type prefix.  This prefix will be matched within
  * that schema to provide the URI of the referenced schema.  This URI can then
  * be used to find the original defined prefix for that data type through the

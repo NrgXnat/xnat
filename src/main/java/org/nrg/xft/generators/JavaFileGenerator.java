@@ -1723,7 +1723,7 @@ public class JavaFileGenerator {
                 sb.append(header).append("\t\t</Mapping>");
                 sb.append(header).append("\t</ViewLink>");
                 
-                sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(', ' || shared.project) AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
+                sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
                 
                 
 
@@ -1935,7 +1935,7 @@ public class JavaFileGenerator {
                 sb.append(header).append("\t\t</Mapping>");
                 sb.append(header).append("\t</ViewLink>");
                 
-                sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(', ' || shared.project) AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
+                sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
                 
                 sb.append(header).append("</Displays>");
                 
@@ -2115,7 +2115,7 @@ public class JavaFileGenerator {
                 sb.append(header).append("\t\t</Mapping>");
                 sb.append(header).append("\t</ViewLink>");
                 
-                sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(', ' || shared.project) AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
+                sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
                 
                 sb.append(header).append("</Displays>");
                 

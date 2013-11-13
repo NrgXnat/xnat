@@ -99,7 +99,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 								msgBuilder.append(uv.getUsername()).append(", ");
 							}
                             // If this user has never logged in, they're new, send the appropriate notification.
-                            if (uv.getLastLogin() == null) {
+                            if (uv.getLastLogin() == null || disabledDueToInactivity(uv)) {
                                 AdminUtils.sendNewUserNotification(uv, context);
                             }
 						}
@@ -170,17 +170,16 @@ public class VerifyEmail extends VelocitySecureScreen {
 
     private boolean disabledDueToInactivity(XDATUser user) {
         try {
-            XDATUserDetails xdatUserDetails = (XDATUserDetails) user;
-            if (!xdatUserDetails.isEnabled()) {
+            if (!user.isEnabled()) {
                 String query = "SELECT COUNT(*) AS count " +
                         "FROM xdat_user_history " +
-                        "WHERE xdat_user_id=" + xdatUserDetails.getXdatUserId() + " " +
-                        "AND change_user=" + xdatUserDetails.getXdatUserId() + " " +
+                        "WHERE xdat_user_id=" + user.getXdatUserId() + " " +
+                        "AND change_user=" + user.getXdatUserId() + " " +
                         "AND change_date = (SELECT MAX(change_date) " +
                         "FROM xdat_user_history " +
-                        "WHERE xdat_user_id=" + xdatUserDetails.getXdatUserId() + " " +
+                        "WHERE xdat_user_id=" + user.getXdatUserId() + " " +
                         "AND enabled=1)";
-                Long result = (Long) PoolDBUtils.ReturnStatisticQuery(query, "count", xdatUserDetails.getDBName(), xdatUserDetails.getUsername());
+                Long result = (Long) PoolDBUtils.ReturnStatisticQuery(query, "count", PoolDBUtils.getDefaultDBName(), null);
 
                 return result > 0;
             }

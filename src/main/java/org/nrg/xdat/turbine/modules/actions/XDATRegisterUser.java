@@ -30,6 +30,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
@@ -70,8 +71,10 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                if (validator.isValid(tempPass, null)) {
 	                
 		                // NEW USER
-	                    found.setProperty("primary_password", XDATUser.EncryptString(tempPass, "SHA-256"));
-	
+                        String salt = XDATUser.createNewSalt();
+	                    found.setProperty("primary_password", new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
+	                    found.setProperty("salt", salt);
+
 		                boolean autoApproval = autoApproval(data, context);
 		                
 		                if (autoApproval) {

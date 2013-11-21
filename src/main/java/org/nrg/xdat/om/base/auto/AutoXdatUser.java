@@ -227,6 +227,35 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 	 private ArrayList<org.nrg.xdat.om.XdatElementAccess> _ElementAccess =null;
 
+    //FIELD
+
+    private String _Salt=null;
+
+    /**
+     * @return Returns the salt.
+     */
+    public String getSalt(){
+        try{
+            if (_PrimaryPassword==null){
+                _PrimaryPassword=getStringProperty("salt");
+                return _PrimaryPassword;
+            }else {
+                return _PrimaryPassword;
+            }
+        } catch (Exception e1) {logger.error(e1);return null;}
+    }
+
+    /**
+     * Sets the value for salt.
+     * @param v Value to Set.
+     */
+    public void setSalt(String v){
+        try{
+            setProperty(SCHEMA_ELEMENT_NAME + "/salt",v);
+            _PrimaryPassword=null;
+        } catch (Exception e1) {logger.error(e1);}
+    }
+
 	/**
 	 * element_access
 	 * @return Returns an ArrayList of org.nrg.xdat.om.XdatElementAccess

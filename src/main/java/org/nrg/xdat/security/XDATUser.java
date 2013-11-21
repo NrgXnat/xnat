@@ -11,6 +11,7 @@ package org.nrg.xdat.security;
 
 import java.io.File;
 import java.io.Serializable;
+import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -25,6 +26,7 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
 import org.nrg.xdat.XDAT;
@@ -72,6 +74,7 @@ import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
+import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 /**
  * @author Tim
@@ -79,6 +82,7 @@ import org.nrg.xft.utils.StringUtils;
 @SuppressWarnings({"unchecked"})
 public class XDATUser extends XdatUser implements UserI, Serializable {
     private static final long serialVersionUID = -8144623503683531831L;
+    private static SecureRandom secureRandom = new SecureRandom();
     static Logger logger = Logger.getLogger(XDATUser.class);
     public static final String USER_ELEMENT = "xdat:user";
     private boolean loggedIn = false;
@@ -167,17 +171,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
 
         String pass = (String) this.getStringProperty("primary_password");
+        String salt = (String) this.getStringProperty("salt");
 
         if (StringUtils.IsEmpty(pass)) throw new PasswordAuthenticationException(getUsername());
 
         // encryption
-        if (EncryptString(password, "SHA-256").equals(pass)) {
+        if (new ShaPasswordEncoder(256).isPasswordValid(pass, password, salt)) {
             loggedIn = true;
-        } else if (EncryptString(EncryptString(password, "obfuscate"), "SHA-256").equals(pass)) {
-            loggedIn = true;
-        } else if (EncryptString(password, "obfuscate").equals(pass)) {
-            loggedIn = true;
-        } else if (password.equals(pass)) {
+        } else if (new ObfuscatedPasswordEncoder().isPasswordValid(pass, password, salt)) {
             loggedIn = true;
         }
 
@@ -210,28 +211,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         this.clearLocalCache();
 
         if (XFT.VERBOSE) System.out.println("User Init(" + this.getUsername() + "): " + (Calendar.getInstance().getTimeInMillis() - startTime) + "ms");
-    }
-
-    public static String EncryptString(String stringToEncrypt) {
-        return EncryptString(stringToEncrypt, "SHA-256");
-    }
-
-    public static String EncryptString(String stringToEncrypt, String algorithm) {
-        if (algorithm.equals("SHA-256")) {
-            return DigestUtils.sha256Hex(stringToEncrypt);
-        } else if (algorithm.equals("obfuscate")) {
-            int prime = 373;
-            int g = 2;
-            String ans = "";
-            char[] as = stringToEncrypt.toCharArray();
-            for (int i = 0; i < stringToEncrypt.length(); i++) {
-                int encrypt_digit = g ^ (char) (as[i]) % prime;
-                ans = ans + (char) (encrypt_digit);
-            }
-            return (ans);
-        } else {
-            return null;
-        }
     }
 
     public static class UserNotFoundException extends FailedLoginException {
@@ -2654,8 +2633,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 		        	if(validator.isValid(tempPass, null)){
 		        		//this is set to null instead of authenticatedUser because new users should be able to use any password even those that have recently been used by other users.
-		        		found.setProperty("primary_password", XDATUser
-		                    .EncryptString(tempPass, "SHA-256"));
+                        String salt = createNewSalt();
+		        		found.setProperty("primary_password", new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
+                        found.setProperty("salt", salt);
 		        	} else {
 		        		throw new PasswordComplexityException(validator.getMessage());
 		        	}
@@ -2684,8 +2664,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		        if (!tempPass.equals(savedPass)){
 		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 		        	if(validator.isValid(tempPass, authenticatedUser)){
-		            found.setProperty("primary_password", XDATUser
-		                    .EncryptString(tempPass, "SHA-256"));
+                        String salt = createNewSalt();
+		                found.setProperty("primary_password", new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
+                        found.setProperty("salt", salt);
 		        	} else {
 		        		throw new PasswordComplexityException(validator.getMessage());
 		        	}
@@ -2698,6 +2679,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		        XFTItem toSave = XFTItem.NewItem("xdat:user", authenticatedUser);
 		        toSave.setProperty("login", authenticatedUser.getLogin());
 		        toSave.setProperty("primary_password", found.getProperty("primary_password"));
+                toSave.setProperty("salt", found.getProperty("salt"));
 		        toSave.setProperty("email", found.getProperty("email"));
 		        if(found.getProperty("verified")!=null && !(found.getProperty("verified").equals(""))){
 		        	toSave.setProperty("verified", found.getProperty("verified"));
@@ -2708,6 +2690,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		        SaveItemHelper.authorizedSave(toSave, authenticatedUser, false, false,ci);
 
 		        authenticatedUser.setProperty("primary_password", found.getProperty("primary_password"));
+                authenticatedUser.setProperty("salt", found.getProperty("salt"));
 		        authenticatedUser.setProperty("email", found.getProperty("email"));
 		        if(found.getProperty("verified")!=null && !(found.getProperty("verified").equals(""))){
 		        	authenticatedUser.setProperty("verified", found.getProperty("verified"));
@@ -2720,6 +2703,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		        throw new InvalidPermissionException("Unauthorized user modification attempt");
 		    }
 		}
+    }
+
+    public static String createNewSalt() {
+        String salt = RandomStringUtils.random(64, 0, 0, true, true, null, new SecureRandom());
+        return salt;
     }
 
     public Date getLastLogin() throws SQLException, Exception{

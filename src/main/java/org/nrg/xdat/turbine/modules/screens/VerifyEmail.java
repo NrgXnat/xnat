@@ -62,6 +62,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 	    				XFTItem toSave = XFTItem.NewItem("xdat:user", curUser);
 	    				toSave.setProperty("login", curUser.getLogin());
 	    				toSave.setProperty("primary_password", curUser.getProperty("primary_password"));
+                        toSave.setProperty("salt", curUser.getProperty("salt"));
 	    				toSave.setProperty("email", curUser.getProperty("email"));
 	    				toSave.setProperty("verified", "1");
 	    			

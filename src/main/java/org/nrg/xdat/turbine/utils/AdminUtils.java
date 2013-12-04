@@ -281,7 +281,7 @@ public class AdminUtils {
        
        AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(userName);
        Context context = new VelocityContext();
-       context.put("name", firstName + lastName);
+       context.put("name", firstName + " " + lastName);
        context.put("verifyEmailLink", TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret());
 
        String subject = TurbineUtils.GetSystemName() + " Email Verification";

@@ -2340,7 +2340,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     qo.addField("xnat:subjectData/ID");
 
                     query = qo.buildQuery();
-
                     idField = qo.translateXMLPath("xnat:subjectData/ID");
 
                     Long sub_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
@@ -2350,9 +2349,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     qo = new org.nrg.xft.search.QueryOrganizer("wrk:workflowData", this, ViewManager.ALL);
                     qo.addField("wrk:workflowData/ID");
 
-                    query = qo.buildQuery();
-
-                    idField = qo.translateXMLPath("wrk:workflowData/ID");
+                    //
+                    // These two lines were causing an issue where the file viewer was not opening. (See XNAT-2511)
+                    // Since we are reusing the query and idField variables below, if we overwrite them here it causes
+                    // any experiment dataType that was added before XNAT 1.6 (when we started using the wrk:workflowData
+                    // table heavily) to not be returned from this method.
+                    //
+                    // query = qo.buildQuery();
+                    // idField = qo.translateXMLPath("wrk:workflowData/ID");
+                    //
 
                     Long wrk_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM (" + qo.buildQuery() + ") SEARCH;", "count", this.getDBName(), this.getUsername());
                     readable_counts.put("wrk:workflowData", wrk_count);

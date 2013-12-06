@@ -84,11 +84,13 @@ public class ChangePassword extends VelocitySecureScreen {
                     }
                 }
 
-                if (!user.isEnabled()) {
-                    throw new Exception("User is not enabled: " + user.getUsername());
-                }
-                if (XDAT.verificationOn() && !user.isVerified()) {
-                    throw new Exception("User is not verified: " + user.getUsername());
+                if(user != null){
+                    if(!user.isEnabled()) {
+                        throw new Exception("User is not enabled: " + user.getUsername());
+                    }
+                    if (XDAT.verificationOn() && !user.isVerified()) {
+                        throw new Exception("User is not verified: " + user.getUsername());
+                    }
                 }
 
                 context.put("topMessage", "Enter a new password.");

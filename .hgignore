@@ -93,6 +93,9 @@ syntax: regexp
 ^xnat_builder_1_6dev.iml
 ^xnat_builder.iml
 ^xnat_builder.eml
+^buildXDAT.bat
+^deployXDAT.bat
+^restartApache.bat
 
 # ignore emacs backups
 ~$

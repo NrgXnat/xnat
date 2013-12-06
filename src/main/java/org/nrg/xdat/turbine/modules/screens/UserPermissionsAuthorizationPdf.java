@@ -376,7 +376,6 @@ class CNLCellEvent implements PdfPCellEvent {
 			}			
 			jScript += invIds.substring(0,invIds.lastIndexOf(",")) +" ]; \n";
 			jScript += "for (var i=0; i<chkBoxObjects.length; i++) {" ;
-			//jScript += "app.alert(\" Hi there\");";
 			jScript += "var f = this.getField(chkBoxObjects[i]); ";
 			jScript += "f.checkThisBox(0); ";
 			jScript += "}";

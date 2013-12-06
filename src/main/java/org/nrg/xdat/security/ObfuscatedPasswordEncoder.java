@@ -17,6 +17,10 @@ import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 public class ObfuscatedPasswordEncoder extends ShaPasswordEncoder {
 
+    public ObfuscatedPasswordEncoder(int strength) {
+        super(strength);
+    }
+
     public String encodePassword(String rawPass, Object salt) {
         String obfuscatedPass = obfuscatePassword(rawPass);
         return super.encodePassword(obfuscatedPass,salt);

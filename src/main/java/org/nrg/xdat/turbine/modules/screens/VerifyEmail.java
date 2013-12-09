@@ -58,7 +58,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 
 	    		for(ItemI i : users.getItems()){
 	    			XDATUser curUser = new XDATUser(i.getItem(),false);
-	    			if(!curUser.getVerified() || disabledDueToInactivity(curUser)){
+	    			if(!curUser.getVerified() || (!curUser.getEnabled() && disabledDueToInactivity(curUser))){
 	    				XFTItem toSave = XFTItem.NewItem("xdat:user", curUser);
 	    				toSave.setProperty("login", curUser.getLogin());
 	    				toSave.setProperty("primary_password", curUser.getProperty("primary_password"));
@@ -171,19 +171,17 @@ public class VerifyEmail extends VelocitySecureScreen {
 
     private boolean disabledDueToInactivity(XDATUser user) {
         try {
-            if (!user.isEnabled()) {
-                String query = "SELECT COUNT(*) AS count " +
-                        "FROM xdat_user_history " +
-                        "WHERE xdat_user_id=" + user.getXdatUserId() + " " +
-                        "AND change_user=" + user.getXdatUserId() + " " +
-                        "AND change_date = (SELECT MAX(change_date) " +
-                        "FROM xdat_user_history " +
-                        "WHERE xdat_user_id=" + user.getXdatUserId() + " " +
-                        "AND enabled=1)";
-                Long result = (Long) PoolDBUtils.ReturnStatisticQuery(query, "count", PoolDBUtils.getDefaultDBName(), null);
+            String query = "SELECT COUNT(*) AS count " +
+                    "FROM xdat_user_history " +
+                    "WHERE xdat_user_id=" + user.getXdatUserId() + " " +
+                    "AND change_user=" + user.getXdatUserId() + " " +
+                    "AND change_date = (SELECT MAX(change_date) " +
+                    "FROM xdat_user_history " +
+                    "WHERE xdat_user_id=" + user.getXdatUserId() + " " +
+                    "AND enabled=1)";
+            Long result = (Long) PoolDBUtils.ReturnStatisticQuery(query, "count", PoolDBUtils.getDefaultDBName(), null);
 
-                return result > 0;
-            }
+            return result > 0;
         } catch (Exception e) {
             logger.error(e.getMessage());
         }

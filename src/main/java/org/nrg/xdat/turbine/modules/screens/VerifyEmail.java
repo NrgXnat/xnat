@@ -58,7 +58,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 
 	    		for(ItemI i : users.getItems()){
 	    			XDATUser curUser = new XDATUser(i.getItem(),false);
-	    			if(!curUser.getVerified() || (!curUser.getEnabled() && disabledDueToInactivity(curUser))){
+	    			if((curUser.getVerified()!=null && !(curUser.getVerified())) || (!curUser.getEnabled() && disabledDueToInactivity(curUser))){
 	    				XFTItem toSave = XFTItem.NewItem("xdat:user", curUser);
 	    				toSave.setProperty("login", curUser.getLogin());
 	    				toSave.setProperty("primary_password", curUser.getProperty("primary_password"));

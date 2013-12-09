@@ -178,7 +178,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         // encryption
         if (new ShaPasswordEncoder(256).isPasswordValid(pass, password, salt)) {
             loggedIn = true;
-        } else if (new ObfuscatedPasswordEncoder().isPasswordValid(pass, password, salt)) {
+        } else if (new ObfuscatedPasswordEncoder(256).isPasswordValid(pass, password, salt)) {
             loggedIn = true;
         }
 

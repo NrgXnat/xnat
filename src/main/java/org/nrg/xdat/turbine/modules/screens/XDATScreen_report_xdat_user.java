@@ -11,6 +11,7 @@ package org.nrg.xdat.turbine.modules.screens;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.entities.XdatUserAuth;
@@ -31,6 +32,8 @@ public class XDATScreen_report_xdat_user extends AdminReport {
             XDATUser tempUser = new XDATUser(item);
 			context.put("userObject",tempUser);
             context.put("allGroups",XdatUsergroup.getAllXdatUsergroups(null, false,"xdat:userGroup/tag"));
+            
+            // Does the user hanve any failed login attempts?
             boolean hasFailedLoginAttempts = false;
             List<XdatUserAuth> auths = XDAT.getXdatUserAuthService().getUsersByName(tempUser.getUsername());
             for (XdatUserAuth auth : auths) {
@@ -39,6 +42,11 @@ public class XDATScreen_report_xdat_user extends AdminReport {
                 }
             }
             context.put("hasFailedLoginAttempts", hasFailedLoginAttempts);
+            
+            // Has the user been blocked from requesting emails? (Resend Email Verification / Reset password)
+            final EmailRequestLogService requests = XDAT.getContextService().getBean(EmailRequestLogService.class);
+            context.put("emailRequestsBlocked", requests.isEmailBlocked(tempUser.getEmail()));
+
         } catch (Exception e) {
             logger.error("",e);
         }

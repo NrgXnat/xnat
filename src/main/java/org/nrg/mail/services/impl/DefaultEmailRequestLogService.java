@@ -48,6 +48,16 @@ public class DefaultEmailRequestLogService implements EmailRequestLogService {
 		// The email is blocked if the maximum number of requests have been made.
 		return (log.get(e).size() == MAX_REQUESTS);
 	}
+	
+	/**
+	 * Function removes an email from the block list.
+	 * @param e - the email we are interested in.
+	 */
+	public void unblockEmail(String e){
+		if(log.containsKey(e)){
+			log.remove(e);
+		}
+	}
 
 	/**
 	 * Function clears the log of email requests that have expired.

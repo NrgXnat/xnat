@@ -8,5 +8,7 @@ public interface EmailRequestLogService{
 	
 	public boolean isEmailBlocked(String email);
 	
+	public void unblockEmail(String email);
+	
 	public void clearLogs();
 }

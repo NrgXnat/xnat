@@ -1300,35 +1300,36 @@ public class ElementSecurity extends ItemWrapper{
 
 	
 	/**
-	 * @return ArrayList of Strings
+	 * @return A sorted List of Strings
 	 * @throws Exception
 	 */
-	public static ArrayList GetElementNames() throws Exception
+	public static List<String> GetElementNames() throws Exception
 	{
-		ArrayList al = new ArrayList();
+		ArrayList<String> al = new ArrayList<String>();
 		Collection<ElementSecurity> ess= GetElementSecurities().values();
-		for (ElementSecurity es:ess)
-		{
+		for (ElementSecurity es:ess){
 			al.add(es.getElementName());
 		}
 		al.trimToSize();
+		Collections.sort(al);
 		return al;
 	}
 
 	/**
-	 * @return ArrayList of Strings
+	 * @return A sorted List of Strings
 	 * @throws Exception
 	 */
-	public static ArrayList GetNonXDATElementNames() throws Exception
+	public static List<String> GetNonXDATElementNames() throws Exception
 	{
-		ArrayList al = new ArrayList();
+		ArrayList<String> al = new ArrayList<String>();
 		Collection<ElementSecurity> ess= GetElementSecurities().values();
-		for (ElementSecurity es:ess)
-		{
-			if (!es.getElementName().startsWith("xdat"))
-			    al.add(es.getElementName());
+		for (ElementSecurity es:ess){
+			if (!es.getElementName().startsWith("xdat")){
+				al.add(es.getElementName());
+			}
 		}
 		al.trimToSize();
+		Collections.sort(al);
 		return al;
 	}
 	

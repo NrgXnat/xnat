@@ -78,7 +78,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                boolean autoApproval = autoApproval(data, context);
 		                
 		                if (autoApproval) {
-		                	if (XDAT.verificationOn()) {
+		                	if (XDAT.verificationOn() && !hasPAR(data)) {
 		                		found.setProperty("enabled", "false");
 		                	} else {
 		                		found.setProperty("enabled", "true");
@@ -86,8 +86,13 @@ public class XDATRegisterUser extends VelocitySecureAction {
 		                } else {
 		                    found.setProperty("enabled", "false");
 		                }
-		                
-		                found.setProperty("verified","false");
+
+                        if (hasPAR(data)) {
+                            found.setProperty("verified","true");
+                        }
+                        else {
+                            found.setProperty("verified","false");
+                        }
 		                found.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name","SiteUser");
 	                    found.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name","DataManager");
 		                

@@ -107,9 +107,10 @@ public class ModifyUser extends SecureAction {
 				return;
 			}
 		}
-		
-		String newPassword=found.getStringProperty("primary_password");
-		if(StringUtils.isNotEmpty(newPassword)){
+
+		String newPassword=data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
+		found.setProperty("primary_password", newPassword);
+        if(StringUtils.isNotEmpty(newPassword)){
 			found.setProperty("verified", "1");
 		}else{
 			data.setMessage("Password cannot be empty.");

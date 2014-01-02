@@ -130,11 +130,12 @@ public class ModifyPassword extends SecureAction {
 				
 				XDATUser authenticatedUser=TurbineUtils.getUser(data);
 				try {
-					String newPass=found.getStringProperty("primary_password");
+                    String newPassword=data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
 					XDATUser submitted=new XDATUser(found);
-					if(StringUtils.isNotEmpty(newPass)){
+					if(StringUtils.isNotEmpty(newPassword)){
 						PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-						if(validator.isValid(newPass, submitted)){
+						if(validator.isValid(newPassword, submitted)){
+                            found.setProperty("primary_password", newPassword);
 							XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Password"));
 							
 							//need to update password expiration

@@ -581,7 +581,7 @@ public class XDAT implements Initializable,Configurable{
     public static boolean loginUser(RunData data, XDATUser user, boolean forcePasswordChange) throws Exception{
     	PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
     	ItemI found = populater.getItem();
-    	String tempPass = found.getStringProperty("primary_password");
+    	String tempPass = data.getParameters().getString("xdat:user.primary_password");
     	
     	TurbineUtils.setUser(data, user);
 

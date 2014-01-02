@@ -66,7 +66,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
                 temp = search.exec().getFirst();
 
                 if (temp == null) {
-	                String tempPass = found.getStringProperty("primary_password");
+	                String tempPass = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
 	                PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 	                if (validator.isValid(tempPass, null)) {
 	                

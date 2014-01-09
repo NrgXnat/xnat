@@ -65,6 +65,33 @@ public class EventUtils {
 		};
 	}
 	
+	public static EventMetaI ADMIN_EVENT(final UserI u){
+		return new EventMetaI(){
+			final Date d= Calendar.getInstance().getTime();
+			final String t=FileUtils.getTimestamp(d);
+
+			public String getMessage() {
+				return "ADMIN_EVENT occurred";
+			}
+
+			public Date getEventDate() {
+				return d;
+			}
+
+			public String getTimestamp() {
+				return t;
+			}
+
+			public UserI getUser() {
+				return u;
+			}
+
+			public Integer getEventId(){
+				return null;
+			}
+		};
+	}
+
 	public static Date getEventDate(EventMetaI ea,boolean allowNull){
 		if(ea==null){
 			return (allowNull)?null:Calendar.getInstance().getTime();

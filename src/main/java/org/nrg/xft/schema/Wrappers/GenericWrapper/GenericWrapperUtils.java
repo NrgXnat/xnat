@@ -36,6 +36,16 @@ import java.util.*;
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class GenericWrapperUtils {
+    public static final String CREATE_CLASS = "create_class2";
+    
+	public static final String CREATE_FUNCTION = "create_function2";
+
+	public static final String CREATE_SCHEMA = "create_schema2";
+
+	public static final String CREATE_TRIGGER = "create_trigger2";
+	
+	public static Boolean BATCH_MODE=Boolean.FALSE;
+
     public static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperUtils.class);
 
     public static final String TXT_FUNCTION = "i_";
@@ -613,173 +623,15 @@ public class GenericWrapperUtils {
         return sb;
     }
 
-    public static List<String> GetFunctionSQL() {
+    public static List<String>[] GetFunctionSQL() {
         List<String> all = new ArrayList<String>();
-        StringBuilder functions = new StringBuilder();
-        functions.append("\n\n\nCREATE OR REPLACE FUNCTION class_exists( VARCHAR)");
-        functions.append("\nRETURNS BOOLEAN AS");
-        functions.append("\n'");
-        functions.append("\n    declare");
-        functions.append("\n     current_row RECORD;");
-        functions.append("\n    begin");
-        functions.append("\n      FOR current_row IN SELECT * FROM pg_catalog.pg_class WHERE  relname=LOWER($1)");
-        functions.append("\n     LOOP");
-        functions.append("\n          RETURN TRUE;");
-        functions.append("\n      END LOOP;");
-        functions.append("\n");
-        functions.append("\n	 RETURN FALSE;");
-        functions.append("\n    end;");
-        functions.append("\n'");
-        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
-        all.add(functions.toString());
-        functions = new StringBuilder();
-        functions.append("\n\n\nCREATE OR REPLACE FUNCTION schema_exists( VARCHAR)");
-        functions.append("\nRETURNS BOOLEAN AS");
-        functions.append("\n'");
-        functions.append("\n    declare");
-        functions.append("\n     current_row RECORD;");
-        functions.append("\n    begin");
-        functions.append("\n      FOR current_row IN SELECT * FROM pg_namespace WHERE nspname=LOWER($1)");
-        functions.append("\n     LOOP");
-        functions.append("\n          RETURN TRUE;");
-        functions.append("\n      END LOOP;");
-        functions.append("\n");
-        functions.append("\n	 RETURN FALSE;");
-        functions.append("\n    end;");
-        functions.append("\n'");
-        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
-        all.add(functions.toString());
-        functions = new StringBuilder();
-        functions.append("\n\nCREATE OR REPLACE FUNCTION function_exists( VARCHAR)");
-        functions.append("\nRETURNS BOOLEAN AS");
-        functions.append("\n'");
-        functions.append("\n    declare");
-        functions.append("\n     current_row RECORD;");
-        functions.append("\n    begin");
-        functions.append("\n      FOR current_row IN SELECT * FROM pg_proc WHERE  proname=LOWER($1)");
-        functions.append("\n     LOOP");
-        functions.append("\n          RETURN TRUE;");
-        functions.append("\n      END LOOP;");
-        functions.append("\n");
-        functions.append("\n	 RETURN FALSE;");
-        functions.append("\n    end;");
-        functions.append("\n'");
-        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
-        all.add(functions.toString());
-        functions = new StringBuilder();
-        functions.append("\n\nCREATE OR REPLACE FUNCTION trigger_exists( VARCHAR)");
-        functions.append("\nRETURNS BOOLEAN AS");
-        functions.append("\n'");
-        functions.append("\n    declare");
-        functions.append("\n     current_row RECORD;");
-        functions.append("\n    begin");
-        functions.append("\n      FOR current_row IN SELECT * FROM pg_trigger WHERE  tgname=LOWER($1)");
-        functions.append("\n     LOOP");
-        functions.append("\n          RETURN TRUE;");
-        functions.append("\n      END LOOP;");
-        functions.append("\n");
-        functions.append("\n	 RETURN FALSE;");
-        functions.append("\n    end;");
-        functions.append("\n'");
-        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
-        all.add(functions.toString());
-        functions = new StringBuilder();
-        functions.append("\n\nCREATE OR REPLACE FUNCTION create_trigger(VARCHAR,VARCHAR)");
-        functions.append("\nRETURNS VARCHAR AS");
-        functions.append("\n'");
-        functions.append("\n    begin");
-        functions.append("\n	IF(NOT TRIGGER_EXISTS($1)) THEN");
-        functions.append("\n		EXECUTE $2;");
-        functions.append("\n		RETURN ''CREATED'';");
-        functions.append("\n	END IF;");
-        functions.append("\n	RETURN ''EXISTS'';");
-        functions.append("\n    end;");
-        functions.append("\n'");
-        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
-        all.add(functions.toString());
-        functions = new StringBuilder();
-        functions.append("\n");
-        functions.append("\n\nCREATE OR REPLACE FUNCTION create_class(VARCHAR,VARCHAR)");
-        functions.append("\nRETURNS VARCHAR AS");
-        functions.append("\n'");
-        functions.append("\n    begin");
-        functions.append("\n	IF(NOT CLASS_EXISTS($1)) THEN");
-        functions.append("\n		EXECUTE $2;");
-        functions.append("\n		RETURN ''CREATED'';");
-        functions.append("\n	END IF;");
-        functions.append("\n	RETURN ''EXISTS'';");
-        functions.append("\n    end;");
-        functions.append("\n'");
-        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
-        all.add(functions.toString());
-        functions = new StringBuilder();
-        functions.append("\n");
-        functions.append("\n\nCREATE OR REPLACE FUNCTION create_schema(VARCHAR,VARCHAR)");
-        functions.append("\nRETURNS VARCHAR AS");
-        functions.append("\n'");
-        functions.append("\n    begin");
-        functions.append("\n	IF(NOT SCHEMA_EXISTS($1)) THEN");
-        functions.append("\n		EXECUTE $2;");
-        functions.append("\n		RETURN ''CREATED'';");
-        functions.append("\n	END IF;");
-        functions.append("\n	RETURN ''EXISTS'';");
-        functions.append("\n    end;");
-        functions.append("\n'");
-        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
-        all.add(functions.toString());
-        functions = new StringBuilder();
-        functions.append("\n");
-        functions.append("\n");
-        functions.append("\nCREATE OR REPLACE FUNCTION create_function(VARCHAR,VARCHAR)");
-        functions.append("\nRETURNS VARCHAR AS");
-        functions.append("\n'");
-        functions.append("\n    begin");
-        functions.append("\n	IF(NOT FUNCTION_EXISTS($1)) THEN");
-        functions.append("\n		EXECUTE $2;");
-        functions.append("\n		RETURN ''CREATED'';");
-        functions.append("\n	END IF;");
-        functions.append("\n");
-        functions.append("\n	RETURN ''EXISTS'';");
-        functions.append("\n    end;");
-        functions.append("\n'");
-        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
-        all.add(functions.toString());
-        functions = new StringBuilder();
-        functions.append("\n");
-        functions.append("\n");
-        functions.append("\nCREATE OR REPLACE FUNCTION xs_concat(text, text) RETURNS text AS");
-        functions.append("\n'");
-        functions.append("\n    DECLARE");
-        functions.append("\n       t text;");
-        functions.append("\n    begin");
-        functions.append("\n       IF(character_length($1) > 0) THEN");
-        functions.append("\n          t = $1 ||'', ''|| $2;");
-        functions.append("\n       ELSE");
-        functions.append("\n          t = $2;");
-        functions.append("\n       END IF;");
-        functions.append("\n       RETURN t;");
-        functions.append("\n    END;");
-        functions.append("\n'");
-        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
-        all.add(functions.toString());
-        functions = new StringBuilder();
-        functions.append("\n");
-        functions.append("\n");
-        functions.append("\nSELECT create_function('xs_a_concat','CREATE AGGREGATE xs_a_concat(");
-        functions.append("\n    BASETYPE = text,");
-        functions.append("\n    SFUNC = textcat,");
-        functions.append("\n    STYPE = text,");
-        functions.append("\n    INITCOND = '''')');");
-        all.add(functions.toString());
+        List<String> post = new ArrayList<String>();
         try {
             for (Object o : XFTManager.GetInstance().getOrderedElements()) {
                 GenericWrapperElement element = (GenericWrapperElement) o;
-                //System.out.println(element.getXSIType());
-                //if (!element.isSkipSQL())
-                //                if (!(element.getName().endsWith("meta_data") || element
-                //                        .getName().endsWith("history"))) {
-                all.addAll(GetFunctionStatements(element));
-                //                }
+                List<String>[] func=GetFunctionStatements(element);
+                all.addAll(func[0]);
+                post.addAll(func[1]);
             }
         } catch (XFTInitException e) {
             logger.error("", e);
@@ -788,7 +640,8 @@ public class GenericWrapperUtils {
         } catch (Exception e) {
             logger.error("", e);
         }
-        return all;
+        List[] _return={all,post};
+        return _return;
     }
     
     public static List<String> GetTextOutputFunctions(GenericWrapperElement input)
@@ -1925,10 +1778,11 @@ public class GenericWrapperUtils {
         return all;
     }
     
-    public static ArrayList GetUpdateFunctions(GenericWrapperElement input)
+    public static List<String>[] GetUpdateFunctions(GenericWrapperElement input)
     throws ElementNotFoundException, XFTInitException {
         StringBuffer sb = new StringBuffer();
-        ArrayList all =new ArrayList();
+        List<String> all =new ArrayList();
+        List<String> post = new ArrayList();
         Object[][] keyArray = input.getSQLKeys();
         if (input.isExtended()) {
             sb.append("\n\n\nCREATE OR REPLACE FUNCTION update_ls_ext_"
@@ -2319,7 +2173,7 @@ public class GenericWrapperUtils {
         
             sb = new StringBuffer();
             //		CREATE TRIGGER REFERENCE FUNCTION.
-//            sb.append("\n\nSELECT create_function('after_update_"
+//            sb.append("\n\nSELECT " + GenericWrapperUtils.CREATE_FUNCTION + "('after_update_"
 //                    + input.getSQLName() + "','");
             sb.append("CREATE OR REPLACE FUNCTION after_update_"
                     + input.getFormattedName() + "()");
@@ -2373,7 +2227,7 @@ public class GenericWrapperUtils {
 
             all.add(sb.toString());
             sb = new StringBuffer();
-            sb.append("\n\nSELECT create_trigger('a_u_" + input.getFormattedName()
+            sb.append("\n\nSELECT " + GenericWrapperUtils.CREATE_TRIGGER + "('a_u_" + input.getFormattedName()
                     + "','");
             sb.append("CREATE TRIGGER a_u_" + input.getFormattedName());
             sb.append("  AFTER UPDATE OR DELETE ON ")
@@ -2381,12 +2235,14 @@ public class GenericWrapperUtils {
             sb.append(" FOR EACH ROW EXECUTE PROCEDURE after_update_"
                     + input.getFormattedName() + "()');");
 
-            all.add(sb.toString());
-        return all;
+            post.add(sb.toString());
+            List[] _return={all,post};
+        return _return;
     }
 
-    public static List<String> GetFunctionStatements(GenericWrapperElement input) throws ElementNotFoundException, XFTInitException,Exception {
+    public static List<String>[] GetFunctionStatements(GenericWrapperElement input) throws ElementNotFoundException, XFTInitException,Exception {
         List<String> sb= new ArrayList<String>();
+        List<String> post= new ArrayList<String>();
         
         /*******************************
          * TEXT OUTPUT FUNCTIONS
@@ -2414,10 +2270,12 @@ public class GenericWrapperUtils {
             /*******************************
              * UPDATE
              *******************************/
-            sb.addAll(GetUpdateFunctions(input));
-            
+            List[] updates=GetUpdateFunctions(input);
+            sb.addAll(updates[0]);
+            post.addAll(updates[1]);
         }
-        return sb;
+        List[] _return={sb,post};
+        return _return;
     }
 
     /**
@@ -2873,9 +2731,165 @@ public class GenericWrapperUtils {
     }
 
     public static Collection<String> GetExtensionTables() {
-        StringBuilder buffer = new StringBuilder();
+        List<String> statements = new ArrayList<String>();
 
-        buffer.append("SELECT create_class('analytics', '");
+        StringBuilder functions = new StringBuilder();
+        functions.append("\n\n\nCREATE OR REPLACE FUNCTION class_exists( VARCHAR)");
+        functions.append("\nRETURNS BOOLEAN AS");
+        functions.append("\n'");
+        functions.append("\n    declare");
+        functions.append("\n     current_row RECORD;");
+        functions.append("\n    begin");
+        functions.append("\n      FOR current_row IN SELECT * FROM pg_catalog.pg_class WHERE  relname=LOWER($1)");
+        functions.append("\n     LOOP");
+        functions.append("\n          RETURN TRUE;");
+        functions.append("\n      END LOOP;");
+        functions.append("\n");
+        functions.append("\n	 RETURN FALSE;");
+        functions.append("\n    end;");
+        functions.append("\n'");
+        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+        statements.add(functions.toString());
+        functions = new StringBuilder();
+        functions.append("\n\n\nCREATE OR REPLACE FUNCTION schema_exists( VARCHAR)");
+        functions.append("\nRETURNS BOOLEAN AS");
+        functions.append("\n'");
+        functions.append("\n    declare");
+        functions.append("\n     current_row RECORD;");
+        functions.append("\n    begin");
+        functions.append("\n      FOR current_row IN SELECT * FROM pg_namespace WHERE nspname=LOWER($1)");
+        functions.append("\n     LOOP");
+        functions.append("\n          RETURN TRUE;");
+        functions.append("\n      END LOOP;");
+        functions.append("\n");
+        functions.append("\n	 RETURN FALSE;");
+        functions.append("\n    end;");
+        functions.append("\n'");
+        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+        statements.add(functions.toString());
+        functions = new StringBuilder();
+        functions.append("\n\nCREATE OR REPLACE FUNCTION function_exists( VARCHAR)");
+        functions.append("\nRETURNS BOOLEAN AS");
+        functions.append("\n'");
+        functions.append("\n    declare");
+        functions.append("\n     current_row RECORD;");
+        functions.append("\n    begin");
+        functions.append("\n      FOR current_row IN SELECT * FROM pg_proc WHERE  proname=LOWER($1)");
+        functions.append("\n     LOOP");
+        functions.append("\n          RETURN TRUE;");
+        functions.append("\n      END LOOP;");
+        functions.append("\n");
+        functions.append("\n	 RETURN FALSE;");
+        functions.append("\n    end;");
+        functions.append("\n'");
+        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+        statements.add(functions.toString());
+        functions = new StringBuilder();
+        functions.append("\n\nCREATE OR REPLACE FUNCTION trigger_exists( VARCHAR)");
+        functions.append("\nRETURNS BOOLEAN AS");
+        functions.append("\n'");
+        functions.append("\n    declare");
+        functions.append("\n     current_row RECORD;");
+        functions.append("\n    begin");
+        functions.append("\n      FOR current_row IN SELECT * FROM pg_trigger WHERE  tgname=LOWER($1)");
+        functions.append("\n     LOOP");
+        functions.append("\n          RETURN TRUE;");
+        functions.append("\n      END LOOP;");
+        functions.append("\n");
+        functions.append("\n	 RETURN FALSE;");
+        functions.append("\n    end;");
+        functions.append("\n'");
+        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+        statements.add(functions.toString());
+        functions = new StringBuilder();
+        functions.append("\n\nCREATE OR REPLACE FUNCTION " + GenericWrapperUtils.CREATE_TRIGGER + "(VARCHAR,VARCHAR)");
+        functions.append("\nRETURNS void AS");
+        functions.append("\n'");
+        functions.append("\n    begin");
+        functions.append("\n	IF(NOT TRIGGER_EXISTS($1)) THEN");
+        functions.append("\n		EXECUTE $2;");
+        functions.append("\n		RETURN;");
+        functions.append("\n	END IF;");
+        functions.append("\n	RETURN;");
+        functions.append("\n    end;");
+        functions.append("\n'");
+        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+        statements.add(functions.toString());
+        functions = new StringBuilder();
+        functions.append("\n");
+        functions.append("\n\nCREATE OR REPLACE FUNCTION " + GenericWrapperUtils.CREATE_CLASS + "(VARCHAR,VARCHAR)");
+        functions.append("\nRETURNS void AS");
+        functions.append("\n'");
+        functions.append("\n    begin");
+        functions.append("\n	IF(NOT CLASS_EXISTS($1)) THEN");
+        functions.append("\n		EXECUTE $2;");
+        functions.append("\n		RETURN;");
+        functions.append("\n	END IF;");
+        functions.append("\n	RETURN;");
+        functions.append("\n    end;");
+        functions.append("\n'");
+        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+        statements.add(functions.toString());
+        functions = new StringBuilder();
+        functions.append("\n");
+        functions.append("\n\nCREATE OR REPLACE FUNCTION " + GenericWrapperUtils.CREATE_SCHEMA + "(VARCHAR,VARCHAR)");
+        functions.append("\nRETURNS void AS");
+        functions.append("\n'");
+        functions.append("\n    begin");
+        functions.append("\n	IF(NOT SCHEMA_EXISTS($1)) THEN");
+        functions.append("\n		EXECUTE $2;");
+        functions.append("\n		RETURN ;");
+        functions.append("\n	END IF;");
+        functions.append("\n	RETURN ;");
+        functions.append("\n    end;");
+        functions.append("\n'");
+        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+        statements.add(functions.toString());
+        functions = new StringBuilder();
+        functions.append("\n");
+        functions.append("\n");
+        functions.append("\nCREATE OR REPLACE FUNCTION " + GenericWrapperUtils.CREATE_FUNCTION + "(VARCHAR,VARCHAR)");
+        functions.append("\nRETURNS void AS");
+        functions.append("\n'");
+        functions.append("\n    begin");
+        functions.append("\n	IF(NOT FUNCTION_EXISTS($1)) THEN");
+        functions.append("\n		EXECUTE $2;");
+        functions.append("\n		RETURN ;");
+        functions.append("\n	END IF;");
+        functions.append("\n");
+        functions.append("\n	RETURN ;");
+        functions.append("\n    end;");
+        functions.append("\n'");
+        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+        statements.add(functions.toString());
+        functions = new StringBuilder();
+        functions.append("\n");
+        functions.append("\n");
+        functions.append("\nCREATE OR REPLACE FUNCTION xs_concat(text, text) RETURNS text AS");
+        functions.append("\n'");
+        functions.append("\n    DECLARE");
+        functions.append("\n       t text;");
+        functions.append("\n    begin");
+        functions.append("\n       IF(character_length($1) > 0) THEN");
+        functions.append("\n          t = $1 ||'', ''|| $2;");
+        functions.append("\n       ELSE");
+        functions.append("\n          t = $2;");
+        functions.append("\n       END IF;");
+        functions.append("\n       RETURN t;");
+        functions.append("\n    END;");
+        functions.append("\n'");
+        functions.append("\n  LANGUAGE 'plpgsql' VOLATILE;");
+        statements.add(functions.toString());
+        functions.append("\nSELECT " + GenericWrapperUtils.CREATE_FUNCTION + "('xs_a_concat','CREATE AGGREGATE xs_a_concat(");
+        functions.append("\n    BASETYPE = text,");
+        functions.append("\n    SFUNC = textcat,");
+        functions.append("\n    STYPE = text,");
+        functions.append("\n    INITCOND = '''')');");
+        statements.add(functions.toString());
+        
+        
+        StringBuilder buffer = new StringBuilder();
+        buffer.append("SELECT " + GenericWrapperUtils.CREATE_CLASS + "('analytics', '");
         buffer.append("CREATE TABLE analytics\n");
         buffer.append("(\n");
         buffer.append("        id serial NOT NULL,\n");
@@ -2889,8 +2903,65 @@ public class GenericWrapperUtils {
         buffer.append("        PRIMARY KEY (id)\n");
         buffer.append(") WITH (OIDS=FALSE)');");
 
-        List<String> statements = new ArrayList<String>();
         statements.add(buffer.toString());
+        
+
+
+        statements.add("\n\n--XDAT SEARCH ENTRIES\n" +
+				"SELECT " + GenericWrapperUtils.CREATE_SCHEMA + "('xdat_search','CREATE SCHEMA xdat_search;');");
+		
+		statements.add("\n\n--XDAT SEARCH ENTRIES\n" +
+				"SELECT " + GenericWrapperUtils.CREATE_CLASS + "('xdat_searches','CREATE TABLE xdat_searches"+
+		"\n("+
+				"\n  search_name varchar(255) NOT NULL,"+
+				"\n  last_access timestamp DEFAULT now(),"+
+				"\n  created timestamp DEFAULT now(),"+
+				"\n  owner varchar(255)"+
+				"\n) "+
+				"\nWITHOUT OIDS');");
+
+		statements.add("GRANT ALL ON TABLE xdat_searches TO public;");
+
+
+		statements.add("\n\n--XDAT SEARCH ENTRIES\n" +
+				"SELECT " + GenericWrapperUtils.CREATE_CLASS + "('xs_fav_entries','CREATE TABLE xdat_search.xs_fav_entries "+
+				"\n( "+
+				"\n  datatype character varying(255), "+
+				"\n  id character varying(255), "+
+				"\n  xdat_user_id integer "+
+				"\n) "+
+				"\nWITH OIDS;');");
+
+		statements.add("GRANT ALL ON TABLE xdat_search.xs_fav_entries TO public;");
+		
+		statements.add("\n\n--XDAT SEARCH ENTRIES\n" +
+				"SELECT " + GenericWrapperUtils.CREATE_CLASS + "('xs_materialized_views','CREATE TABLE xdat_search.xs_materialized_views"+
+				"\n("+
+				"\ntable_name character varying(255),"+
+				"\ncreated timestamp without time zone DEFAULT now(),"+
+				"\nlast_access timestamp without time zone DEFAULT now(),"+
+				"\nusername character varying(255),"+
+				"\nsearch_id text,"+
+				"\ntag character varying(255),"+
+				"\nsearch_sql text,"+
+				"\nsearch_xml text"+
+				"\n) "+
+				"\nWITH OIDS;');");
+
+		statements.add("GRANT ALL ON TABLE xdat_search.xs_materialized_views TO public;");
+		
+		statements.add("\n\n--XDAT SEARCH ENTRIES\n" +
+				"SELECT " + GenericWrapperUtils.CREATE_CLASS + "('xs_item_access','CREATE TABLE xdat_search.xs_item_access"+
+				"\n("+
+				"\nsearch_value character varying(255),"+
+				"\nsearch_element character varying(255),"+
+				"\nsearch_field character varying(255),"+
+				"\naccessed timestamp without time zone DEFAULT now(),"+
+				"\nxdat_user_id character varying(255),"+
+				"\nmethod character varying(255)"+
+				"\n)"+
+				"\nWITH OIDS;');");
+        
         return statements;
     }
 }

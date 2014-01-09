@@ -374,7 +374,7 @@ public class TorqueSchemaGenerator {
 	public static void main(String args[]) {
 		if (args.length == 2){
 			try {
-				XFT.init(args[0],true);
+				XFT.init(args[0]);
 				TorqueSchemaGenerator.generateDoc(args[1]);
 			} catch (ElementNotFoundException e) {
 				e.printStackTrace();

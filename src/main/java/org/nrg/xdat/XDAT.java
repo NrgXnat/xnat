@@ -14,13 +14,21 @@ package org.nrg.xdat;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 
 import javax.jms.Destination;
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
-import com.google.common.base.Joiner;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -56,26 +64,31 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xdat.turbine.utils.PopulateItem;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.services.XftFieldExclusionService;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xft.ItemI;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 
 /**
  * @author Tim
@@ -102,7 +115,7 @@ public class XDAT implements Initializable,Configurable{
     private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
-    
+
     public static List<String> getWhitelistedIPs(XDATUser user) throws ConfigServiceException {
         return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
     }
@@ -123,7 +136,7 @@ public class XDAT implements Initializable,Configurable{
         	return _default;
         }
     }
-    
+
     public static boolean getBoolSiteConfigurationProperty(String property,boolean _default) {
     	try {
 			Properties properties = getSiteConfiguration();
@@ -136,11 +149,11 @@ public class XDAT implements Initializable,Configurable{
 			return _default;
 		}
     }
-    
+
 	public static boolean verificationOn() {
 		return getBoolSiteConfigurationProperty("emailVerification",false);
 	}
-	
+
 	public static boolean isAuthenticated() {
 		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
 	}
@@ -161,7 +174,7 @@ public class XDAT implements Initializable,Configurable{
 				userDetails, null);
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
-	
+
 	public static void setNewUserDetails(XDATUserDetails userDetails, RunData data, Context context) {
 		//SecurityContextHolder.getContext().setAuthentication(null);
 		String username = userDetails.getLogin();
@@ -176,7 +189,7 @@ public class XDAT implements Initializable,Configurable{
 			item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
 			item.setProperty("xdat:user_login.login_date", today);
 			item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
-	        item.setProperty("xdat:user_login.session_id", data.getSession().getId());  
+	        item.setProperty("xdat:user_login.session_id", data.getSession().getId());
 			SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI)null);
 
 			HttpSession session = data.getSession();
@@ -252,9 +265,17 @@ public class XDAT implements Initializable,Configurable{
 			initLog4j= false;
 		}
 
-		XFT.init(_configFilesLocation, allowDBAccess, initLog4j);
-		//XFT.LogCurrentTime("XDAT INIT: 1","ERROR");
-		if (allowDBAccess)
+		XFT.init(_configFilesLocation, initLog4j);
+
+		Long user_count;
+		try {
+			user_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
+		} catch (Throwable e) {
+			// xdat_user table doesn't exist
+			user_count = null;
+		}
+		
+		if (allowDBAccess && user_count!=null)
 		{
 			try {
                 for (ElementSecurity es : ElementSecurity.GetQuarantinedElements()) {
@@ -269,10 +290,8 @@ public class XDAT implements Initializable,Configurable{
 	        }
 		}
 
-		//XFT.LogCurrentTime("XDAT INIT: 2","ERROR");
 		logger.info("Initializing Display Manager");
 		DisplayManager.GetInstance();
-		//XFT.LogCurrentTime("XDAT INIT: 3","ERROR");
 	}
 
 	public static void GenerateUpdateSQL(String file) throws Exception
@@ -289,8 +308,18 @@ public class XDAT implements Initializable,Configurable{
 	    {
 	        buffer.append(item).append("\n--BR\n");
 	    }
+	    for (Object item : GenericWrapperUtils.GetExtensionTables())
+	    {
+	        buffer.append(item).append("\n--BR\n");
+	    }
+	    for (Object item : GenericWrapperUtils.GetFunctionSQL())
+	    {
+	        buffer.append(item).append("\n--BR\n");
+	    }
 		buffer.append("\n\n-- REMOVE OLD VIEWS FOR DISPLAY DOCS\n\n");
-		buffer.append("\n\nSELECT removeViews();\n--BR\n");
+
+		buffer.append("SELECT removeViews();\n--BR\n");
+
 		buffer.append("\n\n-- ADDED VIEWS FOR DISPLAY DOCS\n\n");
 	    for (Object item : DisplayManager.GetCreateViewsSQL(true))
 	    {
@@ -312,7 +341,7 @@ public class XDAT implements Initializable,Configurable{
 	    buffer.append("\n-- start transaction (if an error occurs, the database will be rolled back to its state before this file was executed)\n");
 	    buffer.append("BEGIN;\n");
 
-	    for (Object item : SQLCreateGenerator.GetSQLCreate())
+	    for (Object item : SQLCreateGenerator.GetSQLCreate(true))
 	    {
 	        buffer.append(item).append("\n--BR\n");
 	    }
@@ -327,6 +356,17 @@ public class XDAT implements Initializable,Configurable{
 
 		ViewManager.OutputFieldNames();
 		logger.info("File Created: " + file);
+	}
+
+	public static List<String> GenerateCreateSQL() throws Exception
+	{
+        List<String> sql=Lists.newArrayList();
+
+        sql.addAll(SQLCreateGenerator.GetSQLCreate(true));
+
+        sql.addAll(DisplayManager.GetCreateViewsSQL(false));
+
+        return sql;
 	}
 
 	/**
@@ -362,7 +402,7 @@ public class XDAT implements Initializable,Configurable{
 	    }
 	    return _notificationService;
 	}
-	
+
 	/**
 	 * Returns an instance of the currently supported {@link NotificationService notification service}.
 	 * @return An instance of the {@link NotificationService notification service}.
@@ -396,7 +436,7 @@ public class XDAT implements Initializable,Configurable{
         return _marshallerCacheService;
     }
 
-    
+
     public static void addScreenTemplatesFolder(String screenTemplatesFolder) {
         _screenTemplatesFolders.add(new File(screenTemplatesFolder));
     }
@@ -404,7 +444,7 @@ public class XDAT implements Initializable,Configurable{
     public static List<File> getScreenTemplateFolders(){
     	return _screenTemplatesFolders;
     }
-    
+
     /**
      * Returns the folder containing screen templates. These are installed by custom datatypes, modules, and other
      * customizations that extend or override the default application behavior.
@@ -417,7 +457,7 @@ public class XDAT implements Initializable,Configurable{
     public static void setScreenTemplatesFolder(String screenTemplatesFolder) {
         _screenTemplatesFolder = new File(screenTemplatesFolder);
     }
-    
+
     public static File getScreenTemplatesSubfolder(String subfolder) {
         if (StringUtils.isBlank(subfolder)) {
             return new File(getScreenTemplatesFolder());
@@ -440,7 +480,7 @@ public class XDAT implements Initializable,Configurable{
 
         return current;
     }
-    
+
 	/**
 	 * Returns an instance of the currently supported configuration service.
 	 * @return An instance of the {@link ConfigService} service.
@@ -466,13 +506,13 @@ public class XDAT implements Initializable,Configurable{
     public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
         return getSiteConfigurationService().getSiteConfigurationProperty(property);
     }
-    
+
     public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
         getSiteConfigurationService().setSiteConfigurationProperty(getUserDetails().getUsername(), property, value);
     }
-    
+
     public static Properties getSiteConfiguration() throws ConfigServiceException {
-    	return getSiteConfigurationService().getSiteConfiguration(); 
+    	return getSiteConfigurationService().getSiteConfiguration();
     }
 
     /**
@@ -595,9 +635,9 @@ public class XDAT implements Initializable,Configurable{
         item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
         item.setProperty("xdat:user_login.login_date",today);
         item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
-        item.setProperty("xdat:user_login.session_id", data.getSession().getId());  
+        item.setProperty("xdat:user_login.session_id", data.getSession().getId());
         SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
-        
+
 		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
         grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
         if (user.isSiteAdmin()) {

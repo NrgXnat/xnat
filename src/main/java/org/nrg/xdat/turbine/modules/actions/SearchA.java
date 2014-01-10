@@ -11,13 +11,7 @@ package org.nrg.xdat.turbine.modules.actions;
 
 import java.io.StringWriter;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -540,7 +534,7 @@ public abstract class SearchA extends SecureAction {
         value = StringUtils.ReplaceStr(value.trim(),"IS NULL","IS_NULL");
         value = StringUtils.ReplaceStr(value.trim(),"IS NOT NULL","IS_NOT_NULL");
         value = StringUtils.ReplaceStr(value,"*","%");
-        while (value.indexOf(",")!=-1)
+        while (value.indexOf(",")!=-1 && !df.getId().equalsIgnoreCase("PROJECT_INVS")) // PROJECT_INVS has a comma in its middle
         {
             if (value.indexOf(",")==0)
             {
@@ -609,7 +603,7 @@ public abstract class SearchA extends SecureAction {
                                     s = s.substring(1);
                                 }
                                 //equals
-                                DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s);
+                                DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s.substring(1));
                                 subCC.add(dc);
                             }else{
                                 if (s.startsWith("/")){
@@ -660,7 +654,7 @@ public abstract class SearchA extends SecureAction {
                                 s = s.substring(1);
                             }
                             //equals
-                            DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s);
+                            DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s.substring(1));
                             cc.add(dc);
                         }else{
                             if (temp.startsWith("/")){
@@ -691,7 +685,12 @@ public abstract class SearchA extends SecureAction {
                 if (temp.indexOf(" ")!=-1)
                 {
                     CriteriaCollection subCC = new CriteriaCollection("OR");
-                    Iterator strings= StringUtils.DelimitedStringToArrayList(temp," ").iterator();
+                    Iterator strings = null;
+                    if (df.getId().equalsIgnoreCase("PROJECT_INVS")) {  //project_invs always has a space in it and we don't want it torn apart
+                        strings = Arrays.asList(new String[]{temp}).iterator(); // this is stupid, but it needs an iterator
+                    } else {
+                        strings= StringUtils.DelimitedStringToArrayList(temp," ").iterator();
+                    }
                     while (strings.hasNext())
                     {
                         String s= (String)strings.next();
@@ -733,7 +732,7 @@ public abstract class SearchA extends SecureAction {
                                 s = s.substring(1);
                             }
                             //equals
-                            DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s);
+                            DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s.substring(1));
                             subCC.add(dc);
                         }else{
                             if (s.startsWith("/")){
@@ -784,7 +783,7 @@ public abstract class SearchA extends SecureAction {
                             s = s.substring(1);
                         }
                         //equals
-                        DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s);
+                        DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s.substring(1));
                         cc.add(dc);
                     }else{
                         if (temp.startsWith("/")){

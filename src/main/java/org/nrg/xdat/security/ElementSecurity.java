@@ -1303,7 +1303,7 @@ public class ElementSecurity extends ItemWrapper{
 	 * @return A sorted List of Strings
 	 * @throws Exception
 	 */
-	public static List<String> GetElementNames() throws Exception
+	public static ArrayList GetElementNames() throws Exception
 	{
 		ArrayList<String> al = new ArrayList<String>();
 		Collection<ElementSecurity> ess= GetElementSecurities().values();
@@ -1319,7 +1319,7 @@ public class ElementSecurity extends ItemWrapper{
 	 * @return A sorted List of Strings
 	 * @throws Exception
 	 */
-	public static List<String> GetNonXDATElementNames() throws Exception
+	public static ArrayList GetNonXDATElementNames() throws Exception
 	{
 		ArrayList<String> al = new ArrayList<String>();
 		Collection<ElementSecurity> ess= GetElementSecurities().values();

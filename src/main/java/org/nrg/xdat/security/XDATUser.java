@@ -1330,6 +1330,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
         return isOK;
     }
+    
+    public boolean canQuery(final String elementName){
+    	try {
+			Authorizer.getInstance().authorizeRead(GenericWrapperElement.GetElement(elementName), this);
+			return true;
+		} catch (Exception e) {
+			return false;
+		}
+    }
 
 
     public boolean canEdit(ItemI item) throws InvalidItemException, Exception {

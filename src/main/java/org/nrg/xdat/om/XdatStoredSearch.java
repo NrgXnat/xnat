@@ -10,7 +10,7 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 
-import org.h2.util.StringUtils;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.om.base.BaseXdatStoredSearch;

@@ -12,8 +12,15 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.navigation.DefaultReportIdentifier;
+import org.nrg.xdat.navigation.DefaultReportIdentifierI;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.XFTTable;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.utils.StringUtils;
+
 /**
  * @author Tim
  *
@@ -23,35 +30,22 @@ public class DisplayItemAction extends SecureAction {
 	public void doPerform(RunData data, Context context) throws Exception
 	{
         preserveVariables(data,context);
-//		try {
-		    try {
-                logger.debug("BEGIN DisplayItemAction");
-                SchemaElementI se = TurbineUtils.GetSchemaElementBySearch(data);
-                
-                if (se != null)
-                {
-                	String templateName = GetReportScreen(se);
-                	data.setScreenTemplate(templateName);
-                	logger.info("Routing request to '" + templateName + "'");
-                }else{
-                	logger.error("No Element Found. ");
-                	TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
-    	            data.setMessage("No Item Found.");
-    	          	data.setScreenTemplate("Error.vm");
-                }
-            } catch (Exception e) {
-                logger.error("",e);
-	            TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
-	            data.setMessage(e.getMessage());
-	          	data.setScreenTemplate("Error.vm");
+
+        try{
+            String className = XDAT.getSiteConfigurationProperty("UI.defaultReportIdentifier","org.nrg.xdat.navigation.DefaultReportIdentifier");
+            Class clazz = Class.forName(className);
+            Object o = clazz.newInstance();
+            if(o instanceof DefaultReportIdentifierI){
+                String templateName = ((DefaultReportIdentifier)o).identifyReport(data, context);
+                data.setScreenTemplate(templateName);
             }
-//        } catch (Exception e) {
-//            logger.error("",e);
-//            TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
-//            data.setMessage(e.getMessage());
-//        	data.setScreenTemplate("DefaultReport.vm");
-//        }
-	    logger.debug("END DisplayItemAction");
+        }catch (Throwable e){
+            logger.error("",e);
+            TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
+            data.setMessage(e.getMessage());
+            data.setScreenTemplate("Error.vm");
+        }
+
 	}
 	
 	public static String GetReportScreen(SchemaElementI se)
@@ -66,5 +60,6 @@ public class DisplayItemAction extends SecureAction {
 		}
 		return templateName;
 	}
+
 }
 

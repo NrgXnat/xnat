@@ -22,7 +22,6 @@ import javax.servlet.http.HttpSession;
 import nl.bitwalker.useragentutils.Browser;
 import nl.bitwalker.useragentutils.BrowserType;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.services.velocity.TurbineVelocity;
@@ -356,6 +355,22 @@ public abstract class SecureAction extends VelocitySecureAction
 	public void notifyAdmin(XDATUser authenticatedUser, RunData data, int code, String subject, String message) throws IOException{
 		AdminUtils.sendAdminEmail(authenticatedUser, subject,message);
 		data.getResponse().sendError(code);
+	}
+	
+	public void displayProjectEditError(RunData data, XFTItem item){
+		displayProjectEditError(null, data, item);
+	}
+	
+	// Displays an error to the user.
+	public void displayProjectEditError(String msg, RunData data, XFTItem item){
+		if(null != msg && !msg.isEmpty()){
+			data.addMessage(msg);
+		}
+		TurbineUtils.SetEditItem(item,data);
+		if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
+		{
+			data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
+		}
 	}
 }
 

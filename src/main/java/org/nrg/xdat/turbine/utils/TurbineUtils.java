@@ -777,10 +777,10 @@ public class TurbineUtils {
 			if (data != null)
 			{
 				logger.debug("\n\nSession Parameters");
-				final Enumeration<Object> enumer = data.getSession().getAttributeNames();
+				final Enumeration<String> enumer = data.getSession().getAttributeNames();
 				while (enumer.hasMoreElements())
 				{
-					final String key = (String)enumer.nextElement();
+					final String key = enumer.nextElement();
 					final Object o = data.getSession().getAttribute(key);
 				    logger.debug("KEY: "+ key + " VALUE: " + o.getClass());
 				}
@@ -1062,19 +1062,19 @@ public class TurbineUtils {
     
     /**
      * Note: much of this was copied from SecureScreen.  This version looks at the other templates directories (not just templates).  We may want to merge the two impls.
-     * @param subFolderAndPatttern : like topBar/admin
-     * @return
+     * @param subFolder    like topBar/admin
+     * @return The properties found in the subfolder.
      */
     public List<Properties> getTemplates(String subFolder){
     	//first see if the props have been cached.
     	List<Properties> screens=cachedVMS.get(subFolder);
-    	List<String> _defaultScreens=new ArrayList<String>();
+    	List<String> _defaultScreens=new ArrayList<>();
     	if(screens==null){
     		synchronized (this){
     			//synchronized so that two calls don't overwrite eachother.  I only synchronized this chunk in hopes that when the screens list is cached, the block woudn't occur.
 	    		//need to build the list of props.
-	    		screens=new ArrayList<Properties>();
-	        	List<String> exists=new ArrayList<String>();
+	    		screens=new ArrayList<>();
+	        	List<String> exists=new ArrayList<>();
 	    		List<File> screensFolders = XDAT.getScreenTemplateFolders();
 	    		for(File screensFolder: screensFolders){
 	    	        if (screensFolder.exists()) {
@@ -1150,18 +1150,16 @@ public class TurbineUtils {
     }
     
     private boolean containsPropByProperty(final List<Properties> props, final Properties prop, final String property){
-    	if(!prop.containsKey(property)){
-    		return false;
-    	}
-		return (CollectionUtils.find(props, new Predicate(){
-			@Override
-			public boolean evaluate(Object arg0) {
-				if(((Properties)arg0).getProperty(property)!=null){
-					return ObjectUtils.equals(prop.getProperty(property), ((Properties)arg0).getProperty(property));
-				}else{
-					return false;
-				}
-			}})!=null);
+        return prop.containsKey(property) && (CollectionUtils.find(props, new Predicate() {
+            @Override
+            public boolean evaluate(Object arg0) {
+                if (((Properties) arg0).getProperty(property) != null) {
+                    return ObjectUtils.equals(prop.getProperty(property), ((Properties) arg0).getProperty(property));
+                } else {
+                    return false;
+                }
+            }
+        }) != null);
     }
     
     private void mergePropsNoOverwrite(final List<Properties> props, final List<Properties> add, final String property){

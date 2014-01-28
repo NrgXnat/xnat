@@ -155,6 +155,12 @@
 		<dependency>
 			<groupId>turbine</groupId>
 			<artifactId>turbine</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>velocity</groupId>
+                    <artifactId>velocity</artifactId>
+                </exclusion>
+            </exclusions>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.velocity</groupId>

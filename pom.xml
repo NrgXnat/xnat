@@ -523,6 +523,12 @@
                 <artifactId>velocity</artifactId>
                 <version>${velocity.version}</version>
                 <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>velocity</groupId>
+                        <artifactId>velocity</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>ecs</groupId>

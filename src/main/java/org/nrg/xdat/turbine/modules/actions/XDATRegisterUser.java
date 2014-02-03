@@ -132,6 +132,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			                    if (AdminUtils.GetNewUserRegistrationsEmail()) {
                                     AdminUtils.sendNewUserNotification(newUser, comments, phone, lab, context);
                                 }
+                                AdminUtils.sendNewUserEmailMessage(newUser.getUsername(), newUser.getEmail(), context);
 
 			                    XFTItem item = XFTItem.NewItem("xdat:user_login",newUser);
 			                    Date today = Calendar.getInstance(TimeZone.getDefault()).getTime();

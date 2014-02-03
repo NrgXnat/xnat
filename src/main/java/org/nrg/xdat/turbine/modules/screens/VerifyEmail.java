@@ -102,6 +102,7 @@ public class VerifyEmail extends VelocitySecureScreen {
                             // If this user has never logged in, they're new, send the appropriate notification.
                             if (uv.getLastLogin() == null || disabledDueToInactivity(uv)) {
                                 AdminUtils.sendNewUserNotification(uv, context);
+                                AdminUtils.sendNewUserEmailMessage(uv.getUsername(), uv.getEmail(), context);
                             }
 						}
 						// Set the user message.

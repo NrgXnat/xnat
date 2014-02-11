@@ -274,10 +274,10 @@ public class SaveItemHelper {
 		if(i==null){
 			throw new NullPointerException();
 		}
-		
+
 		getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval,c);
 	}
-	
+
 	/**
 	 * Save resource without additional security precautions.
 	 * @param i
@@ -292,29 +292,29 @@ public class SaveItemHelper {
 		if(i==null){
 			throw new NullPointerException();
 		}
-		
+
 		String id=i.getItem().getPKValueString();
         if(StringUtils.IsEmpty(id)){
         	id=ID_PLACEHOLDER;
         }
 
         PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow((XDATUser)user,i.getXSIType(),id,PersistentWorkflowUtils.getExternalId(i),c);
-			
+
 		final EventMetaI ci=wrk.buildEvent();
-        
+
 		try {
 			getInstance().save(i, user, overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval,ci);
-			
+
 			if(id.equals(ID_PLACEHOLDER)){
 				wrk.setId(i.getItem().getPKValueString());
 			}
-			
+
 			PersistentWorkflowUtils.complete(wrk,ci,overrideSecurity);
 		} catch (Exception e) {
 			if(id.equals(ID_PLACEHOLDER)){
 				wrk.setId(i.getItem().getPKValueString());
 			}
-			
+
 			PersistentWorkflowUtils.fail(wrk,ci,overrideSecurity);
 			throw e;
 		}
@@ -401,7 +401,7 @@ public class SaveItemHelper {
 	    }else{
 	    	c=EventUtils.ADMIN_EVENT(user);
 	    }
-	    
+
 	    try {
 	    	SaveItemHelper.Save(item,user,overrideSecurity, quarantine, overrideQuarantine, allowItemRemoval,c);
 			if(wrk!=null)PersistentWorkflowUtils.complete(wrk, c);
@@ -410,41 +410,41 @@ public class SaveItemHelper {
 			throw e;
 		}
 	}
-	
-	
+
+
 	 */
 	public static boolean authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
 		if(i==null){
 			throw new NullPointerException();
 		}
-		
+
 		return getInstance().save(i, user, overrideSecurity, allowItemRemoval,c);
-			
-		
+
+
 	}
-	
+
 	public static boolean authorizedSave(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventDetails c) throws Exception {
 		if(i==null){
 			throw new NullPointerException();
 		}
-		
+
 		String id=i.getItem().getPKValueString();
         if(StringUtils.IsEmpty(id)){
         	id=ID_PLACEHOLDER;
         }
 
         PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow((XDATUser)user,i.getXSIType(),id,PersistentWorkflowUtils.getExternalId(i),c);
-			
+
 		final EventMetaI ci=wrk.buildEvent();
-        
+
 		try {
 			boolean _return=getInstance().save(i, user, overrideSecurity, allowItemRemoval,ci);
-			
+
 			if(_return){
 				if(id.equals(ID_PLACEHOLDER)){
 					wrk.setId(i.getItem().getPKValueString());
 				}
-				
+
 				PersistentWorkflowUtils.complete(wrk,ci);
 			}
 			return _return;
@@ -452,10 +452,10 @@ public class SaveItemHelper {
 			if(id.equals(ID_PLACEHOLDER)){
 				wrk.setId(i.getItem().getPKValueString());
 			}
-			
+
 			PersistentWorkflowUtils.fail(wrk,ci);
 			throw e;
 		}
-		
+
 	}
 }

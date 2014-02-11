@@ -1,15 +1,14 @@
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
 /*
- * GENERATED FILE
- * Created on Mon Feb 26 14:11:51 CST 2007
+ * org.nrg.xdat.om.XdatCriteriaSet
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7 Feb 2014 1:15 PM
  */
 package org.nrg.xdat.om;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
 
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.om.base.BaseXdatCriteriaSet;
@@ -17,7 +16,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.security.UserI;
 
-import com.google.common.collect.Lists;
+import java.util.*;
 
 /**
  * @author XDAT
@@ -52,10 +51,8 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
         int i = this.getCriteria().size();
 
         if (this.getChildSet().size()>0){
-            Iterator iter = getChildSet().iterator();
-            while(iter.hasNext()){
-                XdatCriteriaSet cs = (XdatCriteriaSet)iter.next();
-                i += cs.size();
+            for (final Object cs : getChildSet()) {
+                i += ((XdatCriteriaSet) cs).size();
             }
         }
 
@@ -78,7 +75,7 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
     	}
     	
     	//all matches should have been removed from the copies
-    	return !(copy1.size()>0 || copy2.size()>0);
+    	return copy1.size() == 0 && copy2.size() == 0;
     }
     
     public static boolean compareCriteria(final List<XdatCriteria> set1, final List<XdatCriteria> set2){
@@ -99,7 +96,7 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
     	}
     	
     	//all matches should have been removed from the copies
-    	return (copy1.size()>0 || copy2.size()>0);
+    	return copy1.size() == 0 && copy2.size() == 0;
     }
     
     public static boolean equalByFields(XdatCriteriaSet set1,XdatCriteriaSet set2){
@@ -112,14 +109,13 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
     	return false;
     }
     
-    public static boolean equalByFields(XdatCriteria crit1,XdatCriteria crit2){
-    	if(!StringUtils.equals(crit1.getComparisonType(), crit1.getComparisonType()))return false;
-    	if(!StringUtils.equals(crit1.getCustomSearch(), crit1.getCustomSearch()))return false;
-    	if(!StringUtils.equals(crit1.getSchemaElementName(), crit1.getSchemaElementName()))return false;
-    	if(!StringUtils.equals(crit1.getSchemaField(), crit1.getSchemaField()))return false;
-    	if(!StringUtils.equals(crit1.getValue(), crit1.getValue()))return false;
-    	
-    	return true;
+    public static boolean equalByFields(XdatCriteria crit1, XdatCriteria crit2){
+        return StringUtils.equals(crit1.getComparisonType(), crit2.getComparisonType()) &&
+               StringUtils.equals(crit1.getCustomSearch(), crit2.getCustomSearch()) &&
+               StringUtils.equals(crit1.getSchemaElementName(), crit2.getSchemaElementName()) &&
+               StringUtils.equals(crit1.getSchemaField(), crit2.getSchemaField()) &&
+               StringUtils.equals(crit1.getValue(), crit2.getValue());
+
     }
 
     public void populateCriteria(org.nrg.xft.search.CriteriaCollection cc) throws Exception{
@@ -146,4 +142,3 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
         }
     }
 }
-

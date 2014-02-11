@@ -30,6 +30,7 @@ public interface UserI {
 	public boolean can(ItemI item,String action) throws InvalidItemException,Exception;
 	public String canStoreItem(ItemI item,boolean descend) throws InvalidItemException,Exception;
 	public CriteriaCollection getCriteriaForBackendRead(SchemaElementI rootElement) throws Exception;
+    public boolean isGuest();
 	
 	/**
 	 * @return

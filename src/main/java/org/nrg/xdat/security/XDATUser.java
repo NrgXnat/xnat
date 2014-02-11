@@ -791,11 +791,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean can(String action) throws Exception {
-        if (this.getActions().containsKey(action)) {
-            return true;
-        } else {
+        if (isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
             return false;
         }
+        return this.getActions().containsKey(action);
     }
 
     public DisplaySearch getSearch(String elementName, String display) throws Exception {
@@ -1288,6 +1287,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean can(ItemI item, String action) throws InvalidItemException, Exception {
+        if (isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+            return false;
+        }
         boolean isOK = false;
         if (!ElementSecurity.HasDefinedElementSecurity(item.getXSIType())) {
             isOK = true;
@@ -1342,6 +1344,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
 
     public boolean canEdit(ItemI item) throws InvalidItemException, Exception {
+        if (isGuest()) {
+            return false;
+        }
         boolean isOK = false;
         if (!ElementSecurity.HasDefinedElementSecurity(item.getXSIType())) {
             isOK = true;
@@ -1363,29 +1368,28 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return isOK;
     }
 
-    public boolean canCreate(ItemI item) throws InvalidItemException, Exception {
-        boolean isOK = false;
-        if (!ElementSecurity.HasDefinedElementSecurity(item.getXSIType())) {
-            isOK = true;
-        } else if (ElementSecurity.IsInSecureElement(item.getXSIType())) {
-            isOK = true;
-        } else {
-            ElementSecurity es = ElementSecurity.GetElementSecurity(item.getXSIType());
-            if (es.isSecure(SecurityManager.CREATE)) {
-                SecurityValues sv = item.getItem().getSecurityValues();
-                if (securityCheckByXMLPath(SecurityManager.CREATE, SchemaElement.GetElement(item.getXSIType()), sv)) {
-                    isOK = true;
-                } else {
-                    isOK = false;
-                }
-            } else {
-                isOK = true;
-            }
+    public boolean canCreate(ItemI item) throws Exception {
+        if (isGuest()) {
+            return false;
         }
-        return isOK;
+        if (!ElementSecurity.HasDefinedElementSecurity(item.getXSIType())) {
+            return true;
+        }
+        if (ElementSecurity.IsInSecureElement(item.getXSIType())) {
+            return true;
+        }
+        ElementSecurity es = ElementSecurity.GetElementSecurity(item.getXSIType());
+        if (es.isSecure(SecurityManager.CREATE)) {
+            SecurityValues sv = item.getItem().getSecurityValues();
+            return securityCheckByXMLPath(SecurityManager.CREATE, SchemaElement.GetElement(item.getXSIType()), sv);
+        }
+        return true;
     }
 
     public boolean canActivate(ItemI item) throws InvalidItemException, Exception {
+        if (isGuest()) {
+            return false;
+        }
         boolean isOK = false;
         if (!ElementSecurity.HasDefinedElementSecurity(item.getXSIType())) {
             isOK = true;
@@ -1422,6 +1426,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean canEdit(String xmlPath, Object value) throws Exception {
+        if (isGuest()) {
+            return false;
+        }
         String rootElement = StringUtils.GetRootElementName(xmlPath);
         boolean isOK = false;
         if (!ElementSecurity.HasDefinedElementSecurity(rootElement)) {
@@ -1445,6 +1452,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean canAction(String xmlPath, Object value, String action) throws Exception {
+        if (isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+            return false;
+        }
         String rootElement = StringUtils.GetRootElementName(xmlPath);
         boolean isOK = false;
         if (!ElementSecurity.HasDefinedElementSecurity(rootElement)) {
@@ -1464,7 +1474,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean canDelete(ItemI item) throws InvalidItemException, Exception {
-        boolean isOK = false;
+        if (isGuest()) {
+            return false;
+        }
+        boolean isOK;
         if (!ElementSecurity.HasDefinedElementSecurity(item.getXSIType())) {
             isOK = true;
         } else if (ElementSecurity.IsInSecureElement(item.getXSIType())) {
@@ -2179,13 +2192,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     //can("xnat:subjectData","xnat:subjectData/project",SecurityManager.READ)
     public boolean can(String elementName, String xmlPath, String action) {
-        // consider caching, but this should not hit the database on every call anyways.
-        List<Object> values = getAllowedValues(elementName, xmlPath, action);
-        if (values != null && values.size() > 0) {
-            return true;
-        } else {
+        if (isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
             return false;
         }
+        // consider caching, but this should not hit the database on every call anyways.
+        List<Object> values = getAllowedValues(elementName, xmlPath, action);
+        return values != null && values.size() > 0;
     }
 
     public List<Object> getAllowedValues(String elementName, String xmlPath, String action) {
@@ -2727,6 +2739,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public Date getLastLogin() throws SQLException, Exception{
     	String query = "SELECT login_date FROM xdat_user_login WHERE user_xdat_user_id=" + this.getXdatUserId() + " ORDER BY login_date DESC LIMIT 1";
         return (Date) PoolDBUtils.ReturnStatisticQuery(query, "login_date", this.getDBName(), this.getUsername());
+    }
+
+    public boolean isGuest() {
+        final String login = getLogin();
+        return StringUtils.IsEmpty(login) || login.equalsIgnoreCase("guest");
     }
 }
 

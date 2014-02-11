@@ -87,7 +87,11 @@ public class Authorizer implements AuthorizerI{
 	public void authorize(String action,final GenericWrapperElement e, final UserI user) throws Exception{
 		if (requiresSecurity(action,e,user))
         {
-			if(protectedNamespace.get(action).contains(e.getType().getForeignPrefix())){
+            if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+                throwException(new InvalidPermissionException("Guest users can not perform the requested operation " + action + " on the element type " + e.getXSIType()));
+            }
+
+            if(protectedNamespace.get(action).contains(e.getType().getForeignPrefix())){
 	    		AdminUtils.sendAdminEmail(user,"Unauthorized Admin Data Access Attempt", "Unauthorized access of '" + e.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
 	    		throwException(new InvalidPermissionException("Only site administrators can read core documents."));
 	        }else if(!ElementSecurity.IsSecureElement(e.getXSIType())){

@@ -162,7 +162,7 @@ public abstract class SecureAction extends VelocitySecureAction
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(HttpServletRequest request, String clientToken, boolean strict) throws Exception {
     	
-    	boolean csrfEmailEnabled = XDAT.getBoolSiteConfigurationProperty("enableCsrfEmail",true);
+    	boolean csrfEmailEnabled = XDAT.getBoolSiteConfigurationProperty("enableCsrfEmail", false);
     	
     	if(!XFT.GetEnableCsrfToken()){
     		return true;

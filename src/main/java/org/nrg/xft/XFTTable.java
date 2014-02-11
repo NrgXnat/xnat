@@ -1152,37 +1152,38 @@ public class XFTTable implements XFTTableI {
 		writer.write("<tbody id=\"dataRows\">\n");
 	
 		int rowC=0;
-		for(Object[] row: rows)
-		{
-			writer.write("<tr class=\"x_rs_tr_data");
-			if(rowC++% 2 != 0)writer.write(" even");
-			else writer.write(" odd");
-			writer.write("\">");
-			for (int i=0;i<this.numCols;i++)
-			{
-				if (i!=0)
-				{
-				}else
-				{
-					writer.write("\n");
-				}
-			
-				String value=StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," ");
-				
-				if(cp !=null &&cp.containsKey(this.getColumns()[i]) && cp.get(this.getColumns()[i]).containsKey("serverRoot"))
-				{
-					value= "<a href='" + cp.get(this.getColumns()[i]).get("serverRoot") + value + "'>" + value + "</a>";
-				}
-				if (insertTDTags)
-				{
-					writer.write("<td>" + value + "</td>");
-				}else
-				{
-					writer.write(value);
-				}
-			}
-			writer.write("</tr>");
-		}
+		if (rows != null) {
+            for(Object[] row: rows) {
+                writer.write("<tr class=\"x_rs_tr_data");
+                if(rowC++% 2 != 0)writer.write(" even");
+                else writer.write(" odd");
+                writer.write("\">");
+                for (int i=0;i<this.numCols;i++)
+                {
+                    if (i!=0)
+                    {
+                    }else
+                    {
+                        writer.write("\n");
+                    }
+
+                    String value=StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," ");
+
+                    if(cp !=null &&cp.containsKey(this.getColumns()[i]) && cp.get(this.getColumns()[i]).containsKey("serverRoot"))
+                    {
+                        value= "<a href='" + cp.get(this.getColumns()[i]).get("serverRoot") + value + "'>" + value + "</a>";
+                    }
+                    if (insertTDTags)
+                    {
+                        writer.write("<td>" + value + "</td>");
+                    }else
+                    {
+                        writer.write(value);
+                    }
+                }
+                writer.write("</tr>");
+            }
+        }
 		writer.write("</tbody>\n</table>");
 		writer.flush();
 	}

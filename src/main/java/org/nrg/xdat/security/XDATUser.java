@@ -1154,15 +1154,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
 
     private ItemI secureChild(ItemI item) throws Exception {
-        ArrayList invalidItems = new ArrayList();
+        List<ItemI> invalidItems = new ArrayList<ItemI>();
 
-        Iterator iter = item.getChildItems().iterator();
-        while (iter.hasNext()) {
-            ItemI child = (ItemI) iter.next();
+        for (final Object o : item.getChildItems()) {
+            ItemI child = (ItemI) o;
             boolean b = canRead(child);
 
             if (b) {
-                if (!canActivate(child)) {
+                if (child.getProperty("meta") != null && !canActivate(child)) {
                     if (!child.isActive()) {
                         b = false;
                     }
@@ -1177,12 +1176,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
 
         if (invalidItems.size() > 0) {
-            Iterator invalids = invalidItems.iterator();
-            while (invalids.hasNext()) {
-                XFTItem invalid = (XFTItem) invalids.next();
-                XFTItem parent = (XFTItem) item;
-                parent.removeItem(invalid);
-                item = parent;
+            for (final ItemI invalid : invalidItems) {
+                ((XFTItem) item).removeItem(invalid);
             }
         }
         return item;
@@ -1233,7 +1228,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
             //check quarantine
             if (isOK) {
-                if (!canActivate(item)) {
+                // If this item has a metadata element (which stores active status) and the user can't activate this...
+                if (item.getProperty("meta") != null && !canActivate(item)) {
+                    // Then check to see if it's not active. You can't access inactive things.
                     if (!item.isActive()) {
                         isOK = false;
                         throw new IllegalAccessException("Access Denied: This data is in quarantine.");

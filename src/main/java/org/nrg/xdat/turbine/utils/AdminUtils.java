@@ -255,6 +255,7 @@ public class AdminUtils {
             AdminUtils.sendNewUserRequestNotification(username, firstName, lastName, email, comments, phone, organization, context);
         } else {
             AdminUtils.sendNewUserCreationNotification(username, firstName, lastName, email, comments, phone, organization, context);
+            AdminUtils.sendNewUserEmailMessage(username, email, context);
         }
     }
 

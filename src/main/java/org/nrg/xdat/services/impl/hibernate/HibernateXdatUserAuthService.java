@@ -281,9 +281,6 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         PopulateItem populater = new PopulateItem(newUserProperties, null, XFT.PREFIX + ":user", true);
         ItemI item = populater.getItem();
 
-        item.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name", "SiteUser");
-        item.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name", "DataManager");
-
         return new XDATUser(item);
     }
 

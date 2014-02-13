@@ -179,32 +179,6 @@ public class ModifyUserPrivileges extends SecureAction {
 			return authenticatedUser;
 		}
 		
-		//clear out any roles that were removed
-		final ItemCollection items = ItemSearch.GetItems("xdat:user.login",login,TurbineUtils.getUser(data),false);
-	    if (items.size()>0)
-	    {
-	    	final XFTItem item = (XFTItem)items.getFirst();
-	    	final ArrayList<XFTItem> newItems = found.getChildItems("xdat:user.assigned_roles.assigned_role");
-	    	final ArrayList<XFTItem> oldItems = item.getChildItems("xdat:user.assigned_roles.assigned_role");
-	        for (XFTItem oldChild: oldItems)
-            {
-                boolean foundChild = false;
-                for (XFTItem newChild:newItems)
-                {
-                    if (XFTItem.CompareItemsByPKs(newChild,oldChild))
-                    {
-                        foundChild = true;
-                        break;
-                    }
-                }
-                
-                if (!foundChild)
-                {
-                    item.removeChildFromDB("xdat:user.assigned_roles.assigned_role",oldChild,TurbineUtils.getUser(data),ci);
-                }
-            }
-	    }
-		
 		tempUser = new XDATUser(found.getCurrentDBVersion());
 
 		//logger.error("3\n"+tempUser.getItem().toString());

@@ -75,18 +75,6 @@ public class ModifyUserGroups extends SecureAction {
         EventMetaI ci=wrk.buildEvent();
         
         try {
-            if (oldUser.checkRole("Administrator")){
-                if (!newUser.checkRole("Administrator")){
-                    Iterator iter= oldUser.getAssignedRoles_assignedRole().iterator();
-                    while(iter.hasNext()){
-                        XdatRoleType role = (XdatRoleType)iter.next();
-                        if (role.getStringProperty("role_name").equals("Administrator")){
-                            //DBAction.DeleteItem(role.getItem(), TurbineUtils.getUser(data));
-                        	SaveItemHelper.unauthorizedRemoveChild(oldUser.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), TurbineUtils.getUser(data),ci);
-                        }
-                    }
-                }
-            }
             
             ArrayList<XdatUserGroupid> newGroups = newUser.getGroups_groupid();
             ArrayList<XdatUserGroupid> oldGroups = oldUser.getGroups_groupid();

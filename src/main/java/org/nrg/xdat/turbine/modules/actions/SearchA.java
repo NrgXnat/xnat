@@ -1105,6 +1105,9 @@ public abstract class SearchA extends SecureAction {
                 cc.add(subCC);
             }else{
                 String s= integer;
+                
+                s=StringEscapeUtils.unescapeXml(s);
+                
                 if (s.indexOf("-")==-1)
                 {
                     if (s.startsWith(">="))

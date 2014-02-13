@@ -235,32 +235,6 @@ public class SchemaElement implements SchemaElementI {
 		
 		return df;
 	}
-	
-	public DisplayField getSQLQueryField(String id, String header, boolean visible, boolean searchable, String dataType, String sqlColName, String subQuery, String schemaField, String schemaQueryField){
-		DisplayField df=this.getDisplay().getDisplayField(id);
-		if(df==null){
-			df = new SQLQueryField(this.getDisplay());
-			df.setId(id);
-			df.setHeader(header);
-			df.setVisible(visible);
-			df.setSearchable(searchable);
-			df.setDataType(dataType);
-			df.getContent().put("sql",sqlColName);
-			((SQLQueryField)df).setSubQuery(subQuery);
-			((SQLQueryField)df).addMappingColumn(schemaField, schemaQueryField);
-			
-			try {
-				this.getDisplay().addDisplayFieldWException(df);
-				return df;
-			} catch (DisplayFieldCollection.DuplicateDisplayFieldException e) {
-		        logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
-				logger.error("",e);
-			}
-		}
-		
-		return df;
-	}
-
 
 	public DisplayField createDisplayFieldForXMLPath(String s) throws XFTInitException,ElementNotFoundException,Exception
 	{

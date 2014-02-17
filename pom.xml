@@ -77,7 +77,7 @@
         <junit.version>4.8.2</junit.version>
         <log4j.version>1.2.16</log4j.version>
         <mockito.version>1.8.5</mockito.version>
-        <pipeline.version>1.6.1</pipeline.version>
+        <pipeline.version>1.6.3</pipeline.version>
         <postgresql.version>9.0-801.jdbc4</postgresql.version>
         <reflections.version>0.9.9-RC1</reflections.version>
         <restlet.version>1.1.10</restlet.version>
@@ -192,6 +192,11 @@
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>xnat_tools</artifactId>
                 <version>${pipeline.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>pipelineXNAT</artifactId>
+                <version>1.0</version>
             </dependency>
 
             <!-- Pipeline dependency definitions -->

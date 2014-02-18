@@ -201,4 +201,19 @@ public class XdatCriteria extends BaseXdatCriteria {
         
         return null;
 	}
+
+    public boolean equals(Object anObject) {
+        if (this == anObject) {
+            return true;
+        }
+        if (anObject instanceof XdatCriteria) {
+            XdatCriteria other = (XdatCriteria) anObject;
+            return org.apache.commons.lang.StringUtils.equals(this.getComparisonType(), other.getComparisonType()) &&
+                    org.apache.commons.lang.StringUtils.equals(this.getCustomSearch(), other.getCustomSearch()) &&
+                    org.apache.commons.lang.StringUtils.equals(this.getSchemaElementName(), other.getSchemaElementName()) &&
+                    org.apache.commons.lang.StringUtils.equals(this.getSchemaField(), other.getSchemaField()) &&
+                    org.apache.commons.lang.StringUtils.equals(this.getValue(), other.getValue());
+        }
+        return false;
+    }
 }

@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.om;
 
+import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.om.base.BaseXdatCriteriaSet;
 import org.nrg.xft.ItemI;
@@ -60,62 +61,11 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
     }
     
     public static boolean compareCriteriaSets(List<XdatCriteriaSet> set1, List<XdatCriteriaSet> set2){
-    	final List<XdatCriteriaSet> copy1=new ArrayList<XdatCriteriaSet>(set1);
-    	final List<XdatCriteriaSet> copy2=new ArrayList<XdatCriteriaSet>(set2);
-    	
-    	for(int i=0;i<set1.size();i++){
-    		XdatCriteriaSet set=copy1.get(i);
-    		for(XdatCriteriaSet second: copy2){
-    			if(equalByFields(set,second)){
-    				copy2.remove(second);
-    	    		copy1.remove(i);
-    				break;
-    			}
-    		}
-    	}
-    	
-    	//all matches should have been removed from the copies
-    	return copy1.size() == 0 && copy2.size() == 0;
+        return (CollectionUtils.subtract(set1, set2).size() == 0 && CollectionUtils.subtract(set2, set1).size() == 0);
     }
     
     public static boolean compareCriteria(final List<XdatCriteria> set1, final List<XdatCriteria> set2){
-    	final List<XdatCriteria> copy1=new ArrayList<XdatCriteria>(set1);
-    	final List<XdatCriteria> copy2=new ArrayList<XdatCriteria>(set2);
-    	
-    	Collections.reverse(copy1);
-    	
-    	for(int i=0;i<set1.size();i++){
-    		XdatCriteria crit1=copy1.get(i);
-    		for(XdatCriteria second: copy2){
-    			if(equalByFields(crit1,second)){
-    				copy2.remove(second);
-    	    		copy1.remove(i);
-    				break;
-    			}
-    		}
-    	}
-    	
-    	//all matches should have been removed from the copies
-    	return copy1.size() == 0 && copy2.size() == 0;
-    }
-    
-    public static boolean equalByFields(XdatCriteriaSet set1,XdatCriteriaSet set2){
-    	if(StringUtils.equals(set1.getMethod(),set2.getMethod())){
-    		if(compareCriteriaSets(set1.getChildSet(),set2.getChildSet()) && compareCriteria(set1.getCriteria(),set2.getCriteria())){
-    			return true;
-    		}
-    	}
-    	
-    	return false;
-    }
-    
-    public static boolean equalByFields(XdatCriteria crit1, XdatCriteria crit2){
-        return StringUtils.equals(crit1.getComparisonType(), crit2.getComparisonType()) &&
-               StringUtils.equals(crit1.getCustomSearch(), crit2.getCustomSearch()) &&
-               StringUtils.equals(crit1.getSchemaElementName(), crit2.getSchemaElementName()) &&
-               StringUtils.equals(crit1.getSchemaField(), crit2.getSchemaField()) &&
-               StringUtils.equals(crit1.getValue(), crit2.getValue());
-
+    	return (CollectionUtils.subtract(set1, set2).size() == 0 && CollectionUtils.subtract(set2, set1).size() == 0);
     }
 
     public void populateCriteria(org.nrg.xft.search.CriteriaCollection cc) throws Exception{
@@ -140,5 +90,20 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
                 this.setCriteria(criteria);
             }
         }
+    }
+
+    public boolean equals(Object anObject) {
+        if (this == anObject) {
+            return true;
+        }
+        if (anObject instanceof XdatCriteriaSet) {
+            XdatCriteriaSet other = (XdatCriteriaSet) anObject;
+            if(StringUtils.equals(this.getMethod(),other.getMethod())){
+                if(compareCriteriaSets(this.getChildSet(),other.getChildSet()) && compareCriteria(this.getCriteria(),other.getCriteria())){
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 }

@@ -26,12 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
-/**
- * Implements the {@link SubscriptionService} interface to provide default {@link Subscription subscription}
- * management functionality.
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 @Service
 public class HibernateSubscriptionService extends AbstractHibernateEntityService<Subscription> implements SubscriptionService {
 

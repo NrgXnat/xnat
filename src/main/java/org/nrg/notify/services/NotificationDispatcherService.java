@@ -14,9 +14,6 @@ import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.exceptions.NrgNotificationException;
 
-/**
- * The Interface NotificationDispatcherService.
- */
 public interface NotificationDispatcherService {
     public static String SERVICE_NAME = "NotificationDispatcherService";
 

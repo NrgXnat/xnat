@@ -26,10 +26,6 @@ import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.ChannelRendererProcessingException;
 import org.springframework.beans.factory.annotation.Autowired;
 
-/**
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public class NrgMailChannelRenderer implements ChannelRenderer {
     public static final String DEFAULT_FORMAT = "text/html";
 

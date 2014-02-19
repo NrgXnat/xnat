@@ -1,4 +1,14 @@
 <?xml version="1.0" encoding="ISO-8859-1"?>
+<!--
+  ~ D:/Development/XNAT/1.6/nrg_notify/src/site/site.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 7/1/13 5:31 PM
+  -->
 <project name="Spring Batch: ${project.name}">
 
 	<bannerLeft>

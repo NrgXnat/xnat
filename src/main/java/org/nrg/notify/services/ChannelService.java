@@ -13,11 +13,6 @@ import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.notify.entities.Channel;
 
 
-/**
- * Provides the means for managing the various notification publication channels.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public interface ChannelService extends BaseHibernateService<Channel> {
     public static String SERVICE_NAME = "ChannelService";
 

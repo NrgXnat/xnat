@@ -25,15 +25,6 @@ import org.hibernate.annotations.LazyCollectionOption;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.notify.api.SubscriberType;
 
-/**
- * The Class Subscription.
- * 
- * Note: The use of the {@link LazyCollection} annotation in place of the {@link FetchType}
- * attribute on the relational annotations is due to a restriction in the JPA annotations on
- * having more than one eager fetch in a class. The Hibernate-specific annotation allows you
- * to specify more than one eager fetch. More information is available at 
- * <a href="http://stackoverflow.com/questions/4334970/hibernate-cannot-simultaneously-fetch-multiple-bags">Stack Overflow</a>. 
- */
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Subscription extends AbstractHibernateEntity {

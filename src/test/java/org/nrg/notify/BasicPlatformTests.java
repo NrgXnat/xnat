@@ -33,13 +33,6 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
 
-/**
- * Tests various platform attributes to ensure that they're working, e.g. connection
- * to the data source.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
- */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 public class BasicPlatformTests {

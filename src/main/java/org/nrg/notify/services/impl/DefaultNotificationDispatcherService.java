@@ -28,12 +28,6 @@ import org.nrg.notify.services.NotificationDispatcherService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * The Class DefaultNotificationDispatcherServiceImpl.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
- */
 @Service
 public class DefaultNotificationDispatcherService implements NotificationDispatcherService {
 

@@ -19,13 +19,6 @@ import org.nrg.notify.entities.Category;
 import org.springframework.stereotype.Repository;
 
 
-/**
- * Implements the DAO class for the {@link Category} entity type.
- * 
- * @see AbstractHibernateDAO
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
- */
 @Repository
 public class CategoryDAO extends AbstractHibernateDAO<Category> {
 

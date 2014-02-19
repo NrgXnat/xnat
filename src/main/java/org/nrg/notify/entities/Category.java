@@ -20,12 +20,6 @@ import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
 
-/**
- * The Category supports notification categories. These are basically a {@link CategoryScope scope} (e.g.
- * site, project, etc.) and an event, which is just a string that identifies an event. The unique constraint
- * for this class allows multiple disabled instances of a particular category, but only a single enabled
- * instance of that category. 
- */
 @Auditable
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"scope", "event", "enabled", "disabled"}))

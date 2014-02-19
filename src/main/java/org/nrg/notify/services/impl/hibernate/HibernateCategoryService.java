@@ -23,12 +23,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
-/**
- * Implements the {@link CategoryService} interface to provide default {@link Category category}
- * management functionality.
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 @Service
 public class HibernateCategoryService extends AbstractHibernateEntityService<Category> implements CategoryService {
 

@@ -21,13 +21,6 @@ import org.nrg.notify.services.DefinitionService;
 import org.springframework.stereotype.Repository;
 
 
-/**
- * Implements the DAO class for the {@link Definition} entity type.
- * 
- * @see AbstractHibernateDAO
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
- */
 @Repository
 public class DefinitionDAO extends AbstractHibernateDAO<Definition> {
 

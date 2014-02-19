@@ -15,10 +15,6 @@ import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.entities.Category;
 
 
-/**
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public interface CategoryService extends BaseHibernateService<Category> {
     public static String SERVICE_NAME = "CategoryService";
 

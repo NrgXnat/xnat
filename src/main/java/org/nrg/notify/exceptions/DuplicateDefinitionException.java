@@ -12,10 +12,6 @@ package org.nrg.notify.exceptions;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.notify.entities.Definition;
 
-/**
- * Thrown when there's an attempt to create a duplicate {@link Definition definition} object.
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public class DuplicateDefinitionException extends NrgNotificationException {
 
     /**

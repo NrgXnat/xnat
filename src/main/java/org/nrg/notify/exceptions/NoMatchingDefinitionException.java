@@ -12,12 +12,6 @@ package org.nrg.notify.exceptions;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.notify.entities.Definition;
 
-/**
- * Thrown when there's an attempt to retrieve a non-existent {@link Definition definition} object.
- * This is only thrown in particular circumstances when it's necessary to distinguish the cause
- * of a failure to create, e.g., a notification.
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public class NoMatchingDefinitionException extends NrgNotificationException {
 
     /**

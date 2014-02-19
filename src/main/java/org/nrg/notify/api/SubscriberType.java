@@ -9,10 +9,6 @@
  */
 package org.nrg.notify.api;
 
-/**
- * This indicates the type of a subscriber.
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public enum SubscriberType {
     User;
     

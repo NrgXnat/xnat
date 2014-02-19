@@ -16,11 +16,6 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-/**
- * The channel class represents a notification channel that can be used to inform a subscriber that a
- * particular event occurred. This allows notifications to be created generically and then displayed
- * through a variety of means, such as email, IM, REST API calls, and so on.
- */
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Channel extends AbstractHibernateEntity {

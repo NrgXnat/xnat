@@ -26,12 +26,6 @@ import org.nrg.notify.exceptions.DuplicateDefinitionException;
 import org.nrg.notify.exceptions.NoMatchingCategoryException;
 import org.nrg.notify.exceptions.NoMatchingDefinitionException;
 
-/**
- * The NotificationService interface. The notification service is the primary service for the notification system.
- * As such it has references to all of the other services required to create and maintain notifications and their
- * classifications, as well as dispatch notifications to subscribers through the configured channels.
-  * @author Rick Herrick <rick.herrick@wustl.edu>
-*/
 public interface NotificationService extends BaseHibernateService<Notification> {
     public static String SERVICE_NAME = "NotificationService";
 

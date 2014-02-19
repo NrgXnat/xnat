@@ -15,12 +15,6 @@ import javax.inject.Provider;
 
 import org.nrg.notify.renderers.ChannelRenderer;
 
-/**
- * The provider for injecting the channel renderer registry. This provider is necessary to inject
- * the registry, since the registry is {@link Map}-based and because of type erasure maps can not
- * be injected at run time.
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public class ChannelRendererProvider implements Provider<Map<String, ChannelRenderer>> {
 
     /**

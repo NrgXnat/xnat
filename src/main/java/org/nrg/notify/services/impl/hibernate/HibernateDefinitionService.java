@@ -26,12 +26,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
-/**
- * Implements the {@link DefinitionService} interface to provide default {@link Definition Definition}
- * management functionality.
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 @Service
 public class HibernateDefinitionService extends AbstractHibernateEntityService<Definition> implements DefinitionService {
 

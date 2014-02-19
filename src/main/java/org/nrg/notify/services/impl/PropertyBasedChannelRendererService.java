@@ -19,10 +19,6 @@ import org.nrg.notify.renderers.ChannelRenderer;
 import org.nrg.notify.services.ChannelRendererService;
 import org.springframework.stereotype.Service;
 
-/**
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 @Service
 public class PropertyBasedChannelRendererService implements ChannelRendererService {
 

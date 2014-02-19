@@ -20,11 +20,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 
-/**
- * 
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 @Service
 public class HibernateChannelService extends AbstractHibernateEntityService<Channel> implements ChannelService {
 

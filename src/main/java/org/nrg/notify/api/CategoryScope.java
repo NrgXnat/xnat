@@ -9,11 +9,6 @@
  */
 package org.nrg.notify.api;
 
-/**
- * 
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public enum CategoryScope {
     Site,
     Project,

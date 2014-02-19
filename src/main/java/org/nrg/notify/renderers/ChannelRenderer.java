@@ -13,9 +13,6 @@ import org.nrg.notify.entities.Notification;
 import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.ChannelRendererProcessingException;
 
-/**
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public interface ChannelRenderer {
     abstract public void render(Subscription subscription, Notification notification) throws ChannelRendererProcessingException;
     abstract public void render(Subscription subscription, Notification notification, String format) throws ChannelRendererProcessingException;

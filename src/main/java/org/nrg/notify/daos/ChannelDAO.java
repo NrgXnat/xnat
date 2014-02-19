@@ -18,13 +18,6 @@ import org.nrg.notify.entities.Channel;
 import org.springframework.stereotype.Repository;
 
 
-/**
- * Implements the DAO class for the {@link Channel} entity type.
- * 
- * @see AbstractHibernateDAO
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
- */
 @Repository
 public class ChannelDAO extends AbstractHibernateDAO<Channel> {
 

@@ -12,10 +12,6 @@ package org.nrg.notify.exceptions;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 
-/**
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 abstract public class NrgNotificationException extends NrgServiceException {
 
     /**

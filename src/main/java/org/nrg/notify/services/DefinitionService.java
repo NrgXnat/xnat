@@ -17,11 +17,6 @@ import org.nrg.notify.entities.Definition;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
 
 
-/**
- * 
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public interface DefinitionService extends BaseHibernateService<Definition>  {
     public static String SERVICE_NAME = "DefinitionService";
 

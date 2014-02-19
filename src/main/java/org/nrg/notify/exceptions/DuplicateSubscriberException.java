@@ -11,10 +11,6 @@ package org.nrg.notify.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;
 
-/**
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public class DuplicateSubscriberException extends NrgNotificationException {
 
     /**

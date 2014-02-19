@@ -18,13 +18,6 @@ import org.nrg.notify.entities.Subscriber;
 import org.springframework.stereotype.Repository;
 
 
-/**
- * Implements the DAO class for the {@link Subscriber} entity type.
- * 
- * @see AbstractHibernateDAO
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
- */
 @Repository
 public class SubscriberDAO extends AbstractHibernateDAO<Subscriber> {
 

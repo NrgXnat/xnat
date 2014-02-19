@@ -14,10 +14,6 @@ import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 
 
-/**
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public interface SubscriberService extends BaseHibernateService<Subscriber> {
     public static String SERVICE_NAME = "SubscriberService";
     

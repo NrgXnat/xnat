@@ -46,17 +46,6 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Many of these tests are annotated with {@link Transactional} to support session persistence through the execution
- * of the test. In the Spring Web context, this is usually handled with the OpenSessionInView intercepter configuration.
- * Basically the issue is that a Hibernate session is instantiated at the boundary of the Transactional annotation. Any
- * objects that have lazily-fetched data members that aren't accessed within the transaction context will become
- * unresolvable later once the session has expired. Maintaining the Transactional layer at the test method level allows
- * these data members to be properly resolved without having to resort to eager fetches or collection initialization
- * (e.g. calling {@link Hibernate#initialize(Object)}).
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 public class NotificationServiceTests {

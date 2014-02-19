@@ -45,11 +45,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-/**
- * Provides the Hibernate implementation for the notification service.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 @Service
 public class HibernateNotificationService extends AbstractHibernateEntityService<Notification> implements NotificationService {
 

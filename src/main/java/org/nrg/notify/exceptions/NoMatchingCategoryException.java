@@ -12,12 +12,6 @@ package org.nrg.notify.exceptions;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.notify.entities.Category;
 
-/**
- * Thrown when there's an attempt to retrieve a non-existent {@link Category category} object.
- * This is only thrown in particular circumstances when it's necessary to distinguish the cause
- * of a failure to create, e.g., a definition or notification.
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public class NoMatchingCategoryException extends NrgNotificationException {
 
     /**

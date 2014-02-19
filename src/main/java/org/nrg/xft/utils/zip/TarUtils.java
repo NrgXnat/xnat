@@ -60,47 +60,44 @@ public class TarUtils implements ZipI {
     public ArrayList extract(InputStream is, String dir) throws IOException{
     	return extract(is,dir,true,null);
     }
-    
-    public ArrayList extract(InputStream is, String dir,boolean overwrite,EventMetaI ci) throws IOException{
-        ArrayList extractedFiles = new ArrayList();
-        if (_compressionMethod==ZipOutputStream.DEFLATED)
-        {
+
+    public ArrayList extract(InputStream is, String dir, boolean overwrite, EventMetaI ci) throws IOException {
+        ArrayList<File> extractedFiles = new ArrayList<File>();
+        if (_compressionMethod == ZipOutputStream.DEFLATED) {
             //f = unGzip(f,dir,deleteZip);
             is = new GZIPInputStream(is);
         }
-    
+
         File dest = new File(dir);
         dest.mkdirs();
-        
+
         TarInputStream tis = new TarInputStream(is);
-        
+
         TarEntry te = tis.getNextEntry();
-        
-        while (te !=null){
-            File destPath = new File(dest,te.getName());
-            if (te.isDirectory())
-            {
+
+        while (te != null) {
+            File destPath = new File(dest, te.getName());
+            if (te.isDirectory()) {
                 destPath.mkdirs();
-            }else
-            {
-                if(destPath.exists() && !overwrite){
+            } else {
+                if (destPath.exists() && !overwrite) {
                     _duplicates.add(te.getName());
-                }else if(destPath.exists()){
-                	FileUtils.MoveToHistory(destPath,EventUtils.getTimestamp(ci));
+                } else {
+                    if (destPath.exists()) {
+                        FileUtils.MoveToHistory(destPath, EventUtils.getTimestamp(ci));
+                    }
+                    destPath.getParentFile().mkdirs();
+                    //System.out.println("Writing: " + te.getName());
+                    FileOutputStream fout = new FileOutputStream(destPath);
+
+                    tis.copyEntryContents(fout);
+
+                    fout.close();
+                    extractedFiles.add(destPath);
                 }
-                
-            	destPath.getParentFile().mkdirs();
-                //System.out.println("Writing: " + te.getName());
-                FileOutputStream fout = new FileOutputStream(destPath); 
-
-                tis.copyEntryContents(fout); 
-
-                fout.close(); 
-            } 
-            extractedFiles.add(destPath);
-            te = tis.getNextEntry(); 
+            }
+            te = tis.getNextEntry();
         }
-    
         tis.close();
         return extractedFiles;
     }

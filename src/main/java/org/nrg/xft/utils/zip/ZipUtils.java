@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Aug 17, 2006
+ * org.nrg.xft.utils.zip.ZipUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/18/14 7:53 PM
  */
+
+
 package org.nrg.xft.utils.zip;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;

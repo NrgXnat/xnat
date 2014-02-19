@@ -22,11 +22,6 @@ import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 
-/**
- * HibernateUserRegistrationDataService class.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 @Service
 public class HibernateUserRegistrationDataService extends AbstractHibernateEntityService<UserRegistrationData> implements UserRegistrationDataService {
 

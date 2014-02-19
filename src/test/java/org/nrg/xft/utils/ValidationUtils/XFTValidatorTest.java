@@ -12,10 +12,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 
 import com.google.common.collect.Lists;
 
-/**
- * @author Kevin A. Archie <karchie@wustl.edu>
- *
- */
 public class XFTValidatorTest {
 
     /**

@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on May 9, 2005
+ * org.nrg.xdat.search.QueryOrganizer
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 9/10/13 2:42 PM
  */
+
+
 package org.nrg.xdat.search;
 
 import java.util.ArrayList;
@@ -38,15 +45,6 @@ import org.nrg.xft.search.QueryOrganizerI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
-/**
- * @author Tim
- *
- * FindBugs says this class should be renamed to something other than QueryOrganizer.  I agree.  However,
- * this code is used in alot of places and is due for a big refactoring.  I vote for putting off this fix
- * until the search is refactored.  Unable to suppress warnings to support 1.5. 
- * 
- * 
- */
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements QueryOrganizerI{
 	static org.apache.log4j.Logger logger = Logger.getLogger(QueryOrganizer.class);

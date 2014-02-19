@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.utils.FileUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 
 package org.nrg.xft.utils;
 
@@ -39,12 +46,6 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 
 
-/**
- *
- * You should add additional methods to this class to meet the
- * application requirements.  This class will only be generated as
- * long as it does not already exist in the output directory.
- */
 public  class FileUtils
 {
 	static org.apache.log4j.Logger logger = Logger.getLogger(FileUtils.class);

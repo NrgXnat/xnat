@@ -1,24 +1,21 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Oct 11, 2004
+ * org.nrg.xft.schema.XFTDataModel
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 import java.io.File;
 
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.utils.XMLUtils;
-/**
- * This class specifies data about a particular XFTSchema and contains a reference to the XFTSchema.
- * 
- * <BR><BR>Specifies the location of the Schema file, its selected DB, and populates the XFTSchema.
- * 
- * @author Tim
- */
 public class XFTDataModel {
 	public String db = "";
 	public String fileLocation = "";

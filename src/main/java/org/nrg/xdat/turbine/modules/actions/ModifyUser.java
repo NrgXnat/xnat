@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT ï¿½ Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 25, 2005
+ * org.nrg.xdat.turbine.modules.actions.ModifyUser
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/3/14 9:54 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 import java.io.IOException;
 import java.util.Hashtable;

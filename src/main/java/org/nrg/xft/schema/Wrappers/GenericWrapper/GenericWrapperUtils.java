@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jul 20, 2004
+ * org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 
 import org.apache.log4j.Logger;
@@ -28,12 +32,6 @@ import org.nrg.xft.search.SearchCriteria;
 
 import java.util.*;
 
-/**
- * Class used to perform tasks which manipulate and format the data in
- * GenericWrapperElements and GenericWrapperFields.
- * 
- * @author Tim
- */
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class GenericWrapperUtils {
     public static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperUtils.class);

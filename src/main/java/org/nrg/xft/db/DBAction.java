@@ -1,12 +1,12 @@
 /*
  * org.nrg.xft.db.DBAction
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2014, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  *
- * Last modified 9/16/13 2:28 PM
+ * Last modified 10/3/13 9:23 AM
  */
 package org.nrg.xft.db;
 

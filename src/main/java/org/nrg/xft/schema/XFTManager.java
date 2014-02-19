@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.schema.XFTManager
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 8/28/13 3:19 PM
  */
-/*
- * Created on Mar 18, 2004
- */
+
+
 package org.nrg.xft.schema;
 import java.io.File;
 import java.util.ArrayList;
@@ -37,28 +41,6 @@ import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-/**
- * This singleton class manages the creation and manipulation of XFTDataModels.
- *
- * <BR><BR>This class is in charge of loading and maintaining all of the Schemas used
- * used in the application.  Upon a call to the init() method, the XFTManager reads
- * the configuration from the InstanceSettings.xml document.  Using these specifications,
- * it finds the Schema files and creates XFTDataModels accordingly.
- *
- * <BR><BR>The singleton format of the class mandates that only one instance of the
- * XFTManager will be running at any given time.  It is loaded up init() and exists
- * until the application process ends.  After initialization, the XFTManager instance
- * is available through the GetInstance() method.  From the instance, one can access
- * the source Directory (where the InstanceSettings.xml was located).  Otherwise, all
- * access is done through the static methods.
- *
- * <BR><BR>This class also maintains a static reference to the XFTElement table (if it exists).
- * This Element maintains a list of all elements in the application.  Extended elements
- * use this Reference to create an Extended Element Reference Field which defines the type of
- * element which extended it.
- *
- * @author Tim
- */
 public class XFTManager {
     static org.apache.log4j.Logger logger = Logger.getLogger(XFTManager.class);
     private static XFTManager MANAGER = null;

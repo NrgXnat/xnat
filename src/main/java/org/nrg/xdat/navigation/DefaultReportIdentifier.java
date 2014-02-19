@@ -1,3 +1,13 @@
+/*
+ * org.nrg.xdat.navigation.DefaultReportIdentifier
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/21/14 9:52 AM
+ */
 package org.nrg.xdat.navigation;
 
 import org.apache.turbine.util.RunData;
@@ -6,9 +16,6 @@ import org.nrg.xdat.turbine.modules.actions.DisplayItemAction;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 
-/**
- * Created by mmckay01 on 1/16/14.
- */
 public class DefaultReportIdentifier implements DefaultReportIdentifierI{
     public DefaultReportIdentifier(){
 

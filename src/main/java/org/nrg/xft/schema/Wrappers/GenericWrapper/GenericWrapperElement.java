@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT  Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jul 15, 2004
+ * org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 11/18/13 9:36 AM
  */
+
+
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -48,16 +52,6 @@ import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.utils.StringUtils;
-/**
- * This class is the primary access point for XFTElements.  It wraps an XFTElement
- * and provides methods which access and format the information in that element.
- * 
- * The object maintains post-loaded collections of all the direct children (level 1)
- * of this element, post-loaded collections of all the fields for this element, and 
- * post-loaded collections of the element's superior references. 
- * 
- * @author Tim
- */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class GenericWrapperElement extends XFTElementWrapper implements SchemaElementI{	
 	static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperElement.class);

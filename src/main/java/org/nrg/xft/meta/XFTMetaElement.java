@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Dec 10, 2004
+ * org.nrg.xft.meta.XFTMetaElement
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.meta;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -16,12 +19,6 @@ import org.nrg.xft.schema.XFTElement;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
-/**
- * Class used to store the mappings between an XFTElement and its javaName, sqlName, fullXMLName,
- * code, and element ID (from DB).  Stored as a collection in the XFTMetaManager.
- * 
- * @author Tim 
- */
 public class XFTMetaElement {
 	private Integer elementId = null;
 	private String prefix = null;

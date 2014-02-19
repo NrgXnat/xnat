@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 3, 2004
+ * org.nrg.xft.XFTTool
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft;
 
 import java.io.File;
@@ -35,13 +39,6 @@ import org.nrg.xft.utils.XMLValidator;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.w3c.dom.Document;
-/**
- * This class is used as the primary access point for XFT features.  Any access to
- * sub objects should be avoided.  Instead methods should be created in this class to
- * allow for one centralized point of access to XFT.
- * 
- * @author Tim
- */
 public class XFTTool {
 	
 	/**

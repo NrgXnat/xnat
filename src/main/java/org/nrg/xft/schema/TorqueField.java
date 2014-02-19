@@ -1,24 +1,20 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 17, 2004
+ * org.nrg.xft.schema.TorqueField
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 
 import org.nrg.xft.utils.NodeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-/**
- * This class is used to defined the customized properties needed for Torque schema generation.
- * 
- * <BR><BR>Properties for this field are defined within a physical schema file as a sub element of 
- * the &#60;xft:field&#62; called &#60;xft:torqueField&#62;.  The properties match one-to-one to the attributes of that element.
- * If torque is not being used, then this class will not be used.
- * @author Tim
- */
 public class TorqueField extends XFTWebAppField {
 	private String defaultValue = "";
 	private String inheritance = "";

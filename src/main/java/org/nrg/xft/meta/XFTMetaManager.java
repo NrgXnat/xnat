@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Dec 10, 2004
+ * org.nrg.xft.meta.XFTMetaManager
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.meta;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -30,14 +33,6 @@ import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SearchCriteria;
-/**
- * This singleton class maintains references to all of the available XFTElements via XFTMetaElements
- * by fullXMLName, javaName, sqlName, element ID (from DB), or code.  It provides Find methods 
- * for accessing the proper element.  It also includes Mapping collections between schema URIs 
- * and their relative prefixs.
- * 
- * @author Tim
- */
 public class XFTMetaManager {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTMetaManager.class);
 	private static XFTMetaManager manager = null;

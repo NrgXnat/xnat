@@ -1,23 +1,20 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.db.DBConfig
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 8/28/13 3:19 PM
  */
-/*
- * Created on Oct 28, 2004
- */
+
+
 package org.nrg.xft.db;
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.apache.commons.dbcp.BasicDataSource;
-/**
- * Class used to store information about one of the databases used in the application and used to
- * create a connection from the connection pool DataSource.
- *
- * <BR><BR>The org.apache.commons.dbcp.BasicDataSource is used to manage the connection pool.
- * @author Tim
- */
 public class DBConfig {
 	private String driver = "";
 	private String user = "";

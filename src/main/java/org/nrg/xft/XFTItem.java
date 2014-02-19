@@ -1,9 +1,12 @@
 /*
- * XFTItem
- * Copyright (c) 2013. Washington University School of Medicine
+ * org.nrg.xft.XFTItem
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
 package org.nrg.xft;
 import java.io.ByteArrayOutputStream;
@@ -106,19 +109,6 @@ import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-/**
- * This is a generic element used to store and manage data in XFT.
- * Each item corresponds to an data type in the schema and to a table in the database.
- *
- * <BR><BR>An item has a name (XSIType) (which specifies the XML Full Name of the element from
- * the schema which this item represents) and a Hashtable of properties
- * (which are stored using the sql-name of the property as corresponds to the database table).
- * XFTItems can contain other XFTItems in their properties hashtable when
- * references are defined for that data type in the schema.
- *
- * @author Tim
- * @since 24 March 2004
- */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	public static final String EQUALS = "=";

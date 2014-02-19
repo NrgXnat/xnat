@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Aug 22, 2006
+ * org.nrg.xft.utils.zip.ZipI
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/18/14 5:03 PM
  */
+
+
 package org.nrg.xft.utils.zip;
 
 import java.io.File;

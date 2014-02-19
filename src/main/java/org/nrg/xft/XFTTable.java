@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Oct 21, 2004
+ * org.nrg.xft.XFTTable
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/11/14 2:34 PM
  */
+
+
 package org.nrg.xft;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -29,26 +33,6 @@ import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.utils.StringUtils;
 import org.json.JSONException;
 import org.json.JSONObject;
-/**
- * Generic table structure used to hold tabular data and populate XFTItems.
- * 
- * <BR><BR>This table is constructed out of columns (String[]) and an ArrayList
- * of rows (Object[]).
- * 
- * <BR><BR>The XFTTable can be initialized using a collection of headers (String[]). 
- * Rows can be inserted using the insertRow() method.
- * 
- * <BR><BR>To access information in the rows directly, start by using the resetRowCursor().
- * Then, the hasMoreRows() and nextRow() methods can be used to iterate through the rows
- * in a while loop. The nextRow() method will return the next row (Object[]) or the getCellValue()
- * method can be used to access specific values based on header values.
- * 
- * <BR><BR>Data in the XFTTable can also be accessed using the populateItems() method to populate
- * XFTItems from the rows.  The XFTItems and all of their sub Items will be populated if matching
- * fields are found in the table.  
- * 
- * @author Tim
- */
 public class XFTTable implements XFTTableI {
 	static Logger logger = Logger.getLogger(XFTTable.class);
 	private String [] columns = null;

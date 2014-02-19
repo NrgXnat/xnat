@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.XFT
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/3/14 12:24 PM
  */
-/*
- * Created on Nov 3, 2004
- */
+
+
 package org.nrg.xft;
 
 import java.io.File;
@@ -39,11 +43,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
-/**
- * @author Tim
- *
- * This class is used to initialize the settings for XFT tasks.
- */
 public class XFT {
     private static String ADMIN_EMAIL = "nrgtech@nrg.wustl.edu";
     private static String ADMIN_EMAIL_HOST = "";

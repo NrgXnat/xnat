@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
-/*
- * Created on Mar 26, 2004
- */
+
+
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
 import java.io.BufferedOutputStream;
@@ -40,17 +44,6 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-/**
- * Class used to write content to an XML document.
- *
- * <BR><BR>Most often the user will create XML content using the static methods like
- * ItemToDOM, StoreXFTItemListToXMLFile, or StoreXFTItemListToDOM.
- *
- * <BR><BR>Also, a user can write content to an XML document by first instanciating
- * the XMLWriter object.  This is used to build a new XML DOM Document.
- *
- * @author Tim
- */
 public class XMLWriter {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XMLWriter.class);
 	private DocumentBuilderFactory factory = null;

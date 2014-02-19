@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.utils.ValidationUtils.XFTValidator
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/30/13 5:36 PM
  */
-/*
- * Created on May 21, 2004
- */
+
+
 package org.nrg.xft.utils.ValidationUtils;
 
 import java.util.ArrayList;
@@ -23,16 +27,6 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.DateUtils;
-/**
- * Uses the specifications in the XFTSchemas to validate the content of an
- * XFTItem and its sub-items.
- *
- * <BR><BR>The Validate() method is used to verify that the data contained in a
- * XFTItem is valid.  The method returns a ValidationResults object which contains
- * the results of the validation.
- *
- * @author Tim
- */
 public class XFTValidator {
 	private static final String EMPTY = "";
 	private static final String TRUE = "true";

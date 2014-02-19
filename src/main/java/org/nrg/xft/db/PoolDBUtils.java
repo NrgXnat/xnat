@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.db.PoolDBUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
-/*
- * Created on Oct 22, 2004
- */
+
+
 package org.nrg.xft.db;
 import java.sql.CallableStatement;
 import java.sql.Connection;
@@ -29,15 +33,6 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.StringUtils;
-/**
- * This class is in charge of performing all sql queries against a database.
- *
- * <BR><BR>  This class allows for sql processing without interation with any of
- * the java.sql classes.  It can process inserts, updates, and selects.  All connection
- * closures are handled within the methods.
- *
- * @author Tim
- */
 public class PoolDBUtils {
 	static org.apache.log4j.Logger logger = Logger.getLogger(PoolDBUtils.class);
 	//private ResultSet rs = null;

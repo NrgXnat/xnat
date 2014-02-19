@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jul 15, 2004
+ * org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 import java.util.Hashtable;
 
@@ -13,10 +17,6 @@ import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactory;
 import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
-/**
- * Factory for creating GenericWrapperFields and GenericWrapperElements.
- * @author Tim
- */
 public class GenericWrapperFactory  extends XFTFactory implements XFTFactoryI {
 	private static GenericWrapperFactory singleton = null;
 	

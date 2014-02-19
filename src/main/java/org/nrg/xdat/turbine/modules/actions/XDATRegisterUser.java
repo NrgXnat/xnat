@@ -1,8 +1,15 @@
-//Copyright Washington University School of Medicine All Rights Reserved
 /*
- * Created on Dec 11, 2006
+ * org.nrg.xdat.turbine.modules.actions.XDATRegisterUser
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/10/14 8:53 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.commons.lang.StringUtils;

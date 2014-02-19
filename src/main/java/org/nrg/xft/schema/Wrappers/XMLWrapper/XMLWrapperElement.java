@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 26, 2004
+ * org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperElement
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
 import java.util.ArrayList;
@@ -14,12 +18,6 @@ import java.util.List;
 
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
-/**
- * Alternative version of the GenericWrapperElement used to summarize the element
- * from an XML perspective.
- * 
- * @author Tim
- */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class XMLWrapperElement extends GenericWrapperElement implements XMLNode {
 

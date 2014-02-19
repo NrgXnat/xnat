@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.db.DBPool
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 8/28/13 3:19 PM
  */
-/*
- * Created on Oct 22, 2004
- */
+
+
 package org.nrg.xft.db;
 import java.sql.Connection;
 import java.sql.SQLException;
@@ -14,13 +18,6 @@ import java.util.Hashtable;
 import java.util.Iterator;
 
 import org.nrg.xft.exception.DBPoolException;
-/**
- * This singleton class manages access to the DBConfigs used to access pooled connections.
- *
- * <BR><BR>The available DBConfigs are stored in a hashtable with the db identifier as
- * key.
- * @author Tim
- */
 public class DBPool {
 	private static DBPool pool = null;
 	private Hashtable<String,DBConfig> ds = new Hashtable<String,DBConfig>();

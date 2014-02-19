@@ -1,14 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 26, 2004
+ * org.nrg.xft.schema.design.XFTFieldWrapper
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
- * To change the template for this generated file go to
- * Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema.design;
 import java.util.ArrayList;
 
@@ -17,11 +18,6 @@ import org.nrg.xft.identifier.Identifier;
 import org.nrg.xft.schema.XFTDataField;
 import org.nrg.xft.schema.XFTField;
 import org.nrg.xft.utils.StringUtils;
-/**
- * Generic wrapper for access to XFTFields
- * 
- * @author Tim
- */
 public abstract class XFTFieldWrapper implements Identifier{
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTFieldWrapper.class);
 	protected XFTField wrapped = null;

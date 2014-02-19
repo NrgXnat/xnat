@@ -1,13 +1,13 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ D:/Development/XNAT-1.6/nrg_config/src/test/resources/org/nrg/config/DefaultSiteConfigurationServiceTests-context.xml
+  ~ D:/Development/XNAT/1.6/nrg_config/src/test/resources/org/nrg/config/DefaultSiteConfigurationServiceTests-context.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2013, Washington University School of Medicine
+  ~ Copyright (c) 2014, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
   ~
-  ~ Last modified 7/1/13 5:30 PM
+  ~ Last modified 8/28/13 3:57 PM
   -->
 <beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
     xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd">

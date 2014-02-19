@@ -20,14 +20,6 @@ import org.nrg.mail.api.MailMessage;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
-/**
- * Provides relatively implementation-independent mail service to allow access
- * to Spring application context mail service without requiring context
- * initialization outside of Spring classes.
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
- */
 @Service("mailService")
 public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 

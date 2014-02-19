@@ -17,13 +17,6 @@ import javax.mail.MessagingException;
 import org.nrg.framework.services.NrgService;
 import org.nrg.mail.api.MailMessage;
 
-/**
- * Provides implementation-independent mail service. This implements a large array of methods to send messages
- * to allow for easier key-value specification of parameters for REST-style invocations.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
- */
 public interface MailService extends NrgService {
     public static String SERVICE_NAME = "MailService";
     

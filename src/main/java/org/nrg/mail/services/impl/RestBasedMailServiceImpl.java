@@ -38,14 +38,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-/**
- * Provides relatively implementation-independent mail service to allow access
- * to Spring application context mail service without requiring context
- * initialization outside of Spring classes.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
- */
 public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
     public RestBasedMailServiceImpl(String address) throws NrgServiceException {

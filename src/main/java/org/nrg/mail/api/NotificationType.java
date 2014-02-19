@@ -12,7 +12,6 @@ package org.nrg.mail.api;
 import java.util.HashMap;
 import java.util.Map;
 
-// TODO: This should eventually be dynamically populated, e.g. from a database.
 public enum NotificationType {
 	Error ("Errors"), 
 	Issue ("Issues"), 

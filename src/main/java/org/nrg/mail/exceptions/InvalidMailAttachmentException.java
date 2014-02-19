@@ -11,10 +11,6 @@ package org.nrg.mail.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;
 
-/**
- * Thrown when there's an attempt to create a duplicate {@link Definition definition} object.
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public class InvalidMailAttachmentException extends NrgMailException {
     /**
      * Default constructor. This sets the {@link #getServiceError() service error}

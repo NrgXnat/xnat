@@ -32,12 +32,6 @@ import org.springframework.core.io.FileSystemResource;
 import org.springframework.mail.SimpleMailMessage;
 import org.springframework.mail.javamail.MimeMessageHelper;
 
-/**
- * This class provides a convenient encapsulation of mail message functionality that
- * can be used with NRG {@link MailService} implementations.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 public class MailMessage {
     public static final String PROP_FROM = "from";
     public static final String PROP_ON_BEHALF_OF = "onBehalfOf";

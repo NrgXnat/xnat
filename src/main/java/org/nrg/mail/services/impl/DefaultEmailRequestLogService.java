@@ -1,3 +1,13 @@
+/*
+ * org.nrg.mail.services.impl.DefaultEmailRequestLogService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/3/14 12:07 PM
+ */
 package org.nrg.mail.services.impl;
 
 import static java.util.concurrent.TimeUnit.MILLISECONDS;

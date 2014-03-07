@@ -414,6 +414,11 @@
                 <version>${guava.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.google.collections</groupId>
+                <artifactId>google-collections</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
                 <groupId>gnu.getopt</groupId>
                 <artifactId>java-getopt</artifactId>
                 <version>${java-getopt.version}</version>

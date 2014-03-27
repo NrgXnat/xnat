@@ -1018,23 +1018,31 @@ public  class FileUtils
     }
     
     public static void MoveToCache(File f) throws FileNotFoundException, IOException{
-		String cache = XFT.GetCachePath();
-		if(cache.equals(""))
-		{
-		    cache="/cache/";
-		}
-		cache=AppendSlash(cache)+"DELETED";
-		
-		cache=AppendSlash(cache)+getTimestamp(Calendar.getInstance().getTime());		
-		
-		String path=f.getAbsolutePath();
+    	if(XDAT.getBoolSiteConfigurationProperty("files.allow_move_to_cache", true)){
+			String cache = XFT.GetCachePath();
+			if(cache.equals(""))
+			{
+			    cache="/cache/";
+			}
+			cache=AppendSlash(cache)+"DELETED";
 			
-		String dest=AppendSlash(cache)+RemoveAbsoluteCharacters(path);
-		
-		if(f.isDirectory())
-			FileUtils.MoveDir(f, new File(dest), true);
-		else
-			FileUtils.MoveFile(f, new File(dest), true);
+			cache=AppendSlash(cache)+getTimestamp(Calendar.getInstance().getTime());		
+			
+			String path=f.getAbsolutePath();
+				
+			String dest=AppendSlash(cache)+RemoveAbsoluteCharacters(path);
+			
+			if(f.isDirectory())
+				FileUtils.MoveDir(f, new File(dest), true);
+			else
+				FileUtils.MoveFile(f, new File(dest), true);
+    	}else{
+    		if(f.isDirectory()){
+    			org.apache.commons.io.FileUtils.deleteDirectory(f);
+    		}else{
+    			f.delete();
+    		}
+    	}
     }
 
     public static String RelativizePath(File parent, File child){

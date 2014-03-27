@@ -40,6 +40,7 @@ import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.exception.InvalidValueException;

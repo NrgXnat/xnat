@@ -1,11 +1,13 @@
 /**
- * Copyright (c) 2012 Washington University
+ * Copyright (c) 2012,2014 Washington University School of Medicine
  */
 package org.nrg.attr;
 
 import java.util.Map;
 
 import com.google.common.base.Function;
+import com.google.common.base.Objects;
+import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.Iterables;
 
 /**
@@ -35,6 +37,59 @@ public class TransformingExtAttrDef<S,V,A> extends AbstractExtAttrDef<S,V,A> {
             }
         });
     }
+    
+    public static <S,V,A> TransformingExtAttrDef<S,V,A>
+    wrapTextMap(final EvaluableAttrDef<S,V,A> base, final Map<String,String> m) {
+        return wrapTextFunction(base, new Function<String,String>() {
+            public String apply(final String k) {
+                return m.containsKey(k) ? m.get(k) : k;
+            }
+        });
+    }
+    
+    public static <S,V,A> TransformingExtAttrDef<S,V,A>
+    wrap(final EvaluableAttrDef<S,V,A> base, final String k, final String v) {
+        return wrapTextFunction(base, new Function<String,String>() {
+            public String apply(final String k_) {
+                return Objects.equal(k_, k) ? v : k_;
+            }
+        });
+    }
+    
+    public static <S,V,A> TransformingExtAttrDef<S,V,A>
+    wrap(final EvaluableAttrDef<S,V,A> base,
+            final String k1, final String v1,
+            final String k2, final String v2) {
+        return wrapTextMap(base, ImmutableMap.of(k1, v1, k2, v2));
+    }
+
+    public static <S,V,A> TransformingExtAttrDef<S,V,A>
+    wrap(final EvaluableAttrDef<S,V,A> base,
+            final String k1, final String v1,
+            final String k2, final String v2,
+            final String k3, final String v3) {
+        return wrapTextMap(base, ImmutableMap.of(k1, v1, k2, v2, k3, v3));
+    }
+
+    public static <S,V,A> TransformingExtAttrDef<S,V,A>
+    wrap(final EvaluableAttrDef<S,V,A> base,
+            final String k1, final String v1,
+            final String k2, final String v2,
+            final String k3, final String v3,
+            final String k4, final String v4) {
+        return wrapTextMap(base, ImmutableMap.of(k1, v1, k2, v2, k3, v3, k4, v4));
+    }
+
+    public static <S,V,A> TransformingExtAttrDef<S,V,A>
+    wrap(final EvaluableAttrDef<S,V,A> base,
+            final String k1, final String v1,
+            final String k2, final String v2,
+            final String k3, final String v3,
+            final String k4, final String v4,
+            final String k5, final String v5) {
+        return wrapTextMap(base, ImmutableMap.of(k1, v1, k2, v2, k3, v3, k4, v4, k5, v5));
+    }
+
 
     /*
      * (non-Javadoc)

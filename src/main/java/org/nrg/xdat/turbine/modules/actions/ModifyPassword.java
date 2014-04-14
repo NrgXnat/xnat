@@ -144,11 +144,6 @@ public class ModifyPassword extends SecureAction {
 						if(validator.isValid(newPassword, submitted)){
                             found.setProperty("primary_password", newPassword);
 							XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Password"));
-							
-							//need to update password expiration
-							XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(found.getStringProperty("login"), XdatUserAuthService.LOCALDB, "");
-							auth.setPasswordUpdated(new java.util.Date());
-							XDAT.getXdatUserAuthService().update(auth);
 							data.getSession().setAttribute("expired",new Boolean(false));
 						}else{
 							data.setMessage(validator.getMessage());

@@ -2681,23 +2681,26 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		    // OLD USER
 		    String tempPass = found.getStringProperty("primary_password");
 		    String savedPass = temp.getStringProperty("primary_password");
-		    if (StringUtils.IsEmpty(tempPass)
-		            && StringUtils.IsEmpty(savedPass)) {
+            // check if the password is being updated
+		    if (!StringUtils.IsEmpty(tempPass) && !tempPass.equals(savedPass) && !(new ShaPasswordEncoder(256).encodePassword(tempPass, temp.getStringProperty("salt"))).equals(savedPass)) {
+                PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
+                if(validator.isValid(tempPass, authenticatedUser)){
+                    String salt = createNewSalt();
+                    found.setProperty("primary_password", new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
+                    found.setProperty("salt", salt);
 
-		    } else if (StringUtils.IsEmpty(tempPass)) {
-
-		    } else {
-		        if (!tempPass.equals(savedPass)){
-		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-		        	if(validator.isValid(tempPass, authenticatedUser)){
-                        String salt = createNewSalt();
-		                found.setProperty("primary_password", new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
-                        found.setProperty("salt", salt);
-		        	} else {
-		        		throw new PasswordComplexityException(validator.getMessage());
-		        	}
-		        }
-		    }
+                    XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(found.getStringProperty("login"), XdatUserAuthService.LOCALDB, "");
+                    auth.setPasswordUpdated(new java.util.Date());
+                    auth.setFailedLoginAttempts(0);
+                    XDAT.getXdatUserAuthService().update(auth);
+                } else {
+                    throw new PasswordComplexityException(validator.getMessage());
+                }
+            }
+            // if not updated, may have been passed unencrypted and needs to be changed to its already saved encrypted form
+            else {
+                found.setProperty("primary_password", savedPass);
+            }
 
 		    if (authenticatedUser.checkRole("Administrator")) {
 		        SaveItemHelper.authorizedSave(found, authenticatedUser, false, false,ci);

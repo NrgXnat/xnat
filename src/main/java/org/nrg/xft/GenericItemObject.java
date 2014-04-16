@@ -337,8 +337,9 @@ public abstract class GenericItemObject implements ItemI {
 				String root=key.substring(0,key.indexOf("/"));
 				try {
 					GenericWrapperElement local=GenericWrapperElement.GetElement(this.getXSIType());
+					GenericWrapperElement other=GenericWrapperElement.GetElement(root);
 					
-					if(local.instanceOf(root)){
+					if(local.instanceOf(other.getXSIType())){
 	                    this.setProperty(this.getXSIType()+key.substring(key.indexOf("/")),validate(hash.get(key)));
 					}
                 } catch (XFTInitException e) {

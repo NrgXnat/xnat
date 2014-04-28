@@ -13,43 +13,29 @@
 
 package org.nrg.xft.utils;
 
-import java.io.BufferedReader;
-import java.io.DataInputStream;
-import java.io.File;
-import java.io.FileFilter;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.io.OutputStream;
-import java.io.PrintWriter;
+import org.nrg.xdat.XDAT;
+import org.nrg.xft.XFT;
+import org.nrg.xft.XFTTool;
+import org.nrg.xft.exception.InvalidValueException;
+import org.nrg.xft.exception.XFTInitException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.*;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.MappedByteBuffer;
 import java.nio.channels.FileChannel;
 import java.nio.charset.Charset;
 import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
-
-import org.apache.log4j.Logger;
-import org.nrg.xdat.XDAT;
-import org.nrg.xft.XFT;
-import org.nrg.xft.XFTTool;
-import org.nrg.xft.exception.InvalidValueException;
-import org.nrg.xft.exception.XFTInitException;
 
 
 public  class FileUtils
 {
-	static org.apache.log4j.Logger logger = Logger.getLogger(FileUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(FileUtils.class);
 
 	public static final int LARGE_DOWNLOAD=1000*1024;
 	public static final int SMALL_DOWNLOAD=8*1024;
@@ -810,7 +796,6 @@ public  class FileUtils
 		}
 	}
 
-
     /**
      * Populates list of files which do not match.
      * @param src
@@ -954,21 +939,21 @@ public  class FileUtils
         if (f.isDirectory())
         {
             String[] files = f.list();
-            for (int i=0;i<files.length;i++){
-                File child = new File(f.getAbsolutePath() + File.separator + files[i]);
+            for (final String file : files) {
+                File child = new File(f.getAbsolutePath() + File.separator + file);
                 DeleteFile(child);
             }
             if (!f.delete()){
-                System.out.println("Failed to delete: " + f.getAbsolutePath());
+                logFailedToDelete(f);
             }
         }else{
             if (!f.delete()){
-                System.out.println("Failed to delete: " + f.getAbsolutePath());
+                logFailedToDelete(f);
             }
         }
     }
-    
-	public static String renameWTimestamp(final String n,Date d){
+
+    public static String renameWTimestamp(final String n,Date d){
 		return n + "_" + getTimestamp(d);
 	}
 	
@@ -1119,5 +1104,22 @@ public  class FileUtils
 			} catch (IOException e) {
 			}
 	}
+
+    private static void logFailedToDelete(final File f) {
+        if (logger.isDebugEnabled()) {
+            final StringBuilder buffer = new StringBuilder("Failed to delete: ").append(f.getAbsolutePath()).append("\n");
+            final StackTraceElement[] layers = Thread.currentThread().getStackTrace();
+            for (final StackTraceElement layer : layers) {
+                final String present = layer.toString();
+                // Filter out the getStackTrace call and call to this method...
+                if (!present.contains("getStackTrace") && !present.contains("logFailedToDelete")) {
+                    buffer.append("   at ").append(layer).append("\n");
+                }
+            }
+            logger.debug(buffer.toString());
+        } else {
+            logger.warn("Failed to delete: " + f.getAbsolutePath());
+        }
+    }
 }
 

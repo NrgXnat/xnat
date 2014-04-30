@@ -65,6 +65,8 @@
         <javax-activation.version>1.1.1</javax-activation.version>
         <javax-inject.version>1</javax-inject.version>
         <javax-mail>1.4.5</javax-mail>
+        <jena.version>2.11.1</jena.version>
+        <jena-tdb.version>1.0.1</jena-tdb.version>
         <json.version>20140107</json.version>
         <junit.version>4.8.2</junit.version>
         <log4j.version>1.2.17</log4j.version>
@@ -264,6 +266,16 @@
 				<artifactId>ehcache-core</artifactId>
 				<version>${ehcache.version}</version>
 			</dependency>
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-core</artifactId>
+                <version>${jena.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-tdb</artifactId>
+                <version>${jena-tdb.version}</version>
+            </dependency>
 			<dependency>
 				<groupId>org.reflections</groupId>
 				<artifactId>reflections</artifactId>

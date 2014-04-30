@@ -9,22 +9,10 @@
  */
 package org.nrg.notify.services;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-
-import java.io.IOException;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
-import javax.inject.Inject;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Hibernate;
+import org.hibernate.exception.ConstraintViolationException;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Ignore;
@@ -33,19 +21,34 @@ import org.junit.runner.RunWith;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
-import org.nrg.notify.entities.Category;
-import org.nrg.notify.entities.Channel;
-import org.nrg.notify.entities.Definition;
-import org.nrg.notify.entities.Subscriber;
-import org.nrg.notify.entities.Subscription;
+import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
-import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.test.annotation.ExpectedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.inject.Inject;
+import java.io.IOException;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import static org.junit.Assert.*;
+
+/**
+ * Many of these tests are annotated with {@link Transactional} to support session persistence through the execution
+ * of the test. In the Spring Web context, this is usually handled with the OpenSessionInView intercepter configuration.
+ * Basically the issue is that a Hibernate session is instantiated at the boundary of the Transactional annotation. Any
+ * objects that have lazily-fetched data members that aren't accessed within the transaction context will become
+ * unresolvable later once the session has expired. Maintaining the Transactional layer at the test method level allows
+ * these data members to be properly resolved without having to resort to eager fetches or collection initialization
+ * (e.g. calling {@link Hibernate#initialize(Object)}).
+ * 
+ * @author Rick Herrick <rick.herrick@wustl.edu>
+ */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 public class NotificationServiceTests {
@@ -142,8 +145,7 @@ public class NotificationServiceTests {
         assertEquals(allOffset, categories.size());
     }
     
-    @Test
-    @ExpectedException(DataIntegrityViolationException.class)
+    @Test(expected = ConstraintViolationException.class)
     public void testCategoryConstraints() {
         Category category1 = _service.getCategoryService().newEntity();
         category1.setScope(CategoryScope.Site);
@@ -292,14 +294,14 @@ public class NotificationServiceTests {
     }
 
     /**
-     * @param subscription
-     * @param subscriberName
-     * @param subscriberEmail
-     * @param entity
-     * @param scope
-     * @param event
-     * @param channelName
-     * @param mimeType
+     * @param subscription       The subscription to validate.
+     * @param subscriberName     The subscriber login name.
+     * @param subscriberEmail    The subscriber email.
+     * @param entity             The ID of the entity with which the subscription is associated.
+     * @param scope              The {@link org.nrg.notify.api.CategoryScope scope} of the subscription category.
+     * @param event              The event associated with the subscription.
+     * @param channelName        The channel name.
+     * @param mimeType           The requested MIME type for the subscription.
      */
     private void validateSubscription(Subscription subscription, String subscriberName, String subscriberEmail, long entity, CategoryScope scope, String event, String channelName, String mimeType) {
         assertNotNull(subscription);

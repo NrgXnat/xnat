@@ -37,8 +37,14 @@
         <nrg.framework.version>${project.version}</nrg.framework.version>
         <nrg.dicomedit.version>4.0.0</nrg.dicomedit.version>
         <nrg.dicomutils.version>1.3.1</nrg.dicomutils.version>
+        <nrg.dicomimageutils.version>1.0.3</nrg.dicomimageutils.version>
+        <nrg.dicomdb.version>[4.0.0,5.0.0)</nrg.dicomdb.version>
+        <nrg.dicom-xnat.version>${project.version}</nrg.dicom-xnat.version>
+        <nrg.ecat4xnat.version>${project.version}</nrg.ecat4xnat.version>
         <nrg.nrgutil.version>1.1.0</nrg.nrgutil.version>
-        <nrg.extattr.version>4.0.0</nrg.extattr.version>
+        <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
+        <nrg.extattr.version>4.1.0</nrg.extattr.version>
+        <nrg.sessionbuilders.version>${project.version}</nrg.sessionbuilders.version>
 
         <!-- These are default property values to be overridden for specific applets and signing requirements. -->
         <applet.main.class>AppletMainClass</applet.main.class>
@@ -48,7 +54,11 @@
         <signing.storepass>keypass</signing.storepass>
         <signing.keypass>keypass</signing.keypass>
 
+        <!-- TODO: We will need to add trusted TSA timstamping for security purposes. See XNAT-2976 for information. -->
+        <!-- signing.tsa>http://nrg115.nrg.mir:8081/tsa.aspx</signing.tsa -->
+
         <ant.version>1.6.1</ant.version>
+        <org.apache.ant.version>1.8.2</org.apache.ant.version> <!-- org.apache.ant and ant should be combined to use the latest version -->
         <antlr.version>3.4</antlr.version>
         <avalon.version>4.1.4</avalon.version>
         <axis.version>1.4</axis.version>
@@ -66,6 +76,7 @@
         <commons-lang.version>2.6</commons-lang.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <dcm4che.version>2.0.25</dcm4che.version>
+        <dom4j.version>1.6.1</dom4j.version>
         <ecs.version>1.4.2</ecs.version>
         <ehcache.version>2.6.6</ehcache.version>
         <fop.version>0.20.5-rc3-alpha</fop.version>
@@ -74,7 +85,7 @@
         <hibernate.version>3.6.10.Final</hibernate.version>
         <hibernate-jpa.version>1.0.1.Final</hibernate-jpa.version>
         <hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
-        <httpcomponents-client.version>4.2.2</httpcomponents-client.version>
+        <httpcomponents-client.version>4.3.3</httpcomponents-client.version>
         <itext.version>1.1.4</itext.version>
         <jackson.version>1.8.11</jackson.version>
         <jargon.version>1.4.25</jargon.version>
@@ -83,12 +94,15 @@
         <javax-activation.version>1.1.1</javax-activation.version>
         <javax-inject.version>1</javax-inject.version>
         <javax-mail>1.4.5</javax-mail>
+        <jena.version>2.11.1</jena.version>
+        <jena-tdb.version>1.0.1</jena-tdb.version>
         <json.version>20090211</json.version>
         <junit.version>4.8.2</junit.version>
         <log4j.version>1.2.16</log4j.version>
         <mockito.version>1.8.5</mockito.version>
         <pipeline.version>1.6.3</pipeline.version>
         <postgresql.version>9.0-801.jdbc4</postgresql.version>
+        <org.postgresql.version>9.3-1101-jdbc41</org.postgresql.version>
         <reflections.version>0.9.9-RC1</reflections.version>
         <restlet.version>1.1.10</restlet.version>
         <servlet-api.version>2.5</servlet-api.version>
@@ -111,6 +125,11 @@
                 <groupId>org.nrg</groupId>
                 <artifactId>nrgutil</artifactId>
                 <version>${nrg.nrgutil.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>status</artifactId>
+                <version>${nrg.nrgstatus.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
@@ -149,8 +168,48 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
+                <artifactId>DicomImageUtils</artifactId>
+                <version>${nrg.dicomimageutils.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>DicomDB</artifactId>
+                <version>${nrg.dicomdb.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
                 <artifactId>ExtAttr</artifactId>
                 <version>${nrg.extattr.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>SessionBuilders</artifactId>
+                <version>${nrg.sessionbuilders.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>dicom-xnat</artifactId>
+                <version>${nrg.dicom-xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>dicom-xnat-mx</artifactId>
+                <version>${nrg.dicom-xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>dicom-xnat-sop</artifactId>
+                <version>${nrg.dicom-xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>dicom-xnat-util</artifactId>
+                <version>${nrg.dicom-xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>ecat4xnat</artifactId>
+                <version>${nrg.ecat4xnat.version}</version>
             </dependency>
 
             <!-- XDAT dependency definitions -->
@@ -293,6 +352,16 @@
 				<version>${ehcache.version}</version>
 			</dependency>
 			<dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-core</artifactId>
+                <version>${jena.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.jena</groupId>
+                <artifactId>jena-tdb</artifactId>
+                <version>${jena-tdb.version}</version>
+            </dependency>
+			<dependency>
 				<groupId>org.reflections</groupId>
 				<artifactId>reflections</artifactId>
 				<version>${reflections.version}</version>
@@ -389,6 +458,26 @@
                 <version>${dcm4che.version}</version>
             </dependency>
             <dependency>
+                <groupId>dcm4che</groupId>
+                <artifactId>dcm4che-imageio-rle</artifactId>
+                <version>${dcm4che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dcm4che</groupId>
+                <artifactId>dcm4che-imageio</artifactId>
+                <version>${dcm4che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dcm4che</groupId>
+                <artifactId>dcm4che-net</artifactId>
+                <version>${dcm4che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dcm4che</groupId>
+                <artifactId>dcm4che-image</artifactId>
+                <version>${dcm4che.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.geronimo.specs</groupId>
                 <artifactId>geronimo-jms_1.1_spec</artifactId>
                 <version>1.1.1</version>
@@ -407,6 +496,11 @@
                 <groupId>org.apache.xmlbeans</groupId>
                 <artifactId>xmlbeans-xmlpublic</artifactId>
                 <version>${xmlbeans.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dom4j</groupId>
+                <artifactId>dom4j</artifactId>
+                <version>${dom4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -537,6 +631,11 @@
                 <version>${javax-mail}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.ant</groupId>
+                <artifactId>ant</artifactId>
+                <version>${org.apache.ant.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>ant</groupId>
                 <artifactId>ant</artifactId>
                 <version>${ant.version}</version>
@@ -627,6 +726,11 @@
                 <groupId>postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.postgresql</groupId>
+                <artifactId>postgresql</artifactId>
+                <version>${org.postgresql.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -720,7 +824,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>webstart-maven-plugin</artifactId>
-                    <version>1.0-beta-4</version>
+                    <version>1.0-beta-5</version>
                     <executions>
                         <execution>
                             <phase>package</phase>
@@ -739,12 +843,14 @@
                             <Application-Name>${xnat.app.name}</Application-Name>
                             <Permissions>all-permissions</Permissions>
                             <Codebase>*</Codebase>
+                            <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
                         </updateManifestEntries>
                         <sign>
                             <keystore>${signing.keystore}</keystore>
                             <alias>${signing.alias}</alias>
                             <storepass>${signing.storepass}</storepass>
                             <keypass>${signing.keypass}</keypass>
+                            <!-- tsaLocation>${signing.tsa}</tsaLocation -->
                             <verify>true</verify>
                             <keystoreConfig>
                                 <delete>false</delete>
@@ -805,8 +911,35 @@
                                 <Application-Name>${xnat.app.name}</Application-Name>
                                 <Permissions>all-permissions</Permissions>
                                 <Codebase>*</Codebase>
+                                <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
                             </manifestEntries>
                         </archive>
+                    </configuration>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-jarsigner-plugin</artifactId>
+                    <version>1.3.1</version>
+                    <executions>
+                        <execution>
+                            <id>sign</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>sign</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                    <configuration>
+                        <keystore>${signing.keystore}</keystore>
+                        <alias>${signing.alias}</alias>
+                        <storepass>${signing.storepass}</storepass>
+                        <keypass>${signing.keypass}</keypass>
+                        <!-- tsa>${signing.tsa}</tsa -->
+                        <certs>true</certs>
+                        <excludes>
+                            <exclude>*-sources.jar</exclude>
+                            <exclude>*-javadoc.jar</exclude>
+                        </excludes>
                     </configuration>
                 </plugin>
                 <plugin>

@@ -1,0 +1,49 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ /Users/rherrick/Development/XNAT/1.6/nrg_ddict/src/test/resources/org/nrg/notify/services/DataDictionaryServicesTests-context.xml
+  ~
+  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ XNAT is an open-source project of the Neuroinformatics Research Group.
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 5/1/14 10:42 AM
+  -->
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p"
+       xmlns:tx="http://www.springframework.org/schema/tx"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		                   http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx.xsd">
+
+	<import resource="classpath:/org/nrg/prefs/TestDataSource-context.xml" />
+	<import resource="classpath:/META-INF/configuration/nrg-prefs-context.xml" />
+
+	<bean id="namingStrategy" class="org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy" p:prefix="xhbm" />
+
+    <bean id="hibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
+        <property name="properties">
+            <props>
+                <prop key="hibernate.dialect">org.hibernate.dialect.H2Dialect</prop>
+                <prop key="hibernate.hbm2ddl.auto">create</prop>
+                <prop key="hibernate.show_sql">true</prop>
+                <prop key="hibernate.cache.use_second_level_cache">true</prop>
+                <prop key="hibernate.cache.use_query_cache">true</prop>
+            </props>
+        </property>
+    </bean>
+
+    <bean id="cacheRegionFactory" class="net.sf.ehcache.hibernate.SingletonEhCacheRegionFactory">
+        <constructor-arg index="0" ref="hibernateProperties" />
+    </bean>
+
+    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean"
+          p:cacheRegionFactory-ref="cacheRegionFactory" p:dataSource-ref="dataSource"
+          p:hibernateProperties-ref="hibernateProperties" p:packagesToScan-ref="nrgPrefsEntityPackages"
+          p:namingStrategy-ref="namingStrategy" />
+
+	<bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager" p:sessionFactory-ref="sessionFactory" />
+
+	<tx:annotation-driven />
+
+</beans>

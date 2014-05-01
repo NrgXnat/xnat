@@ -1,0 +1,30 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ /Users/rherrick/Development/XNAT/1.6/nrg_prefs/src/main/resources/META-INF/configuration/nrg-prefs-context.xml
+  ~
+  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ XNAT is an open-source project of the Neuroinformatics Research Group.
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 5/1/14 11:08 AM
+  -->
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util"
+    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
+		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd
+		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+
+    <description>Default configuration for NRG preferences</description>
+
+    <context:annotation-config/>
+
+    <!-- Scan for the hibernate service and the default repositories. -->
+    <context:component-scan base-package="org.nrg.prefs.services.impl.hibernate" />
+    <context:component-scan base-package="org.nrg.prefs.repositories" />
+
+    <util:list id="nrgPrefsEntityPackages">
+        <value>org.nrg.prefs.entities</value>
+    </util:list>
+
+</beans>

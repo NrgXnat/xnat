@@ -40,12 +40,7 @@ public class ResendVerification extends SecureScreen {
                         data.setMessage("You have exceeded the allowed number of email requests. Please try again later.");
                         data.setScreenTemplate("Login.vm");
                     }else{
-            			String subject = TurbineUtils.GetSystemName() + " Email Verification";
-            			String admin = AdminUtils.getAdminEmailId();        		
-            			AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user,true,null);
-    	    	        
-            			String text = "Dear " + user.getFirstname() + " " + user.getLastname() + ",<br/>\r\n" + "Please click this link to verify your email address: " + TurbineUtils.GetFullServerPath() + "/app/template/VerifyEmail.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
-            			XDAT.getMailService().sendHtmlMessage(admin, emailTo, subject, text);
+                        AdminUtils.sendNewUserVerificationEmail(user);
             			if(requestLog != null){ requestLog.logEmailRequest(emailTo, new Date()); }
                     }
         		}

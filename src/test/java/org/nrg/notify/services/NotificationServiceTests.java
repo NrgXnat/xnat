@@ -24,7 +24,6 @@ import org.nrg.notify.api.SubscriberType;
 import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
-import org.springframework.test.annotation.ExpectedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -209,8 +208,7 @@ public class NotificationServiceTests {
         assertEquals(2, definitions.size());
     }
     
-    @Test
-    @ExpectedException(DuplicateDefinitionException.class)
+    @Test(expected = DuplicateDefinitionException.class)
     @Transactional
     public void testDuplicateDefinitions() throws DuplicateDefinitionException {
         _service.createDefinition(CategoryScope.Project, "dupevent1", 11L);

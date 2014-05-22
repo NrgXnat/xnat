@@ -1,14 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!--
-  ~ D:/Development/XNAT/1.6/nrg/pom.xml
-  ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2014, Washington University School of Medicine
-  ~ All Rights Reserved
-  ~
-  ~ Released under the Simplified BSD.
-  ~
-  ~ Last modified 2/18/14 5:52 PM
-  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
     xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
     xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
@@ -42,7 +32,8 @@
         <nrg.dicom-xnat.version>${project.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${project.version}</nrg.ecat4xnat.version>
         <nrg.nrgutil.version>1.1.0</nrg.nrgutil.version>
-        <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
+
+<nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
         <nrg.extattr.version>4.1.0</nrg.extattr.version>
         <nrg.sessionbuilders.version>${project.version}</nrg.sessionbuilders.version>
 
@@ -105,7 +96,6 @@
         <mockito.version>1.8.5</mockito.version>
         <pipeline.version>1.6.3</pipeline.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
-        <org.postgresql.version>9.3-1101-jdbc41</org.postgresql.version>
         <reflections.version>0.9.9-RC1</reflections.version>
         <restlet.version>1.1.10</restlet.version>
         <servlet-api.version>3.1.0</servlet-api.version>
@@ -170,7 +160,8 @@
                 <artifactId>DicomUtils</artifactId>
                 <version>${nrg.dicomutils.version}</version>
             </dependency>
-            <dependency>
+
+<dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>DicomImageUtils</artifactId>
                 <version>${nrg.dicomimageutils.version}</version>
@@ -266,7 +257,8 @@
                 <artifactId>xnat_tools</artifactId>
                 <version>${pipeline.version}</version>
             </dependency>
-            <dependency>
+
+<dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>pipelineXNAT</artifactId>
                 <version>1.0</version>
@@ -345,21 +337,21 @@
                 <artifactId>hibernate-jpa-2.1-api</artifactId>
                 <version>${hibernate-jpa-2.1.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.hibernate</groupId>
-                <artifactId>hibernate-validator</artifactId>
-                <version>${hibernate-validator.version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.hibernate</groupId>
+				<artifactId>hibernate-validator</artifactId>
+				<version>${hibernate-validator.version}</version>
+			</dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-ehcache</artifactId>
                 <version>${hibernate.version}</version>
             </dependency>
-            <dependency>
-                <groupId>net.sf.ehcache</groupId>
-                <artifactId>ehcache-core</artifactId>
-                <version>${ehcache.version}</version>
-            </dependency>
+			<dependency>
+				<groupId>net.sf.ehcache</groupId>
+				<artifactId>ehcache-core</artifactId>
+				<version>${ehcache.version}</version>
+			</dependency>
             <dependency>
                 <groupId>org.apache.jena</groupId>
                 <artifactId>jena-core</artifactId>
@@ -370,11 +362,11 @@
                 <artifactId>jena-tdb</artifactId>
                 <version>${jena-tdb.version}</version>
             </dependency>
-            <dependency>
-                <groupId>org.reflections</groupId>
-                <artifactId>reflections</artifactId>
-                <version>${reflections.version}</version>
-            </dependency>
+			<dependency>
+				<groupId>org.reflections</groupId>
+				<artifactId>reflections</artifactId>
+				<version>${reflections.version}</version>
+			</dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
@@ -601,17 +593,18 @@
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple</artifactId>
-                <version>${slf4j.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-log4j12</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>jul-to-slf4j</artifactId>
+                <version>${slf4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.slf4j</groupId>
+                <artifactId>slf4j-simple
+</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
@@ -677,11 +670,19 @@
                         <artifactId>jamon</artifactId>
                     </exclusion>
                 </exclusions>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.velocity</groupId>
                 <artifactId>velocity</artifactId>
                 <version>${velocity.version}</version>
+                <scope>provided</scope>
+                <exclusions>
+                    <exclusion>
+                        <groupId>velocity</groupId>
+                        <artifactId>velocity</artifactId>
+                    </exclusion>
+                </exclusions>
             </dependency>
             <dependency>
                 <groupId>ecs</groupId>
@@ -692,6 +693,7 @@
                 <groupId>torque</groupId>
                 <artifactId>torque</artifactId>
                 <version>${torque.version}</version>
+                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>stratum</groupId>
@@ -751,14 +753,9 @@
                 <scope>test</scope>
             </dependency>
             <dependency>
-                <groupId>postgresql</groupId>
-                <artifactId>postgresql</artifactId>
-                <version>${postgresql.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
-                <version>${org.postgresql.version}</version>
+                <version>${postgresql.version}</version>
             </dependency>
             <dependency>
                 <groupId>junit</groupId>
@@ -871,7 +868,7 @@
                             <Application-Name>${xnat.app.name}</Application-Name>
                             <Permissions>all-permissions</Permissions>
                             <Codebase>*</Codebase>
-                            <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
+                        <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
                         </updateManifestEntries>
                         <sign>
                             <keystore>${signing.keystore}</keystore>
@@ -939,7 +936,7 @@
                                 <Application-Name>${xnat.app.name}</Application-Name>
                                 <Permissions>all-permissions</Permissions>
                                 <Codebase>*</Codebase>
-                                <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
+                            <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
                             </manifestEntries>
                         </archive>
                     </configuration>
@@ -1047,3 +1044,4 @@
     </distributionManagement>
 
 </project>
+

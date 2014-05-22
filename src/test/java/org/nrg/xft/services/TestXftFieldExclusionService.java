@@ -5,7 +5,6 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.xft.entities.XftFieldExclusion;
 import org.nrg.xft.entities.XftFieldExclusionScope;
-import org.springframework.test.annotation.ExpectedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -44,8 +43,7 @@ public class TestXftFieldExclusionService {
         assertTrue(retrieved == null);
     }
 
-    @Test
-    @ExpectedException(ConstraintViolationException.class)
+    @Test(expected = ConstraintViolationException.class)
     public void testConstraints() {
         XftFieldExclusion exclusion1 = _service.newEntity();
         exclusion1.setScope(XftFieldExclusionScope.Project);

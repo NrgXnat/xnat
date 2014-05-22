@@ -11,7 +11,11 @@ package org.nrg.xdat.test;
 
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.search.DisplaySearch;
+import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTTableI;
+
+import java.io.File;
 
 
 /**
@@ -27,12 +31,12 @@ public class Test {
             String sep =System.getProperty("line.separator");
             String id = "050603_vc18118";
             
-             XDAT.init(appDir,false,true);
+             XDAT.init(new File(appDir).toURI(), false, true);
 //            
 //            
 //           // XFTTool.GenerateSQL("cdisc.sql");
-            org.nrg.xdat.security.XDATUser user = new org.nrg.xdat.security.XDATUser("tolsen","mysql");
-            org.nrg.xdat.security.ElementSecurity.GetElementSecurities();
+            XDATUser user = new org.nrg.xdat.security.XDATUser("tolsen","mysql");
+            ElementSecurity.GetElementSecurities();
 
             DisplaySearch ds = user.getSearch("xnat:mrSessionData", "listing");
             ds.setUser(null);

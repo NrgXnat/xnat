@@ -7,12 +7,6 @@
  * Created on Mar 18, 2004
  */
 package org.nrg.xft.schema;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
@@ -36,6 +30,11 @@ import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import java.io.File;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.util.*;
 
 /**
  * This singleton class manages the creation and manipulation of XFTDataModels.
@@ -69,7 +68,7 @@ public class XFTManager {
     private static Hashtable ROOT_LEVEL_ELEMENTS= new Hashtable();
 
     //private String packageName = "";
-    private String sourceDir = "";
+    private URI sourceDir;
 
     /**
      * Gets singleton instance of the Manager
@@ -91,7 +90,7 @@ public class XFTManager {
      * @return
      * @throws ElementNotFoundException
      */
-    public static XFTManager init(String schemaLocation) throws ElementNotFoundException
+    public static XFTManager init(URI schemaLocation) throws ElementNotFoundException
     {
         //XFT.LogCurrentTime("MANAGER INIT:1","ERROR");
         MANAGER = new XFTManager(schemaLocation);
@@ -138,7 +137,7 @@ public class XFTManager {
      * Re-Initializes the XFTManager
      * @throws XFTInitException
      */
-    public static void Refresh(String sourceDirectory) throws XFTInitException,ElementNotFoundException
+    public static void Refresh(URI sourceDirectory) throws XFTInitException,ElementNotFoundException
     {
         MANAGER = null;
         init(sourceDirectory);
@@ -185,16 +184,16 @@ public class XFTManager {
      * Source directory where the InstanceSettings.xml document can be found.
      * @return
      */
-    public String getSourceDir() {
+    public URI getSourceDir() {
         return sourceDir;
     }
 
     /**
      * Source directory where the InstanceSettings.xml document can be found.
-     * @param string
+     * @param dir    The source directory.
      */
-    public void setSourceDir(String string) {
-        sourceDir = string;
+    public void setSourceDir(URI dir) {
+        sourceDir = dir;
     }
 
     /**
@@ -203,20 +202,21 @@ public class XFTManager {
      * @param source location where InstanceSettings.xml can be found.
      * @throws ElementNotFoundException
      */
-    private XFTManager(String source) throws ElementNotFoundException
+    private XFTManager(URI source) throws ElementNotFoundException
     {
         logger.debug("Java Version is: " + System.getProperty("java.version"));
-        if (! source.endsWith(File.separator))
-        {
-            source = source + File.separator;
-        }
-        if (source.indexOf("WEB-INF")!=-1){
-            sourceDir = source.substring(0,source.indexOf("WEB-INF"));
-            System.out.println("SOURCE: " + sourceDir);
+        if (source.toString().contains("WEB-INF")){
+            String path = source.toString();
+            try {
+                sourceDir = new URI(path.substring(0, path.indexOf("WEB-INF")));
+            } catch (URISyntaxException ignored) {
+                // Just shouldn't happen.
+            }
         }else{
             sourceDir = source;
         }
-        File file = new File(source + "InstanceSettings.xml");
+
+        File file = new File(source.resolve("InstanceSettings.xml"));
         Document doc = XMLUtils.GetDOM(file);
         Element root = doc.getDocumentElement();
 
@@ -330,7 +330,7 @@ public class XFTManager {
                                 }
                                 if (NodeUtils.HasAttribute(child2,"MaxConnections"))
                                 {
-                                    db.setMaxConnections(new Integer(NodeUtils.GetAttributeValue(child2,"MaxConnections","")).intValue());
+                                    db.setMaxConnections(new Integer(NodeUtils.GetAttributeValue(child2, "MaxConnections", "")));
                                 }
                                 DBPool.AddDBConfig(db);
                            }
@@ -375,9 +375,7 @@ public class XFTManager {
                                 }
                                 try {
                                     model.setSchema();
-                                } catch (XFTInitException e) {
-                                    e.printStackTrace();
-                                } catch (ElementNotFoundException e) {
+                                } catch (XFTInitException | ElementNotFoundException e) {
                                     e.printStackTrace();
                                 }
                                 DATA_MODELS.put(model.getFileName(),model);

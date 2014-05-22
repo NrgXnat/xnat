@@ -7,20 +7,6 @@
  * Created on Jul 26, 2004
  */
 package org.nrg.xft.utils.DBTools;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Properties;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
@@ -28,6 +14,12 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
+
+import java.io.*;
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Properties;
 /**
  * @author Tim
  */
@@ -42,13 +34,9 @@ public class DBCopy {
 		try {
 			InputStream propsIn = new FileInputStream(propsLocation);
 			props.load(propsIn);
-		} catch (FileNotFoundException e) {
-			e.printStackTrace();
-			return;
 		} catch (IOException e) {
 			e.printStackTrace();
-			return;
-		}
+        }
 	}
 	
 	public void cleanDestinationDB()
@@ -414,11 +402,11 @@ logger.info("Copying " + table + " ...");
 			return;
 		}
 		try {
-			XFT.init("C:\\xdat\\projects\\cnda",false);
+			XFT.init(new File("C:\\xdat\\projects\\cnda").toURI(), false);
 		} catch (ElementNotFoundException e) {
 			e.printStackTrace();
 		}
-		DBCopy db = new DBCopy(args[0]);
+        DBCopy db = new DBCopy(args[0]);
 		db.cleanDestinationDB();
 		db.copyDB();
 		db.validateCopy();

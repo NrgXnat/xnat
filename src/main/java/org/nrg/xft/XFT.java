@@ -8,16 +8,6 @@
  */
 package org.nrg.xft;
 
-import java.io.File;
-import java.sql.SQLException;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Random;
-
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
@@ -32,13 +22,20 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.references.XFTPseudonymManager;
 import org.nrg.xft.references.XFTReferenceManager;
-import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
+import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
+
+import java.io.File;
+import java.net.MalformedURLException;
+import java.net.URI;
+import java.sql.SQLException;
+import java.text.NumberFormat;
+import java.util.*;
 /**
  * @author Tim
  *
@@ -48,7 +45,7 @@ public class XFT {
     private static String ADMIN_EMAIL = "nrgtech@nrg.wustl.edu";
     private static String ADMIN_EMAIL_HOST = "";
 
-    private static String CONF_DIR=null;
+    private static URI CONF_DIR=null;
 
     private static String SITE_URL = "";
     private static String ARCHIVE_ROOT_PATH = "";
@@ -57,7 +54,6 @@ public class XFT {
     static org.apache.log4j.Logger logger = Logger.getLogger(XFT.class);
     public static final String PREFIX = "xdat";
     public static final char PATH_SEPERATOR = '/';
-    private static String WEBAPP_NAME = null;
 
     public static boolean VERBOSE = false;
     private static Boolean REQUIRE_REASON = null;
@@ -68,9 +64,9 @@ public class XFT {
 //	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
 //	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 
-    public static void init(String location,boolean allowDBAccess) throws ElementNotFoundException
+    public static void init(final URI location, boolean allowDBAccess) throws ElementNotFoundException
     {
-        init(location,allowDBAccess,true);
+        init(location, allowDBAccess, true);
     }
     /**
      * This method must be run before any XFT task is performed.
@@ -78,20 +74,13 @@ public class XFT {
      * XFT's settings and loads the schema.
      * @param location (Directory which includes the InstanceSettings.xml document)
      */
-    public static void init(String location,boolean allowDBAccess, boolean initLog4j) throws ElementNotFoundException
+    public static void init(URI location,boolean allowDBAccess, boolean initLog4j) throws ElementNotFoundException
     {
-
-        //XFT.LogCurrentTime("XFT INIT:1","ERROR");
-        if (! location.endsWith(File.separator))
-        {
-            location = location + File.separator;
-        }
-
         if (XFT.VERBOSE) {
             System.out.println("SETTINGS LOCATION: " + location);
         }
 
-        CONF_DIR=location;
+        CONF_DIR = location;
 
         if (initLog4j)
         {
@@ -178,14 +167,13 @@ public class XFT {
         }
     }
 
-    public static void initLog4j(String location)
+    public static void initLog4j(URI location)
     {
-        if (! location.endsWith(File.separator))
-        {
-            location = location + File.separator;
+        try {
+            PropertyConfigurator.configure(location.resolve("log4j.properties").toURL());
+        } catch (MalformedURLException ignored) {
+            // This just shouldn't happen.
         }
-
-        PropertyConfigurator.configure(location + "log4j.properties");
 
         logger.info("");
         Logger.getLogger("org.nrg.xft.db.PoolDBUtils").error("");
@@ -799,12 +787,7 @@ public class XFT {
     private static String UserRegistration = "";
     public static boolean GetUserRegistration()
     {
-        if(XFT.UserRegistration != null && (XFT.UserRegistration.equalsIgnoreCase("false") || XFT.UserRegistration.equalsIgnoreCase("1")))
-        {
-            return false;
-        }else{
-            return true;
-        }
+        return !(XFT.UserRegistration != null && (XFT.UserRegistration.equalsIgnoreCase("false") || XFT.UserRegistration.equalsIgnoreCase("1")));
     }
 
     public static void SetUserRegistration(String s)
@@ -812,26 +795,19 @@ public class XFT {
         XFT.UserRegistration=s;
     }
 
-    public static String GetSettingsDirectory() throws XFTInitException
+    public static URI GetSettingsDirectory() throws XFTInitException
     {
         return XFTManager.GetInstance().getSourceDir();
     }
 
-    public static String GetConfDir(){
+    public static URI GetConfDir(){
         return CONF_DIR;
     }
     
     private static String EnableCsrfToken = "";
     public static boolean GetEnableCsrfToken()
     {
-        if(XFT.EnableCsrfToken==null){
-            return true;
-        }else if(XFT.EnableCsrfToken.equalsIgnoreCase("false") || XFT.EnableCsrfToken.equalsIgnoreCase("1"))
-        {
-            return false;
-        }else{
-            return true;
-        }
+        return XFT.EnableCsrfToken == null || !(XFT.EnableCsrfToken.equalsIgnoreCase("false") || XFT.EnableCsrfToken.equalsIgnoreCase("1"));
     }
 
     public static void SetEnableCsrfToken(String s)

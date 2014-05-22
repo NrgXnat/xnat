@@ -1,26 +1,27 @@
 package org.nrg.xdat.security;
 
+import org.apache.commons.lang.StringUtils;
+
 import java.util.regex.Pattern;
 
 public class RegExpValidator implements PasswordValidator{
 
 	String regexp="";
 	String message="Password is not sufficiently complex.";
-	
+
+    @SuppressWarnings("unused")
 	public RegExpValidator(){
 		
 	}
-	
-	@Override
+
+    public RegExpValidator(final String regexp, final String message) {
+        setRegexp(regexp);
+        setMessage(message);
+    }
+
+    @Override
 	public boolean isValid(String password, XDATUser user) {
-		boolean valid = false;
-		if((regexp.equals(""))){
-			valid = true;
-		}
-		else{
-			valid = Pattern.matches(regexp, password);
-		}
-		return valid;
+        return StringUtils.isBlank(regexp) || Pattern.matches(regexp, password);
 	}
 
 	public String getRegexp() {
@@ -42,5 +43,4 @@ public class RegExpValidator implements PasswordValidator{
 			this.message = message;
 		}
 	}
-
 }

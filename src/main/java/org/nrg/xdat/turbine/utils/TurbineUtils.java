@@ -9,29 +9,7 @@
  */
 package org.nrg.xdat.turbine.utils;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.StringReader;
-import java.net.URLDecoder;
-import java.text.NumberFormat;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
+import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.lang.ObjectUtils;
@@ -70,8 +48,13 @@ import org.nrg.xft.utils.StringUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.google.common.collect.Collections2;
-import com.google.common.collect.Lists;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import java.io.*;
+import java.net.URLDecoder;
+import java.text.NumberFormat;
+import java.text.ParseException;
+import java.util.*;
 /**
  * @author Tim
  *
@@ -774,10 +757,10 @@ public class TurbineUtils {
 			if (data != null)
 			{
 				logger.debug("\n\nSession Parameters");
-				final Enumeration<Object> enumer = data.getSession().getAttributeNames();
+				final Enumeration<String> enumer = data.getSession().getAttributeNames();
 				while (enumer.hasMoreElements())
 				{
-					final String key = (String)enumer.nextElement();
+					final String key = enumer.nextElement();
 					final Object o = data.getSession().getAttribute(key);
 				    logger.debug("KEY: "+ key + " VALUE: " + o.getClass());
 				}
@@ -1059,8 +1042,8 @@ public class TurbineUtils {
     
     /**
      * Note: much of this was copied from SecureScreen.  This version looks at the other templates directories (not just templates).  We may want to merge the two impls.
-     * @param subFolderAndPatttern : like topBar/admin
-     * @return
+     * @param subFolder like topBar/admin
+     * @return The properties from the located templates.
      */
     public List<Properties> getTemplates(String subFolder){
     	//first see if the props have been cached.
@@ -1068,7 +1051,7 @@ public class TurbineUtils {
     	List<String> _defaultScreens=new ArrayList<String>();
     	if(screens==null){
     		synchronized (this){
-    			//synchronized so that two calls don't overwrite eachother.  I only synchronized this chunk in hopes that when the screens list is cached, the block woudn't occur.
+    			//synchronized so that two calls don't overwrite each other.  I only synchronized this chunk in hopes that when the screens list is cached, the block wouldn't occur.
 	    		//need to build the list of props.
 	    		screens=new ArrayList<Properties>();
 	        	List<String> exists=new ArrayList<String>();

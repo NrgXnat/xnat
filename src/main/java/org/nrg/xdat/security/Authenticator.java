@@ -1,6 +1,11 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.security;
 
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.XFT;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -8,19 +13,10 @@ import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xdat.security.XDATUser.ActivationException;
-import org.nrg.xdat.security.XDATUser.EnabledException;
-import org.nrg.xdat.security.XDATUser.PasswordAuthenticationException;
-import org.nrg.xdat.security.XDATUser.UserNotFoundException;
-import org.nrg.xdat.services.AliasTokenService;
-import org.nrg.xft.XFT;
-
 public class Authenticator {
     public synchronized static String RetrieveAuthenticatorClassName() {
         if (AUTH_CLASS == null) {
-            File AUTH_PROPS = new File(XFT.GetConfDir(), "authentication.properties");
+            File AUTH_PROPS = new File(XFT.GetConfDir().resolve("authentication.properties"));
             if (!AUTH_PROPS.exists()) {
                 System.out.println("No authentication.properties file found in conf directory. Skipping enhanced authentication method.");
                 AUTH_CLASS = "org.nrg.xdat.security.Authenticator";

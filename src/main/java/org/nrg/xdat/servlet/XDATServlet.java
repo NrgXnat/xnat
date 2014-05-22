@@ -9,19 +9,19 @@
  */
 package org.nrg.xdat.servlet;
 
-import java.io.File;
-import java.sql.SQLException;
-import java.util.logging.Handler;
-import java.util.logging.LogManager;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
 import org.slf4j.bridge.SLF4JBridgeHandler;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import java.io.File;
+import java.net.URI;
+import java.sql.SQLException;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
 
 /**
  * @author Tim
@@ -36,16 +36,11 @@ public class XDATServlet extends HttpServlet{
 		super.init(config);
 		
 		try {
-            String path = this.getServletContext().getRealPath("WEB-INF" + File.separator + "conf" + File.separator);
+            final URI path = this.getServletContext().getResource("WEB-INF" + File.separator + "conf" + File.separator).toURI();
 
-            String webapp = path.substring(0,path.lastIndexOf(File.separator + "WEB-INF" + File.separator + "conf"));
-            webapp = webapp.substring(webapp.lastIndexOf(File.separator));
-            System.out.println("WEBAPP:" + webapp);
-            //XFT.setWEBAPP_NAME(webapp);
-            
-			XDAT.init(path,true,false);
+			XDAT.init(path, true, false);
+
             XDAT.setScreenTemplatesFolder(this.getServletContext().getRealPath("templates" + File.separator + "screens" + File.separator));
-            
             XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath("templates" + File.separator + "screens" + File.separator));
             XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath("xnat-templates" + File.separator + "screens" + File.separator));
             XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath("xdat-templates" + File.separator + "screens" + File.separator));
@@ -61,7 +56,7 @@ public class XDATServlet extends HttpServlet{
 	{
 	    try {
             XFT.closeConnections();
-        } catch (SQLException e) {
+        } catch (SQLException ignored) {
         }
         super.destroy();
 	}
@@ -73,22 +68,6 @@ public class XDATServlet extends HttpServlet{
                 DBAction.AdjustSequences();
             }
     }
-//    
-//    public class DelayedGroupLoader extends Thread 
-//    {                      
-//            public void run()                       
-//            {              
-//                UserGroupManager.GetAllUserGroups();
-//            }
-//    }
-//    
-//    public class DelayedSearchLoader extends Thread 
-//    {                      
-//            public void run()                       
-//            {              
-//                XdatStoredSearch.GetPreLoadedSearches();
-//            }
-//    }
 
 	private void replaceLogging() {
 		// remove the java.util.logging handlers so that nothing is logged to stdout/stderr

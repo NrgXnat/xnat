@@ -5,6 +5,16 @@
  */
 package org.nrg.xft.commandPrompt;
 
+import org.nrg.xdat.XDATTool;
+import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xft.XFT;
+import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.utils.FileUtils;
+
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
@@ -15,16 +25,6 @@ import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.Properties;
-
-import org.nrg.xdat.XDATTool;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
-import org.nrg.xft.XFT;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.utils.FileUtils;
 
 /**
  * @author Tim
@@ -181,9 +181,9 @@ public abstract class CommandPromptTool {
         }
     }
     
-    public void _service() throws DBPoolException,SQLException,FailedLoginException,Exception
+    public void _service() throws Exception
     {
-        XFT.initLog4j(getDirectory());
+        XFT.initLog4j(new File(getDirectory()).toURI());
         service();
     }
     
@@ -191,7 +191,7 @@ public abstract class CommandPromptTool {
         _process();
     }
     
-    public void _process() throws DBPoolException,SQLException,FailedLoginException,Exception
+    public void _process() throws Exception
     {
         getDirectory();
 		
@@ -615,16 +615,6 @@ public abstract class CommandPromptTool {
     public boolean requireLogin()
     {
         return true;
-    }
-    
-    public String getWorkingDirectory()
-    {
-        return tool.getWorkDirectory();
-    }
-    
-    public String getSettingsDirectory()
-    {
-        return tool.getSettingsDirectory();
     }
     
     public XDATUser getUser()

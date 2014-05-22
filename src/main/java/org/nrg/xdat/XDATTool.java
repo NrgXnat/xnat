@@ -5,12 +5,6 @@
  */
 package org.nrg.xdat;
 
-import java.io.File;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.presentation.CSVPresenter;
@@ -20,35 +14,36 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
-import org.nrg.xft.ItemI;
-import org.nrg.xft.XFT;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.XFTTable;
-import org.nrg.xft.XFTTableI;
+import org.nrg.xft.*;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.ValidationException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.references.XFTReferenceManager;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
-import org.nrg.xft.utils.XMLValidator;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
+import org.nrg.xft.utils.XMLValidator;
+
+import java.io.File;
+import java.net.URI;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
 
 /**
  * @author Tim
@@ -56,7 +51,7 @@ import org.nrg.xft.utils.ValidationUtils.XFTValidator;
  */
 public class XDATTool {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XDATTool.class);
-    private String location = null;
+    private URI location = null;
     private XDATUser user = null;
     private boolean ignoreSecurity = false;
     public XDATTool() throws XFTInitException
@@ -67,37 +62,30 @@ public class XDATTool {
      *
      */
     public XDATTool(String instanceLocation) throws Exception {
-    	instanceLocation = FileUtils.AppendSlash(instanceLocation);
-        location= instanceLocation;
+        location = new File(instanceLocation).toURI();
         XDAT.init(location,false);
     }
     /**
      *
      */
     public XDATTool(String instanceLocation,XDATUser u) throws Exception {
-    	instanceLocation = FileUtils.AppendSlash(instanceLocation);
         user=u;
-        location= instanceLocation;
+        location = new File(instanceLocation).toURI();
         XDAT.init(location,false);
     }
 
-    public XDATTool(String instanceLocation,String username, String password) throws DBPoolException,SQLException,FailedLoginException,Exception
+    public XDATTool(String instanceLocation,String username, String password) throws Exception
     {
-    	instanceLocation = FileUtils.AppendSlash(instanceLocation);
-        location= instanceLocation;
+        location = new File(instanceLocation).toURI();
         XDAT.init(location,true);
         login(username,password);
     }
 
-    private void login(String username, String password) throws DBPoolException,SQLException,FailedLoginException,Exception
+    private void login(String username, String password) throws Exception
     {
         try {
             user = Authenticator.Authenticate(new Authenticator.Credentials(username,password));
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
+        } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
             logger.error("",e);
         }
     }
@@ -105,7 +93,6 @@ public class XDATTool {
     /**
 	 * Generate CREATE, ALTER, VIEW, and INSERT statements for each element in the
 	 * defined schemas.
-	 * @param outputFile (location to save generated sql)
 	 */
 	public void generateSQL() throws Exception
 	{
@@ -115,7 +102,6 @@ public class XDATTool {
     /**
 	 * Generate CREATE, ALTER, VIEW, and INSERT statements for each element in the
 	 * defined schemas.
-	 * @param outputFile (location to save generated sql)
 	 */
 	public void generateSQL(String s) throws Exception
 	{
@@ -143,14 +129,11 @@ public class XDATTool {
 
 	public void storeXML(File fileLocation,Boolean quarantine, boolean allowItemRemoval) throws Exception
 	{
-	    boolean overrideSecurity = false;
-	    if (user == null && (!ignoreSecurity))
+        if (user == null && (!ignoreSecurity))
 	    {
 	        if(!fileLocation.getAbsolutePath().endsWith("security.xml"))
 	        {
 	            throw new Exception("Error: No username and password.");
-	        }else{
-	            overrideSecurity=true;
 	        }
 	    }
 	    if (! fileLocation.exists())
@@ -184,7 +167,7 @@ public class XDATTool {
 			boolean override;
 			if (quarantine!=null)
 			{
-			    q = quarantine.booleanValue();
+			    q = quarantine;
 			    override = true;
 			}else{
 			    q = item.getGenericSchemaElement().isQuarantine();
@@ -433,22 +416,11 @@ public class XDATTool {
 	    return f.getAbsolutePath();
 	}
 
-	public String getSettingsDirectory()
+	public URI getSettingsDirectory()
 	{
 	    return location;
 	}
 
-	public static String GetSettingsDirectory()
-	{
-	    try {
-            String s=  XFTManager.GetInstance().getSourceDir();
-        	s = FileUtils.AppendSlash(s);
-            return s;
-        } catch (XFTInitException e) {
-            logger.error("",e);
-            return "XDAT NOT INITIALIZED";
-        }
-	}
     /**
      * @return Returns the user.
      */

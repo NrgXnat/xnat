@@ -19,6 +19,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
 
+import java.io.File;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -106,7 +107,7 @@ public class SQLCreateGenerator {
     public static void main(String args[]) {
         if (args.length == 2) {
             try {
-                XFT.init(args[0], true);
+                XFT.init(new File(args[0]).toURI(), true);
                 SQLCreateGenerator.generateDoc(args[1]);
             } catch (Exception e) {
                 e.printStackTrace();

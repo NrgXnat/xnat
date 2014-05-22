@@ -11,15 +11,6 @@
 
 package org.nrg.xdat;
 
-import java.io.File;
-import java.net.InetAddress;
-import java.net.UnknownHostException;
-import java.util.*;
-
-import javax.jms.Destination;
-import javax.servlet.http.HttpSession;
-import javax.sql.DataSource;
-
 import com.google.common.base.Joiner;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
@@ -29,7 +20,7 @@ import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.hibernate.cache.RegionFactory;
+import org.hibernate.cache.spi.RegionFactory;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.SiteConfigurationService;
@@ -41,11 +32,7 @@ import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
-import org.nrg.notify.entities.Category;
-import org.nrg.notify.entities.Channel;
-import org.nrg.notify.entities.Definition;
-import org.nrg.notify.entities.Subscriber;
-import org.nrg.notify.entities.Subscription;
+import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
@@ -56,6 +43,9 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xdat.turbine.utils.PopulateItem;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
@@ -69,13 +59,19 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xft.ItemI;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import javax.jms.Destination;
+import javax.servlet.http.HttpSession;
+import javax.sql.DataSource;
+import java.io.File;
+import java.net.InetAddress;
+import java.net.URI;
+import java.net.UnknownHostException;
+import java.util.*;
 
 /**
  * @author Tim
@@ -98,8 +94,8 @@ public class XDAT implements Initializable,Configurable{
     private static SiteConfigurationService _siteConfigurationService;
     private static RegionFactory _cacheRegionFactory;
     public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
-    private static String _configFilesLocation = null;
-    private String instanceSettingsLocation = null;
+    private static URI _configFilesLocation = null;
+    private URI instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
     
@@ -204,8 +200,8 @@ public class XDAT implements Initializable,Configurable{
 	 * @see org.apache.stratum.lifecycle.Configurable
 	 */
 	public void configure(Configuration configuration) 	{
-		instanceSettingsLocation = configuration.getString("instance_settings_directory");
-	}
+        instanceSettingsLocation = new File(configuration.getString("instance_settings_directory")).toURI();
+    }
 
 	/**
 	 * initialize Torque
@@ -223,7 +219,7 @@ public class XDAT implements Initializable,Configurable{
 		}
 	}
 
-	public static void init(String location) throws Exception
+	public static void init(URI location) throws Exception
 	{
 		XDAT.init(location, true, true);
 	}
@@ -234,16 +230,17 @@ public class XDAT implements Initializable,Configurable{
 		DisplayManager.GetInstance();
 	}
 
-	public static void init(String location,boolean allowDBAccess) throws Exception
+	public static void init(URI location,boolean allowDBAccess) throws Exception
 	{
 		init(location, allowDBAccess, true);
 	}
 
-	public static void init(String location,boolean allowDBAccess, boolean initLog4j) throws Exception
+	public static void init(URI location,boolean allowDBAccess, boolean initLog4j) throws Exception
 	{
 		DisplayManager.clean();
-        if (StringUtils.isBlank(_configFilesLocation)) {
-            _configFilesLocation = FileUtils.AppendSlash(location);
+
+        if (_configFilesLocation == null) {
+            _configFilesLocation = location;
         }
 
 		if (initLog4j)
@@ -253,7 +250,7 @@ public class XDAT implements Initializable,Configurable{
 		}
 
 		XFT.init(_configFilesLocation, allowDBAccess, initLog4j);
-		//XFT.LogCurrentTime("XDAT INIT: 1","ERROR");
+
 		if (allowDBAccess)
 		{
 			try {

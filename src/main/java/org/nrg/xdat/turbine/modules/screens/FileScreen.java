@@ -17,6 +17,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
+import java.net.URI;
 
 /**
  * @author Tim
@@ -40,12 +41,8 @@ public abstract class FileScreen extends SecureScreen {
         if (f==null || !f.exists())
         {
         	//if file doesn't exist return this image... Throwing an exception should skip this.
-            String path = XFT.GetSettingsDirectory();
-            if (!(path.endsWith("/") || path.endsWith("\\")))
-            {
-                path += "/";
-            }
-            f = new File(path + "/images/rc.gif");
+            URI path = XFT.GetSettingsDirectory();
+            f = new File(path.resolve("/images/rc.gif"));
         }
         
           HttpServletResponse response =data.getResponse();

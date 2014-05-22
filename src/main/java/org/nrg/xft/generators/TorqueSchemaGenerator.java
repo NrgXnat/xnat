@@ -7,33 +7,30 @@
  * Created on Apr 1, 2004
  */
 package org.nrg.xft.generators;
-import java.util.ArrayList;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
 
 import org.apache.log4j.Logger;
-import org.nrg.xft.XFT;
 import org.nrg.xft.TypeConverter.TorqueMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
+import org.nrg.xft.XFT;
 import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.references.XFTManyToManyReference;
-import org.nrg.xft.references.XFTMappingColumn;
-import org.nrg.xft.references.XFTReferenceI;
-import org.nrg.xft.references.XFTReferenceManager;
-import org.nrg.xft.references.XFTRelationSpecification;
-import org.nrg.xft.references.XFTSuperiorReference;
-import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.schema.XFTSchema;
+import org.nrg.xft.references.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
+import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
 /**
  * Generater class that is used to output a torque schema for the collection of XFTSchemas.
  * 
@@ -374,7 +371,7 @@ public class TorqueSchemaGenerator {
 	public static void main(String args[]) {
 		if (args.length == 2){
 			try {
-				XFT.init(args[0],true);
+				XFT.init(new File(args[0]).toURI(), true);
 				TorqueSchemaGenerator.generateDoc(args[1]);
 			} catch (ElementNotFoundException e) {
 				e.printStackTrace();

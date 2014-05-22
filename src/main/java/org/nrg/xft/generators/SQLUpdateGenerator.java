@@ -25,6 +25,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
 
+import java.io.File;
 import java.sql.SQLException;
 import java.util.*;
 
@@ -52,21 +53,19 @@ public class SQLUpdateGenerator {
             }
             FileUtils.OutputToFile(sb.toString(), location);
             System.out.println("File Created: " + location);
-        } catch (org.nrg.xft.exception.XFTInitException e) {
-            logger.error("", e);
-        } catch (ElementNotFoundException e) {
+        } catch (XFTInitException | ElementNotFoundException e) {
             logger.error("", e);
         }
     }
 
     public static List<String> GetSQLCreate() throws Exception {
-        List<String> creates = new ArrayList<String>();
-        List<String> alters = new ArrayList<String>();
+        List<String> creates = new ArrayList<>();
+        List<String> alters = new ArrayList<>();
 
-        Map<String, List<String>> databases = new Hashtable<String, List<String>>();
+        Map<String, List<String>> databases = new Hashtable<>();
         for (DBConfig config : DBPool.GetPool().getDBConfigs()) {
             //LOAD CURRENT TABLES FROM DB
-            List<String> lowerCaseLoadedTables = new ArrayList<String>();
+            List<String> lowerCaseLoadedTables = new ArrayList<>();
             PoolDBUtils con;
             try {
                 con = new PoolDBUtils();
@@ -75,8 +74,6 @@ public class SQLUpdateGenerator {
                     t.nextRow();
                     lowerCaseLoadedTables.add(t.getCellValue("relname").toString().toLowerCase());
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
             } catch (Exception e) {
                 e.printStackTrace();
             }
@@ -134,7 +131,7 @@ public class SQLUpdateGenerator {
             }
         }
 
-        List<String> all = new ArrayList<String>();
+        List<String> all = new ArrayList<>();
         all.addAll(creates);
         all.addAll(alters);
         all.addAll(GenericWrapperUtils.GetFunctionSQL());
@@ -143,7 +140,7 @@ public class SQLUpdateGenerator {
     }
 
     public static List<String> GetUpdateStatements(GenericWrapperElement e) {
-        List<String> statements = new ArrayList<String>();
+        List<String> statements = new ArrayList<>();
 
         List<String> lowerCaseColumns = new ArrayList<String>();
         List<String> columnTypes = new ArrayList<String>();
@@ -466,9 +463,7 @@ public class SQLUpdateGenerator {
                     }
                 }
             }
-        } catch (ElementNotFoundException e1) {
-            e1.printStackTrace();
-        } catch (XFTInitException e1) {
+        } catch (ElementNotFoundException | XFTInitException e1) {
             e1.printStackTrace();
         }
 
@@ -479,7 +474,7 @@ public class SQLUpdateGenerator {
     public static void main(String args[]) {
         if (args.length == 2) {
             try {
-                XFT.init(args[0], true);
+                XFT.init(new File(args[0]).toURI(), true);
                 SQLUpdateGenerator.generateDoc(args[1]);
             } catch (Exception e) {
                 e.printStackTrace();

@@ -4,7 +4,6 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.springframework.test.annotation.ExpectedException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
@@ -38,8 +37,7 @@ public class TestXdatUserAuthService {
         assertTrue(retrieved == null);
     }
     
-    @Test
-    @ExpectedException(ConstraintViolationException.class)
+    @Test(expected = ConstraintViolationException.class)
     public void testConstraints() {
     	XdatUserAuth userAuth1 = _service.newEntity();
         userAuth1.setAuthUser("mmckay");
@@ -54,7 +52,6 @@ public class TestXdatUserAuthService {
         userAuth2.setXdatUsername("mike");
         _service.create(userAuth2);
     }
-
 
     @Inject
     private XdatUserAuthService _service;

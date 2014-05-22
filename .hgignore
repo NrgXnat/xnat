@@ -18,6 +18,7 @@ plugin-resources/repository/org.apache.directory.server/jars/apacheds-all-1.5.5.
 plugin-resources/misc/template2.*
 Thumbs.db
 out
+build
 
 work
 pom.xml

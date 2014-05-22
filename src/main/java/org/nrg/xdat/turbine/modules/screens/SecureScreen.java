@@ -11,7 +11,28 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
-import com.google.common.base.Joiner;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Properties;
+import java.util.Scanner;
+import java.util.UUID;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+
+import org.apache.commons.io.FileUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
@@ -37,15 +58,7 @@ import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+import com.google.common.base.Joiner;
 /**
  * @author Tim
  *
@@ -346,20 +359,44 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             });
 
             for (File file: files) {
-                addProps(file,tabs,_defaultTabs,subfolder+"/"+file.getName());
+                try {
+					addProps(file,tabs,_defaultTabs,subfolder+"/"+file.getName());
+				} catch (IOException e) {
+					logger.error("",e);
+				}
             }
         }
         return tabs;
     }
     
     public static void addProps(File file,List<Properties> screens, List<String> _defaultScreens, final String path) throws FileNotFoundException{
-    	String fileName = file.getName();
-        String divName = fileName.substring(0, fileName.length() - 3);
+        if(file.exists()){
+        	InputStream stm=null;;
+        	try {
+				stm=FileUtils.openInputStream(file);
+				addProps(file.getName(),stm,screens,_defaultScreens,path);
+			} catch (IOException e) {
+				logger.error("",e);
+			}finally{
+				if(stm!=null){
+					try {
+						stm.close();
+					} catch (IOException e) {
+						logger.error("",e);
+					}
+				}
+			}
+        }
+    }
+    
+    public static void addProps(String fileName,InputStream file,List<Properties> screens, List<String> _defaultScreens, final String path) throws FileNotFoundException{
+    	String divName = fileName.substring(0, fileName.length() - 3);
 
         // If there are no default tabs or if the defaultTabs doesn't exclude this divName...
         if (_defaultScreens == null || !_defaultScreens.contains(divName)) {
             Properties metadata = new Properties();
 
+            
             // Set default divName and title properties to start. These can be overridden during mix-in processing.
             metadata.setProperty("fileName", fileName);
             metadata.setProperty("path", path);
@@ -368,7 +405,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
             boolean include = true;
 
-            if(file.exists()){
+            if(file!=null){
                 Scanner scanner = new Scanner(file);
                 try {
                     while (scanner.hasNextLine()) {
@@ -379,14 +416,14 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                             String value = matcher.group(2);
                             if (key.equalsIgnoreCase("ignore") && value.equalsIgnoreCase("true")) {
                                 if (logger.isDebugEnabled()) {
-                                    logger.debug("Found ignore = true in file: " + file.getName());
+                                    logger.debug("Found ignore = true in file: " + fileName);
                                 }
                                 include = false;
                                 break;
                             }
                             metadata.setProperty(key, value);
                             if (logger.isDebugEnabled()) {
-                                logger.debug("Came up with " + key + "[" + value + "] from file: " + file.getName());
+                                logger.debug("Came up with " + key + "[" + value + "] from file: " + fileName);
                             }
                         }
                     }

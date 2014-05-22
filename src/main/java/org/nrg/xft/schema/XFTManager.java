@@ -8,7 +8,9 @@
  */
 package org.nrg.xft.schema;
 
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.db.DBConfig;
@@ -32,6 +34,7 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
 import java.io.File;
+import java.io.InputStream;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.*;
@@ -63,11 +66,9 @@ public class XFTManager {
     private static XFTManager MANAGER = null;
 
     private static XFTElement ELEMENT_TABLE = null;
-    private static Hashtable DATA_MODELS = new Hashtable();
+    private static Hashtable<String, XFTDataModel> DATA_MODELS = new Hashtable<>();
+    private static Hashtable<String, String> ROOT_LEVEL_ELEMENTS= new Hashtable<>();
 
-    private static Hashtable ROOT_LEVEL_ELEMENTS= new Hashtable();
-
-    //private String packageName = "";
     private URI sourceDir;
 
     /**
@@ -98,21 +99,18 @@ public class XFTManager {
         //XFT.LogCurrentTime("MANAGER INIT:2","ERROR");
         try {
             MANAGER.manageAddins();
-        }catch (XFTInitException e) {
-            e.printStackTrace();
-        }catch (Exception e) {
-            e.printStackTrace();
+        } catch (Exception e) {
+            logger.warn("Exception found", e);
         }
         //XFT.LogCurrentTime("MANAGER INIT:3","ERROR");
         //FileUtils.OutputToFile(MANAGER.toString(),MANAGER.getSourceDir() +"xdat.xml");
         return MANAGER;
     }
 
-    public static void clean()
-    {
+    public static void clean() {
         MANAGER = null;
         ELEMENT_TABLE = null;
-        DATA_MODELS = new Hashtable();
+        DATA_MODELS = new Hashtable<>();
     }
 
     /**
@@ -151,11 +149,8 @@ public class XFTManager {
     public static ArrayList GetSchemas()
     {
         ArrayList al = new ArrayList();
-        XFTElement xe = null;
-        Enumeration enumer = DATA_MODELS.keys();
-        while(enumer.hasMoreElements())
-        {
-            al.add(((XFTDataModel)DATA_MODELS.get(enumer.nextElement())).getSchema());
+        for (final XFTDataModel model : DATA_MODELS.values()) {
+            al.add(model.getSchema());
         }
         return al;
     }
@@ -289,6 +284,8 @@ public class XFTManager {
             XFT.SetUserRegistration(user_registration);
         }
 
+        String lastDB=null;
+
         if (root.hasChildNodes())
         {
             for (int i=0;i<root.getChildNodes().getLength();i++)
@@ -330,7 +327,7 @@ public class XFTManager {
                                 }
                                 if (NodeUtils.HasAttribute(child2,"MaxConnections"))
                                 {
-                                    db.setMaxConnections(new Integer(NodeUtils.GetAttributeValue(child2, "MaxConnections", "")));
+                                    db.setMaxConnections(new Integer(NodeUtils.GetAttributeValue(child2,"MaxConnections","")).intValue());
                                 }
                                 DBPool.AddDBConfig(db);
                            }
@@ -367,7 +364,7 @@ public class XFTManager {
                                 }
                                 if (NodeUtils.HasAttribute(child2,"DB"))
                                 {
-                                    model.setDb(NodeUtils.GetAttributeValue(child2,"DB",""));
+                                    model.setDb(lastDB = NodeUtils.GetAttributeValue(child2,"DB",""));
                                 }
                                 if (NodeUtils.HasAttribute(child2,"package"))
                                 {
@@ -385,6 +382,65 @@ public class XFTManager {
                 }
             }
         }
+        
+        try {
+			//retrieve schema from jars
+			List<XFTDataModel> models=discoverSchema();
+			for(XFTDataModel model:models){
+				model.setDb(lastDB);
+				DATA_MODELS.put(model.getFileName(), model);
+			}
+		} catch (XFTInitException e) {
+			e.printStackTrace();
+			logger.error("",e);
+		}
+    }
+
+    private List<XFTDataModel> discoverSchema() throws XFTInitException, ElementNotFoundException {
+		List<XFTDataModel> models=Lists.newArrayList();
+		  	
+		List<DataModelDefinition> defs=discoverDataModelDefs();
+		for(DataModelDefinition annotation: defs){
+            InputStream in=this.getClass().getClassLoader().getResourceAsStream(annotation.getSchemaPath());
+            
+            if(in!=null){
+                XFTDataModel model=new XFTDataModel();
+				model.setFileLocation(annotation.getSchemaPath());
+				model.setFileName((annotation.getSchemaPath().contains("/"))?annotation.getSchemaPath().substring(annotation.getSchemaPath().lastIndexOf("/")):annotation.getSchemaPath());
+				model.setSchema(new XFTSchema(XMLUtils.GetDOM(in),annotation.getSchemaPath(),model));
+				models.add(model);
+            }
+        }
+		
+		return models;
+	}
+    
+    public static List<DataModelDefinition> discoverDataModelDefs(){
+    	List<DataModelDefinition> defs= Lists.newArrayList();
+    	//look for defined schema extensions
+        List<Class<?>> classes;
+        try {
+            classes = Reflection.getClassesForPackage("org.nrg.xft.schema.extensions");
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
+        
+        for (Class<?> clazz : classes) {
+            if (DataModelDefinition.class.isAssignableFrom(clazz)) {//must be a data model definition
+            	try {
+					DataModelDefinition annotation = (DataModelDefinition)clazz.newInstance();
+					String schemaPath=annotation.getSchemaPath();
+					InputStream in=clazz.getClassLoader().getResourceAsStream(schemaPath);
+					
+					if(in!=null){
+					    defs.add(annotation);
+					}
+				} catch (InstantiationException | IllegalAccessException e) {
+					logger.error("",e);
+				}
+            }
+        }
+        return defs;
     }
 
     @Override
@@ -399,17 +455,15 @@ public class XFTManager {
         XMLWriter writer = new XMLWriter();
         Document doc =writer.getDocument();
         Node main = doc.createElement("xdat-manager");
-        Iterator schemas =  GetSchemas().iterator();
-        while (schemas.hasNext())
-        {
-            XFTSchema schema = (XFTSchema)schemas.next();
+        for (final Object o : GetSchemas()) {
+            XFTSchema schema = (XFTSchema) o;
             main.appendChild(schema.toXML(doc));
         }
         doc.appendChild(main);
         return doc;
     }
 
-    private void manageAddins() throws ElementNotFoundException,XFTInitException,Exception
+    private void manageAddins() throws Exception
     {
         //XFT.LogCurrentTime("MANAGER ADD_INS:1","ERROR");
 

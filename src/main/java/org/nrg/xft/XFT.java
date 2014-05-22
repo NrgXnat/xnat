@@ -59,14 +59,11 @@ public class XFT {
     private static Boolean REQUIRE_REASON = null;
     private static Boolean SHOW_REASON = null;
     
-
     private static Boolean REQUIRE_EVENT_NAME = false;//used to configure whether event names are required on modifications
-//	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
-//	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 
-    public static void init(final URI location, boolean allowDBAccess) throws ElementNotFoundException
+    public static void init(final URI location) throws ElementNotFoundException
     {
-        init(location, allowDBAccess, true);
+        init(location, true);
     }
     /**
      * This method must be run before any XFT task is performed.
@@ -74,7 +71,7 @@ public class XFT {
      * XFT's settings and loads the schema.
      * @param location (Directory which includes the InstanceSettings.xml document)
      */
-    public static void init(URI location,boolean allowDBAccess, boolean initLog4j) throws ElementNotFoundException
+    public static void init(URI location, boolean initLog4j) throws ElementNotFoundException
     {
         if (XFT.VERBOSE) {
             System.out.println("SETTINGS LOCATION: " + location);
@@ -98,7 +95,7 @@ public class XFT {
 
         //XFT.LogCurrentTime("XFT INIT:3","ERROR");
         try {
-            XFTMetaManager.init(allowDBAccess);
+            XFTMetaManager.init();
 
             //XFT.LogCurrentTime("XFT INIT:4","ERROR");
             Iterator schemas = XFTManager.GetSchemas().iterator();
@@ -341,6 +338,8 @@ public class XFT {
 
                      fileName += "_" + pk;
                  }
+
+                 fileName=fileName.replace(":", "_");
 
                  if ((new File(s + fileName + ".sql")).exists())
                  {

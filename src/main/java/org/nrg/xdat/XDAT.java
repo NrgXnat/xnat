@@ -249,7 +249,7 @@ public class XDAT implements Initializable,Configurable{
 			initLog4j= false;
 		}
 
-		XFT.init(_configFilesLocation, allowDBAccess, initLog4j);
+		XFT.init(_configFilesLocation, initLog4j);
 
 		if (allowDBAccess)
 		{
@@ -309,7 +309,7 @@ public class XDAT implements Initializable,Configurable{
 	    buffer.append("\n-- start transaction (if an error occurs, the database will be rolled back to its state before this file was executed)\n");
 	    buffer.append("BEGIN;\n");
 
-	    for (Object item : SQLCreateGenerator.GetSQLCreate())
+	    for (Object item : SQLCreateGenerator.GetSQLCreate(true))
 	    {
 	        buffer.append(item).append("\n--BR\n");
 	    }

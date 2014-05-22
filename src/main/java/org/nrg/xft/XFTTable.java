@@ -24,6 +24,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.json.JSONArray;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.utils.StringUtils;
@@ -1081,44 +1082,42 @@ public class XFTTable implements XFTTableI {
 	{
 		toJSON(writer,null);
 	}
-    
-	public void toJSON (Writer writer, Map<String,Map<String,String>> cp) throws IOException{
-		org.json.JSONArray array = new org.json.JSONArray();
-		ArrayList<ArrayList<String>> columnsWType=new ArrayList<ArrayList<String>>();
-		for (int i=0;i<this.numCols;i++)
-		{
-			ArrayList col= new ArrayList();
-			col.add(this.getColumns()[i]);
-			if(cp.containsKey(col.get(0))){
-				Map<String,String> props=cp.get(col.get(0));
-				if(props.containsKey("type")){
-					col.add(props.get("type"));
-				}
-			}
-			columnsWType.add(col);
-		}
-		
-		for (int j = 0; j<rows.size();j++){
-			Object[] row = rows.get(j);
-			org.json.JSONObject json = new org.json.JSONObject();
-			for (int i = 0; i <this.numCols;i++){
-				ArrayList<String> columnSpec=columnsWType.get(i);
-				try {
-					json.put(columnSpec.get(0), ValueParser(row[i]));
-				} catch (JSONException e) {
-					e.printStackTrace();
-			}
-				}
-			array.put(json);
-		}
-							try{
-			array.write(writer);
-		} catch (JSONException e) {
-			e.printStackTrace();
-							}
-						}
 
-	/**
+    public void toJSON(Writer writer, Map<String, Map<String, String>> cp) throws IOException {
+        JSONArray array = new JSONArray();
+        List<List<String>> columnsWType = new ArrayList<>();
+        for (int i = 0; i < this.numCols; i++) {
+            List<String> col = new ArrayList<>();
+            col.add(this.getColumns()[i]);
+            if (cp.containsKey(col.get(0))) {
+                Map<String, String> props = cp.get(col.get(0));
+                if (props.containsKey("type")) {
+                    col.add(props.get("type"));
+                }
+            }
+            columnsWType.add(col);
+        }
+
+        for (Object[] row : rows) {
+            JSONObject json = new JSONObject();
+            for (int i = 0; i < this.numCols; i++) {
+                List<String> columnSpec = columnsWType.get(i);
+                try {
+                    json.put(columnSpec.get(0), ValueParser(row[i]));
+                } catch (JSONException e) {
+                    e.printStackTrace();
+                }
+            }
+            array.put(json);
+        }
+        try {
+            array.write(writer);
+        } catch (JSONException e) {
+            e.printStackTrace();
+        }
+    }
+
+    /**
 	 * Outputs table headers and contents into an HTML Table
 	 * @param delimiter
 	 * @return

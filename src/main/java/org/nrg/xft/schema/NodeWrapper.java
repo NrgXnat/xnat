@@ -179,7 +179,17 @@ public class NodeWrapper {
 		if (s != null)
 		{
 			File f = new File(s.getDataModel().getFileLocation() + s.getDataModel().getFileName());
-			Document doc = XMLUtils.GetDOM(f);
+			Document doc;
+			if(f.exists()){
+				doc = XMLUtils.GetDOM(f);
+			}else{
+				String path=s.getDataModel().getFileLocation();
+				if(path.endsWith(File.separator)){
+					path=path.substring(0,path.length()-1);
+				}
+				doc = XMLUtils.GetDOM(getClass().getClassLoader().getResourceAsStream(path));
+			}
+			
 			Element root = doc.getDocumentElement();
 			NodeList elements = root.getChildNodes();
 		

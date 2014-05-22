@@ -9,11 +9,13 @@
  */
 package org.nrg.xdat.display;
 import java.io.File;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -24,9 +26,11 @@ import org.nrg.xdat.collections.DisplayFieldRefCollection;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.QueryOrganizer;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.DataModelDefinition;
 import org.nrg.xft.schema.XFTDataModel;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.design.SchemaElementI;
@@ -485,6 +489,19 @@ public class DisplayManager {
 			}
 		}
 		
+		for(DataModelDefinition annotation: XFTManager.discoverDataModelDefs()){
+			for(String s:annotation.getDisplayDocs()){
+				if(!StringUtils.IsEmpty(s)){
+					InputStream in=annotation.getClass().getClassLoader().getResourceAsStream(s);
+
+					if(in!=null){
+						Document doc = XMLUtils.GetDOM(in);
+						assignDisplays(doc);
+					}
+				}
+			}
+		}
+		
 		try {
 			initArcs();
 		} catch (Exception e) {
@@ -513,66 +530,11 @@ public class DisplayManager {
 		}
 	}
 	
-	public static ArrayList GetCreateViewsSQL(boolean isUpdate)
+	public static List<String> GetCreateViewsSQL(boolean isUpdate)
 	{
 		ArrayList drops = new ArrayList();
 		ArrayList views = new ArrayList();
 		
-
-		views.add("\n\n--XDAT SEARCH ENTRIES\n" +
-				"SELECT CREATE_SCHEMA('xdat_search','CREATE SCHEMA xdat_search;');");
-		
-		views.add("\n\n--XDAT SEARCH ENTRIES\n" +
-				"SELECT CREATE_CLASS('xdat_searches','CREATE TABLE xdat_searches"+
-		"\n("+
-				"\n  search_name varchar(255) NOT NULL,"+
-				"\n  last_access timestamp DEFAULT now(),"+
-				"\n  created timestamp DEFAULT now(),"+
-				"\n  owner varchar(255)"+
-				"\n) "+
-				"\nWITHOUT OIDS');");
-
-		views.add("GRANT ALL ON TABLE xdat_searches TO public;");
-
-
-		views.add("\n\n--XDAT SEARCH ENTRIES\n" +
-				"SELECT CREATE_CLASS('xs_fav_entries','CREATE TABLE xdat_search.xs_fav_entries "+
-				"\n( "+
-				"\n  datatype character varying(255), "+
-				"\n  id character varying(255), "+
-				"\n  xdat_user_id integer "+
-				"\n) "+
-				"\nWITH OIDS;');");
-
-		views.add("GRANT ALL ON TABLE xdat_search.xs_fav_entries TO public;");
-		
-		views.add("\n\n--XDAT SEARCH ENTRIES\n" +
-				"SELECT CREATE_CLASS('xs_materialized_views','CREATE TABLE xdat_search.xs_materialized_views"+
-				"\n("+
-				"\ntable_name character varying(255),"+
-				"\ncreated timestamp without time zone DEFAULT now(),"+
-				"\nlast_access timestamp without time zone DEFAULT now(),"+
-				"\nusername character varying(255),"+
-				"\nsearch_id text,"+
-				"\ntag character varying(255),"+
-				"\nsearch_sql text,"+
-				"\nsearch_xml text"+
-				"\n) "+
-				"\nWITH OIDS;');");
-
-		views.add("GRANT ALL ON TABLE xdat_search.xs_materialized_views TO public;");
-		
-		views.add("\n\n--XDAT SEARCH ENTRIES\n" +
-				"SELECT CREATE_CLASS('xs_item_access','CREATE TABLE xdat_search.xs_item_access"+
-				"\n("+
-				"\nsearch_value character varying(255),"+
-				"\nsearch_element character varying(255),"+
-				"\nsearch_field character varying(255),"+
-				"\naccessed timestamp without time zone DEFAULT now(),"+
-				"\nxdat_user_id character varying(255),"+
-				"\nmethod character varying(255)"+
-				"\n)"+
-				"\nWITH OIDS;');");
 
 		views.add("GRANT ALL ON TABLE xdat_search.xs_item_access TO public;");
 		
@@ -586,11 +548,17 @@ public class DisplayManager {
 		    String content = function.getContent();
 		    if (content.indexOf("CREATE TYPE ")!=-1)
 		    {
+		    	try {
+					if(PoolDBUtils.checkIfTypeExists(function.getName().trim())){
+						continue;
+					}
+				} catch (Exception e) {
+					logger.error("",e);
+				}
 			    if (content.endsWith(";"))
 			    {
 			        content =content.substring(0,content.length()-1);
 			    }
-		        content = "SELECT CREATE_CLASS('"+ function.getName().trim() + "','"+ content + "');";
 		    }else{
 
 			    if (!content.endsWith(";"))
@@ -759,7 +727,13 @@ public class DisplayManager {
 				"\n'"+
 				"\n  LANGUAGE 'plpgsql' VOLATILE;");
 
-		views.add("SELECT CREATE_CLASS('sortedstrings','CREATE TYPE sortedstrings AS (strings \"varchar\",sort_order int4)');");
+//		try {
+//			if(!PoolDBUtils.checkIfTypeExists("sortedstrings")){
+//				views.add("CREATE TYPE sortedstrings AS (strings \"varchar\",sort_order int4);");
+//			}
+//		} catch (Exception e) {
+//			logger.error("",e);
+//		}
 
 		views.add("CREATE OR REPLACE FUNCTION getnextview()   RETURNS name AS "+
 				"\n' DECLARE   my_record RECORD;  viewName name; "+

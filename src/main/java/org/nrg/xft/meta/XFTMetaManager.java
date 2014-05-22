@@ -62,7 +62,7 @@ public class XFTMetaManager {
 	 * @param allowDBAccess
 	 * @throws XFTInitException
 	 */
-	private XFTMetaManager(boolean allowDBAccess) throws XFTInitException
+	private XFTMetaManager() throws XFTInitException
 	{
 		//logger.info("Initializing XFT Meta Data Manager");
 		Iterator schemas = XFTManager.GetSchemas().iterator();
@@ -73,7 +73,7 @@ public class XFTMetaManager {
 			while (elements.hasNext())
 			{
 				XFTElement e = (XFTElement)elements.next();
-				XFTMetaElement meta = new XFTMetaElement(e,allowDBAccess);
+				XFTMetaElement meta = new XFTMetaElement(e);
 				sqlHash.put(meta.getSqlName().toLowerCase(),meta);
 				javaHash.put(meta.getJavaName().toLowerCase(),meta);
 				fullNameHash.put(e.getType().getFullLocalType().toLowerCase(),meta);
@@ -146,19 +146,19 @@ public class XFTMetaManager {
 	{
 		if (manager == null)
 		{
-			manager = new XFTMetaManager(true);
+			manager = new XFTMetaManager();
 		}
 		return manager;
 	}
 	
 	/**
-	 * Initialization method used to instanciate the manager.
+	 * Initialization method used to instantiate the manager.
 	 * @param allowDBAccess
 	 * @throws XFTInitException
 	 */
-	public static void init(boolean allowDBAccess) throws XFTInitException
+	public static void init() throws XFTInitException
 	{
-		manager = new XFTMetaManager(allowDBAccess);
+		manager = new XFTMetaManager();
 	}
 	
 	public static void clean()

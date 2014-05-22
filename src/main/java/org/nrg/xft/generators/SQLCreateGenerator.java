@@ -19,7 +19,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
 
-import java.io.File;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -43,7 +43,7 @@ public class SQLCreateGenerator {
     public static void generateDoc(String location) throws Exception {
         try {
             StringBuilder builder = new StringBuilder();
-            for (Object o : GetSQLCreate()) {
+            for (Object o : GetSQLCreate(true)) {
                 builder.append(o).append("\n");
             }
             FileUtils.OutputToFile(builder.toString(), location);
@@ -55,7 +55,7 @@ public class SQLCreateGenerator {
         }
     }
 
-    public static List<String> GetSQLCreate() throws Exception {
+    public static List<String> GetSQLCreate(boolean includeFunctions) throws Exception {
         List<String> creates = new ArrayList<String>();
         List<String> alters = new ArrayList<String>();
 
@@ -96,10 +96,14 @@ public class SQLCreateGenerator {
         all.addAll(creates);
         all.add("\n\n--ALTER STATEMENTS");
         all.addAll(alters);
-        all.add("\n\n--FUNCTION STATEMENTS");
-        all.addAll(GenericWrapperUtils.GetFunctionSQL());
-        all.add("\n\n--EXTENSION TABLES");
-        all.addAll(GenericWrapperUtils.GetExtensionTables());
+        if(includeFunctions){
+	        all.add("\n\n--EXTENSION TABLES");
+	        all.addAll(GenericWrapperUtils.GetExtensionTables());
+	        all.add("\n\n--FUNCTION STATEMENTS");
+	        List<String>[]func=GenericWrapperUtils.GetFunctionSQL();
+	        all.addAll(func[0]);
+	        all.addAll(func[1]);
+        }
 
         return all;
     }
@@ -107,7 +111,7 @@ public class SQLCreateGenerator {
     public static void main(String args[]) {
         if (args.length == 2) {
             try {
-                XFT.init(new File(args[0]).toURI(), true);
+                XFT.init(new URI(args[0]));
                 SQLCreateGenerator.generateDoc(args[1]);
             } catch (Exception e) {
                 e.printStackTrace();

@@ -1,6 +1,6 @@
 //Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT  Extensible Data Archive Toolkit
+ * XDAT eXtensible Data Archive Toolkit
  * Copyright (C) 2005 Washington University
  */
 /*

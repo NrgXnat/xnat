@@ -421,6 +421,16 @@ public class XDATTool {
 	    return location;
 	}
 
+    public static String GetSettingsDirectory()
+    {
+        try {
+            return XFTManager.GetInstance().getSourceDir().getPath();
+        } catch (XFTInitException e) {
+            logger.error("",e);
+            return "XDAT NOT INITIALIZED";
+        }
+    }
+
     /**
      * @return Returns the user.
      */

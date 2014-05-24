@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.nrg</groupId>
@@ -33,7 +33,7 @@
         <nrg.ecat4xnat.version>${project.version}</nrg.ecat4xnat.version>
         <nrg.nrgutil.version>1.1.0</nrg.nrgutil.version>
 
-<nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
+        <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
         <nrg.extattr.version>4.1.0</nrg.extattr.version>
         <nrg.sessionbuilders.version>${project.version}</nrg.sessionbuilders.version>
 
@@ -80,6 +80,7 @@
         <hibernate-jpa-2.1.version>1.0.0.Final</hibernate-jpa-2.1.version>
         <hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
         <httpcomponents-client.version>4.3.3</httpcomponents-client.version>
+        <imagej.version>1.44.update</imagej.version>
         <itext.version>1.1.4</itext.version>
         <jackson.version>1.8.11</jackson.version>
         <jargon.version>1.4.25</jargon.version>
@@ -92,8 +93,11 @@
         <jena-tdb.version>1.0.1</jena-tdb.version>
         <json.version>20140107</json.version>
         <junit.version>4.8.2</junit.version>
+        <jzlib.version>1.1.3</jzlib.version>
         <log4j.version>1.2.17</log4j.version>
         <mockito.version>1.8.5</mockito.version>
+        <nifti_io.version>1.0</nifti_io.version>
+        <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
         <pipeline.version>1.6.3</pipeline.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
         <reflections.version>0.9.9-RC1</reflections.version>
@@ -107,7 +111,7 @@
         <turbine.version>2.3.3</turbine.version>
         <user-agent-utils.version>1.2.4</user-agent-utils.version>
         <velocity.version>1.7</velocity.version>
-        <xmlbeans.version>2.3.0</xmlbeans.version>
+        <xmlbeans.version>2.6.0</xmlbeans.version>
 
     </properties>
 
@@ -161,7 +165,7 @@
                 <version>${nrg.dicomutils.version}</version>
             </dependency>
 
-<dependency>
+            <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>DicomImageUtils</artifactId>
                 <version>${nrg.dicomimageutils.version}</version>
@@ -258,7 +262,7 @@
                 <version>${pipeline.version}</version>
             </dependency>
 
-<dependency>
+            <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>pipelineXNAT</artifactId>
                 <version>1.0</version>
@@ -337,21 +341,21 @@
                 <artifactId>hibernate-jpa-2.1-api</artifactId>
                 <version>${hibernate-jpa-2.1.version}</version>
             </dependency>
-			<dependency>
-				<groupId>org.hibernate</groupId>
-				<artifactId>hibernate-validator</artifactId>
-				<version>${hibernate-validator.version}</version>
-			</dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${hibernate-validator.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-ehcache</artifactId>
                 <version>${hibernate.version}</version>
             </dependency>
-			<dependency>
-				<groupId>net.sf.ehcache</groupId>
-				<artifactId>ehcache-core</artifactId>
-				<version>${ehcache.version}</version>
-			</dependency>
+            <dependency>
+                <groupId>net.sf.ehcache</groupId>
+                <artifactId>ehcache-core</artifactId>
+                <version>${ehcache.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.jena</groupId>
                 <artifactId>jena-core</artifactId>
@@ -362,11 +366,11 @@
                 <artifactId>jena-tdb</artifactId>
                 <version>${jena-tdb.version}</version>
             </dependency>
-			<dependency>
-				<groupId>org.reflections</groupId>
-				<artifactId>reflections</artifactId>
-				<version>${reflections.version}</version>
-			</dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>${reflections.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
@@ -604,7 +608,7 @@
             <dependency>
                 <groupId>org.slf4j</groupId>
                 <artifactId>slf4j-simple
-</artifactId>
+                </artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
@@ -670,13 +674,11 @@
                         <artifactId>jamon</artifactId>
                     </exclusion>
                 </exclusions>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>org.apache.velocity</groupId>
                 <artifactId>velocity</artifactId>
                 <version>${velocity.version}</version>
-                <scope>provided</scope>
                 <exclusions>
                     <exclusion>
                         <groupId>velocity</groupId>
@@ -693,7 +695,6 @@
                 <groupId>torque</groupId>
                 <artifactId>torque</artifactId>
                 <version>${torque.version}</version>
-                <scope>provided</scope>
             </dependency>
             <dependency>
                 <groupId>stratum</groupId>
@@ -742,21 +743,35 @@
             <dependency>
                 <groupId>imagej</groupId>
                 <artifactId>imagej</artifactId>
-                <version>1.44.update</version>
+                <version>${imagej.version}</version>
             </dependency>
-
-            <!-- Test dependencies -->
+            <dependency>
+                <groupId>com.jcraft</groupId>
+                <artifactId>jzlib</artifactId>
+                <version>${jzlib.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>nifti_io</groupId>
+                <artifactId>nifti_io</artifactId>
+                <version>${nifti_io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.regexp</groupId>
+                <artifactId>com.springsource.org.apache.regexp</artifactId>
+                <version>${org.apache.regexp.version}</version>
+            </dependency>
             <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
-                <scope>test</scope>
             </dependency>
             <dependency>
                 <groupId>org.postgresql</groupId>
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
             </dependency>
+
+            <!-- Test dependencies -->
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -849,7 +864,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>webstart-maven-plugin</artifactId>
-                    <version>1.0-beta-5</version>
+                    <version>1.0-beta-6</version>
                     <executions>
                         <execution>
                             <phase>package</phase>
@@ -868,7 +883,7 @@
                             <Application-Name>${xnat.app.name}</Application-Name>
                             <Permissions>all-permissions</Permissions>
                             <Codebase>*</Codebase>
-                        <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
+                            <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
                         </updateManifestEntries>
                         <sign>
                             <keystore>${signing.keystore}</keystore>
@@ -936,7 +951,7 @@
                                 <Application-Name>${xnat.app.name}</Application-Name>
                                 <Permissions>all-permissions</Permissions>
                                 <Codebase>*</Codebase>
-                            <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
+                                <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
                             </manifestEntries>
                         </archive>
                     </configuration>

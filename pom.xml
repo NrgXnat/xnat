@@ -48,13 +48,16 @@
         <!-- TODO: We will need to add trusted TSA timestamping for security purposes. See XNAT-2976 for information. -->
         <!-- signing.tsa>http://nrg115.nrg.mir:8081/tsa.aspx</signing.tsa -->
 
+        <activemq.version>5.7.0</activemq.version>
         <ant.version>1.6.1</ant.version>
         <org.apache.ant.version>1.8.2</org.apache.ant.version>
         <!-- org.apache.ant and ant should be combined to use the latest version -->
-        <antlr.version>3.4</antlr.version>
+        <antlr.version>3.5.2</antlr.version>
+        <aopalliance.version>1.0</aopalliance.version>
         <avalon.version>4.1.4</avalon.version>
         <axis.version>1.4</axis.version>
         <cglib.version>2.2.2</cglib.version>
+        <com-noelios-restlet.version>1.1.10</com-noelios-restlet.version>
         <commons-beanutils.version>1.8.3</commons-beanutils.version>
         <commons-codec.version>1.5</commons-codec.version>
         <commons-collections.version>3.2.1</commons-collections.version>
@@ -66,16 +69,19 @@
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <commons-io.version>2.4</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
+        <commons-lang3.version>3.3.1</commons-lang3.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <commons-net.version>3.3</commons-net.version>
         <dcm4che.version>2.0.25</dcm4che.version>
         <dom4j.version>1.6.1</dom4j.version>
         <ecs.version>1.4.2</ecs.version>
         <ehcache.version>2.6.6</ehcache.version>
+        <fastmd5.version>2.7.1</fastmd5.version>
         <fop.version>0.20.5-rc3-alpha</fop.version>
         <guava.version>17.0</guava.version>
         <h2.version>1.3.175</h2.version>
         <hibernate.version>4.3.1.Final</hibernate.version>
+        <hibernate-commons.version>4.0.4.Final</hibernate-commons.version>
         <hibernate-jpa-2.0.version>1.0.1.Final</hibernate-jpa-2.0.version>
         <hibernate-jpa-2.1.version>1.0.0.Final</hibernate-jpa-2.1.version>
         <hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
@@ -89,9 +95,11 @@
         <javax-activation.version>1.1.1</javax-activation.version>
         <javax-inject.version>1</javax-inject.version>
         <javax-mail>1.4.5</javax-mail>
+        <jcs.version>1.3</jcs.version>
         <jena.version>2.11.1</jena.version>
         <jena-tdb.version>1.0.1</jena-tdb.version>
         <json.version>20140107</json.version>
+        <jstl.version>1.2</jstl.version>
         <junit.version>4.8.2</junit.version>
         <jzlib.version>1.1.3</jzlib.version>
         <log4j.version>1.2.17</log4j.version>
@@ -100,18 +108,23 @@
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
         <pipeline.version>1.6.3</pipeline.version>
         <postgresql.version>9.3-1100-jdbc41</postgresql.version>
+        <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.9-RC1</reflections.version>
         <restlet.version>1.1.10</restlet.version>
+        <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
         <slf4j.version>1.7.7</slf4j.version>
         <spring-framework.version>4.0.4.RELEASE</spring-framework.version>
         <spring-security.version>3.2.3.RELEASE</spring-security.version>
+        <spring-ldap.version>2.0.2.RELEASE</spring-ldap.version>
         <stratum.version>1.0</stratum.version>
         <torque.version>3.1.1</torque.version>
         <turbine.version>2.3.3</turbine.version>
         <user-agent-utils.version>1.2.4</user-agent-utils.version>
         <velocity.version>1.7</velocity.version>
+        <xbean.version>3.17</xbean.version>
         <xmlbeans.version>2.6.0</xmlbeans.version>
+        <xml-apis.version>1.4.01</xml-apis.version>
 
     </properties>
 
@@ -141,6 +154,11 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
+                <artifactId>anonymize</artifactId>
+                <version>${nrg.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
                 <artifactId>notify</artifactId>
                 <version>${nrg.framework.version}</version>
             </dependency>
@@ -156,6 +174,11 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
+                <artifactId>PrearcImporter</artifactId>
+                <version>${nrg.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
                 <artifactId>DicomEdit</artifactId>
                 <version>${nrg.dicomedit.version}</version>
             </dependency>
@@ -164,7 +187,6 @@
                 <artifactId>DicomUtils</artifactId>
                 <version>${nrg.dicomutils.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>DicomImageUtils</artifactId>
@@ -267,12 +289,32 @@
                 <artifactId>pipelineXNAT</artifactId>
                 <version>1.0</version>
             </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat.pipeline</groupId>
+                <artifactId>base</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat.pipeline</groupId>
+                <artifactId>build</artifactId>
+                <version>1.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat.pipeline</groupId>
+                <artifactId>workflow</artifactId>
+                <version>1.0</version>
+            </dependency>
 
-            <!-- Pipeline dependency definitions -->
+
             <dependency>
                 <groupId>org.nrg.xnat</groupId>
                 <artifactId>xnatsrb</artifactId>
                 <version>1.0.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>xnatfs</artifactId>
+                <version>1.5.1</version>
             </dependency>
 
             <!-- External definitions -->
@@ -303,6 +345,31 @@
             </dependency>
             <dependency>
                 <groupId>org.springframework</groupId>
+                <artifactId>spring-aop</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-beans</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-expression</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-jdbc</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
+                <artifactId>spring-webmvc</artifactId>
+                <version>${spring-framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework</groupId>
                 <artifactId>spring-context</artifactId>
                 <version>${spring-framework.version}</version>
             </dependency>
@@ -318,6 +385,36 @@
             </dependency>
             <dependency>
                 <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-acl</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-aspects</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-config</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-core</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-ldap</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
+                <artifactId>spring-security-taglibs</artifactId>
+                <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-web</artifactId>
                 <version>${spring-security.version}</version>
             </dependency>
@@ -325,6 +422,11 @@
                 <groupId>org.springframework.security</groupId>
                 <artifactId>spring-security-openid</artifactId>
                 <version>${spring-security.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.springframework.ldap</groupId>
+                <artifactId>spring-ldap-core</artifactId>
+                <version>${spring-ldap.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
@@ -352,9 +454,19 @@
                 <version>${hibernate.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.hibernate.common</groupId>
+                <artifactId>hibernate-commons-annotations</artifactId>
+                <version>${hibernate-commons.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>net.sf.ehcache</groupId>
                 <artifactId>ehcache-core</artifactId>
                 <version>${ehcache.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-core</artifactId>
+                <version>5.7.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.jena</groupId>
@@ -385,6 +497,11 @@
                 <groupId>dom4j</groupId>
                 <artifactId>dom4j</artifactId>
                 <version>${dom4j.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>aopalliance</groupId>
+                <artifactId>aopalliance</artifactId>
+                <version>${aopalliance.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-beanutils</groupId>
@@ -436,6 +553,11 @@
                 <groupId>commons-lang</groupId>
                 <artifactId>commons-lang</artifactId>
                 <version>${commons-lang.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-fileupload</groupId>
@@ -503,6 +625,11 @@
                 <version>1.1.1</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.xbean</groupId>
+                <artifactId>xbean-spring</artifactId>
+                <version>${xbean.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.xmlbeans</groupId>
                 <artifactId>xmlbeans</artifactId>
                 <version>${xmlbeans.version}</version>
@@ -516,6 +643,21 @@
                 <groupId>org.apache.xmlbeans</groupId>
                 <artifactId>xmlbeans-xmlpublic</artifactId>
                 <version>${xmlbeans.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>xml-apis</groupId>
+                <artifactId>xml-apis</artifactId>
+                <version>${xml-apis.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>net.sourceforge.saxon</groupId>
+                <artifactId>saxon</artifactId>
+                <version>${saxon.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.quartz-scheduler</groupId>
+                <artifactId>quartz</artifactId>
+                <version>${quartz.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
@@ -558,6 +700,21 @@
             <dependency>
                 <groupId>org.restlet</groupId>
                 <artifactId>org.restlet</artifactId>
+                <version>${restlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.restlet</groupId>
+                <artifactId>org.restlet.ext.fileupload</artifactId>
+                <version>${restlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.noelios.restlet</groupId>
+                <artifactId>com.noelios.restlet</artifactId>
+                <version>${restlet.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.noelios.restlet</groupId>
+                <artifactId>com.noelios.restlet.ext.servlet</artifactId>
                 <version>${restlet.version}</version>
             </dependency>
             <dependency>
@@ -627,6 +784,11 @@
                 <version>${servlet-api.version}</version>
             </dependency>
             <dependency>
+                <groupId>javax.servlet</groupId>
+                <artifactId>jstl</artifactId>
+                <version>${jstl.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.activation</groupId>
                 <artifactId>activation</artifactId>
                 <version>${javax-activation.version}</version>
@@ -650,6 +812,11 @@
                 <groupId>ant</groupId>
                 <artifactId>ant</artifactId>
                 <version>${ant.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.antlr</groupId>
+                <artifactId>antlr</artifactId>
+                <version>${antlr.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.antlr</groupId>
@@ -721,9 +888,19 @@
                 <version>${itext.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.twmacinta</groupId>
+                <artifactId>fast-md5</artifactId>
+                <version>${fastmd5.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>fop</groupId>
                 <artifactId>fop</artifactId>
                 <version>${fop.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>jcs</groupId>
+                <artifactId>jcs</artifactId>
+                <version>${jcs.version}</version>
             </dependency>
             <dependency>
                 <groupId>avalon-framework</groupId>

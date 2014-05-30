@@ -79,7 +79,7 @@ public class XdatUsergroup extends BaseXdatUsergroup {
 		if(xea==null){
 			xea=new XdatElementAccess((UserI)this.getUser());
 			xea.setElementName(elementName);
-			this.getItem().setChild("xdat:userGroup.element_access",xea.getItem(),true);
+			this.setElementAccess(xea);
 		}
 		
 		XdatFieldMappingSet xfms=null;
@@ -292,45 +292,16 @@ public class XdatUsergroup extends BaseXdatUsergroup {
         
         Collections.sort(elements,((ElementSecurity)elements.get(0)).getComparator());
         
-        UserGroup ug =UserGroupManager.GetGroup(this.getId());
-        
-        for (ElementSecurity es:elements)
-        {
-            final List<PermissionItem> permissionItems = es.getPermissionItems(login);
-            boolean isAuthenticated = true;
-            boolean wasSet = false;
-            for (PermissionItem pi:permissionItems)
-            {
-                final ElementAccessManager eam = ug.getAccessManagers().get(es.getElementName());
-                if (eam != null)
-                {
-                    final PermissionCriteria pc = eam.getRootPermission(pi.getFullFieldName(),pi.getValue());
-                    if (pc != null)
-                    {
-                        pi.set(pc);
-                    }
-                }
-                if (!pi.isAuthenticated())
-                {
-                    isAuthenticated = false;
-                }
-                if (pi.wasSet())
-                {
-                    wasSet = true;
-                }
-            }
-            
-            final List<Object> elementManager = new ArrayList<Object>();
-            elementManager.add(es.getElementName());
-            elementManager.add(permissionItems);
-            elementManager.add(es.getSchemaElement().getSQLName());
-            elementManager.add((isAuthenticated)?Boolean.TRUE:Boolean.FALSE);
-            elementManager.add((wasSet)?Boolean.TRUE:Boolean.FALSE);
-            
-            if (permissionItems.size() > 0)
-                allElements.add(elementManager);
-
+        UserGroup ug=null;
+        if(this.getId()!=null){
+        	ug =UserGroupManager.GetGroup(this.getId());
         }
-        return allElements;
+        
+        if(ug==null){
+        	ug=new UserGroup(null);
+        	ug.init(this.getItem());
+        }
+        
+        return ug.getPermissionItems(login);
     }
 }

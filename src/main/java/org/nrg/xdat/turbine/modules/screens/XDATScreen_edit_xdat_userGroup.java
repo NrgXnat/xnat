@@ -17,6 +17,8 @@ import java.util.List;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.security.UserGroup;
+import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -43,8 +45,22 @@ public class XDATScreen_edit_xdat_userGroup extends EditScreenA {
     public void finalProcessing(RunData data, Context context) {
         try {
             XdatUsergroup g = new XdatUsergroup(item);
-            List<List<Object>> permisionItems = g.getPermissionItems(TurbineUtils.getUser(data).getUsername());
-            context.put("allElements",permisionItems);
+            if(TurbineUtils.HasPassedParameter("tag", data) && g.getTag()==null){
+            	g.setTag((String)TurbineUtils.GetPassedParameter("tag", data));
+            }
+            
+            UserGroup ug=null;
+            if(g.getId()!=null){
+            	ug =UserGroupManager.GetGroup(g.getId());
+            }
+            
+            if(ug==null){
+            	ug=new UserGroup(null);
+            	ug.init(g.getItem());
+            }
+            
+            context.put("allElements",ug.getPermissionItems(TurbineUtils.getUser(data).getUsername())); 
+            context.put("ug",ug);
         } catch (Exception e) {
             logger.error("",e);
         }

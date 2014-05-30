@@ -77,6 +77,8 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.VelocityUtils;
 
+import com.google.common.collect.Lists;
+
 /**
  * @author Tim
  *
@@ -866,6 +868,26 @@ public class ElementSecurity extends ItemWrapper{
 		laJSON=null;
 	}
 	
+	public List<PermissionItem> getPermissionItemsForTag(String tag) throws XFTInitException, ElementNotFoundException, FieldNotFoundException{
+		List<PermissionItem> tempItems = Lists.newArrayList();
+        
+        for (String fieldName:getPrimarySecurityFields())
+        {
+            if (! fieldName.startsWith(this.getElementName()))
+            {
+                fieldName = this.getElementName() + XFT.PATH_SEPERATOR + fieldName;
+            }
+            
+            PermissionItem pi = new PermissionItem();
+            pi.setFullFieldName(fieldName);
+            pi.setDisplayName(tag);
+            pi.setValue(tag);
+            tempItems.add(pi);
+        }
+        
+        Collections.sort(tempItems,PermissionItem.GetComparator());
+        return tempItems;
+	}
     
     private ArrayList permissionItems = null;
 	/**

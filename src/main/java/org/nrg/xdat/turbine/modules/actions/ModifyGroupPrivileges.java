@@ -14,6 +14,7 @@ package org.nrg.xdat.turbine.modules.actions;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
@@ -117,7 +118,7 @@ public class ModifyGroupPrivileges extends AdminAction {
 				
 				final String wasSet=(String)props.get(s.toLowerCase() + "_wasSet");
 				
-				if(wasSet.equals("1") || pc.getCreate() || pc.getRead() || pc.getEdit() || pc.getDelete() || pc.getActivate()){
+				if((wasSet==null || wasSet.equals("1")) || pc.getCreate() || pc.getRead() || pc.getEdit() || pc.getDelete() || pc.getActivate()){
 					tempUser.addRootPermission(es.getElementName(),pc);
 				}
 			}
@@ -134,7 +135,7 @@ public class ModifyGroupPrivileges extends AdminAction {
 		final ItemI found = populater.getItem();
 		XdatUsergroup tempGroup = new XdatUsergroup(found);
 		
-		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data),found.getItem(), EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified permissions"));
+		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data),"xdat:userGroup",tempGroup.getId(),(StringUtils.isNotEmpty(tempGroup.getTag()))?tempGroup.getTag():"ADMIN", EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified permissions"));
         EventMetaI ci=wrk.buildEvent();
         
 		try {

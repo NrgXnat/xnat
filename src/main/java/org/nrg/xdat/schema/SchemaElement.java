@@ -703,5 +703,9 @@ public class SchemaElement implements SchemaElementI {
 	        return false;
 	    }
 	}
+	
+	public boolean instanceOf(String s){
+		return this.getGenericXFTElement().getExtendedXSITypes().contains(s);
+	}
 }
 

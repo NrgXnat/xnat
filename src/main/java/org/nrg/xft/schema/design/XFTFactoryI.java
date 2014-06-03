@@ -1,25 +1,21 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 26, 2004
+ * org.nrg.xft.schema.design.XFTFactoryI
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
- * To change the template for this generated file go to
- * Window&gt;Preferences&gt;Java&gt;Code Generation&gt;Code and Comments
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema.design;
 import java.util.ArrayList;
 import java.util.Collection;
 
 import org.nrg.xft.schema.XFTElement;
 import org.nrg.xft.schema.XFTField;
-/**
- * Interface for Factory implementation.
- * 
- * @author Tim
- */
 public interface XFTFactoryI {
 	/**
 	 * @param elements

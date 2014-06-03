@@ -1,9 +1,15 @@
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
 /*
- * GENERATED FILE
- * Created on Fri Jun 29 12:54:15 CDT 2007
+ * org.nrg.xdat.om.XdatUsergroup
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.om;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -54,8 +60,4 @@ public class XdatUsergroup extends BaseXdatUsergroup {
 	{
 		super(properties,user);
 	}
-
-
-
-
 }

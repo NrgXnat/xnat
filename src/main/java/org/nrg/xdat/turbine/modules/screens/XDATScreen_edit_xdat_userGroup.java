@@ -1,12 +1,23 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Jun 29, 2007
+ * org.nrg.xdat.turbine.modules.screens.XDATScreen_edit_xdat_userGroup
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.security.UserGroup;
+import org.nrg.xdat.security.UserGroupI;
+import org.nrg.xdat.security.UserGroupManager;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -32,5 +43,25 @@ public class XDATScreen_edit_xdat_userGroup extends EditScreenA {
      */
     public void finalProcessing(RunData data, Context context) {
 
+        try {
+        	UserGroupI passedGroup=Groups.createGroup(TurbineUtils.GetDataParameterHash(data));
+            if(TurbineUtils.HasPassedParameter("tag", data) && passedGroup.getTag()==null){
+            	passedGroup.setTag((String)TurbineUtils.GetPassedParameter("tag", data));
+            }
+            
+            UserGroupI storedGroup=null;
+            if(passedGroup.getId()!=null){
+            	storedGroup =Groups.getGroup(passedGroup.getId());
+            }
+            
+            if(storedGroup==null){
+            	storedGroup=passedGroup;
+            }
+            
+            context.put("allElements",storedGroup.getPermissionItems(TurbineUtils.getUser(data).getUsername())); 
+            context.put("ug",storedGroup);
+        } catch (Exception e) {
+            logger.error("",e);
+        }
     }
 }

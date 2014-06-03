@@ -1,8 +1,9 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.security;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Hashtable;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -73,17 +74,10 @@ public class UserGroup implements UserGroupI{
     	tag=StringUtils.intern(tag);
     	
         accessManagers = new Hashtable<String,ElementAccessManager>();
-        Iterator items = item.getChildItems("xdat:userGroup.element_access").iterator();
 
-//        Hashtable<String,ElementAccessManager> guestManagers=ElementAccessManager.GetGuestManagers();
-
-        while (items.hasNext())
+        for (ItemI sub :item.getChildItems("xdat:userGroup.element_access"))
         {
-            ItemI sub = (ItemI)items.next();
             ElementAccessManager eam = new ElementAccessManager(sub);
-//            if (guestManagers.containsKey(eam.getElement())){
-//                eam.setGuestManager(guestManagers.get(eam.getElement()));
-//            }
             accessManagers.put(eam.getElement(),eam);
         }
     }
@@ -126,12 +120,10 @@ public class UserGroup implements UserGroupI{
     protected XdatStoredSearch getStoredSearch(String id)
     {
         List<XdatStoredSearch> temp = getStoredSearches();
-        Iterator tempIter = temp.iterator();
         XdatStoredSearch xss = null;
         try {
-            while (tempIter.hasNext())
+            for (XdatStoredSearch search:temp)
             {
-                XdatStoredSearch search = (XdatStoredSearch)tempIter.next();
                 if (id.equalsIgnoreCase(search.getId()))
                 {
                     xss= search;
@@ -155,6 +147,61 @@ public class UserGroup implements UserGroupI{
             logger.error("",e);
         }
         stored_searches.add(i);
+    }
+
+    /**
+     * ArrayList: 0:elementName 1:ArrayList of PermissionItems
+     * @return
+     * @throws Exception
+     */
+    @SuppressWarnings("unchecked")
+	public List<List<Object>> getPermissionItems(String login) throws Exception
+    {
+        final ArrayList<List<Object>> allElements = new ArrayList<List<Object>>();
+        final List<ElementSecurity> elements = ElementSecurity.GetSecureElements();
+        
+        Collections.sort(elements,((ElementSecurity)elements.get(0)).getComparator());
+        
+        
+        for (ElementSecurity es:elements)
+        {
+            final List<PermissionItem> permissionItems = (this.getTag()==null)?es.getPermissionItems(login):es.getPermissionItemsForTag(this.getTag());
+            boolean isAuthenticated = true;
+            boolean wasSet = false;
+            for (PermissionItem pi:permissionItems)
+            {
+                final ElementAccessManager eam = this.getAccessManagers().get(es.getElementName());
+                if (eam != null)
+                {
+                    final PermissionCriteriaI pc = eam.getMatchingPermissions(pi.getFullFieldName(),pi.getValue());
+                    if (pc != null)
+                    {
+                        pi.set(pc);
+                    }
+                }
+                if (!pi.isAuthenticated())
+                {
+                    isAuthenticated = false;
+                }
+                if (pi.wasSet())
+                {
+                    wasSet = true;
+                }
+            }
+            
+            final List<Object> elementManager = new ArrayList<Object>();
+            elementManager.add(es.getElementName());
+            elementManager.add(permissionItems);
+            elementManager.add(es.getSchemaElement().getSQLName());
+            elementManager.add((isAuthenticated)?Boolean.TRUE:Boolean.FALSE);
+            elementManager.add((wasSet)?Boolean.TRUE:Boolean.FALSE);
+            elementManager.add(es);
+            
+            if (permissionItems.size() > 0)
+                allElements.add(elementManager);
+
+        }
+        return allElements;
     }
 
 	@Override

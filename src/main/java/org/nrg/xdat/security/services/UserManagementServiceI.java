@@ -37,7 +37,7 @@ public interface UserManagementServiceI {
 	 * @throws UserNotFoundException
 	 * @throws UserInitException
 	 */
-	public UserI getUser(String username) throws UserInitException;
+	public UserI getUser(String username) throws UserInitException, UserNotFoundException;
 	
 	/**
      * Return a User object for the referenced user id.

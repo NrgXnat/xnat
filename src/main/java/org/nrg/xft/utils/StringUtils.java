@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.utils.StringUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
-/*
- * Created on Nov 10, 2003
- */
+
+
 package org.nrg.xft.utils;
 import java.io.File;
 import java.util.ArrayList;
@@ -13,12 +17,6 @@ import java.util.ArrayList;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-/**
- * A collection of methods for easy manipulation of Strings.
- *
- * @author Tim
- *
- */
 public class StringUtils {
 
     public static boolean IsEmpty(String s)

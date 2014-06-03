@@ -1,24 +1,17 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Oct 11, 2004
+ * org.nrg.xft.schema.XFTCodeMapping
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 
-/**
- * This class is used to map abbreviated type codes to specific elements.
- * 
- * <BR><BR>This class is used to track the connection between a model element and its code.
- * It also includes description information about the element.  The values for this object 
- * are stored in the InstanceSettings.xml as &#60;Type_Code_Mapping&#62; elements.  
- * 
- * This element is used in the legacy version of XDAT.
- * 
- * @author Tim
- */
 public class XFTCodeMapping {
 	private String modelId = "";
 	private String modelElement = "";

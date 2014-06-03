@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 29, 2004
+ * org.nrg.xft.schema.NodeWrapper
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 import java.io.File;
 import java.util.Hashtable;
@@ -19,29 +22,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-/**
- * The purpose of this class is to organize and maintain
- * access to every XML root node in every XML schema.
- * 
- * <BR><BR>When a new schema is loaded, the first thing it does 
- * is create a NodeWrapper for each root node in 
- * the schema.  The Node Wrapper is created using the static
- * AddNode method.  It uses the XFTSchema's definedPrefix and
- * the node's name to create an XMLType for the node.  It maintains
- * a reference to the XFTSchema and stores the name of the
- * corresponding XFTElement (if one was created).  This NodeWrapper
- * is then added to the ALL_NODES hashtable which maintains a list of
- * all loaded nodes with their XMLType.FullXMLType as the key value.<BR><BR>
- * 
- * When a schema is first loaded, the nodeWrappers are created before 
- * the XFTElements are created.  Thus, initially all NodeWrappers are initially
- * created with null values in the element parameter.  After the XFTElements are
- * loaded the NodeWrappers are overwritten by NodeWrappers with the correct
- * element name specified.
- * 
- * @author Tim
- *
- */
 public class NodeWrapper {
 	
 	/**

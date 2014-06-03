@@ -1,12 +1,12 @@
 /*
  * org.nrg.xdat.turbine.modules.screens.SecureScreen
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2014, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  *
- * Last modified 7/10/13 7:44 PM
+ * Last modified 7/10/13 7:54 PM
  */
 
 package org.nrg.xdat.turbine.modules.screens;

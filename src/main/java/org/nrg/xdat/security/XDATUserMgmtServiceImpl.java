@@ -195,34 +195,39 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		    // OLD USER
 		    String tempPass = user.getPassword();
 		    String savedPass = existing.getPassword();
-		    if (StringUtils.IsEmpty(tempPass) && StringUtils.IsEmpty(savedPass)) {
-
-		    } else if (StringUtils.IsEmpty(tempPass)) {
-
-		    } else {
-		        if (!tempPass.equals(savedPass)){
-		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-		        	if(validator.isValid(tempPass, authenticatedUser)){
-                        String salt = Users.createNewSalt();
-		                user.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
-		                user.setSalt(salt);
-		        	} else {
-		        		throw new PasswordComplexityException(validator.getMessage());
-		        	}
-		        }
-		    }
+		 
+		    // check if the password is being updated
+		    if (!StringUtils.IsEmpty(tempPass) && !tempPass.equals(savedPass) && !(new ShaPasswordEncoder(256).encodePassword(tempPass, existing.getSalt())).equals(savedPass)) {
+	    		PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
+	        	if(validator.isValid(tempPass, authenticatedUser)){
+                    String salt = Users.createNewSalt();
+	                user.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
+	                user.setSalt(salt);
+	                
+	                XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
+                    auth.setPasswordUpdated(new java.util.Date());
+                    auth.setFailedLoginAttempts(0);
+                    XDAT.getXdatUserAuthService().update(auth);
+                } else {
+	        		throw new PasswordComplexityException(validator.getMessage());
+	        	}
+	        }
+            // if not updated, may have been passed unencrypted and needs to be changed to its already saved encrypted form
+            else {
+            	user.setPassword(savedPass);
+            }
 
 		    if (authenticatedUser.checkRole("Administrator") || overrideSecurity) {
 		        SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, false, false,c);
 		    } else if (user.getLogin().equals(authenticatedUser.getLogin())) {
 		    	//not-admin user is modifying his own account.
 		    	//we only allow him to modify specific fields.
-		    	UserI toSave=Users.createUser();
+		    	XDATUser toSave=(XDATUser)createUser();
 		        toSave.setLogin(authenticatedUser.getLogin());
 		        toSave.setPassword(user.getPassword());
                 toSave.setSalt(user.getSalt());
 		        toSave.setEmail(user.getEmail());
-		        SaveItemHelper.authorizedSave(((XDATUser)toSave), authenticatedUser, false, false,c);
+		        SaveItemHelper.authorizedSave(toSave, authenticatedUser, false, false,c);
 
 		        authenticatedUser.setPassword(user.getPassword());
 		        authenticatedUser.setSalt(user.getSalt());

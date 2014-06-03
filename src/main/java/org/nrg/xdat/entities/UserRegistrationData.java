@@ -19,12 +19,6 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import java.io.Serializable;
 
-/**
- * This class allows persistence of user registration data through the email verification and administrative approval
- * process.
- *
- * @author rherri01
- */
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class UserRegistrationData extends AbstractHibernateEntity {

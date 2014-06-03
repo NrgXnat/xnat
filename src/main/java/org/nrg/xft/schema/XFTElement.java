@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.schema.XFTElement
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 11/18/13 9:36 AM
  */
-/*
- * Created on Mar 17, 2004
- */
+
+
 package org.nrg.xft.schema;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -28,36 +32,6 @@ import org.w3c.dom.Node;
 /**
  * @author Tim
  *
- */
-/**
- * This object stores information about a schema-defined element and collections of its fields.
- *
- * <BR><BR>This object maintains information about each schema-defined element.  It can contain
- * a XFTSqlElement and/or a XFTWebAppElement which contain additional details about the element
- * used for specialized purposes.
- *
- * <BR><BR>The object maintains a collection of XFTFields in its hashtable (fields).  These fields
- * are the direct children of the given element.  Each one may contain additional sub fields.  The
- * name of the element, and its schema's target namespace prefix are used to generate a XMLType which
- * is used to uniquely identify an element.
- *
- * <BR><BR>If the element is an extension of another element, then its extension is true and the
- * extended elements XMLType is stored in the exstensionType element.  If this element is extended
- * by another element then its isExtended field is true.  If it is extended and is not an extension
- * itself, then it will contain an additional field (reference to XFT_Element) and its hasExtensionElement
- * will be true.
- *
- * <BR><BR>If this element does not correspond to a unique XML node then its isANoChildElement will be true.
- *
- * <BR><BR>If this element was not defined at the root level of the schema, but was instead defined as a child
- * of another element (usually with maxOccurs &#62;1), then its createdChild property will be true.
- *
- * <BR><BR>The object contains a schemaPrefix property which stores the XMLNS prefix for this element.  It
- * will be used for any simple data fields generated for this element.
- *
- * <BR><BR>The object also retains a reference to the XFTSchema which created it.
- *
- * @author Tim
  */
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class XFTElement extends XFTNode{

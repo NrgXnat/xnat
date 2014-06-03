@@ -1,3 +1,13 @@
+<!--
+  ~ D:/Development/XNAT/1.6/xdat_1_6dev/pom.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 12/12/13 5:13 PM
+  -->
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
 	<modelVersion>4.0.0</modelVersion>
@@ -5,7 +15,7 @@
 	<parent>
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
-		<version>1.6.3</version>
+		<version>1.6.4-SNAPSHOT</version>
 		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 

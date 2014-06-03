@@ -1,9 +1,15 @@
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
 /*
- * GENERATED FILE
- * Created on Mon Feb 26 14:11:51 CST 2007
+ * org.nrg.xdat.om.XdatStoredSearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/21/14 9:52 AM
  */
+
+
 package org.nrg.xdat.om;
 import java.util.ArrayList;
 import java.util.Collections;

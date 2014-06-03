@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on May 21, 2004
+ * org.nrg.xft.utils.ValidationUtils.ValidationResults
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.utils.ValidationUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,16 +21,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.utils.StringUtils;
-/**
- * Contains all of the validation errors found in a validation process.  If the 
- * collection of errors is empty then the results are valid, otherwise they are
- * invalid.
- * 
- * <BR><BR>The object stores a collection of validation errors.  The collection stores
- * a series of Object[VWrapperField,String(message)].
- * 
- * @author Tim
- */
 public class ValidationResults implements ValidationResultsI{
 	private ArrayList results = new ArrayList(); // FIELD (VWrapperField), MESSAGE (String)
 	/* (non-Javadoc)

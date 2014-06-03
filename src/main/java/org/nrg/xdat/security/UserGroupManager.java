@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Jun 29, 2007
+ * org.nrg.xdat.security.UserGroupManager
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.security;
 
 import java.io.File;
@@ -24,8 +31,12 @@ import org.nrg.xdat.om.XdatFieldMappingSet;
 import org.nrg.xdat.om.XdatUserGroupid;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.search.CriteriaCollection;
+import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
+import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.cache.CacheManager;
 import org.nrg.xft.db.DBAction;
@@ -51,7 +62,8 @@ import org.nrg.xft.utils.VelocityUtils;
 import com.google.common.collect.Lists;
 
 public class UserGroupManager implements UserGroupServiceI{
-    static Logger logger = Logger.getLogger(UserGroupManager.class);
+
+	static Logger logger = Logger.getLogger(UserGroupManager.class);
     
 	
     public UserGroupI getGroup(String id){
@@ -564,5 +576,17 @@ public class UserGroupManager implements UserGroupServiceI{
 			}
         }
 
+	}
+
+
+	@Override
+	public UserGroupI createGroup(Map<String, ? extends Object> params) throws GroupFieldMappingException {
+		try {
+			PopulateItem populater = new PopulateItem(params,null,org.nrg.xft.XFT.PREFIX + ":user",true);
+			ItemI found = populater.getItem();
+			return new UserGroup(new XdatUsergroup(found));
+		} catch (Exception e) {
+			throw new GroupFieldMappingException(e);
+		}
 	}
 }

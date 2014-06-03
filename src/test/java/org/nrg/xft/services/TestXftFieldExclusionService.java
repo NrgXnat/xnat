@@ -1,3 +1,13 @@
+/*
+ * org.nrg.xft.services.TestXftFieldExclusionService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 9/12/13 4:29 PM
+ */
 package org.nrg.xft.services;
 
 import org.hibernate.exception.ConstraintViolationException;

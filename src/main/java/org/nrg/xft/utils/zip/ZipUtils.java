@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Aug 17, 2006
+ * org.nrg.xft.utils.zip.ZipUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/18/14 7:53 PM
  */
+
+
 package org.nrg.xft.utils.zip;
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
@@ -15,6 +22,7 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.List;
 import java.util.zip.CRC32;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipInputStream;
@@ -46,20 +54,24 @@ public class ZipUtils implements ZipI {
     ZipOutputStream out = null;
     int compression=ZipOutputStream.DEFLATED;
     boolean decompress = false;
-        
+    private List<String> _duplicates = new ArrayList<String>();
+
+    @Override
     public void setOutputStream(OutputStream outStream) throws IOException
     {
         out = new ZipOutputStream(outStream);
         out.setMethod(ZipOutputStream.DEFLATED);
     }
-    
+
+    @Override
     public void setOutputStream(OutputStream outStream, int compressionMethod) throws IOException
     {
         out = new ZipOutputStream(outStream);
         out.setMethod(compressionMethod);
         compression=compressionMethod;
     }
-    
+
+    @Override
     public void setCompressionMethod(int compressionMethod){
         out.setMethod(compressionMethod);
         compression=compressionMethod;
@@ -71,7 +83,8 @@ public class ZipUtils implements ZipI {
      * @throws FileNotFoundException
      * @throws IOException
      */
-    public void write(String relativePath,String absolutePath) throws FileNotFoundException,IOException
+    @Override
+    public void write(String relativePath,String absolutePath) throws IOException
     {
         if (out== null)
         {
@@ -87,7 +100,8 @@ public class ZipUtils implements ZipI {
      * @throws FileNotFoundException
      * @throws IOException
      */
-    public void write(String relativePath, File f) throws FileNotFoundException,IOException
+    @Override
+    public void write(String relativePath, File f) throws IOException
     {
         if (out== null)
         {
@@ -188,7 +202,8 @@ public class ZipUtils implements ZipI {
             }
         }
     }
-    
+
+    @Override
     public void write(String relativePath, InputStream is) throws IOException
     {
         if (compression==ZipOutputStream.STORED)
@@ -220,7 +235,7 @@ public class ZipUtils implements ZipI {
             out.closeEntry();
         }
     }
-    
+
     public void write(String relativePath, SRBFile srb) throws IOException
     {
         byte[] tempBUF = new byte[FileUtils.LARGE_DOWNLOAD];
@@ -276,6 +291,7 @@ public class ZipUtils implements ZipI {
         }
     }
 
+    @Override
     public void write(XNATDirectory dir) throws IOException{
         ArrayList files = dir.getFiles();
         ArrayList subDirectories = dir.getSubdirectories();
@@ -303,6 +319,7 @@ public class ZipUtils implements ZipI {
     /**
      * @throws IOException
      */
+    @Override
     public void close() throws IOException{
         if (out== null)
         {
@@ -310,7 +327,8 @@ public class ZipUtils implements ZipI {
         }
         out.close();
     }
-    
+
+    @Override
     public void extract(File f, String dir, boolean deleteZip) throws IOException{;
                 
         final class Expander extends Expand {
@@ -330,60 +348,60 @@ public class ZipUtils implements ZipI {
         if (deleteZip)
             f.deleteOnExit();
     }
-    
+
+    @Override
     public ArrayList extract(InputStream is, String dir) throws IOException{
     	return extract(is,dir,true,null);
     }
-    
-    public ArrayList extract(InputStream is, String destination,boolean overwrite, EventMetaI ci) throws IOException{;
-         ArrayList extractedFiles = new ArrayList();       
+
+    @Override
+    public ArrayList extract(InputStream is, String destination, boolean overwrite, EventMetaI ci) throws IOException {
+        ArrayList<File> extractedFiles = new ArrayList<File>();
         //  Create a ZipInputStream to read the zip file
-        BufferedOutputStream dest = null;
-        ZipInputStream zis = new ZipInputStream( new BufferedInputStream( is ) );
-    
+        BufferedOutputStream dest;
+        ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
+
         File df = new File(destination);
-        if (!df.exists()){
+        if (!df.exists()) {
             df.mkdirs();
         }
+
         // Loop over all of the entries in the zip file
         int count;
-        byte data[] = new byte[ FileUtils.LARGE_DOWNLOAD ];
+        byte data[] = new byte[FileUtils.LARGE_DOWNLOAD];
         ZipEntry entry;
-        while( ( entry = zis.getNextEntry() ) != null )
-        {
-          if( !entry.isDirectory() )
-          {            
-            final File f = new File(destination,entry.getName());
-            
-            if(f.exists()){
-                if(!overwrite){
-                	throw new IOException("File already exists"+f.getCanonicalPath());
-                }else{
-                	FileUtils.MoveToHistory(f,EventUtils.getTimestamp(ci));
+        while ((entry = zis.getNextEntry()) != null) {
+            if (!entry.isDirectory()) {
+                final File f = new File(destination, entry.getName());
+
+                if (f.exists() && !overwrite) {
+                    _duplicates.add(entry.getName());
+                } else {
+                    if (f.exists()) {
+                        FileUtils.MoveToHistory(f, EventUtils.getTimestamp(ci));
+                    }
+                    f.getParentFile().mkdirs();
+
+                    // Write the file to the file system
+                    FileOutputStream fos = new FileOutputStream(f);
+                    dest = new BufferedOutputStream(fos, FileUtils.LARGE_DOWNLOAD);
+                    while ((count = zis.read(data, 0, FileUtils.LARGE_DOWNLOAD)) != -1) {
+                        dest.write(data, 0, count);
+                    }
+                    dest.flush();
+                    dest.close();
+                    extractedFiles.add(new File(f.getAbsolutePath()));
                 }
+            } else {
+                df = new File(destination, entry.getName());
+                if (!df.exists()) {
+                    df.mkdirs();
+                }
+                extractedFiles.add(df);
             }
-            f.getParentFile().mkdirs();
-            // Write the file to the file system
-            FileOutputStream fos = new FileOutputStream(f);
-            dest = new BufferedOutputStream( fos, FileUtils.LARGE_DOWNLOAD );
-            while( (count = zis.read( data, 0, FileUtils.LARGE_DOWNLOAD ) ) != -1 )
-            {
-              dest.write( data, 0, count );
-            }
-            dest.flush();
-            dest.close();
-            extractedFiles.add(new File(f.getAbsolutePath()));
-          }else{
-              df = new File(destination,entry.getName());
-              if (!df.exists()){
-                  df.mkdirs();
-              }
-              extractedFiles.add(df);
-          }
         }
         zis.close();
         return extractedFiles;
-
     }
 
     public static void Unzip(File f) throws IOException {
@@ -414,8 +432,9 @@ public class ZipUtils implements ZipI {
         expander.execute();
         
     }
-    
-    public void writeDirectory(File dir) throws FileNotFoundException, IOException
+
+    @Override
+    public void writeDirectory(File dir) throws IOException
     {
         writeDirectory("", dir);
     }
@@ -439,6 +458,7 @@ public class ZipUtils implements ZipI {
     /**
      * @return Returns the _compressionMethod.
      */
+    @Override
     public int getCompressionMethod() {
         return this.compression;
     }
@@ -446,6 +466,7 @@ public class ZipUtils implements ZipI {
     /* (non-Javadoc)
      * @see org.nrg.xft.utils.zip.ZipI#getDecompressFilesBeforeZipping()
      */
+    @Override
     public boolean getDecompressFilesBeforeZipping() {
         return decompress;
     }
@@ -453,8 +474,13 @@ public class ZipUtils implements ZipI {
     /* (non-Javadoc)
      * @see org.nrg.xft.utils.zip.ZipI#setDecompressFilesBeforeZipping(boolean)
      */
+    @Override
     public void setDecompressFilesBeforeZipping(boolean method) {
         decompress=method;
     }
-      
+
+    @Override
+    public List<String> getDuplicates() {
+        return _duplicates;
+    }
 }

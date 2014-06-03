@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 
@@ -164,4 +165,15 @@ public interface UserGroupServiceI {
 	 * @return
 	 */
 	public String getGroupDatatype();
+
+	
+    /**
+     * Return a freshly created group object populated with the passed parameters.
+     * 
+     * Object may or may not already exist in the database.
+     * 
+     * @return
+     * @throws GroupFieldMappingException 
+     */
+	public UserGroupI createGroup(Map<String, ? extends Object> params) throws GroupFieldMappingException;
 }

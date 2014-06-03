@@ -1,6 +1,6 @@
 package org.nrg.xdat.security;
 
-import org.nrg.xft.ItemI;
+import java.util.List;
 
 public interface UserGroupI {
 
@@ -12,4 +12,6 @@ public interface UserGroupI {
 	public abstract void setTag(String tag);
 	public abstract void setDisplayname(String displayName);
 	public abstract void setPK(Integer pk);
+	
+	public List<List<Object>> getPermissionItems(String login) throws Exception;
 }

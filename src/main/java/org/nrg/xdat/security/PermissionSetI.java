@@ -3,7 +3,6 @@ package org.nrg.xdat.security;
 import java.util.List;
 
 import org.nrg.xft.ItemWrapper;
-import org.nrg.xft.exception.MetaDataException;
 
 public interface PermissionSetI {
 
@@ -60,4 +59,12 @@ public interface PermissionSetI {
      * @return the permSet
      */
     public List<PermissionSetI> getPermSets();
+    
+    /**
+     * @param fieldName
+     * @param value
+     * @return
+     * @throws Exception
+     */
+    public PermissionCriteriaI getMatchingPermissions(String fieldName, Object value) throws Exception;
 }

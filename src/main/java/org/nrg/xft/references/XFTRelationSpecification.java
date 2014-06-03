@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 12, 2004
+ * org.nrg.xft.references.XFTRelationSpecification
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.references;
 
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -15,11 +19,6 @@ import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 
-/**
- * Class used to identify a one-to-many relationship between two elements.
- * 
- * @author Tim
- */
 public class XFTRelationSpecification {
 	private String localTable=null;
 	private String localCol=null;

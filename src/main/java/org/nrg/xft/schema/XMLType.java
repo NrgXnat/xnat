@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT � Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 17, 2004
+ * org.nrg.xft.schema.XMLType
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 11/18/13 9:36 AM
  */
+
+
 package org.nrg.xft.schema;
 
 import java.text.ParseException;
@@ -13,32 +17,6 @@ import java.text.ParseException;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.utils.StringUtils;
 
-/**
- * This class identifies a specific type of XML Element.  The XMLType
- * can specify a basic data type or a created data type.
- * 
- * <BR><BR>The local field specifies the name of the data type.  The
- * localPrefix identifies the prefix assigned within this document to 
- * this item.  If this is a basic data type, then the localPrefix will
- * match the XMLNS of the schema.  For example, with a type of xs:string
- * xs would become the localPrefix and string would become the local.  In
- * the case of basic data types, the foreignPrefix will be equal to the 
- * localPrefix.  For a generated type, if the data type was defined in the 
- * same schema then its localPrefix and foreignPrefix will be the XFTSchema's
- * targetNamespacePrefix.  If the generated type refers to a foreign data type 
- * (defined in a separate namespace) then the localPrefix will define the local
- * schema's version of the data type prefix.  This prefix will be matched within
- * that schema to provide the URI of the referenced schema.  This URI can then
- * be used to find the original defined prefix for that data type through the
- * XFTMetaManager's URI-to-Prefix mapping.  The original prefix will have been used
- * to define the element throughout the application.  This orginal prefix will 
- * become the foreignPrefix of the XMLType.
- * 
- * <BR><BR>The fullLocalType will give the localPrefix:local.  The fullForeignType will
- * give the foreignPefix:local.
- * 
- * @author Tim
- */
 public class XMLType {
 	private static final String TIMESTAMP = "timestamp";
 	private static final String DATE_TIME = "dateTime";

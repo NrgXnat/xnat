@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 17, 2004
+ * org.nrg.xft.schema.XFTSchema
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 8/28/13 3:20 PM
  */
+
+
 package org.nrg.xft.schema;
 import java.io.File;
 import java.util.ArrayList;
@@ -33,27 +37,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-/**
- * This class relates one-to-one to a XML Schema (xsd) document and stores all of the elements
- * defined in that schema.
- * 
- * <BR><BR>This class maintains references to XFTElements via Hashtables using localXMLName,
- * code, javaName, or sqlName.  
- * 
- * <BR><BR>This class maintains a reference to XFTWebAppSchema which contains additional details
- * about the schema.
- * 
- * <BR><BR>The XFTSchema also maintains a reference to the DBConfig for this schema and thus can
- * provide details about this schema's database.
- * 
- * <BR><BR>The XFTSchema includes a collection of all of the imports for this schema, and mapping
- * collections between the schemas foreign prefixs and their corresponding URIs.  These URIs can
- * be used to get the accurate prefix for referenced items from the XFTMetaManager.  It also stores
- * the schema's default targetNamespaceURI, targetNamespacePrefix and XMLNS prefix.
- * 
- * @author Tim
- */
-
 public class XFTSchema {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTSchema.class);
 	private XFTWebAppSchema webAppSchema = null;

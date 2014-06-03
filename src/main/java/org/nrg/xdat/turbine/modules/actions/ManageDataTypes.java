@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Mar 14, 2008
+ * org.nrg.xdat.turbine.modules.actions.ManageDataTypes
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 10/14/13 5:43 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.util.ArrayList;

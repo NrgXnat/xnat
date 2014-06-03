@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Apr 1, 2004
+ * org.nrg.xft.generators.TorqueSchemaGenerator
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.generators;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -34,11 +38,6 @@ import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
-/**
- * Generater class that is used to output a torque schema for the collection of XFTSchemas.
- * 
- * @author Tim
- */
 public class TorqueSchemaGenerator {
 	static org.apache.log4j.Logger logger = Logger.getLogger(TorqueSchemaGenerator.class);
 	/**

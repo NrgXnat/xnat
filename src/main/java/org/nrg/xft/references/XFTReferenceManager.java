@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 9, 2004
+ * org.nrg.xft.references.XFTReferenceManager
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.references;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -24,19 +28,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
-/**
- * Singleton class used to manager reference between different elements.  It stores references to all
- * one-to-many references and many-to-many references.
- * 
- * <BR><BR>The singleton object is initialized through the init() method and accessed through static methods.
- * 
- * <BR><BR>In addition to stated references, the object also maintains the connection between elements in
- * the schema which simply refer to another type and are not translated into XFTElements (Most commonly,
- * these refer to root level element names which are of a given complex type).  These are maintained
- * as 'proper names' or 'element types'.
- * 
- * @author Tim
- */
 public class XFTReferenceManager {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTReferenceManager.class);
 	private static XFTReferenceManager instance = null;

@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Apr 14, 2004
+ * org.nrg.xft.generators.SQLCreateGenerator
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.generators;
 
 import org.apache.commons.logging.Log;
@@ -23,12 +27,6 @@ import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
 
-/**
- * Generator class that is used to output all of the SQL needed to create the
- * database, including CREATE, ALTER, VIEW, AND INSERT statements.
- *
- * @author Tim
- */
 public class SQLCreateGenerator {
     private static final Log logger = LogFactory.getLog(SQLCreateGenerator.class);
 

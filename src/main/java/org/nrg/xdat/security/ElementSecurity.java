@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 18, 2005
+ * org.nrg.xdat.security.ElementSecurity
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/13/14 11:48 AM
  */
+
+
 package org.nrg.xdat.security;
 
 import java.io.File;
@@ -75,6 +78,8 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.VelocityUtils;
+
+import com.google.common.collect.Lists;
 
 /**
  * @author Tim
@@ -868,6 +873,26 @@ public class ElementSecurity extends ItemWrapper{
 		laJSON=null;
 	}
 	
+	public List<PermissionItem> getPermissionItemsForTag(String tag) throws XFTInitException, ElementNotFoundException, FieldNotFoundException{
+		List<PermissionItem> tempItems = Lists.newArrayList();
+        
+        for (String fieldName:getPrimarySecurityFields())
+        {
+            if (! fieldName.startsWith(this.getElementName()))
+            {
+                fieldName = this.getElementName() + XFT.PATH_SEPERATOR + fieldName;
+            }
+            
+            PermissionItem pi = new PermissionItem();
+            pi.setFullFieldName(fieldName);
+            pi.setDisplayName(tag);
+            pi.setValue(tag);
+            tempItems.add(pi);
+        }
+        
+        Collections.sort(tempItems,PermissionItem.GetComparator());
+        return tempItems;
+	}
     
     private ArrayList permissionItems = null;
 	/**

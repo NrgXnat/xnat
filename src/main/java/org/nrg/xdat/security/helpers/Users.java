@@ -117,8 +117,9 @@ public class Users {
     /**
      * Return a User object for the referenced username.
      * @return
+     * @throws UserNotFoundException 
      */
-	public static UserI getUser(String username) throws UserInitException {
+	public static UserI getUser(String username) throws UserInitException, UserNotFoundException {
 		return getUserManagementService().getUser(username);
 	}
 

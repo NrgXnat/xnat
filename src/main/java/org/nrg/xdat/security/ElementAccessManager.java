@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Jan 13, 2005
+ * org.nrg.xdat.security.ElementAccessManager
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.security;
 
 import java.util.ArrayList;
@@ -111,6 +114,24 @@ public class ElementAccessManager {
             return new ArrayList<PermissionCriteriaI>();
         }
     }
+
+	public PermissionCriteriaI getMatchingPermissions(String fieldName, Object value) throws Exception
+	{
+		final List<PermissionSetI> sets = getPermissionSets();
+	    if (sets.size()>0)
+	    {
+			PermissionSetI ps = sets.get(0);
+			if (ps != null)
+			{
+				return ps.getMatchingPermissions(fieldName,value);
+			}else
+			{
+				return null;
+			}
+	    }else{
+	        return null;
+	    }
+	}
 	
 	public static final String SCHEMA_ELEMENT_NAME="xdat:element_access";
 

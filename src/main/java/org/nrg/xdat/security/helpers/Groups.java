@@ -12,6 +12,9 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.UserGroupServiceI;
+import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
+import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 
@@ -246,4 +249,16 @@ public class Groups {
 	public static void deleteGroupsByTag(String tag, UserI user, EventMetaI ci) throws Exception{
 		getUserGroupService().deleteGroupsByTag(tag, user, ci);
 	}
+	
+    /**
+     * Return a freshly created group object populated with the passed parameters.
+     * 
+     * Object may or may not already exist in the database.
+     * 
+     * @return
+     * @throws GroupFieldMappingException 
+     */
+    public static UserGroupI createGroup(Map<String,? extends Object> params) throws UserFieldMappingException, UserInitException, GroupFieldMappingException{
+		return getUserGroupService().createGroup(params);
+    }
 }

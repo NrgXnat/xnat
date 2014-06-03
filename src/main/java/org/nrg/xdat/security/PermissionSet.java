@@ -1,16 +1,18 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT – Extensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 13, 2005
+ * org.nrg.xdat.security.PermissionSet
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.security;
 
 import java.util.ArrayList;
-import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
@@ -26,7 +28,6 @@ import com.google.common.collect.Lists;
  * @author Tim
  *
  */
-@SuppressWarnings("serial")
 public class PermissionSet implements PermissionSetI{
     static org.apache.log4j.Logger logger = Logger.getLogger(PermissionSet.class);
 	List<PermissionCriteriaI> permCriteria = null;
@@ -40,17 +41,13 @@ public class PermissionSet implements PermissionSetI{
 		permCriteria = new ArrayList<PermissionCriteriaI>();
 		permSets = new ArrayList<PermissionSetI>();
 		
-		Iterator items = i.getChildItems(org.nrg.xft.XFT.PREFIX + ":field_mapping_set.allow").iterator();
-		while (items.hasNext())
+		for (ItemI sub:i.getChildItems(org.nrg.xft.XFT.PREFIX + ":field_mapping_set.allow"))
 		{
-			ItemI sub = (ItemI)items.next();
 			permCriteria.add(new PermissionCriteria(sub));
 		}
 
-		items = i.getChildItems(org.nrg.xft.XFT.PREFIX + ":field_mapping_set.sub_set").iterator();
-		while (items.hasNext())
+		for (ItemI sub:i.getChildItems(org.nrg.xft.XFT.PREFIX + ":field_mapping_set.sub_set"))
 		{
-			ItemI sub = (ItemI)items.next();
 			permSets.add(new PermissionSet(sub));
 		}
 	}
@@ -202,7 +199,7 @@ public class PermissionSet implements PermissionSetI{
 		return false;
 	}
 
-	public PermissionCriteriaI getRootPermission(String fieldName, Object value) throws Exception
+	public PermissionCriteriaI getMatchingPermissions(String fieldName, Object value) throws Exception
 	{
         for (PermissionCriteriaI criteria:permCriteria)
         {            

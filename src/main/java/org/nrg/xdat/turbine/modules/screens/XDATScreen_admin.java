@@ -14,11 +14,12 @@ import java.util.Hashtable;
 import org.apache.turbine.services.pull.tools.TemplateLink;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTableI;
+import org.nrg.xft.security.UserI;
 /**
  * @author Tim
  *
@@ -27,9 +28,9 @@ public class XDATScreen_admin extends AdminScreen {
 	public void doBuildTemplate(RunData data, Context context)
 	{
 		//TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
-		XDATUser user = TurbineUtils.getUser(data);
+		UserI user = TurbineUtils.getUser(data);
 		try {
-			DisplaySearch search = user.getSearch(org.nrg.xft.XFT.PREFIX + ":user","listing");
+			DisplaySearch search = UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data),org.nrg.xft.XFT.PREFIX + ":user","listing");
 			search.execute(new org.nrg.xdat.presentation.HTMLPresenter(TurbineUtils.GetContext(),false),TurbineUtils.getUser(data).getLogin());
 
 			TurbineUtils.setSearch(data,search);
@@ -44,8 +45,8 @@ public class XDATScreen_admin extends AdminScreen {
             XFTTableI table = search.getPresentedTable();
             context.put("userTable", table.toHTML(false, "FFFFFF", "DEDEDE", tableProps, (search.getCurrentPageNum() * search.getRowsPerPage()) + 1));
 
-            XdatUser boss = XdatUser.getXdatUsersByLogin("boss", user, false);
-            if(boss != null && boss.getBooleanProperty("enabled")){
+            UserI boss = Users.getUser("boss");
+            if(boss != null && boss.isEnabled()){
                 TemplateLink link = (TemplateLink) context.get("link");
                 String uri = link.setAction("DisplayItemAction").addPathInfo("search_value", "boss").addPathInfo("search_element", "xdat:user").addPathInfo("search_field", "xdat:user.login").getAbsoluteURI();
                 data.setMessage(String.format("You currently have the user <b>boss</b> enabled. This user is deprecated and should be disabled to protect system security. <a href='%s'>Click here</a> to go to the boss user page.", uri));

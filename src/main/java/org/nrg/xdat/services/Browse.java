@@ -19,8 +19,7 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
@@ -29,6 +28,7 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author timo
@@ -51,7 +51,7 @@ public class Browse {
 			    throw new Exception("Invalid Element Name: " + elementName);
 			}
 			
-			XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
+			UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
             if (user == null)
             {
                 throw new Exception("Invalid User.");
@@ -135,7 +135,7 @@ public class Browse {
         ArrayList al = new ArrayList();
         try {
 			
-			XDATUser user =(XDATUser)AxisEngine.getCurrentMessageContext().getSession().get("user");
+			UserI user =(UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
             if (user == null)
             {
                 throw new Exception("Invalid User.");

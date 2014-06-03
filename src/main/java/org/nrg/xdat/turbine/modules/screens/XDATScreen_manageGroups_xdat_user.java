@@ -9,10 +9,11 @@ import java.util.Hashtable;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
 
 public class XDATScreen_manageGroups_xdat_user extends AdminScreen {
 
@@ -34,7 +35,8 @@ public class XDATScreen_manageGroups_xdat_user extends AdminScreen {
                     context.put("search_field",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)));
                     context.put("search_value",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)));
 
-                    XDATUser tempUser = new XDATUser(item);
+                    
+                    UserI tempUser = Users.getUser(item.getStringProperty("login"));
                     context.put("userObject",tempUser);
 
                     XFTTable groups = XFTTable.Execute("SELECT id,displayname,tag FROM xdat_usergroup ORDER BY tag", tempUser.getDBName(), null);

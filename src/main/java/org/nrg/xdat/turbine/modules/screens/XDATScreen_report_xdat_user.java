@@ -8,17 +8,18 @@
  *
  */
 package org.nrg.xdat.turbine.modules.screens;
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.XDATUserDetails;
+import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.nrg.xdat.om.XdatUsergroup;
-import org.nrg.xdat.security.XDATUser;
-
-import java.util.List;
+import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -29,14 +30,15 @@ public class XDATScreen_report_xdat_user extends AdminReport {
     public void finalProcessing(RunData data,Context context)
     {
         try {            
-            XDATUser tempUser = new XDATUser(item);
+        	
+            UserI tempUser = Users.getUser(item.getStringProperty("login"));
 			context.put("userObject",tempUser);
-            context.put("allGroups",XdatUsergroup.getAllXdatUsergroups(null, false,"xdat:userGroup/tag"));
+            context.put("allGroups",Groups.getAllGroups());
             
             // Does the user hanve any failed login attempts?
             boolean hasFailedLoginAttempts = false;
             List<XdatUserAuth> auths = XDAT.getXdatUserAuthService().getUsersByName(tempUser.getUsername());
-            for (XdatUserAuth auth : auths) {
+            for (UserAuthI auth : auths) {
                 if (auth.getFailedLoginAttempts() > 0) {
                     hasFailedLoginAttempts = true;
                 }

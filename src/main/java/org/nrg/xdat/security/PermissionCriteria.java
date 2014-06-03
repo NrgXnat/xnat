@@ -20,7 +20,7 @@ import org.nrg.xft.utils.StringUtils;
  *
  */
 @SuppressWarnings("serial") //$NON-NLS-1$
-public class PermissionCriteria{
+public class PermissionCriteria implements PermissionCriteriaI{
 	private static final String SPACE = " ";
 	private static final String EMPTY = "";
 	private static final String COMMA = ",";
@@ -70,6 +70,10 @@ public class PermissionCriteria{
 	
 	public static final String SCHEMA_ELEMENT_NAME="xdat:field_mapping";
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getSchemaElementName()
+	 */
+	@Override
 	public String getSchemaElementName()
 	{
 	    return SCHEMA_ELEMENT_NAME;
@@ -79,6 +83,10 @@ public class PermissionCriteria{
 		return authorized;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getField()
+	 */
+	@Override
 	public String getField()
 	{
 		return field;
@@ -89,31 +97,55 @@ public class PermissionCriteria{
 		return (comparison==null)?EQUALS:comparison;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getFieldValue()
+	 */
+	@Override
 	public Object getFieldValue()
 	{
 		return value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getCreate()
+	 */
+	@Override
 	public boolean getCreate()
 	{
 		return (canCreate==null)?false:canCreate;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getRead()
+	 */
+	@Override
 	public boolean getRead()
 	{
 		return (canRead==null)?false:canRead;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getEdit()
+	 */
+	@Override
 	public boolean getEdit()
 	{
 		return (canEdit==null)?false:canEdit;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getDelete()
+	 */
+	@Override
 	public boolean getDelete()
 	{
 		return (canDelete==null)?false:canDelete;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getActivate()
+	 */
+	@Override
 	public boolean getActivate()
 	{
 		return (canActivate==null)?false:canActivate;
@@ -136,23 +168,18 @@ public class PermissionCriteria{
 		}
 	}
 	
-	public boolean canAccess(String access,String headerFormat,SecurityValues values) throws Exception
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#canAccess(java.lang.String, java.lang.String, org.nrg.xdat.security.SecurityValues)
+	 */
+	@Override
+	public boolean canAccess(String access,SecurityValues values) throws Exception
 	{
 		if (getAction(access))
 		{
 			Object value = null;
 			
-			if (headerFormat.equalsIgnoreCase(SecurityManager.SELECT_GRAND))
-			{
-				final Object[] field = GenericWrapperElement.GetViewBasedGrandColumnNameForXMLPath(getField());
-				if (field != null)
-				{
-					value = values.getHash().get((String)field[0]);
-				}
-			}else{
-				// dot syntax
-				value = values.getHash().get(getField());
-			}
+			// dot syntax
+			value = values.getHash().get(getField());
 									
 			if (value == null)
 			{

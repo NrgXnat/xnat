@@ -36,7 +36,9 @@ import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser.UserNotFoundException;
+import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.XFT;
@@ -50,7 +52,6 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.Event;
 import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -69,6 +70,7 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
@@ -146,15 +148,18 @@ public class ElementSecurity extends ItemWrapper{
 	 */
 	public static void refresh()
 	{
-	    elements = null;
-	    elementDistinctIds = new Hashtable();
-//	    XdatStoredSearch.RefreshPreLoadedSearches();
-//	    UserCache.Clear();
-//        UserGroupManager.Refresh();
-//        guestPermissions= new Hashtable();
-//        guestLoaded=false;
-	    
-		CacheManager.GetInstance().clearAll();
+
+		synchronized(lock){
+		    elements = null;
+		    elementDistinctIds = new Hashtable();
+	//	    XdatStoredSearch.RefreshPreLoadedSearches();
+	//	    UserCache.Clear();
+	//        UserGroupManager.Refresh();
+	//        guestPermissions= new Hashtable();
+	//        guestLoaded=false;
+		    
+			CacheManager.GetInstance().clearAll();
+		}
 	}
 	
 	/**
@@ -1382,31 +1387,7 @@ public class ElementSecurity extends ItemWrapper{
 	        return s;
 	    }
 	}
-    
         
-    public static XDATUser GetGuestUser()
-    {
-        XDATUser _guest=null;
-        try {
-            _guest = new XDATUser("guest");
-        } catch (UserNotFoundException e) {
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (DBPoolException e) {
-            logger.error("",e);
-        } catch (SQLException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
-            logger.error("",e);
-        } catch (Exception e) {
-            logger.error("",e);
-        }
-        
-        return _guest;
-    }
-    
     List<String> fields=null;
     
     public boolean hasField(String field){
@@ -1541,13 +1522,13 @@ public class ElementSecurity extends ItemWrapper{
 		}
         
         try {
-			EventManager.Trigger(XdatUsergroup.SCHEMA_ELEMENT_NAME,Event.UPDATE);
+			EventManager.Trigger(Groups.getGroupDatatype(),Event.UPDATE);
 		} catch (Exception e1) {
             logger.error("",e1);
 		}
 		
 		try {
-			PoolDBUtils.ClearCache(this.getDBName(), userName, XdatUsergroup.SCHEMA_ELEMENT_NAME);
+			PoolDBUtils.ClearCache(this.getDBName(), userName, Groups.getGroupDatatype());
 		} catch (Exception e) {
             logger.error("",e);
 		}

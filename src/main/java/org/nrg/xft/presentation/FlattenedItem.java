@@ -9,8 +9,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 
-import org.apache.commons.lang.BooleanUtils;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.compare.ItemComparator;
 import org.nrg.xft.db.loaders.XFTItemDBLoader.ItemCache;
@@ -32,9 +31,9 @@ public class FlattenedItem extends FlattenedItemA{
 		if(this.isHistory){
 			setChange_date(FlattenedItemA.parseDate(i.getProps().get("change_date")));
 			if(i.getMeta()!=null){
-				create_username=XDATUser.getUsername(i.getMeta().getProperty("insert_user_xdat_user_id"));
+				create_username=Users.getUsername(i.getMeta().getProperty("insert_user_xdat_user_id"));
 			}
-			modified_username=XDATUser.getUsername(i.getProps().get("change_user"));
+			modified_username=Users.getUsername(i.getProps().get("change_user"));
 			create_event_id=translateNumber(i.getProps().get("xft_version"));
 			if(isDeleted()){
 				modified_event_id=translateNumber(i.getXFTVersion());
@@ -43,7 +42,7 @@ public class FlattenedItem extends FlattenedItemA{
 		}else{
 			create_event_id=translateNumber(i.getXFTVersion());
 			if(i.getMeta()!=null){
-				create_username=XDATUser.getUsername(i.getMeta().getProperty("insert_user_xdat_user_id"));
+				create_username=Users.getUsername(i.getMeta().getProperty("insert_user_xdat_user_id"));
 			}
 		}
 

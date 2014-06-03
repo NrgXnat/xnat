@@ -7,10 +7,10 @@ import java.util.Calendar;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
 public class ItemAccessHistory {
@@ -23,7 +23,7 @@ public class ItemAccessHistory {
 	private String search_field;
 	private String method;
 	private Integer xdat_user_id;
-	private XDATUser user;
+	private UserI user;
 	
 	
 
@@ -61,11 +61,11 @@ public class ItemAccessHistory {
 		this.search_value = search_value;
 	}
 
-	public XDATUser getUser() {
+	public UserI getUser() {
 		return user;
 	}
 
-	public void setUser(XDATUser user) {
+	public void setUser(UserI user) {
 		this.user = user;
 	}
 
@@ -91,7 +91,7 @@ public class ItemAccessHistory {
 			query +=",'" + search_field + "'";
 		}
 		
-		query +="," + user.getXdatUserId();
+		query +="," + user.getID();
 		
 		if(method==null){
 			query +=",NULL";
@@ -104,7 +104,7 @@ public class ItemAccessHistory {
 		PoolDBUtils.ExecuteNonSelectQuery(query, user.getDBName(), user.getLogin());
 	}
 
-	public static void VerifyManagerExistence(XDATUser user){
+	public static void VerifyManagerExistence(UserI user){
 		try {
             if (!EXISTS){
         		PoolDBUtils.CreateTempSchema(user.getDBName(), user.getLogin());
@@ -137,7 +137,7 @@ public class ItemAccessHistory {
         }
 	}
 	
-	public static void LogAccess(XDATUser user,String value, String element, String field, String method) throws SQLException,Exception{
+	public static void LogAccess(UserI user,String value, String element, String field, String method) throws SQLException,Exception{
 		if(user==null || value==null || element==null){
 			throw new NullPointerException();
 		}
@@ -152,7 +152,7 @@ public class ItemAccessHistory {
 		his.save();
 	}
 	
-	public static void LogAccess(XDATUser user,ItemI item,String method) throws SQLException,Exception{
+	public static void LogAccess(UserI user,ItemI item,String method) throws SQLException,Exception{
 		if(user==null || item==null){
 			throw new NullPointerException();
 		}

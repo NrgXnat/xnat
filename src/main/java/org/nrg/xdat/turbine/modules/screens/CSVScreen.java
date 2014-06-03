@@ -19,7 +19,6 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.presentation.CSVPresenter;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
@@ -28,6 +27,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -52,7 +52,7 @@ public class CSVScreen extends org.apache.turbine.modules.screens.RawScreen
           {
               String search_xml = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_xml",data));
 
-              XDATUser user = TurbineUtils.getUser(data);
+              UserI user = TurbineUtils.getUser(data);
 
               if (user!=null){
                   StringReader sr = new StringReader(search_xml);

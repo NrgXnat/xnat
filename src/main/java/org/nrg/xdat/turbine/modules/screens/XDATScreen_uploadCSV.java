@@ -11,6 +11,7 @@ import java.util.ArrayList;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.utils.FieldMapping;
@@ -25,7 +26,7 @@ public class XDATScreen_uploadCSV extends SecureScreen {
         context.put("all_elements", GenericWrapperElement.GetAllElements(false));
         
         ArrayList<FieldMapping> fms = new ArrayList<FieldMapping>();
-        File dir = TurbineUtils.getUser(data).getCachedFile("csv");
+        File dir = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv");
         File[] files = dir.listFiles();
         if (files!=null){
             for(File f : dir.listFiles()){

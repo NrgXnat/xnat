@@ -1,7 +1,8 @@
 package org.nrg.xdat.security;
 
-import java.util.ArrayList;
 import java.util.List;
+
+import org.nrg.xft.security.UserI;
 
 public class PasswordValidatorChain implements PasswordValidator {
 	List<PasswordValidator> validators;
@@ -9,7 +10,7 @@ public class PasswordValidatorChain implements PasswordValidator {
 	
 	//if there are no validators, just return true;
 	@Override
-	public boolean isValid(String password, XDATUser user){
+	public boolean isValid(String password, UserI user){
 		boolean ret = true;
 		StringBuffer sb = new StringBuffer();
 		if(validators != null){

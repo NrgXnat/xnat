@@ -10,18 +10,19 @@ import java.util.Hashtable;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTableI;
+import org.nrg.xft.security.UserI;
 
 public class XDATScreen_manage_news extends AdminScreen {
 
     @Override
     protected void doBuildTemplate(RunData data, Context context)
             throws Exception {
-        XDATUser user = TurbineUtils.getUser(data); 
+        UserI user = TurbineUtils.getUser(data); 
         try {
-            DisplaySearch search = user.getSearch("xdat:newsEntry","listing");
+            DisplaySearch search = UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data),"xdat:newsEntry","listing");
             search.execute(new org.nrg.xdat.presentation.HTMLPresenter(TurbineUtils.GetContext(),false),TurbineUtils.getUser(data).getLogin());
             
             TurbineUtils.setSearch(data,search);

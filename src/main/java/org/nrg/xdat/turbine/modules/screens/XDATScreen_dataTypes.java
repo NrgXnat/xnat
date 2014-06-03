@@ -7,11 +7,11 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -21,7 +21,7 @@ public class XDATScreen_dataTypes extends AdminScreen {
 	public void doBuildTemplate(RunData data, Context context)
 	{
 		//TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
-		XDATUser user = TurbineUtils.getUser(data);
+		UserI user = TurbineUtils.getUser(data);
 
         try {
             CriteriaCollection cc = new CriteriaCollection("AND");

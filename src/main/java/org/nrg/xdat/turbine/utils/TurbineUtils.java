@@ -45,13 +45,12 @@ import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.om.XdatSecurity;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
@@ -66,11 +65,11 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SearchCriteria;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
-import com.google.common.collect.Collections2;
 import com.google.common.collect.Lists;
 /**
  * @author Tim
@@ -288,12 +287,12 @@ public class TurbineUtils {
 	}
     
 	
-	public static void SetEditItem(ItemI item,RunData data)
+	public static void SetEditItem(Object item,RunData data)
 	{
 	    data.getSession().setAttribute(EDIT_ITEM,item);
 	}
 	
-	public static ItemI GetEditItem(RunData data)
+	public static Object GetEditItem(RunData data)
 	{
 		final ItemI edit_item = (ItemI)data.getSession().getAttribute(EDIT_ITEM);
 	    data.getSession().removeAttribute(EDIT_ITEM);
@@ -439,26 +438,26 @@ public class TurbineUtils {
         return s;
     }
 	
-	public static XDATUser getUser(RunData data)
+	public static UserI getUser(RunData data)
 	{
-		XDATUser user;
+		UserI user;
 		if (data.getSession().getAttribute("user") == null) {
 			user = XDAT.getUserDetails();
 			data.getSession().setAttribute("user", user);
 		} else {
-			user = (XDATUser) data.getSession().getAttribute("user");
+			user = (UserI) data.getSession().getAttribute("user");
 		}
 		return user;
 	}
 	
-	public static void setUser(RunData data, XDATUser user) throws Exception
+	public static void setUser(RunData data, UserI user) throws Exception
 	{
-		XDAT.setUserDetails(new XDATUserDetails(user));
+		XDAT.setUserDetails(user);
 	}
 	
-	public static void setNewUser(RunData data, XDATUser user, Context context) throws Exception
+	public static void setNewUser(RunData data, UserI user, Context context) throws Exception
 	{
-		XDAT.setNewUserDetails(new XDATUserDetails(user), data, context);
+		XDAT.setNewUserDetails(user, data, context);
 	}
 	
 	/**
@@ -485,7 +484,7 @@ public class TurbineUtils {
                 }
                 
                 try {
-                    ds = TurbineUtils.getUser(data).getSearch(displayElement,"listing");
+                    ds = UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data),displayElement,"listing");
                     
                     final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
                     final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
@@ -519,7 +518,7 @@ public class TurbineUtils {
 	}
     
     public static DisplaySearch getDSFromSearchXML(RunData data){
-    	final XDATUser user = TurbineUtils.getUser(data);
+    	final UserI user = TurbineUtils.getUser(data);
         
         if (user!=null){
 	        if (data.getParameters().get("search_xml") !=null)
@@ -559,7 +558,7 @@ public class TurbineUtils {
 	            try {
 	            	final String search_id = data.getParameters().get("search_id");
 	                    
-	            	final String search_xml = PoolDBUtils.RetrieveLoggedCustomSearch(user.getLogin(), user.getDBName(), search_id);
+	            	final String search_xml = PoolDBUtils.RetrieveLoggedCustomSearch(user.getUsername(), user.getDBName(), search_id);
 	                    
 	                    if (search_xml!=null){
 	                    	final StringReader sr = new StringReader(search_xml);

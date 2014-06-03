@@ -6,7 +6,9 @@
 package org.nrg.xdat.turbine.utils;
 
 import java.io.StringWriter;
-import java.util.*;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 import javax.mail.MessagingException;
 
@@ -19,22 +21,15 @@ import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.mail.api.MailMessage;
-import org.nrg.xdat.XDAT;
 import org.nrg.mail.api.NotificationSubscriberProvider;
 import org.nrg.mail.api.NotificationType;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserRegistrationData;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
-import org.nrg.xft.collections.ItemCollection;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.AuthUtils;
 
@@ -204,7 +199,7 @@ public class AdminUtils {
         XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
 	}
 
-    public static void sendNewUserNotification(final XDATUser user, final Context context) throws Exception {
+    public static void sendNewUserNotification(final UserI user, final Context context) throws Exception {
         UserRegistrationData regData = XDAT.getContextService().getBean(UserRegistrationDataService.class).getUserRegistrationData(user);
         String comments = "";
         String phone = "";
@@ -219,7 +214,7 @@ public class AdminUtils {
         sendNewUserNotification(user, comments, phone, organization, context);
     }
 
-    public static void sendNewUserNotification(final XDATUser user, final String comments, final String phone, final String organization, final Context context) throws Exception {
+    public static void sendNewUserNotification(final UserI user, final String comments, final String phone, final String organization, final Context context) throws Exception {
         final String username = user.getUsername();
         final String firstName = user.getFirstname();
         final String lastName = user.getLastname();
@@ -234,7 +229,7 @@ public class AdminUtils {
         }
     }
 
-   public static void sendNewUserVerificationEmail(XdatUser user) throws Exception {
+   public static void sendNewUserVerificationEmail(UserI user) throws Exception {
       // If the Item is null, don't continue.
       if(user == null){ throw new Exception("Unable to send verification email. Required User is null."); }
       sendNewUserVerificationEmail(user.getEmail(), user.getFirstname(), user.getLastname(), user.getLogin());
@@ -308,7 +303,7 @@ public class AdminUtils {
 	 * @param user    The user to be authorized.
 	 */
 
-	public static void sendAuthorizationEmailMessage(XDATUser user) {
+	public static void sendAuthorizationEmailMessage(UserI user) {
 
 		String from = getAdminEmailId();
 		String[] tos = StringUtils.split(getAuthorizerEmailId(), ", ");
@@ -340,7 +335,7 @@ public class AdminUtils {
 	}
 
 	public static void sendErrorNotification(RunData data, String message, Context context) throws Exception {
-		XDATUser user = TurbineUtils.getUser(data);
+		UserI user = TurbineUtils.getUser(data);
 		String email = user.getEmail();
 		if (!StringUtils.isBlank(email)) {
 		    context.put("time", Calendar.getInstance().getTime());

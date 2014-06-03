@@ -13,8 +13,7 @@ import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTool;
@@ -23,6 +22,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 /**
  * @author timo
@@ -71,7 +71,7 @@ public class GetIdentifiers {
 			    comparison = _comparison;
 			}
 			Object o = _value;
-			XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
+			UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
             
             Authorizer.getInstance().authorizeRead(gwe, user);
             if (user == null)
@@ -155,7 +155,7 @@ public class GetIdentifiers {
 			    comparison = _comparison;
 			}
 			Object o = _value;
-			XDATUser user = (XDATUser)AxisEngine.getCurrentMessageContext().getSession().get("user");
+			UserI user = (UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
             if (user == null)
             {
                 throw new Exception("Invalid User.");

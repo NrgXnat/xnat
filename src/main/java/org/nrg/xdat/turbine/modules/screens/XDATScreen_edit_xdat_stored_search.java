@@ -5,24 +5,17 @@
  *
  */
 package org.nrg.xdat.turbine.modules.screens;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.List;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.UserNotFoundException;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 
 
 /**
@@ -48,31 +41,12 @@ public class XDATScreen_edit_xdat_stored_search extends AdminEditScreenA {
 	 * @see org.nrg.xdat.turbine.modules.screens.SecureReport#finalProcessing(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
 	 */
 	public void finalProcessing(RunData data, Context context) {
-		Iterator<String> itr = (XDATUser.getAllLogins()).iterator();
-		ArrayList<String> users = new ArrayList<String>();
+		List<UserI> allUsers=Users.getUsers();
 		Hashtable<String,String> users_h = new Hashtable<String,String>();
-		while (itr.hasNext()) {
-			String login = itr.next();
-			try {
-				XDATUser u = new XDATUser(login);
-				String user = u.getLastname() + "," + u.getFirstname();
-				users_h.put(login, user);
-				users.add(user);
-			} catch (UserNotFoundException e) {
-				e.printStackTrace();
-			} catch (XFTInitException e) {
-				e.printStackTrace();
-			} catch (ElementNotFoundException e) {
-				e.printStackTrace();
-			} catch (DBPoolException e) {
-				e.printStackTrace();
-			} catch (SQLException e) {
-				e.printStackTrace();
-			} catch (FieldNotFoundException e) {
-				e.printStackTrace();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
+		
+		for(UserI u: allUsers){
+			String user = u.getLastname() + "," + u.getFirstname();
+			users_h.put(u.getLogin(), user);
 		}
 
 		try {

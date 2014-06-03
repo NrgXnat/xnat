@@ -12,6 +12,7 @@ import java.util.Map;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
@@ -27,7 +28,7 @@ public class XDATScreen_uploadCSV1 extends SecureScreen {
         FieldMapping fm = (FieldMapping)context.get("fm");
         String fm_id = (String)TurbineUtils.GetPassedParameter("fm_id", data);
         if (fm==null && fm_id!=null){
-            File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
+            File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + fm_id + ".xml");
             fm  = new FieldMapping(f);
         }
         String root = fm.getElementName();

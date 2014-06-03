@@ -13,11 +13,11 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -70,7 +70,7 @@ public class EmailReportAction extends EmailAction {
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
                 
                 StringBuffer sb = new StringBuffer();
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
@@ -101,7 +101,7 @@ public class EmailReportAction extends EmailAction {
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
                 
                 StringBuffer sb = new StringBuffer();
                 sb.append("<html>");

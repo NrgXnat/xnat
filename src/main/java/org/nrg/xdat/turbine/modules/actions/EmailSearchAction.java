@@ -15,8 +15,8 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatStoredSearch;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -52,7 +52,7 @@ public class EmailSearchAction extends SearchAction {
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
                 DisplaySearch ds = TurbineUtils.getSearch(data);
                 XdatStoredSearch xss = ds.getStoredSearch();
                 
@@ -109,7 +109,7 @@ public class EmailSearchAction extends SearchAction {
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
 
                 DisplaySearch ds = TurbineUtils.getSearch(data);
                 

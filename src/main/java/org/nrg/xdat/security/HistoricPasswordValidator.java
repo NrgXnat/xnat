@@ -6,6 +6,7 @@ import java.util.Hashtable;
 
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.security.UserI;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 public class HistoricPasswordValidator implements PasswordValidator {
@@ -14,7 +15,7 @@ public class HistoricPasswordValidator implements PasswordValidator {
 	private int durationInDays = 365;
 	
 	@Override
-	public boolean isValid(String password, XDATUser user) {
+	public boolean isValid(String password, UserI user) {
 		//if there's no user, they're probably new so there's nothing to do here.
 		if(user != null){
             try {

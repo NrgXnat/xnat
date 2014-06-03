@@ -1,6 +1,10 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.turbine.modules.screens;
 
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.List;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -9,23 +13,15 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.XDATUserDetails;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.search.ItemSearch;
-import org.springframework.security.core.userdetails.UserDetails;
-
-import java.sql.SQLException;
-import java.util.ArrayList;
+import org.nrg.xft.security.UserI;
 
 public class VerifyEmail extends VelocitySecureScreen {
 	private static final Logger logger = Logger.getLogger(VerifyEmail.class);
@@ -52,28 +48,22 @@ public class VerifyEmail extends VelocitySecureScreen {
             String secret = (String) TurbineUtils.GetPassedParameter("s", data);
 			String userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias, Long.parseLong(secret));
 	    	if (userID!=null) {
-	    		XDATUser u = new XDATUser(userID);
-	    		ItemCollection users = getAllUsersWithEmail(u.getEmail());
-	    		ArrayList<XDATUser> verified = new ArrayList<XDATUser>();
+	    		UserI u = Users.getUser(userID);
+	    		List<UserI> users = getAllUsersWithEmail(u.getEmail());
+	    		List<UserI> verified = new ArrayList<UserI>();
 
-	    		for(ItemI i : users.getItems()){
-	    			XDATUser curUser = new XDATUser(i.getItem(),false);
-	    			if((curUser.getVerified()!=null && !(curUser.getVerified())) || (!curUser.getEnabled() && disabledDueToInactivity(curUser))){
-	    				XFTItem toSave = XFTItem.NewItem("xdat:user", curUser);
-	    				toSave.setProperty("login", curUser.getLogin());
-	    				toSave.setProperty("primary_password", curUser.getProperty("primary_password"));
-                        toSave.setProperty("salt", curUser.getProperty("salt"));
-	    				toSave.setProperty("email", curUser.getProperty("email"));
-	    				toSave.setProperty("verified", "1");
-	    			
+	    		for(UserI curUser : users){
+	    			if((curUser.isVerified()!=null && !(curUser.isVerified())) || (!curUser.isEnabled() && disabledDueToInactivity(curUser))){
+	    				curUser.setVerified(Boolean.TRUE);
+	    				
 	    				// If auto-approval is true, the user is enabled
 	    				if(XFT.GetUserRegistration()){
-	    					toSave.setProperty("enabled", "1");
+	    					curUser.setEnabled(true);
 	    				}
 	    				
 	    				try {
 	    					// Save the user, and add the user to the list of verified users.
-	    					XDATUser.ModifyUser(curUser, toSave, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Verify User Email"));
+	    					Users.save(curUser, curUser,false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Verify User Email"));
 	    					verified.add(curUser);
 	    				} catch (Exception e) {
 	    					invalidInformation(data, context, e.getMessage());
@@ -92,7 +82,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 						// Build the user message
 						StringBuilder msgBuilder = new StringBuilder();
 						msgBuilder.append(u.getEmail()).append(" has been verified for the following users: ");
-						for(XDATUser uv : verified){ 
+						for(UserI uv : verified){ 
 							// Append a list of user names that we have verified.
 							if(verified.get(verified.size() - 1) == uv){
 								msgBuilder.append(uv.getUsername()); // Don't append comma if it's the last in the list.
@@ -100,7 +90,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 								msgBuilder.append(uv.getUsername()).append(", ");
 							}
                             // If this user has never logged in, they're new, send the appropriate notification.
-                            if (uv.getLastLogin() == null || disabledDueToInactivity(uv)) {
+                            if (Users.getLastLogin(uv) == null || disabledDueToInactivity(uv)) {
                                 AdminUtils.sendNewUserNotification(uv, context);
                                 AdminUtils.sendNewUserEmailMessage(uv.getUsername(), uv.getEmail(), context);
                             }
@@ -170,15 +160,15 @@ public class VerifyEmail extends VelocitySecureScreen {
     		}
       }
 
-    private boolean disabledDueToInactivity(XDATUser user) {
+    private boolean disabledDueToInactivity(UserI user) {
         try {
             String query = "SELECT COUNT(*) AS count " +
                     "FROM xdat_user_history " +
-                    "WHERE xdat_user_id=" + user.getXdatUserId() + " " +
-                    "AND change_user=" + user.getXdatUserId() + " " +
+                    "WHERE xdat_user_id=" + user.getID() + " " +
+                    "AND change_user=" + user.getID() + " " +
                     "AND change_date = (SELECT MAX(change_date) " +
                     "FROM xdat_user_history " +
-                    "WHERE xdat_user_id=" + user.getXdatUserId() + " " +
+                    "WHERE xdat_user_id=" + user.getID() + " " +
                     "AND enabled=1)";
             Long result = (Long) PoolDBUtils.ReturnStatisticQuery(query, "count", PoolDBUtils.getDefaultDBName(), null);
 
@@ -195,12 +185,8 @@ public class VerifyEmail extends VelocitySecureScreen {
      * @param email    The email we are searching on.
      * @return ItemCollection containing all users with the given email 
      */
-    private ItemCollection getAllUsersWithEmail(String email) throws Exception{
-        ItemSearch search = new ItemSearch();
-        search.setAllowMultiples(false);
-        search.setElement("xdat:user");
-        search.addCriteria("xdat:user.email",email);
-        return search.exec();
+    private List<UserI> getAllUsersWithEmail(String email) throws Exception{
+        return Users.getUsersByEmail(email);
      }
 
     private void redirectToLogin(final RunData data){

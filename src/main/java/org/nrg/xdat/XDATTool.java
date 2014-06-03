@@ -19,8 +19,9 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -43,6 +44,7 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
@@ -57,7 +59,7 @@ import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 public class XDATTool {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XDATTool.class);
     private String location = null;
-    private XDATUser user = null;
+    private UserI user = null;
     private boolean ignoreSecurity = false;
     public XDATTool() throws XFTInitException
     {
@@ -74,7 +76,7 @@ public class XDATTool {
     /**
      *
      */
-    public XDATTool(String instanceLocation,XDATUser u) throws Exception {
+    public XDATTool(String instanceLocation,UserI u) throws Exception {
     	instanceLocation = FileUtils.AppendSlash(instanceLocation);
         user=u;
         location= instanceLocation;
@@ -336,7 +338,7 @@ public class XDATTool {
 	        throw new Exception("Error: No username and password.");
 	    }
 	    String rootElement = StringUtils.GetRootElementName(xmlPath);
-	    DisplaySearch ds = user.getSearch(rootElement,"listing");
+	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user,rootElement,"listing");
 	    ds.addCriteria(xmlPath,comparisonType,value);
 	    XFTTableI table =ds.execute(new HTMLPresenter(""),user.getLogin());
 	    FileUtils.OutputToFile(table.toHTML(true,"FFFFFF","FFFFCC",new java.util.Hashtable(),0),getSearchFileName("html"));
@@ -382,7 +384,7 @@ public class XDATTool {
 	        throw new Exception("Error: No username and password.");
 	    }
 	    String rootElement = StringUtils.GetRootElementName(xmlPath);
-	    DisplaySearch ds = user.getSearch(rootElement,"listing");
+	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user,rootElement,"listing");
 	    ds.addCriteria(xmlPath,comparisonType,value);
 	    XFTTableI table =ds.execute(new CSVPresenter(),user.getLogin());
 	    FileUtils.OutputToFile(table.toString(","),getSearchFileName("csv"));
@@ -394,7 +396,7 @@ public class XDATTool {
 	    {
 	        throw new Exception("Error: No username and password.");
 	    }
-	    DisplaySearch ds = user.getSearch(elementName,"listing");
+	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user,elementName,"listing");
 	    XFTTableI table =ds.execute(new HTMLPresenter(""),user.getLogin());
 	    FileUtils.OutputToFile(table.toHTML(true,"FFFFFF","FFFFCC",new java.util.Hashtable(),0),getSearchFileName("html"));
 	}
@@ -405,7 +407,7 @@ public class XDATTool {
 	    {
 	        throw new Exception("Error: No username and password.");
 	    }
-	    DisplaySearch ds = user.getSearch(elementName,"listing");
+	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user,elementName,"listing");
 	    XFTTableI table =ds.execute(new CSVPresenter(),user.getLogin());
 	    FileUtils.OutputToFile(table.toString(","),getSearchFileName("csv"));
 	}
@@ -452,13 +454,13 @@ public class XDATTool {
     /**
      * @return Returns the user.
      */
-    public XDATUser getUser() {
+    public UserI getUser() {
         return user;
     }
     /**
      * @param user The user to set.
      */
-    public void setUser(XDATUser user) {
+    public void setUser(UserI user) {
         this.user = user;
     }
 

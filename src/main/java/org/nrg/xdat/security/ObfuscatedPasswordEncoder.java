@@ -12,8 +12,6 @@ package org.nrg.xdat.security;/*
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 
-import org.nrg.xdat.security.XDATUser;
-import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 public class ObfuscatedPasswordEncoder extends ShaPasswordEncoder {
 

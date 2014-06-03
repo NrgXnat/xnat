@@ -10,7 +10,7 @@ public class Event extends Object {
 	public final static String DELETE="D";
 	
 	private String xsiType=null;
-	private ItemI i=null;
+	private Object i=null;
 	private String action=null;
 	private Object id=null;
 	
@@ -27,11 +27,11 @@ public class Event extends Object {
 		this.action = action;
 	}
 	
-	public ItemI getItem() {
+	public Object getItem() {
 		return i;
 	}
 	
-	public void setItem(ItemI i) {
+	public void setItem(Object i) {
 		this.i = i;
 	}
 	

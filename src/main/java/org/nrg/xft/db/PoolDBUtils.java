@@ -19,15 +19,14 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 /**
  * This class is in charge of performing all sql queries against a database.
@@ -810,7 +809,7 @@ public class PoolDBUtils {
         }
     }
 
-    public static Long CreateManagedTempTable(String tablename, String query,XDATUser user) throws Exception{
+    public static Long CreateManagedTempTable(String tablename, String query,UserI user) throws Exception{
         MaterializedView mv = new MaterializedView(user);
         mv.setTable_name(tablename);
         mv.setSearch_sql(query);
@@ -819,7 +818,7 @@ public class PoolDBUtils {
         return mv.getSize();
     }
 
-    public static XFTTable RetrieveManagedTempTable(String tablename,XDATUser user,int offset, int rowsPerPage) throws Exception{
+    public static XFTTable RetrieveManagedTempTable(String tablename,UserI user,int offset, int rowsPerPage) throws Exception{
         MaterializedView mv = MaterializedView.GetMaterializedView(tablename, user);
         if(mv==null){
         	return null;

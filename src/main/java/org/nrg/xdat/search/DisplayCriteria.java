@@ -14,9 +14,12 @@ import java.util.ArrayList;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.QueryOrganizerI;
 import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.search.SearchCriteria;
@@ -340,6 +343,20 @@ public class DisplayCriteria implements SQLClause{
 		this.where_value = where_value;
 	}
     
-    
+    public static SQLClause buildCriteria(SchemaElement root, PermissionCriteriaI c) throws XFTInitException, ElementNotFoundException, Exception{
+    	final DisplayField df = root.getDisplayFieldForXMLPath(c.getField());
+        if (df == null|| !df.generatedFor.equals(""))
+        {
+            final ElementCriteria ec = new ElementCriteria();
+            ec.setFieldWXMLPath(c.getField());
+            ec.setValue(c.getFieldValue());
+            return ec;
+        }else{
+            final DisplayCriteria newC = new DisplayCriteria();
+            newC.setSearchFieldByDisplayField(root.getFullXMLName(),df.getId());
+            newC.setValue(c.getFieldValue(),false);
+            return newC;
+        }
+    }
 }
 

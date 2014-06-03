@@ -11,7 +11,14 @@ package org.nrg.xdat.turbine.modules.actions;
 
 import java.io.StringWriter;
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Enumeration;
+import java.util.GregorianCalendar;
+import java.util.Iterator;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -25,13 +32,14 @@ import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.CriteriaCollection;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.StringUtils;
 
@@ -73,7 +81,7 @@ public abstract class SearchA extends SecureAction {
 		try {
 		    doPreliminaryProcessing(data,context);
 
-			XDATUser user = TurbineUtils.getUser(data);
+			UserI user = TurbineUtils.getUser(data);
 			String display = data.getParameters().getString("display","listing");
 			String elementName = ((String)TurbineUtils.GetPassedParameter("element",data));
 			Integer page = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger("page",data));
@@ -122,7 +130,7 @@ public abstract class SearchA extends SecureAction {
 				}
 				if (search == null || hasSuperSearchVariables(data) || queryType.equalsIgnoreCase("new"))
 				{
-					search = user.getSearch(elementName,display);
+					search = UserHelper.getSearchHelperService().getSearchForUser(user,elementName,display);
 
 					if (hasSuperSearchVariables(data))
 					{
@@ -220,8 +228,8 @@ public abstract class SearchA extends SecureAction {
     {
         ds.resetWebFormValues();
 
-        XDATUser user = TurbineUtils.getUser(data);
-        Iterator eds = user.getSearchableElementDisplays().iterator();
+        UserI user = TurbineUtils.getUser(data);
+        Iterator eds = UserHelper.getUserHelperService(user).getSearchableElementDisplays().iterator();
         while (eds.hasNext())
         {
             ElementDisplay ed = (ElementDisplay)eds.next();

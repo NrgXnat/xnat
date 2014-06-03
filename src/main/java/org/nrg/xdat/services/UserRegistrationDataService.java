@@ -11,7 +11,7 @@ package org.nrg.xdat.services;
 
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.xdat.entities.UserRegistrationData;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xft.security.UserI;
 
 /**
  * UserRegistrationDataService interface.
@@ -19,8 +19,8 @@ import org.nrg.xdat.security.XDATUser;
  * @author rherri01
  */
 public interface UserRegistrationDataService extends BaseHibernateService<UserRegistrationData> {
-    public abstract UserRegistrationData cacheUserRegistrationData(XDATUser user, String phone, String organization, String comment);
-    public abstract UserRegistrationData getUserRegistrationData(XDATUser user);
+    public abstract UserRegistrationData cacheUserRegistrationData(UserI user, String phone, String organization, String comment);
+    public abstract UserRegistrationData getUserRegistrationData(UserI user);
     public abstract UserRegistrationData getUserRegistrationData(String xdatUserId);
-    public abstract void clearUserRegistrationData(XDATUser user);
+    public abstract void clearUserRegistrationData(UserI user);
 }

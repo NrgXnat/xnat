@@ -1,6 +1,8 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.turbine.modules.screens;
 
+import java.sql.SQLException;
+
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
@@ -8,13 +10,12 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-
-import java.sql.SQLException;
+import org.nrg.xft.security.UserI;
 
 @SuppressWarnings("UnusedDeclaration")
 public class ChangePassword extends VelocitySecureScreen {
@@ -36,7 +37,7 @@ public class ChangePassword extends VelocitySecureScreen {
                 context.put("login", TurbineUtils.getUser(data).getUsername());
                 context.put("topMessage", "Your password has expired. Please choose a new one.");
             } else {
-                XDATUser user = (XDATUser) data.getSession().getAttribute("user");
+                UserI user = (UserI) data.getSession().getAttribute("user");
 
                 // If the user isn't already logged in...
                 if(user == null || user.getUsername().equals("guest")) {
@@ -49,7 +50,7 @@ public class ChangePassword extends VelocitySecureScreen {
                         {
                             userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,Long.parseLong(secret));
                             if(userID!=null){
-                                user = new XDATUser(userID);
+                                user = Users.getUser(userID);
                                 boolean forcePasswordChange = true;
                                 XDAT.loginUser(data, user, forcePasswordChange);
                             }

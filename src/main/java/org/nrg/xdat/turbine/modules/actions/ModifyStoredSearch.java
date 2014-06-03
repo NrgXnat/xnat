@@ -13,6 +13,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatSearchField;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.design.SchemaElementI;
@@ -27,11 +28,9 @@ public class ModifyStoredSearch extends ModifyItem {
         SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
                 
         XdatStoredSearch xss = new XdatStoredSearch(item);
-        //XdatStoredSearch.ReplacePreLoadedSearch(xss);
         
-        TurbineUtils.getUser(data).replacePreLoadedSearch(xss);
+        UserHelper.getSearchHelperService().replacePreLoadedSearchForUser(TurbineUtils.getUser(data), xss);
         
-        //UserGroupManager.ReplacePreLoadedSearch(xss);
         
         if (TurbineUtils.HasPassedParameter("destination", data)){
             this.redirectToReportScreen((String)TurbineUtils.GetPassedParameter("destination", data), item, data);

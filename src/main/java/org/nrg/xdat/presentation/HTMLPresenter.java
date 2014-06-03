@@ -25,11 +25,12 @@ import org.nrg.xdat.display.SQLQueryField;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.SecurityValues;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.XFTTableI;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 /**
  * @author Tim
@@ -358,7 +359,7 @@ public class HTMLPresenter extends PresentationA {
 						if (link.isSecure() && dfr.getElementName()!=null && !dfr.getElementName().equals(getRootElement().getFullXMLName()))
 						{
 							SchemaElementI secureElement = SchemaElement.GetElement(link.getSecureLinkTo());
-							XDATUser user = (XDATUser)search.getUser();
+							UserI user = search.getUser();
 
 							SecurityValues values = new SecurityValues();
 							Enumeration secureKeys = link.getSecureProps().keys();
@@ -386,7 +387,7 @@ public class HTMLPresenter extends PresentationA {
 
 							if (values.getHash().size()>0)
 							{
-								if (user.canReadByXMLPath(secureElement,values))
+								if (Permissions.canRead(user,secureElement,values))
 								{
 									hasLink = true;
 									sb.append("<A");

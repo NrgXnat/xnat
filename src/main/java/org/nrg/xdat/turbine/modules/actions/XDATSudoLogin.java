@@ -12,11 +12,10 @@ package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.entities.XDATUserDetails;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.security.UserI;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.context.SecurityContextImpl;
 
@@ -24,10 +23,10 @@ public class XDATSudoLogin extends SecureAction{
 
 	@Override
 	public void doPerform(RunData data, Context context) throws Exception {
-		XDATUser user = TurbineUtils.getUser(data);
+		UserI user = TurbineUtils.getUser(data);
         if (user.checkRole("Administrator")) {
 			String login = (String)TurbineUtils.GetPassedParameter("sudo_login", data);
-            XDATUserDetails temp = new XDATUserDetails(login);
+			UserI temp=Users.getUser(login);
 			TurbineUtils.setNewUser(data, temp, context);
             SecurityContextImpl securityContext = new SecurityContextImpl();
             UsernamePasswordAuthenticationToken authentication = new UsernamePasswordAuthenticationToken(temp, login, temp.getAuthorities());

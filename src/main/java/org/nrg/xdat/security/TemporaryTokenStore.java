@@ -2,18 +2,17 @@ package org.nrg.xdat.security;
 
 import java.util.Calendar;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.mail.MessagingException;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.security.UserI;
 
 public final class TemporaryTokenStore {
 	static Logger logger = Logger.getLogger(TemporaryTokenStore.class);
@@ -140,7 +139,7 @@ public final class TemporaryTokenStore {
 	}
 	
  	public static void addTokenAndEmail(final String login, final String subject) throws Exception {
-		final XDATUser u = new XDATUser(login);
+		final UserI u = Users.getUser(login);
 		final String from = AdminUtils.getAdminEmailId();
 		final String[] tos = {u.getEmail()};
 		final String[] ccs = {};

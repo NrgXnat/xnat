@@ -46,23 +46,6 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
 		super(properties,user);
 	}
 
-//	public static ArrayList<XdatStoredSearch> GetPreLoadedSearches()
-//	{
-//	    if (ALL_STORED_SEARCHES == null)
-//	    {
-//	        try {
-//                long startTime = Calendar.getInstance().getTimeInMillis();
-//                ALL_STORED_SEARCHES = PopulateSearches();
-//                if(XFT.VERBOSE)System.out.println("Finished pre-loading stored searches " + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
-//            } catch (Exception e) {
-//                logger.error("",e);
-//                ALL_STORED_SEARCHES = new ArrayList<XdatStoredSearch>();
-//            }
-//	    }
-//	    
-//	    return ALL_STORED_SEARCHES;
-//	}
-//    
     public static ArrayList<XdatStoredSearch> GetSearches(CriteriaCollection cc,boolean withChildren) {
         ArrayList _ALL_STORED_SEARCHES = new ArrayList<XdatStoredSearch>();
         try {
@@ -78,30 +61,13 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
         
         return _ALL_STORED_SEARCHES;
     }
+    
     public static ArrayList<XdatStoredSearch> GetSearches(String field,String value,boolean withChildren) {
         CriteriaCollection cc = new CriteriaCollection("AND");
         cc.addClause(field, value);
         return GetSearches(cc,withChildren);
     }
-//    
-//    public static void ReplacePreLoadedSearch(XdatStoredSearch i){
-//        XdatStoredSearch xss = GetPreLoadedSearch(i.getId());
-//        if (xss!=null){
-//            ALL_STORED_SEARCHES.remove(xss);
-//        }
-//        ALL_STORED_SEARCHES.add(i);
-//    }
-//    
-//    public static boolean HasPreLoadedSearch(String bundle)
-//    {
-//        if (GetPreLoadedSearch(bundle)==null)
-//        {
-//            return false;
-//        }else{
-//            return true;
-//        }
-//    }
-//    
+
     public static XdatStoredSearch GetPreLoadedSearch(String id,boolean withChildren)
     {
     	try {
@@ -113,40 +79,6 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
 		
 		return null;
     }
-//    
-//
-//    public static ArrayList<XdatStoredSearch> GetPreLoadedSearches(String field, String login)
-//    {
-//        ArrayList<XdatStoredSearch> _return = new ArrayList<XdatStoredSearch>();
-//        for(XdatStoredSearch xss: GetPreLoadedSearches())
-//        {
-//            try {
-//                Boolean b = xss.getSecure();
-//                if (b==null)
-//                {
-//                    b=Boolean.TRUE;
-//                }
-//                if (b.booleanValue())
-//                {
-//                    if (xss.hasProperty(field,login))
-//                    {
-//                        _return.add(xss);
-//                    }
-//                }else{
-//                    _return.add(xss);
-//                }
-//            } catch (XFTInitException e) {
-//                logger.error("",e);
-//            } catch (ElementNotFoundException e) {
-//                logger.error("",e);
-//            } catch (FieldNotFoundException e) {
-//                logger.error("",e);
-//            }
-//        }
-//        
-//        return _return;
-//    }
-    
 
     public static ArrayList<XdatStoredSearch> GetPreLoadedSearchesByAllowedUser(String login)
 	{
@@ -158,11 +90,6 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
     {
         return GetSearches("xdat:stored_search.allowed_groups.groupID", groupID,true);
     }
-	
-//	public static void RefreshPreLoadedSearches()
-//	{
-//	    ALL_STORED_SEARCHES = null;
-//	}
     
     public boolean canRead(String login){
         Boolean b = getSecure();

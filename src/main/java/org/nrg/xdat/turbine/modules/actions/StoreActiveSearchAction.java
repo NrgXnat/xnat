@@ -22,10 +22,10 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.ElementCriteria;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.SQLClause;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -44,7 +44,7 @@ public class StoreActiveSearchAction extends SearchAction {
 
     public void doFinalProcessing(RunData data, Context context) throws Exception
     {
-        XDATUser user = TurbineUtils.getUser(data);
+        UserI user = TurbineUtils.getUser(data);
         DisplaySearch ds = TurbineUtils.getSearch(data);
         
         XdatStoredSearch xss = new XdatStoredSearch();

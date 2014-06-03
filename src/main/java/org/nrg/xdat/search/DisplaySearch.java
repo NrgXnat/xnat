@@ -35,7 +35,6 @@ import org.nrg.xdat.om.XdatCriteriaSet;
 import org.nrg.xdat.om.XdatSearchField;
 import org.nrg.xdat.presentation.PresentationA;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
@@ -95,7 +94,7 @@ public class DisplaySearch implements TableSearchI{
 	private XFTTableI presentedTable = null;
 	private PresentationA lastPresenter = null;
 
-	private XDATUser user = null;
+	private UserI user = null;
 
 	private String level = ViewManager.ACCESSIBLE;
 
@@ -334,7 +333,7 @@ public class DisplaySearch implements TableSearchI{
 		       DisplayField df=dfw.getDisplayField();
 		       if(df instanceof SQLQueryField){
 		    	   if(dfw.getValue()!=null && dfw.getValue().equals("{XDAT_USER_ID}")){
-		    		   dfw.setValue(user.getXdatUserId());
+		    		   dfw.setValue(user.getID());
 		    	   }
 		       }
 		   }catch(Exception e){
@@ -529,7 +528,7 @@ public class DisplaySearch implements TableSearchI{
                if (df instanceof SQLQueryField){
             	   if(dfr.getValue()!=null){
             		   if(dfr.getValue().equals("{XDAT_USER_ID}")){
-                		   dfr.setValue(user.getXdatUserId());
+                		   dfr.setValue(user.getID());
                 	   }
                        alias = df.getId() +"_" + cleanColumnName((dfr).getValue().toString());
             	   }
@@ -1455,7 +1454,7 @@ public class DisplaySearch implements TableSearchI{
 	 * @param user
 	 */
 	public void setUser(UserI user) {
-		this.user = (XDATUser)user;
+		this.user = user;
 	}
 
 	/**

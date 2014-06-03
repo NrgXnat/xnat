@@ -12,19 +12,18 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatElementSecurity;
 import org.nrg.xdat.om.XdatSecurity;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.security.UserI;
+import org.nrg.xft.utils.SaveItemHelper;
 
 public class ManageDataTypes extends AdminAction {
 
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
-        XDATUser user=TurbineUtils.getUser(data);
+        UserI user=TurbineUtils.getUser(data);
         PopulateItem populater = PopulateItem.Populate(data,"xdat:security",true);
                 
         XFTItem found = populater.getItem();

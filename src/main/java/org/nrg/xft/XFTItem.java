@@ -37,9 +37,9 @@ import org.apache.commons.collections.Predicate;
 import org.apache.log4j.Logger;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.om.XdatUserI;
 import org.nrg.xdat.security.SecurityManager;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.TypeConverter.JavaMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
 import org.nrg.xft.cache.CacheManager;
@@ -102,6 +102,7 @@ import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.VelocityUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -3419,7 +3420,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             s = null;
             if (user != null)
             {
-                user.secureItem(item);
+            	Permissions.secureItem(user,item);
             }
         } catch (XFTInitException e) {
             logger.error("",e);
@@ -5762,7 +5763,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    		boolean q = getGenericSchemaElement().isQuarantine();
 	    		return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),c);
             }else{
-                String error = user.canStoreItem(this,allowItemRemoval);
+                String error = Permissions.canStoreItem(user,this,allowItemRemoval);
                 if (error == null)
                 {
     	    		boolean q = getGenericSchemaElement().isQuarantine();
@@ -5808,7 +5809,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    		boolean q = getGenericSchemaElement().isQuarantine(quarantine);
                 DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance(),c);
             }else{
-                String error = user.canStoreItem(this,allowItemRemoval);
+                String error = Permissions.canStoreItem(user,this,allowItemRemoval);
                 if (error == null)
                 {
     	    		boolean q = getGenericSchemaElement().isQuarantine(quarantine);
@@ -6096,7 +6097,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 */
 	public boolean isValid() throws Exception
 	{
-	    ValidationResults vr = validate();
+	    ValidationResultsI vr = validate();
 	    return vr.isValid();
 	}
 
@@ -6493,37 +6494,37 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @see org.nrg.xft.ItemI#canRead(org.nrg.xft.security.UserI)
 	 */
 	public boolean canRead(UserI user) throws Exception{
-	    return user.canRead(this);
+	    return Permissions.canRead(user,this);
 	}
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#canEdit(org.nrg.xft.security.UserI)
 	 */
 	public boolean canEdit(UserI user) throws Exception{
-	    return user.canEdit(this);
+	    return Permissions.canEdit(user,this);
 	}
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#canEdit(org.nrg.xft.security.UserI)
 	 */
 	public boolean canCreate(UserI user) throws Exception{
-	    return user.canCreate(this);
+	    return Permissions.canCreate(user,this);
 	}
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#canActivate(org.nrg.xft.security.UserI)
 	 */
 	public boolean canActivate(UserI user) throws Exception{
-	    return user.canActivate(this);
+	    return Permissions.canActivate(user,this);
 	}
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#canActivate(org.nrg.xft.security.UserI)
 	 */
 	public boolean canDelete(UserI user) throws Exception{
-	    return user.canDelete(this);
+	    return Permissions.canDelete(user,this);
 	}
     /**
      * @return Returns the validationResults.
      */
     @SuppressWarnings("unused")
-    private ValidationResults getValidationResults() {
+    private ValidationResultsI getValidationResults() {
         return validationResults;
     }
 
@@ -6619,8 +6620,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         return null;
     }
 
-    private XdatUser activation_user=null;
-    public XdatUser getActivationUser()
+    private UserI activation_user=null;
+    public UserI getActivationUser()
     {
     	if(activation_user==null)
         {
@@ -6630,7 +6631,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     Integer i= (Integer)this.getMeta().getProperty("activation_user_xdat_user_id");
 
                     if (i!=null){
-                    	activation_user = XdatUser.getXdatUsersByXdatUserId(i, user, false);
+                    	activation_user = Users.getUser(i);
                     }
                 } catch (XFTInitException e) {
                     logger.error("",e);
@@ -6638,7 +6639,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     logger.error("",e);
                 } catch (FieldNotFoundException e) {
                     logger.error("",e);
-                }
+                } catch (Exception e) {
+					logger.error("",e);
+				}
             }
         }
 
@@ -6650,9 +6653,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         }
     }
 
-    private XdatUserI insert_user = null;
+    private UserI insert_user = null;
 
-    public XdatUserI getInsertUser()
+    public UserI getInsertUser()
     {
         if(insert_user==null)
         {
@@ -6662,7 +6665,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     Integer i= (Integer)this.getMeta().getProperty("insert_user_xdat_user_id");
 
                     if (i!=null){
-                        insert_user = XdatUser.getXdatUsersByXdatUserId(i, user, false);
+                        insert_user = Users.getUser(i);
                     }
                 } catch (XFTInitException e) {
                     logger.error("",e);
@@ -6670,7 +6673,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     logger.error("",e);
                 } catch (FieldNotFoundException e) {
                     logger.error("",e);
-                }
+                } catch (Exception e) {
+                    logger.error("",e);
+				}
             }
         }
 

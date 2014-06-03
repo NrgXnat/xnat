@@ -12,11 +12,7 @@ import java.io.File;
 import java.sql.SQLException;
 import java.util.ArrayList;
 
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowI;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;

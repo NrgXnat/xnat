@@ -14,11 +14,11 @@ package org.nrg.xdat.turbine.modules.screens;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.base.BaseElement;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -36,7 +36,7 @@ public abstract class SecureReport extends SecureScreen {
     public abstract void finalProcessing(RunData data, Context context);
     public void noItemError(RunData data, Context context){
     	StringBuilder sb=new StringBuilder();
-    	XDATUser u=TurbineUtils.getUser(data);
+    	UserI u=TurbineUtils.getUser(data);
     	sb.append("We are unable to provide the requested data. Either you have encountered a link to erroneous data, or ");
     	if(u!=null){
         	sb.append("this user account (<b>").append(u.getUsername()).append("</b>) does not have access to this data.");
@@ -99,7 +99,7 @@ public abstract class SecureReport extends SecureScreen {
 			    context.put("item",item.getItem());
 			    if(XFT.VERBOSE)System.out.println("Loaded item object (org.nrg.xft.ItemI) as context parameter 'item'.");
 			    context.put("user",TurbineUtils.getUser(data));
-			    if(XFT.VERBOSE)System.out.println("Loaded user object (org.nrg.xdat.security.XDATUser) as context parameter 'user'.");
+			    if(XFT.VERBOSE)System.out.println("Loaded user object (org.nrg.xdat.security.UserI) as context parameter 'user'.");
 
             	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
             	if(TurbineUtils.GetPassedParameter("search_element",data) !=null)

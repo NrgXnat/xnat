@@ -16,10 +16,10 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.security.UserI;
 
 public class EmailCustomSearch {
     static org.apache.log4j.Logger logger = Logger.getLogger(EmailCustomSearch.class);
@@ -28,7 +28,7 @@ public class EmailCustomSearch {
         String xmlString = req.getParameter("search_xml");
         
         HttpSession session = req.getSession();
-        XDATUser user = ((XDATUser)session.getAttribute("user"));        
+        UserI user = ((UserI)session.getAttribute("user"));        
 
         String _return ="<DIV class=\"error\">Unknown Exception</DIV>";
         if (user!=null){
@@ -70,7 +70,7 @@ public class EmailCustomSearch {
         response.getWriter().write(_return);
     }
 
-	public String getTxtMessage(HttpServletRequest req, XDATUser user, String msg, Object search_id) {
+	public String getTxtMessage(HttpServletRequest req, UserI user, String msg, Object search_id) {
 		if (req.getParameter("txtmessage") == null) {
             try {                
                 StringBuffer sb = new StringBuffer();
@@ -96,7 +96,7 @@ public class EmailCustomSearch {
 
     }
     
-	private String formatHtmlMessage(HttpServletRequest req, XDATUser user, String msg, Object search_id) {
+	private String formatHtmlMessage(HttpServletRequest req, UserI user, String msg, Object search_id) {
 		if (req.getParameter("htmlmessage") == null) {
             try {
                 StringBuffer sb = new StringBuffer();

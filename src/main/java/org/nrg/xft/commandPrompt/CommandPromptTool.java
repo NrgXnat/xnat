@@ -17,13 +17,13 @@ import java.util.Iterator;
 import java.util.Properties;
 
 import org.nrg.xdat.XDATTool;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 
 /**
@@ -75,7 +75,7 @@ public abstract class CommandPromptTool {
         int _return = 0;
         try {
             run();
-        } catch (org.nrg.xdat.security.XDATUser.FailedLoginException e) {
+        } catch (org.nrg.xdat.security.user.exceptions.FailedLoginException e) {
             System.out.println(e.getMessage());
             _return= 4;
         } catch (ElementNotFoundException e) {
@@ -627,7 +627,7 @@ public abstract class CommandPromptTool {
         return tool.getSettingsDirectory();
     }
     
-    public XDATUser getUser()
+    public UserI getUser()
     {
         return tool.getUser();
     }

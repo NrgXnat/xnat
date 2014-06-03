@@ -17,7 +17,7 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;

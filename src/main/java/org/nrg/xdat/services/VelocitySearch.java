@@ -12,8 +12,7 @@ import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -21,6 +20,7 @@ import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.security.UserI;
 /**
  * @author Tim
  *
@@ -163,7 +163,7 @@ public class VelocitySearch{
         }
     }
     
-    private String output(ItemCollection items, String templateName,XDATUser user){
+    private String output(ItemCollection items, String templateName,UserI user){
     	StringBuffer sb= new StringBuffer();
         Iterator iter = items.getItemIterator();
         while (iter.hasNext())

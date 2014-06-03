@@ -3,18 +3,20 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import java.util.Date;
 
+import javax.mail.MessagingException;
+
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import javax.mail.MessagingException;
+import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.mail.services.EmailRequestLogService;
+import org.nrg.xft.security.UserI;
 
 
 public class ResendVerification extends SecureScreen {
@@ -34,7 +36,7 @@ public class ResendVerification extends SecureScreen {
     		if(storeParameterIfPresent(data, context, "emailTo") && storeParameterIfPresent(data, context, "emailUsername")){
     			String emailTo = (String)context.get("emailTo");
         		String emailUsername = (String)context.get("emailUsername");
-        		XDATUser user = new XDATUser(emailUsername);
+        		UserI user = Users.getUser(emailUsername);
         		if(!user.isVerified()){
                     if(requestLog != null && requestLog.isEmailBlocked(emailTo)){
                         data.setMessage("You have exceeded the allowed number of email requests. Please try again later.");

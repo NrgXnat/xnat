@@ -17,6 +17,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -125,7 +126,7 @@ public class ItemCollection {
 		{
 			ItemI item = (ItemI)iter.next();
 			try {
-                ItemI temp = user.secureItem(item);
+                ItemI temp = Permissions.secureItem(user,item);
                 if (temp == null)
                 {
                     remove.add(item);

@@ -25,12 +25,12 @@ import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.security.TurbineSecurityException;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 /**
  * @author Tim
@@ -88,7 +88,7 @@ public class XDATLoginUser extends VelocityAction{
 		try
 		{
 			// Authenticate the user and get the object;.
-			XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(username,password));
+			UserI user = Authenticator.Authenticate(new Authenticator.Credentials(username,password));
 
 			XFTItem item = XFTItem.NewItem("xdat:user_login",user);
 			java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
@@ -150,7 +150,7 @@ public class XDATLoginUser extends VelocityAction{
 		}
 	}
 
-	public void doRedirect(RunData data, Context context,XDATUser user) throws Exception{
+	public void doRedirect(RunData data, Context context,UserI user) throws Exception{
 		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
 		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 		/*

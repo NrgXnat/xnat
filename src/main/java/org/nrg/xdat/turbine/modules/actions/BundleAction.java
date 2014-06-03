@@ -8,6 +8,8 @@ package org.nrg.xdat.turbine.modules.actions;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.search.DisplaySearch;
+import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 
 /**
@@ -25,11 +27,13 @@ public class BundleAction extends SearchA {
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle",data))!=null)
         {
             String bundle = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("bundle",data));
-            ds = TurbineUtils.getUser(data).getStoredSearch(bundle);
-            if (ds ==null)
+            XdatStoredSearch xss= UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data), bundle);
+            
+            if (xss ==null)
             {
                 ds = null;
             }else{
+            	ds = xss.getDisplaySearch(TurbineUtils.getUser(data));
                 ds.setPagingOn(true);
                 ds = addSearchCriteria(ds,data);
                 return ds;

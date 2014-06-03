@@ -28,7 +28,6 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.nrg.xdat.display.DisplayField;
-import org.nrg.xdat.om.XdatUserI;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xft.ItemI;
@@ -462,7 +461,7 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
         return this.getItem().getInsertDate();
     }
 
-    public XdatUserI getInsertUser(){
+    public UserI getInsertUser(){
         return this.getItem().getInsertUser();
     }
 }

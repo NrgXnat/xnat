@@ -39,7 +39,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 
 /**
  * @author Tim
@@ -182,9 +182,9 @@ public class ModifyItem  extends SecureAction {
 //                return;
 //            }
 
-            ValidationResults vr = null;
+            ValidationResultsI vr = null;
 
-            	ValidationResults temp = first.validate();
+            	ValidationResultsI temp = first.validate();
             	if (! temp.isValid())
             	{
             	   vr = temp;

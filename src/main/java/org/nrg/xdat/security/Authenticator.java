@@ -10,12 +10,10 @@ import java.util.Properties;
 
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xdat.security.XDATUser.ActivationException;
-import org.nrg.xdat.security.XDATUser.EnabledException;
-import org.nrg.xdat.security.XDATUser.PasswordAuthenticationException;
-import org.nrg.xdat.security.XDATUser.UserNotFoundException;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xft.XFT;
+import org.nrg.xft.security.UserI;
 
 public class Authenticator {
     public synchronized static String RetrieveAuthenticatorClassName() {
@@ -49,25 +47,28 @@ public class Authenticator {
         return (Authenticator) authClass.newInstance();
     }
 
-    public static XDATUser Authenticate(Credentials cred) throws Exception {
+    public static UserI Authenticate(Credentials cred) throws Exception {
         return CreateAuthenticator().authenticate(cred);
     }
 
-    public static boolean Authenticate(XDATUser u, Credentials cred) throws Exception {
+    public static boolean Authenticate(UserI u, Credentials cred) throws Exception {
         return CreateAuthenticator().authenticate(u, cred);
     }
 
-    public XDATUser authenticate(Credentials cred) throws Exception {
-        XDATUser user;
+    public UserI authenticate(Credentials cred) throws Exception {
+    	UserI user;
         try {
-            user = new XDATUser(cred.username, cred.password);
+            user= Users.getUser(cred.username);
+            if(!authenticate(user,cred)){
+            	user=null;
+            }
         } catch (Exception e) {
             user = null;
         }
         if (user == null && AliasToken.isAliasFormat(cred.username)) {
             AliasToken token = getAliasTokenService().locateToken(cred.username);
             try {
-                user = new XDATUser(token.getXdatUserId());
+                user = Users.getUser(token.getXdatUserId());
             } catch (Exception exception) {
                 user = null;
             }
@@ -75,8 +76,8 @@ public class Authenticator {
         return user;
     }
 
-    public boolean authenticate(XDATUser u, Credentials cred) throws Exception {
-        return u.login(cred.password);
+    public boolean authenticate(UserI u, Credentials cred) throws Exception {
+    	return Users.authenticate(u,cred);
     }
 
     private AliasTokenService getAliasTokenService() {

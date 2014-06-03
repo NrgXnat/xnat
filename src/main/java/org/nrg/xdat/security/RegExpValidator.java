@@ -2,6 +2,8 @@ package org.nrg.xdat.security;
 
 import java.util.regex.Pattern;
 
+import org.nrg.xft.security.UserI;
+
 public class RegExpValidator implements PasswordValidator{
 
 	String regexp="";
@@ -12,7 +14,7 @@ public class RegExpValidator implements PasswordValidator{
 	}
 	
 	@Override
-	public boolean isValid(String password, XDATUser user) {
+	public boolean isValid(String password, UserI user) {
 		boolean valid = false;
 		if((regexp.equals(""))){
 			valid = true;

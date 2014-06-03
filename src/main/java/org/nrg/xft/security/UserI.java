@@ -9,27 +9,21 @@
  */
 package org.nrg.xft.security;
 
-import org.nrg.xft.ItemI;
-import org.nrg.xft.exception.InvalidItemException;
-import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.search.CriteriaCollection;
+import java.io.Serializable;
+import java.util.Date;
+
+import org.nrg.xdat.entities.UserAuthI;
+import org.nrg.xft.exception.MetaDataException;
+import org.springframework.security.core.userdetails.UserDetails;
 
 /**
  * @author Tim
  *
  */
-public interface UserI {
+public interface UserI extends UserDetails,Serializable{
 	public Integer getID();
 	public String getUsername();
-	public ItemI secureItem(ItemI item) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException;
-	public boolean canRead(ItemI item) throws InvalidItemException,Exception;
-	public boolean canEdit(ItemI item) throws InvalidItemException,Exception;
-	public boolean canCreate(ItemI item) throws InvalidItemException,Exception;
-	public boolean canActivate(ItemI item) throws InvalidItemException,Exception;
-	public boolean canDelete(ItemI item) throws InvalidItemException,Exception;
-	public boolean can(ItemI item,String action) throws InvalidItemException,Exception;
-	public String canStoreItem(ItemI item,boolean descend) throws InvalidItemException,Exception;
-	public CriteriaCollection getCriteriaForBackendRead(SchemaElementI rootElement) throws Exception;
+	public String getLogin();
     public boolean isGuest();
 	
 	/**
@@ -46,5 +40,32 @@ public interface UserI {
 	 * @return
 	 */
 	public String getEmail();
+	public boolean checkRole(String roleSiteAdmin) throws Exception;
+
+	public boolean isSiteAdmin();
+	public String getDBName();
+	public String getPassword();
+	public boolean isEnabled();
+	public Boolean isVerified();
+	public String getSalt();
+	public boolean isActive()throws MetaDataException;
+	
+	public Date getLastModified();
+	
+	public void setLogin(String login);
+	public void setEmail(String e);
+	public void setFirstname(String firstname);
+	public void setLastname(String lastname);
+	public void setPassword(String encodePassword);
+	public void setSalt(String salt);
+	public void setPrimaryPassword_encrypt(Object b);
+	public void setEnabled(Object enabled);
+	public void setVerified(Object verified);
+	
+	public Object getCustomField(String key);
+	public void setCustomField(String key, Object value) throws Exception;
+	
+	public UserAuthI setAuthorization(UserAuthI newUserAuth);
+	public UserAuthI getAuthorization();
 }
 

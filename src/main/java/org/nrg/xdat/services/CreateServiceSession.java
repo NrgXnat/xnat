@@ -15,13 +15,13 @@ import org.apache.axis.session.Session;
 import org.apache.axis.transport.http.AxisHttpSession;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author timo
@@ -38,7 +38,7 @@ public class CreateServiceSession  extends ServiceA{
         String s=null;
         try {
             Message rspmsg =mc.getResponseMessage();
-            XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
+            UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
             Session session = mc.getSession();
             session.set("user", user);
             session.set("state", "maintained");

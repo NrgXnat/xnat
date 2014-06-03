@@ -13,6 +13,7 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplayCriteria;
+import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
@@ -357,5 +358,17 @@ public class SearchCriteria implements SQLClause {
 	{
 	    return new ArrayList<DisplayCriteria>();
 	}
+    
+    public static SearchCriteria buildCriteria(PermissionCriteriaI c){
+    	final SearchCriteria newC = new SearchCriteria();
+        try {
+			newC.setFieldWXMLPath(c.getField());
+			newC.setValue(c.getFieldValue());
+		} catch (Exception e) {
+			logger.error("",e);
+		}
+        
+        return newC;
+    }
 }
 

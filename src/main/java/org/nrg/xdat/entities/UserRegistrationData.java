@@ -32,7 +32,7 @@ public class UserRegistrationData extends AbstractHibernateEntity {
     private static final long serialVersionUID = 6837523294464366339L;
 
     /**
-     * The login name of the user. This maps directly to the {@link org.nrg.xdat.security.XDATUser#getLogin()} property.
+     * The login name of the user. This maps directly to the {@link org.nrg.xft.security.UserI#getLogin()} property.
      * @return The login name for the registered user with which this registration data is associated.
      */
     @Column(unique = true, nullable = false)

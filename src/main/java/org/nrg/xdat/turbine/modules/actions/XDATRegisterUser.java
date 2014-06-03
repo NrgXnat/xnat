@@ -5,6 +5,16 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
+
+import javax.servlet.http.HttpSession;
+
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
@@ -15,19 +25,17 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.PasswordValidatorChain;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
@@ -37,68 +45,54 @@ import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
-import javax.servlet.http.HttpSession;
-import java.util.*;
-
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
 
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
 		try {
-        	PopulateItem populater = PopulateItem.Populate(data, XFT.PREFIX + ":user", true);
-        	ItemI found = populater.getItem();
-            ItemSearch search = new ItemSearch();
-            search.setAllowMultiples(false);
-            search.setElement("xdat:user");
-            search.addCriteria("xdat:user.login", found.getProperty("login"));
-            
-            ItemI temp = search.exec().getFirst();
-            
-            if (temp == null) {
-            	String emailWithWhite = found.getStringProperty("email");
+			UserI found=Users.createUser(TurbineUtils.GetDataParameterHash(data));
+			UserI existing=Users.getUser(found.getLogin());
+			
+            if (existing == null) {
+            	String emailWithWhite = found.getEmail();
         		String noWhiteEmail = emailWithWhite.trim();
-        		found.setProperty("email", noWhiteEmail);
-                search = new ItemSearch();
-                search.setAllowMultiples(false);
-                search.setElement("xdat:user");
-                search.addCriteria("xdat:user.email",found.getProperty("email"));
-                temp = search.exec().getFirst();
+        		found.setEmail(emailWithWhite);
+        		
+        		List<UserI> matches=Users.getUsersByEmail(emailWithWhite);
 
-                if (temp == null) {
+                if (matches.size()==0) {
 	                String tempPass = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
 	                PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 	                if (validator.isValid(tempPass, null)) {
 	                
 		                // NEW USER
-                        String salt = XDATUser.createNewSalt();
-	                    found.setProperty("primary_password", new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
-	                    found.setProperty("salt", salt);
+                        String salt = Users.createNewSalt();
+                        found.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
+                        found.setSalt(salt);
 
 		                boolean autoApproval = autoApproval(data, context);
 		                
 		                if (autoApproval) {
 		                	if (XDAT.verificationOn() && !hasPAR(data)) {
-		                		found.setProperty("enabled", "false");
+		                		found.setEnabled(Boolean.FALSE);
 		                	} else {
-		                		found.setProperty("enabled", "true");
+		                		found.setEnabled(Boolean.TRUE);
 		                	}
 		                } else {
-		                    found.setProperty("enabled", "false");
+	                		found.setEnabled(Boolean.FALSE);
 		                }
 
                         if (hasPAR(data)) {
-                            found.setProperty("verified","true");
+	                		found.setVerified(Boolean.TRUE);
                         }
                         else {
-                            found.setProperty("verified","false");
+	                		found.setVerified(Boolean.FALSE);
                         }
 		                
-		                XDATUser newUser = new XDATUser(found);
-
-						SaveItemHelper.authorizedSave(newUser, TurbineUtils.getUser(data), true, false, true, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
-		                
-		                XdatUserAuth newUserAuth = new XdatUserAuth((String)found.getProperty("login"), XdatUserAuthService.LOCALDB);
+                        Users.save(found, TurbineUtils.getUser(data), true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
+						
+		                XdatUserAuth newUserAuth = new XdatUserAuth(found.getLogin(), XdatUserAuthService.LOCALDB);
 	                    XDAT.getXdatUserAuthService().create(newUserAuth);
 
                         final String comments = TurbineUtils.HasPassedParameter("comments", data) ? (String) TurbineUtils.GetPassedParameter("comments", data) : "";
@@ -108,9 +102,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         if (autoApproval) {
                             if (!hasPAR(data) && XDAT.verificationOn()) {
                             	try {
-                                    AdminUtils.sendNewUserVerificationEmail(newUser);
-            				        context.put("emailTo", newUser.getEmail());
-            				        context.put("emailUsername", found.getProperty("login"));
+                                    AdminUtils.sendNewUserVerificationEmail(found);
+            				        context.put("emailTo", found.getEmail());
+            				        context.put("emailUsername", found.getLogin());
             				        data.setRedirectURI(null);
                                     data.setScreenTemplate("VerificationSent.vm");
                                 } catch (Exception e) {
@@ -118,23 +112,23 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                     handleInvalid(data, context, "We are unable to send you the verification email. If you entered a valid email address, please contact our technical support.");
                                 }
                             } else {
-	                            TurbineUtils.setUser(data, newUser);
+	                            TurbineUtils.setUser(data, found);
 	
 	                            HttpSession session = data.getSession();
-			                    session.setAttribute("user",newUser);
+			                    session.setAttribute("user",found);
 			                    session.setAttribute("loggedin",true);
 			                    data.setMessage("User registration complete.");
 			                    
 			                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 			                    
 			                    if (AdminUtils.GetNewUserRegistrationsEmail()) {
-                                    AdminUtils.sendNewUserNotification(newUser, comments, phone, lab, context);
+                                    AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
                                 }
-                                AdminUtils.sendNewUserEmailMessage(newUser.getUsername(), newUser.getEmail(), context);
+                                AdminUtils.sendNewUserEmailMessage(found.getUsername(), found.getEmail(), context);
 
-			                    XFTItem item = XFTItem.NewItem("xdat:user_login",newUser);
+			                    XFTItem item = XFTItem.NewItem("xdat:user_login",found);
 			                    Date today = Calendar.getInstance(TimeZone.getDefault()).getTime();
-			                    item.setProperty("xdat:user_login.user_xdat_user_id", newUser.getID());
+			                    item.setProperty("xdat:user_login.user_xdat_user_id", found.getID());
 			                    item.setProperty("xdat:user_login.login_date", today);
 			                    item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
 			                    item.setProperty("xdat:user_login.session_id", data.getSession().getId());
@@ -142,12 +136,12 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
                                 Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
 			                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
-			    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
+			    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getLogin(), tempPass, grantedAuthorities);
 			    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
 			    		    	securityContext.setAuthentication(authentication);
 								
 			                    try{
-			                    	directRequest(data,context,newUser);
+			                    	directRequest(data,context,found);
 			                    }catch(Exception e){
 			                        logger.error(e);
                                     handleInvalid(data, context, "Error directing request after new user was registered.");
@@ -155,22 +149,22 @@ public class XDATRegisterUser extends VelocitySecureAction {
                             }
 		                } else {
 		                    try {
-		                    	directRequest(data, context, newUser);
+		                    	directRequest(data, context, found);
 		                    } catch(Exception e) {
 		                        logger.error(e);
 		                    }
 		                	
 		                    try {
-                                cacheRegistrationData(newUser, comments, phone, lab);
+                                cacheRegistrationData(found, comments, phone, lab);
                                 if (XDAT.verificationOn()) {
                                     // If verification is on, the user must verify their email before the admin gets emailed.
-                                    AdminUtils.sendNewUserVerificationEmail(newUser);
-            				        context.put("emailTo", newUser.getEmail());
-            				        context.put("emailUsername", found.getProperty("login"));
+                                    AdminUtils.sendNewUserVerificationEmail(found);
+            				        context.put("emailTo", found.getEmail());
+            				        context.put("emailUsername", found.getLogin());
             				        data.setRedirectURI(null);
                                     data.setScreenTemplate("VerificationSent.vm");
                                 } else {
-                                	AdminUtils.sendNewUserNotification(newUser, comments, phone, lab, context);
+                                	AdminUtils.sendNewUserNotification(found, comments, phone, lab, context);
 	                            	data.setRedirectURI(null);
 	                                data.setScreenTemplate("PostRegister.vm");
                                 }
@@ -186,11 +180,11 @@ public class XDATRegisterUser extends VelocitySecureAction {
 	                }
 	            } else {
                     //Duplicate Email
-                    handleInvalid(data, context, "Email (" + found.getProperty("email") + ") already exists.");
+                    handleInvalid(data, context, "Email (" + found.getEmail() + ") already exists.");
                 }
             } else {
                 //Duplicate Login
-                handleInvalid(data, context, "Username (" + found.getProperty("login") + ") already exists.");
+                handleInvalid(data, context, "Username (" + found.getLogin() + ") already exists.");
             }
         } catch (Exception e) {
             //Other Error
@@ -199,7 +193,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
     }
 
-    private void cacheRegistrationData(final XDATUser newUser, final String comments, final String phone, final String lab) {
+    private void cacheRegistrationData(final UserI newUser, final String comments, final String phone, final String lab) {
         UserRegistrationDataService service = XDAT.getContextService().getBean(UserRegistrationDataService.class);
         service.cacheUserRegistrationData(newUser, phone, lab, comments);
     }
@@ -258,7 +252,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
     	return XFT.GetUserRegistration();
     }
     
-    public void directRequest(RunData data,Context context,XDATUser user) throws Exception{
+    public void directRequest(RunData data,Context context,UserI user) throws Exception{
 		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
 		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 

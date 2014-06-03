@@ -24,6 +24,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
@@ -3334,7 +3335,7 @@ public class DBAction {
 
 	/**
 	 */
-	public static void DeleteItem(XFTItem item,UserI user,EventMetaI c) throws SQLException,Exception
+	public static void DeleteItem(XFTItem item,UserI user,EventMetaI c,boolean skipTriggers) throws SQLException,Exception
 	{
 	    DBItemCache cache =  new DBItemCache(user,c);
 	    DeleteItem(item,user,cache,false,false);
@@ -3356,8 +3357,10 @@ public class DBAction {
                 cache.getDBTriggers().add(item);
             }
 
-            PerformUpdateTriggers(cache, username,xdat_user_id,false);
-
+            if(!skipTriggers){
+            	PerformUpdateTriggers(cache, username,xdat_user_id,false);
+            }
+            
 			con = new PoolDBUtils();
 			con.sendBatch(cache,item.getDBName(),username);
 
@@ -3416,7 +3419,7 @@ public class DBAction {
 
 		if(user!=null)
 		{
-			if(!user.canDelete(item)){
+			if(!Permissions.canDelete(user, item)){
 				throw new org.nrg.xdat.exceptions.IllegalAccessException("Unable to delete "+ item.getXSIType());
 			}
 		}

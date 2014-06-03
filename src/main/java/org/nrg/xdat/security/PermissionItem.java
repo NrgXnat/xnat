@@ -16,6 +16,8 @@ import org.nrg.xft.utils.StringUtils;
 
 
 /**
+ * PermissionItem represents potential permission objects.
+ * 
  * @author Tim
  *
  */
@@ -33,7 +35,7 @@ public class PermissionItem {
 	private boolean authenticated = false;
 	private boolean wasSet = false;
 	
-	public void set(PermissionCriteria c) throws MetaDataException
+	public void set(PermissionCriteriaI c) throws MetaDataException
 	{
 		if (c.getField().equalsIgnoreCase(StringUtils.StandardizeXMLPath(fullFieldName)) && c.getFieldValue().toString().equalsIgnoreCase(value.toString()))
 		{
@@ -42,7 +44,7 @@ public class PermissionItem {
 			this.setDelete(c.getDelete());
 			this.setRead(c.getRead());
 			this.setActivate(c.getActivate());
-			this.setComparison_type(c.getComparisonType());
+			this.setComparison_type("=");
 			wasSet = true;
 		}
 	}

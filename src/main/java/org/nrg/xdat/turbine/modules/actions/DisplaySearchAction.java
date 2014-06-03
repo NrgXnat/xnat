@@ -14,6 +14,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 
@@ -57,7 +58,7 @@ public class DisplaySearchAction extends SearchA {
         {
             level = "listing";
         }
-        DisplaySearch ds = TurbineUtils.getUser(data).getSearch(elementName,level);
+        DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data),elementName,level);
 
         ds.setPagingOn(true);
 

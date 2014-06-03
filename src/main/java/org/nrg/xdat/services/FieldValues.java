@@ -16,8 +16,7 @@ import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
@@ -76,7 +75,7 @@ public class FieldValues {
 			    comparison = _comparison;
 			}
 			Object o = _value;
-			XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
+			UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
             if (user == null)
             {
                 throw new Exception("Invalid User.");
@@ -177,7 +176,7 @@ public class FieldValues {
 			    comparison = _comparison;
 			}
 			Object o = _value;
-			XDATUser user = (XDATUser)AxisEngine.getCurrentMessageContext().getSession().get("user");
+			UserI user = (UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
             if (user == null)
             {
                 throw new Exception("Invalid User.");

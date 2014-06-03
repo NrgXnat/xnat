@@ -19,26 +19,22 @@ import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.daos.XdatUserAuthDAO;
-import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.AuthUtils;
-import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.SpringSecurityMessageSource;
 import org.springframework.security.core.authority.AuthorityUtils;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
-import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -88,7 +84,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     public List<XdatUserAuth> getUsersByName(String user) {
         XdatUserAuth example = new XdatUserAuth();
         example.setAuthUser(user);
-        return _dao.findByExample(example, EXCLUSION_PROPERTIES_USERNAME);
+        return (List<XdatUserAuth>)_dao.findByExample(example, EXCLUSION_PROPERTIES_USERNAME);
     }
 
     @Override
@@ -106,33 +102,33 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 
     @Override
     @Transactional
-    public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth) {
+    public UserI getUserDetailsByNameAndAuth(String user, String auth) {
         return getUserDetailsByNameAndAuth(user, auth, "", null, null, null);
     }
 
     @Override
     @Transactional
-    public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id) {
+    public UserI getUserDetailsByNameAndAuth(String user, String auth, String id) {
         return getUserDetailsByNameAndAuth(user, auth, id, null, null, null);
     }
 
     @Override
     @Transactional
-    public XDATUserDetails getUserDetailsByNameAndAuth(String user, String auth, String id, String email) {
+    public UserI getUserDetailsByNameAndAuth(String user, String auth, String id, String email) {
         return getUserDetailsByNameAndAuth(user, auth, id, email, null, null);
     }
 
     @Override
     @Transactional
-    public XDATUserDetails getUserDetailsByNameAndAuth(String username, String auth, String id, String email, String lastname, String firstname) {
-        List<XDATUserDetails> users = loadUsersByUsernameAndAuth(username, auth, id);
+    public UserI getUserDetailsByNameAndAuth(String username, String auth, String id, String email, String lastname, String firstname) {
+        List<UserI> users = loadUsersByUsernameAndAuth(username, auth, id);
         return getUserDetailsForUserList(users, username, auth, id, email, lastname, firstname);
     }
 
     @Override
     @Transactional
-    public XDATUserDetails getUserDetailsByUsernameAndMostRecentSuccessfulLogin(String username) {
-        List<XDATUserDetails> users = loadUsersByUsernameAndMostRecentSuccessfulLogin(username);
+    public UserI getUserDetailsByUsernameAndMostRecentSuccessfulLogin(String username) {
+        List<UserI> users = loadUsersByUsernameAndMostRecentSuccessfulLogin(username);
         String auth = null, id = null;
         if (users.size() > 0 && users.get(0) != null) {
             auth = users.get(0).getAuthorization().getAuthMethod();
@@ -158,14 +154,14 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return XFT.GetUserRegistration();
     }
 
-    protected XDATUserDetails getUserDetails(String username, String auth, String id) {
-        XDATUserDetails userDetails = null;
+    protected UserI getUserDetails(String username, String auth, String id) {
+        UserI userDetails = null;
         try {
             XdatUserAuth userAuth = getUserByNameAndAuth(username, auth, id);
             if (userAuth == null) {
                 userAuth = getUserByXdatUsernameAndAuth(username, auth, id);
             }
-            userDetails = new XDATUserDetails(userAuth.getXdatUsername());
+            userDetails = Users.getUser(userAuth.getXdatUsername());
             userDetails.setAuthorization(userAuth);
         } catch (Exception exception) {
             _log.error(exception);
@@ -173,8 +169,8 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return userDetails;
     }
 
-    private XDATUserDetails getUserDetailsForUserList(List<XDATUserDetails> users, String username, String auth, String id, String email, String lastname, String firstname) {
-        XDATUserDetails userDetails = null;
+    private UserI getUserDetailsForUserList(List<UserI> users, String username, String auth, String id, String email, String lastname, String firstname) {
+        UserI userDetails = null;
 
         if (users.size() == 0) {
             if (auth.equals(XdatUserAuthService.LDAP)) {
@@ -190,7 +186,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
             }
         }
 
-        UserDetails user = users.get(0); // contains no GrantedAuthority[]
+        UserI user = users.get(0); // contains no GrantedAuthority[]
 
         Set<GrantedAuthority> dbAuthsSet = new HashSet<GrantedAuthority>();
 
@@ -213,10 +209,9 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return userDetails;
     }
 
-    private XDATUserDetails handleNewLdapUser(final String id, String username, String email, String firstName, String lastName) {
-        XDATUserDetails userDetails = null;
-
-        try {
+    private UserI handleNewLdapUser(final String id, String username, String email, String firstName, String lastName) {
+    	UserI newUser=null;
+    	try {
             String ldapUsername = username;
             username = findUnusedLocalUsernameForNewLDAPUser(ldapUsername);
             _log.debug("Adding LDAP user '" + username + "' to database.");
@@ -224,10 +219,10 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
             PersistentWorkflowI wrk = PersistentWorkflowUtils.buildAdminWorkflow(null, "xdat:user", username, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Created user from LDAP", null, null));
 
             try {
-                XDATUser newUser = createXDATUser(username, email, firstName, lastName);
+                newUser = createXDATUser(username, email, firstName, lastName);
 
-                SaveItemHelper.authorizedSave(newUser, XDAT.getUserDetails(), true, false, true, false, wrk.buildEvent());
-                wrk.setId(newUser.getStringProperty("xdat_user_id"));
+                Users.save(newUser, XDAT.getUserDetails(), true, wrk.buildEvent());
+                wrk.setId(newUser.getID().toString());
 
                 XdatUserAuth newUserAuth = new XdatUserAuth(ldapUsername, XdatUserAuthService.LDAP, id, username, true, 0);
                 XDAT.getXdatUserAuthService().create(newUserAuth);
@@ -244,10 +239,9 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
                 newUserAuth.setEnabled(newUserAccountsAreAutoEnabled());
                 // </HACK_ALERT>
 
-                userDetails = new XDATUserDetails(newUser);
-                userDetails.setAuthorization(newUserAuth);
+                newUser.setAuthorization(newUserAuth);
 
-                XDAT.setUserDetails(userDetails);
+                XDAT.setUserDetails(newUser);
 
                 PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
             } catch (Exception e) {
@@ -263,10 +257,10 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
             throw new UsernameNotFoundException(SpringSecurityMessageSource.getAccessor().getMessage("JdbcDaoImpl.notFound", new Object[]{username}, "Username {0} not found"));
         }
 
-        return userDetails;
+        return newUser;
     }
 
-    private XDATUser createXDATUser(final String username, final String email, final String firstName, final String lastName) throws Exception {
+    private UserI createXDATUser(final String username, final String email, final String firstName, final String lastName) throws Exception {
         Map<String, String> newUserProperties = new HashMap<String, String>();
         newUserProperties.put(XFT.PREFIX + ":user.login", username);
         newUserProperties.put(XFT.PREFIX + ":user.email", email);
@@ -278,10 +272,8 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         newUserProperties.put(XFT.PREFIX + ":user.verified", "true");
         newUserProperties.put(XFT.PREFIX + ":user.enabled", newUserAccountsAreAutoEnabled().toString());
 
-        PopulateItem populater = new PopulateItem(newUserProperties, null, XFT.PREFIX + ":user", true);
-        ItemI item = populater.getItem();
+        return Users.createUser(newUserProperties);
 
-        return new XDATUser(item);
     }
 
     private String getUsersByUsernameAndAuthQuery() {
@@ -300,19 +292,19 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return maxFailedLoginAttempts;
     }
 
-    private List<XDATUserDetails> loadUsersByUsernameAndAuth(String username, String auth, String id) {
+    private List<UserI> loadUsersByUsernameAndAuth(String username, String auth, String id) {
         id = (id == null) ? "" : id;
         return loadUsersByQuery(getUsersByUsernameAndAuthQuery(), username, auth, id);
     }
 
-    private List<XDATUserDetails> loadUsersByUsernameAndMostRecentSuccessfulLogin(String username) {
+    private List<UserI> loadUsersByUsernameAndMostRecentSuccessfulLogin(String username) {
         return loadUsersByQuery(getUsersByXDATUsernameAndMostRecentSuccessfulLoginQuery(), username);
     }
 
-    private List<XDATUserDetails> loadUsersByQuery(String query, String... params) {
-        List<XDATUserDetails> u =
-                (new JdbcTemplate(_datasource)).query(query, params, new RowMapper<XDATUserDetails>() {
-                    public XDATUserDetails mapRow(ResultSet rs, int rowNum) throws SQLException {
+    private List<UserI> loadUsersByQuery(String query, String... params) {
+        List<UserI> u =
+                (new JdbcTemplate(_datasource)).query(query, params, new RowMapper<UserI>() {
+                    public UserI mapRow(ResultSet rs, int rowNum) throws SQLException {
                         String username = rs.getString(1);
                         String method = rs.getString(2);
                         String xdatUsername = rs.getString(3);
@@ -321,9 +313,9 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
                         String methodId = rs.getString(6);
                         Date lastSuccessfulLogin = rs.getDate(7);
                         XdatUserAuth u = new XdatUserAuth(username, method, methodId, enabled, true, true, true, AuthorityUtils.NO_AUTHORITIES, xdatUsername, failedLoginAttempts, lastSuccessfulLogin);
-                        XDATUserDetails xdat = null;
+                        UserI xdat = null;
                         try {
-                            xdat = new XDATUserDetails(u.getXdatUsername());
+                            xdat = Users.getUser(u.getXdatUsername());
                             xdat.setAuthorization(u);
                         } catch (Exception e) {
                             _log.error(e);

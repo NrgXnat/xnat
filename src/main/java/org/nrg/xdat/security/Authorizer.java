@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -14,7 +15,6 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
 
 public class Authorizer implements AuthorizerI{
 	static Logger logger = Logger.getLogger(Authorizer.class);
@@ -78,7 +78,7 @@ public class Authorizer implements AuthorizerI{
 	
 	private boolean requiresSecurity(String action,final GenericWrapperElement e, final UserI user) throws SQLException, Exception{
 		if(user != null){
-			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers()) || !((XDATUser)user).checkRole("Administrator")));
+			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers()) || !user.checkRole("Administrator")));
 		} else {
 			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers())));
 		}
@@ -106,7 +106,7 @@ public class Authorizer implements AuthorizerI{
         {
 			authorize(action,item.getGenericSchemaElement(),user);
 			if(ElementSecurity.IsSecureElement(item.getXSIType())){
-	        	if(!user.can(item,action)){
+	        	if(!Permissions.can(user,item,action)){
 	        		AdminUtils.sendAdminEmail(user,"Unauthorized Data Retrieval Attempt", "Unauthorized access of '" + item.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
 		    		throwException(new InvalidPermissionException("Unsecured data Access attempt"));
 		        }

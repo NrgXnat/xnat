@@ -19,7 +19,7 @@ import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
@@ -64,7 +64,7 @@ public class CSVUpload2 extends SecureAction {
 
 
         String fm_id=TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data)));
-        File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
+        File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
         context.put("fm_id", fm_id);
@@ -97,7 +97,7 @@ public class CSVUpload2 extends SecureAction {
         rows = (ArrayList)data.getSession().getAttribute("rows");
 
         String fm_id=((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
-        File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
+        File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
         context.put("fm_id", fm_id);
@@ -111,7 +111,7 @@ public class CSVUpload2 extends SecureAction {
             String rootElementName = fm.getElementName();
             GenericWrapperElement.GetElement(rootElementName);
 
-            XDATUser user = TurbineUtils.getUser(data);
+            UserI user = TurbineUtils.getUser(data);
             Iterator iter = rows.iterator();
             while(iter.hasNext())
             {
@@ -289,8 +289,8 @@ public class CSVUpload2 extends SecureAction {
             data.getSession().removeAttribute("rows");
 
             data.setScreenTemplate("XDATScreen_uploadCSV4.vm");
-            
-		    user.clearLocalCache();
+
+			Users.clearCache(user);
 			try {
 				MaterializedView.DeleteByUser(user);
 			} catch (DBPoolException e) {
@@ -326,7 +326,7 @@ public class CSVUpload2 extends SecureAction {
         String project = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
 
         String fm_id=((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
-        File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
+        File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         context.put("fm",fm);
         context.put("fm_id", fm_id);

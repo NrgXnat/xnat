@@ -9,22 +9,20 @@
  */
 package org.nrg.xdat.services.impl.hibernate;
 
+import java.util.List;
+import java.util.Set;
+
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.services.AliasTokenService;
-import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.daos.AliasTokenDAO;
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.lang.Override;
-import java.lang.String;
-import java.util.List;
-import java.util.Set;
 
 @Service
 public class HibernateAliasTokenService extends AbstractHibernateEntityService<AliasToken> implements AliasTokenService {
@@ -54,8 +52,8 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
      */
     @Override
     @Transactional
-    public void deactivateAllTokensForUser(String xdatUserId) {
-        List<AliasToken> tokens = findTokensForUser(xdatUserId);
+    public void deactivateAllTokensForUser(String username) {
+        List<AliasToken> tokens = findTokensForUser(username);
         for(AliasToken token : tokens) {
             token.setEnabled(false);
         }
@@ -63,32 +61,32 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
 
     @Override
     @Transactional
-    public AliasToken issueTokenForUser(final String xdatUserId) throws Exception {
-        XDATUser user = new XDATUser(xdatUserId);
+    public AliasToken issueTokenForUser(final String username) throws Exception {
+    	UserI user=Users.getUser(username);
         return issueTokenForUser(user);
     }
 
     @Override
     @Transactional
-    public AliasToken issueTokenForUser(final XdatUser xdatUser) {
+    public AliasToken issueTokenForUser(final UserI xdatUser) {
         return issueTokenForUser(xdatUser, null);
     }
 
     @Override
     @Transactional
-    public AliasToken issueTokenForUser(final XdatUser xdatUser, final boolean isSingleUse) {
+    public AliasToken issueTokenForUser(final UserI xdatUser, final boolean isSingleUse) {
         return issueTokenForUser(xdatUser, isSingleUse, null);
     }
 
     @Override
     @Transactional
-    public AliasToken issueTokenForUser(final XdatUser xdatUser, Set<String> validIPAddresses) {
+    public AliasToken issueTokenForUser(final UserI xdatUser, Set<String> validIPAddresses) {
         return issueTokenForUser(xdatUser, false, validIPAddresses);
     }
 
     @Override
     @Transactional
-    public AliasToken issueTokenForUser(final XdatUser xdatUser, boolean isSingleUse, Set<String> validIPAddresses) {
+    public AliasToken issueTokenForUser(final UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses) {
         AliasToken token = newEntity();
         token.setXdatUserId(xdatUser.getLogin());
         token.setSingleUse(isSingleUse);

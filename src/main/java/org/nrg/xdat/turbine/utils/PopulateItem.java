@@ -11,12 +11,12 @@ package org.nrg.xdat.turbine.utils;
 import java.util.Map;
 
 import org.apache.turbine.util.RunData;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 /**
  * @author Tim
  *
@@ -35,7 +35,7 @@ public class PopulateItem {
      * @throws ElementNotFoundException
      * @throws FieldNotFoundException
      */
-    public PopulateItem(Map<String,? extends Object> hash,XDATUser user, String element,boolean throwException) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
+    public PopulateItem(Map<String,? extends Object> hash,UserI user, String element,boolean throwException) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
     {
         item = XFTItem.NewItem(element,user);
 		try {
@@ -55,7 +55,7 @@ public class PopulateItem {
      * @throws ElementNotFoundException
      * @throws FieldNotFoundException
      */
-    public PopulateItem(Map<String,? extends Object> hash,XDATUser user, String element,boolean throwException,XFTItem newItem) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
+    public PopulateItem(Map<String,? extends Object> hash,UserI user, String element,boolean throwException,XFTItem newItem) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
     {
         item = newItem;
 		try {
@@ -76,7 +76,7 @@ public class PopulateItem {
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public static PopulateItem Populate(Map<String,? extends Object> hash,XDATUser user, String element,boolean throwException) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
+	public static PopulateItem Populate(Map<String,? extends Object> hash,UserI user, String element,boolean throwException) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
 	{
 		return new PopulateItem(hash,user,element,throwException);
 	}
@@ -92,7 +92,7 @@ public class PopulateItem {
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public static PopulateItem Populate(Map<String,? extends Object> hash,XDATUser user, String element,boolean throwException,XFTItem newItem) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
+	public static PopulateItem Populate(Map<String,? extends Object> hash,UserI user, String element,boolean throwException,XFTItem newItem) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
 	{
 		return new PopulateItem(hash,user,element,throwException,newItem);
 	}

@@ -14,13 +14,20 @@ package org.nrg.xdat;
 import java.io.File;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Date;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Properties;
+import java.util.Set;
+import java.util.TimeZone;
+import java.util.UUID;
 
 import javax.jms.Destination;
 import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 
-import com.google.common.base.Joiner;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -49,13 +56,14 @@ import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
+import org.nrg.xdat.turbine.utils.PopulateItem;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.ViewManager;
@@ -63,19 +71,19 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.services.XftFieldExclusionService;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
-import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xft.ItemI;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.core.context.SecurityContextHolder;
+
+import com.google.common.base.Joiner;
 
 /**
  * @author Tim
@@ -103,11 +111,11 @@ public class XDAT implements Initializable,Configurable{
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders=new ArrayList<File>();
     
-    public static List<String> getWhitelistedIPs(XDATUser user) throws ConfigServiceException {
+    public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
         return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
     }
 
-    public static String getWhitelistConfiguration(XDATUser user) throws ConfigServiceException {
+    public static String getWhitelistConfiguration(UserI user) throws ConfigServiceException {
         org.nrg.config.entities.Configuration whitelist = XDAT.getConfigService().getConfig(IP_WHITELIST_TOOL, IP_WHITELIST_PATH);
         if (whitelist == null || StringUtils.isBlank(whitelist.getContents())) {
             whitelist = createDefaultWhitelist(user);
@@ -145,28 +153,28 @@ public class XDAT implements Initializable,Configurable{
 		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
 	}
 
-	public static XDATUserDetails getUserDetails() {
+	public static UserI getUserDetails() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		if (authentication != null && authentication.getPrincipal() != null
-				&& authentication.getPrincipal() instanceof XDATUserDetails) {
-			return (XDATUserDetails) authentication.getPrincipal();
+				&& authentication.getPrincipal() instanceof UserI) {
+			return (UserI) authentication.getPrincipal();
 		}
 
 		return null;
 	}
 
-	public static void setUserDetails(XDATUserDetails userDetails) {
+	public static void setUserDetails(UserI userDetails) {
 		Authentication authentication = new UsernamePasswordAuthenticationToken(
 				userDetails, null);
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
 	
-	public static void setNewUserDetails(XDATUserDetails userDetails, RunData data, Context context) {
+	public static void setNewUserDetails(UserI userDetails, RunData data, Context context) {
 		//SecurityContextHolder.getContext().setAuthentication(null);
 		String username = userDetails.getLogin();
-		String password = userDetails.getPrimaryPassword();
-		XDATUser user;
+		String password = userDetails.getPassword();
+		UserI user;
 		try {
 			user = Authenticator.Authenticate(new Authenticator.Credentials(
                     username, password));
@@ -185,7 +193,7 @@ public class XDAT implements Initializable,Configurable{
 
 			session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
-			AccessLogger.LogActionAccess(data, "Valid Login:" + user.getLogin());
+			AccessLogger.LogActionAccess(data, "Valid Login:" + user.getUsername());
 
 		} catch (Exception exception) {
             logger.error("Error performing su operation", exception);
@@ -578,7 +586,7 @@ public class XDAT implements Initializable,Configurable{
         return channel;
     }
     
-    public static boolean loginUser(RunData data, XDATUser user, boolean forcePasswordChange) throws Exception{
+    public static boolean loginUser(RunData data, UserI user, boolean forcePasswordChange) throws Exception{
     	PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
     	ItemI found = populater.getItem();
     	String tempPass = data.getParameters().getString("xdat:user.primary_password");
@@ -616,8 +624,8 @@ public class XDAT implements Initializable,Configurable{
         XDAT.getContextService().getBean(JmsTemplate.class).convertAndSend(destination, request);
 }
 
-    private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(XDATUser user) throws ConfigServiceException {
-        String username = user.getLogin();
+    private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(UserI user) throws ConfigServiceException {
+        String username = user.getUsername();
         String reason = user.isSiteAdmin() ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
         return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
 }

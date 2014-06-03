@@ -1,9 +1,9 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.security;
 
-import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.om.XdatUsergroup;
@@ -12,34 +12,59 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.utils.StringUtils;
 
-public class UserGroup{
+import com.google.common.collect.Lists;
+
+public class UserGroup implements UserGroupI{
     private Logger logger = Logger.getLogger(UserGroup.class);
 	private String id=null;
+	private Integer pk=null;
 	private String tag=null;
-	public UserGroup(String _id){
-		id=_id;
+	private String displayName=null;
+	
+	public UserGroup(XdatUsergroup gp) throws Exception{
+		id=gp.getId();
+		pk=gp.getXdatUsergroupId();
+		displayName=gp.getDisplayname();
+		init(gp.getItem());
 	}
 	
+	public UserGroup(){
+		
+	}
+	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.UserGroupI#getId()
+	 */
+	@Override
 	public String getId(){
 		return id;
 	}
-	
+
+	@Override
 	public String getTag(){
 		return tag;
 	}
 
+	@Override
+	public String getDisplayname(){
+		return displayName;
+	}
+
 	private Hashtable<String,ElementAccessManager> accessManagers = null;
 
-    public synchronized Hashtable<String,ElementAccessManager> getAccessManagers(){
+    protected synchronized Hashtable<String,ElementAccessManager> getAccessManagers(){
         if (accessManagers==null){
             try {
-            	XdatUsergroup temp =(XdatUsergroup) XdatUsergroup.getXdatUsergroupsById(id, null, true);
-                init(temp);
+                init(getUserGroupImpl());
             } catch (Exception e) {
                 logger.error("",e);
             }
         }
         return accessManagers;
+    }
+    
+    public XdatUsergroup getUserGroupImpl(){
+    	return XdatUsergroup.getXdatUsergroupsById(id, null, true);
     }
 
     public void init(ItemI item) throws Exception
@@ -76,34 +101,11 @@ public class UserGroup{
     	return sb.toString();
     }
 
-
-    public boolean getRootPermission(String elementName, String fieldName, Object value, String action) throws Exception
-    {
-        final PermissionCriteria pc = getRootPermissionObject(elementName,fieldName,value);
-        if (pc != null)
-        {
-            return pc.getAction(action);
-        }else{
-            return false;
-        }
-    }
-
-    public PermissionCriteria getRootPermissionObject(String elementName, String fieldName, Object value) throws Exception
-    {
-        final ElementAccessManager eam = getAccessManagers().get(elementName);
-        if (eam == null)
-        {
-            return null;
-        }else{
-            return eam.getRootPermission(fieldName,value);
-        }
-    }
-
-    private ArrayList<XdatStoredSearch> stored_searches = null;
+    private List<XdatStoredSearch> stored_searches = null;
     /**
      * @return
      */
-    public ArrayList<XdatStoredSearch> getStoredSearches()
+    protected List<XdatStoredSearch> getStoredSearches()
     {
         if (this.stored_searches==null)
         {
@@ -121,9 +123,9 @@ public class UserGroup{
      * @param id
      * @return
      */
-    public ItemI getStoredSearch(String id)
+    protected XdatStoredSearch getStoredSearch(String id)
     {
-        ArrayList<XdatStoredSearch> temp = getStoredSearches();
+        List<XdatStoredSearch> temp = getStoredSearches();
         Iterator tempIter = temp.iterator();
         XdatStoredSearch xss = null;
         try {
@@ -141,7 +143,7 @@ public class UserGroup{
         return xss;
     }
 
-    public void replacePreLoadedSearch(XdatStoredSearch i){
+    protected void replacePreLoadedSearch(XdatStoredSearch i){
         try {
             ItemI old = getStoredSearch(i.getStringProperty("ID"));
             if (old!=null){
@@ -154,4 +156,68 @@ public class UserGroup{
         }
         stored_searches.add(i);
     }
+
+	@Override
+	public Integer getPK() {
+		return pk;
+	}
+	
+
+    
+    public List<PermissionCriteriaI> getPermissionsByDataType(String type){
+    	List<PermissionCriteriaI> criteria=Lists.newArrayList();
+    	
+    	ElementAccessManager eam3;
+		try {
+			eam3 = this.getAccessManagers().get(type);
+			
+			if (eam3 == null) {
+	            return criteria;
+	        }
+
+		} catch (Exception e) {
+			logger.error(e);
+			return criteria;
+		}
+
+        for (PermissionSetI ps:eam3.getPermissionSets()) {
+        	if(ps.isActive()){
+        		criteria.addAll(ps.getAllCriteria());
+        	}
+        }
+        
+        return criteria;
+    }
+    
+    public List<PermissionCriteriaI> getPermissionsByDataTypeAndField(String dataType, String field){
+    	List<PermissionCriteriaI> criteria=Lists.newArrayList();
+    	
+    	for(PermissionCriteriaI crit: getPermissionsByDataType(dataType)){
+    		if(org.apache.commons.lang.StringUtils.equals(crit.getField(), field)){
+    			criteria.add(crit);
+    		}
+    	}
+    	
+    	return criteria;
+    }
+
+	@Override
+	public void setId(String id) {
+		this.id=id;
+	}
+
+	@Override
+	public void setTag(String tag) {
+		this.tag=tag;
+	}
+
+	@Override
+	public void setDisplayname(String displayName) {
+		this.displayName=displayName;
+	}
+
+	@Override
+	public void setPK(Integer pk) {
+		this.pk=pk;
+	}
 }

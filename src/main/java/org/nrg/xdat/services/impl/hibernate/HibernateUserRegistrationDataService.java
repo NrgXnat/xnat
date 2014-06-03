@@ -9,18 +9,18 @@
  */
 package org.nrg.xdat.services.impl.hibernate;
 
+import javax.inject.Inject;
+
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.orm.hibernate.BaseHibernateDAO;
 import org.nrg.xdat.daos.UserRegistrationDataDAO;
 import org.nrg.xdat.entities.UserRegistrationData;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.UserRegistrationDataService;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
-import javax.inject.Inject;
 
 /**
  * HibernateUserRegistrationDataService class.
@@ -32,7 +32,7 @@ public class HibernateUserRegistrationDataService extends AbstractHibernateEntit
 
     @Transactional
     @Override
-    public UserRegistrationData cacheUserRegistrationData(final XDATUser user, final String phone, final String organization, final String comments) {
+    public UserRegistrationData cacheUserRegistrationData(final UserI user, final String phone, final String organization, final String comments) {
         if (_log.isDebugEnabled()) {
             _log.debug("Creating user registration data for login: " + user.getLogin());
         }
@@ -47,7 +47,7 @@ public class HibernateUserRegistrationDataService extends AbstractHibernateEntit
 
     @Transactional
     @Override
-    public UserRegistrationData getUserRegistrationData(final XDATUser user) {
+    public UserRegistrationData getUserRegistrationData(final UserI user) {
         return getUserRegistrationData(user.getLogin());
     }
 
@@ -62,7 +62,7 @@ public class HibernateUserRegistrationDataService extends AbstractHibernateEntit
 
     @Transactional
     @Override
-    public void clearUserRegistrationData(final XDATUser user) {
+    public void clearUserRegistrationData(final UserI user) {
         final UserRegistrationData data = _dao.findByLogin(user.getLogin());
         if (data != null) {
             _dao.delete(data);

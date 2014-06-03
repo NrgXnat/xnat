@@ -18,7 +18,7 @@ import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayFieldElement;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -439,7 +439,7 @@ public class QueryOrganizer implements QueryOrganizerI{
        // SQLClause securityClause = null;
 		if (user != null)
 		{
-		    SQLClause coll = user.getCriteriaForBackendRead(rootElement);
+		    SQLClause coll = Permissions.getCriteriaForXFTRead(user,rootElement);
 			if (coll != null)
 			{
 			    if (coll.numClauses() > 0)
@@ -639,7 +639,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                       coll =where;
                     }
                 }else{
-                    coll = ((XDATUser)user).getCriteriaForDisplayRead(e);
+                    coll = Permissions.getCriteriaForXDATRead(user,new SchemaElement(e));
                 }
 
 

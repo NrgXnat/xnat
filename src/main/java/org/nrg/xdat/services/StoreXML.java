@@ -13,20 +13,17 @@ import java.sql.SQLException;
 import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFT;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowI;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.ValidationException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XMLValidator;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
@@ -48,7 +45,7 @@ public class StoreXML {
         StringBuffer sb = new StringBuffer();
 
             try {
-                XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
+                UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
                                
                 //XERCES VALIDATION
                 XMLValidator validator = new XMLValidator();
@@ -138,7 +135,7 @@ public class StoreXML {
         StringBuffer sb = new StringBuffer();
 
             try {
-                XDATUser user = (XDATUser)AxisEngine.getCurrentMessageContext().getSession().get("user");
+            	UserI user = (UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
                                
                 //XERCES VALIDATION
                 XMLValidator validator = new XMLValidator();

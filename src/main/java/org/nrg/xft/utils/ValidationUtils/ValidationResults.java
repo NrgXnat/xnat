@@ -27,12 +27,12 @@ import org.nrg.xft.utils.StringUtils;
  * 
  * @author Tim
  */
-public class ValidationResults {
+public class ValidationResults implements ValidationResultsI{
 	private ArrayList results = new ArrayList(); // FIELD (VWrapperField), MESSAGE (String)
-	/**
-	 * If there were any erros then false, else true.
-	 * @return
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.utils.ValidationUtils.ValidationResultsI#isValid()
 	 */
+	@Override
 	public boolean isValid() {
 		if (results.size() > 0)
 		{

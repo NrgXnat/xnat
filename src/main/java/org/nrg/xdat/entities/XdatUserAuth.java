@@ -25,7 +25,7 @@ import org.springframework.security.core.authority.GrantedAuthorityImpl;
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"authUser", "authMethodId"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
-public class XdatUserAuth extends AbstractHibernateEntity{
+public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 
     private static final long serialVersionUID = -1590002660142544162L;
     private String xdatUsername;
@@ -116,38 +116,74 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		this.lastSuccessfulLogin = other.lastSuccessfulLogin;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#getXdatUsername()
+	 */
+	@Override
 	public String getXdatUsername() {
 		return xdatUsername;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#setXdatUsername(java.lang.String)
+	 */
+	@Override
 	public void setXdatUsername(String xdatUsername) {
 		this.xdatUsername = xdatUsername;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#getAuthUser()
+	 */
+	@Override
 	public String getAuthUser() {
 		return authUser;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#setAuthUser(java.lang.String)
+	 */
+	@Override
 	public void setAuthUser(String user) {
 		this.authUser = user;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#getAuthMethod()
+	 */
+	@Override
 	public String getAuthMethod() {
 		return authMethod;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#setAuthMethod(java.lang.String)
+	 */
+	@Override
 	public void setAuthMethod(String means) {
 		this.authMethod = means;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#getAuthMethodId()
+	 */
+	@Override
 	public String getAuthMethodId() {
 		return authMethodId;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#setAuthMethodId(java.lang.String)
+	 */
+	@Override
 	public void setAuthMethodId(String means) {
 		this.authMethodId = means;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#getFailedLoginAttempts()
+	 */
+	@Override
 	public Integer getFailedLoginAttempts() {
 		if(failedLoginAttempts==null){
 			return 0;
@@ -156,24 +192,44 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#setFailedLoginAttempts(java.lang.Integer)
+	 */
+	@Override
 	public void setFailedLoginAttempts(Integer count) {
 		this.failedLoginAttempts = count;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#getLastSuccessfulLogin()
+	 */
+	@Override
 	public Date getLastSuccessfulLogin() {
 		return lastSuccessfulLogin;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#setLastSuccessfulLogin(java.util.Date)
+	 */
+	@Override
 	public void setLastSuccessfulLogin(Date lastSuccessfulLogin) {
 		this.lastSuccessfulLogin = lastSuccessfulLogin;
 	}
 
-    @Temporal(TemporalType.TIMESTAMP)
+    /* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#getPasswordUpdated()
+	 */
+    @Override
+	@Temporal(TemporalType.TIMESTAMP)
     public Date getPasswordUpdated() {
         return passwordUpdated;
     }
 
-    @Temporal(TemporalType.TIMESTAMP)
+    /* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#setPasswordUpdated(java.util.Date)
+	 */
+    @Override
+	@Temporal(TemporalType.TIMESTAMP)
     public void setPasswordUpdated(Date timestamp) {
     	passwordUpdated = timestamp;
     }
@@ -183,13 +239,17 @@ public class XdatUserAuth extends AbstractHibernateEntity{
         if (object == null || !(object instanceof XdatUserAuth)) {
             return false;
         }
-        XdatUserAuth other = (XdatUserAuth) object;
+        UserAuthI other = (UserAuthI) object;
         return           StringUtils.equals(getAuthUser(), other.getAuthUser()) &&
                          StringUtils.equals(getAuthMethod(), other.getAuthMethod()) &&
                          StringUtils.equals(getXdatUsername(), other.getXdatUsername());
     }
 	
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#getAuthorities()
+	 */
+	@Override
 	@Transient
 	public Collection<GrantedAuthority> getAuthorities() {
 		Set<GrantedAuthority> list = new HashSet<GrantedAuthority>();
@@ -198,18 +258,30 @@ public class XdatUserAuth extends AbstractHibernateEntity{
 	}
 
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#isAccountNonExpired()
+	 */
+	@Override
 	@Transient
 	public boolean isAccountNonExpired() {
 		return accountNonExpired;
 	}
 
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#isAccountNonLocked()
+	 */
+	@Override
 	@Transient
 	public boolean isAccountNonLocked() {
 		return accountNonLocked;
 	}
 
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#isCredentialsNonExpired()
+	 */
+	@Override
 	@Transient
 	public boolean isCredentialsNonExpired() {
 		return credentialsNonExpired;

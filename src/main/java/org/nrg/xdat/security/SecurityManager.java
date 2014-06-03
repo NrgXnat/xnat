@@ -18,8 +18,6 @@ import org.nrg.xft.security.SecurityManagerI;
  *
  */
 public class SecurityManager implements SecurityManagerI{
-	public static final String XML_PATH = "xml_path";
-	public static final String SELECT_GRAND = "selectGrandColumn";
 	public static final String READ = "read";
 	public static final String CREATE = "create";
 	public static final String EDIT = "edit";

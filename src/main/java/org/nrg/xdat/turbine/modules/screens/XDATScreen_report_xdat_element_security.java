@@ -24,20 +24,6 @@ public class XDATScreen_report_xdat_element_security extends AdminReport {
         try {
             if (item.getBooleanProperty("secure"))
             {
-//                ArrayList allUsers = new ArrayList();
-//                Iterator users = XdatUser.getAllXdatUsers(null,true).iterator();
-//                while(users.hasNext())
-//                {
-//                    try {
-//                        XDATUser u = new XDATUser(((XdatUser)users.next()).getItem());
-//                        allUsers.add(u);
-//                        
-//                    } catch (Exception e) {
-//                        logger.error("",e);
-//                    }
-//                }
-//                
-//                context.put("allUsers",allUsers);
             }
         } catch (XFTInitException e) {
             logger.error("",e);

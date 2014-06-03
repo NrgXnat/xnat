@@ -6,7 +6,6 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.axis.utils.StringUtils;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -40,27 +39,27 @@ public class PersistentWorkflowUtils {
 		return builder;
 	}
 	
-	public static PersistentWorkflowI getWorkflowByEventId(final XDATUser user,final Integer id){
+	public static PersistentWorkflowI getWorkflowByEventId(final UserI user,final Integer id){
 		return  getWorkflowBuilder(user).getWorkflowByEventId(user,id);
 	}
 	
-	public static Collection<? extends PersistentWorkflowI> getOpenWorkflows(final XDATUser user,final String ID){		
+	public static Collection<? extends PersistentWorkflowI> getOpenWorkflows(final UserI user,final String ID){		
 		return getWorkflowBuilder(user).getOpenWorkflows(user,ID);
 	}
 	
-	public static Collection<? extends PersistentWorkflowI> getWorkflows(final XDATUser user,final String ID){		
+	public static Collection<? extends PersistentWorkflowI> getWorkflows(final UserI user,final String ID){		
 		return getWorkflowBuilder(user).getWorkflows(user,ID);
 	}
 	
-	public static Collection<? extends PersistentWorkflowI> getWorkflowsByExternalId(final XDATUser user,final String ID){		
+	public static Collection<? extends PersistentWorkflowI> getWorkflowsByExternalId(final UserI user,final String ID){		
 		return getWorkflowBuilder(user).getWorkflowsByExternalId(user,ID);
 	}
 	
-	public static Collection<? extends PersistentWorkflowI> getWorkflows(final XDATUser user,final List<String> IDs){		
+	public static Collection<? extends PersistentWorkflowI> getWorkflows(final UserI user,final List<String> IDs){		
 		return getWorkflowBuilder(user).getWorkflows(user,IDs);
 	}
 	
-	private static PersistentWorkflowI buildOpenWorkflow(final XDATUser user, final String xsiType,final String ID,final String project_id) throws FieldNotFoundException, IDAbsent{
+	private static PersistentWorkflowI buildOpenWorkflow(final UserI user, final String xsiType,final String ID,final String project_id) throws FieldNotFoundException, IDAbsent{
 		PersistentWorkflowI workflow = getWorkflowBuilder(user).getPersistentWorkflowI(user);
 		workflow.setDataType(xsiType);
 		workflow.setExternalid(project_id);
@@ -121,7 +120,7 @@ public class PersistentWorkflowUtils {
 		}
 	}
 	
-	public static PersistentWorkflowI buildOpenWorkflow(final XDATUser user, final String xsiType,final String ID,final String project_id,final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
+	public static PersistentWorkflowI buildOpenWorkflow(final UserI user, final String xsiType,final String ID,final String project_id,final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
 		try {
 			PersistentWorkflowI workflow = buildOpenWorkflow(user, xsiType, ID, project_id);
 
@@ -149,11 +148,11 @@ public class PersistentWorkflowUtils {
 		}
 	}
 	
-	public static PersistentWorkflowI buildAdminWorkflow(final XDATUser user, final String xsiType, String id, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
+	public static PersistentWorkflowI buildAdminWorkflow(final UserI user, final String xsiType, String id, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
 		return buildOpenWorkflow(user, xsiType, id, ADMIN_EXTERNAL_ID,event);
 	}
 	
-	public static PersistentWorkflowI buildOpenWorkflow(final XDATUser user, final XFTItem expt, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
+	public static PersistentWorkflowI buildOpenWorkflow(final UserI user, final XFTItem expt, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
 		try {
 
 			if(expt.getItem().instanceOf("xnat:experimentData") || expt.getItem().instanceOf("xnat:subjectData")){
@@ -182,7 +181,11 @@ public class PersistentWorkflowUtils {
 		}
 	}
 	
-	public static PersistentWorkflowI getOrCreateWorkflowData(Integer eventId, XDATUser user,XFTItem expt, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
+	public static String getExternalId(UserI user){
+		return ADMIN_EXTERNAL_ID;
+	}
+	
+	public static PersistentWorkflowI getOrCreateWorkflowData(Integer eventId, UserI user,XFTItem expt, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent {
 		PersistentWorkflowI ci=null;
 		if(eventId!=null){
 			ci=getWorkflowByEventId(user, eventId);
@@ -195,7 +198,7 @@ public class PersistentWorkflowUtils {
 		return ci;
 	}
 	
-	public static PersistentWorkflowI getOrCreateWorkflowData(Integer eventId, XDATUser user, String xsiType, String id, String project, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent{
+	public static PersistentWorkflowI getOrCreateWorkflowData(Integer eventId, UserI user, String xsiType, String id, String project, final EventDetails event) throws JustificationAbsent,ActionNameAbsent,IDAbsent{
 		PersistentWorkflowI ci=null;
 		if(eventId!=null){
 			ci=getWorkflowByEventId(user, eventId);

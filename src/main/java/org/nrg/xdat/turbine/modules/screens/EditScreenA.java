@@ -73,11 +73,11 @@ public abstract class EditScreenA extends SecureScreen {
                 if (item !=null){
                     data.getSession().removeAttribute(getStringIdentifierForPassedItem(data));
                 }else{
-                    item = TurbineUtils.GetEditItem(data);
+                    item =(ItemI) TurbineUtils.GetEditItem(data);
                 }
                 
             }else{
-                item = TurbineUtils.GetEditItem(data);
+                item = (ItemI)TurbineUtils.GetEditItem(data);
             }
             
             if (item !=null)

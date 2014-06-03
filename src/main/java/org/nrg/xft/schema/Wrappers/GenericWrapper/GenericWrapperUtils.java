@@ -9,7 +9,6 @@
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xdat.security.SecurityManager;

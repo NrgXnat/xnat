@@ -12,20 +12,19 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.om.XdatElementSecurity;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowI;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 
 /**
  * @author Tim
@@ -84,7 +83,7 @@ public class ElementSecurityWizard extends AdminAction {
             }
 		}
 
-		ValidationResults vr = found.validate();
+		ValidationResultsI vr = found.validate();
 		if (vr.isValid())
 		{
 		    TurbineUtils.SetEditItem(found,data);
@@ -254,7 +253,7 @@ public class ElementSecurityWizard extends AdminAction {
 				ElementSecurity.refresh();
 				ElementSecurity es=ElementSecurity.GetElementSecurity(found.getStringProperty("element_name"));
 				es.initExistingPermissions(TurbineUtils.getUser(data).getLogin());
-				TurbineUtils.getUser(data).initGroups();
+				Groups.reloadGroupsForUser(TurbineUtils.getUser(data));
 			}
 			
 			data = TurbineUtils.setDataItem(data,found);
@@ -279,7 +278,7 @@ public class ElementSecurityWizard extends AdminAction {
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 
-		ValidationResults vr = found.validate();
+		ValidationResultsI vr = found.validate();
 		if (vr.isValid())
 		{
 		    int counter = 0;
@@ -300,78 +299,4 @@ public class ElementSecurityWizard extends AdminAction {
 		    data.setScreenTemplate("XDATScreen_ES_Wizard3.vm");
 		}
     }
-//  REMOVED 12/10/09 while refactoring the UserGroup-ElementAccess code.  I don't think it is used anywhere anymore.
-//    /**
-//     * @param data
-//     * @param context
-//     * @throws Exception
-//     */
-//    public void doStep5(RunData data, Context context) throws Exception{
-//        XDATUser primaryUser =TurbineUtils.getUser(data);
-//        String eName = (String)TurbineUtils.GetPassedParameter("element_name",data);
-//        ElementSecurity es = ElementSecurity.GetElementSecurity(eName);
-//
-//        Iterator users = XdatUser.getAllXdatUsers(null,false).iterator();
-//        while(users.hasNext())
-//        {
-//            try {
-//                XDATUser u = new XDATUser(((XdatUser)users.next()).getItem());
-//                Hashtable props = TurbineUtils.GetDataParameterHash(data);
-//
-//                ArrayList criteria = new ArrayList();
-//    			ElementAccessManager eam = u.getAccessManager(es.getElementName());
-//
-//    			ArrayList permissionItems = es.getPermissionItems(u.getLogin());
-//    			Iterator permissions = permissionItems.iterator();
-//    			while (permissions.hasNext())
-//    			{
-//    				PermissionItem pi = (PermissionItem)permissions.next();
-//    				PermissionCriteria pc = new PermissionCriteria();
-//
-//    				pc.setField(pi.getFullFieldName());
-//    				pc.setFieldValue(pi.getValue());
-//    				String s = u.getLogin()+ "_" + pi.getFullFieldName() + "_" + pi.getValue();
-//    				if (props.get(s.toLowerCase() + "_r") != null)
-//    				{
-//    			    	pc.setRead(true);
-//    				}else{
-//    					pc.setRead(false);
-//    				}
-//    				if (props.get(s.toLowerCase() + "_c") != null)
-//    				{
-//    					pc.setCreate(true);
-//    				}else{
-//    					pc.setCreate(false);
-//    				}
-//    				if (props.get(s.toLowerCase() + "_e") != null)
-//    				{
-//    					pc.setEdit(true);
-//    				}else{
-//    					pc.setEdit(false);
-//    				}
-//    				if (props.get(s.toLowerCase() + "_d") != null)
-//    				{
-//    					pc.setDelete(true);
-//    				}else{
-//    					pc.setDelete(false);
-//    				}
-//    			    if (props.get(s.toLowerCase() + "_a") != null)
-//    				{
-//    				    pc.setActivate(true);
-//    				}else{
-//    				    pc.setActivate(false);
-//    				}
-//    				if (props.get(s.toLowerCase() + "_type") != null)
-//    				{
-//    				   pc.setComparisonType(props.get(s.toLowerCase() + "_type"));
-//    				}
-//    				u.addRootPermission(es.getElementName(),pc);
-//    			}
-//
-//    			u.save(null,true,true,false,false);
-//            } catch (Exception e) {
-//                logger.error("",e);
-//            }
-//        }
-//    }
 }

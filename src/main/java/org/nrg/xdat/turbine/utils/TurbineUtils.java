@@ -1055,9 +1055,11 @@ public class TurbineUtils {
 	    		//need to build the list of props.
 	    		screens=new ArrayList<Properties>();
 	        	List<String> exists=new ArrayList<String>();
-	    		List<File> screensFolders = XDAT.getScreenTemplateFolders();
-	    		for(File screensFolder: screensFolders){
-	    	        if (screensFolder.exists()) {
+	    		Set<String> screensFolders = XDAT.getScreenTemplateFolders();
+                // MIGRATE: This is pending a real fix.
+	    		for(final String screensFolder: screensFolders) {
+                    File folder = new File(screensFolder);
+	    	        if (folder.exists()) {
 	    	        	File subFile=new File(screensFolder,subFolder);
 	    	        	if(subFile.exists()){
 	        	            File[] files = subFile.listFiles(new FilenameFilter() {

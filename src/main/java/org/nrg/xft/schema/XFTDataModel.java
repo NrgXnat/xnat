@@ -11,7 +11,6 @@ import java.io.File;
 
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.utils.XMLUtils;
 /**
  * This class specifies data about a particular XFTSchema and contains a reference to the XFTSchema.
  * 
@@ -134,14 +133,10 @@ public class XFTDataModel {
 	}
 
 	/**
-	 * @param string
+	 * @param fileLocation
 	 */
-	public void setFileLocation(String string) {
-		if (! string.endsWith(java.io.File.separator))
-		{
-			string = string + java.io.File.separator;
-		}
-		fileLocation = string;
+	public void setFileLocation(String fileLocation) {
+		this.fileLocation = fileLocation;
 	}
 
 	/**
@@ -152,17 +147,16 @@ public class XFTDataModel {
 	}
 
 	/**
-	 * @param schema
 	 */
 	public void setSchema() throws XFTInitException,ElementNotFoundException {
-		this.schema = new XFTSchema(XMLUtils.GetDOM(new File(this.fileLocation + this.fileName)),fileLocation,this);
+        this.schema = new XFTSchema(fileLocation, fileName, this);
 	}
 
 	/**
 	 * @param schema
 	 */
-	public void setSchema(XFTSchema s) {
-		this.schema = s;
+	public void setSchema(XFTSchema schema) {
+		this.schema = schema;
 		schema.setDataModel(this);
 	}
 

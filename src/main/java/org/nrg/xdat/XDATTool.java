@@ -5,7 +5,6 @@
  */
 package org.nrg.xdat;
 
-import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.presentation.CSVPresenter;
 import org.nrg.xdat.presentation.HTMLPresenter;
@@ -28,7 +27,6 @@ import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.utils.FileUtils;
@@ -37,9 +35,12 @@ import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -50,36 +51,41 @@ import java.util.Iterator;
  *
  */
 public class XDATTool {
-	static org.apache.log4j.Logger logger = Logger.getLogger(XDATTool.class);
-    private URI location = null;
+	private static final Logger logger = LoggerFactory.getLogger(XDATTool.class);
+
     private XDATUser user = null;
     private boolean ignoreSecurity = false;
-    public XDATTool() throws XFTInitException
-    {
-        location = XFTManager.GetInstance().getSourceDir();
-    }
-    /**
-     *
-     */
-    public XDATTool(String instanceLocation) throws Exception {
-        location = new File(instanceLocation).toURI();
-        XDAT.init(location,false);
-    }
-    /**
-     *
-     */
-    public XDATTool(String instanceLocation,XDATUser u) throws Exception {
-        user=u;
-        location = new File(instanceLocation).toURI();
-        XDAT.init(location,false);
-    }
 
-    public XDATTool(String instanceLocation,String username, String password) throws Exception
-    {
-        location = new File(instanceLocation).toURI();
-        XDAT.init(location,true);
-        login(username,password);
-    }
+    // MIGRATE: This is just a stand-in to see if this code is even necessary any more.
+    private static final String location = "SOME KIND OF BOGUS LOCATION I DONT THINK THIS IS EVEN CALLED";
+
+
+//    public XDATTool() throws XFTInitException
+//    {
+//        location = XFTManager.GetInstance().getSourceDir();
+//    }
+//    /**
+//     *
+//     */
+//    public XDATTool(String instanceLocation) throws Exception {
+//        location = new File(instanceLocation).toURI();
+//        XDAT.init(location,false);
+//    }
+//    /**
+//     *
+//     */
+//    public XDATTool(String instanceLocation,XDATUser u) throws Exception {
+//        user=u;
+//        location = new File(instanceLocation).toURI();
+//        XDAT.init(location,false);
+//    }
+//
+//    public XDATTool(String instanceLocation,String username, String password) throws Exception
+//    {
+//        location = new File(instanceLocation).toURI();
+//        XDAT.init(location,true);
+//        login(username,password);
+//    }
 
     private void login(String username, String password) throws Exception
     {
@@ -418,17 +424,25 @@ public class XDATTool {
 
 	public URI getSettingsDirectory()
 	{
-	    return location;
-	}
+        // MIGRATE: Again, just a bogus thing to preserve compilability.
+        try {
+            return new URI("http://www.yahoo.com");
+        } catch (URISyntaxException e) {
+            // Nothing here.
+        }
+        return null;
+    }
 
     public static String GetSettingsDirectory()
     {
-        try {
-            return XFTManager.GetInstance().getSourceDir().getPath();
-        } catch (XFTInitException e) {
-            logger.error("",e);
-            return "XDAT NOT INITIALIZED";
-        }
+        // MIGRATE: Again, just a bogus thing to preserve compilability.
+        return location;
+//        try {
+//            return XFTManager.GetInstance().getSourceDir().getPath();
+//        } catch (XFTInitException e) {
+//            logger.error("",e);
+//            return "XDAT NOT INITIALIZED";
+//        }
     }
 
     /**
@@ -466,16 +480,16 @@ public class XDATTool {
 
     public void info(Exception e)
     {
-        logger.info(e);
+        logger.info("", e);
     }
 
     public void debug(Exception e)
     {
-        logger.debug(e);
+        logger.debug("", e);
     }
 
     public void error(Exception e)
     {
-        logger.error(e);
+        logger.error("", e);
     }
 }

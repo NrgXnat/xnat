@@ -111,7 +111,7 @@ public class SQLCreateGenerator {
     public static void main(String args[]) {
         if (args.length == 2) {
             try {
-                XFT.init(new URI(args[0]));
+                XFT.init();
                 SQLCreateGenerator.generateDoc(args[1]);
             } catch (Exception e) {
                 e.printStackTrace();

@@ -9,6 +9,7 @@
  */
 package org.nrg.xdat.servlet;
 
+import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
@@ -31,19 +32,18 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import javax.servlet.ServletConfig;
+import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
 
@@ -57,33 +57,30 @@ import java.util.logging.LogManager;
 @SuppressWarnings("serial")
 public class XDATServlet extends HttpServlet{
     private static final Logger logger = LoggerFactory.getLogger(XDATServlet.class);
-    
-    public static URI WEBAPP_ROOT;
-    
+    private static ServletContext _context;
+
 	/* (non-Javadoc)
 	 * @see javax.servlet.GenericServlet#init(javax.servlet.ServletConfig)
 	 */
-	public void init(ServletConfig config) throws ServletException
-	{
+	public void init(ServletConfig config) throws ServletException {
 		//this was added to XNAT a really really long time ago.  I believe it was because config files on the classpath 
 		// were overriding the log4j.properties on the file system.  But, later it was modified to bridge the SLF4J divide.
 		replaceLogging();
 
 		super.init(config);
-		
+
+        _context = getServletContext();
+
 		try {
-            XDATServlet.WEBAPP_ROOT = getAppRelativeLocation("");
-            
-			XDAT.init(getAppRelativeLocation("WEB-INF" + File.separator + "conf" + File.separator), true, false);//initializes the XDAT engine (and XFT implicitly)
+			XDAT.init(true, false); //initializes the XDAT engine (and XFT implicitly)
 			
 			//store some  more convenience paths
-			XDAT.setScreenTemplatesFolder(new File(getAppRelativeLocation("templates", "screens")).getPath());
-            XDAT.addScreenTemplatesFolder(new File(getAppRelativeLocation("templates", "screens")).getPath());
-            XDAT.addScreenTemplatesFolder(new File(getAppRelativeLocation("xnat-templates", "screens")).getPath());
-            XDAT.addScreenTemplatesFolder(new File(getAppRelativeLocation("xdat-templates", "screens")).getPath());
+			XDAT.setScreenTemplatesFolder("templates/screens");
+            XDAT.addScreenTemplatesFolder("xnat-templates/screens");
+            XDAT.addScreenTemplatesFolder("xdat-templates/screens");
 			
             //call the logic to check if the database is up to date.
-            if(updateDatabase(new File(getAppRelativeLocation("resources","default-sql")).getPath())) {
+            if(updateDatabase("resources/default-sql")) {
             	//reset loaded stuff, because database changed
             	ElementSecurity.refresh();
             }
@@ -92,88 +89,6 @@ public class XDATServlet extends HttpServlet{
 		}
 	}
 	
-	/**
-	 * Method used to manage auto-updates to the database.  It will only auto update the database, if the auto-update parameter is null or true.
-	 * 
-	 * It uses a query on the user table to identify if the user table to see if users have been populated.
-	 * @param conf    The configuration folder.
-	 * @return Whether the database update was successful or not.
-	 * @throws Exception
-	 */
-	private boolean updateDatabase(String conf) throws Exception {
-        Long user_count;
-		try {
-			user_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
-		} catch (SQLException e) {
-			// xdat_user table doesn't exist
-			user_count = null;
-		}
-		
-		//this should use the config service.. but I couldn't get it to work because of servlet init issues.
-		Properties prop = new Properties();
-		File f = new File(insertPath(conf,"properties") + "database.properties");
-		if(f.exists()){
-			prop.load(new FileInputStream(f));
-		}
-
-		//currently defaults to true, if the file isn't there.
-		if(!prop.containsKey("auto-update")){
-			prop.setProperty("auto-update", "true");
-		}
-		
-		if((prop.containsKey("auto-update")) && (BooleanUtils.toBoolean(prop.getProperty("auto-update")))){
-			if (user_count != null) {
-				final DatabaseUpdater du = new DatabaseUpdater((user_count == 0)?conf:null);//user_count==0 means users need to be created.
-
-				//only interested in the required ones here.
-				final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
-				if (sql.size() > 0) {
-					System.out.println("===========================");
-					System.out.println("Database out of date... updating");
-					for(String s:sql)System.out.println(s);
-					System.out.println("===========================");
-					// changes have been made to the actual db schema, they
-					// should be done before we continue
-					// the user can't use the site until these are
-					// completed.
-					du.addStatements(sql);
-					du.run();// use run to prevent a second thread.
-					return true;
-				} else {
-					System.out.println("Database up to date.");
-					// the database tables are up to date. But, we should
-					// still make sure the functions and views are up to
-					// date.
-					// However, this can be done in a separate thread so
-					// that the user can start using the site.
-					
-					//commenting this out because it is very slow.... they certainly don't need to be run every startup.  But, we need some way of getting them updated when it is needed.
-					//du.addStatements(sql);
-					//du.start();// start in a separate thread
-					(new SequenceUpdater()).start();//this isn't necessary if we did the du.start();
-					return false;
-				}
-			} else {
-				System.out.println("===========================");
-				System.out.println("New Database -- BEGINNING Initialization");
-				System.out.println("===========================");
-				// xdat-user table doesn't exist, assume this is an empty
-				// database
-				final DatabaseUpdater du = new DatabaseUpdater(conf);
-				du.addStatements(SQLCreateGenerator.GetSQLCreate(false));
-				du.run();// start and wait for it
-
-				System.out.println("===========================");
-				System.out.println("Database initialization complete.");
-				System.out.println("===========================");
-				return true;
-			}
-		} else {
-			(new SequenceUpdater()).start();
-			return false;
-		}
-	}
-
 	public void destroy()
 	{
 	    try {
@@ -182,8 +97,129 @@ public class XDATServlet extends HttpServlet{
         }
         super.destroy();
 	}
-    
-	public class SequenceUpdater extends Thread{
+
+    /**
+     * Returns the URI of the specified relative path within the web application. If no resource is found at the
+     * indicated path, this method returns <b>null</b>.
+     * @param relativePaths    The path or path components.
+     * @return A URI for the indicated resource or <b>null</b> if not found.
+     */
+    public static URI getAppRelativeLocation(final String... relativePaths) {
+        try {
+            return _context.getResource(joinPaths(relativePaths)).toURI();
+        } catch (URISyntaxException | MalformedURLException e) {
+            return null;
+        }
+    }
+
+    /**
+     * Locates the resource at the specified relative path within the web application. If no resource is found at the
+     * indicated path, this method returns <b>null</b>.
+     * @param relativePaths    The path or path components.
+     * @return An input stream for the indicated resource or <b>null</b> if not found.
+     */
+    public static InputStream getAppRelativeStream(final String... relativePaths) {
+        return _context.getResourceAsStream(joinPaths(relativePaths));
+    }
+
+    /**
+     * Gets all of the contents of the indicated relative path. This returns subfolders and file contents without
+     * descending into the subfolders. If you want to find all children, including those in subfolders, use the
+     * {@link #getAppRelativeLocationChildren(String...)} method. If you want to filter the filenames returned without
+     * descending, use the {@link #getAppRelativeLocationContents(java.io.FilenameFilter, String...)} method.
+     * @param relativePaths    The relative paths to search.
+     * @return A set of paths to the contents of the indicated relative path.
+     */
+    public static Set<String> getAppRelativeLocationContents(final String... relativePaths) {
+        return getAppRelativeLocationContents(null, relativePaths);
+    }
+
+    /**
+     * Gets all of the file contents of the indicated relative path that match the submitted filename filter. This
+     * return subfolders and filter contents without descending into the subfolders. If you want to find all children,
+     * including those in subfolders, use the {@link #getAppRelativeLocationChildren(java.io.FilenameFilter, String...)}
+     * method.
+     * Note that the <b>File</b> parameter of the {@link java.io.FilenameFilter#accept(java.io.File, String)} method
+     * will always be null, so your implementation shouldn't use that parameter and only match the name. If you want to
+     * include subfolders in your results, add a condition to match names that {@link java.lang.String#endsWith(String)
+     * end with the '/' character}.
+     * @param filter           An implementation of the {@link java.io.FilenameFilter} class that filters on filename.
+     * @param relativePaths    The relative paths to search.
+     * @return A set of paths to the contents of the indicated relative path.
+     */
+    public static Set<String> getAppRelativeLocationContents(FilenameFilter filter, final String... relativePaths) {
+        final Set<String> paths = _context.getResourcePaths(joinPaths(relativePaths));
+        if (filter == null) {
+            return paths;
+        }
+        final Set<String> accepted = new HashSet<>();
+        for (final String path : paths) {
+            if (filter.accept(null, getFileName(path))) {
+                accepted.add(path);
+            }
+        }
+        return accepted;
+    }
+
+    /**
+     * Gets all of the file contents of the indicated relative path and its subfolders. This does not return subfolders,
+     * but resolves the contents of all subfolders. If you want to find just the contents of the path, including
+     * subfolders, without descending, use the {@link #getAppRelativeLocationContents(String...)} method.
+     * @param relativePaths    The relative paths to search.
+     * @return A set of paths to the contents of the indicated relative path.
+     */
+    public static Set<String> getAppRelativeLocationChildren(final String... relativePaths) {
+        return getAppRelativeLocationChildren(null, relativePaths);
+    }
+
+    /**
+     * Gets all of the file contents of the indicated relative path and its subfolders. This does not return subfolders,
+     * but resolves the contents of all subfolders. If you want to find just the contents of the path, including
+     * subfolders, without descending, use the {@link #getAppRelativeLocationContents(String...)} method.
+     * Note that the <b>File</b> parameter of the {@link java.io.FilenameFilter#accept(java.io.File, String)} method
+     * will always be null, so your implementation shouldn't use that parameter and only match the name.
+     * @param filter           An implementation of the {@link java.io.FilenameFilter} class that filters on filename.
+     * @param relativePaths    The relative paths to search.
+     * @return A set of paths to the contents of the indicated relative path.
+     */
+    public static Set<String> getAppRelativeLocationChildren(final FilenameFilter filter, final String... relativePaths) {
+        final Set<String> found = getAppRelativeLocationContents(relativePaths);
+        final Set<String> children = new HashSet<>();
+        for (final String current : found) {
+            if (!current.endsWith("/")) {
+                if (filter == null || filter.accept(null, getFileName(current))) {
+                    children.add(current);
+                }
+            } else {
+                children.addAll(getAppRelativeLocationChildren(current));
+            }
+        }
+        return children;
+    }
+
+    /**
+     * This is a convenience wrapper around the {@link #getAppRelativeLocation(String...)} method that takes a single
+     * resource name and tries to load it from the configuration folder (by default, WEB-INF/conf).
+     *
+     * @param configuration    The resource to retrieve.
+     * @return A URI for the requested resource if found, <b>null</b> if not.
+     */
+    public static URI getConfigurationLocation(final String configuration) {
+        return getAppRelativeLocation("WEB-INF", "conf", configuration);
+    }
+
+    /**
+     * This is a convenience wrapper around the {@link #getAppRelativeStream(String...)} method that takes a single
+     * resource name and tries to load it from the configuration folder (by default, WEB-INF/conf).
+     *
+     * @param configuration    The resource to retrieve.
+     * @return An input stream for the requested resource if found, <b>null</b> if not.
+     */
+    public static InputStream getConfigurationStream(final String configuration) {
+        return getAppRelativeStream("WEB-INF", "conf", configuration);
+    }
+
+    public class SequenceUpdater extends Thread{
 		public void run(){
 			DBAction.AdjustSequences();
 		}
@@ -346,8 +382,96 @@ public class XDATServlet extends HttpServlet{
     		return stmts;
     	}
     }
-    
-	private void replaceLogging() {
+
+    /**
+     * Method used to manage auto-updates to the database.  It will only auto update the database, if the auto-update parameter is null or true.
+     *
+     * It uses a query on the user table to identify if the user table to see if users have been populated.
+     * @param config    The configuration folder.
+     * @return Whether the database update was successful or not.
+     * @throws Exception
+     */
+    private boolean updateDatabase(final String config) throws Exception {
+        Long user_count;
+        try {
+            user_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
+        } catch (SQLException e) {
+            // xdat_user table doesn't exist
+            user_count = null;
+        }
+
+        //this should use the config service.. but I couldn't get it to work because of servlet init issues.
+        Properties prop = new Properties();
+        String dbProperties = joinPaths(config, "properties", "database.properties");
+        File f = new File(dbProperties);
+        if(f.exists()){
+            prop.load(new FileInputStream(f));
+        } else {
+            InputStream stream = getAppRelativeStream(config);
+            if (stream != null) {
+                prop.load(stream);
+            }
+        }
+
+        //currently defaults to true, if the file isn't there.
+        if(!prop.containsKey("auto-update")){
+            prop.setProperty("auto-update", "true");
+        }
+
+        if((prop.containsKey("auto-update")) && (BooleanUtils.toBoolean(prop.getProperty("auto-update")))){
+            if (user_count != null) {
+                final DatabaseUpdater du = new DatabaseUpdater((user_count == 0) ? config : null);//user_count==0 means users need to be created.
+
+                //only interested in the required ones here.
+                final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
+                if (sql.size() > 0) {
+                    System.out.println("===========================");
+                    System.out.println("Database out of date... updating");
+                    for(String s:sql)System.out.println(s);
+                    System.out.println("===========================");
+                    // changes have been made to the actual db schema, they
+                    // should be done before we continue
+                    // the user can't use the site until these are
+                    // completed.
+                    du.addStatements(sql);
+                    du.run();// use run to prevent a second thread.
+                    return true;
+                } else {
+                    System.out.println("Database up to date.");
+                    // the database tables are up to date. But, we should
+                    // still make sure the functions and views are up to
+                    // date.
+                    // However, this can be done in a separate thread so
+                    // that the user can start using the site.
+
+                    //commenting this out because it is very slow.... they certainly don't need to be run every startup.  But, we need some way of getting them updated when it is needed.
+                    //du.addStatements(sql);
+                    //du.start();// start in a separate thread
+                    (new SequenceUpdater()).start();//this isn't necessary if we did the du.start();
+                    return false;
+                }
+            } else {
+                System.out.println("===========================");
+                System.out.println("New Database -- BEGINNING Initialization");
+                System.out.println("===========================");
+                // xdat-user table doesn't exist, assume this is an empty
+                // database
+                final DatabaseUpdater du = new DatabaseUpdater(config);
+                du.addStatements(SQLCreateGenerator.GetSQLCreate(false));
+                du.run();// start and wait for it
+
+                System.out.println("===========================");
+                System.out.println("Database initialization complete.");
+                System.out.println("===========================");
+                return true;
+            }
+        } else {
+            (new SequenceUpdater()).start();
+            return false;
+        }
+    }
+
+    private void replaceLogging() {
 		// remove the java.util.logging handlers so that nothing is logged to stdout/stderr
 		java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
 		for (Handler h : rootLogger.getHandlers()){
@@ -362,18 +486,16 @@ public class XDATServlet extends HttpServlet{
 		} 
 	}
 
-    private String insertPath(String... elements){
-        StringBuilder sb=new StringBuilder();
-        for(final String s: elements) {
-            sb.append(s).append(File.separator);
+    private static String getFileName(final String path) {
+        if (path.contains("/")) {
+            return path.substring(path.lastIndexOf("/") + 1);
         }
-
-        return sb.toString();
+        return path;
     }
 
-    private URI getAppRelativeLocation(final String... relativePaths) throws MalformedURLException, URISyntaxException {
-        final String relativePath = insertPath(relativePaths);
-        return getServletContext().getResource(relativePath).toURI();
+    private static String joinPaths(String... elements){
+        // MIGRATE: This is not using File.separator, since that causes issues locating files via URI, JNDI, etc.
+        return Joiner.on("/").join(elements);
     }
 }
 

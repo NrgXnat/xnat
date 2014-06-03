@@ -8,6 +8,7 @@ package org.nrg.xdat.turbine.modules.screens;
 import org.apache.ecs.ConcreteElement;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.utils.FileUtils;
@@ -41,8 +42,8 @@ public abstract class FileScreen extends SecureScreen {
         if (f==null || !f.exists())
         {
         	//if file doesn't exist return this image... Throwing an exception should skip this.
-            URI path = XFT.GetSettingsDirectory();
-            f = new File(path.resolve("/images/rc.gif"));
+            // MIGRATE: Not sure how this might work.
+            f = new File(XDATServlet.getAppRelativeLocation("images/rc.gif"));
         }
         
           HttpServletResponse response =data.getResponse();

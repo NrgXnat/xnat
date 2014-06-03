@@ -64,23 +64,15 @@ public class DBCopy {
 		logger.info("Copy Destination DB: " + props.getProperty("dest.db.url"));
 		Connection con = null;
 		try {
-			File sourceDirinsert = new File(XFTManager.GetInstance().getSourceDir()+ "inserts");
-			if (! sourceDirinsert.exists())
-			{
-				sourceDirinsert.mkdir();
-			}
 			StringBuffer sb = new StringBuffer();
 			Class.forName(props.getProperty("src.db.driver"));
 			Class.forName(props.getProperty("dest.db.driver"));
 			con = DriverManager.getConnection(props.getProperty("src.db.url"),props.getProperty("src.db.user"),props.getProperty("src.db.password"));
 			Statement stmt = con.createStatement();
 			
-			ArrayList tableNames = StringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
-			Iterator iter = tableNames.iterator();
-			while (iter.hasNext())
-			{
-				String table = (String)iter.next();
-logger.info("Copying " + table + " ...");
+			ArrayList<String> tableNames = StringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
+			for (final String table : tableNames) {
+                logger.info("Copying " + table + " ...");
 				ArrayList columns = new ArrayList();
 				ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
 				
@@ -133,13 +125,15 @@ logger.info("Copying " + table + " ...");
 					
 					if (rowCounter++ == 10000)
 					{
-						FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir()+ "inserts" + File.separator + table +"_inserts.sql");
+                        // MIGRATE: I'm not even sure what this is doing.
+						// FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir()+ "inserts" + File.separator + table +"_inserts.sql");
 						this.execDestinationSQL(sb.toString());
 						sb = new StringBuffer();
 						rowCounter=0;
 					}
 				}
-				FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir()+ "inserts" + File.separator + table +"_inserts.sql");
+                // MIGRATE: I'm not even sure what this is doing.
+				// FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir()+ "inserts" + File.separator + table +"_inserts.sql");
 				this.execDestinationSQL(sb.toString());
 				sb = new StringBuffer();
 			}
@@ -148,8 +142,8 @@ logger.info("Copying " + table + " ...");
 			logger.error("",e);
 		} catch (SQLException e) {
 			logger.error("",e);
-		} catch (org.nrg.xft.exception.XFTInitException e) {
-			logger.error("",e);
+//		} catch (org.nrg.xft.exception.XFTInitException e) {
+//			logger.error("",e);
 		} catch (Exception e) {
 			logger.error("",e);
 		}finally
@@ -401,11 +395,12 @@ logger.info("Copying " + table + " ...");
 			System.out.println("Arguments: <Properties File location>");
 			return;
 		}
-		try {
-			XFT.init(new File("C:\\xdat\\projects\\cnda").toURI(), false);
-		} catch (ElementNotFoundException e) {
-			e.printStackTrace();
-		}
+// MIGRATE: Not really necessary, but this will require a way to specify a path in place of just the string file name.
+//		try {
+//			XFT.init(new File("C:\\xdat\\projects\\cnda").toURI(), false);
+//		} catch (ElementNotFoundException e) {
+//			e.printStackTrace();
+//		}
         DBCopy db = new DBCopy(args[0]);
 		db.cleanDestinationDB();
 		db.copyDB();

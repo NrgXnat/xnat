@@ -495,7 +495,8 @@ public class SQLUpdateGenerator {
     public static void main(String args[]) {
         if (args.length == 2) {
             try {
-                XFT.init(new URI(args[0]));
+                // MIGRATE: No init options.
+                XFT.init();
                 SQLUpdateGenerator.generateDoc(args[1]);
             } catch (Exception e) {
                 e.printStackTrace();

@@ -9,7 +9,6 @@
 package org.nrg.xft.utils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.generators.SQLCreateGenerator;
-import org.nrg.xft.generators.TorqueSchemaGenerator;
 
 import java.io.File;
 /**
@@ -21,9 +20,10 @@ public class GeneratorUtils {
 		File file = new File(sourceFile);
 		String sourceDir = file.getParent();
 		try {
-			XFT.init(file.toURI(), true);
+			XFT.init(true);
 			SQLCreateGenerator.generateDoc(sourceDir + File.separator + "createDB.sql");
-			TorqueSchemaGenerator.generateDoc(sourceDir + File.separator + "base-schema.xml");
+            // MIGRATE: Removed because Torque.
+			// TorqueSchemaGenerator.generateDoc(sourceDir + File.separator + "base-schema.xml");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

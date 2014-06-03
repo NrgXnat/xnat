@@ -652,49 +652,50 @@ public class XFTReferenceManager {
 	/**
 	 * Outputs all of the references defined in the XFTReferenceManager.
 	 */
-	public static void OutputReferences()
-	{
-		try {
-			StringBuffer sb = new StringBuffer("Element Types:");
-			
-			Enumeration enumer = GetInstance().getElementType().keys();
-			while(enumer.hasMoreElements())
-			{
-				String key =(String)enumer.nextElement();
-				sb.append("\n").append(key).append("->").append(GetInstance().getElementType().get(key));
-			}
-			
-			sb.append("\n\nProper Names:");
-			enumer = GetInstance().getProperNames().keys();
-			while(enumer.hasMoreElements())
-			{
-				String key =(String)enumer.nextElement();
-				sb.append("\n").append(key).append("->").append(GetInstance().getProperNames().get(key));
-			}
-			
-			sb.append("\n\nMany-To-Many:");
-			Iterator iter = GetInstance().getManyToManys().iterator();
-			while(iter.hasNext())
-			{
-				ArrayList key =(ArrayList)iter.next();
-				sb.append("\n").append(((GenericWrapperElement)key.get(0)).getName()).append("->").append(((GenericWrapperField)key.get(1)).getName()).append(":").append(((XFTManyToManyReference)key.get(2)).getMappingTable());
-			}
-			
-			sb.append("\n\nMany-To-One:");
-			iter = GetInstance().getManyToOnes().iterator();
-			while(iter.hasNext())
-			{
-				ArrayList key =(ArrayList)iter.next();
-				sb.append("\n").append(key.get(0)).append("(FK)->").append(key.get(1));
-			}
-			
-			org.nrg.xft.utils.FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir() + "references.txt");
-		} catch (org.nrg.xft.exception.XFTInitException e) {
-			logger.error(e);
-		} catch (Exception e) {
-			logger.error(e);
-		}
-	}
+// MIGRATE: This doesn't appear to be used and the getSourceDir() method makes it break, so...
+//	public static void OutputReferences()
+//	{
+//		try {
+//			StringBuffer sb = new StringBuffer("Element Types:");
+//
+//			Enumeration enumer = GetInstance().getElementType().keys();
+//			while(enumer.hasMoreElements())
+//			{
+//				String key =(String)enumer.nextElement();
+//				sb.append("\n").append(key).append("->").append(GetInstance().getElementType().get(key));
+//			}
+//
+//			sb.append("\n\nProper Names:");
+//			enumer = GetInstance().getProperNames().keys();
+//			while(enumer.hasMoreElements())
+//			{
+//				String key =(String)enumer.nextElement();
+//				sb.append("\n").append(key).append("->").append(GetInstance().getProperNames().get(key));
+//			}
+//
+//			sb.append("\n\nMany-To-Many:");
+//			Iterator iter = GetInstance().getManyToManys().iterator();
+//			while(iter.hasNext())
+//			{
+//				ArrayList key =(ArrayList)iter.next();
+//				sb.append("\n").append(((GenericWrapperElement)key.get(0)).getName()).append("->").append(((GenericWrapperField)key.get(1)).getName()).append(":").append(((XFTManyToManyReference)key.get(2)).getMappingTable());
+//			}
+//
+//			sb.append("\n\nMany-To-One:");
+//			iter = GetInstance().getManyToOnes().iterator();
+//			while(iter.hasNext())
+//			{
+//				ArrayList key =(ArrayList)iter.next();
+//				sb.append("\n").append(key.get(0)).append("(FK)->").append(key.get(1));
+//			}
+//
+//			org.nrg.xft.utils.FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir() + "references.txt");
+//		} catch (org.nrg.xft.exception.XFTInitException e) {
+//			logger.error(e);
+//		} catch (Exception e) {
+//			logger.error(e);
+//		}
+//	}
 	
 	/**
 	 * @param item

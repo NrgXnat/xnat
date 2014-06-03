@@ -312,6 +312,7 @@ public class XFTPseudonymManager {
 	/**
 	 * Outputs the list of pseudonyms to a file called 'pseudonyms.txt'.
 	 */
+    // MIGRATE: Doesn't look as if this is used at all.
 	public static void OutputPseudonyms()
 	{
 		try {
@@ -337,9 +338,9 @@ public class XFTPseudonymManager {
 					}
 				}
 			}
-			FileUtils.OutputToFile(p.toString(),XFTManager.GetInstance().getSourceDir() + "pseudonyms.txt");
-		} catch (org.nrg.xft.exception.XFTInitException e) {
-			logger.error("",e);
+			// FileUtils.OutputToFile(p.toString(),XFTManager.GetInstance().getSourceDir() + "pseudonyms.txt");
+//		} catch (org.nrg.xft.exception.XFTInitException e) {
+//			logger.error("",e);
 		} catch (Exception e) {
 			logger.error("",e);
 		}

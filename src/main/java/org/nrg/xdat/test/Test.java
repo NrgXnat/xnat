@@ -30,8 +30,9 @@ public class Test {
 			String appDir = "C:\\xdat\\deployments\\cnda_xnat";
             String sep =System.getProperty("line.separator");
             String id = "050603_vc18118";
-            
-             XDAT.init(new File(appDir).toURI(), false, true);
+
+            // MIGRATE: This test is sort of obsolete.
+            // XDAT.init(new File(appDir).toURI(), false, true);
 //            
 //            
 //           // XFTTool.GenerateSQL("cdisc.sql");

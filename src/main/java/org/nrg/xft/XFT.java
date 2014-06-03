@@ -15,6 +15,7 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.spi.LoggerRepository;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -32,10 +33,11 @@ import org.nrg.xft.utils.StringUtils;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URI;
+import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.text.NumberFormat;
 import java.util.*;
+
 /**
  * @author Tim
  *
@@ -44,9 +46,6 @@ import java.util.*;
 public class XFT {
     private static String ADMIN_EMAIL = "nrgtech@nrg.wustl.edu";
     private static String ADMIN_EMAIL_HOST = "";
-
-    private static URI CONF_DIR=null;
-
     private static String SITE_URL = "";
     private static String ARCHIVE_ROOT_PATH = "";
     private static String PREARCHIVE_PATH = "";
@@ -61,29 +60,19 @@ public class XFT {
     
     private static Boolean REQUIRE_EVENT_NAME = false;//used to configure whether event names are required on modifications
 
-    public static void init(final URI location) throws ElementNotFoundException
-    {
-        init(location, true);
+    public static void init() throws ElementNotFoundException, MalformedURLException, URISyntaxException {
+        init(true);
     }
+
     /**
      * This method must be run before any XFT task is performed.
      * Using the InstanceSettings.xml document, it initializes the
      * XFT's settings and loads the schema.
-     * @param location (Directory which includes the InstanceSettings.xml document)
      */
-    public static void init(URI location, boolean initLog4j) throws ElementNotFoundException
-    {
-        if (XFT.VERBOSE) {
-            System.out.println("SETTINGS LOCATION: " + location);
+    public static void init(final boolean initLog4j) throws ElementNotFoundException, MalformedURLException, URISyntaxException {
+        if (initLog4j) {
+            initLog4j();
         }
-
-        CONF_DIR = location;
-
-        if (initLog4j)
-        {
-            initLog4j(location);
-        }
-
 
         XFTManager.clean();
         XFTMetaManager.clean();
@@ -91,7 +80,7 @@ public class XFT {
         XFTPseudonymManager.clean();
 
         //XFT.LogCurrentTime("XFT INIT:2","ERROR");
-        XFTManager.init(location);
+        XFTManager.init();
 
         //XFT.LogCurrentTime("XFT INIT:3","ERROR");
         try {
@@ -164,17 +153,12 @@ public class XFT {
         }
     }
 
-    public static void initLog4j(URI location)
+    public static void initLog4j()
     {
-        try {
-            PropertyConfigurator.configure(location.resolve("log4j.properties").toURL());
-        } catch (MalformedURLException ignored) {
-            // This just shouldn't happen.
-        }
+        PropertyConfigurator.configure(XDATServlet.getConfigurationStream("log4j.properties"));
 
         logger.info("");
         Logger.getLogger("org.nrg.xft.db.PoolDBUtils").error("");
-
 
         LoggerRepository lr = logger.getLoggerRepository();
         Enumeration enum1 = lr.getCurrentLoggers();
@@ -231,13 +215,9 @@ public class XFT {
        DBPool.GetPool().closeConnections();
     }
 
-    public static void LogError(Object message, Throwable e)
-    {
-        logger.error(message,e);
-    }
-
     public static String buildLogFileName(ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException{
-        String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
+        // MIGRATE: This is iffy but I'm not sure it's ever used here.
+        String s = XDATServlet.getAppRelativeLocation("logs").getPath();
         if(!(new File(s)).exists())
         {
             (new File(s)).mkdir();
@@ -280,7 +260,8 @@ public class XFT {
         if (!fileName.startsWith("xdat:"))
         {
             try {
-                 String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
+                // MIGRATE: This is iffy but I'm not sure it's ever used here.
+                String s = XDATServlet.getAppRelativeLocation("logs").getPath();
                  if(!(new File(s)).exists())
                  {
                      (new File(s)).mkdir();
@@ -316,7 +297,8 @@ public class XFT {
         if (!item.getItem().getXSIType().startsWith("xdat:") && !item.getItem().getXSIType().startsWith("wrk:"))
         {
             try {
-                 String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
+                // MIGRATE: This is iffy but I'm not sure it's ever used here.
+                 String s = XDATServlet.getAppRelativeLocation("logs").getPath();
                  if(!(new File(s)).exists())
                  {
                      (new File(s)).mkdir();
@@ -794,15 +776,6 @@ public class XFT {
         XFT.UserRegistration=s;
     }
 
-    public static URI GetSettingsDirectory() throws XFTInitException
-    {
-        return XFTManager.GetInstance().getSourceDir();
-    }
-
-    public static URI GetConfDir(){
-        return CONF_DIR;
-    }
-    
     private static String EnableCsrfToken = "";
     public static boolean GetEnableCsrfToken()
     {

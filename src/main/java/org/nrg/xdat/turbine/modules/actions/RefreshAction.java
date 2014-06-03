@@ -17,6 +17,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTool;
@@ -36,13 +37,8 @@ public class RefreshAction extends AdminAction {
 			String refresh = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("refresh",data));
 			if (refresh.equalsIgnoreCase("security"))
 			{
-				String location = XFTTool.GetSettingsLocation();
-				location =FileUtils.AppendSlash(location);
-				File f = new File(location + "security.xml");
-				if (f.exists())
-				{
-					XFTTool.StoreXMLToDB(f,TurbineUtils.getUser(data),null,false);
-				}
+                // MIGRATE: Looks to be obsolete, security.xml is not packaged with the application.
+                XFTTool.StoreXMLToDB(XDATServlet.getConfigurationStream("security.xml"), TurbineUtils.getUser(data),null,false);
 			}else if (refresh.equalsIgnoreCase("DisplayManager"))
 			{
 				XDAT.RefreshDisplay();

@@ -9,8 +9,11 @@
  */
 package org.nrg.xft.schema;
 import java.io.File;
+import java.io.InputStream;
 import java.util.Hashtable;
 
+import com.google.common.base.Joiner;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
@@ -178,16 +181,22 @@ public class NodeWrapper {
 	public Node getNode() {
 		if (s != null)
 		{
-			File f = new File(s.getDataModel().getFileLocation() + s.getDataModel().getFileName());
+            // MIGRATE: This is all modified to deal with difference loading in a WAR-packaged web application. It looks for a file first, classpath resource next, then web-app relative resource last.
+            XFTDataModel dataModel = s.getDataModel();
+            File f = new File(dataModel.getFileLocation(), dataModel.getFileName());
 			Document doc;
 			if(f.exists()){
 				doc = XMLUtils.GetDOM(f);
-			}else{
-				String path=s.getDataModel().getFileLocation();
-				if(path.endsWith(File.separator)){
-					path=path.substring(0,path.length()-1);
-				}
-				doc = XMLUtils.GetDOM(getClass().getClassLoader().getResourceAsStream(path));
+			} else {
+                String relativePath = Joiner.on("/").join(dataModel.getFileLocation(), dataModel.getFileName());
+                InputStream stream = getClass().getClassLoader().getResourceAsStream(relativePath);
+                if (stream == null) {
+                    stream = XDATServlet.getAppRelativeStream(relativePath);
+                    if (stream == null) {
+                        throw new RuntimeException("Unable to locate resource identified by path: " + relativePath);
+                    }
+                }
+                doc = XMLUtils.GetDOM(stream);
 			}
 			
 			Element root = doc.getDocumentElement();

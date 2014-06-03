@@ -16,15 +16,8 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Properties;
-import java.util.Scanner;
-import java.util.UUID;
+import java.net.URI;
+import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -42,6 +35,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
@@ -346,17 +340,10 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
     protected List<Properties> findTabs(String subfolder) throws FileNotFoundException {
         List<Properties> tabs = new ArrayList<Properties>();
-        File tabsFolder = XDAT.getScreenTemplatesSubfolder(subfolder);
-        if (tabsFolder!=null && tabsFolder.exists()) {
-            File[] files = tabsFolder.listFiles(new FilenameFilter() {
-                @Override
-                public boolean accept(File folder, String name) {
-                    if (logger.isDebugEnabled()) {
-                        logger.debug("Testing the name: " + name + " in folder: " + folder.getAbsolutePath());
-                    }
-                    return name.endsWith(".vm");
-                }
-            });
+        String path = XDAT.getScreenTemplatesSubfolder(subfolder);
+        File tabsFolder = new File(path);
+        if (tabsFolder.exists()) {
+            File[] files = tabsFolder.listFiles(VM_FILENAME_FILTER);
 
             for (File file: files) {
                 try {
@@ -364,6 +351,11 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 				} catch (IOException e) {
 					logger.error("",e);
 				}
+            }
+        } else {
+            Set<String> files = XDATServlet.getAppRelativeLocationContents(VM_FILENAME_FILTER, path);
+            for (final String file : files) {
+                addProps(getFileName(file), XDATServlet.getAppRelativeStream(file), tabs, _defaultTabs, file);
             }
         }
         return tabs;
@@ -466,7 +458,25 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 	        response.setHeader("Pragma", "no-cache");
     	}
     }
-    
+
+    // MIGRATE: This is used both here and in XDATServlet. Probably this should all be moved into a helper class.
+    private static String getFileName(final String path) {
+        if (path.contains("/")) {
+            return path.substring(path.lastIndexOf("/") + 1);
+        }
+        return path;
+    }
+
     private List<String> _defaultTabs;
+
+    private static FilenameFilter VM_FILENAME_FILTER = new FilenameFilter() {
+        @Override
+        public boolean accept(File folder, String name) {
+            if (logger.isDebugEnabled()) {
+                logger.debug("Testing the name: " + name + (folder == null ? ", no folder specified" : " in folder: " + folder.getAbsolutePath()));
+            }
+            return name.endsWith(".vm");
+        }
+    };
 }
 

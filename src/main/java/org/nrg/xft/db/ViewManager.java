@@ -1045,16 +1045,21 @@ public class ViewManager {
 		return s;		
 	}
 	
-	public static void OutputFieldNames()
+	public static void OutputFieldNames(final String target)
 	{
 		try {
-			String local = XFTTool.GetSettingsLocation() + "fields" + File.separator;
-			File f = new File(local);
-			if (! f.exists())
-			{
-				f.mkdir();
-			}
-			
+            // MIGRATE: This tries to resolve from the file being used by the calling function.
+            File file = new File(target);
+            File destination;
+            if (file.isDirectory()) {
+                destination = new File(file.toURI().resolve("fields"));
+            } else {
+                destination = new File(file.getParentFile().toURI().resolve("fields"));
+            }
+            if (!destination.mkdir()) {
+                throw new RuntimeException("Failed to create destination folder: " + destination.getAbsolutePath());
+            }
+
 			StringBuffer hierarchy = new StringBuffer("Possible Parent Data-Types:");
 			
 			Iterator al = XFTMetaManager.GetElementNames().iterator();
@@ -1120,21 +1125,21 @@ public class ViewManager {
 					
 					
 					//OUTPUT TO FILE
-					File temp = new File(local + e.getSQLName() + ".txt");
+					File temp = new File(destination, e.getSQLName() + ".txt");
 					if (temp.exists())
 					{
 						temp.delete();
 					}
-					FileUtils.OutputToFile(sb.toString(),local + e.getSQLName() + ".txt");
+					FileUtils.OutputToFile(sb.toString(), temp.getAbsolutePath());
 				}
 			}
 			
-			File temp = new File(local + "hierarchy.txt");
+			File temp = new File(destination, "hierarchy.txt");
 			if (temp.exists())
 			{
 				temp.delete();
 			}
-			FileUtils.OutputToFile(hierarchy.toString(),local + "hierarchy.txt");
+			FileUtils.OutputToFile(hierarchy.toString(), temp.getAbsolutePath());
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

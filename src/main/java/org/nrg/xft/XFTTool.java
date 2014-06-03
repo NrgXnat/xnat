@@ -28,6 +28,7 @@ import org.nrg.xft.utils.XMLValidator;
 import org.w3c.dom.Document;
 
 import java.io.File;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 /**
@@ -219,7 +220,7 @@ public class XFTTool {
      * @return The document object for the XML.
      * @throws Exception All kinds of things can go wrong.
 	 */
-	public static Document StoreXMLToDB(File f, UserI user,Boolean quarantine,boolean allowItemRemoval) throws Exception
+	public static Document StoreXMLToDB(InputStream f, UserI user,Boolean quarantine,boolean allowItemRemoval) throws Exception
 	{
         if (user == null)
 	    {
@@ -307,11 +308,6 @@ public class XFTTool {
 		{
 			throw new ValidationException(vr);
 		}
-	}
-	
-	public static String GetSettingsLocation() throws XFTInitException
-	{
-		return XFTManager.GetInstance().getSourceDir().getPath();
 	}
 }
 

@@ -41,6 +41,7 @@ import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.XdatUserAuthService;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.PopulateItem;
@@ -94,10 +95,9 @@ public class XDAT implements Initializable,Configurable{
     private static SiteConfigurationService _siteConfigurationService;
     private static RegionFactory _cacheRegionFactory;
     public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
-    private static URI _configFilesLocation = null;
     private URI instanceSettingsLocation = null;
-    private static File _screenTemplatesFolder;
-    private static List<File> _screenTemplatesFolders=new ArrayList<File>();
+    private static String _screenTemplatesFolder;
+    private static Set<String> _screenTemplatesFolders=new HashSet<>();
     
     public static List<String> getWhitelistedIPs(XDATUser user) throws ConfigServiceException {
         return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
@@ -212,16 +212,16 @@ public class XDAT implements Initializable,Configurable{
 	{
 		try {
 			logger.info("Starting Service XDAT");
-			init(instanceSettingsLocation);
+			init();
 		} catch (Exception exception) {
-            System.out.println(exception);
+            System.out.println(exception.getMessage());
 			exception.printStackTrace();
 		}
 	}
 
-	public static void init(URI location) throws Exception
+	public static void init() throws Exception
 	{
-		XDAT.init(location, true, true);
+		XDAT.init(true, true);
 	}
 
 	public static void RefreshDisplay()
@@ -230,26 +230,20 @@ public class XDAT implements Initializable,Configurable{
 		DisplayManager.GetInstance();
 	}
 
-	public static void init(URI location,boolean allowDBAccess) throws Exception
+	public static void init(boolean allowDBAccess) throws Exception
 	{
-		init(location, allowDBAccess, true);
+		init(allowDBAccess, true);
 	}
 
-	public static void init(URI location,boolean allowDBAccess, boolean initLog4j) throws Exception
+	public static void init(boolean allowDBAccess, boolean initLog4j) throws Exception
 	{
 		DisplayManager.clean();
 
-        if (_configFilesLocation == null) {
-            _configFilesLocation = location;
-        }
-
-		if (initLog4j)
-		{
-			PropertyConfigurator.configure(_configFilesLocation + "log4j.properties");
-			initLog4j= false;
+		if (initLog4j) {
+			PropertyConfigurator.configure(XDATServlet.getConfigurationStream("log4j.properties"));
 		}
 
-		XFT.init(_configFilesLocation, initLog4j);
+		XFT.init(false);
 
 		if (allowDBAccess)
 		{
@@ -320,9 +314,9 @@ public class XDAT implements Initializable,Configurable{
 	    }
 	    buffer.append("\n-- commit transaction\n");
 	    buffer.append("COMMIT;");
-		FileUtils.OutputToFile(buffer.toString(),file);
+		FileUtils.OutputToFile(buffer.toString(), file);
 
-		ViewManager.OutputFieldNames();
+		ViewManager.OutputFieldNames(file);
 		logger.info("File Created: " + file);
 	}
 
@@ -395,10 +389,10 @@ public class XDAT implements Initializable,Configurable{
 
     
     public static void addScreenTemplatesFolder(String screenTemplatesFolder) {
-        _screenTemplatesFolders.add(new File(screenTemplatesFolder));
+        _screenTemplatesFolders.add(screenTemplatesFolder);
     }
 
-    public static List<File> getScreenTemplateFolders(){
+    public static Set<String> getScreenTemplateFolders(){
     	return _screenTemplatesFolders;
     }
     
@@ -408,34 +402,25 @@ public class XDAT implements Initializable,Configurable{
      * @return The full path to the screen templates folder.
      */
     public static String getScreenTemplatesFolder() {
-        return _screenTemplatesFolder.getAbsolutePath();
+        return _screenTemplatesFolder;
     }
 
     public static void setScreenTemplatesFolder(String screenTemplatesFolder) {
-        _screenTemplatesFolder = new File(screenTemplatesFolder);
+        _screenTemplatesFolder = screenTemplatesFolder;
+        if (!_screenTemplatesFolders.contains(screenTemplatesFolder)) {
+            _screenTemplatesFolders.add(screenTemplatesFolder);
+        }
     }
     
-    public static File getScreenTemplatesSubfolder(String subfolder) {
+    public static String getScreenTemplatesSubfolder(String subfolder) {
+        // MIGRATE: This returns the value of a validated subfolder in the web application. If it's not validated, it'll return null.
         if (StringUtils.isBlank(subfolder)) {
-            return new File(getScreenTemplatesFolder());
+            return getScreenTemplatesFolder();
         }
 
-        File current = new File(getScreenTemplatesFolder(), "");
-
-        String[] subfolders = subfolder.split("/");
-        for (String folder : subfolders) {
-            current = new File(current, folder);
-            if (!current.exists()) {
-                // This is actually OK, it just means there are no overrides, so return null.
-                return null;
-            }
-            if (!current.isDirectory()) {
-                logger.error("",new NrgRuntimeException("The path indicated by " + current.getAbsolutePath() + " isn't a folder."));
-                return null;
-            }
-        }
-
-        return current;
+        final String composite = _screenTemplatesFolder + (_screenTemplatesFolder.endsWith("/") || subfolder.startsWith("/") ? "" : "/") + subfolder;
+        final URI result = XDATServlet.getAppRelativeLocation(composite);
+        return result == null ? null : composite;
     }
     
 	/**

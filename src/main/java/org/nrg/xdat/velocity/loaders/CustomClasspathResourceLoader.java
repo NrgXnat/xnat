@@ -21,6 +21,8 @@ import org.nrg.xdat.servlet.XDATServlet;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import java.io.*;
+import java.net.MalformedURLException;
+import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 
@@ -77,7 +79,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             		if(known.startsWith("f:")){
             			//VMs found on the file system, will have f: on the start of their path.
     					try {
-							result=new BufferedInputStream(new FileInputStream(new File(XDATServlet.WEBAPP_ROOT.resolve(known.substring(2)))));
+							result = XDATServlet.getAppRelativeStream(known.substring(2));
 							if(result!=null){
 								return result;
 							}else{
@@ -143,25 +145,19 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 	 * @return
 	 */
 	private InputStream findMatch(String name, String possible){
-		try {
-			File f = new File(XDATServlet.WEBAPP_ROOT.resolve(possible));
-			if(f.exists()){
-				InputStream result= new BufferedInputStream(new FileInputStream(f));
-				templatePaths.put(name.intern(), ("f:"+possible).intern());
-				return result;
-			}
-		} catch (FileNotFoundException e) {
-			//ignore.  shouldn't happen because we check if it exists first.
-		}
-		
-		final InputStream result= this.getClass().getClassLoader().getResourceAsStream(safeJoin("/", META_INF_RESOURCES,possible));
+        // MIGRATE: This changed from opening a file to using the stream. Check on this.
+        InputStream result = XDATServlet.getAppRelativeStream(possible);
+        if (result != null) {
+            templatePaths.put(name.intern(), ("f:"+possible).intern());
+            return result;
+        }
+
+        result = this.getClass().getClassLoader().getResourceAsStream(safeJoin("/", META_INF_RESOURCES,possible));
 		if(result!=null){
 			//once we find a match, lets cache the name of it
 			templatePaths.put(name.intern(), ("c:"+possible).intern());
-		}else{
-			//check for file system file
-			
 		}
+
 		return result;
 	}
 	

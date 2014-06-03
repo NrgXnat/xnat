@@ -11,6 +11,7 @@ package org.nrg.xft.schema;
 import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.db.DBConfig;
@@ -26,18 +27,19 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
-import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import java.io.File;
 import java.io.InputStream;
-import java.net.URI;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
 
 /**
  * This singleton class manages the creation and manipulation of XFTDataModels.
@@ -69,11 +71,9 @@ public class XFTManager {
     private static Hashtable<String, XFTDataModel> DATA_MODELS = new Hashtable<>();
     private static Hashtable<String, String> ROOT_LEVEL_ELEMENTS= new Hashtable<>();
 
-    private URI sourceDir;
-
     /**
      * Gets singleton instance of the Manager
-     * @return
+     * @return The requested instance of the manager.
      * @throws XFTInitException
      */
     public static XFTManager GetInstance() throws XFTInitException
@@ -87,14 +87,12 @@ public class XFTManager {
 
     /**
      * Initializes the XFTManager (if it hasn't been already)
-     * @param schemaLocation
-     * @return
+     * @return An initialized manager.
      * @throws ElementNotFoundException
      */
-    public static XFTManager init(URI schemaLocation) throws ElementNotFoundException
-    {
+    public static XFTManager init() throws ElementNotFoundException, MalformedURLException, URISyntaxException {
         //XFT.LogCurrentTime("MANAGER INIT:1","ERROR");
-        MANAGER = new XFTManager(schemaLocation);
+        MANAGER = new XFTManager();
 
         //XFT.LogCurrentTime("MANAGER INIT:2","ERROR");
         try {
@@ -115,7 +113,7 @@ public class XFTManager {
 
     /**
      * returns the XFTElement which stores all of the element names.
-     * @return
+     * @return An element object.
      */
     public static XFTElement GetElementTable()
     {
@@ -124,7 +122,7 @@ public class XFTManager {
 
     /**
      * sets the XFTElement which stores all of the element names.
-     * @param xe
+     * @param xe    The element to set for the table.
      */
     public static void SetElementTable(XFTElement xe)
     {
@@ -135,15 +133,14 @@ public class XFTManager {
      * Re-Initializes the XFTManager
      * @throws XFTInitException
      */
-    public static void Refresh(URI sourceDirectory) throws XFTInitException,ElementNotFoundException
-    {
+    public static void Refresh() throws XFTInitException, ElementNotFoundException, MalformedURLException, URISyntaxException {
         MANAGER = null;
-        init(sourceDirectory);
+        init();
     }
 
     /**
      * Gets the XFTSchemas contained in the XFTDataModels collection
-     * @return
+     * @return A list of available schema.
      * @see XFTSchema
      */
     public static ArrayList GetSchemas()
@@ -175,44 +172,15 @@ public class XFTManager {
     public static void AddRootElement(String name, String elementName) {
         ROOT_LEVEL_ELEMENTS.put(name,elementName);
     }
-    /**
-     * Source directory where the InstanceSettings.xml document can be found.
-     * @return
-     */
-    public URI getSourceDir() {
-        return sourceDir;
-    }
-
-    /**
-     * Source directory where the InstanceSettings.xml document can be found.
-     * @param dir    The source directory.
-     */
-    public void setSourceDir(URI dir) {
-        sourceDir = dir;
-    }
 
     /**
      * Access the InstanceSettings.xml document, and parses it to create a
      * collection of DB Connections in the DBPool and a collection of XFTDataModels (local).
-     * @param source location where InstanceSettings.xml can be found.
      * @throws ElementNotFoundException
      */
-    private XFTManager(URI source) throws ElementNotFoundException
-    {
+    private XFTManager() throws ElementNotFoundException {
         logger.debug("Java Version is: " + System.getProperty("java.version"));
-        if (source.toString().contains("WEB-INF")){
-            String path = source.toString();
-            try {
-                sourceDir = new URI(path.substring(0, path.indexOf("WEB-INF")));
-            } catch (URISyntaxException ignored) {
-                // Just shouldn't happen.
-            }
-        }else{
-            sourceDir = source;
-        }
-
-        File file = new File(source.resolve("InstanceSettings.xml"));
-        Document doc = XMLUtils.GetDOM(file);
+        Document doc = XMLUtils.GetDOM(XDATServlet.getConfigurationStream("InstanceSettings.xml"));
         Element root = doc.getDocumentElement();
 
         ViewManager.PRE_LOAD_HISTORY = NodeUtils.GetBooleanAttributeValue(root,"Pre_Load_History",false);
@@ -327,7 +295,7 @@ public class XFTManager {
                                 }
                                 if (NodeUtils.HasAttribute(child2,"MaxConnections"))
                                 {
-                                    db.setMaxConnections(new Integer(NodeUtils.GetAttributeValue(child2,"MaxConnections","")).intValue());
+                                    db.setMaxConnections(new Integer(NodeUtils.GetAttributeValue(child2, "MaxConnections", "")));
                                 }
                                 DBPool.AddDBConfig(db);
                            }
@@ -355,12 +323,7 @@ public class XFTManager {
                                 }
                                 if (NodeUtils.HasAttribute(child2,"File_Location"))
                                 {
-                                    String file_location = NodeUtils.GetAttributeValue(child2,"File_Location","");
-                                    if (!FileUtils.IsAbsolutePath(file_location))
-                                    {
-                                        file_location = sourceDir + file_location;
-                                    }
-                                    model.setFileLocation(file_location);
+                                    model.setFileLocation(NodeUtils.GetAttributeValue(child2,"File_Location",""));
                                 }
                                 if (NodeUtils.HasAttribute(child2,"DB"))
                                 {

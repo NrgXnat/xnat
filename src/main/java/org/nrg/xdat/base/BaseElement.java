@@ -343,7 +343,7 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
 	        try {
                 Velocity.templateExists(templateName);
                 velocityInit=true;
-            } catch (Exception e1) {
+            } catch (Exception ignored) {
             }
 
             if (velocityInit)
@@ -361,69 +361,70 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
                     logger.info("No Velocity TEXT vm found for " + getItem().getGenericSchemaElement().getFullXMLName());
                     return getItem().toXML_String();
                 }
-            }else
-            {
-                VelocityUtils.init();
-                boolean exists= Velocity.templateExists(getItem().getGenericSchemaElement().getFormattedName() +"_text.vm");
-                String path = XFTManager.GetInstance().getSourceDir() + "src/templates/text/"+ templateName;
-                File f = new File(path);
-                if (f.exists())
-                {
-                    VelocityContext context = new VelocityContext();
-                    context.put("item",this);
-                    StringWriter sw = new StringWriter();
-
-                    Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-
-                    return sw.toString();
-                }else {
-                    path = XFTManager.GetInstance().getSourceDir() + "src/xnat-templates/text/"+ templateName;
-                    f = new File(path);
-                    if (f.exists())
-                    {
-                        VelocityContext context = new VelocityContext();
-                        context.put("item",this);
-                        StringWriter sw = new StringWriter();
-
-                        Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-
-                        return sw.toString();
-                    }else{
-                        path = XFTManager.GetInstance().getSourceDir() + "src/xdat-templates/text/"+ templateName;
-                        f = new File(path);
-                        if (f.exists())
-                        {
-                            VelocityContext context = new VelocityContext();
-                            context.put("item",this);
-                            StringWriter sw = new StringWriter();
-
-                            Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-
-                            return sw.toString();
-                        }else{
-                            path = XFTManager.GetInstance().getSourceDir() + "src/base-templates/text/"+ templateName;
-                            f = new File(path);
-                            if (f.exists())
-                            {
-                                VelocityContext context = new VelocityContext();
-                                context.put("item",this);
-                                StringWriter sw = new StringWriter();
-
-                                Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-
-                                return sw.toString();
-                            }else{
-            	                logger.info("No Velocity TEXT vm found for " + getItem().getGenericSchemaElement().getFullXMLName() +" at " + path);
-            	                return getItem().toXML_String();
-            	            }
-        	            }
-    	            }
-                }
             }
+// MIGRATE: I think this is basically deprecated. For example, there is no "src/templates/text" folder to look in.
+//            else {
+//                VelocityUtils.init();
+//                boolean exists= Velocity.templateExists(getItem().getGenericSchemaElement().getFormattedName() +"_text.vm");
+//                String path = XFTManager.GetInstance().getSourceDir() + "src/templates/text/"+ templateName;
+//                File f = new File(path);
+//                if (f.exists())
+//                {
+//                    VelocityContext context = new VelocityContext();
+//                    context.put("item",this);
+//                    StringWriter sw = new StringWriter();
+//
+//                    Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
+//
+//                    return sw.toString();
+//                }else {
+//                    path = XFTManager.GetInstance().getSourceDir() + "src/xnat-templates/text/"+ templateName;
+//                    f = new File(path);
+//                    if (f.exists())
+//                    {
+//                        VelocityContext context = new VelocityContext();
+//                        context.put("item",this);
+//                        StringWriter sw = new StringWriter();
+//
+//                        Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
+//
+//                        return sw.toString();
+//                    }else{
+//                        path = XFTManager.GetInstance().getSourceDir() + "src/xdat-templates/text/"+ templateName;
+//                        f = new File(path);
+//                        if (f.exists())
+//                        {
+//                            VelocityContext context = new VelocityContext();
+//                            context.put("item",this);
+//                            StringWriter sw = new StringWriter();
+//
+//                            Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
+//
+//                            return sw.toString();
+//                        }else{
+//                            path = XFTManager.GetInstance().getSourceDir() + "src/base-templates/text/"+ templateName;
+//                            f = new File(path);
+//                            if (f.exists())
+//                            {
+//                                VelocityContext context = new VelocityContext();
+//                                context.put("item",this);
+//                                StringWriter sw = new StringWriter();
+//
+//                                Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
+//
+//                                return sw.toString();
+//                            }else{
+//            	                logger.info("No Velocity TEXT vm found for " + getItem().getGenericSchemaElement().getFullXMLName() +" at " + path);
+//            	                return getItem().toXML_String();
+//            	            }
+//        	            }
+//    	            }
+//                }
+//            }
         } catch (Exception e) {
             logger.error("",e);
-            return getItem().toXML_String();
         }
+        return getItem().toXML_String();
     }
 
     public String output()

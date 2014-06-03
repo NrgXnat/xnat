@@ -6862,30 +6862,32 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	public String output(String templateName)
 	{
-	    try {
-            VelocityUtils.init();
-            
-            if(templateName==null)templateName=this.getGenericSchemaElement().getFormattedName() +"_text.vm";
-
-            String path = XFTManager.GetInstance().getSourceDir() + "src/templates/text/"+ templateName;
-            File f = new File(path);
-            if (f.exists())
-            {
-                VelocityContext context = new VelocityContext();
-                context.put("item",this);
-                StringWriter sw = new StringWriter();
-
-                Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-
-                return sw.toString();
-            }else{
-                logger.info("No Velocity TEXT vm found for " + this.getGenericSchemaElement().getFullXMLName() +" at " + path);
-                return this.toXML_String();
-            }
-        } catch (Exception e) {
-            logger.error("",e);
-            return this.toXML_String();
-        }
+        return this.toXML_String();
+// MIGRATE: I think this is basically deprecated. For example, there is no "src/templates/text" folder to look in.
+//	    try {
+//            VelocityUtils.init();
+//
+//            if(templateName==null)templateName=this.getGenericSchemaElement().getFormattedName() +"_text.vm";
+//
+//            String path = XFTManager.GetInstance().getSourceDir() + "src/templates/text/"+ templateName;
+//            File f = new File(path);
+//            if (f.exists())
+//            {
+//                VelocityContext context = new VelocityContext();
+//                context.put("item",this);
+//                StringWriter sw = new StringWriter();
+//
+//                Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
+//
+//                return sw.toString();
+//            }else{
+//                logger.info("No Velocity TEXT vm found for " + this.getGenericSchemaElement().getFullXMLName() +" at " + path);
+//                return this.toXML_String();
+//            }
+//        } catch (Exception e) {
+//            logger.error("",e);
+//            return this.toXML_String();
+//        }
 	}
 
 	public String output()

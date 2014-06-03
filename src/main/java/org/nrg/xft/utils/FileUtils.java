@@ -165,17 +165,18 @@ public  class FileUtils
         }
     }
 
-	public static void OutputToSubFolder(String folder, String file, String content) throws XFTInitException
-	{
-		String local = XFTTool.GetSettingsLocation() + folder + File.separator;
-		File f = new File(local);
-		if (! f.exists())
-		{
-			f.mkdir();
-		}
-
-		OutputToFile(content,XFTTool.GetSettingsLocation() + folder + File.separator + file);
-	}
+// MIGRATE: Not used anywhere, so I think it's OK to go away.
+//	public static void OutputToSubFolder(String folder, String file, String content) throws XFTInitException
+//	{
+//		String local = XFTTool.GetSettingsLocation() + folder + File.separator;
+//		File f = new File(local);
+//		if (! f.exists())
+//		{
+//			f.mkdir();
+//		}
+//
+//		OutputToFile(content,XFTTool.GetSettingsLocation() + folder + File.separator + file);
+//	}
 
 	public static boolean SearchFolderForChild(File folder, String folderName)
 	{

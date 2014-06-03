@@ -7,14 +7,15 @@
  * Created on Mar 17, 2004
  */
 package org.nrg.xft.schema;
-import java.io.File;
+import java.io.InputStream;
+import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.db.DBConfig;
 import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -24,7 +25,6 @@ import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactoryI;
-import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.XMLUtils;
@@ -79,7 +79,13 @@ public class XFTSchema {
     private boolean nullXMLNSPrefix = false;
 	
 	private DBConfig config = null;
-	
+
+    public XFTSchema(String dir, String file, XFTDataModel data) throws XFTInitException,ElementNotFoundException {
+        InputStream stream = XDATServlet.getAppRelativeStream(dir, file);
+        Document dom = XMLUtils.GetDOM(stream);
+        init(dom, dir, data);
+    }
+
 	/**
 	 * Constructs an XFTSchema object from the XML DOM Document. Stores each root level node
 	 * in the XML DOM Document as a NodeWrapper. All import nodes are added as additional 
@@ -91,8 +97,12 @@ public class XFTSchema {
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public XFTSchema(Document doc,String dir,XFTDataModel data) throws XFTInitException,ElementNotFoundException {
-		this.setDataModel(data);
+	public XFTSchema(Document doc, String dir, XFTDataModel data) throws XFTInitException,ElementNotFoundException {
+        init(doc, dir, data);
+    }
+
+	private void init(Document doc, String dir, XFTDataModel data) throws XFTInitException,ElementNotFoundException {
+        this.setDataModel(data);
 		final Element rootElement = doc.getDocumentElement();
 				
 		//Set XMLSchema prefix
@@ -149,47 +159,30 @@ public class XFTSchema {
 				NodeWrapper.AddNode(NodeUtils.GetNodeName(element),null,this);
 			}
 		}
-		
-		Iterator includeNodes = NodeUtils.GetLevelNNodes(rootElement,getXMLNS() + ":include",1).iterator();
-		while (includeNodes.hasNext())
-		{
-			Node n = (Node)includeNodes.next();
-			String schemaLocal = NodeUtils.GetAttributeValue(n,"schemaLocation","");
-			String tempDir = null;
-			if (schemaLocal.indexOf(File.separator) == -1)
-			{
-				if (dir.endsWith(File.separator))
-				{
-					tempDir =dir + schemaLocal;
-				}else{
-					tempDir =dir + File.separator + schemaLocal;	
-				}
-			}else
-			{
-				tempDir = schemaLocal;
-			}
-			File f = new File(tempDir);
-			if (f.exists())
-			{
-				String fileName = StringUtils.GetFileName(tempDir);
-				if (XFTManager.GetDataModels().get(fileName) == null)
-				{
-					XFTDataModel model = new XFTDataModel();
-					model.setFileName(fileName);
-					model.setFileLocation(StringUtils.GetDirName(tempDir));
-					model.setDb(this.getDataModel().getDb());
 
-					XFTManager.GetDataModels().put(model.getFileName(),model);
-					try {
-						model.setSchema();
-					} catch (XFTInitException e) {
-						e.printStackTrace();
-					} catch (ElementNotFoundException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}		
+// MIGRATE: This code should be deprecated. This removes support for using foo:include to reference other schema. All schema should be referenced through InstanceSettings.xml.
+//        for (final Node node : NodeUtils.GetLevelNNodes(rootElement, getXMLNS() + ":include", 1)) {
+//            String schemaLocal = NodeUtils.GetAttributeValue(node, "schemaLocation", "");
+//            URI location = XDATServlet.getAppRelativeLocation(dir, schemaLocal);
+//            if (location != null) {
+//                String fileName = StringUtils.GetFileName(location.getPath());
+//                if (XFTManager.GetDataModels().get(fileName) == null) {
+//                    XFTDataModel model = new XFTDataModel();
+//                    model.setFileName(fileName);
+//                    model.setFileLocation(StringUtils.GetDirName(location.getPath()));
+//                    model.setDb(this.getDataModel().getDb());
+//
+//                    XFTManager.GetDataModels().put(model.getFileName(), model);
+//                    try {
+//                        model.setSchema();
+//                    } catch (XFTInitException e) {
+//                        e.printStackTrace();
+//                    } catch (ElementNotFoundException e) {
+//                        e.printStackTrace();
+//                    }
+//                }
+//            }
+//        }
 		
 		int counter = 1;
 		logger.debug("Loading Schema '" + data.getFileName() +"' FROM '" + dir + "'...");		
@@ -268,10 +261,10 @@ public class XFTSchema {
 ////							NO ELEMENT CREATED	
 //							if (elementType.equalsIgnoreCase(""))
 //							{
-//								Node n = NodeUtils.GetLevel2Child(element,"xs:restriction");
-//								if (n!= null)
+//								Node node = NodeUtils.GetLevel2Child(element,"xs:restriction");
+//								if (node!= null)
 //								{
-//									elementType = NodeUtils.GetAttributeValue(n,"base","");
+//									elementType = NodeUtils.GetAttributeValue(node,"base","");
 //								}
 //							}
 //							if ((elementName != "") && (elementType != ""))
@@ -547,9 +540,9 @@ public class XFTSchema {
 	public String toString()
 	{
 //		java.lang.StringBuffer sb = new StringBuffer();
-//		sb.append("\nXFTSchema\n");
+//		sb.append("\nXFTSchema\node");
 //		if (getDbType() != "")
-//			sb.append("dbType:").append(this.getDbType()).append("\n");
+//			sb.append("dbType:").append(this.getDbType()).append("\node");
 //		if (getWebAppSchema() != null)
 //			sb.append(this.getWebAppSchema().toString("\t"));
 //		
@@ -754,22 +747,23 @@ public class XFTSchema {
 	/**
 	 * Writes schema to text file in the XFTManager's source directory called schema.txt.
 	 */
-	public static void OutputSchema()
-	{
-		try {
-			StringBuffer sb = new StringBuffer();
-			Enumeration enumer = XFTManager.GetDataModels().keys();
-			while(enumer.hasMoreElements())
-			{
-				sb.append(((XFTDataModel)XFTManager.GetDataModels().get(enumer.nextElement())).getSchema().toString());
-			}
-			FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir() + "schema.txt");
-		} catch (org.nrg.xft.exception.XFTInitException e) {
-			logger.error("",e);
-		} catch (Exception e) {
-			logger.error("",e);
-		}
-	}
+// MIGRATE: This was called from TorqueSchemaGenerator so totally obsolete.
+//	public static void OutputSchema()
+//	{
+//		try {
+//			StringBuffer sb = new StringBuffer();
+//			Enumeration enumer = XFTManager.GetDataModels().keys();
+//			while(enumer.hasMoreElements())
+//			{
+//				sb.append(((XFTDataModel)XFTManager.GetDataModels().get(enumer.nextElement())).getSchema().toString());
+//			}
+//			FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir() + "schema.txt");
+//		} catch (org.nrg.xft.exception.XFTInitException e) {
+//			logger.error("",e);
+//		} catch (Exception e) {
+//			logger.error("",e);
+//		}
+//	}
 
 	/**
 	 * @return
@@ -794,7 +788,8 @@ public class XFTSchema {
 	}
 
 	/**
-	 * @param string
+     * Sets the data model.
+	 * @param data    The data model to set.
 	 */
 	public void setDataModel(XFTDataModel data) {
 		dataModel = data;
@@ -824,7 +819,7 @@ public class XFTSchema {
 	}
 	
 	/**
-	 * @param prefix
+	 * @param uri    The URI for which to get a prefix.
 	 * @return
 	 */
 	public String getPrefixForURI(String uri)

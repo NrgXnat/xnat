@@ -9,21 +9,20 @@
  */
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.io.File;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.utils.FileUtils;
+
 /**
  * @author Tim
  *
@@ -38,7 +37,7 @@ public class RefreshAction extends AdminAction {
 			if (refresh.equalsIgnoreCase("security"))
 			{
                 // MIGRATE: Looks to be obsolete, security.xml is not packaged with the application.
-                XFTTool.StoreXMLToDB(XDATServlet.getConfigurationStream("security.xml"), TurbineUtils.getUser(data),null,false);
+                XFTTool.StoreXMLToDB(XDAT.getContextService().getConfigurationStream("security.xml"), TurbineUtils.getUser(data),null,false);
 			}else if (refresh.equalsIgnoreCase("DisplayManager"))
 			{
 				XDAT.RefreshDisplay();

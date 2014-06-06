@@ -1,14 +1,13 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.security;
 
+import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.services.AliasTokenService;
-import org.nrg.xdat.servlet.XDATServlet;
 
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URISyntaxException;
 import java.util.HashMap;
 import java.util.Properties;
 
@@ -19,7 +18,7 @@ public class Authenticator {
     public synchronized static String RetrieveAuthenticatorClassName() {
         // MIGRATE: Went straight to inputstream instead of file.
         if (AUTH_CLASS == null) {
-            InputStream inputs = XDATServlet.getConfigurationStream("authentication.properties");
+            InputStream inputs = XDAT.getContextService().getConfigurationStream("authentication.properties");
             if (inputs != null) {
                 try {
                     Properties properties = new Properties();

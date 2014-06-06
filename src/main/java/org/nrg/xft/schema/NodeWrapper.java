@@ -13,7 +13,7 @@ import java.io.InputStream;
 import java.util.Hashtable;
 
 import com.google.common.base.Joiner;
-import org.nrg.xdat.servlet.XDATServlet;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
@@ -52,8 +52,8 @@ public class NodeWrapper {
 	 * the elements full local xml type (local prefix + type) as the key.
 	 */
 	public final static Hashtable ALL_NODES = new Hashtable();
-	
-	/**
+
+    /**
 	 * Adds a new NodeWrapper to the ALL_NODES collection of loaded nodes
 	 * using the input variables.  The schema's definedPrefix is used with the
 	 * name variable to create the node's XMLType.
@@ -191,7 +191,7 @@ public class NodeWrapper {
                 String relativePath = Joiner.on("/").join(dataModel.getFileLocation(), dataModel.getFileName());
                 InputStream stream = getClass().getClassLoader().getResourceAsStream(relativePath);
                 if (stream == null) {
-                    stream = XDATServlet.getAppRelativeStream(relativePath);
+                    stream = XDAT.getContextService().getAppRelativeStream(relativePath);
                     if (stream == null) {
                         throw new RuntimeException("Unable to locate resource identified by path: " + relativePath);
                     }

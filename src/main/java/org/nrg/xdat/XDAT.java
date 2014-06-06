@@ -24,7 +24,6 @@ import org.hibernate.cache.spi.RegionFactory;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.SiteConfigurationService;
-import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.MarshallerCacheService;
 import org.nrg.framework.services.PropertiesService;
@@ -41,7 +40,6 @@ import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.PopulateItem;
@@ -240,7 +238,7 @@ public class XDAT implements Initializable,Configurable{
 		DisplayManager.clean();
 
 		if (initLog4j) {
-			PropertyConfigurator.configure(XDATServlet.getConfigurationStream("log4j.properties"));
+			PropertyConfigurator.configure(getContextService().getConfigurationStream("log4j.properties"));
 		}
 
 		XFT.init(false);
@@ -419,7 +417,7 @@ public class XDAT implements Initializable,Configurable{
         }
 
         final String composite = _screenTemplatesFolder + (_screenTemplatesFolder.endsWith("/") || subfolder.startsWith("/") ? "" : "/") + subfolder;
-        final URI result = XDATServlet.getAppRelativeLocation(composite);
+        final URI result = getContextService().getAppRelativeLocation(composite);
         return result == null ? null : composite;
     }
     

@@ -8,9 +8,9 @@ package org.nrg.xdat.turbine.modules.screens;
 import org.apache.ecs.ConcreteElement;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.servlet.XDATServlet;
+import org.nrg.framework.services.ContextService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.utils.FileUtils;
 
 import javax.servlet.ServletOutputStream;
@@ -18,7 +18,6 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.net.URI;
 
 /**
  * @author Tim
@@ -43,7 +42,7 @@ public abstract class FileScreen extends SecureScreen {
         {
         	//if file doesn't exist return this image... Throwing an exception should skip this.
             // MIGRATE: Not sure how this might work.
-            f = new File(XDATServlet.getAppRelativeLocation("images/rc.gif"));
+            f = new File(XDAT.getContextService().getAppRelativeLocation("images/rc.gif"));
         }
         
           HttpServletResponse response =data.getResponse();

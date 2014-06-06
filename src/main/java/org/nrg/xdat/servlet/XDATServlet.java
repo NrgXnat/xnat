@@ -9,11 +9,11 @@
  */
 package org.nrg.xdat.servlet;
 
-import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
+import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.ElementSecurity;
@@ -32,16 +32,12 @@ import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
 import javax.servlet.ServletConfig;
-import javax.servlet.ServletContext;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FilenameFilter;
 import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
 import java.sql.SQLException;
 import java.util.*;
 import java.util.logging.Handler;
@@ -57,7 +53,6 @@ import java.util.logging.LogManager;
 @SuppressWarnings("serial")
 public class XDATServlet extends HttpServlet{
     private static final Logger logger = LoggerFactory.getLogger(XDATServlet.class);
-    private static ServletContext _context;
 
 	/* (non-Javadoc)
 	 * @see javax.servlet.GenericServlet#init(javax.servlet.ServletConfig)
@@ -68,8 +63,6 @@ public class XDATServlet extends HttpServlet{
 		replaceLogging();
 
 		super.init(config);
-
-        _context = getServletContext();
 
 		try {
 			XDAT.init(true, false); //initializes the XDAT engine (and XFT implicitly)
@@ -97,127 +90,6 @@ public class XDATServlet extends HttpServlet{
         }
         super.destroy();
 	}
-
-    /**
-     * Returns the URI of the specified relative path within the web application. If no resource is found at the
-     * indicated path, this method returns <b>null</b>.
-     * @param relativePaths    The path or path components.
-     * @return A URI for the indicated resource or <b>null</b> if not found.
-     */
-    public static URI getAppRelativeLocation(final String... relativePaths) {
-        try {
-            return _context.getResource(joinPaths(relativePaths)).toURI();
-        } catch (URISyntaxException | MalformedURLException e) {
-            return null;
-        }
-    }
-
-    /**
-     * Locates the resource at the specified relative path within the web application. If no resource is found at the
-     * indicated path, this method returns <b>null</b>.
-     * @param relativePaths    The path or path components.
-     * @return An input stream for the indicated resource or <b>null</b> if not found.
-     */
-    public static InputStream getAppRelativeStream(final String... relativePaths) {
-        return _context.getResourceAsStream(joinPaths(relativePaths));
-    }
-
-    /**
-     * Gets all of the contents of the indicated relative path. This returns subfolders and file contents without
-     * descending into the subfolders. If you want to find all children, including those in subfolders, use the
-     * {@link #getAppRelativeLocationChildren(String...)} method. If you want to filter the filenames returned without
-     * descending, use the {@link #getAppRelativeLocationContents(java.io.FilenameFilter, String...)} method.
-     * @param relativePaths    The relative paths to search.
-     * @return A set of paths to the contents of the indicated relative path.
-     */
-    public static Set<String> getAppRelativeLocationContents(final String... relativePaths) {
-        return getAppRelativeLocationContents(null, relativePaths);
-    }
-
-    /**
-     * Gets all of the file contents of the indicated relative path that match the submitted filename filter. This
-     * return subfolders and filter contents without descending into the subfolders. If you want to find all children,
-     * including those in subfolders, use the {@link #getAppRelativeLocationChildren(java.io.FilenameFilter, String...)}
-     * method.
-     * Note that the <b>File</b> parameter of the {@link java.io.FilenameFilter#accept(java.io.File, String)} method
-     * will always be null, so your implementation shouldn't use that parameter and only match the name. If you want to
-     * include subfolders in your results, add a condition to match names that {@link java.lang.String#endsWith(String)
-     * end with the '/' character}.
-     * @param filter           An implementation of the {@link java.io.FilenameFilter} class that filters on filename.
-     * @param relativePaths    The relative paths to search.
-     * @return A set of paths to the contents of the indicated relative path.
-     */
-    public static Set<String> getAppRelativeLocationContents(FilenameFilter filter, final String... relativePaths) {
-        final Set<String> paths = _context.getResourcePaths(joinPaths(relativePaths));
-        if (filter == null) {
-            return paths;
-        }
-        final Set<String> accepted = new HashSet<>();
-        for (final String path : paths) {
-            if (filter.accept(null, getFileName(path))) {
-                accepted.add(path);
-            }
-        }
-        return accepted;
-    }
-
-    /**
-     * Gets all of the file contents of the indicated relative path and its subfolders. This does not return subfolders,
-     * but resolves the contents of all subfolders. If you want to find just the contents of the path, including
-     * subfolders, without descending, use the {@link #getAppRelativeLocationContents(String...)} method.
-     * @param relativePaths    The relative paths to search.
-     * @return A set of paths to the contents of the indicated relative path.
-     */
-    public static Set<String> getAppRelativeLocationChildren(final String... relativePaths) {
-        return getAppRelativeLocationChildren(null, relativePaths);
-    }
-
-    /**
-     * Gets all of the file contents of the indicated relative path and its subfolders. This does not return subfolders,
-     * but resolves the contents of all subfolders. If you want to find just the contents of the path, including
-     * subfolders, without descending, use the {@link #getAppRelativeLocationContents(String...)} method.
-     * Note that the <b>File</b> parameter of the {@link java.io.FilenameFilter#accept(java.io.File, String)} method
-     * will always be null, so your implementation shouldn't use that parameter and only match the name.
-     * @param filter           An implementation of the {@link java.io.FilenameFilter} class that filters on filename.
-     * @param relativePaths    The relative paths to search.
-     * @return A set of paths to the contents of the indicated relative path.
-     */
-    public static Set<String> getAppRelativeLocationChildren(final FilenameFilter filter, final String... relativePaths) {
-        final Set<String> found = getAppRelativeLocationContents(relativePaths);
-        final Set<String> children = new HashSet<>();
-        for (final String current : found) {
-            if (!current.endsWith("/")) {
-                if (filter == null || filter.accept(null, getFileName(current))) {
-                    children.add(current);
-                }
-            } else {
-                children.addAll(getAppRelativeLocationChildren(current));
-            }
-        }
-        return children;
-    }
-
-    /**
-     * This is a convenience wrapper around the {@link #getAppRelativeLocation(String...)} method that takes a single
-     * resource name and tries to load it from the configuration folder (by default, WEB-INF/conf).
-     *
-     * @param configuration    The resource to retrieve.
-     * @return A URI for the requested resource if found, <b>null</b> if not.
-     */
-    public static URI getConfigurationLocation(final String configuration) {
-        return getAppRelativeLocation("WEB-INF", "conf", configuration);
-    }
-
-    /**
-     * This is a convenience wrapper around the {@link #getAppRelativeStream(String...)} method that takes a single
-     * resource name and tries to load it from the configuration folder (by default, WEB-INF/conf).
-     *
-     * @param configuration    The resource to retrieve.
-     * @return An input stream for the requested resource if found, <b>null</b> if not.
-     */
-    public static InputStream getConfigurationStream(final String configuration) {
-        return getAppRelativeStream("WEB-INF", "conf", configuration);
-    }
 
     public class SequenceUpdater extends Thread{
 		public void run(){
@@ -402,12 +274,12 @@ public class XDATServlet extends HttpServlet{
 
         //this should use the config service.. but I couldn't get it to work because of servlet init issues.
         Properties prop = new Properties();
-        String dbProperties = joinPaths(config, "properties", "database.properties");
+        String dbProperties = ContextService.joinPaths(config, "properties", "database.properties");
         File f = new File(dbProperties);
         if(f.exists()){
             prop.load(new FileInputStream(f));
         } else {
-            InputStream stream = getAppRelativeStream(config);
+            InputStream stream = XDAT.getContextService().getAppRelativeStream(config);
             if (stream != null) {
                 prop.load(stream);
             }
@@ -486,16 +358,5 @@ public class XDATServlet extends HttpServlet{
 		} 
 	}
 
-    private static String getFileName(final String path) {
-        if (path.contains("/")) {
-            return path.substring(path.lastIndexOf("/") + 1);
-        }
-        return path;
-    }
-
-    private static String joinPaths(String... elements){
-        // MIGRATE: This is not using File.separator, since that causes issues locating files via URI, JNDI, etc.
-        return Joiner.on("/").join(elements);
-    }
 }
 

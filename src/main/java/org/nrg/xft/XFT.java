@@ -14,8 +14,8 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.spi.LoggerRepository;
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -155,7 +155,7 @@ public class XFT {
 
     public static void initLog4j()
     {
-        PropertyConfigurator.configure(XDATServlet.getConfigurationStream("log4j.properties"));
+        PropertyConfigurator.configure(XDAT.getContextService().getConfigurationStream("log4j.properties"));
 
         logger.info("");
         Logger.getLogger("org.nrg.xft.db.PoolDBUtils").error("");
@@ -217,7 +217,7 @@ public class XFT {
 
     public static String buildLogFileName(ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException{
         // MIGRATE: This is iffy but I'm not sure it's ever used here.
-        String s = XDATServlet.getAppRelativeLocation("logs").getPath();
+        String s = XDAT.getContextService().getAppRelativeLocation("logs").getPath();
         if(!(new File(s)).exists())
         {
             (new File(s)).mkdir();
@@ -261,7 +261,7 @@ public class XFT {
         {
             try {
                 // MIGRATE: This is iffy but I'm not sure it's ever used here.
-                String s = XDATServlet.getAppRelativeLocation("logs").getPath();
+                String s = XDAT.getContextService().getAppRelativeLocation("logs").getPath();
                  if(!(new File(s)).exists())
                  {
                      (new File(s)).mkdir();
@@ -298,7 +298,7 @@ public class XFT {
         {
             try {
                 // MIGRATE: This is iffy but I'm not sure it's ever used here.
-                 String s = XDATServlet.getAppRelativeLocation("logs").getPath();
+                 String s = XDAT.getContextService().getAppRelativeLocation("logs").getPath();
                  if(!(new File(s)).exists())
                  {
                      (new File(s)).mkdir();

@@ -8,14 +8,14 @@
  */
 package org.nrg.xft.schema;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.servlet.XDATServlet;
+import org.nrg.framework.services.ContextService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.db.DBConfig;
 import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -81,7 +81,7 @@ public class XFTSchema {
 	private DBConfig config = null;
 
     public XFTSchema(String dir, String file, XFTDataModel data) throws XFTInitException,ElementNotFoundException {
-        InputStream stream = XDATServlet.getAppRelativeStream(dir, file);
+        InputStream stream = XDAT.getContextService().getAppRelativeStream(dir, file);
         Document dom = XMLUtils.GetDOM(stream);
         init(dom, dir, data);
     }

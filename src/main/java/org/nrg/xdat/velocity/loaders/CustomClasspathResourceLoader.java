@@ -17,12 +17,11 @@ import org.apache.log4j.Logger;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
-import org.nrg.xdat.servlet.XDATServlet;
+import org.nrg.framework.services.ContextService;
+import org.nrg.xdat.XDAT;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import java.io.*;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import java.net.URL;
 import java.util.*;
 
@@ -34,6 +33,7 @@ import java.util.*;
  * This allows VMs to be loaded from within JAR files but is still backwards compatible with the old file system structure.  Also, the loading enforces 
  * the templates/xnat-templates/xdat-templates/base-templates hierarchy.
  */
+// MIGRATE: This will probably fail because it's not properly loading the resources from the web app.
 public class CustomClasspathResourceLoader extends ResourceLoader {
 	static Logger logger = Logger.getLogger(CustomClasspathResourceLoader.class);
 
@@ -79,7 +79,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             		if(known.startsWith("f:")){
             			//VMs found on the file system, will have f: on the start of their path.
     					try {
-							result = XDATServlet.getAppRelativeStream(known.substring(2));
+							result = XDAT.getContextService().getAppRelativeStream(known.substring(2));
 							if(result!=null){
 								return result;
 							}else{
@@ -146,7 +146,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 	 */
 	private InputStream findMatch(String name, String possible){
         // MIGRATE: This changed from opening a file to using the stream. Check on this.
-        InputStream result = XDATServlet.getAppRelativeStream(possible);
+        InputStream result = XDAT.getContextService().getAppRelativeStream(possible);
         if (result != null) {
             templatePaths.put(name.intern(), ("f:"+possible).intern());
             return result;

@@ -16,7 +16,6 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.InputStream;
-import java.net.URI;
 import java.util.*;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
@@ -31,11 +30,11 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
@@ -353,9 +352,9 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 				}
             }
         } else {
-            Set<String> files = XDATServlet.getAppRelativeLocationContents(VM_FILENAME_FILTER, path);
+            Set<String> files = XDAT.getContextService().getAppRelativeLocationContents(VM_FILENAME_FILTER, path);
             for (final String file : files) {
-                addProps(getFileName(file), XDATServlet.getAppRelativeStream(file), tabs, _defaultTabs, file);
+                addProps(getFileName(file), XDAT.getContextService().getAppRelativeStream(file), tabs, _defaultTabs, file);
             }
         }
         return tabs;

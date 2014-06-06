@@ -10,8 +10,9 @@ package org.nrg.xft.schema;
 
 import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
+import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.xdat.servlet.XDATServlet;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.db.DBConfig;
@@ -180,7 +181,12 @@ public class XFTManager {
      */
     private XFTManager() throws ElementNotFoundException {
         logger.debug("Java Version is: " + System.getProperty("java.version"));
-        Document doc = XMLUtils.GetDOM(XDATServlet.getConfigurationStream("InstanceSettings.xml"));
+
+        // MIGRATE: This replaces the load of the database node from InstanceSettings.
+        DBPool.AddDBConfig(XDAT.getContextService().getBean(DBConfig.class));
+
+        // MIGRATE: It would be best to make this all go away. Once we have the database initialized, we can store schemas and everything else in there.
+        Document doc = XMLUtils.GetDOM(XDAT.getContextService().getConfigurationStream("InstanceSettings.xml"));
         Element root = doc.getDocumentElement();
 
         ViewManager.PRE_LOAD_HISTORY = NodeUtils.GetBooleanAttributeValue(root,"Pre_Load_History",false);
@@ -259,55 +265,8 @@ public class XFTManager {
             for (int i=0;i<root.getChildNodes().getLength();i++)
             {
                 Node child1 = root.getChildNodes().item(i);
-                if (child1.getNodeName().equalsIgnoreCase("Databases"))
-               {
-                   if (child1.hasChildNodes())
-                   {
-                       for (int j=0;j<child1.getChildNodes().getLength();j++)
-                       {
-                           Node child2 = child1.getChildNodes().item(j);
-                           if (child2.getNodeName().equalsIgnoreCase("Database"))
-                           {
-                                DBConfig db = new DBConfig();
-                                if (NodeUtils.HasAttribute(child2,"Type"))
-                                {
-                                    db.setType(NodeUtils.GetAttributeValue(child2,"Type",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"Id"))
-                                {
-                                    db.setDbIdentifier(NodeUtils.GetAttributeValue(child2,"Id",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"Url"))
-                                {
-                                    db.setUrl(NodeUtils.GetAttributeValue(child2,"Url",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"User"))
-                                {
-                                    db.setUser(NodeUtils.GetAttributeValue(child2,"User",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"Pass"))
-                                {
-                                    db.setPass(NodeUtils.GetAttributeValue(child2,"Pass",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"Driver"))
-                                {
-                                    db.setDriver(NodeUtils.GetAttributeValue(child2,"Driver",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"MaxConnections"))
-                                {
-                                    db.setMaxConnections(new Integer(NodeUtils.GetAttributeValue(child2, "MaxConnections", "")));
-                                }
-                                DBPool.AddDBConfig(db);
-                           }
-                       }
-                   }
-               }else if (child1.getNodeName().equalsIgnoreCase("Package"))
-                {
-//					if (NodeUtils.HasAttribute(child1,"Name"))
-//					{
-//						this.setPackageName(NodeUtils.GetAttributeValue(child1,"Name",""));
-//					}
-                }else if (child1.getNodeName().equalsIgnoreCase("Models"))
+                // MIGRATE: Removed check for database nodes here and am bootstrapping DBConfig off of init properties.
+                if (child1.getNodeName().equalsIgnoreCase("Models"))
                 {
                     if (child1.hasChildNodes())
                     {

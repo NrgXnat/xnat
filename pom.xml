@@ -31,7 +31,7 @@
         <nrg.dicomdb.version>[4.0.0,5.0.0)</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${project.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${project.version}</nrg.ecat4xnat.version>
-        <nrg.nrgutil.version>1.1.0</nrg.nrgutil.version>
+        <nrg.nrgutil.version>2.0.0</nrg.nrgutil.version>
 
         <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
         <nrg.extattr.version>4.1.0</nrg.extattr.version>

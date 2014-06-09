@@ -63,7 +63,7 @@ public class ModifyEmail extends SecureAction {
 		
 		String oldEmail=existing.getEmail();
 		if(found.getEmail()==null || StringUtils.equals(oldEmail, found.getEmail())){
-			data.addMessage("Unable to modify user email address.");
+			data.addMessage("Email address unchanged.");
             if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
             {
                 data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
@@ -71,7 +71,7 @@ public class ModifyEmail extends SecureAction {
             return;
 		}
 		
-		existing.setEmail(oldEmail);
+		existing.setEmail(found.getEmail());
 
 		ValidationResultsI vr =Users.validate(existing);
         
@@ -89,7 +89,7 @@ public class ModifyEmail extends SecureAction {
         UserI authenticatedUser=(UserI)TurbineUtils.getUser(data);
         
         try {                	
-        	if(existing.getEmail()!=null &&  !existing.getEmail().equals(authenticatedUser.getEmail())){
+        	if(existing.getEmail()!=null){
         		String newemail = existing.getEmail();
         		if(!newemail.contains("@")){
         			data.setMessage("Please enter a valid email address.");

@@ -12,6 +12,7 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
+import java.util.List;
 import java.util.Map;
 
 import org.apache.turbine.modules.ActionLoader;
@@ -25,6 +26,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
@@ -46,7 +48,7 @@ public class ModifyUserGroups extends SecureAction {
 	        
 	        try {
 	            Map<String, UserGroupI> oldGroups=Groups.getGroupsForUser(oldUser);
-	            Map<String, UserGroupI> newGroups=Groups.getGroupsForUser(newUser);
+	            List<String> newGroups=Groups.getGroupIdsForUser(newUser);
 	            
 	            //remove old groups no longer needed
 	            for(UserGroupI uGroup : oldGroups.values()){
@@ -58,6 +60,12 @@ public class ModifyUserGroups extends SecureAction {
 	            
 	            try {
 	    			Users.save(newUser, authenticatedUser,false,ci);
+	    			
+	    			for(String group_id:newGroups){
+	    				if(!Groups.isMember(oldUser, group_id)){
+	    					Groups.addUserToGroup(group_id, newUser, authenticatedUser, ci);
+	    				}
+	    			}
 	                
 	                PersistentWorkflowUtils.complete(wrk, ci);
 	    		} catch (InvalidPermissionException e) {
@@ -76,13 +84,6 @@ public class ModifyUserGroups extends SecureAction {
 	            logger.error("Error Storing User",e);
 	        }
 	        
-	        data.getParameters().setString("search_element",org.nrg.xft.XFT.PREFIX + ":user");
-	        data.getParameters().setString("search_field",org.nrg.xft.XFT.PREFIX + ":user.login");
-	        
-	        data.getParameters().setString("search_value",oldUser.getLogin());
-	        data.setAction("DisplayItemAction");
-	        VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance("DisplayItemAction");
-	        
 	        if(!newUser.isEnabled() && oldUser.isEnabled()){
 	        	//When a user is disabled, deactivate all their AliasTokens
 	        	XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(newUser.getLogin());
@@ -95,7 +96,8 @@ public class ModifyUserGroups extends SecureAction {
 	                logger.error("",e);
 	            }
 	        }
-	        action.doPerform(data, context);
+
+			this.redirectToReportScreen(DisplayItemAction.GetReportScreen(Users.getUserDataType()), (ItemI)Users.getUser(oldUser.getLogin()), data);
         }
     }
 

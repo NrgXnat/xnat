@@ -63,7 +63,8 @@ public class VerifyEmail extends VelocitySecureScreen {
 	    				
 	    				try {
 	    					// Save the user, and add the user to the list of verified users.
-	    					Users.save(curUser, curUser,false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Verify User Email"));
+	    					// need to specify override security because users generally cannot enable their own account.
+	    					Users.save(curUser, curUser,true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Verify User Email"));
 	    					verified.add(curUser);
 	    				} catch (Exception e) {
 	    					invalidInformation(data, context, e.getMessage());

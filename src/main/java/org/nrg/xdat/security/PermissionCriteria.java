@@ -52,12 +52,14 @@ public class PermissionCriteria implements PermissionCriteriaI{
 
 	private boolean authorized=true;
 	
-	public PermissionCriteria(){
-		
+	public PermissionCriteria(String elementName){
+		this.elementName=elementName;
 	}
 	
-	public PermissionCriteria(ItemI i) throws Exception
+	public PermissionCriteria(String elementName, ItemI i) throws Exception
 	{
+		this.elementName=elementName;
+		
 		setField(i.getStringProperty(FIELD));
 		setFieldValue(i.getProperty(FIELD_VALUE));
 		setComparisonType(i.getStringProperty(COMPARISON_TYPE));
@@ -76,7 +78,6 @@ public class PermissionCriteria implements PermissionCriteriaI{
 	/* (non-Javadoc)
 	 * @see org.nrg.xdat.security.PermissionCriteriaI#getSchemaElementName()
 	 */
-	@Override
 	public String getSchemaElementName()
 	{
 	    return SCHEMA_ELEMENT_NAME;
@@ -291,5 +292,12 @@ public class PermissionCriteria implements PermissionCriteriaI{
 		sb.append(SPACE).append(getActivate()); 
 		
 		return sb.toString();
+	}
+	
+	final String elementName;
+
+	@Override
+	public String getElementName() {
+		return elementName;
 	}
 }

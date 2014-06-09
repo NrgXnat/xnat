@@ -21,6 +21,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.security.UserI;
 
@@ -36,6 +37,7 @@ public class XDATScreen_report_xdat_user extends AdminReport {
         	
             UserI tempUser = Users.getUser(item.getStringProperty("login"));
 			context.put("userObject",tempUser);
+			context.put("userObjectHelper",UserHelper.getUserHelperService(tempUser));
             context.put("allGroups",Groups.getAllGroups());
             
             // Does the user hanve any failed login attempts?

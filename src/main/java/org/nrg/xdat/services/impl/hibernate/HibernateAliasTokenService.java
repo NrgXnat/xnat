@@ -54,8 +54,10 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
     @Transactional
     public void deactivateAllTokensForUser(String username) {
         List<AliasToken> tokens = findTokensForUser(username);
-        for(AliasToken token : tokens) {
-            token.setEnabled(false);
+        if(tokens!=null){
+	        for(AliasToken token : tokens) {
+	            token.setEnabled(false);
+	        }
         }
     }
 

@@ -20,7 +20,7 @@ public interface PermissionCriteriaI {
 	/**
 	 * @return
 	 */
-	public abstract String getSchemaElementName();
+	public abstract String getElementName();
 
 	/**
 	 * @return

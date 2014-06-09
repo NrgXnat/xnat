@@ -597,4 +597,26 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         
         return true;
 	}
+
+	@Override
+	public List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType) {
+		return ((UserGroup)group).getPermissionsByDataType(dataType);
+	}
+
+	@Override
+	public Map<String, List<PermissionCriteriaI>> getPermissionsForGroup(UserGroupI group) {
+		return ((UserGroup)group).getAllPermissions();
+	}
+
+	@Override
+	public void setPermissionsForGroup(UserGroupI group, List<PermissionCriteriaI> criteria, EventMetaI meta, UserI authenticatedUser) throws Exception {
+		for(PermissionCriteriaI crit:criteria){
+			((UserGroup)group).addPermission(crit.getElementName(), crit, authenticatedUser);
+		}
+	}
+
+	@Override
+	public String getUserPermissionsSQL(UserI user) {
+		return String.format("SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user u JOIN xdat_user_groupID map ON u.xdat_user_id=map.groups_groupid_xdat_user_xdat_user_id JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE u.login='guest' UNION SELECT xea.element_name, xfm.field, xfm.field_value FROM xdat_user_groupID map JOIN xdat_userGroup gp ON map.groupid=gp.id JOIN xdat_element_access xea ON gp.xdat_usergroup_id=xea.xdat_usergroup_xdat_usergroup_id JOIN xdat_field_mapping_set xfms ON xea.xdat_element_access_id=xfms.permissions_allow_set_xdat_elem_xdat_element_access_id JOIN xdat_field_mapping xfm ON xfms.xdat_field_mapping_set_id=xfm.xdat_field_mapping_set_xdat_field_mapping_set_id AND read_element=1 AND field_value!=''and field !='' WHERE map.groups_groupid_xdat_user_xdat_user_id=%s",user.getID());
+	}
 }

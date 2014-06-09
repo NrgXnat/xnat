@@ -48,10 +48,10 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 	@Override
 	public UserI getUser(Integer user_id) throws UserNotFoundException, UserInitException {
 		XdatUser u=XdatUser.getXdatUsersByXdatUserId(user_id, null, false);
-		if(u==null){
+		if(u!=null){
 			return new XDATUser(u.getItem());
 		}else{
-			throw new UserNotFoundException(user_id.toString());
+			throw new UserNotFoundException(user_id);
 		}
 	}
     
@@ -142,7 +142,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
     	PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, Users.getUserDataType(),id.toString(),PersistentWorkflowUtils.getExternalId(user), ci);
          
     	try {
-	    	save(authenticatedUser,user,overrideSecurity,wrk.buildEvent());
+	    	save(user,authenticatedUser,overrideSecurity,wrk.buildEvent());
 	    	 
 	    	if(id.equals(user.getLogin())) {
 	    		//this was a new user or didn't include the user's id.
@@ -168,7 +168,12 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 			throw new NullPointerException();
 		}
 		
-		UserI existing=Users.getUser(user.getLogin());
+		UserI existing=null;
+		try {
+			existing = Users.getUser(user.getLogin());
+		} catch (Exception e) {
+		}
+		
 		if (existing == null) {
 			 // NEW USER
 		    if (overrideSecurity || authenticatedUser.checkRole("Administrator")) {
@@ -197,20 +202,23 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		    String savedPass = existing.getPassword();
 		 
 		    // check if the password is being updated
-		    if (!StringUtils.IsEmpty(tempPass) && !tempPass.equals(savedPass) && !(new ShaPasswordEncoder(256).encodePassword(tempPass, existing.getSalt())).equals(savedPass)) {
-	    		PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-	        	if(validator.isValid(tempPass, authenticatedUser)){
-                    String salt = Users.createNewSalt();
-	                user.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
-	                user.setSalt(salt);
-	                
-	                XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
-                    auth.setPasswordUpdated(new java.util.Date());
-                    auth.setFailedLoginAttempts(0);
-                    XDAT.getXdatUserAuthService().update(auth);
-                } else {
-	        		throw new PasswordComplexityException(validator.getMessage());
-	        	}
+		    if (!StringUtils.IsEmpty(tempPass) && !org.apache.commons.lang.StringUtils.equals(tempPass,savedPass)) {
+			    String encrypted=(new ShaPasswordEncoder(256).encodePassword(tempPass, existing.getSalt()));
+			    if(!org.apache.commons.lang.StringUtils.equals(encrypted, savedPass)){
+		    		PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
+		        	if(validator.isValid(tempPass, user)){
+	                    String salt = Users.createNewSalt();
+		                user.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
+		                user.setSalt(salt);
+		                
+		                XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(user.getLogin(), XdatUserAuthService.LOCALDB, "");
+	                    auth.setPasswordUpdated(new java.util.Date());
+	                    auth.setFailedLoginAttempts(0);
+	                    XDAT.getXdatUserAuthService().update(auth);
+	                } else {
+		        		throw new PasswordComplexityException(validator.getMessage());
+		        	}
+			    }
 	        }
             // if not updated, may have been passed unencrypted and needs to be changed to its already saved encrypted form
             else {
@@ -227,6 +235,17 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		        toSave.setPassword(user.getPassword());
                 toSave.setSalt(user.getSalt());
 		        toSave.setEmail(user.getEmail());
+		        
+		        if(!user.isEnabled()){
+		        	//allowed to disable his own account (but not enable)
+		        	toSave.setEnabled(false);
+		        }
+		        
+		        if(!user.isVerified()){
+		        	//allowed to un-verify his own account (but not verify)
+		        	toSave.setVerified(false);
+		        }
+		        
 		        SaveItemHelper.authorizedSave(toSave, authenticatedUser, false, false,c);
 
 		        authenticatedUser.setPassword(user.getPassword());

@@ -18,6 +18,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xdat.turbine.modules.actions.DisplayItemAction;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -36,10 +37,10 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
 	public void doBuildTemplate(RunData data, Context context)
 	{
 		try {
-			ItemI o = TurbineUtils.GetItemBySearch(data);
-			if (o != null)
+			String login=(String)TurbineUtils.GetPassedParameter("search_value", data);
+			if (login != null)
 			{	
-				UserI u=Users.getUser(o.getStringProperty("login"));
+				UserI u=Users.getUser(login);
                 boolean enabled = false;
                 
 				if(u.isEnabled())
@@ -52,8 +53,6 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
 
                 XDAT.getContextService().getBean(UserRegistrationDataService.class).clearUserRegistrationData(u);
 
-				SchemaElementI se = SchemaElement.GetElement(o.getXSIType());
-				data = TurbineUtils.setDataItem(data,o);
                 
                 if (enabled)
                 {
@@ -62,9 +61,13 @@ public class XDATScreen_enable_xdat_user extends AdminScreen {
                     } catch (Exception e) {
                         logger.error("",e);
                     }
+                }else{
+		        	//When a user is disabled, deactivate all their AliasTokens
+		        	XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(u.getLogin());
                 }
-                
-				doRedirect(data,DisplayItemAction.GetReportScreen(se));
+
+				data = TurbineUtils.setDataItem(data,(ItemI)Users.getUser(login));
+				doRedirect(data,DisplayItemAction.GetReportScreen(Users.getUserDataType()));
 			}else{
 			  	logger.error("No Item Found.");
 			  	TurbineUtils.OutputDataParameters(data);

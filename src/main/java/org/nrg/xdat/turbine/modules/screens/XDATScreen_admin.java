@@ -48,7 +48,11 @@ public class XDATScreen_admin extends AdminScreen {
             XFTTableI table = search.getPresentedTable();
             context.put("userTable", table.toHTML(false, "FFFFFF", "DEDEDE", tableProps, (search.getCurrentPageNum() * search.getRowsPerPage()) + 1));
 
-            UserI boss = Users.getUser("boss");
+            UserI boss=null;
+			try {
+				boss = Users.getUser("boss");
+			} catch (Exception e) {
+			}
             if(boss != null && boss.isEnabled()){
                 TemplateLink link = (TemplateLink) context.get("link");
                 String uri = link.setAction("DisplayItemAction").addPathInfo("search_value", "boss").addPathInfo("search_element", "xdat:user").addPathInfo("search_field", "xdat:user.login").getAbsoluteURI();

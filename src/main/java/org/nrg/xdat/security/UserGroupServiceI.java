@@ -5,7 +5,9 @@ import java.util.List;
 import java.util.Map;
 
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
+import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 
 /**
@@ -16,6 +18,9 @@ import org.nrg.xft.security.UserI;
  * Added to allow different implementations of User Group activities
  */
 public interface UserGroupServiceI {
+	public class InvalidValueException extends Exception {
+
+	}
 	
 	/**
 	 * Get a UserGroupI by the group ID.
@@ -149,14 +154,13 @@ public interface UserGroupServiceI {
 	 * Add user to the group (includes potential modification to the database).
 	 * 
 	 * @param group_id
-	 * @param tag
 	 * @param newUser
 	 * @param authenticatedUser
 	 * @param ci
 	 * @return
 	 * @throws Exception
 	 */
-	public UserGroupI addUserToGroup(String group_id, String tag, UserI newUser,UserI authenticatedUser, EventMetaI ci) throws Exception;
+	public UserGroupI addUserToGroup(String group_id, UserI newUser,UserI authenticatedUser, EventMetaI ci) throws Exception;
 	
 	/**
 	 * The data type or classification identifier used to identify the group data type.  
@@ -176,4 +180,34 @@ public interface UserGroupServiceI {
      * @throws GroupFieldMappingException 
      */
 	public UserGroupI createGroup(Map<String, ? extends Object> params) throws GroupFieldMappingException;
+
+	/**
+	 * @param g
+	 * @param user
+	 * @param eventDetails
+	 */
+	public void deleteGroup(UserGroupI g, UserI user, EventMetaI ci);
+
+	/**
+	 * @param gID
+	 * @return
+	 */
+	public UserGroupI getGroupByPK(Object gID);
+
+	/**
+	 * @param pID
+	 * @param gID
+	 * @return
+	 */
+	public UserGroupI getGroupByTagAndName(String pID, String gID);
+
+	/**
+	 * @param tempGroup
+	 * @param user
+	 * @param meta
+	 * @throws Exception 
+	 * @throws InvalidValueException 
+	 */
+	public void save(UserGroupI tempGroup, UserI user, EventMetaI meta) throws InvalidValueException, Exception;
+
 }

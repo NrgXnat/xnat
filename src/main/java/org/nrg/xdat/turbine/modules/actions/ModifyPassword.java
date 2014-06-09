@@ -83,7 +83,10 @@ public class ModifyPassword extends SecureAction {
             return;
 		}
 		
+		String newPassword=data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
 		String oldPassword=existing.getPassword();
+		
+		existing.setPassword(newPassword);
 		
 		ValidationResultsI vr =Users.validate(existing);
         
@@ -99,12 +102,10 @@ public class ModifyPassword extends SecureAction {
 		
 		UserI authenticatedUser=TurbineUtils.getUser(data);
 		try {
-            String newPassword=data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
-			if(StringUtils.isNotEmpty(newPassword) && existing!=null){
+            if(StringUtils.isNotEmpty(newPassword) && existing!=null){
 				PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
-				if(validator.isValid(newPassword, found)){
-					found.setPassword(newPassword);
-					Users.save(found, authenticatedUser, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Password"));
+				if(validator.isValid(newPassword, existing)){
+					Users.save(existing, authenticatedUser, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Password"));
 					
 					data.getSession().setAttribute("expired",new Boolean(false));
 				}else{

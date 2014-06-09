@@ -83,7 +83,11 @@ public class XDATForgotLogin extends VelocitySecureAction {
             }
 		} else if (!StringUtils.isBlank(username)) {
             //check user
-                UserI user=Users.getUser(username);
+                UserI user=null;
+				try {
+					user = Users.getUser(username);
+				} catch (Exception e1) {
+				}
 
                 if (user==null){
                     data.setMessage("Unknown username.");

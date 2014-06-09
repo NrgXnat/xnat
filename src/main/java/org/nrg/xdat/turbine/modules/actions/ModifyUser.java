@@ -75,7 +75,11 @@ public class ModifyUser extends SecureAction {
 			return;
 		}
 		
-		UserI oldUser = Users.getUser(login);
+		UserI oldUser=null;
+		try {
+			oldUser = Users.getUser(login);
+		} catch (Exception e1) {
+		}
 		
 		if(oldUser!=null && submitted.getID()==null){
 			data.setMessage("User " + login + " already exists");

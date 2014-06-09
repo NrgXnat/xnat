@@ -59,7 +59,18 @@ public class XDATRegisterUser extends VelocitySecureAction {
     public void doPerform(RunData data, Context context) throws Exception {
 		try {
 			UserI found=Users.createUser(TurbineUtils.GetDataParameterHash(data));
-			UserI existing=Users.getUser(found.getLogin());
+			
+			if(found.getID()!=null){
+                //This shouldn't have a pk yet
+                handleInvalid(data, context, "Error registering user account");
+                return;
+			}
+			
+			UserI existing=null;
+			try {
+				existing = Users.getUser(found.getLogin());
+			} catch (Exception e1) {
+			}
 			
             if (existing == null) {
             	String emailWithWhite = found.getEmail();
@@ -67,8 +78,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
         		found.setEmail(emailWithWhite);
         		
         		List<UserI> matches=Users.getUsersByEmail(emailWithWhite);
+        		List<UserI> matches2=Users.getUsersByEmail(noWhiteEmail);
 
-                if (matches.size()==0) {
+                if (matches.size()==0 && matches2.size()==0) {
 	                String tempPass = data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
 	                PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 	                if (validator.isValid(tempPass, null)) {
@@ -96,8 +108,10 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         else {
 	                		found.setVerified(Boolean.FALSE);
                         }
+                        
+                        UserI currUser=TurbineUtils.getUser(data);
 		                
-                        Users.save(found, TurbineUtils.getUser(data), true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
+                        Users.save(found, (currUser!=null)?currUser:found, true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
 						
 		                XdatUserAuth newUserAuth = new XdatUserAuth(found.getLogin(), XdatUserAuthService.LOCALDB);
 	                    XDAT.getXdatUserAuthService().create(newUserAuth);

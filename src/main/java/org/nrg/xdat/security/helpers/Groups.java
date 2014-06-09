@@ -15,7 +15,9 @@ import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 
 public class Groups {
@@ -84,7 +86,7 @@ public class Groups {
 	}
 
 	/**
-	 * Get the UserGroup that are currently assigned to a user.
+	 * Get the UserGroup that are currently assigned to a user.  Loads current groups from database.
 	 * @param user
 	 * @return
 	 */
@@ -93,7 +95,7 @@ public class Groups {
 	}
 
 	/**
-	 * Get the group IDs currently assigned to a user.
+	 * Get the group IDs currently assigned to a user.  Only reviews local object, groups may not be saved yet.
 	 * @param user
 	 * @return
 	 */
@@ -210,15 +212,14 @@ public class Groups {
 	 * Add user to the group (includes potential modification to the database).
 	 * 
 	 * @param group_id
-	 * @param tag
 	 * @param newUser
 	 * @param authenticatedUser
 	 * @param ci
 	 * @return
 	 * @throws Exception
 	 */
-	public static UserGroupI addUserToGroup(String group_id, String tag, UserI user, UserI authenticatedUser, EventMetaI ci) throws Exception{
-		return getUserGroupService().addUserToGroup(group_id, tag, user, authenticatedUser, ci);
+	public static UserGroupI addUserToGroup(String group_id, UserI user, UserI authenticatedUser, EventMetaI ci) throws Exception{
+		return getUserGroupService().addUserToGroup(group_id, user, authenticatedUser, ci);
 	}
 
 	/**
@@ -249,6 +250,17 @@ public class Groups {
 	public static void deleteGroupsByTag(String tag, UserI user, EventMetaI ci) throws Exception{
 		getUserGroupService().deleteGroupsByTag(tag, user, ci);
 	}
+
+	/**
+	 * Delete the groups (and user-group mappings) associated with this tag.
+	 * @param tag
+	 * @param user
+	 * @param eventDetails
+	 * @throws Exception
+	 */
+	public static void deleteGroup(UserGroupI g, UserI user, EventMetaI ci) throws Exception{
+		getUserGroupService().deleteGroup(g, user, ci);
+	}
 	
     /**
      * Return a freshly created group object populated with the passed parameters.
@@ -261,4 +273,16 @@ public class Groups {
     public static UserGroupI createGroup(Map<String,? extends Object> params) throws UserFieldMappingException, UserInitException, GroupFieldMappingException{
 		return getUserGroupService().createGroup(params);
     }
+
+	public static void save(UserGroupI tempGroup, UserI user, EventMetaI meta) throws org.nrg.xdat.security.UserGroupServiceI.InvalidValueException, Exception {
+		getUserGroupService().save(tempGroup,user,meta);
+	}
+
+	public static UserGroupI getGroupByPK(Object gID) {
+		return getUserGroupService().getGroupByPK(gID);
+	}
+
+	public static UserGroupI getGroupByTagAndName(String pID, String gID) {
+		return getUserGroupService().getGroupByTagAndName(pID,gID);
+	}
 }

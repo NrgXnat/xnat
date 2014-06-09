@@ -12,7 +12,6 @@
 
 package org.nrg.xdat.security;
 
-import java.io.File;
 import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -33,15 +32,15 @@ import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.helpers.Groups;
-import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.cache.CacheManager;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.Event;
+import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -50,14 +49,10 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
-import org.nrg.xft.utils.VelocityUtils;
 
 import com.google.common.collect.Lists;
 
@@ -336,23 +331,25 @@ public class UserGroupManager implements UserGroupServiceI{
 	}
 
 	@Override
-	public UserGroupI addUserToGroup(String group_id, String tag, UserI newUser,UserI currentUser, EventMetaI ci) throws Exception{
+	public UserGroupI addUserToGroup(String group_id, UserI newUser,UserI currentUser, EventMetaI ci) throws Exception{
     	boolean isOwner=false;
     	UserGroupI gp=Groups.getGroup(group_id);
-
-    	//remove fom existing groups
-		for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(newUser).entrySet()) {
-			if (entry.getValue().getTag()!=null && entry.getValue().getTag().equals(tag)) {
-				if(entry.getValue().getId().equals(group_id)){
-					return gp;
-				}
-
-				//find mapping object to delete
-				if(Groups.isMember(newUser, entry.getValue().getId())){
-					Groups.removeUserFromGroup(newUser, entry.getValue().getId(),ci);
+    	
+    	if(gp.getTag()!=null){
+	    	//remove from existing groups
+			for (Map.Entry<String, UserGroupI> entry : Groups.getGroupsForUser(newUser).entrySet()) {
+				if (entry.getValue().getTag()!=null && entry.getValue().getTag().equals(gp.getTag())) {
+					if(entry.getValue().getId().equals(group_id)){
+						return gp;
+					}
+	
+					//find mapping object to delete
+					if(Groups.isMember(newUser, entry.getValue().getId())){
+						Groups.removeUserFromGroup(newUser, entry.getValue().getId(),ci);
+					}
 				}
 			}
-		}
+    	}
 
     	final String confirmquery = "SELECT * FROM xdat_user_groupid WHERE groupid='" + group_id + "' AND groups_groupid_xdat_user_xdat_user_id=" + newUser.getID() + ";";
 
@@ -536,57 +533,168 @@ public class UserGroupManager implements UserGroupServiceI{
 
 	@Override
 	public void deleteGroupsByTag(String tag, UserI user, EventMetaI ci) throws Exception {
-        //DELETE user.groupId
-        CriteriaCollection col = new CriteriaCollection("AND");
-        col.addClause(XdatUserGroupid.SCHEMA_ELEMENT_NAME +".groupid"," SIMILAR TO ", tag + "\\_(owner|member|collaborator)");
-        Iterator groups = XdatUserGroupid.getXdatUserGroupidsByField(col, user, false).iterator();
-
-        while(groups.hasNext()){
-            XdatUserGroupid g = (XdatUserGroupid)groups.next();
-            try {
-            	SaveItemHelper.authorizedDelete(g.getItem(), user,ci);
-            } catch (Throwable e) {
-                logger.error("",e);
-            }
-        }
-
-        //DELETE user groups
-        col = new CriteriaCollection("AND");
-        col.addClause(XdatUsergroup.SCHEMA_ELEMENT_NAME +".ID"," SIMILAR TO ", tag + "\\_(owner|member|collaborator)");
-        groups = XdatUsergroup.getXdatUsergroupsByField(col, user, false).iterator();
-
-        while(groups.hasNext()){
-            XdatUsergroup g = (XdatUsergroup)groups.next();
-            try {
-            	SaveItemHelper.authorizedDelete(g.getItem(), user,ci,true);
-            } catch (Throwable e) {
-                logger.error("",e);
-            }
-
-	        try {
-				EventManager.Trigger(Groups.getGroupDatatype(),g.getId(),Event.DELETE);
-			} catch (Exception e1) {
-	            logger.error("",e1);
-			}
-			
-			try {
-				PoolDBUtils.ClearCache(null, user.getUsername(), Groups.getGroupDatatype());
-			} catch (Exception e) {
-	            logger.error("",e);
-			}
-        }
-
+		for(UserGroupI g: getGroupsByTag(tag)){
+			deleteGroup(g, user, ci);
+		}
 	}
 
 
 	@Override
 	public UserGroupI createGroup(Map<String, ? extends Object> params) throws GroupFieldMappingException {
 		try {
-			PopulateItem populater = new PopulateItem(params,null,org.nrg.xft.XFT.PREFIX + ":user",true);
+			PopulateItem populater = new PopulateItem(params,null,XdatUsergroup.SCHEMA_ELEMENT_NAME,true);
 			ItemI found = populater.getItem();
 			return new UserGroup(new XdatUsergroup(found));
 		} catch (Exception e) {
 			throw new GroupFieldMappingException(e);
+		}
+	}
+
+
+	@Override
+	public void deleteGroup(UserGroupI g, UserI user, EventMetaI ci) {
+      //DELETE user.groupId
+        CriteriaCollection col = new CriteriaCollection("AND");
+        col.addClause(XdatUserGroupid.SCHEMA_ELEMENT_NAME +".groupid"," = ", g.getId());
+        Iterator groupIds = XdatUserGroupid.getXdatUserGroupidsByField(col, user, false).iterator();
+
+        while(groupIds.hasNext()){
+            XdatUserGroupid gId = (XdatUserGroupid)groupIds.next();
+            try {
+            	SaveItemHelper.authorizedDelete(gId.getItem(), user,ci);
+            } catch (Throwable e) {
+                logger.error("",e);
+            }
+        }
+        
+        try {
+        	XdatUsergroup tmp=XdatUsergroup.getXdatUsergroupsByXdatUsergroupId(g.getPK(), user, false);
+    		
+    		SaveItemHelper.authorizedDelete(tmp.getItem(), user,ci);
+        } catch (Throwable e) {
+            logger.error("",e);
+        }
+        
+
+
+        try {
+			EventManager.Trigger(Groups.getGroupDatatype(),g.getId(),Event.DELETE);
+		} catch (Exception e1) {
+            logger.error("",e1);
+		}
+		
+		try {
+			PoolDBUtils.ClearCache(null, user.getUsername(), Groups.getGroupDatatype());
+		} catch (Exception e) {
+            logger.error("",e);
+		}
+	}
+
+
+	@Override
+	public UserGroupI getGroupByPK(Object gID) {
+		try {
+			String id=(String)PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xdat_usergroup WHERE xdat_userGroup_id=%1s;", "id", null, null);
+			if(id!=null){
+				return getGroup(id);
+			}
+		} catch (SQLException e) {
+			logger.error("",e);
+		} catch (Exception e) {
+			logger.error("",e);
+		}
+		return null;
+	}
+
+
+	private void validateGroupByTag(XdatUsergroup tempGroup, String tag) throws InvalidValueException{
+		//verify that the user isn't trying to gain access to other projects.
+		for(XdatElementAccess ea:tempGroup.getElementAccess()){
+			for(XdatFieldMappingSet set: ea.getPermissions_allowSet()){
+				List<String> values=getPermissionValues(set);
+				if(values.size()!=1){
+					throw new InvalidValueException();
+				}
+				if(!org.apache.commons.lang.StringUtils.equals(values.get(0), tag)){
+					throw new InvalidValueException();
+				}
+			}
+		}
+	}
+	
+
+	
+	private List<String> getPermissionValues(XdatFieldMappingSet set) {
+		List<String> values=Lists.newArrayList();
+		
+		for(final XdatFieldMapping map: set.getAllow()){
+			if(!values.contains(map.getFieldValue())){
+				values.add((String)map.getFieldValue());
+			}
+		}
+		
+		for(XdatFieldMappingSet subset: set.getSubSet()){
+			values.addAll(getPermissionValues(subset));
+		}
+		
+		return values;
+	}
+
+
+	@Override
+	public UserGroupI getGroupByTagAndName(String pID, String gID) {
+		try {
+			String id=(String)PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xdat_usergroup WHERE tag='%1s' AND displayname='%2s';", "id", null, null);
+			if(id!=null){
+				return getGroup(id);
+			}
+		} catch (SQLException e) {
+			logger.error("",e);
+		} catch (Exception e) {
+			logger.error("",e);
+		}
+		return null;
+	}
+
+
+	@Override
+	public void save(UserGroupI group, UserI user, EventMetaI meta) throws InvalidValueException, Exception{
+		if(((UserGroup)group).xdatGroup==null){
+			return;
+		}
+		
+		XdatUsergroup xdatGroup=((UserGroup)group).xdatGroup;
+		
+		if(!user.isSiteAdmin()){
+			String firstValue=null;
+			for(XdatElementAccess ea:xdatGroup.getElementAccess()){
+				for(XdatFieldMappingSet set: ea.getPermissions_allowSet()){
+					List<String> values=getPermissionValues(set);
+					firstValue=values.get(0);
+					break;
+				}
+				if(firstValue!=null){
+					break;
+				}
+			}
+			
+			validateGroupByTag(xdatGroup, firstValue);
+			
+			if(!UserHelper.getUserHelperService(user).isOwner(firstValue)){
+				throw new InvalidValueException();
+			}
+		}
+		
+		SaveItemHelper.authorizedSave(xdatGroup, user, false,true, meta);
+		
+		((UserGroup)group).init(xdatGroup.getItem());
+		((UserGroup)group).xdatGroup=null;
+		
+		try {
+			EventManager.Trigger(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), Event.UPDATE);
+			Groups.reloadGroupsForUser(user);
+		} catch (Exception e1) {
+			logger.error("", e1);
 		}
 	}
 }

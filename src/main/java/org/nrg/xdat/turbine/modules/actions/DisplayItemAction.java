@@ -18,9 +18,12 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.navigation.DefaultReportIdentifier;
 import org.nrg.xdat.navigation.DefaultReportIdentifierI;
+import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.StringUtils;
 
@@ -62,6 +65,11 @@ public class DisplayItemAction extends SecureAction {
 			templateName="DefaultReport.vm";
 		}
 		return templateName;
+	}
+	
+	public static String GetReportScreen(String elementName) throws XFTInitException, ElementNotFoundException
+	{
+		return GetReportScreen(SchemaElement.GetElement(elementName));
 	}
 
 }

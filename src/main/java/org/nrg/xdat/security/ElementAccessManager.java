@@ -60,7 +60,7 @@ public class ElementAccessManager {
 		while (subs.hasNext())
 		{
 			ItemI sub = (ItemI)subs.next();
-			PermissionSetI ps = new PermissionSet(sub);
+			PermissionSetI ps = new PermissionSet(getElement(),sub);
 
 			sets.add(ps);
 		}

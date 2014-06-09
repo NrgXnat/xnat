@@ -553,13 +553,56 @@ public class Permissions {
     }
     
 	/**
-	 * Get all active permission criteria for this user account (including group permissions, etc).
+	 * Get all active permission criteria for this user account / data type combination (including group permissions, etc).
 	 * @param user
 	 * @param dataType
 	 * @return
 	 */
 	public static List<PermissionCriteriaI> getPermissionsForUser(UserI user, String dataType){
 		return getPermissionsService().getPermissionsForUser(user, dataType);
+	}
+    
+	/**
+	 * Get all active permission criteria for this user group / data type combination.
+	 * @param group
+	 * @param dataType
+	 * @return
+	 */
+	public static List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType){
+		return getPermissionsService().getPermissionsForGroup(group, dataType);
+	}
+    
+	/**
+	 * Get all active permission criteria for this user group (organized by data type).
+	 * @param group
+	 * @param dataType
+	 * @return
+	 */
+	public static Map<String,List<PermissionCriteriaI>> getPermissionsForGroup(UserGroupI group){
+		return getPermissionsService().getPermissionsForGroup(group);
+	}
+    
+	/**
+	 * Adds/modifies specified permissions for this group.  However, nothing is saved to the database.
+	 * 
+	 * Call Groups.save() to save the modifications.
+	 * 
+	 * @param group
+	 * @param dataType
+	 * @return
+	 * @throws Exception 
+	 */
+	public static void setPermissionsForGroup(UserGroupI group,List<PermissionCriteriaI> criteria, EventMetaI meta, UserI authenticatedUser) throws Exception{
+		getPermissionsService().setPermissionsForGroup(group,criteria,meta,authenticatedUser);
+	}
+	
+	/**
+	 * Return an SQL statement that will return a list of this user's permissions
+	 * @param user
+	 * @return
+	 */
+	public static String getUserPermissionsSQL(UserI user){
+		return getPermissionsService().getUserPermissionsSQL(user);
 	}
 	
 }

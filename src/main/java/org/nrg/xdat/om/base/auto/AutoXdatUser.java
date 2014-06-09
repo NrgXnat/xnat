@@ -242,11 +242,11 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
      */
     public String getSalt(){
         try{
-            if (_PrimaryPassword==null){
-                _PrimaryPassword=getStringProperty("salt");
-                return _PrimaryPassword;
+            if (_Salt==null){
+            	_Salt=getStringProperty("salt");
+                return _Salt;
             }else {
-                return _PrimaryPassword;
+                return _Salt;
             }
         } catch (Exception e1) {logger.error(e1);return null;}
     }
@@ -258,7 +258,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
     public void setSalt(String v){
         try{
             setProperty(SCHEMA_ELEMENT_NAME + "/salt",v);
-            _PrimaryPassword=null;
+            _Salt=null;
         } catch (Exception e1) {logger.error(e1);}
     }
 

@@ -34,7 +34,7 @@ public class PermissionSet implements PermissionSetI{
 	List<PermissionSetI> permSets = null;
 	private String method=null;
 	
-	public PermissionSet(ItemI i) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,Exception
+	public PermissionSet(String elementName, ItemI i) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,Exception
 	{
 		this.setMethod(i.getStringProperty("method"));
 		
@@ -43,12 +43,12 @@ public class PermissionSet implements PermissionSetI{
 		
 		for (ItemI sub:i.getChildItems(org.nrg.xft.XFT.PREFIX + ":field_mapping_set.allow"))
 		{
-			permCriteria.add(new PermissionCriteria(sub));
+			permCriteria.add(new PermissionCriteria(elementName,sub));
 		}
 
 		for (ItemI sub:i.getChildItems(org.nrg.xft.XFT.PREFIX + ":field_mapping_set.sub_set"))
 		{
-			permSets.add(new PermissionSet(sub));
+			permSets.add(new PermissionSet(elementName,sub));
 		}
 	}
 	

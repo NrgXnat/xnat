@@ -6,6 +6,7 @@ import java.util.Map;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xdat.security.SecurityValues;
+import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidItemException;
@@ -336,5 +337,39 @@ public interface PermissionsServiceI {
 	 * @throws Exception
 	 */
 	public boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception;
+
+    
+	/**
+	 * Get all active permission criteria for this user group / data type combination.
+	 * @param group
+	 * @param dataType
+	 * @return
+	 */
+	public List<PermissionCriteriaI> getPermissionsForGroup(UserGroupI group, String dataType);
+
+    
+	/**
+	 * Get all active permission criteria for this user group (organized by data type).
+	 * @param group
+	 * @param dataType
+	 * @return
+	 */
+	public abstract Map<String, List<PermissionCriteriaI>> getPermissionsForGroup(UserGroupI group);
+
+	/**
+	 * Adds specified permissions for this group.
+	 * @param group
+	 * @param dataType
+	 * @return
+	 * @throws Exception 
+	 */
+	public abstract void setPermissionsForGroup(UserGroupI group, List<PermissionCriteriaI> criteria,EventMetaI meta, UserI authenticatedUser) throws Exception;
+
+	/**
+	 * Return an SQL statement that will return a list of this user's permissions
+	 * @param user
+	 * @return
+	 */
+	public abstract String getUserPermissionsSQL(UserI user);
 	
 }

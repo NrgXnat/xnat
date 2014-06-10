@@ -8,10 +8,14 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.om.XdatElementAccess;
+import org.nrg.xdat.om.XdatFieldMapping;
+import org.nrg.xdat.om.XdatFieldMappingSet;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
 public class UserGroup{
@@ -210,4 +214,6 @@ public class UserGroup{
         }
         return allElements;
     }
+    
+
 }

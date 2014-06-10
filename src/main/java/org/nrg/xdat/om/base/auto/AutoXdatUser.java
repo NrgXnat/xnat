@@ -242,11 +242,11 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
      */
     public String getSalt(){
         try{
-            if (_PrimaryPassword==null){
-                _PrimaryPassword=getStringProperty("salt");
-                return _PrimaryPassword;
+            if (_Salt==null){
+                _Salt=getStringProperty("salt");
+                return _Salt;
             }else {
-                return _PrimaryPassword;
+                return _Salt;
             }
         } catch (Exception e1) {logger.error(e1);return null;}
     }
@@ -258,7 +258,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
     public void setSalt(String v){
         try{
             setProperty(SCHEMA_ELEMENT_NAME + "/salt",v);
-            _PrimaryPassword=null;
+            _Salt=null;
         } catch (Exception e1) {logger.error(e1);}
     }
 
@@ -447,7 +447,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 		_Enabled=null;
 		} catch (Exception e1) {logger.error(e1);}
 	}
-	
+
 	//FIELD
 
 	private Boolean _Verified=null;
@@ -597,7 +597,7 @@ public ArrayList<ResourceFile> getFileResources(String rootPath, boolean prevent
 	ArrayList<ResourceFile> _return = new ArrayList<ResourceFile>();
 	 boolean localLoop = preventLoop;
 	        localLoop = preventLoop;
-	
+
 	        //element_access
 	        for(XdatElementAccess childElementAccess : this.getElementAccess()){
 	            for(ResourceFile rf: childElementAccess.getFileResources(rootPath, localLoop)) {
@@ -606,9 +606,9 @@ public ArrayList<ResourceFile> getFileResources(String rootPath, boolean prevent
 	                 _return.add(rf);
 	            }
 	        }
-	
+
 	        localLoop = preventLoop;
-	
+
 	        //assigned_roles/assigned_role
 	        for(XdatRoleType childAssignedRoles_assignedRole : this.getAssignedRoles_assignedRole()){
 	            for(ResourceFile rf: childAssignedRoles_assignedRole.getFileResources(rootPath, localLoop)) {
@@ -617,9 +617,9 @@ public ArrayList<ResourceFile> getFileResources(String rootPath, boolean prevent
 	                 _return.add(rf);
 	            }
 	        }
-	
+
 	        localLoop = preventLoop;
-	
+
 	        //groups/groupID
 	        for(XdatUserGroupid childGroups_groupid : this.getGroups_groupid()){
 	            for(ResourceFile rf: childGroups_groupid.getFileResources(rootPath, localLoop)) {
@@ -628,9 +628,9 @@ public ArrayList<ResourceFile> getFileResources(String rootPath, boolean prevent
 	                 _return.add(rf);
 	            }
 	        }
-	
+
 	        localLoop = preventLoop;
-	
+
 	return _return;
 }
 }

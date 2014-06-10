@@ -16,6 +16,7 @@ import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -42,6 +43,8 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
+
+import com.google.common.collect.Lists;
 
 /**
  * @author Tim
@@ -90,6 +93,12 @@ public class QueryOrganizer implements QueryOrganizerI{
         setPKField();
     }
 
+    private List<String> keys=Lists.newArrayList();
+    
+    public List<String> getKeys(){
+    	return keys;
+    }
+    
     private void setPKField()
     {
         Iterator keys = rootElement.getGenericXFTElement().getAllPrimaryKeys().iterator();
@@ -97,7 +106,9 @@ public class QueryOrganizer implements QueryOrganizerI{
         {
             GenericWrapperField sf = (GenericWrapperField)keys.next();
             try {
-                addField(sf.getXMLPathString(rootElement.getFullXMLName()));
+            	String key=sf.getXMLPathString(rootElement.getFullXMLName());
+                addField(key);
+            	this.keys.add(key);
             } catch (ElementNotFoundException e) {
                 logger.error("",e);
             }

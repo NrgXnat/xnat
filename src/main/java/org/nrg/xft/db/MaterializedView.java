@@ -204,7 +204,7 @@ public class MaterializedView {
 		}
 		
 		if(sortBy!=null){
-			query+=" ORDER BY " + sortBy;
+			query+=" ORDER BY " + sortBy + ", key";
 		}
 		
 		if(offset!=null){

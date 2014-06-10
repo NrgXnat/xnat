@@ -655,6 +655,12 @@ public class DisplaySearch implements TableSearchI{
 				}
 		    }
 		}
+		
+		if(this.addKeyColumn()){
+			String keyCol = qo.getFieldAlias(qo.getKeys().get(0),"SEARCH");
+			select.append(", ");
+			select.append(keyCol).append(" AS KEY ");
+		}
 
 		orderBy.append(" ORDER BY ");
 		if (this.getCustomSortBy().equalsIgnoreCase(""))
@@ -855,6 +861,17 @@ public class DisplaySearch implements TableSearchI{
 		return sb.toString();
 	}
 	
+	private boolean addKey=false;
+	
+	public boolean addKeyColumn() {
+		return addKey;
+	}
+	
+	public void addKeyColumn(boolean b) {
+		addKey=b;
+	}
+
+
 	public static String cleanColumnName(String s){
 		s=StringUtils.ReplaceStr(s, ",", "_com_");
 		s=StringUtils.ReplaceStr(s, ":", "_col_");

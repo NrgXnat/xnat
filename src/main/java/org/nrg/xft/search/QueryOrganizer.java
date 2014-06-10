@@ -44,8 +44,6 @@ import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
-import com.google.common.collect.Lists;
-
 /**
  * @author Tim
  *
@@ -93,7 +91,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         setPKField();
     }
 
-    private List<String> keys=Lists.newArrayList();
+    private List<String> keys=new ArrayList<String>();
     
     public List<String> getKeys(){
     	return keys;

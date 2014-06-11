@@ -22,6 +22,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
 
 public final class TemporaryTokenStore {
@@ -157,10 +158,12 @@ public final class TemporaryTokenStore {
 		final String body = "Dear " + u.getFirstname() + " " + u.getLastname() + ",\n" + emailBody(null);
 		CallableWith<Void,String> emailAction = new CallableWith<Void,String>() {
 			public Void call(String login) {
-				try {
-					XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subj, body);
-				} catch (MessagingException exception) {
-					logger.error("Unable to send mail", exception);
+				if(XFT.getBooleanProperty("smtp.enabled", true)){
+					try {
+						XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subj, body);
+					} catch (MessagingException exception) {
+						logger.error("Unable to send mail", exception);
+					}
 				}
 				return null;
 			}

@@ -18,12 +18,12 @@ import org.junit.Before;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
 import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
-import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -70,7 +70,7 @@ public class NotificationServiceTests {
      * @throws InterruptedException This is required for the {@link Thread#sleep(long)} call.
      */
     @Test
-    public void testManageCategory() throws InterruptedException {
+    public void testManageCategory() throws InterruptedException, NrgServiceException {
 
         // Verify the service.
         assertNotNull(_service);
@@ -145,7 +145,7 @@ public class NotificationServiceTests {
     }
     
     @Test(expected = ConstraintViolationException.class)
-    public void testCategoryConstraints() {
+    public void testCategoryConstraints() throws NrgServiceException {
         Category category1 = _service.getCategoryService().newEntity();
         category1.setScope(CategoryScope.Site);
         category1.setEvent("duplicate");
@@ -160,7 +160,7 @@ public class NotificationServiceTests {
      * Creates multiple categories and definitions.
      */
     @Test
-    public void testCategoryAndDefinitions() {
+    public void testCategoryAndDefinitions() throws NrgServiceException {
         // Create a category.
         Category category1 = _service.getCategoryService().newEntity();
         assertNotNull(category1);
@@ -210,14 +210,14 @@ public class NotificationServiceTests {
     
     @Test(expected = DuplicateDefinitionException.class)
     @Transactional
-    public void testDuplicateDefinitions() throws DuplicateDefinitionException {
+    public void testDuplicateDefinitions() throws NrgServiceException {
         _service.createDefinition(CategoryScope.Project, "dupevent1", 11L);
         _service.createDefinition(CategoryScope.Project, "dupevent1", 11L);
     }
 
     @Test
     @Ignore("Ignored because requires working SMTP server. Set SMTP address in test.properties to test.")
-    public void testSubscribersAndSubscriptions() throws DuplicateDefinitionException, DuplicateSubscriberException, IOException {
+    public void testSubscribersAndSubscriptions() throws NrgServiceException, IOException {
         Subscriber subscriber1 = _service.getSubscriberService().createSubscriber("Subscriber 1", "subscriber1@rickherrick.com");
         Subscriber subscriber2 = _service.getSubscriberService().createSubscriber("Subscriber 2", "subscriber2@rickherrick.com");
         Subscriber subscriber3 = _service.getSubscriberService().createSubscriber("Subscriber 3", "subscriber3@rickherrick.com");

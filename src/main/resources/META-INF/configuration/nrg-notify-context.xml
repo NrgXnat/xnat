@@ -9,14 +9,15 @@
   ~
   ~ Last modified 7/1/13 5:31 PM
   -->
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:context="http://www.springframework.org/schema/context" xmlns:util="http://www.springframework.org/schema/util"
-    xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans-3.0.xsd
-		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd
-		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+		                   http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <description>Default configuration for the NRG Notification Service</description>
 
-    <context:component-scan base-package="org.nrg.notify.services" />
+    <context:component-scan base-package="org.nrg.notify.services.impl" />
     <context:component-scan base-package="org.nrg.notify.daos" />
 
     <bean id="nrgNotificationEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">

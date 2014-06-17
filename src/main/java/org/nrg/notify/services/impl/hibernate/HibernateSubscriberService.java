@@ -16,13 +16,11 @@ import org.nrg.notify.daos.SubscriberDAO;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.SubscriberService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 @Service
-public class HibernateSubscriberService extends AbstractHibernateEntityService<Subscriber> implements SubscriberService {
+public class HibernateSubscriberService extends AbstractHibernateEntityService<Subscriber, SubscriberDAO> implements SubscriberService {
 
     /**
      * Creates a new {@link Subscriber subscriber} objects with the submitted attributes.
@@ -37,6 +35,9 @@ public class HibernateSubscriberService extends AbstractHibernateEntityService<S
     @Transactional
     public Subscriber createSubscriber(String name, String emails) throws DuplicateSubscriberException {
         // TODO: Check for subscriber with existing name.
+        if (_log.isDebugEnabled()) {
+            _log.debug("Creating a new subscriber, name: " + name + ", emails: " + emails);
+        }
         Subscriber subscriber = newEntity();
         subscriber.setName(name);
         subscriber.setEmails(emails);
@@ -52,29 +53,11 @@ public class HibernateSubscriberService extends AbstractHibernateEntityService<S
     @Override
     @Transactional
     public Subscriber getSubscriberByName(String name) {
+        if (_log.isDebugEnabled()) {
+            _log.debug("Looking for subscriber with name: " + name);
+        }
         return getDao().getSubscriberByName(name);
     }
     
-    /**
-     * @return A new empty {@link Subscriber} object.
-     * @see SubscriberService#newEntity()
-     */
-    public Subscriber newEntity() {
-        _log.debug("Creating a new subscriber object");
-        return new Subscriber();
-    }
-
-    /**
-     * @return
-     * @see AbstractHibernateEntityService#getDao()
-     */
-    @Override
-    protected SubscriberDAO getDao() {
-        return _dao;
-    }
-
     private static final Log _log = LogFactory.getLog(HibernateSubscriberService.class);
-
-    @Autowired
-    private SubscriberDAO _dao;
 }

@@ -21,23 +21,25 @@ import org.nrg.notify.entities.Definition;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.services.SubscriptionService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
-
 @Service
-public class HibernateSubscriptionService extends AbstractHibernateEntityService<Subscription> implements SubscriptionService {
+public class HibernateSubscriptionService extends AbstractHibernateEntityService<Subscription, SubscriptionDAO> implements SubscriptionService {
 
     /**
      * Finds all subscriptions for the indicated {@link Definition definition}.
-     * @param subscriber The {@link Subscriber subscriber}.
+     * @param definition    The {@link Definition definition}.
      * @return A list of subscriptions for the {@link Definition}.
      * @see SubscriptionService#getSubscriptionsForDefinition(Definition)
      */
     @Override
     @Transactional
     public List<Subscription> getSubscriptionsForDefinition(Definition definition) {
+        if (_log.isDebugEnabled()) {
+            _log.debug("Looking for subscriptions for definition: " + definition.toString());
+        }
+
         return getDao().getSubscriptionsForDefinition(definition);
     }
 
@@ -54,29 +56,11 @@ public class HibernateSubscriptionService extends AbstractHibernateEntityService
         for (Subscription subscription : subscriptions) {
             map.put(subscription.getSubscriber(), subscription);
         }
+        if (_log.isDebugEnabled()) {
+            _log.debug("Found " + map.size() + " subscribers for definition: " + definition.toString());
+        }
         return map;
     }
 
-    /**
-     * @return A new empty {@link Subscription} object.
-     * @see SubscriptionService#newEntity()
-     */
-    public Subscription newEntity() {
-        _log.debug("Creating a new subscription object");
-        return new Subscription();
-    }
-
-    /**
-     * @return
-     * @see AbstractHibernateEntityService#getDao()
-     */
-    @Override
-    protected SubscriptionDAO getDao() {
-        return _dao;
-    }
-
     private static final Log _log = LogFactory.getLog(HibernateSubscriptionService.class);
-
-    @Autowired
-    private SubscriptionDAO _dao;
 }

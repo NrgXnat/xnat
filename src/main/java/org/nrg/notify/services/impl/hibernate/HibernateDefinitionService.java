@@ -9,8 +9,6 @@
  */
 package org.nrg.notify.services.impl.hibernate;
 
-import java.util.List;
-
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.hibernate.Hibernate;
@@ -20,25 +18,26 @@ import org.nrg.notify.entities.Category;
 import org.nrg.notify.entities.Definition;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
 import org.nrg.notify.services.DefinitionService;
-import org.nrg.notify.services.NotificationService;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.List;
 
 @Service
-public class HibernateDefinitionService extends AbstractHibernateEntityService<Definition> implements DefinitionService {
+public class HibernateDefinitionService extends AbstractHibernateEntityService<Definition, DefinitionDAO> implements DefinitionService {
 
     /**
      * Retrieves all {@link Definition definitions} associated with the given category.
      * @param category The category for which to find all associated definitions. 
      * @return All {@link Definition definitions} associated with the given category.
-     * @see NotificationService#getDefinitionsForCategory(Category)
      */
     @Override
     @Transactional
     public List<Definition> getDefinitionsForCategory(Category category) {
-        List<Definition> definitions = _dao.getDefinitionsForCategory(category);
+        if (_log.isDebugEnabled()) {
+            _log.debug("Getting the definitions for category: [" + category.toString() + "]");
+        }
+        List<Definition> definitions = getDao().getDefinitionsForCategory(category);
         Hibernate.initialize(definitions);
         return definitions;
     }
@@ -55,29 +54,11 @@ public class HibernateDefinitionService extends AbstractHibernateEntityService<D
     @Override
     @Transactional
     public Definition getDefinitionForCategoryAndEntity(Category category, long entity) throws DuplicateDefinitionException {
-        return _dao.getDefinitionForCategoryAndEntity(category, entity);
-    }
-
-    /**
-     * @return A new empty {@link Definition} object.
-     * @see DefinitionService#newDefinition()
-     */
-    public Definition newEntity() {
-        _log.debug("Creating a new definition object");
-        return new Definition();
-    }
-
-    /**
-     * @return
-     * @see AbstractHibernateEntityService#getDao()
-     */
-    @Override
-    protected DefinitionDAO getDao() {
-        return _dao;
+        if (_log.isDebugEnabled()) {
+            _log.debug("Getting the definition for category/entity: [" + category.toString() + ":" + entity + "]");
+        }
+        return getDao().getDefinitionForCategoryAndEntity(category, entity);
     }
 
     private static final Log _log = LogFactory.getLog(HibernateDefinitionService.class);
-
-    @Autowired
-    private DefinitionDAO _dao;
 }

@@ -9,11 +9,12 @@
  */
 package org.nrg.notify.services;
 
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.notify.entities.Channel;
 
-
 public interface ChannelService extends BaseHibernateService<Channel> {
+    @SuppressWarnings("unused")
     public static String SERVICE_NAME = "ChannelService";
 
     /**
@@ -22,7 +23,7 @@ public interface ChannelService extends BaseHibernateService<Channel> {
      * @param format The format supported by the channel.
      * @return The newly created channel object.
      */
-    abstract public Channel createChannel(String name, String format);
+    abstract public Channel createChannel(String name, String format) throws NrgServiceException;
 
     /**
      * Retrieves the channel with the indicated name.

@@ -46,7 +46,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class HibernateNotificationService extends AbstractHibernateEntityService<Notification> implements NotificationService {
+public class HibernateNotificationService extends AbstractHibernateEntityService<Notification, NotificationDAO> implements NotificationService {
 
     /**
      * The ultimate convenience method. This creates a new {@link Notification notification}, setting it to the given
@@ -81,9 +81,9 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @param definition The notification definition from which the notification should be created.
      * @param parameters Any parameters for this particular notification. These are transformed through JSON to a string.
      * @return The newly created and dispatched notification.
-     * @throws IOException 
-     * @throws JsonMappingException 
-     * @throws JsonGenerationException 
+     * @throws IOException
+     * @throws JsonMappingException
+     * @throws JsonGenerationException
      * @see NotificationService#createNotification(Definition, Map))
      * @see NotificationService#createNotification(Definition, String)
      */
@@ -116,21 +116,20 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
         if (category == null) {
             throw new NoMatchingCategoryException("Didn't find a category for site-scoped event: " + event);
         }
-        
+
         // Now get the definition.
-        Definition definition = null;
         List<Definition> definitions = _definitionService.getDefinitionsForCategory(category);
         if (definitions == null || definitions.size() == 0) {
             throw new NoMatchingDefinitionException("Didn't find a category for site-scoped event: " + event);
-        } else {
-            // Just get the first if there's more than one, which there shouldn't be, since they shouldn't differ based on entity.
-            definition = definitions.get(0);
         }
-        
+
+        // Just get the first if there's more than one, which there shouldn't be, since they shouldn't differ based on entity.
+        Definition definition = definitions.get(0);
+
         // Create the notification.
         return createNotification(definition, parameters);
     }
-    
+
     /**
      * This creates a new {@link CategoryScope system-scoped} {@link Notification notification}, setting 
      * it to the given event and dispatching it to all subscribers with the given parameters. Basically,
@@ -152,7 +151,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
     public Notification createNotification(String event, Map<String, Object> parameters) throws IOException, NoMatchingCategoryException, NoMatchingDefinitionException {
         return createNotification(event, new ObjectMapper().writeValueAsString(parameters));
     }
-    
+
     /**
      * Creates a {@link Definition definition} associated with the {@link Category category} associated with
      * the indicated {@link CategoryScope scope} and event. If there's already a category with the same scope
@@ -185,19 +184,19 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
         definition.setCategory(category);
         definition.setEntity(entity);
         getDefinitionService().create(definition);
-        
+
         return definition;
     }
 
     /**
-     * Creates a new subscription for the given {@link Definition definition}, {@link Subscriber subscriber}, 
-     * and {@link Channel channel}. This subscription indicates that the indicated subscriber wants to be notified
-     * of events matching the definition using the given notification channel. 
+     * Creates a new subscription for the given {@link Definition definition}, {@link Subscriber subscriber}, and {@link
+     * Channel channel}. This subscription indicates that the indicated subscriber wants to be notified of events
+     * matching the definition using the given notification channel.
      * @param subscriber The subscriber.
      * @param subscriberType The type of subscriber.
      * @param definition The definition or event to which the subscriber wants to subscribe.
      * @param channel The channel by which the subscriber wants to be notified.
-     * @see NotificationService#subscribe(Definition, Subscriber, Channel)
+     * @see NotificationService#subscribe(Subscriber, SubscriberType, Definition, List)
      */
     @Override
     public Subscription subscribe(Subscriber subscriber, SubscriberType subscriberType, Definition definition, Channel channel) {
@@ -205,13 +204,13 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
     }
 
     /**
-     * This is the same as the {@link #subscribe(Definition, Subscriber, Channel)} method, except that it allows
-     * the subscriber to specify multiple notification channels. 
+     * This is the same as the {@link #subscribe(Subscriber, SubscriberType, Definition, Channel)} method, except that
+     * it allows the subscriber to specify multiple notification channels.
      * @param subscriber The subscriber.
      * @param subscriberType The type of subscriber.
      * @param definition The definition or event to which the subscriber wants to subscribe.
      * @param channels The channels by which the subscriber wants to be notified.
-     * @see NotificationService#subscribe(Definition, Subscriber, Channel)
+     * @see NotificationService#subscribe(Subscriber, SubscriberType, Definition, Channel)
      */
     @Override
     public Subscription subscribe(Subscriber subscriber, SubscriberType subscriberType, Definition definition, List<Channel> channels) {
@@ -226,21 +225,6 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
         return subscription;
     }
 
-    /**
-     * Creates a new {@link Notification notification} object.
-     * @return A new {@link Notification notification} object.
-     * @see AbstractHibernateEntityService#newEntity()
-     */
-    @Override
-    public Notification newEntity() {
-        return new Notification();
-    }
-
-    /**
-     * Sets the category service for this notification service.
-     * @param categoryService The category service to set.
-     * @see NotificationService#setCategoryService(CategoryService)
-     */
     @Override
     public void setCategoryService(CategoryService categoryService) {
         _categoryService = categoryService;
@@ -325,17 +309,17 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
     public void setNotificationDispatcherService(NotificationDispatcherService dispatcherService) {
         _dispatcherService = dispatcherService;
     }
-    
+
     /**
      * Gets the current notification dispatcher service instance.
      * @return Returns the notification dispatcher service.
-     * @see NotificationService#getNotificationDispatcherService() 
+     * @see NotificationService#getNotificationDispatcherService()
      */
     @Override
     public NotificationDispatcherService getNotificationDispatcherService() {
         return _dispatcherService;
     }
-    
+
     /**
      * Sets the subscriber service for this notification service.
      * @param subscriberService The subscriber service to set.
@@ -376,20 +360,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
         return _subscriptionService;
     }
 
-    /**
-     * Gets the {@link NotificationDAO notification DAO} instance for this service.
-     * @return The {@link NotificationDAO notification DAO} instance for this service.
-     * @see AbstractHibernateEntityService#getDao()
-     */
-    @Override
-    protected NotificationDAO getDao() {
-        return _dao;
-    }
-
     private static final Log _log = LogFactory.getLog(HibernateNotificationService.class);
-    
-    @Autowired
-    private NotificationDAO _dao;
 
     @Autowired
     private CategoryService _categoryService;

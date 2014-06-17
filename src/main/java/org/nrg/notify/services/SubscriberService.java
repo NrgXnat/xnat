@@ -13,8 +13,8 @@ import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 
-
 public interface SubscriberService extends BaseHibernateService<Subscriber> {
+    @SuppressWarnings("unused")
     public static String SERVICE_NAME = "SubscriberService";
     
     /**

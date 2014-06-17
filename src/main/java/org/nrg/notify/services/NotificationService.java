@@ -27,6 +27,7 @@ import org.nrg.notify.exceptions.NoMatchingCategoryException;
 import org.nrg.notify.exceptions.NoMatchingDefinitionException;
 
 public interface NotificationService extends BaseHibernateService<Notification> {
+    @SuppressWarnings("unused")
     public static String SERVICE_NAME = "NotificationService";
 
     /**
@@ -89,7 +90,6 @@ public interface NotificationService extends BaseHibernateService<Notification> 
      * @param event The category event.
      * @param entity The entity with which the definition is associated.
      * @return A newly created definition.
-     * @throws IOException Thrown when there's a problem converting the parameters to a string.
      * @throws DuplicateDefinitionException When a definition with the same scope, event, and entity association already exists.
      */
     abstract public Definition createDefinition(CategoryScope scope, String event, long entity) throws DuplicateDefinitionException;
@@ -117,7 +117,7 @@ public interface NotificationService extends BaseHibernateService<Notification> 
 
     /**
      * Getters and setters for all the dependent service instances.
-     * @return
+     * @return The category service.
      */
     abstract public CategoryService getCategoryService();
     abstract public void setCategoryService(CategoryService categoryService);

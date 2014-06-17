@@ -27,15 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 @Service
-public class HibernateAliasTokenService extends AbstractHibernateEntityService<AliasToken> implements AliasTokenService {
-    /**
-     * @return A new empty entity object.
-     * @see org.nrg.framework.orm.hibernate.BaseHibernateService#newEntity()
-     */
-    @Override
-    public AliasToken newEntity() {
-        return new AliasToken();
-    }
+public class HibernateAliasTokenService extends AbstractHibernateEntityService<AliasToken, AliasTokenDAO> implements AliasTokenService {
 
     /**
      * Finds all active tokens for a particular user.

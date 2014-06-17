@@ -24,15 +24,10 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class HibernateXftFieldExclusionService extends AbstractHibernateEntityService<XftFieldExclusion> implements XftFieldExclusionService {
+public class HibernateXftFieldExclusionService extends AbstractHibernateEntityService<XftFieldExclusion, XftFieldExclusionDAO> implements XftFieldExclusionService {
 
     private static final String[] EXCLUSION_PROPERTIES_SYSTEM_SCOPE = new String[] { "targetId", "pattern", "id", "enabled", "created", "timestamp", "disabled" };
     private static final String[] EXCLUSION_PROPERTIES_TARGET_SCOPE = new String[] { "pattern", "id", "enabled", "created", "timestamp", "disabled" };
-
-    @Override
-    public XftFieldExclusion newEntity() {
-        return new XftFieldExclusion();
-    }
 
     @Override
     @Transactional
@@ -76,11 +71,6 @@ public class HibernateXftFieldExclusionService extends AbstractHibernateEntitySe
         return null;
     }
 
-    @Override
-    protected XftFieldExclusionDAO getDao() {
-        return _dao;
-    }
-    
     @Inject
     private XftFieldExclusionDAO _dao;
 }

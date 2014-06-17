@@ -13,6 +13,7 @@ package org.nrg.xdat.services;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.springframework.test.annotation.ExpectedException;
 import org.springframework.test.context.ContextConfiguration;
@@ -31,7 +32,7 @@ public class TestXdatUserAuthService {
     }
 
     @Test
-    public void testUserAuthCreation() {
+    public void testUserAuthCreation() throws NrgServiceException {
     	XdatUserAuth created = _service.newEntity();
     	created.setAuthUser("mike");
     	created.setAuthMethod("ldap");
@@ -50,7 +51,7 @@ public class TestXdatUserAuthService {
     
     @Test
     @ExpectedException(ConstraintViolationException.class)
-    public void testConstraints() {
+    public void testConstraints() throws NrgServiceException {
     	XdatUserAuth userAuth1 = _service.newEntity();
         userAuth1.setAuthUser("mmckay");
         userAuth1.setAuthMethod("ldap");

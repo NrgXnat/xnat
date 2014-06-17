@@ -19,6 +19,7 @@ import org.nrg.config.entities.Configuration;
 import org.nrg.config.entities.ConfigurationData;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -29,22 +30,10 @@ import java.util.Collections;
 import java.util.List;
 
 @Service
-public class DefaultConfigService extends AbstractHibernateEntityService<Configuration> implements ConfigService {
+public class DefaultConfigService extends AbstractHibernateEntityService<Configuration, ConfigurationDAO> implements ConfigService {
 
     public static BeanComparator ConfigComparatorByCreateDate = new BeanComparator("created");
     public static BeanComparator ConfigComparatorByVersion = new BeanComparator("version");
-
-    @Override
-    public Configuration newEntity() {
-        Configuration entity = new Configuration();
-        entity.setUnversioned(false);
-        return entity;
-    }
-
-    @Override
-    protected ConfigurationDAO getDao() {
-        return _dao;
-    }
 
     @Transactional
     @Override

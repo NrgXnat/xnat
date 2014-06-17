@@ -10,8 +10,8 @@
   ~ Last modified 2/18/14 5:52 PM
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.nrg</groupId>
@@ -58,7 +58,8 @@
         <!-- signing.tsa>http://nrg115.nrg.mir:8081/tsa.aspx</signing.tsa -->
 
         <ant.version>1.6.1</ant.version>
-        <org.apache.ant.version>1.8.2</org.apache.ant.version> <!-- org.apache.ant and ant should be combined to use the latest version -->
+        <org.apache.ant.version>1.8.2</org.apache.ant.version>
+        <!-- org.apache.ant and ant should be combined to use the latest version -->
         <antlr.version>3.4</antlr.version>
         <avalon.version>4.1.4</avalon.version>
         <axis.version>1.4</axis.version>
@@ -88,6 +89,7 @@
         <httpcomponents-client.version>4.3.3</httpcomponents-client.version>
         <itext.version>1.1.4</itext.version>
         <jackson.version>1.8.11</jackson.version>
+        <fasterxml-jackson.version>2.1.0</fasterxml-jackson.version>
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
         <javassist.version>3.16.1-GA</javassist.version>
@@ -212,7 +214,17 @@
                 <version>${nrg.ecat4xnat.version}</version>
             </dependency>
 
-            <!-- XDAT dependency definitions -->
+            <!-- XNAT/XDAT dependency definitions -->
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>builder</artifactId>
+                <version>${xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>xnat-builder</artifactId>
+                <version>${xnat.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.nrg.xdat</groupId>
                 <artifactId>core</artifactId>
@@ -336,22 +348,22 @@
                 <artifactId>hibernate-jpa-2.0-api</artifactId>
                 <version>${hibernate-jpa.version}</version>
             </dependency>
-			<dependency>
-				<groupId>org.hibernate</groupId>
-				<artifactId>hibernate-validator</artifactId>
-				<version>${hibernate-validator.version}</version>
-			</dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-validator</artifactId>
+                <version>${hibernate-validator.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-ehcache</artifactId>
                 <version>${hibernate.version}</version>
             </dependency>
-			<dependency>
-				<groupId>net.sf.ehcache</groupId>
-				<artifactId>ehcache-core</artifactId>
-				<version>${ehcache.version}</version>
-			</dependency>
-			<dependency>
+            <dependency>
+                <groupId>net.sf.ehcache</groupId>
+                <artifactId>ehcache-core</artifactId>
+                <version>${ehcache.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.jena</groupId>
                 <artifactId>jena-core</artifactId>
                 <version>${jena.version}</version>
@@ -361,11 +373,11 @@
                 <artifactId>jena-tdb</artifactId>
                 <version>${jena-tdb.version}</version>
             </dependency>
-			<dependency>
-				<groupId>org.reflections</groupId>
-				<artifactId>reflections</artifactId>
-				<version>${reflections.version}</version>
-			</dependency>
+            <dependency>
+                <groupId>org.reflections</groupId>
+                <artifactId>reflections</artifactId>
+                <version>${reflections.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.apache.httpcomponents</groupId>
                 <artifactId>httpclient</artifactId>
@@ -478,9 +490,29 @@
                 <version>${dcm4che.version}</version>
             </dependency>
             <dependency>
+                <groupId>dcm4che.tool</groupId>
+                <artifactId>dcm4che-tool-dcmecho</artifactId>
+                <version>${dcm4che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dcm4che.tool</groupId>
+                <artifactId>dcm4che-tool-dcmqr</artifactId>
+                <version>${dcm4che.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.geronimo.specs</groupId>
                 <artifactId>geronimo-jms_1.1_spec</artifactId>
                 <version>1.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-core</artifactId>
+                <version>5.7.0</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.xbean</groupId>
+                <artifactId>xbean-spring</artifactId>
+                <version>3.12</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xmlbeans</groupId>
@@ -569,6 +601,11 @@
                 <groupId>org.codehaus.jackson</groupId>
                 <artifactId>jackson-mapper-asl</artifactId>
                 <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${fasterxml-jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.xml</groupId>
@@ -750,7 +787,12 @@
                 <version>${spring-framework.version}</version>
                 <scope>test</scope>
             </dependency>
-
+            <dependency>
+                <groupId>org.kubek2k</groupId>
+                <artifactId>springockito</artifactId>
+                <version>1.0.5</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

@@ -26,20 +26,7 @@ import java.util.Set;
  * Service for managing preferences within the XNAT system.
  */
 @Service
-public class HibernatePreferencesService extends AbstractHibernateEntityService<Preference> implements PreferencesService {
-
-    @Override
-    public Preference newEntity() {
-        return new Preference();
-    }
-
-    @Override
-    protected BaseHibernateDAO<Preference> getDao() {
-        return _dao;
-    }
-
-    @Inject
-    private PreferenceRepository _dao;
+    public class HibernatePreferencesService extends AbstractHibernateEntityService<Preference, PreferenceRepository> implements PreferencesService {
 
     @Override
     public Set<String> getFeatureNames() {

@@ -16,6 +16,7 @@ import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.prefs.entities.Preference;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -49,7 +50,7 @@ public class PreferencesServiceTests {
     }
 
     @Test
-    public void testSimplePreference() {
+    public void testSimplePreference() throws NrgServiceException {
         Preference preference = _service.newEntity();
         preference.setName("Preference 1");
         _service.create(preference);

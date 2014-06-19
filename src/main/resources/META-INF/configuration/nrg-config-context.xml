@@ -20,7 +20,12 @@
  
     <context:component-scan base-package="org.nrg.config" />
 
-    <util:list id="nrgConfigEntityPackages">
-        <value>org.nrg.config.entities</value>
-    </util:list>
+    <bean id="nrgConfigEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
+        <property name="items">
+            <util:list>
+                <value>org.nrg.config.entities</value>
+            </util:list>
+        </property>
+    </bean>
+
 </beans>

@@ -241,6 +241,10 @@ public class XFTTable implements XFTTableI {
 		rowCursor = 0;
 	}
 	
+	/* (non-Javadoc)
+	 * Warning: Don't modify the contents of this ArrayList directly.  Use the insertRow and removeRow methods.  XFTTable is an old dumb ox and is not robust to your fancy pants ways.
+	 * @see org.nrg.xft.XFTTableI#rows()
+	 */
 	public ArrayList<Object[]> rows()
 	{
 	    return rows;

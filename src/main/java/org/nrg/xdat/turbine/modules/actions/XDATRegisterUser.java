@@ -101,8 +101,6 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         else {
                             found.setProperty("verified","false");
                         }
-		                found.setProperty("xdat:user.assigned_roles.assigned_role[0].role_name","SiteUser");
-	                    found.setProperty("xdat:user.assigned_roles.assigned_role[1].role_name","DataManager");
 		                
 		                XDATUser newUser = new XDATUser(found);
 

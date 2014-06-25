@@ -18,7 +18,6 @@ import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
-import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -36,6 +35,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
+import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
@@ -45,6 +45,7 @@ import org.nrg.xdat.om.XdatUserGroupid;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.QueryOrganizer;
+import org.nrg.xdat.services.UserRoleService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
@@ -57,6 +58,7 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
@@ -79,6 +81,8 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
+import com.google.common.collect.Lists;
+
 /**
  * @author Tim
  */
@@ -93,7 +97,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private Hashtable actions = null;
     private final Hashtable<String, UserGroup> groups = new Hashtable<String, UserGroup>();
     private boolean extended = false;
-    private ArrayList roleNames = null;
+    private List<String> roleNames = null;
     private ArrayList<XdatStoredSearch> stored_searches = null;
 
     private ArrayList<ElementDisplay> browseable = null;
@@ -712,61 +716,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     /**
-     * Hashtable of the allowed actions for this user.
-     *
-     * @return
-     * @throws XFTInitException
-     * @throws ElementNotFoundException
-     * @throws DBPoolException
-     * @throws java.sql.SQLException
-     * @throws FieldNotFoundException
-     * @throws UserNotFoundException
-     * @throws PasswordAuthenticationException
-     *
-     * @throws Exception
-     */
-    public Hashtable getActions() throws XFTInitException, ElementNotFoundException, DBPoolException, java.sql.SQLException, FieldNotFoundException, UserNotFoundException, PasswordAuthenticationException, Exception {
-        if (this.actions == null) {
-            actions = new Hashtable();
-            Iterator items = this.getChildItems(USER_ELEMENT + ".assigned_roles.assigned_role").iterator();
-            while (items.hasNext()) {
-                ItemI sub = (ItemI) items.next();
-
-                Iterator subIter = sub.getChildItems(org.nrg.xft.XFT.PREFIX + ":role_type.allowed_actions.allowed_action").iterator();
-                while (subIter.hasNext()) {
-                    ItemI sub2 = (ItemI) subIter.next();
-                    XDATAction action = new XDATAction(sub2);
-                    actions.put(action.getName(), action);
-                }
-            }
-        }
-        return actions;
-    }
-
-    public List getSortedActions() throws XFTInitException, ElementNotFoundException, DBPoolException, java.sql.SQLException, FieldNotFoundException, UserNotFoundException, PasswordAuthenticationException, Exception {
-        ArrayList al = new ArrayList();
-        ItemCollection items = this.getChildItemCollection(USER_ELEMENT + ".assigned_roles.assigned_role");
-        ArrayList sortedRoles = items.getItems("xdat:role_type.sequence");
-        Iterator sortedItems = sortedRoles.iterator();
-        while (sortedItems.hasNext()) {
-            ItemI sub = (ItemI) sortedItems.next();
-            ItemCollection actionItems = new ItemCollection(sub.getChildItems(org.nrg.xft.XFT.PREFIX + ":role_type.allowed_actions.allowed_action"));
-
-            Iterator subIter = actionItems.getItemIterator("xdat:action_type.sequence");
-            while (subIter.hasNext()) {
-                ItemI sub2 = (ItemI) subIter.next();
-                XDATAction action = new XDATAction(sub2);
-                al.add(action);
-            }
-        }
-        return al;
-    }
-
-    public Collection getActionCollection() throws XFTInitException, ElementNotFoundException, DBPoolException, java.sql.SQLException, FieldNotFoundException, UserNotFoundException, PasswordAuthenticationException, Exception {
-        return getSortedActions();
-    }
-
-    /**
      * @return
      */
 
@@ -793,12 +742,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return sb.toString();
     }
 
-    public boolean can(String action) throws Exception {
-        if (isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
-            return false;
-        }
-        return this.getActions().containsKey(action);
-    }
+
 
     public DisplaySearch getSearch(String elementName, String display) throws Exception {
         DisplaySearch search = new DisplaySearch();
@@ -957,37 +901,85 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public void setExtended(boolean b) {
         extended = b;
     }
-
+    
     /**
-     * @return ArrayList of XFTItems
+     * Removes the user from the specified role.  The authenticatedUser must be a site admin.  The operation will remove the role from the old XFT structure and the new Hibernate structure.
+     * @param authenticatedUser
+     * @param dRole
+     * @throws Exception
      */
-    public ArrayList getRoles() throws Exception {
-        ArrayList al = new ArrayList();
-
-        Iterator items = this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role").iterator();
-        while (items.hasNext()) {
-            ItemI sub = (ItemI) items.next();
-            al.add(sub);
+    public void deleteRole(XDATUser authenticatedUser, String dRole) throws Exception{
+		if(!authenticatedUser.isSiteAdmin()){
+			throw new Exception("Invalid permissions for user modification.");
+		}
+		
+    	for (ItemI role: (List<ItemI>)this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
+    		if(org.apache.commons.lang.StringUtils.equals(role.getStringProperty("role_name"),dRole)){
+    			PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user",this.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Removed " + dRole + " role"));
+    			EventMetaI ci=wrk.buildEvent();
+    			SaveItemHelper.unauthorizedRemoveChild(this.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), authenticatedUser,ci);
+    			PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
+    		}
         }
-
-        al.trimToSize();
-        return al;
+    	
+    	List<UserRole> roles =XDAT.getContextService().getBean(UserRoleService.class).findRolesForUser(this.getLogin());
+        if(roles!=null){
+        	for(final UserRole ur: roles){
+        		if(org.apache.commons.lang.StringUtils.equals(ur.getRole(), dRole)){
+        			XDAT.getContextService().getBean(UserRoleService.class).delete(ur);
+        			PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user",this.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Removed " + dRole + " role"));
+        			PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
+        		}
+        	}
+        }
     }
-
+    
+    /**
+     * Method used to add a user to a role. The authenticatedUser must be a site admin.  It stores the role in the Hibernate UserRole impl.
+     * @param authenticatedUser
+     * @param dRole
+     * @throws Exception
+     */
+    public void addRole(XDATUser authenticatedUser, String dRole) throws Exception{
+    	if(!StringUtils.IsEmpty(dRole)){
+	    	if(XDAT.getContextService().getBean(UserRoleService.class).findUserRole(this.getLogin(), dRole)==null){
+	    		if(!authenticatedUser.isSiteAdmin()){
+	    			throw new Exception("Invalid permissions for user modification.");
+	    		}
+	    		
+	    		XDAT.getContextService().getBean(UserRoleService.class).addRoleToUser(this.getLogin(), dRole);
+	    		
+	    		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user",this.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Added " + dRole + " role"));
+	    		PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
+	    	}
+    	}
+    }
+    
+    private List<String> loadRoleNames() throws Exception {
+    	final List<String> r=Lists.newArrayList();
+    	
+    	//load from the old role store
+        for (ItemI sub: (List<ItemI>)this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
+            r.add(sub.getStringProperty("role_name"));
+        }
+        
+        //load from the new role store
+        List<UserRole> roles =XDAT.getContextService().getBean(UserRoleService.class).findRolesForUser(this.getLogin());
+        if(roles!=null){
+        	for(final UserRole ur: roles){
+        		r.add(ur.getRole());
+        	}
+        }
+        
+        return r;
+    }
+    
     /**
      * @return ArrayList of XFTItems
      */
-    public ArrayList getRoleNames() throws Exception {
+    public List<String> getRoleNames() throws Exception {
         if (roleNames == null) {
-            roleNames = new ArrayList();
-
-            Iterator items = this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role").iterator();
-            while (items.hasNext()) {
-                ItemI sub = (ItemI) items.next();
-                roleNames.add(sub.getProperty("role_name"));
-            }
-
-            roleNames.trimToSize();
+            roleNames = loadRoleNames();
         }
         return roleNames;
     }
@@ -2666,9 +2658,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		        		throw new PasswordComplexityException(validator.getMessage());
 		        	}
 		        }
-		        found.setProperty(
-		                "xdat:user.assigned_roles.assigned_role[0].role_name",
-		                "SiteUser");
 		        XDATUser newUser = new XDATUser(found);
 		        // newUser.initializePermissions();
 		        SaveItemHelper.authorizedSave(newUser, authenticatedUser, true, false, true, false,ci);

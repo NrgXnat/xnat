@@ -914,6 +914,10 @@ public class TurbineUtils {
 	public Boolean toBoolean(String s){
 		return Boolean.valueOf(s);
 	}
+	
+	public String[] toList(String s){
+		return s.split(",");
+	}
     
     public String formatDate(Date d, String pattern){
 	    	final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat (pattern);
@@ -1175,6 +1179,28 @@ public class TurbineUtils {
 				final GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
 				mergePropsNoOverwrite(props,getTemplates(p.getSQLName()+"/"+subFolder),"fileName");
 			}
+    		
+    		Collections.sort(props, new Comparator<Properties>() {
+				@Override
+				public int compare(Properties arg0, Properties arg1) {
+					if(arg0.containsKey("Sequence") && arg1.containsKey("Sequence")){
+						try {
+							Integer sequence1=Integer.parseInt(arg0.getProperty("Sequence"));
+							Integer sequence2=Integer.parseInt(arg1.getProperty("Sequence"));
+							return sequence1.compareTo(sequence2);
+						} catch (NumberFormatException e) {
+							logger.error("Illegal sequence format.",e);
+							return 0;
+						}
+					}else if(arg0.containsKey("Sequence")){
+						return -1;
+					}else if(arg1.containsKey("Sequence")){
+						return 1;
+					}else{
+						return 0;
+					}
+				}
+			});
 		} catch (XFTInitException e) {
 			logger.error("",e);
 		} catch (ElementNotFoundException e) {

@@ -118,30 +118,6 @@ public class AdminUtils {
 	public static String getAuthorizerEmailId() {
 		if (authorizerEmailAddress == null) {
 			try {
-				ItemCollection items = ItemSearch.GetItems("xdat:user.assigned_roles.assigned_role.role_name", "Bossman", null, false);
-
-				if (items.size() > 0) {
-					int count = 0;
-					@SuppressWarnings("rawtypes")
-					Iterator iterator = items.getItemIterator();
-					while (iterator.hasNext()) {
-						if (count++ == 0)
-							authorizerEmailAddress = ((ItemI) iterator.next()).getStringProperty("email");
-						else {
-							authorizerEmailAddress += "," + ((ItemI) iterator.next()).getStringProperty("email");
-						}
-					}
-				} else {
-					authorizerEmailAddress = getAdminEmailId();
-				}
-			} catch (XFTInitException e) {
-				logger.error("", e);
-				authorizerEmailAddress = getAdminEmailId();
-			} catch (ElementNotFoundException e) {
-				logger.error("", e);
-				authorizerEmailAddress = getAdminEmailId();
-			} catch (FieldNotFoundException e) {
-				logger.error("", e);
 				authorizerEmailAddress = getAdminEmailId();
 			} catch (Exception e) {
 				logger.error("", e);

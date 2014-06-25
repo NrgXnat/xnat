@@ -239,7 +239,6 @@ public class SchemaElement implements SchemaElementI {
 		return df;
 	}
 
-
 	public DisplayField createDisplayFieldForXMLPath(String s) throws XFTInitException,ElementNotFoundException,Exception
 	{
 		DisplayField temp = null;

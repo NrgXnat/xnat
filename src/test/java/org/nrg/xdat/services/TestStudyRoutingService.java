@@ -28,6 +28,7 @@ public class TestStudyRoutingService {
     public static final String UID2 = "2.3.4.5.6.7.8";
     public static final String UID3 = "3.4.5.6.7.8.9";
     public static final String UID4 = "4.5.6.7.8.9.0";
+    public static final String UID5 = "5.6.7.8.9.0.1";
     public static final String PRJ1 = "prj1";
     public static final String PRJ2 = "prj2";
     public static final String USR1 = "user1";
@@ -55,10 +56,10 @@ public class TestStudyRoutingService {
 
     @Test
     public void testLotsOfAssignments() {
-        _service.assign(UID1, PRJ1, USR1);
         _service.assign(UID2, PRJ1, USR1);
         _service.assign(UID3, PRJ1, USR2);
         _service.assign(UID4, PRJ2, USR2);
+        _service.assign(UID5, PRJ1, USR1);
         Map<String, Map<String, String>> assignments = _service.findProjectRoutings(PRJ1);
         assertEquals(3, assignments.size());
         assignments = _service.findProjectRoutings(PRJ2);

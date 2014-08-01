@@ -18,6 +18,7 @@ import java.security.SecureRandom;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Date;
@@ -27,7 +28,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
-import org.apache.commons.codec.digest.DigestUtils;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -45,6 +45,7 @@ import org.nrg.xdat.om.XdatUserGroupid;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.QueryOrganizer;
+import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.services.UserRoleService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -82,6 +83,7 @@ import org.nrg.xft.utils.StringUtils;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 /**
  * @author Tim
@@ -96,6 +98,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private Hashtable<String, ElementAccessManager> accessManagers = null;
     private Hashtable actions = null;
     private final Hashtable<String, UserGroup> groups = new Hashtable<String, UserGroup>();
+    private final Map<String, String> groupsByTag = Maps.newHashMap();
     private boolean extended = false;
     private List<String> roleNames = null;
     private ArrayList<XdatStoredSearch> stored_searches = null;
@@ -214,6 +217,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
 
         this.groups.clear();
+        this.groupsByTag.clear();
         this.stored_searches = null;
         this.clearLocalCache();
 
@@ -1985,6 +1989,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public void initGroups() {
         synchronized (groups) {
             groups.clear();
+            groupsByTag.clear();
             getGroups();
         }
     }
@@ -2002,6 +2007,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                         UserGroup group = UserGroupManager.GetGroup(groupID);
                         if (group != null) {
                             groups.put(groupID, group);
+                            if(group.getTag()!=null){
+                            	groupsByTag.put(group.getTag(), group.getId());
+                            }
                         }
                     }
                 } catch (SQLException e) {
@@ -2057,6 +2065,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     public UserGroup getGroup(String id) {
         return getGroups().get(id);
+    }
+
+    public UserGroup getGroupByTag(String tag) {
+    	if(groupsByTag.size()==0){
+    		initGroups();
+    	}
+        return UserGroupManager.GetGroup(groupsByTag.get(tag));
     }
 
     public ArrayList getRecentItems(String elementName, int limit) {
@@ -2737,5 +2752,72 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         final String login = getLogin();
         return StringUtils.IsEmpty(login) || login.equalsIgnoreCase("guest");
     }
+    
+
+
+	public Collection<String> getFeaturesForUserByTag(String tag) {
+		return Features.getFeaturesForGroup(getGroupByTag(tag));
+	}
+
+	public Collection<String> getFeaturesForUserByTags(Collection<String> tags) {
+		List<String> combined=Lists.newArrayList();
+		for(String tag: tags){
+			for(String feature: getFeaturesForUserByTag(tag)){
+				if(!combined.contains(feature)){
+					combined.add(feature);
+				}
+			}
+		}
+		return combined;
+	}
+
+	public boolean checkSiteRole(String role) {
+		try {
+			return this.checkRole(role);
+		} catch (Exception e) {
+			logger.error("",e);
+			return false;
+		}
+	}
+
+	/**
+	 * Returns true if the user is a part of a group with the matching tag and feature
+	 * @param tag
+	 * @param feature
+	 * @return
+	 */
+	public boolean checkFeature(String tag, String feature) {
+		return Features.checkFeature(getGroupByTag(tag), feature);
+	}
+
+	/**
+	 * Returns true if the user is part of any groups with the matching tag and feature
+	 * @param tags
+	 * @param feature
+	 * @return
+	 */
+	public boolean checkFeature(Collection<String> tags, String feature) {
+		for(String tag: tags){
+			if(checkFeature(tag,feature)){
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * Returns true if the user is part of any groups with the matching tag and feature
+	 * @param tags
+	 * @param feature
+	 * @return
+	 */
+	public boolean checkFeature(BaseElement item, String feature) {
+		return checkFeature(item.getSecurityTags().getHash().values(),feature);
+	}
+	
+	public boolean checkFeatureForAnyTag(String feature){
+		return Features.checkFeatureForAnyTag(this, feature);
+	}
 }
 

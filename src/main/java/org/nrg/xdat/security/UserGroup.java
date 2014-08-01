@@ -8,20 +8,22 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.om.XdatElementAccess;
-import org.nrg.xdat.om.XdatFieldMapping;
-import org.nrg.xdat.om.XdatFieldMappingSet;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.GroupFeature;
 import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.services.GroupFeatureService;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
+
+import com.google.common.collect.Lists;
 
 public class UserGroup{
     private Logger logger = Logger.getLogger(UserGroup.class);
 	private String id=null;
 	private String tag=null;
+	private String displayname=null;
 	public UserGroup(String _id){
 		id=_id;
 	}
@@ -30,11 +32,17 @@ public class UserGroup{
 		return id;
 	}
 	
+	public String getDisplayname(){
+		return displayname;
+	}
+	
 	public String getTag(){
 		return tag;
 	}
 
 	private Hashtable<String,ElementAccessManager> accessManagers = null;
+	private List<String> features=null;
+	private List<String> blocked=null;
 
     public synchronized Hashtable<String,ElementAccessManager> getAccessManagers(){
         if (accessManagers==null){
@@ -52,6 +60,9 @@ public class UserGroup{
     {
     	this.tag=item.getStringProperty("tag");
     	tag=StringUtils.intern(tag);
+
+    	this.displayname=item.getStringProperty("displayName");
+    	displayname=StringUtils.intern(displayname);
     	
         accessManagers = new Hashtable<String,ElementAccessManager>();
         Iterator items = item.getChildItems("xdat:userGroup.element_access").iterator();
@@ -66,6 +77,16 @@ public class UserGroup{
 //                eam.setGuestManager(guestManagers.get(eam.getElement()));
 //            }
             accessManagers.put(eam.getElement(),eam);
+        }
+
+        features=Lists.newArrayList();
+        blocked=Lists.newArrayList();
+        for(GroupFeature feature:(XDAT.getContextService().getBean(GroupFeatureService.class).findFeaturesForGroup(this.getId()))){
+        	if(feature.isBlocked()){
+            	blocked.add(feature.getFeature());
+        	}else if(feature.isOnByDefault()){
+            	features.add(feature.getFeature());
+        	}
         }
     }
 
@@ -215,5 +236,11 @@ public class UserGroup{
         return allElements;
     }
     
-
+    public List<String> getFeatures(){
+    	return features;
+    }
+    
+    public List<String> getBlockedFeatures(){
+    	return blocked;
+    }
 }

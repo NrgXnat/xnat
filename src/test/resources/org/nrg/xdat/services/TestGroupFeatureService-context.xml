@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ D:/Development/XNAT/1.6/xdat_1_6dev/src/test/resources/org/nrg/xdat/services/TestGroupFeatureService-context.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 8/28/13 3:46 PM
+  -->
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <import resource="classpath:/TestDataSource-context.xml" />
+    <import resource="classpath:/META-INF/configuration/nrg-framework-context.xml" />
+
+    <context:component-scan base-package="org.nrg.xdat.services" />
+    <context:component-scan base-package="org.nrg.xdat.daos" />
+
+    <bean id="testEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
+        <property name="items">
+            <list>
+                <value>org.nrg.xdat.entities</value>
+            </list>
+        </property>
+    </bean>
+
+</beans>

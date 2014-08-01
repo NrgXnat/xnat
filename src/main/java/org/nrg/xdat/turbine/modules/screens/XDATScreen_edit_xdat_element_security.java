@@ -12,13 +12,19 @@
 
 package org.nrg.xdat.turbine.modules.screens;
 
+import java.util.List;
+
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.helpers.FeatureDefinitionI;
+import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+
+import com.google.common.collect.Lists;
 
 /**
  * @author Tim
@@ -56,6 +62,12 @@ public class XDATScreen_edit_xdat_element_security extends AdminEditScreenA {
         } catch (FieldNotFoundException e) {
             logger.error("",e);
         }
+        
+        List<List> features=Lists.newArrayList();
+        for(FeatureDefinitionI def: Features.getAllFeatures()){
+        	features.add(Lists.newArrayList(def.getKey(),def.getName()));
+        }
+        context.put("features", features);
     }
 
 }

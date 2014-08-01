@@ -967,13 +967,23 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             r.add(sub.getStringProperty("role_name"));
         }
         
-        //load from the new role store
-        List<UserRole> roles =XDAT.getContextService().getBean(UserRoleService.class).findRolesForUser(this.getLogin());
-        if(roles!=null){
-        	for(final UserRole ur: roles){
-        		r.add(ur.getRole());
-        	}
-        }
+        try {
+			//load from the new role store
+        	//TODO: Fix it so that this is required in tomcat mode, but optional in command line mode.
+			UserRoleService roleService=XDAT.getContextService().getBean(UserRoleService.class);
+			if(roleService!=null){
+			    List<UserRole> roles =roleService.findRolesForUser(this.getLogin());
+			    if(roles!=null){
+			    	for(final UserRole ur: roles){
+			    		r.add(ur.getRole());
+			    	}
+			    }
+			}else{
+				logger.error("skipping user role service review... service is null");
+			}
+		} catch (Throwable e) {
+			logger.error("",e);
+		}
         
         return r;
     }

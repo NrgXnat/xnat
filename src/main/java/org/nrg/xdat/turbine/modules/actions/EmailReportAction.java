@@ -49,8 +49,8 @@ public class EmailReportAction extends EmailAction {
 			String[] bccs = StringUtils.split(bccAddress == null ? "" : bccAddress, ", ");
 			
 			String subject = getSubject(data,context);
-			String message = getHtmlMessage(data,context);
-			String text = getTxtMessage(data,context);
+			String message = getHtmlMessage(data,context).replace("&apos;", "'"); // standard email HTML doesn't use this tag
+			String text = getTxtMessage(data,context).replace("&apos;", "'");
 
 			try {
 				XDAT.getMailService().sendHtmlMessage(AdminUtils.getAdminEmailId(), tos, ccs, bccs, subject, message, text);

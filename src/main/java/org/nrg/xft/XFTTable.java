@@ -27,12 +27,13 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.utils.StringUtils;
 import org.json.JSONException;
-import org.json.JSONObject;
+
 public class XFTTable implements XFTTableI {
 	static Logger logger = Logger.getLogger(XFTTable.class);
 	private String [] columns = null;
@@ -41,7 +42,6 @@ public class XFTTable implements XFTTableI {
 	private int numRows = 0;
 	
 	private int rowCursor = 0;
-	
 	public ArrayList quarantineIndexs = new ArrayList();
 		
 	public static XFTTable Execute(String query, String dbName, String userName) throws SQLException,DBPoolException{
@@ -255,16 +255,14 @@ public class XFTTable implements XFTTableI {
 	 * @param delimiter
 	 * @return
 	 */
-	public String toString(String delimiter)
-	{
-		StringBuffer sb = new StringBuffer();
+	public String toString(String delimiter) {
+		StringBuilder buffer = new StringBuilder();
 		for (int i=0;i<this.numCols;i++)
 		{
-			if (i!=0)
-			{
-				sb.append(delimiter);
+			if (i!=0) {
+				buffer.append(delimiter);
 			}
-			sb.append(this.getColumns()[i]);
+			buffer.append(StringEscapeUtils.escapeCsv(this.getColumns()[i]));
 		}
 		
 		resetRowCursor();
@@ -276,19 +274,19 @@ public class XFTTable implements XFTTableI {
 			{
 				if (i!=0)
 				{
-					sb.append(delimiter);
+					buffer.append(delimiter);
 				}else
 				{
-					sb.append("\n");
+					buffer.append("\n");
 				}
-				sb.append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),delimiter," "),"\n"," "),"\r"," "));
-			}
+				buffer.append(StringEscapeUtils.escapeCsv(ValueParser(row[i])));
+            }
 		}
 		
-		return sb.toString();
+		return buffer.toString();
 	}
-	
-	public String toHTML(boolean insertTDTags,String lightColor,String darkColor,Hashtable tableProperties,int startCount)
+
+    public String toHTML(boolean insertTDTags,String lightColor,String darkColor,Hashtable tableProperties,int startCount)
 	{
 	    if (tableProperties ==null)
 	    {
@@ -447,7 +445,7 @@ public class XFTTable implements XFTTableI {
 
 	/**
 	 * Outputs table headers and contents into an HTML Table
-	 * @param delimiter
+	 * @param insertTDTags Indicates whether TD tags should be inserted.
 	 * @return
 	 */
 	public String toHTML(boolean insertTDTags)
@@ -497,8 +495,7 @@ public class XFTTable implements XFTTableI {
 	
 	/**
 	 * Outputs table headers and contents without delimiters
-	 * @param delimiter
-	 * @return
+	 * @return A string representation of the table.
 	 */
 	public String toString()
 	{
@@ -741,41 +738,21 @@ public class XFTTable implements XFTTableI {
 	    al.trimToSize();
 	    return al;
 	}
-	
+
     /**
      * @param columns The columns to set.
      */
     public void setColumns(String[] columns) {
         this.columns = columns;
     }
-    /**
-     * @param numCols The numCols to set.
-     */
-    private void setNumCols(int numCols) {
-        this.numCols = numCols;
-    }
-    /**
-     * @param numRows The numRows to set.
-     */
-    private void setNumRows(int numRows) {
-        this.numRows = numRows;
-    }
-    /**
-     * @param rows The rows to set.
-     */
-    private void setRows(ArrayList rows) {
-        this.rows = rows;
-    }
-    
-    
+
     /**
      * @return Returns the rowCursor.
      */
     public int getRowCursor() {
         return rowCursor;
     }
-    
-    
+
     /**
      * Converts each row into a hashtable and inserts them into an ArrayList.
      * @return
@@ -793,8 +770,7 @@ public class XFTTable implements XFTTableI {
 	    al.trimToSize();
 	    return al;
     }
-    
-    
+
     /**
      * Converts each row into a hashtable and inserts them into an ArrayList.
      * @return
@@ -1034,11 +1010,10 @@ public class XFTTable implements XFTTableI {
 			Writer writer = new BufferedWriter(w);
 			for (int i=0;i<this.numCols;i++)
 			{
-				if(i>0)
-					writer.write(",");
-				writer.write("\"");
-				writer.write(this.getColumns()[i]);
-				writer.write("\"");
+				if(i>0) {
+                    writer.write(",");
+                }
+                StringEscapeUtils.escapeCsv(writer, this.getColumns()[i]);
 			}
 			writer.write("\n");
 			writer.flush();
@@ -1050,10 +1025,8 @@ public class XFTTable implements XFTTableI {
 					if(i>0)
 						writer.write(",");
 					if(null!=row[i]){
-						if(row[i] instanceof String)writer.write("\"");
-						writer.write(StringUtils.ReplaceStr(ValueParser(row[i]),"\"","'"));
-						if(row[i] instanceof String)writer.write("\"");		
-					}			
+                        StringEscapeUtils.escapeCsv(writer, ValueParser(row[i]));
+					}
 				}
 				writer.write("\n");
 				writer.flush();
@@ -1108,8 +1081,8 @@ public class XFTTable implements XFTTableI {
 
 	/**
 	 * Outputs table headers and contents into an HTML Table
-	 * @param delimiter
-	 * @return
+	 * @param insertTDTags    Indicates whether TD tags should be inserted.
+     * @param writer          The writer to use for output.
 	 */
 	public void toHTML(boolean insertTDTags,Writer writer) throws IOException
 	{
@@ -1118,8 +1091,9 @@ public class XFTTable implements XFTTableI {
 
 	/**
 	 * Outputs table headers and contents into an HTML Table
-	 * @param delimiter
-	 * @return
+	 * @param insertTDTags    Indicates whether TD tags should be inserted.
+     * @param writer          The writer to use for output.
+     * @param cp              Column properties.
 	 */
 	public void toHTML(boolean insertTDTags,Writer writer,Map <String,Map<String,String>> cp) throws IOException
 	{
@@ -1218,5 +1192,23 @@ public class XFTTable implements XFTTableI {
 	public void reverse(){
 		Collections.reverse(rows);
 	}
-}
 
+    /**
+     * @param numCols The numCols to set.
+     */
+    private void setNumCols(int numCols) {
+        this.numCols = numCols;
+    }
+    /**
+     * @param numRows The numRows to set.
+     */
+    private void setNumRows(int numRows) {
+        this.numRows = numRows;
+    }
+    /**
+     * @param rows The rows to set.
+     */
+    private void setRows(ArrayList rows) {
+        this.rows = rows;
+    }
+}

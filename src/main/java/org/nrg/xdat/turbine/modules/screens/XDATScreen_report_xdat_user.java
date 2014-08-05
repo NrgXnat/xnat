@@ -20,6 +20,7 @@ import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Roles;
 
 import java.util.List;
 
@@ -49,6 +50,8 @@ public class XDATScreen_report_xdat_user extends AdminReport {
             // Has the user been blocked from requesting emails? (Resend Email Verification / Reset password)
             final EmailRequestLogService requests = XDAT.getContextService().getBean(EmailRequestLogService.class);
             context.put("emailRequestsBlocked", requests.isEmailBlocked(tempUser.getEmail()));
+            
+            context.put("allRoles",Roles.getRoles());
 
         } catch (Exception e) {
             logger.error("",e);

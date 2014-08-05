@@ -23,12 +23,14 @@ public class UserRoleDAO extends AbstractHibernateDAO<UserRole> {
     public List<UserRole> findByRole(String role) {
         Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("role", role));
+        criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
         return (List<UserRole>) criteria.list();
     }
 
     public List<UserRole> findByUser(String username) {
         Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("username", username));
+        criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
         return (List<UserRole>) criteria.list();
     }
 
@@ -36,6 +38,7 @@ public class UserRoleDAO extends AbstractHibernateDAO<UserRole> {
         Criteria criteria = getSession().createCriteria(getParameterizedType());
         criteria.add(Restrictions.eq("username", username));
         criteria.add(Restrictions.eq("role", role));
+        criteria.add(Restrictions.eq("enabled", Boolean.TRUE));
         if (criteria.list().size() == 0) {
             return null;
         }

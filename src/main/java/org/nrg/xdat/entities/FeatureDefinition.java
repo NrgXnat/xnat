@@ -13,7 +13,7 @@ import org.nrg.xdat.security.helpers.FeatureDefinitionI;
 
 @Auditable
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"key"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"key","disabled"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class FeatureDefinition extends AbstractHibernateEntity implements FeatureDefinitionI{
 

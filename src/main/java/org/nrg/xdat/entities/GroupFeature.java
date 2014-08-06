@@ -12,7 +12,7 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
 @Auditable
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"feature", "group_id"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"feature", "group_id","disabled"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class GroupFeature extends AbstractHibernateEntity {
 	public GroupFeature() {

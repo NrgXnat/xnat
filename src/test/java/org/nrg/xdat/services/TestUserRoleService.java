@@ -9,15 +9,14 @@ import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
-import org.nrg.xdat.entities.FeatureDefinition;
-import org.nrg.xdat.entities.GroupFeature;
+import org.nrg.xdat.entities.UserRole;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
-public class TestFeatureDefinitionService {
+public class TestUserRoleService {
     @Test
     public void testServiceInstance() {
         assertNotNull(_service);
@@ -25,12 +24,12 @@ public class TestFeatureDefinitionService {
 
     @Test
     public void testCreation() throws NrgServiceException {
-    	FeatureDefinition created = _service.newEntity();
-    	created.setKey("key1");
-    	created.setName("name1");
+    	UserRole created = _service.newEntity();
+    	created.setUsername("key1");
+    	created.setRole("name1");
     	_service.create(created);
     	
-    	FeatureDefinition retrieved = _service.findFeatureByKey("key1");
+    	UserRole retrieved = _service.findUserRole("key1", "name1");
     	assertNotNull(retrieved);
 
         assertEquals(created, retrieved);
@@ -42,12 +41,12 @@ public class TestFeatureDefinitionService {
 
     @Test
     public void testReCreation() throws NrgServiceException {
-    	FeatureDefinition created = _service.newEntity();
-    	created.setKey("key2");
-    	created.setName("name2");
+    	UserRole created = _service.newEntity();
+    	created.setUsername("key2");
+    	created.setRole("name2");
     	_service.create(created);
     	
-    	FeatureDefinition retrieved = _service.findFeatureByKey("key2");
+    	UserRole retrieved = _service.findUserRole("key2", "name2");
     	assertNotNull(retrieved);
 
         assertEquals(created, retrieved);
@@ -57,11 +56,11 @@ public class TestFeatureDefinitionService {
         assertTrue(retrieved == null);
         
         created = _service.newEntity();
-    	created.setKey("key2");
-    	created.setName("name2");
+    	created.setUsername("key2");
+    	created.setRole("name2");
     	_service.create(created);
     	
-    	retrieved = _service.findFeatureByKey("key2");
+    	retrieved = _service.findUserRole("key2", "name2");
     	assertNotNull(retrieved);
 
         assertEquals(created, retrieved);
@@ -72,5 +71,5 @@ public class TestFeatureDefinitionService {
     }
 
     @Inject
-    private FeatureDefinitionService _service;
+    private UserRoleService _service;
 }

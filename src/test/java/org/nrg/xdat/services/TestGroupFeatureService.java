@@ -43,6 +43,39 @@ public class TestGroupFeatureService {
         retrieved = _service.retrieve(created.getId());
         assertTrue(retrieved == null);
     }
+    @Test
+    public void testReCreation() throws NrgServiceException {
+    	GroupFeature created = _service.newEntity();
+    	created.setGroupId("basicgroupx");
+    	created.setTag("tagx");
+    	created.setFeature("basicrolex");
+    	_service.create(created);
+    	
+    	GroupFeature retrieved = _service.findGroupFeature("basicgroupx", "basicrolex");
+    	assertNotNull(retrieved);
+
+        assertEquals(created, retrieved);
+        
+        _service.delete(created);
+        retrieved = _service.retrieve(created.getId());
+        assertTrue(retrieved == null);
+        
+        created = _service.newEntity();
+    	created.setGroupId("basicgroupx");
+    	created.setTag("tagx");
+    	created.setFeature("basicrolex");
+    	_service.create(created);
+    	
+
+    	retrieved = _service.findGroupFeature("basicgroupx", "basicrolex");
+    	assertNotNull(retrieved);
+
+        assertEquals(created, retrieved);
+        
+        _service.delete(created);
+        retrieved = _service.retrieve(created.getId());
+        assertTrue(retrieved == null);
+    }
     
     @Test(expected=ConstraintViolationException.class)
     public void testUniqueConstraintWithSameTag() throws NrgServiceException {

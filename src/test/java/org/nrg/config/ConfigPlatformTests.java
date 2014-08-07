@@ -76,19 +76,7 @@ public class ConfigPlatformTests {
 	    }
 	    return num;
 	}
-/*	public String decode(Long l){
-		if(l == null){
-			return null;
-		}
-		StringBuilder sb = new StringBuilder();
-	    while (l != 0) {
-	        sb.append(symbols.charAt((int) (l % symbolsLength)));
-	        l /= symbolsLength;
-	    }
-	    return sb.reverse().toString();
-	}
-	*/
-	
+
 	@Before
 	public void setup() throws ConfigServiceException {	
 		_testDBUtils.cleanDb();
@@ -232,8 +220,7 @@ public class ConfigPlatformTests {
      	
      	assertEquals("Bill", c.getTool());  	
     }
-    
-    
+
     @Test
     public void testGetProjects() throws ConfigServiceException {
 		_testDBUtils.cleanDb();
@@ -406,14 +393,27 @@ public class ConfigPlatformTests {
     
     @Test
     public void testDisablingAndEnablingConfig() throws ConfigServiceException {
+    	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, contents);
+    	assertEquals("enabled", _configService.getConfig(toolName, path).getStatus());
+    	_configService.disable(xnatUser, "disabling", toolName, path);
+    	assertEquals("disabled",_configService.getConfig(toolName, path).getStatus());
+    	_configService.enable(xnatUser, "enabling", toolName, path);
+
+        Configuration siteConfig = _configService.getConfig(toolName, path);
+        assertEquals("enabled", siteConfig.getStatus());
+        assertEquals(contents, siteConfig.getContents());
+
     	_configService.replaceConfig(xnatUser, reasonCreated, toolName, path, contents, encode(project));
-    	assertEquals("enabled", _configService.getConfig(toolName, path, encode(project)).getStatus());	
+    	assertEquals("enabled", _configService.getConfig(toolName, path, encode(project)).getStatus());
     	_configService.disable(xnatUser, "disabling", toolName, path, encode(project));
     	assertEquals("disabled",_configService.getConfig(toolName, path, encode(project)).getStatus());
     	_configService.enable(xnatUser, "enabling", toolName, path, encode(project));
-    	assertEquals("enabled",_configService.getConfig(toolName, path, encode(project)).getStatus());
+
+        Configuration prjConfig = _configService.getConfig(toolName, path, encode(project));
+        assertEquals("enabled", prjConfig.getStatus());
+        assertEquals(contents, prjConfig.getContents());
     }
-    
+
     @Test
     public void testNullPath() throws ConfigServiceException {
     	_configService.replaceConfig(xnatUser, reasonCreated, toolName, null, contents, encode(project));

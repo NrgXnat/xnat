@@ -8,7 +8,6 @@
         <artifactId>nrg</artifactId>
         <groupId>org.nrg</groupId>
         <version>1.6.4-SNAPSHOT</version>
-        <relativePath>../nrg/pom.xml</relativePath>
     </parent>
 
     <artifactId>prefs</artifactId>

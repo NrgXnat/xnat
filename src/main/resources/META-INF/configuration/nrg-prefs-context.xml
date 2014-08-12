@@ -23,8 +23,12 @@
     <context:component-scan base-package="org.nrg.prefs.services.impl.hibernate" />
     <context:component-scan base-package="org.nrg.prefs.repositories" />
 
-    <util:list id="nrgPrefsEntityPackages">
-        <value>org.nrg.prefs.entities</value>
-    </util:list>
+    <bean id="nrgPrefsEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
+        <property name="items">
+            <util:list>
+                <value>org.nrg.prefs.entities</value>
+            </util:list>
+        </property>
+    </bean>
 
 </beans>

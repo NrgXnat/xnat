@@ -10,13 +10,14 @@
  */
 package org.nrg.config.entities;
 
-import javax.persistence.*;
-
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
+
+import javax.persistence.*;
+import java.util.Properties;
 
 @Auditable
 @Entity
@@ -124,4 +125,27 @@ public class Configuration extends AbstractHibernateEntity {
 	public String toString(){
 		return ToStringBuilder.reflectionToString(this);
 	}
+
+    public Properties asProperties() {
+        final Properties properties = new Properties();
+        setNonblankProperty(properties, "xnatUser", xnatUser);
+        setNonblankProperty(properties, "project", project);
+        setNonblankProperty(properties, "tool", tool);
+        setNonblankProperty(properties, "path", path);
+        setNonblankProperty(properties, "reason", reason);
+        setNonblankProperty(properties, "status", status);
+        setNonblankProperty(properties, "version", version);
+        setNonblankProperty(properties, "unversioned", unversioned);
+        setNonblankProperty(properties, "contents", configData.getContents());
+        return properties;
+    }
+
+    private void setNonblankProperty(final Properties properties, final String key, final Object value) {
+        if (value != null) {
+            final String valueString = value.toString().trim();
+            if (!valueString.equals("")) {
+                properties.setProperty(key, valueString);
+            }
+        }
+    }
 }

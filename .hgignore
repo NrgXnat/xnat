@@ -1,0 +1,13 @@
+syntax: glob
+.classpath
+.project
+*.DS_Store
+.settings
+Thumbs.db
+doc
+target*
+
+syntax: regexp
+.*\.log
+.*\.[ei]ml
+.*\.orig

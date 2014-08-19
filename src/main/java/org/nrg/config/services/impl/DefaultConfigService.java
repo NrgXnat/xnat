@@ -19,7 +19,7 @@ import org.nrg.config.entities.Configuration;
 import org.nrg.config.entities.ConfigurationData;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
-import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -75,6 +75,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return getToolsImpl(projectID);
     }
 
+    @Override
+    public List<String> getTools(final Scope scope, final String entityId) {
+        throw new UnsupportedOperationException("Support for scoped entities other than projects is not yet available.");
+    }
+
     @Transactional
     @Override
     public List<Configuration> getConfigsByTool(String toolName) {
@@ -85,6 +90,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @Override
     public List<Configuration> getConfigsByTool(String toolName, Long projectID) {
         return getConfigsByToolImpl(toolName, projectID);
+    }
+
+    @Override
+    public List<Configuration> getConfigsByTool(final String toolName, final Scope scope, final String entityId) {
+        throw new UnsupportedOperationException();
     }
 
 
@@ -100,6 +110,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return getConfigImpl(toolName, path, projectID);
     }
 
+    @Override
+    public Configuration getConfig(final String toolName, final String path, final Scope scope, final String entityId) {
+        throw new UnsupportedOperationException("Support for scoped entities other than projects is not yet available.");
+    }
+
     @Transactional
     @Override
     public String getConfigContents(String toolName, String path) {
@@ -110,6 +125,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @Override
     public String getConfigContents(String toolName, String path, Long projectID) {
         return getConfigContentsImpl(toolName, path, projectID);
+    }
+
+    @Override
+    public String getConfigContents(final String toolName, final String path, final Scope scope, final String entityId) {
+        throw new UnsupportedOperationException();
     }
 
     @Transactional
@@ -124,6 +144,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return getConfigByIdImpl(toolName, path, id, projectID);
     }
 
+    @Override
+    public Configuration getConfigById(final String toolName, final String path, final String id, final Scope scope, final String entityId) {
+        throw new UnsupportedOperationException();
+    }
+
     @Transactional
     @Override
     public Configuration getConfigByVersion(String toolName, String path, int version) {
@@ -134,6 +159,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @Override
     public Configuration getConfigByVersion(String toolName, String path, int version, Long projectID) {
         return getConfigByVersionImpl(toolName, path, version, projectID);
+    }
+
+    @Override
+    public Configuration getConfigByVersion(final String toolName, final String path, final int version, final Scope scope, final String entityId) {
+        throw new UnsupportedOperationException();
     }
 
     @Transactional
@@ -148,6 +178,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return replaceConfig(xnatUser, reason, toolName, path, null, contents, projectID);
     }
 
+    @Override
+    public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final String contents, final Scope scope, final String entityId) throws ConfigServiceException {
+        throw new UnsupportedOperationException();
+    }
+
     @Transactional
     @Override
     public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final Boolean unversioned, final String contents) throws ConfigServiceException {
@@ -158,6 +193,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @Override
     public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final Boolean unversioned, final String contents, final Long projectID) throws ConfigServiceException {
         return replaceConfigImpl(xnatUser, reason, toolName, path, null, unversioned, contents, projectID);
+    }
+
+    @Override
+    public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final Boolean unversioned, final String contents, final Scope scope, final String entityId) throws ConfigServiceException {
+        throw new UnsupportedOperationException();
     }
 
     @Transactional
@@ -172,6 +212,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return getStatusImpl(toolName, path, projectID);
     }
 
+    @Override
+    public String getStatus(final String toolName, final String path, final Scope scope, final String entityId) {
+        throw new UnsupportedOperationException();
+    }
+
     @Transactional
     @Override
     public void enable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException {
@@ -183,6 +228,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @Override
     public void enable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException {
         setStatusImpl(xnatUser, reason, toolName, path, Configuration.ENABLED_STRING, projectID);
+    }
+
+    @Override
+    public void enable(final String xnatUser, final String reason, final String toolName, final String path, final Scope scope, final String entityId) throws ConfigServiceException {
+
     }
 
     //fail silently if the configuration does not exist...
@@ -199,6 +249,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         setStatusImpl(xnatUser, reason, toolName, path, Configuration.DISABLED_STRING, projectID);
     }
 
+    @Override
+    public void disable(final String xnatUser, final String reason, final String toolName, final String path, final Scope scope, final String entityId) throws ConfigServiceException {
+
+    }
+
     @Transactional
     @Override
     public List<Configuration> getHistory(String toolName, String path) {
@@ -209,6 +264,11 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @Override
     public List<Configuration> getHistory(String toolName, String path, Long projectID) {
         return getHistoryImpl(toolName, path, projectID);
+    }
+
+    @Override
+    public List<Configuration> getHistory(final String toolName, final String path, final Scope scope, final String entityId) {
+        throw new UnsupportedOperationException();
     }
 
     private List<String> getToolsImpl(Long projectID) {

@@ -31,7 +31,6 @@ import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.utils.StringUtils;
 import org.json.JSONException;
 
 public class XFTTable implements XFTTableI {
@@ -343,10 +342,10 @@ public class XFTTable implements XFTTableI {
 				}
 				if (insertTDTags)
 				{
-					sb.append("<TD>").append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," ")).append("</TD>");
+					sb.append("<TD>").append(ValueParser(row[i])).append("</TD>");
 				}else
 				{
-					sb.append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "));
+					sb.append(ValueParser(row[i]));
 				}
 			}
 			sb.append("</TR>");
@@ -431,11 +430,11 @@ public class XFTTable implements XFTTableI {
                 if (insertTDTags)
                 {
                     pw.print("<TD>");
-                    pw.print(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "));
+                    pw.print(ValueParser(row[i]));
                     pw.print("</TD>");
                 }else
                 {
-                    pw.print(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "));
+                    pw.print(ValueParser(row[i]));
                 }
             }
             pw.print("</TR>");
@@ -480,10 +479,10 @@ public class XFTTable implements XFTTableI {
 				}
 				if (insertTDTags)
 				{
-					sb.append("<TH>").append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," ")).append("</TH>");
+					sb.append("<TH>").append(ValueParser(row[i])).append("</TH>");
 				}else
 				{
-					sb.append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "));
+					sb.append(ValueParser(row[i]));
 				}
 			}
 			sb.append("</TR>");
@@ -520,7 +519,7 @@ public class XFTTable implements XFTTableI {
 				{
 					sb.append("\n");
 				}
-				sb.append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "),"<","&lt;"),">","&gt;"));
+				sb.append(ValueParser(row[i]).replace("<","&lt;").replace(">","&gt;"));
 			}
 		}
 		
@@ -589,9 +588,9 @@ public class XFTTable implements XFTTableI {
 				} catch (java.io.IOException e) {
 					e.printStackTrace();
 				}
-				return baos.toString();
+				return baos.toString().replace("\n", " ").replace("\r", " ");
 			}
-			return o.toString();
+			return o.toString().replace("\n", " ").replace("\r", " ");
 		}else
 		{
 			return "";
@@ -992,8 +991,7 @@ public class XFTTable implements XFTTableI {
 				writer.write("<row>");
 				for (int i=0;i<this.numCols;i++)
 				{
-					writer.write("<cell>" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "),">","&gt;"),"<","&lt;") + "</cell>");
-					
+					writer.write("<cell>" + ValueParser(row[i]).replace(">","&gt;").replace("<","&lt;") + "</cell>");
 				}
 				writer.write("</row>\n");
 				writer.flush();
@@ -1129,7 +1127,7 @@ public class XFTTable implements XFTTableI {
                         writer.write("\n");
                     }
 
-                    String value=StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," ");
+                    String value=ValueParser(row[i]);
 
                     if(cp !=null &&cp.containsKey(this.getColumns()[i]) && cp.get(this.getColumns()[i]).containsKey("serverRoot"))
                     {

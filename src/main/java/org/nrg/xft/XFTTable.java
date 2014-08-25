@@ -342,10 +342,10 @@ public class XFTTable implements XFTTableI {
 				}
 				if (insertTDTags)
 				{
-					sb.append("<TD>").append(ValueParser(row[i])).append("</TD>");
+					sb.append("<TD>").append(ValueParserNoNewline(row[i])).append("</TD>");
 				}else
 				{
-					sb.append(ValueParser(row[i]));
+					sb.append(ValueParserNoNewline(row[i]));
 				}
 			}
 			sb.append("</TR>");
@@ -430,11 +430,11 @@ public class XFTTable implements XFTTableI {
                 if (insertTDTags)
                 {
                     pw.print("<TD>");
-                    pw.print(ValueParser(row[i]));
+                    pw.print(ValueParserNoNewline(row[i]));
                     pw.print("</TD>");
                 }else
                 {
-                    pw.print(ValueParser(row[i]));
+                    pw.print(ValueParserNoNewline(row[i]));
                 }
             }
             pw.print("</TR>");
@@ -479,10 +479,10 @@ public class XFTTable implements XFTTableI {
 				}
 				if (insertTDTags)
 				{
-					sb.append("<TH>").append(ValueParser(row[i])).append("</TH>");
+					sb.append("<TH>").append(ValueParserNoNewline(row[i])).append("</TH>");
 				}else
 				{
-					sb.append(ValueParser(row[i]));
+					sb.append(ValueParserNoNewline(row[i]));
 				}
 			}
 			sb.append("</TR>");
@@ -569,13 +569,22 @@ public class XFTTable implements XFTTableI {
 //		
 //		return al;
 //	}
-//	
+//
+
+    public static String ValueParser(Object o) {
+        return ValueParser(o, "", "");
+    }
+
+    public static String ValueParserNoNewline(Object o) {
+        return ValueParser(o, "\\r\\n|\\r|\\n", " ");
+    }
+
 	/**
 	 * Formats BYTEA type to string
 	 * @param o
 	 * @return
 	 */
-	public static String ValueParser(Object o)
+	public static String ValueParser(Object o, String regexToReplace, String replacement)
 	{
 		if (o != null)
 		{
@@ -588,9 +597,9 @@ public class XFTTable implements XFTTableI {
 				} catch (java.io.IOException e) {
 					e.printStackTrace();
 				}
-				return baos.toString().replace("\n", " ").replace("\r", " ");
+				return baos.toString().replaceAll(regexToReplace, replacement);
 			}
-			return o.toString().replace("\n", " ").replace("\r", " ");
+			return o.toString().replaceAll(regexToReplace, replacement);
 		}else
 		{
 			return "";
@@ -991,7 +1000,7 @@ public class XFTTable implements XFTTableI {
 				writer.write("<row>");
 				for (int i=0;i<this.numCols;i++)
 				{
-					writer.write("<cell>" + ValueParser(row[i]).replace(">","&gt;").replace("<","&lt;") + "</cell>");
+					writer.write("<cell>" + ValueParserNoNewline(row[i]).replace(">","&gt;").replace("<","&lt;") + "</cell>");
 				}
 				writer.write("</row>\n");
 				writer.flush();
@@ -1023,7 +1032,7 @@ public class XFTTable implements XFTTableI {
 					if(i>0)
 						writer.write(",");
 					if(null!=row[i]){
-                        StringEscapeUtils.escapeCsv(writer, ValueParser(row[i]));
+                        StringEscapeUtils.escapeCsv(writer, ValueParserNoNewline(row[i]));
 					}
 				}
 				writer.write("\n");
@@ -1127,7 +1136,7 @@ public class XFTTable implements XFTTableI {
                         writer.write("\n");
                     }
 
-                    String value=ValueParser(row[i]);
+                    String value=ValueParserNoNewline(row[i]);
 
                     if(cp !=null &&cp.containsKey(this.getColumns()[i]) && cp.get(this.getColumns()[i]).containsKey("serverRoot"))
                     {

@@ -60,10 +60,6 @@
         </dependency>
         <!-- This routes logging in Hibernate to ACL/JCL -->
         <dependency>
-            <groupId>org.slf4j</groupId>
-            <artifactId>slf4j-jcl</artifactId>
-        </dependency>
-        <dependency>
             <groupId>cglib</groupId>
             <artifactId>cglib</artifactId>
         </dependency>

@@ -297,29 +297,45 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
 
     private boolean hasScriptImpl(final Scope scope, final String entityId, final boolean failover, final String scriptId, final String path) {
         try {
-            Connection connection = _dataSource.getConnection();
-            Statement statement = connection.createStatement();
-            final StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS total FROM XHBM_CONFIGURATION WHERE tool = '");
-            sql.append(TOOL_ID_SCRIPTS).append("' AND path = '").append(composite(scriptId, path)).append("' AND status = 'enabled' AND enabled = 't'");
-            // TODO: Need way to figure out other scopes.
-            if (scope == Scope.Site) {
-                sql.append(" AND project IS NULL");
-            } else {
-                sql.append(" AND project = '").append(entityId).append("'");
-            }
-            ResultSet results = statement.executeQuery(sql.toString());
-            while (results.next()) {
-                int count = results.getInt("total");
-                if (count > 0) {
-                    return true;
+            Connection connection = null;
+            Statement statement = null;
+            ResultSet results = null;
+            try {
+                connection = _dataSource.getConnection();
+                statement = connection.createStatement();
+                final StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS total FROM XHBM_CONFIGURATION WHERE tool = '");
+                sql.append(TOOL_ID_SCRIPTS).append("' AND path = '").append(composite(scriptId, path)).append("' AND status = 'enabled' AND enabled = 't'");
+                // TODO: Need way to figure out other scopes.
+                if (scope == Scope.Site) {
+                    sql.append(" AND project IS NULL");
+                } else {
+                    sql.append(" AND project = '").append(entityId).append("'");
                 }
-                if (failover && scope.failoverTo() != null) {
-                    return hasScriptImpl(scope.failoverTo(), entityId, true, scriptId, path);
+                results = statement.executeQuery(sql.toString());
+                while (results.next()) {
+                    int count = results.getInt("total");
+                    if (count > 0) {
+                        return true;
+                    }
+                    if (failover && scope.failoverTo() != null) {
+                        return hasScriptImpl(scope.failoverTo(), entityId, true, scriptId, path);
+                    }
+                }
+                return false;
+            } finally {
+                if (results != null) {
+                    results.close();
+                }
+                if (statement != null) {
+                    statement.close();
+                }
+                if (connection != null) {
+                    connection.close();
                 }
             }
-            return false;
         } catch (SQLException e) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred checking the database", e);
+            _log.error("Exception occurred querying for script " + formatScriptIdSet(scope, entityId, scriptId, path), e);
+            return false;
         }
     }
 
@@ -423,18 +439,23 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             _log.info("User " + user + " is preparing to run script " + formatScriptIdSet(scope, entityId, scriptId, path, parameters));
         }
 
-        final Object results = runner.run(parameters);
-        if (_log.isDebugEnabled()) {
-            _log.debug("Got the following results from running " + formatScriptIdSet(scope, entityId, scriptId, path, parameters));
-            if (results == null) {
-                _log.debug(" * Null results");
-            } else {
-                _log.debug(" * Object type: " + results.getClass());
-                final String renderedResults = results.toString();
-                _log.debug(" * Results: " + (renderedResults.length() > 64 ? renderedResults.substring(0, 63) + "..." : renderedResults));
+        try {
+            final Object results = runner.run(parameters);
+            if (_log.isDebugEnabled()) {
+                _log.debug("Got the following results from running " + formatScriptIdSet(scope, entityId, scriptId, path, parameters));
+                if (results == null) {
+                    _log.debug(" * Null results");
+                } else {
+                    _log.debug(" * Object type: " + results.getClass());
+                    final String renderedResults = results.toString();
+                    _log.debug(" * Results: " + (renderedResults.length() > 64 ? renderedResults.substring(0, 63) + "..." : renderedResults));
+                }
             }
+            return results;
+        } catch (Throwable e) {
+            _log.error("Found an error while running a " + language + " " + version + " script", e);
+            throw new RuntimeException("Found an error while running a " + language + " " + version + " script", e);
         }
-        return results;
     }
 
     /**
@@ -478,8 +499,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         if (!StringUtils.isBlank(path)) {
             buffer.append(".Path[").append(path).append("]");
         }
-        for (final String key : parameters.keySet()) {
-            buffer.append(" * ").append(key).append(": ").append(parameters.get(key).toString()).append("\n");
+        if (parameters != null) {
+            buffer.append("Parameters:\n");
+            for (final String key : parameters.keySet()) {
+                buffer.append(" * ").append(key).append(": ").append(parameters.get(key).toString()).append("\n");
+            }
         }
         return buffer.toString();
     }

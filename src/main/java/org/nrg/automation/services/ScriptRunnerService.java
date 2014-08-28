@@ -3,6 +3,7 @@ package org.nrg.automation.services;
 import org.nrg.automation.runners.ScriptRunner;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.NrgService;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -138,6 +139,22 @@ public interface ScriptRunnerService extends NrgService {
      * @return The results of the script execution.
      */
     public Object runScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path, Map<String, Object> parameters);
+
+    public void enableSiteScript(final String user, final String scriptId) throws NrgServiceException;
+
+    public void enableSiteScript(final String user, final String scriptId, final String path) throws NrgServiceException;
+
+    public void enableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId) throws NrgServiceException;
+
+    public void enableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path) throws NrgServiceException;
+
+    public void disableSiteScript(final String user, final String scriptId) throws NrgServiceException;
+
+    public void disableSiteScript(final String user, final String scriptId, final String path) throws NrgServiceException;
+
+    public void disableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId) throws NrgServiceException;
+
+    public void disableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path) throws NrgServiceException;
 
     @Autowired
     void setRunners(List<ScriptRunner> runners);

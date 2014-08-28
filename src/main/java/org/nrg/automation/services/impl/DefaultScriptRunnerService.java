@@ -11,6 +11,7 @@ import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -32,7 +33,7 @@ import java.util.Properties;
 @Service
 public class DefaultScriptRunnerService implements ScriptRunnerService {
 
-    public static final String TOOL_ID_SCRIPTS = "scripts";
+        public static final String TOOL_ID_SCRIPTS = "scripts";
 
     @Override
     public boolean hasSiteScript(final String scriptId) {
@@ -258,6 +259,46 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     }
 
     @Override
+    public void enableSiteScript(final String user, final String scriptId) throws NrgServiceException {
+        toggleScriptImpl(user, true, Scope.Site, null, scriptId, null);
+    }
+
+    @Override
+    public void enableSiteScript(final String user, final String scriptId, final String path) throws NrgServiceException {
+        toggleScriptImpl(user, true, Scope.Site, null, scriptId, path);
+    }
+
+    @Override
+    public void enableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId) throws NrgServiceException {
+        toggleScriptImpl(user, true, scope, entityId, scriptId, null);
+    }
+
+    @Override
+    public void enableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path) throws NrgServiceException {
+        toggleScriptImpl(user, true, scope, entityId, scriptId, path);
+    }
+
+    @Override
+    public void disableSiteScript(final String user, final String scriptId) throws NrgServiceException {
+        toggleScriptImpl(user, false, Scope.Site, null, scriptId, null);
+    }
+
+    @Override
+    public void disableSiteScript(final String user, final String scriptId, final String path) throws NrgServiceException {
+        toggleScriptImpl(user, false, Scope.Site, null, scriptId, path);
+    }
+
+    @Override
+    public void disableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId) throws NrgServiceException {
+        toggleScriptImpl(user, false, scope, entityId, scriptId, null);
+    }
+
+    @Override
+    public void disableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path) throws NrgServiceException {
+        toggleScriptImpl(user, false, scope, entityId, scriptId, path);
+    }
+
+    @Override
     @Autowired
     public void setRunners(final List<ScriptRunner> runners) {
         _runners.clear();
@@ -324,16 +365,16 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     }
 
     private Properties getScriptImpl(final Scope scope, final String entityId, final boolean failover, final String scriptId, final String path) {
-        validateScopeAndEntityId(scope, entityId);
+        final Object received = validateScopeAndEntityId(scope, entityId);
 
         // TODO: This is a problem here. The entity ID is associated with the base scope. We need to be able to resolve parent IDs when ascending the scope hierarchy.
-        final Long parsed = StringUtils.isBlank(entityId) ? null : Long.valueOf(entityId);
+        final Long parsed = scope == Scope.Site ? null : (Long) received;
         final Configuration configuration = scope == Scope.Site ?
                 _configService.getConfig(TOOL_ID_SCRIPTS, composite(scriptId, path)) :
                 _configService.getConfig(TOOL_ID_SCRIPTS, composite(scriptId, path), parsed);
 
-        // If we didn't find a configuration...
-        if (configuration == null) {
+        // If we didn't find an enabled configuration...
+        if (configuration == null || configuration.getStatus().equals("disabled")) {
             // If failover is allowed and we have somewhere to fail over to...
             if (failover && scope.failoverTo() != null) {
                 // Then fail over to that scope.
@@ -383,8 +424,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
                 }
             }
         }
-        validateScopeAndEntityId(scope, entityId);
-        final Long parsed = StringUtils.isBlank(entityId) ? null : Long.valueOf(entityId);
+        final Object received = validateScopeAndEntityId(scope, entityId);
+        final Long parsed = scope == Scope.Site ? null : (Long) received;
         _configService.replaceConfig(user, "Updating script", TOOL_ID_SCRIPTS, composite(scriptId, path), true, wrapScript(script, properties), parsed);
     }
 
@@ -437,6 +478,30 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         return results;
     }
 
+    private void toggleScriptImpl(final String user, final boolean enable, final Scope scope, final String entityId, final String scriptId, final String path) throws NrgServiceException {
+        final Long projectId = scope == Scope.Site ? null : (Long) validateScopeAndEntityId(scope, entityId);
+        if (!hasScriptImpl(scope, entityId, false, scriptId, path)) {
+            throw new NrgServiceException(NrgServiceError.UnknownEntity, "Couldn't find the script indicated by " + formatScriptIdSet(scope, entityId, scriptId, path) + " to " + (enable ? "enable" : "disable") + " it.");
+        }
+        try {
+            if (enable) {
+                if (scope == Scope.Site) {
+                    _configService.enable(user, "Enabling script", TOOL_ID_SCRIPTS, composite(scriptId, path));
+                } else {
+                    _configService.enable(user, "Enabling script", TOOL_ID_SCRIPTS, composite(scriptId, path), projectId);
+                }
+            } else {
+                if (scope == Scope.Site) {
+                    _configService.disable(user, "Enabling script", TOOL_ID_SCRIPTS, composite(scriptId, path));
+                } else {
+                    _configService.disable(user, "Enabling script", TOOL_ID_SCRIPTS, composite(scriptId, path), projectId);
+                }
+            }
+        } catch (ConfigServiceException e) {
+            throw new NrgServiceException(NrgServiceError.Unknown, "An error occurred in the configuration service while trying to " + (enable ? "enable" : "disable") + " the script indicated by " + formatScriptIdSet(scope, entityId, scriptId, path), e);
+        }
+    }
+
     /**
      * Provides an opportunity to initialize default parameters with some values.
      *
@@ -446,17 +511,17 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         return new HashMap<String, Object>();
     }
 
-    private void validateScopeAndEntityId(final Scope scope, final String entityId) {
+    private Object validateScopeAndEntityId(final Scope scope, final String entityId) {
         final boolean blankEntityId = StringUtils.isBlank(entityId);
         if (scope == Scope.Site) {
-            return;
+            return null;
         }
         if (blankEntityId) {
             throw new NrgServiceRuntimeException(NrgServiceError.UnsupportedFeature, "You must specify a valid value for the entity ID for scope " + scope.code() + ".");
         }
         if (scope == Scope.Project) {
             try {
-                Long.parseLong(entityId);
+                return Long.parseLong(entityId);
             } catch (NumberFormatException ignored) {
                 throw new NrgServiceRuntimeException(NrgServiceError.UnsupportedFeature, "You must specify a valid value for the entity ID for scope " + scope.code() + ". \"" + entityId + " is not a valid long value.");
             }

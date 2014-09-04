@@ -24,6 +24,8 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"role", "username","disabled"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class UserRole extends AbstractHibernateEntity {
+    public static String ROLE_NON_EXPIRING = "non_expiring";
+
     public UserRole() {
     }
 

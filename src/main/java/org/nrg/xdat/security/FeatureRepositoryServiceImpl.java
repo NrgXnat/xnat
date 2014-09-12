@@ -9,20 +9,27 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang.StringUtils;
+import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.FeatureDefinition;
 import org.nrg.xdat.security.helpers.FeatureDefinitionI;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.services.FeatureDefinitionService;
 import org.nrg.xft.XFT;
+import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.EventUtils.CATEGORY;
+import org.nrg.xft.utils.SaveItemHelper;
 
 public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI {
+	static Logger logger = Logger.getLogger(FeatureRepositoryServiceImpl.class);
+	private static final String ELEMENT_ACTION_NAME = "element_action_name";
 	private static final String ON_BY_DEFAULT = "OnByDefault";
 	private static final String FEATURE_DEFINITION_PROPERTIES = "-feature-definition.properties";
 	private static final String NAME="name";
 	private static final String DESC="description";
 	private static final String KEY="key";
-	private static final String[] PROP_OBJECT_FIELDS = new String[]{NAME,DESC,KEY,ON_BY_DEFAULT};
+	private static final String[] PROP_OBJECT_FIELDS = new String[]{NAME,DESC,KEY,ON_BY_DEFAULT,ELEMENT_ACTION_NAME};
 	private static final String PROP_OBJECT_IDENTIFIER = "org.nrg.Feature";
 	
 	static Boolean initd=false;//used to check if we've initialized yet and used for synchronization
@@ -112,6 +119,33 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI {
 							}
 							
 							create(def);
+							
+							//after creating a new feature definition, if the feature is supposed to be related to an element action, it should be registered
+							if(feature.get(ELEMENT_ACTION_NAME)!=null){
+								String action_name=(String)feature.get(ELEMENT_ACTION_NAME);
+								
+								try {
+									for(ElementSecurity es: ElementSecurity.GetElementSecurities().values()){
+										for(ElementAction ea:es.getElementActions()){
+											try {
+												if(StringUtils.equals(ea.getName(), action_name)){
+													if(!StringUtils.equals(ea.getSecureFeature(), def.getKey())){
+														//need to register this action
+														ea.getItem().setProperty("secureFeature", def.getKey());
+														SaveItemHelper.authorizedSave(ea.getItem(), new XDATUser("admin"), true, false, EventUtils.newEventInstance(CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Configure new feature."));
+													}
+												}
+											} catch (Exception e) {
+												logger.error("",e);
+												//otherwise ignore failure
+											}
+										}
+									}
+								} catch (Exception e) {
+									logger.error("",e);
+									//otherwise ignore failure
+								}
+							}
 						}
 					}
 				}

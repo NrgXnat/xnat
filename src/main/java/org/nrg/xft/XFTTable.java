@@ -221,12 +221,20 @@ public class XFTTable implements XFTTableI {
         }
 		return index;
 	}
-	
+
+    /**
+     * This is a pass-through method to avoid having to create an array for the {@link #insertRow(Object[]) method}.
+     * @param items    The items to pass through as an array.
+     */
+    public void insertRowItems(Object... items) {
+        insertRow(items);
+    }
+
 	/**
 	 * Inserts row into table and increments row counter.
 	 * @param row of Objects
 	 */
-	public void insertRow(Object... row)
+	public void insertRow(Object[] row)
 	{
 		this.rows.add(row);
 		numRows++;

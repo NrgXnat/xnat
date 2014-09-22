@@ -226,7 +226,7 @@ public class XFTTable implements XFTTableI {
 	 * Inserts row into table and increments row counter.
 	 * @param row of Objects
 	 */
-	public void insertRow(Object[] row)
+	public void insertRow(Object... row)
 	{
 		this.rows.add(row);
 		numRows++;

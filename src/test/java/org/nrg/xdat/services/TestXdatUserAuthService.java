@@ -49,8 +49,7 @@ public class TestXdatUserAuthService {
         assertTrue(retrieved == null);
     }
     
-    @Test
-    @ExpectedException(ConstraintViolationException.class)
+    @Test(expected = ConstraintViolationException.class)
     public void testConstraints() throws NrgServiceException {
     	XdatUserAuth userAuth1 = _service.newEntity();
         userAuth1.setAuthUser("mmckay");

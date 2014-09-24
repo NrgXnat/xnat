@@ -25,10 +25,7 @@ import java.sql.Connection;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.sql.Statement;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Properties;
+import java.util.*;
 
 @Service
 public class DefaultScriptRunnerService implements ScriptRunnerService {
@@ -93,6 +90,16 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     @Override
     public Properties getScript(final Scope scope, final String entityId, final String scriptId, final String path) {
         return getScriptImpl(scope, entityId, true, scriptId, path);
+    }
+
+    @Override
+    public List<Properties> getScripts() {
+        return getScriptsImpl(Scope.Site, null);
+    }
+
+    @Override
+    public List<Properties> getScripts(final Scope scope, final String entityId) {
+        return getScriptsImpl(scope, entityId);
     }
 
     @Override
@@ -403,6 +410,40 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             }
         }
 
+        return getScriptProperties(scope, entityId, scriptId, path, configuration);
+    }
+
+    private List<Properties> getScriptsImpl(final Scope scope, final String entityId) {
+        final List<Properties> properties = new ArrayList<Properties>();
+        final List<Configuration> configurations;
+        switch (scope) {
+            case Site:
+                configurations = _configService.getConfigsByTool(TOOL_ID_SCRIPTS);
+                break;
+            case Project:
+                configurations = _configService.getConfigsByTool(TOOL_ID_SCRIPTS, Long.parseLong(entityId));
+                break;
+            default:
+                throw new NrgServiceRuntimeException(NrgServiceError.UnsupportedFeature, "This service currently only supports site and project scopes.");
+        }
+        for (Configuration configuration : configurations) {
+            final String configPath = configuration.getPath();
+            final String scriptId;
+            final String path;
+            if (configPath.contains("/")) {
+                final String[] atoms = configPath.split("/", 1);
+                scriptId = atoms[0];
+                path = atoms[1];
+            } else {
+                scriptId = configPath;
+                path = null;
+            }
+            properties.add(getScriptProperties(scope, entityId, scriptId, path, configuration));
+        }
+        return properties;
+    }
+
+    private Properties getScriptProperties(Scope scope, String entityId, String scriptId, String path, Configuration configuration) {
         Properties configProps = configuration.asProperties();
         Properties properties = new Properties();
         properties.setProperty(ScriptProperty.Scope.key(), scope.code());

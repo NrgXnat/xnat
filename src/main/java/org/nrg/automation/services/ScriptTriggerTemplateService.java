@@ -1,0 +1,44 @@
+/**
+ * ScriptTriggerService
+ * (C) 2014 Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD License
+ *
+ * Created on 9/19/2014 by Rick Herrick
+ */
+package org.nrg.automation.services;
+
+import org.nrg.automation.entities.ScriptTrigger;
+import org.nrg.automation.entities.ScriptTriggerTemplate;
+import org.nrg.framework.orm.hibernate.BaseHibernateService;
+
+import java.util.List;
+
+/**
+ * ScriptTriggerService class.
+ *
+ * @author Rick Herrick
+ */
+public interface ScriptTriggerTemplateService extends BaseHibernateService<ScriptTriggerTemplate> {
+    /**
+     * Returns all of the templates that are associated with the indicated entity ID. This means that the value for the
+     * entity ID is contained in the {@link org.nrg.automation.entities.ScriptTriggerTemplate#getAssociatedEntities()}
+     * list.
+     * @param entityId    The entity ID to be queried.
+     * @return A list of any {@link org.nrg.automation.entities.ScriptTriggerTemplate templates} associated with the
+     * submitted entity ID.
+     */
+    abstract public List<ScriptTriggerTemplate> getTemplatesForEntity(final Long entityId);
+    /**
+     * Returns all of the templates with which the indicated {@link org.nrg.automation.entities.ScriptTrigger} is
+     * associated. This means that the trigger is contained in the {@link org.nrg.automation.entities.ScriptTriggerTemplate#getTriggers()}
+     * list.
+     * @param     trigger    The trigger to be queried on.
+     * @return A list of any {@link org.nrg.automation.entities.ScriptTriggerTemplate templates} associated with the
+     * submitted trigger.
+     */
+    abstract public List<ScriptTriggerTemplate> getTemplatesForTrigger(final ScriptTrigger trigger);
+
+    abstract public ScriptTriggerTemplate getByName(final String name);
+}

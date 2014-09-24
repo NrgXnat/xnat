@@ -18,6 +18,16 @@
 
     <context:annotation-config/>
 
-    <context:component-scan base-package="org.nrg.automation"/>
+    <context:component-scan base-package="org.nrg.automation.services.impl"/>
+    <context:component-scan base-package="org.nrg.automation.repositories"/>
+    <context:component-scan base-package="org.nrg.automation.runners"/>
+
+    <bean id="nrgAutomationEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
+        <property name="items">
+            <list>
+                <value>org.nrg.automation.entities</value>
+            </list>
+        </property>
+    </bean>
 
 </beans>

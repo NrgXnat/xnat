@@ -37,6 +37,9 @@ public interface ScriptRunnerService extends NrgService {
 
     public Properties getScript(final Scope scope, final String entityId, final String scriptId, final String path);
 
+    public List<Properties> getScripts();
+    public List<Properties> getScripts(final Scope scope, final String entityId);
+
     public void setSiteScript(final String user, final String scriptId, final String script) throws ConfigServiceException;
 
     public void setSiteScript(final String user, final String scriptId, final String path, final String script) throws ConfigServiceException;

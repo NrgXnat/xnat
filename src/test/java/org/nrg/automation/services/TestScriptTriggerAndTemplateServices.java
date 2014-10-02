@@ -13,6 +13,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.entities.ScriptTriggerTemplate;
 import org.springframework.test.context.ContextConfiguration;
@@ -37,6 +38,17 @@ import static org.junit.Assert.*;
 @TransactionConfiguration(defaultRollback = true)
 @Transactional
 public class TestScriptTriggerAndTemplateServices {
+
+    @Test
+    public void testSimpleScript() {
+        Script script = _scriptService.newEntity("script1", "This is my first script!", "groovy", "2.3.6", "println \"Hello world!\"");
+        List<Script> retrieved = _scriptService.getAll();
+        assertNotNull(retrieved);
+        assertEquals(1, retrieved.size());
+        assertEquals(script, retrieved.get(0));
+        assertTrue(_scriptService.hasScript("script1"));
+        assertFalse(_scriptService.hasScript("script2"));
+    }
 
     @Test
     public void testSimpleTrigger() {
@@ -80,16 +92,16 @@ public class TestScriptTriggerAndTemplateServices {
         assertEquals(3, retrieved.getTriggers().size());
         assertEquals(3, retrieved.getAssociatedEntities().size());
 
-        ScriptTrigger retrievedTrigger0 = _triggerService.getByName("trigger0");
-        ScriptTrigger retrievedTrigger1 = _triggerService.getByName("trigger1");
-        ScriptTrigger retrievedTrigger2 = _triggerService.getByName("trigger2");
+        ScriptTrigger retrievedTrigger0 = _triggerService.getByTriggerId("trigger0");
+        ScriptTrigger retrievedTrigger1 = _triggerService.getByTriggerId("trigger1");
+        ScriptTrigger retrievedTrigger2 = _triggerService.getByTriggerId("trigger2");
 
         assertNotNull(retrievedTrigger0);
-        assertEquals("trigger0", retrievedTrigger0.getName());
+        assertEquals("trigger0", retrievedTrigger0.getTriggerId());
         assertNotNull(retrievedTrigger1);
-        assertEquals("trigger1", retrievedTrigger1.getName());
+        assertEquals("trigger1", retrievedTrigger1.getTriggerId());
         assertNotNull(retrievedTrigger2);
-        assertEquals("trigger2", retrievedTrigger2.getName());
+        assertEquals("trigger2", retrievedTrigger2.getTriggerId());
 
         List<ScriptTriggerTemplate> templates0 = _templateService.getTemplatesForTrigger(retrievedTrigger0);
         List<ScriptTriggerTemplate> templates1 = _templateService.getTemplatesForTrigger(retrievedTrigger1);
@@ -141,9 +153,9 @@ public class TestScriptTriggerAndTemplateServices {
         assertEquals(2, retrieved1.getTriggers().size());
         assertEquals(2, retrieved1.getAssociatedEntities().size());
 
-        ScriptTrigger retrievedTrigger0 = _triggerService.getByName("trigger0");
-        ScriptTrigger retrievedTrigger1 = _triggerService.getByName("trigger1");
-        ScriptTrigger retrievedTrigger2 = _triggerService.getByName("trigger2");
+        ScriptTrigger retrievedTrigger0 = _triggerService.getByTriggerId("trigger0");
+        ScriptTrigger retrievedTrigger1 = _triggerService.getByTriggerId("trigger1");
+        ScriptTrigger retrievedTrigger2 = _triggerService.getByTriggerId("trigger2");
 
         assertNotNull(retrievedTrigger0);
         assertEquals(trigger0, retrievedTrigger0);
@@ -214,28 +226,28 @@ public class TestScriptTriggerAndTemplateServices {
         assertEquals(3, template2.getTriggers().size());
         assertEquals(3, template2.getAssociatedEntities().size());
 
-        ScriptTrigger retrievedTrigger0 = _triggerService.getByName("trigger0");
-        ScriptTrigger retrievedTrigger1 = _triggerService.getByName("trigger1");
-        ScriptTrigger retrievedTrigger2 = _triggerService.getByName("trigger2");
-        ScriptTrigger retrievedTrigger3 = _triggerService.getByName("trigger3");
-        ScriptTrigger retrievedTrigger4 = _triggerService.getByName("trigger4");
-        ScriptTrigger retrievedTrigger5 = _triggerService.getByName("trigger5");
-        ScriptTrigger retrievedTrigger6 = _triggerService.getByName("trigger6");
+        ScriptTrigger retrievedTrigger0 = _triggerService.getByTriggerId("trigger0");
+        ScriptTrigger retrievedTrigger1 = _triggerService.getByTriggerId("trigger1");
+        ScriptTrigger retrievedTrigger2 = _triggerService.getByTriggerId("trigger2");
+        ScriptTrigger retrievedTrigger3 = _triggerService.getByTriggerId("trigger3");
+        ScriptTrigger retrievedTrigger4 = _triggerService.getByTriggerId("trigger4");
+        ScriptTrigger retrievedTrigger5 = _triggerService.getByTriggerId("trigger5");
+        ScriptTrigger retrievedTrigger6 = _triggerService.getByTriggerId("trigger6");
 
         assertNotNull(retrievedTrigger0);
-        assertEquals("trigger0", retrievedTrigger0.getName());
+        assertEquals("trigger0", retrievedTrigger0.getTriggerId());
         assertNotNull(retrievedTrigger1);
-        assertEquals("trigger1", retrievedTrigger1.getName());
+        assertEquals("trigger1", retrievedTrigger1.getTriggerId());
         assertNotNull(retrievedTrigger2);
-        assertEquals("trigger2", retrievedTrigger2.getName());
+        assertEquals("trigger2", retrievedTrigger2.getTriggerId());
         assertNotNull(retrievedTrigger3);
-        assertEquals("trigger3", retrievedTrigger3.getName());
+        assertEquals("trigger3", retrievedTrigger3.getTriggerId());
         assertNotNull(retrievedTrigger4);
-        assertEquals("trigger4", retrievedTrigger4.getName());
+        assertEquals("trigger4", retrievedTrigger4.getTriggerId());
         assertNotNull(retrievedTrigger5);
-        assertEquals("trigger5", retrievedTrigger5.getName());
+        assertEquals("trigger5", retrievedTrigger5.getTriggerId());
         assertNotNull(retrievedTrigger6);
-        assertEquals("trigger6", retrievedTrigger6.getName());
+        assertEquals("trigger6", retrievedTrigger6.getTriggerId());
 
         List<ScriptTriggerTemplate> triggers0 = _templateService.getTemplatesForTrigger(trigger0);
         List<ScriptTriggerTemplate> triggers1 = _templateService.getTemplatesForTrigger(trigger1);
@@ -298,6 +310,9 @@ public class TestScriptTriggerAndTemplateServices {
         System.out.println(template0json);
         System.out.println(template1json);
     }
+
+    @Inject
+    private ScriptService _scriptService;
 
     @Inject
     private ScriptTriggerService _triggerService;

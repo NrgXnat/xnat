@@ -11,23 +11,11 @@ There is default support for the Groovy language, version 2.3.6.
 
 ## Accessing the script service
 
-The default script runner service is available as a Spring service. You must also have access to the
-(NRG configuration service)[https://bitbucket.org/nrg/nrg\_config):
+The default script runner service is available as a Spring service. You can include the default
+script runner service by referencing the built-in context configuration:
 
     :::xml
-        <context:component-scan base-package="org.nrg.config.daos"/>
-        <context:component-scan base-package="org.nrg.automation.services.impl"/>
-        <context:component-scan base-package="org.nrg.automation.runners"/>
-
-        <bean class="org.nrg.config.services.impl.DefaultConfigService"/>
-
-        <bean id="nrgConfigPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
-            <property name="items">
-                <list>
-                    <value>org.nrg.config.entities</value>
-                </list>
-            </property>
-        </bean>
+        <import resource="classpath:/META-INF/configuration/nrg-automation-context.xml" />
 
 Then in your Java code, use **@Inject** or **@Autowired** to associate the instance of the runner service with
 a member variable:
@@ -36,22 +24,28 @@ a member variable:
         @Inject
         private ScriptRunnerService _service;
 
+You can access the **ScriptService** and **ScriptTriggerService** instances in the same way:
+
+    :::java
+        @Inject
+        private ScriptService _scriptService;
+        @Inject
+        private ScriptTriggerService _triggerService;
+
 ## Storing a script
 
 You can store a script at the site-wide and project levels like this:
 
     :::java
-        _service.setSiteScript("foo", "one", SCRIPT_HELLO_WORLD);
-        _service.setScopedScript("foo", Scope.Project, 1, "one", SCRIPT_HELLO_PROJECT);
-
-Note that, when a script is scoped to a particular entity, the information about the scope is passed into the
-script in the variables scope and entityId.
+        _service.setScript("foo", "println 'Hello world!', Scope.Site, null);
+        _service.setScript("foo", "println 'Hello world!', Scope.Project, 1);
 
 ## Running a script
 
 Running a script from the service is straightforward:
 
     :::java
+        final Script script = _service.getScript()
         final Object output = _service.runSiteScript("foo", "one");
         final Object output = _service.runScopedScript("foo", Scope.Project, "1", "one");
 

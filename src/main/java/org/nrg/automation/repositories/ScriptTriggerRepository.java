@@ -28,13 +28,13 @@ import java.util.List;
 public class ScriptTriggerRepository extends AbstractHibernateDAO<ScriptTrigger> {
     private static final Logger _log = LoggerFactory.getLogger(ScriptTriggerRepository.class);
 
-    public ScriptTrigger getByName(final String name) {
+    public ScriptTrigger getByTriggerId(final String triggerId) {
         if (_log.isDebugEnabled()) {
-            _log.debug("Attempting to find script trigger by name: {}", name);
+            _log.debug("Attempting to find script trigger by trigger ID: {}", triggerId);
         }
         Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("enabled", true));
-        criteria.add(Restrictions.eq("name", name));
+        criteria.add(Restrictions.eq("triggerId", triggerId));
         List list = criteria.list();
         return (list == null || list.size() == 0) ? null : (ScriptTrigger) list.get(0);
     }

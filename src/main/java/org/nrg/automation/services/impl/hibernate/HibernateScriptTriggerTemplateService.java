@@ -7,7 +7,7 @@
  *
  * Created on 9/19/2014 by Rick Herrick
  */
-package org.nrg.automation.services.impl;
+package org.nrg.automation.services.impl.hibernate;
 
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.entities.ScriptTriggerTemplate;
@@ -43,7 +43,7 @@ public class HibernateScriptTriggerTemplateService extends AbstractHibernateEnti
     @Transactional
     public List<ScriptTriggerTemplate> getTemplatesForTrigger(ScriptTrigger trigger) {
         if (_log.isDebugEnabled()) {
-            _log.debug("Finding templates associated with the trigger {}", trigger.getName());
+            _log.debug("Finding templates associated with the trigger {}", trigger.getTriggerId());
         }
         return getDao().getTemplatesForTrigger(trigger);
     }

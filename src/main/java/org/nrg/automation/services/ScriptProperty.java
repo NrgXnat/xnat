@@ -6,13 +6,15 @@ import java.util.Set;
 import java.util.concurrent.ConcurrentHashMap;
 
 public enum ScriptProperty {
-    Scope("scope", org.nrg.framework.constants.Scope.Site.code()),
-    EntityId("entityId", null),
-    ScriptId("scriptId", null),
-    Path("path", null),
-    Script("script", null),
+    ScriptId("scriptId"),
+    Description("description"),
+    Script("script"),
     Language("language", "groovy"),
     LanguageVersion("languageVersion", "2.3.6");
+
+    ScriptProperty(final String key) {
+        this(key, null);
+    }
 
     ScriptProperty(final String key, final String defaultValue) {
         _key = key;

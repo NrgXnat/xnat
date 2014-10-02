@@ -18,9 +18,11 @@
 
     <context:annotation-config/>
 
-    <context:component-scan base-package="org.nrg.automation.services.impl"/>
+    <context:component-scan base-package="org.nrg.automation.services.impl.hibernate"/>
     <context:component-scan base-package="org.nrg.automation.repositories"/>
     <context:component-scan base-package="org.nrg.automation.runners"/>
+
+    <bean id="scriptRunnerService" class="org.nrg.automation.services.impl.DefaultScriptRunnerService"/>
 
     <bean id="nrgAutomationEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
         <property name="items">

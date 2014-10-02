@@ -26,7 +26,7 @@ import java.util.Set;
  */
 @Auditable
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"name", "disabled"}))
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"templateId", "disabled"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class ScriptTriggerTemplate extends AbstractHibernateEntity {
 
@@ -46,7 +46,7 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
     }
 
     public ScriptTriggerTemplate(final String name, final String description, final Set<ScriptTrigger> triggers, final Set<Long> associatedEntities) {
-        setName(name);
+        setTemplateId(name);
         setDescription(description);
         setTriggers(triggers);
         setAssociatedEntities(associatedEntities);
@@ -55,12 +55,12 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
         }
     }
 
-    public String getName() {
-        return _name;
+    public String getTemplateId() {
+        return _templateId;
     }
 
-    public void setName(String name) {
-        _name = name;
+    public void setTemplateId(String templateId) {
+        _templateId = templateId;
     }
 
     public String getDescription() {
@@ -80,6 +80,11 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
         _triggers = triggers;
     }
 
+    /**
+     * For the current iteration of this API, associated entities are always the project data info attribute for an XNAT
+     * project.
+     * @return A set of project IDs in the form of the project data info ID.
+     */
     @ElementCollection(fetch = FetchType.EAGER)
     public Set<Long> getAssociatedEntities() {
         return _associatedEntities;
@@ -92,7 +97,7 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
     @Override
     public String toString() {
         return "ScriptTriggerTemplate{" +
-                "name='" + _name + '\'' +
+                "name='" + _templateId + '\'' +
                 ", description='" + _description + '\'' +
                 ", triggers=" + _triggers +
                 ", associatedEntities=" + _associatedEntities +
@@ -106,7 +111,7 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
 
         ScriptTriggerTemplate template = (ScriptTriggerTemplate) o;
 
-        return _name.equals(template._name) &&
+        return _templateId.equals(template._templateId) &&
                 !(_associatedEntities != null ? !_associatedEntities.equals(template._associatedEntities) : template._associatedEntities != null) &&
                 !(_description != null ? !_description.equals(template._description) : template._description != null) &&
                 !(_triggers != null ? !_triggers.equals(template._triggers) : template._triggers != null);
@@ -114,7 +119,7 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
 
     @Override
     public int hashCode() {
-        int result = _name.hashCode();
+        int result = _templateId.hashCode();
         result = 31 * result + (_description != null ? _description.hashCode() : 0);
         result = 31 * result + (_triggers != null ? _triggers.hashCode() : 0);
         result = 31 * result + (_associatedEntities != null ? _associatedEntities.hashCode() : 0);
@@ -124,7 +129,7 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
     private static final long serialVersionUID = -6493849436022689689L;
     private static final Logger _log = LoggerFactory.getLogger(ScriptTriggerTemplate.class);
 
-    private String _name;
+    private String _templateId;
     private String _description;
     private Set<ScriptTrigger> _triggers;
     private Set<Long> _associatedEntities;

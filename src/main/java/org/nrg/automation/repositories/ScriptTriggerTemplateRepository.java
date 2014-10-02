@@ -9,7 +9,6 @@
  */
 package org.nrg.automation.repositories;
 
-import org.hibernate.Session;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.entities.ScriptTriggerTemplate;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
@@ -39,7 +38,7 @@ public class ScriptTriggerTemplateRepository extends AbstractHibernateDAO<Script
     @SuppressWarnings("unchecked")
     public List<ScriptTriggerTemplate> getTemplatesForTrigger(ScriptTrigger trigger) {
         if (_log.isDebugEnabled()) {
-            _log.debug("Finding templates associated with the trigger {}", trigger.getName());
+            _log.debug("Finding templates associated with the trigger {}", trigger.getTriggerId());
         }
         return getSession().createQuery("from org.nrg.automation.entities.ScriptTriggerTemplate template where :trigger in elements(template.triggers)").setEntity("trigger",  trigger).list();
     }

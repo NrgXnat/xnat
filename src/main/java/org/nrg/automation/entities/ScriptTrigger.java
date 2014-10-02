@@ -28,34 +28,34 @@ import javax.persistence.UniqueConstraint;
  */
 @Auditable
 @Entity
-@Table(uniqueConstraints = {
-        @UniqueConstraint(columnNames = {"name", "disabled"}),
-        @UniqueConstraint(columnNames = {"scriptId", "association", "event", "disabled"})})
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"triggerId", "disabled"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class ScriptTrigger extends AbstractHibernateEntity implements Comparable<ScriptTrigger> {
+
+    public static final String DEFAULT_EVENT = "Manual";
 
     public ScriptTrigger() {
         _log.debug("Creating a default ScriptTrigger object.");
     }
 
-    public ScriptTrigger(final String name, final String description, final String scriptId, final String association, final String event) {
-        setName(name);
+    public ScriptTrigger(final String triggerId, final String description, final String scriptId, final String association, final String event) {
+        setTriggerId(triggerId);
         setDescription(description);
         setScriptId(scriptId);
-        setAssociation(association);
-        setEvent(event);
+        setAssociation(association); // datatype:xnat:mrSessionData
+        setEvent(event);             // archived
         if (_log.isDebugEnabled()) {
             _log.debug("Creating a ScriptTrigger object with the values: {}", toString());
         }
     }
 
     @Column(nullable = false)
-    public String getName() {
-        return _name;
+    public String getTriggerId() {
+        return _triggerId;
     }
 
-    public void setName(String name) {
-        _name = name;
+    public void setTriggerId(String triggerId) {
+        _triggerId = triggerId;
     }
 
     public String getDescription() {
@@ -75,6 +75,11 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         _scriptId = scriptId;
     }
 
+    /**
+     * For the current iteration of this API, associations may be XNAT data types (in the form of the xsiType string),
+     * a project ID (in the form "prj:ID"), or the containing site (in the form "site").
+     * @return The association for this trigger.
+     */
     @Column(nullable = false)
     public String getAssociation() {
         return _association;
@@ -96,7 +101,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
     @Override
     public String toString() {
         return "ScriptTrigger{" +
-                "name='" + _name + '\'' +
+                "name='" + _triggerId + '\'' +
                 ", description='" + _description + '\'' +
                 ", scriptId='" + _scriptId + '\'' +
                 ", association='" + _association + '\'' +
@@ -118,13 +123,13 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         return _association.equals(trigger._association) &&
                 !(_description != null ? !_description.equals(trigger._description) : trigger._description != null) &&
                 _event.equals(trigger._event) &&
-                _name.equals(trigger._name) &&
+                _triggerId.equals(trigger._triggerId) &&
                 _scriptId.equals(trigger._scriptId);
     }
 
     @Override
     public int hashCode() {
-        int result = _name.hashCode();
+        int result = _triggerId.hashCode();
         result = 31 * result + (_description != null ? _description.hashCode() : 0);
         result = 31 * result + _scriptId.hashCode();
         result = 31 * result + _association.hashCode();
@@ -140,7 +145,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
     private static final long serialVersionUID = -2222671438700366388L;
     private static final Logger _log = LoggerFactory.getLogger(ScriptTrigger.class);
 
-    private String _name;
+    private String _triggerId;
     private String _description;
     private String _scriptId;
     private String _association;

@@ -1,14 +1,13 @@
 package org.nrg.automation.services.impl;
 
 import org.apache.commons.lang.StringUtils;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.map.ObjectWriter;
+import org.apache.commons.lang.text.StrSubstitutor;
+import org.nrg.automation.entities.Script;
+import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
-import org.nrg.automation.services.ScriptProperty;
 import org.nrg.automation.services.ScriptRunnerService;
-import org.nrg.config.entities.Configuration;
-import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.config.services.ConfigService;
+import org.nrg.automation.services.ScriptService;
+import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
@@ -17,297 +16,429 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
-import javax.sql.DataSource;
-import java.io.IOException;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
 import java.util.*;
 
 @Service
 public class DefaultScriptRunnerService implements ScriptRunnerService {
 
-        public static final String TOOL_ID_SCRIPTS = "scripts";
-
+    /**
+     * Gets the script for the specified script ID. If a script doesn't exist with that script ID, this method returns
+     * null. Note that this method does no checking of the scope, associated entity, or event, but just returns the
+     * script. You can get @{link Script scripts} for particular scopes or events by calling {@link
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScripts(Scope, String, String)}.
+     *
+     * @param scriptId The ID of the script to locate.
+     *
+     * @return The {@link Script} object if a script with the indicated script ID is found, <b>null</b> otherwise.
+     */
     @Override
-    public boolean hasSiteScript(final String scriptId) {
-        return hasScriptImpl(Scope.Site, null, false, scriptId, null);
-    }
-
-    @Override
-    public boolean hasSiteScript(final String scriptId, final String path) {
-        return hasScriptImpl(Scope.Site, null, false, scriptId, path);
-    }
-
-    @Override
-    public boolean hasScopedScript(final Scope scope, final String entityId, final String scriptId) {
-        return hasScriptImpl(scope, entityId, false, scriptId, null);
-    }
-
-    @Override
-    public boolean hasScopedScript(final Scope scope, final String entityId, final String scriptId, final String path) {
-        return hasScriptImpl(scope, entityId, false, scriptId, path);
-    }
-
-    @Override
-    public boolean hasScript(final Scope scope, final String entityId, final String scriptId) {
-        return hasScriptImpl(scope, entityId, true, scriptId, null);
-    }
-
-    @Override
-    public boolean hasScript(final Scope scope, final String entityId, final String scriptId, final String path) {
-        return hasScriptImpl(scope, entityId, true, scriptId, path);
-    }
-
-    @Override
-    public Properties getSiteScript(final String scriptId) {
-        return getScriptImpl(Scope.Site, null, false, scriptId, null);
-    }
-
-    @Override
-    public Properties getSiteScript(final String scriptId, final String path) {
-        return getScriptImpl(Scope.Site, null, false, scriptId, path);
-    }
-
-    @Override
-    public Properties getScopedScript(final Scope scope, final String entityId, final String scriptId) {
-        return getScriptImpl(scope, entityId, false, scriptId, null);
-    }
-
-    @Override
-    public Properties getScopedScript(final Scope scope, final String entityId, final String scriptId, final String path) {
-        return getScriptImpl(scope, entityId, false, scriptId, path);
-    }
-
-    @Override
-    public Properties getScript(final Scope scope, final String entityId, final String scriptId) {
-        return getScriptImpl(scope, entityId, true, scriptId, null);
-    }
-
-    @Override
-    public Properties getScript(final Scope scope, final String entityId, final String scriptId, final String path) {
-        return getScriptImpl(scope, entityId, true, scriptId, path);
-    }
-
-    @Override
-    public List<Properties> getScripts() {
-        return getScriptsImpl(Scope.Site, null);
-    }
-
-    @Override
-    public List<Properties> getScripts(final Scope scope, final String entityId) {
-        return getScriptsImpl(scope, entityId);
-    }
-
-    @Override
-    public void setSiteScript(final String user, final String scriptId, final String script) throws ConfigServiceException {
-        setScriptImpl(user, Scope.Site, null, scriptId, null, script, null);
-    }
-
-    @Override
-    public void setSiteScript(final String user, final String scriptId, final String path, final String script) throws ConfigServiceException {
-        setScriptImpl(user, Scope.Site, null, scriptId, path, script, null);
-    }
-
-    @Override
-    public void setSiteScript(final String user, final String scriptId, final String script, final Properties properties) throws ConfigServiceException {
-        setScriptImpl(user, Scope.Site, null, scriptId, null, script, properties);
-    }
-
-    @Override
-    public void setSiteScript(final String user, final String scriptId, final String path, final String script, Properties properties) throws ConfigServiceException {
-        setScriptImpl(user, Scope.Site, null, scriptId, path, script, properties);
-    }
-
-    @Override
-    public void setScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String script) throws ConfigServiceException {
-        setScriptImpl(user, scope, entityId, scriptId, null, script, null);
-    }
-
-    @Override
-    public void setScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path, final String script) throws ConfigServiceException {
-        setScriptImpl(user, scope, entityId, scriptId, path, script, null);
-    }
-
-    @Override
-    public void setScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String script, final Properties properties) throws ConfigServiceException {
-        setScriptImpl(user, scope, entityId, scriptId, null, script, properties);
-    }
-
-    @Override
-    public void setScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path, final String script, Properties properties) throws ConfigServiceException {
-        setScriptImpl(user, scope, entityId, scriptId, path, script, properties);
-    }
-
-    @Override
-    public Object runSiteScript(final String user, final String scriptId) {
-        return runScriptImpl(user, Scope.Site, null, false, scriptId, null, getInitializedParameters());
-    }
-
-    @Override
-    public Object runSiteScript(final String user, final String scriptId, Map<String, Object> parameters) {
-        return runScriptImpl(user, Scope.Site, null, false, scriptId, null, parameters);
-    }
-
-    @Override
-    public Object runSiteScript(final String user, final String scriptId, final String path) {
-        return runScriptImpl(user, Scope.Site, null, false, scriptId, path, getInitializedParameters());
-    }
-
-    @Override
-    public Object runSiteScript(final String user, final String scriptId, final String path, Map<String, Object> parameters) {
-        return runScriptImpl(user, Scope.Site, null, false, scriptId, path, parameters);
-    }
-
-    @Override
-    public Object runScopedScript(final String user, final Scope scope, final String entityId, final String scriptId) {
-        return runScriptImpl(user, scope, entityId, false, scriptId, null, getInitializedParameters());
-    }
-
-    @Override
-    public Object runScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, Map<String, Object> parameters) {
-        return runScriptImpl(user, scope, entityId, false, scriptId, null, parameters);
-    }
-
-    @Override
-    public Object runScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path) {
-        return runScriptImpl(user, scope, entityId, false, scriptId, path, getInitializedParameters());
-    }
-
-    @Override
-    public Object runScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path, Map<String, Object> parameters) {
-        return runScriptImpl(user, scope, entityId, false, scriptId, path, parameters);
+    public Script getScript(final String scriptId) {
+        return _scriptService.getByScriptId(scriptId);
     }
 
     /**
-     * This attempts to run a script using the indicated scope and entity ID. If no script exists with that scope and
-     * entity ID, it will fail over and try to run the script with the same script ID but with the next higher scope.
-     * <p/>
-     * For now, this effectively means it will try the specific scope and entity ID, then fail over to a site-wide
-     * script with the indicated script ID. Full hierarchical fail-over has performance and relational concerns (e.g.
-     * failing over from subject to project requires retrieving the subject and then the project).
+     * Gets the script for the specified script ID that is also associated (via {@link ScriptTrigger trigger}) with the
+     * indicated scope, entity ID, and event. If a script doesn't exist with that script ID and trigger association,
+     * this method returns null. Note that this method does no checking of the scope, associated entity, or event, but
+     * just returns the script. You can get @{link Script scripts} for particular scopes or events by calling {@link
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScripts(Scope, String, String)}.
      *
-     * @param user     The user requesting to run the script.
+     * @param scriptId The ID of the script to locate.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
-     * @param scriptId The ID of the script to run.
-     * @return The results of the script execution.
+     * @param event    The event for the script.
+     *
+     * @return The {@link Script} object if a script with the indicated script ID and association is found, <b>null</b>
+     * otherwise.
      */
     @Override
-    public Object runScript(final String user, final Scope scope, final String entityId, final String scriptId) {
-        return runScriptImpl(user, scope, entityId, true, scriptId, null, getInitializedParameters());
+    public Script getScript(final String scriptId, final Scope scope, final String entityId, final String event) {
+        final List<ScriptTrigger> triggers = _triggerService.getByScriptIdScopeEntityAndEvent(scriptId, scope, entityId, event);
+        if (triggers.size() == 0) {
+            return null;
+        }
+        return _scriptService.getByScriptId(scriptId);
     }
 
     /**
-     * This attempts to run a script using the indicated scope and entity ID, passing along the indicated parameters. If
-     * no script exists with that scope and entity ID, it will fail over and try to run the script with the same script
-     * ID but with the next higher scope.
-     * <p/>
-     * For now, this effectively means it will try the specific scope and entity ID, then fail over to a site-wide
-     * script with the indicated script ID. Full hierarchical fail-over has performance and relational concerns (e.g.
-     * failing over from subject to project requires retrieving the subject and then the project).
+     * Deletes the script for the specified script ID. If a script doesn't exist with that script ID, this method throws
+     * an {@link NrgServiceException}.
      *
-     * @param user       The user requesting to run the script.
-     * @param scope      The scope for the script.
-     * @param entityId   The associated entity for the script.
-     * @param scriptId   The ID of the script to run.
-     * @param parameters The parameters to pass to the script.
-     * @return The results of the script execution.
+     * @param scriptId The ID of the script to delete.
+     *
+     * @throws NrgServiceException When a script with the indicated script ID can not be found.
      */
     @Override
-    public Object runScript(final String user, final Scope scope, final String entityId, final String scriptId, final Map<String, Object> parameters) {
-        return runScriptImpl(user, scope, entityId, true, scriptId, null, parameters);
+    @Transactional
+    public void deleteScript(final String scriptId) throws NrgServiceException {
+        final Script script = _scriptService.getByScriptId(scriptId);
+        if (script == null) {
+            throw new NrgServiceException(NrgServiceError.UnknownEntity, "Can't find script with script ID: " + scriptId);
+        }
+        final List<ScriptTrigger> triggers = _triggerService.getByScriptId(scriptId);
+        for (final ScriptTrigger trigger : triggers) {
+            _triggerService.delete(trigger);
+        }
+        _scriptService.delete(script);
     }
 
     /**
-     * This attempts to run a script using the indicated scope and entity ID. If no script exists with that scope and
-     * entity ID, it will fail over and try to run the script with the same script ID and path but with the next higher
-     * scope.
-     * <p/>
-     * For now, this effectively means it will try the specific scope and entity ID, then fail over to a site-wide
-     * script with the indicated script ID and path. Full hierarchical fail-over has performance and relational concerns
-     * (e.g. failing over from subject to project requires retrieving the subject and then the project).
+     * Gets the script for the specified scope and entity ID. This will only return scripts associated with the {@link
+     * ScriptTrigger#DEFAULT_EVENT default event}. If a script and associated trigger doesn't exist for those criteria,
+     * this method returns null.
      *
-     * @param user     The user requesting to run the script.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
-     * @param scriptId The ID of the script to run.
-     * @param path     The path info of the script to run.
-     * @return The results of the script execution.
+     *
+     * @return The associated {@link Script scripts} if any with the indicated associations is found, <b>null</b>
+     * otherwise.
      */
     @Override
-    public Object runScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path) {
-        return runScriptImpl(user, scope, entityId, true, scriptId, path, getInitializedParameters());
+    public List<Script> getScripts(final Scope scope, final String entityId) {
+        return getScripts(scope, entityId, ScriptTrigger.DEFAULT_EVENT);
     }
 
     /**
-     * This attempts to run a script using the indicated scope and entity ID, passing along the indicated parameters. If
-     * no script exists with that scope and entity ID, it will fail over and try to run the script with the same script
-     * ID and path but with the next higher scope.
-     * <p/>
-     * For now, this effectively means it will try the specific scope and entity ID, then fail over to a site-wide
-     * script with the indicated script ID and path. Full hierarchical fail-over has performance and relational concerns
-     * (e.g. failing over from subject to project requires retrieving the subject and then the project).
+     * Gets the script for the specified scope, entity, script ID, and event. If a script and associated trigger doesn't
+     * exist for those criteria, this method returns null. For attributes you don't want to specify, pass null.
      *
-     * @param user       The user requesting to run the script.
-     * @param scope      The scope for the script.
-     * @param entityId   The associated entity for the script.
-     * @param scriptId   The ID of the script to run.
-     * @param path       The path info of the script to run.
-     * @param parameters The parameters to pass to the script.
+     * @param scope    The scope for the script.
+     * @param entityId The associated entity for the script.
+     * @param event    The event for the script.
+     *
+     * @return The associated {@link Script scripts} if any with the indicated associations is found, <b>null</b>
+     * otherwise.
+     */
+    @Override
+    public List<Script> getScripts(final Scope scope, final String entityId, final String event) {
+        final List<ScriptTrigger> triggers = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
+        if (_log.isDebugEnabled()) {
+            if (triggers == null || triggers.size() == 0) {
+                _log.debug("Found no script triggers associated with scope {}, entity ID {}, and event {}.", scope, entityId, event);
+            } else {
+                _log.debug("Found {} script triggers associated with scope {}, entity ID {}, and event {}.", triggers.size(), scope, entityId, event);
+            }
+        }
+        if (triggers == null || triggers.size() == 0) {
+            return null;
+        }
+        final List<Script> scripts = new ArrayList<Script>(triggers.size());
+        for (final ScriptTrigger trigger : triggers) {
+            scripts.add(_scriptService.getByScriptId(trigger.getScriptId()));
+        }
+        return scripts;
+    }
+
+    /**
+     * Gets all scripts registered on the system.
+     *
+     * @return All scripts on the system.
+     */
+    @Override
+    public List<Script> getScripts() {
+        return _scriptService.getAll();
+    }
+
+    /**
+     * A pared down version of {@link #setScript(String, String, Scope, String, String, String, String)} that sets the
+     * scope, event, language, and language version arguments to default values. This is useful for creating a site-wide
+     * script that can be run on demand.
+     *
+     * @param scriptId The ID of the script to set.
+     * @param content  The content to set for the script.
+     */
+    @Override
+    public void setScript(final String scriptId, final String content) {
+        setScript(scriptId, content, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+    }
+
+    /**
+     * A pared down version of {@link #setScript(String, String, Scope, String, String, String, String)} that sets the
+     * event, language, and language version arguments to default values.
+     *
+     * @param scriptId The ID of the script to set.
+     * @param content  The content to set for the script.
+     * @param scope    The scope for the script.
+     * @param entityId The associated entity for the script.
+     */
+    @Override
+    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId) {
+        setScript(scriptId, content, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+    }
+
+    /**
+     * A pared down version of {@link #setScript(String, String, Scope, String, String, String, String)} that sets the
+     * language and language version arguments to default values.
+     *
+     * @param scriptId The ID of the script to set.
+     * @param content  The content to set for the script.
+     * @param scope    The scope for the script.
+     * @param entityId The associated entity for the script.
+     * @param event    The event for the script.
+     */
+    @Override
+    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event) {
+        setScript(scriptId, content, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+    }
+
+    /**
+     * Creates a script and trigger with the indicated attributes and saves them to the script repository. If objects
+     * with the same unique constraints already exist, they will be retrieved then updated.
+     *
+     * @param scriptId        The ID of the script to set.
+     * @param content         The content to set for the script.
+     * @param scope           The scope for the script.
+     * @param entityId        The associated entity for the script.
+     * @param event           The event for the script.
+     * @param language        The script language for this script.
+     * @param languageVersion The compatible language version(s).
+     */
+    @Override
+    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language, final String languageVersion) {
+        final Script script;
+        if (_scriptService.hasScript(scriptId)) {
+            script = _scriptService.getByScriptId(scriptId);
+        } else {
+            script = new Script();
+            script.setScriptId(scriptId);
+        }
+
+        script.setDescription("Default description: script ID " + scriptId + " configured to run with " + language + " v" + languageVersion);
+        script.setLanguage(language);
+        script.setLanguageVersion(languageVersion);
+        script.setContent(content);
+
+        final List<ScriptTrigger> triggers = _triggerService.getByScriptIdScopeEntityAndEvent(scriptId, scope, entityId, event);
+        final ScriptTrigger trigger;
+        if (triggers != null && triggers.size() > 0) {
+            trigger = triggers.get(0);
+        } else {
+            trigger = new ScriptTrigger();
+            trigger.setTriggerId(getDefaultTriggerName(scriptId, scope, entityId, event));
+        }
+        trigger.setDescription(getDefaultTriggerDescription(scriptId, scope, entityId, event));
+        trigger.setScriptId(scriptId);
+        trigger.setAssociation(Scope.encode(scope, entityId));
+        trigger.setEvent(event);
+
+        setScript(script, trigger);
+    }
+
+    /**
+     * Takes the submitted script object and creates a trigger for it with the indicated scope, entity ID, and event. If
+     * objects with the same unique constraints already exist, they will be retrieved then updated.
+     *
+     * @param script   The script object to set.
+     * @param scope    The scope for the script.
+     * @param entityId The associated entity for the script.
+     * @param event    The event for the script.
+     */
+    @Override
+    public void setScript(final Script script, final Scope scope, final String entityId, final String event) {
+        String triggerName = getDefaultTriggerName(script.getScriptId(), scope, entityId, event);
+        String triggerDescription = getDefaultTriggerDescription(script.getScriptId(), scope, entityId, event);
+        final ScriptTrigger trigger = new ScriptTrigger(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), event);
+        setScript(script, trigger);
+    }
+
+    /**
+     * Takes the submitted script object and creates a trigger for it with the indicated scope, entity ID, and event. If
+     * objects with the same unique constraints already exist, they will be retrieved then updated.
+     *
+     * @param script  The script object to set.
+     * @param trigger The script trigger to set.
+     */
+    @Override
+    public void setScript(final Script script, final ScriptTrigger trigger) {
+        final Script existingScript = _scriptService.getByScriptId(script.getScriptId());
+        if (existingScript == null) {
+            _scriptService.create(script);
+        } else {
+            boolean isDirty = false;
+            final String existingContent = existingScript.getContent();
+            final String content = script.getContent();
+            if (!StringUtils.equals(existingContent, content)) {
+                existingScript.setContent(content);
+                isDirty = true;
+            }
+            final String existingLanguage = existingScript.getLanguage();
+            final String language = script.getLanguage();
+            if (!StringUtils.equals(existingLanguage, language)) {
+                existingScript.setLanguage(language);
+                isDirty = true;
+            }
+            final String existingVersion = existingScript.getLanguageVersion();
+            final String version = script.getLanguageVersion();
+            if (!StringUtils.equals(existingVersion, version)) {
+                existingScript.setLanguageVersion(version);
+                isDirty = true;
+            }
+            final String existingDescription = existingScript.getDescription();
+            final String description = script.getDescription();
+            if (!StringUtils.equals(existingDescription, description)) {
+                existingScript.setDescription(description);
+                isDirty = true;
+            }
+            if (isDirty) {
+                _scriptService.update(existingScript);
+            }
+        }
+        final ScriptTrigger existingTrigger = _triggerService.getByTriggerId(trigger.getTriggerId());
+        if (existingTrigger == null) {
+            _triggerService.create(trigger);
+        } else {
+            boolean isDirty = false;
+            String existingDescription = existingTrigger.getDescription();
+            String description = trigger.getDescription();
+            if (!existingDescription.equals(description)) {
+                existingTrigger.setDescription(description);
+                isDirty = true;
+            }
+            if (isDirty) {
+                _triggerService.update(existingTrigger);
+            }
+        }
+    }
+
+    /**
+     * A convenience method that sets script and trigger property values from corresponding entries in the submitted
+     * properties object.
+     *
+     * @param scriptId   The ID of the script to set.
+     * @param properties The properties to set on the script.
+     */
+    @Override
+    public void setScript(final String scriptId, final Properties properties) throws NrgServiceException {
+        if (StringUtils.isBlank(scriptId)) {
+            throw new NrgServiceException(NrgServiceError.Unknown, "You must specify the script ID to use this method.");
+        }
+        final String content = properties.getProperty("content");
+        final Scope scope = Scope.getScope(properties.getProperty("scope", Scope.Site.code()));
+        final String entityId = properties.getProperty("entityId");
+        final String event = properties.getProperty("event", ScriptTrigger.DEFAULT_EVENT);
+        final String language = properties.getProperty("language", ScriptRunner.DEFAULT_LANGUAGE);
+        final String languageVersion = properties.getProperty("languageVersion", ScriptRunner.DEFAULT_VERSION);
+        setScript(scriptId, content, scope, entityId, event, language, languageVersion);
+    }
+
+    /**
+     * This attempts to run the submitted script. Note that this method does no checking of the scope, associated
+     * entity, or event, but just executes the script. You can get @{link Script scripts} for particular scopes by
+     * calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or {@link
+     * #getScripts(Scope, String, String)} methods.
+     *
+     * @param script The script to run.
+     *
      * @return The results of the script execution.
      */
     @Override
-    public Object runScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path, final Map<String, Object> parameters) {
-        return runScriptImpl(user, scope, entityId, true, scriptId, path, parameters);
+    public Object runScript(final Script script) throws NrgServiceException {
+        return runScript(script, null, new HashMap<String, Object>());
     }
 
+    /**
+     * This attempts to run the submitted script, passing in the <b>parameters</b> map as parameters to the script. Note
+     * that this method does no checking of the scope, associated entity, or event, but just executes the script. You
+     * can get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScripts(Scope, String, String)} methods.
+     *
+     * @param script     The script to run.
+     * @param parameters The parameters to pass to the script.
+     *
+     * @return The results of the script execution.
+     */
     @Override
-    public void enableSiteScript(final String user, final String scriptId) throws NrgServiceException {
-        toggleScriptImpl(user, true, Scope.Site, null, scriptId, null);
+    public Object runScript(final Script script, final Map<String, Object> parameters) throws NrgServiceException {
+        return runScript(script, null, parameters);
     }
 
+    /**
+     * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
+     * from the trigger parameter, into the script execution environment. You can get @{link Script scripts} for
+     * particular scopes by calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or
+     * {@link #getScripts(Scope, String, String)} methods.
+     *
+     * @param script  The script to run.
+     * @param trigger The associated trigger for the script execution.
+     *
+     * @return The results of the script execution.
+     */
     @Override
-    public void enableSiteScript(final String user, final String scriptId, final String path) throws NrgServiceException {
-        toggleScriptImpl(user, true, Scope.Site, null, scriptId, path);
+    public Object runScript(final Script script, final ScriptTrigger trigger) throws NrgServiceException {
+        return runScript(script, trigger, null);
     }
 
+    /**
+     * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
+     * from the trigger parameter, as well as the submitted parameters, into the script execution environment. You can
+     * get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScripts(Scope, String, String)} methods.
+     *
+     * @param script     The script to run.
+     * @param trigger    The associated trigger for the script execution.
+     * @param parameters The parameters to pass to the script.
+     *
+     * @return The results of the script execution.
+     */
     @Override
-    public void enableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId) throws NrgServiceException {
-        toggleScriptImpl(user, true, scope, entityId, scriptId, null);
+    public Object runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException {
+        // TODO: Need to have a way to do a fuzzy match of versions, so that version 2.3.5 and 2.3.6 can match, e.g. 2.3 or whatever.
+        if (!hasRunner(script.getLanguage(), script.getLanguageVersion())) {
+            throw new NrgServiceRuntimeException(NrgServiceError.UnknownScriptRunner, "There is no script runner that supports " + script.getLanguage() + " version " + script.getLanguageVersion() + ".");
+        }
+
+        final ScriptRunner runner = getRunner(script.getLanguage(), script.getLanguageVersion());
+
+        final Properties properties = script.getAsProperties();
+        for (final String key : properties.stringPropertyNames()) {
+            // Don't override properties that are passed in explicitly.
+            if (!parameters.containsKey(key)) {
+                parameters.put(key, properties.getProperty(key));
+            }
+        }
+        if (trigger != null) {
+            final Map<String, String> items = Scope.decode(trigger.getAssociation());
+            if (!parameters.containsKey("scope")) {
+                parameters.put("scope", items.get("scope"));
+            }
+            if (!parameters.containsKey("entityId")) {
+                parameters.put("entityId", items.get("entityId"));
+            }
+            if (!parameters.containsKey("event")) {
+                parameters.put("event", trigger.getEvent());
+            }
+        }
+        try {
+            final Object results = runner.run(parameters);
+            if (_log.isDebugEnabled()) {
+                _log.debug("Got the following results from running " + formatScriptAndParameters(script, parameters));
+                if (results == null) {
+                    _log.debug(" * Null results");
+                } else {
+                    _log.debug(" * Object type: " + results.getClass());
+                    final String renderedResults = results.toString();
+                    _log.debug(" * Results: " + (renderedResults.length() > 64 ? renderedResults.substring(0, 63) + "..." : renderedResults));
+                }
+            }
+            return results;
+        } catch (Throwable e) {
+            String message = "Found an error while running a " + script.getLanguage() + " v" + script.getLanguageVersion() + " script";
+            _log.error(message, e);
+            throw new RuntimeException(message, e);
+        }
     }
 
-    @Override
-    public void enableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path) throws NrgServiceException {
-        toggleScriptImpl(user, true, scope, entityId, scriptId, path);
-    }
-
-    @Override
-    public void disableSiteScript(final String user, final String scriptId) throws NrgServiceException {
-        toggleScriptImpl(user, false, Scope.Site, null, scriptId, null);
-    }
-
-    @Override
-    public void disableSiteScript(final String user, final String scriptId, final String path) throws NrgServiceException {
-        toggleScriptImpl(user, false, Scope.Site, null, scriptId, path);
-    }
-
-    @Override
-    public void disableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId) throws NrgServiceException {
-        toggleScriptImpl(user, false, scope, entityId, scriptId, null);
-    }
-
-    @Override
-    public void disableScopedScript(final String user, final Scope scope, final String entityId, final String scriptId, final String path) throws NrgServiceException {
-        toggleScriptImpl(user, false, scope, entityId, scriptId, path);
-    }
-
+    /**
+     * Set the system's {@link ScriptRunner script runners} to the submitted collection.
+     *
+     * @param runners The {@link ScriptRunner script runners} to be added to the system.
+     */
     @Override
     @Autowired
-    public void setRunners(final List<ScriptRunner> runners) {
+    public void setRunners(final Collection<ScriptRunner> runners) {
         _runners.clear();
         addRunners(runners);
     }
@@ -325,6 +456,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         return null;
     }
 
+    /**
+     * Adds the submitted {@link ScriptRunner script runner} to the system.
+     *
+     * @param runner The {@link ScriptRunner script runner} to be added to the system.
+     */
     @Override
     public void addRunner(final ScriptRunner runner) {
         final String language = runner.getLanguage();
@@ -336,275 +472,30 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         }
     }
 
+    /**
+     * Adds the submitted {@link ScriptRunner script runners} to the system.
+     *
+     * @param runners The {@link ScriptRunner script runners} to be added to the system.
+     */
     @Override
-    public void addRunners(final List<ScriptRunner> runners) {
+    public void addRunners(final Collection<ScriptRunner> runners) {
         for (final ScriptRunner runner : runners) {
             addRunner(runner);
         }
     }
 
-    private boolean hasScriptImpl(final Scope scope, final String entityId, final boolean failover, final String scriptId, final String path) {
-        try {
-            Connection connection = null;
-            Statement statement = null;
-            ResultSet results = null;
-            try {
-                connection = _dataSource.getConnection();
-                statement = connection.createStatement();
-                final StringBuilder sql = new StringBuilder("SELECT COUNT(*) AS total FROM XHBM_CONFIGURATION WHERE tool = '");
-                sql.append(TOOL_ID_SCRIPTS).append("' AND path = '").append(composite(scriptId, path)).append("' AND status = 'enabled' AND enabled = 't'");
-                // TODO: Need way to figure out other scopes.
-                if (scope == Scope.Site) {
-                    sql.append(" AND project IS NULL");
-                } else {
-                    sql.append(" AND project = '").append(entityId).append("'");
-                }
-                results = statement.executeQuery(sql.toString());
-                while (results.next()) {
-                    int count = results.getInt("total");
-                    if (count > 0) {
-                        return true;
-                    }
-                    if (failover && scope.failoverTo() != null) {
-                        return hasScriptImpl(scope.failoverTo(), entityId, true, scriptId, path);
-                    }
-                }
-                return false;
-            } finally {
-                if (results != null) {
-                    results.close();
-                }
-                if (statement != null) {
-                    statement.close();
-                }
-                if (connection != null) {
-                    connection.close();
-                }
-            }
-        } catch (SQLException e) {
-            _log.error("Exception occurred querying for script " + formatScriptIdSet(scope, entityId, scriptId, path), e);
-            return false;
-        }
-    }
-
-    private Properties getScriptImpl(final Scope scope, final String entityId, final boolean failover, final String scriptId, final String path) {
-        final Object received = validateScopeAndEntityId(scope, entityId);
-
-        // TODO: This is a problem here. The entity ID is associated with the base scope. We need to be able to resolve parent IDs when ascending the scope hierarchy.
-        final Long parsed = scope == Scope.Site ? null : (Long) received;
-        final Configuration configuration = scope == Scope.Site ?
-                _configService.getConfig(TOOL_ID_SCRIPTS, composite(scriptId, path)) :
-                _configService.getConfig(TOOL_ID_SCRIPTS, composite(scriptId, path), parsed);
-
-        // If we didn't find an enabled configuration...
-        if (configuration == null || configuration.getStatus().equals("disabled")) {
-            // If failover is allowed and we have somewhere to fail over to...
-            if (failover && scope.failoverTo() != null) {
-                // Then fail over to that scope.
-                return getScriptImpl(scope.failoverTo(), entityId, true, scriptId, path);
-            } else {
-                if (_log.isInfoEnabled()) {
-                    _log.info("Didn't find a script matching the identifier set: " + formatScriptIdSet(scope, entityId, scriptId, path));
-                }
-                return null;
-            }
-        }
-
-        return getScriptProperties(scope, entityId, scriptId, path, configuration);
-    }
-
-    private List<Properties> getScriptsImpl(final Scope scope, final String entityId) {
-        final List<Properties> properties = new ArrayList<Properties>();
-        final List<Configuration> configurations;
-        switch (scope) {
-            case Site:
-                configurations = _configService.getConfigsByTool(TOOL_ID_SCRIPTS);
-                break;
-            case Project:
-                configurations = _configService.getConfigsByTool(TOOL_ID_SCRIPTS, Long.parseLong(entityId));
-                break;
-            default:
-                throw new NrgServiceRuntimeException(NrgServiceError.UnsupportedFeature, "This service currently only supports site and project scopes.");
-        }
-        for (Configuration configuration : configurations) {
-            final String configPath = configuration.getPath();
-            final String scriptId;
-            final String path;
-            if (configPath.contains("/")) {
-                final String[] atoms = configPath.split("/", 1);
-                scriptId = atoms[0];
-                path = atoms[1];
-            } else {
-                scriptId = configPath;
-                path = null;
-            }
-            properties.add(getScriptProperties(scope, entityId, scriptId, path, configuration));
-        }
-        return properties;
-    }
-
-    private Properties getScriptProperties(Scope scope, String entityId, String scriptId, String path, Configuration configuration) {
-        Properties configProps = configuration.asProperties();
-        Properties properties = new Properties();
-        properties.setProperty(ScriptProperty.Scope.key(), scope.code());
-        if (!StringUtils.isBlank(entityId)) {
-            properties.setProperty(ScriptProperty.EntityId.key(), entityId);
-        }
-        properties.setProperty(ScriptProperty.ScriptId.key(), scriptId);
-        if (!StringUtils.isBlank(path)) {
-            properties.setProperty(ScriptProperty.Path.key(), path);
-        }
-        if (configProps.containsKey("xnatUser")) {
-            properties.setProperty("xnatUser", configProps.getProperty("xnatUser"));
-        }
-        try {
-            final Properties configDataProps = MAPPER.readValue(configProps.getProperty("contents"), Properties.class);
-            properties.setProperty(ScriptProperty.Script.key(), configDataProps.getProperty(ScriptProperty.Script.key()));
-            properties.setProperty(ScriptProperty.Language.key(), configDataProps.getProperty(ScriptProperty.Language.key()));
-            properties.setProperty(ScriptProperty.LanguageVersion.key(), configDataProps.getProperty(ScriptProperty.LanguageVersion.key()));
-        } catch (IOException e) {
-            throw new NrgServiceRuntimeException("There was a weird error unmarshalling the config data", e);
-        }
-        return properties;
-    }
-
-    private void setScriptImpl(final String user, final Scope scope, final String entityId, final String scriptId, final String path, final String script, Properties properties) throws ConfigServiceException {
-        if (properties == null) {
-            properties = new Properties();
-        }
-        for (final String property : ScriptProperty.keys()) {
-            final ScriptProperty key = ScriptProperty.get(property);
-            if (!properties.contains(key)) {
-                final String value = key.defaultValue();
-                if (!StringUtils.isBlank(value)) {
-                    properties.setProperty(key.key(), value);
-                }
-            }
-        }
-        final Object received = validateScopeAndEntityId(scope, entityId);
-        final Long parsed = scope == Scope.Site ? null : (Long) received;
-        _configService.replaceConfig(user, "Updating script", TOOL_ID_SCRIPTS, composite(scriptId, path), true, wrapScript(script, properties), parsed);
-    }
-
-    private Object runScriptImpl(final String user, final Scope scope, final String entityId, final boolean failover, final String scriptId, final String path, final Map<String, Object> parameters) {
-        Properties properties = getScriptImpl(scope, entityId, failover, scriptId, path);
-
-        if (properties == null) {
-            return null;
-        }
-
-        final String language = properties.getProperty(ScriptProperty.Language.key());
-        final String version = properties.getProperty(ScriptProperty.LanguageVersion.key());
-
-        final ScriptRunner runner;
-
-        // TODO: Need to have a way to do a fuzzy match of versions, so that version 2.3.5 and 2.3.6 can match, e.g. 2.3 or whatever.
-        if (hasRunner(language, version)) {
-            runner = getRunner(language, version);
-        } else {
-            throw new NrgServiceRuntimeException(NrgServiceError.UnknownScriptRunner, "There is no script runner that supports " + language + " version " + version + ".");
-        }
-
-        for (final String key : properties.stringPropertyNames()) {
-            // Don't override properties that are passed in explicitly.
-            if (!parameters.containsKey(key)) {
-                parameters.put(key, properties.getProperty(key));
-            }
-        }
-        if (entityId != null) {
-            parameters.put("scope", properties.getProperty("scope"));
-            parameters.put("entityId", properties.getProperty("entityId"));
-        }
-
-        // TODO: Add audit/log trail entries here, something more robust than simple logging.
-        if (_log.isInfoEnabled()) {
-            _log.info("User " + user + " is preparing to run script " + formatScriptIdSet(scope, entityId, scriptId, path, parameters));
-        }
-
-        try {
-            final Object results = runner.run(parameters);
-            if (_log.isDebugEnabled()) {
-                _log.debug("Got the following results from running " + formatScriptIdSet(scope, entityId, scriptId, path, parameters));
-                if (results == null) {
-                    _log.debug(" * Null results");
-                } else {
-                    _log.debug(" * Object type: " + results.getClass());
-                    final String renderedResults = results.toString();
-                    _log.debug(" * Results: " + (renderedResults.length() > 64 ? renderedResults.substring(0, 63) + "..." : renderedResults));
-                }
-            }
-            return results;
-        } catch (Throwable e) {
-            _log.error("Found an error while running a " + language + " " + version + " script", e);
-            throw new RuntimeException("Found an error while running a " + language + " " + version + " script", e);
-        }
-    }
-
-    private void toggleScriptImpl(final String user, final boolean enable, final Scope scope, final String entityId, final String scriptId, final String path) throws NrgServiceException {
-        final Long projectId = scope == Scope.Site ? null : (Long) validateScopeAndEntityId(scope, entityId);
-        if (!hasScriptImpl(scope, entityId, false, scriptId, path)) {
-            throw new NrgServiceException(NrgServiceError.UnknownEntity, "Couldn't find the script indicated by " + formatScriptIdSet(scope, entityId, scriptId, path) + " to " + (enable ? "enable" : "disable") + " it.");
-        }
-        try {
-            if (enable) {
-                if (scope == Scope.Site) {
-                    _configService.enable(user, "Enabling script", TOOL_ID_SCRIPTS, composite(scriptId, path));
-                } else {
-                    _configService.enable(user, "Enabling script", TOOL_ID_SCRIPTS, composite(scriptId, path), projectId);
-                }
-            } else {
-                if (scope == Scope.Site) {
-                    _configService.disable(user, "Enabling script", TOOL_ID_SCRIPTS, composite(scriptId, path));
-                } else {
-                    _configService.disable(user, "Enabling script", TOOL_ID_SCRIPTS, composite(scriptId, path), projectId);
-                }
-            }
-        } catch (ConfigServiceException e) {
-            throw new NrgServiceException(NrgServiceError.Unknown, "An error occurred in the configuration service while trying to " + (enable ? "enable" : "disable") + " the script indicated by " + formatScriptIdSet(scope, entityId, scriptId, path), e);
-        }
-    }
-
     /**
-     * Provides an opportunity to initialize default parameters with some values.
+     * Sets the default trigger ID format. This is used when composing trigger IDs from trigger metadata.
      *
-     * @return An initialized parameters map.
+     * @param defaultTriggerIdFormat The format string for composing trigger IDs.
      */
-    private Map<String, Object> getInitializedParameters() {
-        return new HashMap<String, Object>();
+    @Override
+    public void setDefaultTriggerIdFormat(final String defaultTriggerIdFormat) {
+        _defaultTriggerIdFormat = defaultTriggerIdFormat;
     }
 
-    private Object validateScopeAndEntityId(final Scope scope, final String entityId) {
-        final boolean blankEntityId = StringUtils.isBlank(entityId);
-        if (scope == Scope.Site) {
-            return null;
-        }
-        if (blankEntityId) {
-            throw new NrgServiceRuntimeException(NrgServiceError.UnsupportedFeature, "You must specify a valid value for the entity ID for scope " + scope.code() + ".");
-        }
-        if (scope == Scope.Project) {
-            try {
-                return Long.parseLong(entityId);
-            } catch (NumberFormatException ignored) {
-                throw new NrgServiceRuntimeException(NrgServiceError.UnsupportedFeature, "You must specify a valid value for the entity ID for scope " + scope.code() + ". \"" + entityId + " is not a valid long value.");
-            }
-        } else {
-            throw new NrgServiceRuntimeException(NrgServiceError.UnsupportedFeature, "This service currently only supports site and project scopes.");
-        }
-    }
-
-    private String formatScriptIdSet(final Scope scope, final String entityId, final String scriptId, final String path) {
-        return formatScriptIdSet(scope, entityId, scriptId, path, null);
-    }
-
-    private String formatScriptIdSet(final Scope scope, final String entityId, final String scriptId, final String path, final Map<String, Object> parameters) {
-        final StringBuilder buffer = new StringBuilder("Scope[").append(scope.toString()).append("]");
-        if (!StringUtils.isBlank(entityId)) {
-            buffer.append(".EntityID[").append(entityId).append("]");
-        }
-        buffer.append(".ScriptID[").append(scriptId).append("]");
-        if (!StringUtils.isBlank(path)) {
-            buffer.append(".Path[").append(path).append("]");
-        }
+    private String formatScriptAndParameters(final Script script, final Map<String, Object> parameters) {
+        final StringBuilder buffer = new StringBuilder("Script ID: [").append(script.getScriptId()).append("]");
         if (parameters != null) {
             buffer.append("Parameters:\n");
             for (final String key : parameters.keySet()) {
@@ -614,39 +505,26 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         return buffer.toString();
     }
 
-    /**
-     * Right now this is a very simplistic compositing method to convert scriptId and path into a path of the sort used
-     * by the NRG configuration service. This does allow these to be separated and managed differently later to assist
-     * in creating a script and variation mechanism.
-     *
-     * @param scriptId The ID of the script family.
-     * @param path     The path of the specific script to retrieve.
-     * @return The composite script identifier.
-     */
-    private String composite(final String scriptId, final String path) {
-        return StringUtils.isBlank(path) ? scriptId : scriptId + "/" + path;
+    private String getDefaultTriggerName(final String scriptId, final Scope scope, final String entityId, final String event) {
+        final Map<String, String> values = new HashMap<String, String>();
+        values.put("scriptId", scriptId);
+        values.put("scope", scope.code());
+        values.put("entityId", entityId == null ? "null" : entityId);
+        values.put("event", event);
+        return new StrSubstitutor(values, "%(", ")").replace(_defaultTriggerIdFormat);
     }
 
-    private ObjectWriter getWriter() {
-        return MAPPER.writer().withDefaultPrettyPrinter();
-    }
-
-    private String wrapScript(final String script, final Properties properties) {
-        try {
-            properties.setProperty(ScriptProperty.Script.key(), script);
-            return getWriter().writeValueAsString(properties);
-        } catch (IOException ignored) {
-            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An I/O exception happened while serializing a properties map.");
-        }
+    private String getDefaultTriggerDescription(final String scriptId, final Scope scope, final String entityId, final String event) {
+        return "Script trigger for script " + scriptId + ", scope " + scope.code() + (entityId != null ? ", entity ID: " + entityId : "") + ", event: " + event;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(DefaultScriptRunnerService.class);
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Inject
-    private ConfigService _configService;
+    private ScriptService _scriptService;
     @Inject
-    private DataSource _dataSource;
+    private ScriptTriggerService _triggerService;
 
     private final Map<String, Map<String, ScriptRunner>> _runners = new HashMap<String, Map<String, ScriptRunner>>();
+    private String _defaultTriggerIdFormat = "%(scriptId)-%(scope)-%(entityId)-%(event)";
 }

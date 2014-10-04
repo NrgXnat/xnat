@@ -36,17 +36,17 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
     }
 
     @SuppressWarnings("unused")
-    public ScriptTriggerTemplate(final String name, final String description) {
-        this(name, description, null, null);
+    public ScriptTriggerTemplate(final String templateId, final String description) {
+        this(templateId, description, null, null);
     }
 
     @SuppressWarnings("unused")
-    public ScriptTriggerTemplate(final String name, final String description, final Set<ScriptTrigger> triggers) {
-        this(name, description, triggers, null);
+    public ScriptTriggerTemplate(final String templateId, final String description, final Set<ScriptTrigger> triggers) {
+        this(templateId, description, triggers, null);
     }
 
-    public ScriptTriggerTemplate(final String name, final String description, final Set<ScriptTrigger> triggers, final Set<Long> associatedEntities) {
-        setTemplateId(name);
+    public ScriptTriggerTemplate(final String templateId, final String description, final Set<ScriptTrigger> triggers, final Set<Long> associatedEntities) {
+        setTemplateId(templateId);
         setDescription(description);
         setTriggers(triggers);
         setAssociatedEntities(associatedEntities);
@@ -97,7 +97,7 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
     @Override
     public String toString() {
         return "ScriptTriggerTemplate{" +
-                "name='" + _templateId + '\'' +
+                "templateId='" + _templateId + '\'' +
                 ", description='" + _description + '\'' +
                 ", triggers=" + _triggers +
                 ", associatedEntities=" + _associatedEntities +

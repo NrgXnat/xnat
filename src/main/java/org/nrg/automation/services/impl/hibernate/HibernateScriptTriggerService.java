@@ -85,7 +85,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
      */
     @Override
     @Transactional
-    public List<ScriptTrigger> getSiteTriggers(final String event) {
+    public ScriptTrigger getSiteTrigger(final String event) {
         return getByScopeEntityAndEvent(Scope.Site, null, event);
     }
 
@@ -122,54 +122,10 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
      */
     @Override
     @Transactional
-    public List<ScriptTrigger> getByScopeEntityAndEvent(final Scope scope, final String entityId, final String event) {
+    public ScriptTrigger getByScopeEntityAndEvent(final Scope scope, final String entityId, final String event) {
         return getByAssociationAndEvent(Scope.encode(scope, entityId), event);
     }
 
-    /**
-     * Retrieves all triggers for the indicated scope and entity.
-     *
-     * @param scriptId The script ID for which to locate triggers.
-     * @param scope    The scope to search.
-     * @param entityId The associated entity ID.
-     * @param event    The event associated with the trigger.
-     *
-     * @return All triggers associated with the indicated scope and entity and event
-     * @see #getSiteTriggers(String)
-     */
-    @Override
-    @Transactional
-    public List<ScriptTrigger> getByScriptIdScopeEntityAndEvent(final String scriptId, final Scope scope, final String entityId, final String event) {
-        return getByScriptIdAssociationAndEvent(scriptId, Scope.encode(scope, entityId), event);
-    }
-
-    /**
-     * Retrieves all triggers for the indicated scope and entity.
-     *
-     * @param scriptId    The script ID for which to locate triggers.
-     * @param association The association for the trigger.
-     * @param event       The event associated with the trigger.
-     *
-     * @return All triggers associated with the indicated scope and entity and event
-     * @see #getSiteTriggers(String)
-     */
-    @Override
-    @Transactional
-    public List<ScriptTrigger> getByScriptIdAssociationAndEvent(final String scriptId, final String association, final String event) {
-        ScriptTrigger example = new ScriptTrigger();
-        example.setScriptId(scriptId);
-        example.setAssociation(association);
-        example.setEvent(event);
-        List<ScriptTrigger> triggers = getDao().findByExample(example, EXCLUDE_PROPS_SCRIPT_ID_SCOPE_EVENT);
-        if (_log.isDebugEnabled()) {
-            if (triggers == null || triggers.size() == 0) {
-                _log.debug("Found no trigger for script ID {}, association {}, and event {}", scriptId, association, event);
-            } else {
-                _log.debug("Found {} triggers for script ID {}, association {}, and event {}.", triggers.size(), association, event);
-            }
-        }
-        return triggers;
-    }
 
     /**
      * Retrieves the {@link ScriptTrigger trigger} with the indicated association and event. Generally the association
@@ -182,23 +138,24 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
      */
     @Override
     @Transactional
-    public List<ScriptTrigger> getByAssociationAndEvent(final String association, final String event) {
+    public ScriptTrigger getByAssociationAndEvent(final String association, final String event) {
         ScriptTrigger example = new ScriptTrigger();
         example.setAssociation(association);
         example.setEvent(event);
         List<ScriptTrigger> triggers = getDao().findByExample(example, EXCLUDE_PROPS_SCOPE_EVENT);
-        if (_log.isDebugEnabled()) {
-            if (triggers == null || triggers.size() == 0) {
+        if (triggers == null || triggers.size() == 0) {
+            if (_log.isDebugEnabled()) {
                 _log.debug("Found no trigger for association {} and event {}", association, event);
-            } else {
-                _log.debug("Found {} triggers for association {} and event {}.", triggers.size(), association, event);
             }
+            return null;
         }
-        return triggers;
+        if (_log.isDebugEnabled()) {
+            _log.debug("Found {} triggers for association {} and event {}, should be *1*.", triggers.size(), association, event);
+        }
+        return triggers.get(0);
     }
 
     private static final String[] EXCLUDE_PROPS_SCOPE = new String[]{"id", "enabled", "verified", "created", "timestamp", "disabled", "triggerId", "description", "scriptId", "event"};
-    private static final String[] EXCLUDE_PROPS_SCRIPT_ID_SCOPE_EVENT = new String[]{"id", "enabled", "verified", "created", "timestamp", "disabled", "triggerId", "description"};
     private static final String[] EXCLUDE_PROPS_SCOPE_EVENT = new String[]{"id", "enabled", "verified", "created", "timestamp", "disabled", "triggerId", "description", "scriptId"};
     private static final String[] EXCLUDE_PROPS_SCRIPT_ID = new String[]{"id", "enabled", "verified", "created", "timestamp", "disabled", "triggerId", "description", "association", "event"};
 

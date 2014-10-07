@@ -58,7 +58,7 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      * @return All triggers associated with the site scope and indicated event.
      * @see #getByScopeEntityAndEvent(Scope, String, String)
      */
-    public abstract List<ScriptTrigger> getSiteTriggers(final String event);
+    public abstract ScriptTrigger getSiteTrigger(final String event);
 
     /**
      * Retrieves all triggers for the indicated scope and entity.
@@ -80,7 +80,7 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      *
      * @return All triggers associated with the indicated association and event
      */
-    public abstract List<ScriptTrigger> getByAssociationAndEvent(final String association, final String event);
+    public abstract ScriptTrigger getByAssociationAndEvent(final String association, final String event);
 
     /**
      * Retrieves all triggers for the indicated scope and entity.
@@ -89,33 +89,7 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      * @param entityId The associated entity ID.
      * @param event    The event associated with the trigger.
      *
-     * @return All triggers associated with the indicated scope and entity and event
-     * @see #getSiteTriggers(String)
+     * @return The trigger associated with the indicated scope and entity and event, if any.
      */
-    public abstract List<ScriptTrigger> getByScopeEntityAndEvent(final Scope scope, final String entityId, final String event);
-
-    /**
-     * Retrieves all triggers for the indicated script, scope, and entity.
-     *
-     * @param scriptId The script ID for which to locate triggers.
-     * @param scope    The scope to search.
-     * @param entityId The associated entity ID.
-     * @param event    The event associated with the trigger.
-     *
-     * @return All triggers associated with the indicated scope and entity and event
-     * @see #getSiteTriggers(String)
-     */
-    public abstract List<ScriptTrigger> getByScriptIdScopeEntityAndEvent(final String scriptId, final Scope scope, final String entityId, final String event);
-
-    /**
-     * Retrieves all triggers for the indicated scope and entity.
-     *
-     * @param scriptId       The script ID for which to locate triggers.
-     * @param association    The association for the trigger.
-     * @param event          The event associated with the trigger.
-     *
-     * @return All triggers associated with the indicated scope and entity and event
-     * @see #getSiteTriggers(String)
-     */
-    public abstract List<ScriptTrigger> getByScriptIdAssociationAndEvent(final String scriptId, final String association, final String event);
+    public abstract ScriptTrigger getByScopeEntityAndEvent(final Scope scope, final String entityId, final String event);
 }

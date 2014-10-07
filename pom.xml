@@ -54,6 +54,7 @@
             <artifactId>cglib</artifactId>
         </dependency>
 
+        <!-- Runtime dependencies -->
         <dependency>
             <groupId>org.hibernate</groupId>
             <artifactId>hibernate-ehcache</artifactId>
@@ -63,6 +64,12 @@
             <groupId>net.sf.ehcache</groupId>
             <artifactId>ehcache-core</artifactId>
             <scope>runtime</scope>
+        </dependency>
+
+        <!-- Provided dependencies -->
+        <dependency>
+            <groupId>org.jetbrains</groupId>
+            <artifactId>annotations</artifactId>
         </dependency>
 
         <!-- Test dependencies -->

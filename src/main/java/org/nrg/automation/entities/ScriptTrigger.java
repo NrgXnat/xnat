@@ -11,6 +11,7 @@ package org.nrg.automation.entities;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.jetbrains.annotations.NotNull;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.slf4j.Logger;
@@ -28,7 +29,8 @@ import javax.persistence.UniqueConstraint;
  */
 @Auditable
 @Entity
-@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"triggerId", "disabled"}))
+@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"triggerId", "disabled"}),
+        @UniqueConstraint(columnNames = {"association", "event", "disabled"})})
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class ScriptTrigger extends AbstractHibernateEntity implements Comparable<ScriptTrigger> {
 
@@ -78,6 +80,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
     /**
      * For the current iteration of this API, associations may be XNAT data types (in the form of the xsiType string),
      * a project ID (in the form "prj:ID"), or the containing site (in the form "site").
+     *
      * @return The association for this trigger.
      */
     @Column(nullable = false)
@@ -138,7 +141,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
     }
 
     @Override
-    public int compareTo(final ScriptTrigger other) {
+    public int compareTo(@NotNull final ScriptTrigger other) {
         return toString().compareTo(other.toString());
     }
 

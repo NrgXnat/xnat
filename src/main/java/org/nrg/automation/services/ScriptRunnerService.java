@@ -18,7 +18,7 @@ public interface ScriptRunnerService extends NrgService {
      * Gets the script for the specified script ID. If a script doesn't exist with that script ID, this method returns
      * null. Note that this method does no checking of the scope, associated entity, or event, but just returns the
      * script. You can get @{link Script scripts} for particular scopes or events by calling {@link
-     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScripts(Scope, String, String)}.
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String)}.
      *
      * @param scriptId The ID of the script to locate.
      *
@@ -31,7 +31,7 @@ public interface ScriptRunnerService extends NrgService {
      * indicated scope, entity ID, and event. If a script doesn't exist with that script ID and trigger association,
      * this method returns null. Note that this method does no checking of the scope, associated entity, or event, but
      * just returns the script. You can get @{link Script scripts} for particular scopes or events by calling {@link
-     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScripts(Scope, String, String)}.
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String)}.
      *
      * @return The {@link Script} object if a script with the indicated script ID and association is found, <b>null</b>
      * otherwise.
@@ -69,10 +69,10 @@ public interface ScriptRunnerService extends NrgService {
      * @param entityId The associated entity for the script.
      * @param event    The event for the script.
      *
-     * @return The associated {@link Script scripts} if any with the indicated associations is found, <b>null</b>
+     * @return The associated {@link Script script} if any with the indicated associations is found, <b>null</b>
      * otherwise.
      */
-    public abstract List<Script> getScripts(final Scope scope, final String entityId, final String event);
+    public abstract Script getScript(final Scope scope, final String entityId, final String event);
 
     /**
      * Gets all scripts registered on the system.
@@ -161,7 +161,7 @@ public interface ScriptRunnerService extends NrgService {
      * This attempts to run the submitted script. Note that this method does no checking of the scope, associated
      * entity, or event, but just executes the script. You can get @{link Script scripts} for particular scopes by
      * calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or {@link
-     * #getScripts(Scope, String, String)} methods.
+     * #getScript(Scope, String, String)} methods.
      *
      * @param script The script to run.
      *
@@ -173,7 +173,7 @@ public interface ScriptRunnerService extends NrgService {
      * This attempts to run the submitted script, passing in the <b>parameters</b> map as parameters to the script. Note
      * that this method does no checking of the scope, associated entity, or event, but just executes the script. You
      * can get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
-     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScripts(Scope, String, String)} methods.
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String)} methods.
      *
      * @param script     The script to run.
      * @param parameters The parameters to pass to the script.
@@ -186,7 +186,7 @@ public interface ScriptRunnerService extends NrgService {
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
      * from the trigger parameter, into the script execution environment. You can get @{link Script scripts} for
      * particular scopes by calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or
-     * {@link #getScripts(Scope, String, String)} methods.
+     * {@link #getScript(Scope, String, String)} methods.
      *
      * @param script  The script to run.
      * @param trigger The associated trigger for the script execution.
@@ -199,7 +199,7 @@ public interface ScriptRunnerService extends NrgService {
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
      * from the trigger parameter, as well as the submitted parameters, into the script execution environment. You can
      * get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
-     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScripts(Scope, String, String)} methods.
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String)} methods.
      *
      * @param script     The script to run.
      * @param trigger    The associated trigger for the script execution.

@@ -28,7 +28,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * Gets the script for the specified script ID. If a script doesn't exist with that script ID, this method returns
      * null. Note that this method does no checking of the scope, associated entity, or event, but just returns the
      * script. You can get @{link Script scripts} for particular scopes or events by calling {@link
-     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScripts(Scope, String, String)}.
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String)}.
      *
      * @param scriptId The ID of the script to locate.
      *
@@ -44,7 +44,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * indicated scope, entity ID, and event. If a script doesn't exist with that script ID and trigger association,
      * this method returns null. Note that this method does no checking of the scope, associated entity, or event, but
      * just returns the script. You can get @{link Script scripts} for particular scopes or events by calling {@link
-     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScripts(Scope, String, String)}.
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String)}.
      *
      * @param scriptId The ID of the script to locate.
      * @param scope    The scope for the script.
@@ -55,9 +55,10 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * otherwise.
      */
     @Override
+    @Transactional
     public Script getScript(final String scriptId, final Scope scope, final String entityId, final String event) {
-        final List<ScriptTrigger> triggers = _triggerService.getByScriptIdScopeEntityAndEvent(scriptId, scope, entityId, event);
-        if (triggers.size() == 0) {
+        final ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
+        if (trigger == null) {
             return null;
         }
         return _scriptService.getByScriptId(scriptId);
@@ -98,7 +99,15 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public List<Script> getScripts(final Scope scope, final String entityId) {
-        return getScripts(scope, entityId, ScriptTrigger.DEFAULT_EVENT);
+        final List<ScriptTrigger> triggers = _triggerService.getByScope(scope, entityId);
+        if (triggers == null || triggers.size() == 0) {
+            return new ArrayList<Script>();
+        }
+        final List<Script> scripts = new ArrayList<Script>(triggers.size());
+        for (final ScriptTrigger trigger : triggers) {
+            scripts.add(_scriptService.getByScriptId(trigger.getScriptId()));
+        }
+        return scripts;
     }
 
     /**
@@ -113,23 +122,23 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * otherwise.
      */
     @Override
-    public List<Script> getScripts(final Scope scope, final String entityId, final String event) {
-        final List<ScriptTrigger> triggers = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
-        if (_log.isDebugEnabled()) {
-            if (triggers == null || triggers.size() == 0) {
+    public Script getScript(final Scope scope, final String entityId, final String event) {
+        final ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
+        if (trigger == null) {
+            if (_log.isDebugEnabled()) {
                 _log.debug("Found no script triggers associated with scope {}, entity ID {}, and event {}.", scope, entityId, event);
-            } else {
-                _log.debug("Found {} script triggers associated with scope {}, entity ID {}, and event {}.", triggers.size(), scope, entityId, event);
             }
-        }
-        if (triggers == null || triggers.size() == 0) {
             return null;
         }
-        final List<Script> scripts = new ArrayList<Script>(triggers.size());
-        for (final ScriptTrigger trigger : triggers) {
-            scripts.add(_scriptService.getByScriptId(trigger.getScriptId()));
+        final Script script = _scriptService.getByScriptId(trigger.getScriptId());
+        if (_log.isDebugEnabled()) {
+            if (script == null) {
+                _log.debug("Found no script associated with scope {}, entity ID {}, and event {}.", scope, entityId, event);
+            } else {
+                _log.debug("Found script {} associated with scope {}, entity ID {}, and event {}.", script.getScriptId(), scope, entityId, event);
+            }
         }
-        return scripts;
+        return script;
     }
 
     /**
@@ -211,11 +220,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         script.setLanguageVersion(languageVersion);
         script.setContent(content);
 
-        final List<ScriptTrigger> triggers = _triggerService.getByScriptIdScopeEntityAndEvent(scriptId, scope, entityId, event);
-        final ScriptTrigger trigger;
-        if (triggers != null && triggers.size() > 0) {
-            trigger = triggers.get(0);
-        } else {
+        ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
+        if (trigger == null) {
             trigger = new ScriptTrigger();
             trigger.setTriggerId(getDefaultTriggerName(scriptId, scope, entityId, event));
         }
@@ -328,7 +334,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * This attempts to run the submitted script. Note that this method does no checking of the scope, associated
      * entity, or event, but just executes the script. You can get @{link Script scripts} for particular scopes by
      * calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or {@link
-     * #getScripts(Scope, String, String)} methods.
+     * #getScript(Scope, String, String)} methods.
      *
      * @param script The script to run.
      *
@@ -343,7 +349,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * This attempts to run the submitted script, passing in the <b>parameters</b> map as parameters to the script. Note
      * that this method does no checking of the scope, associated entity, or event, but just executes the script. You
      * can get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
-     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScripts(Scope, String, String)} methods.
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String)} methods.
      *
      * @param script     The script to run.
      * @param parameters The parameters to pass to the script.
@@ -359,7 +365,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
      * from the trigger parameter, into the script execution environment. You can get @{link Script scripts} for
      * particular scopes by calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or
-     * {@link #getScripts(Scope, String, String)} methods.
+     * {@link #getScript(Scope, String, String)} methods.
      *
      * @param script  The script to run.
      * @param trigger The associated trigger for the script execution.
@@ -375,7 +381,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
      * from the trigger parameter, as well as the submitted parameters, into the script execution environment. You can
      * get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
-     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScripts(Scope, String, String)} methods.
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String)} methods.
      *
      * @param script     The script to run.
      * @param trigger    The associated trigger for the script execution.

@@ -71,7 +71,7 @@ public class Script extends AbstractHibernateEntity {
         _languageVersion = languageVersion;
     }
 
-    @Lob
+    @Column(columnDefinition = "TEXT")
     public String getContent() {
         return _content;
     }

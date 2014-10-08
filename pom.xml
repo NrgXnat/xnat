@@ -10,8 +10,8 @@
   ~ Last modified 2/18/14 5:52 PM
   -->
 <project xmlns="http://maven.apache.org/POM/4.0.0"
-    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
-    xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd"
+         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance">
     <modelVersion>4.0.0</modelVersion>
 
     <groupId>org.nrg</groupId>
@@ -41,7 +41,7 @@
         <nrg.dicomdb.version>[4.0.0,5.0.0)</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${project.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${project.version}</nrg.ecat4xnat.version>
-        <nrg.nrgutil.version>1.1.0</nrg.nrgutil.version>
+        <nrg.nrgutil.version>2.0.0</nrg.nrgutil.version>
         <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
         <nrg.extattr.version>4.1.0</nrg.extattr.version>
         <nrg.sessionbuilders.version>${project.version}</nrg.sessionbuilders.version>
@@ -75,6 +75,7 @@
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <commons-io.version>2.4</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
+        <commons-lang3.version>3.3.2</commons-lang3.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <dcm4che.version>2.0.25</dcm4che.version>
         <dom4j.version>1.6.1</dom4j.version>
@@ -82,12 +83,13 @@
         <ehcache.version>2.6.6</ehcache.version>
         <fop.version>0.20.5-rc3-alpha</fop.version>
         <groovy.version>2.3.6</groovy.version>
-        <guava.version>10.0.1</guava.version>
+        <guava.version>18.0</guava.version>
         <h2.version>1.3.173</h2.version>
         <hibernate.version>3.6.10.Final</hibernate.version>
         <hibernate-jpa.version>1.0.1.Final</hibernate-jpa.version>
         <hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
         <httpcomponents-client.version>4.3.3</httpcomponents-client.version>
+        <imagej.version>1.49h</imagej.version>
         <itext.version>1.1.4</itext.version>
         <jackson.version>1.8.11</jackson.version>
         <fasterxml-jackson.version>2.1.0</fasterxml-jackson.version>
@@ -441,6 +443,11 @@
                 <version>${commons-lang.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-lang3</artifactId>
+                <version>${commons-lang3.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-fileupload</groupId>
                 <artifactId>commons-fileupload</artifactId>
                 <version>${commons-fileupload.version}</version>
@@ -753,11 +760,12 @@
                 <version>${json.version}</version>
             </dependency>
             <dependency>
-                <groupId>imagej</groupId>
-                <artifactId>imagej</artifactId>
-                <version>1.44.update</version>
+                <groupId>net.imagej</groupId>
+                <artifactId>ij</artifactId>
+                <version>${imagej.version}</version>
             </dependency>
-            <dependency>
+
+<dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
                 <version>1.0</version>

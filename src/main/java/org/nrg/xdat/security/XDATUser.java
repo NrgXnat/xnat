@@ -2807,6 +2807,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 	 * @return
 	 */
 	public boolean checkFeature(Collection<String> tags, String feature) {
+        if (Features.isBanned(feature)) {
+            return false;
+        }
+
+        if (this.isSiteAdmin()) {
+            return true;
+        }
+
 		for(String tag: tags){
 			if(checkFeature(tag,feature)){
 				return true;

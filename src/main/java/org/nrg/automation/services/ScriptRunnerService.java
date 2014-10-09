@@ -251,11 +251,4 @@ public interface ScriptRunnerService extends NrgService {
      * @param runners The {@link ScriptRunner script runners} to be added to the system.
      */
     public abstract void addRunners(final Collection<ScriptRunner> runners);
-
-    /**
-     * Sets the default trigger ID format. This is used when composing trigger IDs from trigger metadata.
-     *
-     * @param defaultTriggerIdFormat The format string for composing trigger IDs.
-     */
-    public abstract void setDefaultTriggerIdFormat(final String defaultTriggerIdFormat);
 }

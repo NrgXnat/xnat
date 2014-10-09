@@ -1,7 +1,6 @@
 package org.nrg.automation.services.impl;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.text.StrSubstitutor;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
@@ -220,17 +219,21 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         script.setLanguageVersion(languageVersion);
         script.setContent(content);
 
-        ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
-        if (trigger == null) {
-            trigger = new ScriptTrigger();
-            trigger.setTriggerId(getDefaultTriggerName(scriptId, scope, entityId, event));
-        }
-        trigger.setDescription(getDefaultTriggerDescription(scriptId, scope, entityId, event));
-        trigger.setScriptId(scriptId);
-        trigger.setAssociation(Scope.encode(scope, entityId));
-        trigger.setEvent(event);
+        if (scope == null) {
+            saveScript(script);
+        } else {
+            ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
+            if (trigger == null) {
+                trigger = new ScriptTrigger();
+                trigger.setTriggerId(_triggerService.getDefaultTriggerName(scriptId, scope, entityId, event));
+            }
+            trigger.setDescription(getDefaultTriggerDescription(scriptId, scope, entityId, event));
+            trigger.setScriptId(scriptId);
+            trigger.setAssociation(Scope.encode(scope, entityId));
+            trigger.setEvent(event);
 
-        setScript(script, trigger);
+            setScript(script, trigger);
+        }
     }
 
     /**
@@ -244,7 +247,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final Script script, final Scope scope, final String entityId, final String event) {
-        String triggerName = getDefaultTriggerName(script.getScriptId(), scope, entityId, event);
+        String triggerName = _triggerService.getDefaultTriggerName(script.getScriptId(), scope, entityId, event);
         String triggerDescription = getDefaultTriggerDescription(script.getScriptId(), scope, entityId, event);
         final ScriptTrigger trigger = new ScriptTrigger(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), event);
         setScript(script, trigger);
@@ -259,54 +262,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final Script script, final ScriptTrigger trigger) {
-        final Script existingScript = _scriptService.getByScriptId(script.getScriptId());
-        if (existingScript == null) {
-            _scriptService.create(script);
-        } else {
-            boolean isDirty = false;
-            final String existingContent = existingScript.getContent();
-            final String content = script.getContent();
-            if (!StringUtils.equals(existingContent, content)) {
-                existingScript.setContent(content);
-                isDirty = true;
-            }
-            final String existingLanguage = existingScript.getLanguage();
-            final String language = script.getLanguage();
-            if (!StringUtils.equals(existingLanguage, language)) {
-                existingScript.setLanguage(language);
-                isDirty = true;
-            }
-            final String existingVersion = existingScript.getLanguageVersion();
-            final String version = script.getLanguageVersion();
-            if (!StringUtils.equals(existingVersion, version)) {
-                existingScript.setLanguageVersion(version);
-                isDirty = true;
-            }
-            final String existingDescription = existingScript.getDescription();
-            final String description = script.getDescription();
-            if (!StringUtils.equals(existingDescription, description)) {
-                existingScript.setDescription(description);
-                isDirty = true;
-            }
-            if (isDirty) {
-                _scriptService.update(existingScript);
-            }
-        }
-        final ScriptTrigger existingTrigger = _triggerService.getByTriggerId(trigger.getTriggerId());
-        if (existingTrigger == null) {
-            _triggerService.create(trigger);
-        } else {
-            boolean isDirty = false;
-            String existingDescription = existingTrigger.getDescription();
-            String description = trigger.getDescription();
-            if (!existingDescription.equals(description)) {
-                existingTrigger.setDescription(description);
-                isDirty = true;
-            }
-            if (isDirty) {
-                _triggerService.update(existingTrigger);
-            }
-        }
+        saveScript(script);
+        saveTrigger(trigger);
     }
 
     /**
@@ -322,7 +279,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             throw new NrgServiceException(NrgServiceError.Unknown, "You must specify the script ID to use this method.");
         }
         final String content = properties.getProperty("content");
-        final Scope scope = Scope.getScope(properties.getProperty("scope", Scope.Site.code()));
+        final Scope scope = properties.containsKey("scope") ? Scope.getScope(properties.getProperty("scope")) : null;
         final String entityId = properties.getProperty("entityId");
         final String event = properties.getProperty("event", ScriptTrigger.DEFAULT_EVENT);
         final String language = properties.getProperty("language", ScriptRunner.DEFAULT_LANGUAGE);
@@ -490,14 +447,58 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         }
     }
 
-    /**
-     * Sets the default trigger ID format. This is used when composing trigger IDs from trigger metadata.
-     *
-     * @param defaultTriggerIdFormat The format string for composing trigger IDs.
-     */
-    @Override
-    public void setDefaultTriggerIdFormat(final String defaultTriggerIdFormat) {
-        _defaultTriggerIdFormat = defaultTriggerIdFormat;
+    private void saveScript(final Script script) {
+        final Script existingScript = _scriptService.getByScriptId(script.getScriptId());
+        if (existingScript == null) {
+            _scriptService.create(script);
+        } else {
+            boolean isDirty = false;
+            final String existingContent = existingScript.getContent();
+            final String content = script.getContent();
+            if (!StringUtils.equals(existingContent, content)) {
+                existingScript.setContent(content);
+                isDirty = true;
+            }
+            final String existingLanguage = existingScript.getLanguage();
+            final String language = script.getLanguage();
+            if (!StringUtils.equals(existingLanguage, language)) {
+                existingScript.setLanguage(language);
+                isDirty = true;
+            }
+            final String existingVersion = existingScript.getLanguageVersion();
+            final String version = script.getLanguageVersion();
+            if (!StringUtils.equals(existingVersion, version)) {
+                existingScript.setLanguageVersion(version);
+                isDirty = true;
+            }
+            final String existingDescription = existingScript.getDescription();
+            final String description = script.getDescription();
+            if (!StringUtils.equals(existingDescription, description)) {
+                existingScript.setDescription(description);
+                isDirty = true;
+            }
+            if (isDirty) {
+                _scriptService.update(existingScript);
+            }
+        }
+    }
+
+    private void saveTrigger(final ScriptTrigger trigger) {
+        final ScriptTrigger existingTrigger = _triggerService.getByTriggerId(trigger.getTriggerId());
+        if (existingTrigger == null) {
+            _triggerService.create(trigger);
+        } else {
+            boolean isDirty = false;
+            String existingDescription = existingTrigger.getDescription();
+            String description = trigger.getDescription();
+            if (!existingDescription.equals(description)) {
+                existingTrigger.setDescription(description);
+                isDirty = true;
+            }
+            if (isDirty) {
+                _triggerService.update(existingTrigger);
+            }
+        }
     }
 
     private String formatScriptAndParameters(final Script script, final Map<String, Object> parameters) {
@@ -509,15 +510,6 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             }
         }
         return buffer.toString();
-    }
-
-    private String getDefaultTriggerName(final String scriptId, final Scope scope, final String entityId, final String event) {
-        final Map<String, String> values = new HashMap<String, String>();
-        values.put("scriptId", scriptId);
-        values.put("scope", scope.code());
-        values.put("entityId", entityId == null ? "null" : entityId);
-        values.put("event", event);
-        return new StrSubstitutor(values, "%(", ")").replace(_defaultTriggerIdFormat);
     }
 
     private String getDefaultTriggerDescription(final String scriptId, final Scope scope, final String entityId, final String event) {
@@ -532,5 +524,4 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     private ScriptTriggerService _triggerService;
 
     private final Map<String, Map<String, ScriptRunner>> _runners = new HashMap<String, Map<String, ScriptRunner>>();
-    private String _defaultTriggerIdFormat = "%(scriptId)-%(scope)-%(entityId)-%(event)";
 }

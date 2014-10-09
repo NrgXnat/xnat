@@ -92,4 +92,21 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      * @return The trigger associated with the indicated scope and entity and event, if any.
      */
     public abstract ScriptTrigger getByScopeEntityAndEvent(final Scope scope, final String entityId, final String event);
+
+    /**
+     * Sets the default trigger ID format. This is used when composing trigger IDs from trigger metadata.
+     *
+     * @param defaultTriggerIdFormat The format string for composing trigger IDs.
+     */
+    public abstract void setDefaultTriggerIdFormat(final String defaultTriggerIdFormat);
+
+    /**
+     * Gets the default trigger name based on a format string.
+     * @param scriptId    The script ID for the trigger.
+     * @param scope       The scope for the trigger.
+     * @param entityId    The associated entity ID.
+     * @param event       The event associated with the trigger.
+     * @return A trigger name based on the submitted parameters and configured template.
+     */
+    public abstract String getDefaultTriggerName(final String scriptId, final Scope scope, final String entityId, final String event);
 }

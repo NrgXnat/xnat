@@ -9,6 +9,7 @@
  */
 package org.nrg.automation.services.impl.hibernate;
 
+import org.apache.commons.lang.text.StrSubstitutor;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.repositories.ScriptTriggerRepository;
 import org.nrg.automation.services.ScriptTriggerService;
@@ -19,7 +20,9 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * HibernateScriptTriggerTemplateService class.
@@ -126,6 +129,20 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return getByAssociationAndEvent(Scope.encode(scope, entityId), event);
     }
 
+    @Override
+    public void setDefaultTriggerIdFormat(final String defaultTriggerIdFormat) {
+        _defaultTriggerIdTemplate = defaultTriggerIdFormat;
+    }
+
+    @Override
+    public String getDefaultTriggerName(final String scriptId, final Scope scope, final String entityId, final String event) {
+        final Map<String, String> values = new HashMap<String, String>();
+        values.put("scriptId", scriptId);
+        values.put("event", event);
+        values.put("association", Scope.encode(scope, entityId));
+        return new StrSubstitutor(values, "%(", ")").replace(_defaultTriggerIdTemplate);
+    }
+
 
     /**
      * Retrieves the {@link ScriptTrigger trigger} with the indicated association and event. Generally the association
@@ -155,9 +172,11 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return triggers.get(0);
     }
 
-    private static final String[] EXCLUDE_PROPS_SCOPE = new String[]{"id", "enabled", "verified", "created", "timestamp", "disabled", "triggerId", "description", "scriptId", "event"};
-    private static final String[] EXCLUDE_PROPS_SCOPE_EVENT = new String[]{"id", "enabled", "verified", "created", "timestamp", "disabled", "triggerId", "description", "scriptId"};
-    private static final String[] EXCLUDE_PROPS_SCRIPT_ID = new String[]{"id", "enabled", "verified", "created", "timestamp", "disabled", "triggerId", "description", "association", "event"};
+    private static final String[] EXCLUDE_PROPS_SCOPE = new String[]{"id", "verified", "created", "timestamp", "disabled", "triggerId", "description", "scriptId", "event"};
+    private static final String[] EXCLUDE_PROPS_SCOPE_EVENT = new String[]{"id", "verified", "created", "timestamp", "disabled", "triggerId", "description", "scriptId"};
+    private static final String[] EXCLUDE_PROPS_SCRIPT_ID = new String[]{"id", "verified", "created", "timestamp", "disabled", "triggerId", "description", "association", "event"};
 
     private static final Logger _log = LoggerFactory.getLogger(HibernateScriptTriggerService.class);
+
+    private String _defaultTriggerIdTemplate = "%(scriptId)-%(association)-%(event)";
 }

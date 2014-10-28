@@ -58,6 +58,10 @@ public class UserGroup implements UserGroupI{
 	}
 
 	private Hashtable<String,ElementAccessManager> accessManagers = null;
+	private List<String> features=null;
+	private List<String> blocked=null;
+
+    
 
     protected synchronized Hashtable<String,ElementAccessManager> getAccessManagers(){
         if (accessManagers==null){
@@ -104,6 +108,16 @@ public class UserGroup implements UserGroupI{
         {
             ElementAccessManager eam = new ElementAccessManager(sub);
             accessManagers.put(eam.getElement(),eam);
+        }
+
+        features=Lists.newArrayList();
+        blocked=Lists.newArrayList();
+        for(GroupFeature feature:(XDAT.getContextService().getBean(GroupFeatureService.class).findFeaturesForGroup(this.getId()))){
+        	if(feature.isBlocked()){
+            	blocked.add(feature.getFeature());
+        	}else if(feature.isOnByDefault()){
+            	features.add(feature.getFeature());
+        	}
         }
     }
 
@@ -363,5 +377,13 @@ public class UserGroup implements UserGroupI{
 		xfm.setDeleteElement(pc.getDelete());
 		xfm.setActiveElement(pc.getActivate());
 		xfm.setComparisonType("equals");
+    }
+    
+    public List<String> getFeatures(){
+    	return features;
+    }
+    
+    public List<String> getBlockedFeatures(){
+    	return blocked;
     }
 }

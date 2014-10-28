@@ -33,6 +33,7 @@ import org.apache.velocity.app.Velocity;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
+import org.nrg.xdat.security.SecurityValues;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.XFTItem;
@@ -467,5 +468,9 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
     public UserI getInsertUser(){
         return this.getItem().getInsertUser();
     }
+    
+	public SecurityValues getSecurityTags(){
+		return new SecurityValues();
+	}
 }
 

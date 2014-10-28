@@ -2344,7 +2344,7 @@ public class JavaFileGenerator {
         sb.append("@STATIC@");
         sb.append("\n\t\t\t\t\t</TD>");
         sb.append("\n\t\t\t\t\t<TD valign=\"top\" align=\"right\">");
-        sb.append("\n\t\t\t\t\t\t#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute(\"user\") $item)");
+        sb.append("\n\t\t\t\t\t\t#parse($turbineUtils.getTemplateName(\"actions\",$om.getXSIType(),$project))");
         sb.append("\n\t\t\t\t\t</TD>");
         sb.append("\n\t\t\t\t</TR>");
         sb.append("\n\t\t\t</TABLE>");

@@ -54,6 +54,8 @@ public class XDATScreen_report_xdat_user extends AdminReport {
             final EmailRequestLogService requests = XDAT.getContextService().getBean(EmailRequestLogService.class);
             context.put("emailRequestsBlocked", requests.isEmailBlocked(tempUser.getEmail()));
 
+            context.put("allRoles",Roles.getRoles());
+
         } catch (Exception e) {
             logger.error("",e);
         }

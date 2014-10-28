@@ -23,15 +23,7 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class HibernateUserRoleService extends AbstractHibernateEntityService<UserRole> implements UserRoleService {
-    /**
-     * @return A new empty entity object.
-     * @see org.nrg.framework.orm.hibernate.BaseHibernateService#newEntity()
-     */
-    @Override
-    public UserRole newEntity() {
-        return new UserRole();
-    }
-
+    
     /**
      * Finds all roles for the specified user
      * @param username    The username from the XdatUser table.
@@ -91,18 +83,6 @@ public class HibernateUserRoleService extends AbstractHibernateEntityService<Use
         }
     }
 
-    /**
-     * Gets the {@link AliasTokenDAO alias token DAO} instance for this service.
-     * @return The {@link AliasTokenDAO alias token DAO} instance for this service.
-     * @see AbstractHibernateEntityService#getDao()
-     */
-    @Override
-    protected UserRoleDAO getDao() {
-        return _dao;
-    }
-
     private static final Log _log = LogFactory.getLog(HibernateUserRoleService.class);
 
-    @Autowired
-    private UserRoleDAO _dao;
 }

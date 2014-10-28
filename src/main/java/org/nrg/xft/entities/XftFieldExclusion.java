@@ -60,10 +60,7 @@ public class XftFieldExclusion extends AbstractHibernateEntity {
 
     @Override
     public String toString() {
-        StringBuilder buffer = new StringBuilder(_scope.toString());
-        buffer.append("[").append(_scope != XftFieldExclusionScope.System ? _targetId : "N/A").append("]");
-        buffer.append(": ").append(_pattern);
-        return buffer.toString();
+        return _scope.toString() + "[" + (_scope != XftFieldExclusionScope.System ? _targetId : "N/A") + "]" + ": " + _pattern;
     }
 
     @Override

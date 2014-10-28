@@ -23,7 +23,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class HibernateUserRegistrationDataService extends AbstractHibernateEntityService<UserRegistrationData> implements UserRegistrationDataService {
+public class HibernateUserRegistrationDataService extends AbstractHibernateEntityService<UserRegistrationData,UserRegistrationDataDAO> implements UserRegistrationDataService {
 
     @Transactional
     @Override
@@ -62,16 +62,6 @@ public class HibernateUserRegistrationDataService extends AbstractHibernateEntit
         if (data != null) {
             _dao.delete(data);
         }
-    }
-
-    @Override
-    public UserRegistrationData newEntity() {
-        return new UserRegistrationData();
-    }
-
-    @Override
-    protected BaseHibernateDAO<UserRegistrationData> getDao() {
-        return _dao;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(HibernateUserRegistrationDataService.class);

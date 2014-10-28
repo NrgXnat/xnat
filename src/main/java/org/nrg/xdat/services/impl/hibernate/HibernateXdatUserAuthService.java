@@ -50,12 +50,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class HibernateXdatUserAuthService extends AbstractHibernateEntityService<XdatUserAuth> implements XdatUserAuthService {
-
-    @Override
-    public XdatUserAuth newEntity() {
-        return new XdatUserAuth();
-    }
+public class HibernateXdatUserAuthService extends AbstractHibernateEntityService<XdatUserAuth, XdatUserAuthDAO> implements XdatUserAuthService {
 
     @Override
     @Transactional

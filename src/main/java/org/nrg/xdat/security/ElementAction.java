@@ -125,6 +125,15 @@ public class ElementAction extends ItemWrapper {
         return popupHeight;
     }
 
+    public String getSecureFeature() throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+	{
+		try {
+			return (String)getProperty("secureFeature");
+		} catch (FieldEmptyException e) {
+			return "";
+		}
+	}
+
     public String getSecureAccess() throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 		try {

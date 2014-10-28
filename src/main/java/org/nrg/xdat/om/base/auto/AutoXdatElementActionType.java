@@ -229,6 +229,36 @@ public abstract class AutoXdatElementActionType extends org.nrg.xdat.base.BaseEl
 
 	//FIELD
 
+	private String _Securefeature=null;
+
+	/**
+	 * @return Returns the securefeature.
+	 */
+	public String getSecurefeature(){
+		try{
+			if (_Securefeature==null){
+				_Securefeature=getStringProperty("secureFeature");
+				return _Securefeature;
+			}else {
+				return _Securefeature;
+			}
+		} catch (Exception e1) {logger.error(e1);return null;}
+	}
+
+	/**
+	 * Sets the value for secureFeature.
+	 * @param v Value to Set.
+	 */
+	public void setSecurefeature(String v){
+		try{
+		setProperty(SCHEMA_ELEMENT_NAME + "/secureFeature",v);
+		_Securefeature=null;
+		} catch (Exception e1) {logger.error(e1);}
+	}
+
+
+	//FIELD
+
 	private String _Parameterstring=null;
 
 	/**

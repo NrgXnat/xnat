@@ -226,8 +226,7 @@ public class XDAT implements Initializable,Configurable{
 			logger.info("Starting Service XDAT");
 			init(instanceSettingsLocation);
 		} catch (Exception exception) {
-            System.out.println(exception);
-			exception.printStackTrace();
+            logger.error(exception);
 		}
 	}
 

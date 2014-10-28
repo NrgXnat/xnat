@@ -20,6 +20,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.services.StudyRoutingService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTool;
@@ -34,9 +35,9 @@ public class RefreshAction extends AdminAction {
 	static Logger logger = Logger.getLogger(RefreshAction.class);
 	public void doPerform(RunData data, Context context) throws Exception
 	{
-		if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("refresh",data)) !=null)
+		if (TurbineUtils.GetPassedParameter("refresh",data) !=null)
 		{
-			String refresh = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("refresh",data));
+			String refresh = ((String)TurbineUtils.GetPassedParameter("refresh",data));
 			if (refresh.equalsIgnoreCase("security"))
 			{
 				String location = XFTTool.GetSettingsLocation();
@@ -60,10 +61,14 @@ public class RefreshAction extends AdminAction {
                 System.out.println("DB Cache Refreshed.");
     
                 org.nrg.xft.cache.CacheManager.GetInstance().clearAll();
+            }else if (refresh.equalsIgnoreCase("ClearStudyRoutings"))
+            {
+                XDAT.getContextService().getBean(StudyRoutingService.class).closeAll();
+                System.out.println("Cleared all study routings.");
             }else if (refresh.equalsIgnoreCase("MissingMetadatas"))
             {
             	DBAction.InsertMetaDatas();
-                System.out.println("Inserted Meta Datas");
+                System.out.println("Inserted Meta Data");
             }else if (refresh.equalsIgnoreCase("PGVacuum"))
             {
                 VacuumThread vt = new VacuumThread();

@@ -90,6 +90,8 @@ import com.google.common.collect.Maps;
  */
 @SuppressWarnings({"unchecked"})
 public class XDATUser extends XdatUser implements UserI, Serializable {
+    public static final String COMMON = "Unassigned";
+    public static final String ROLE_SITE_ADMIN = "Administrator";
     private static final long serialVersionUID = -8144623503683531831L;
     private static SecureRandom secureRandom = new SecureRandom();
     static Logger logger = Logger.getLogger(XDATUser.class);
@@ -2352,6 +2354,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         userSessionCache = new Hashtable<String, ArrayList<ItemI>>();
         total_counts = null;
         readable_counts = null;
+        _editableProjects = null;
     }
 
     Hashtable readable_counts = null;
@@ -2826,8 +2829,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
 	/**
 	 * Returns true if the user is part of any groups with the matching tag and feature
-	 * @param tags
-	 * @param feature
+	 * @param item       The item to check.
+	 * @param feature    The feature to check.
 	 * @return
 	 */
 	public boolean checkFeature(BaseElement item, String feature) {
@@ -2837,5 +2840,57 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 	public boolean checkFeatureForAnyTag(String feature){
 		return Features.checkFeatureForAnyTag(this, feature);
 	}
+
+    private List<String> _editableProjects;
+
+    public boolean hasAccessTo(final String projectId) throws Exception {
+        return getAccessibleProjects().contains(projectId);
+    }
+
+    /**
+     * Code copied here from
+     * @return All the projects where this user has edit permissions.
+     * @throws Exception
+     */
+    public List<String> getAccessibleProjects() throws Exception {
+        if (_editableProjects == null) {
+            _editableProjects = new ArrayList<String>();
+            for (final List<String> row : getQueryResults("xnat:projectData/ID", "xnat:projectData")) {
+                final String id = row.get(0);
+                if (_editableProjects.contains(id))
+                    continue;
+                try {
+                    if (canModify(id)) {
+                        _editableProjects.add(id);
+                    }
+                } catch (Exception e) {
+                    logger.error("Exception caught testing prearchive access", e);
+                }
+            }
+            // if the user is an admin also add unassigned projects
+            if (checkRole(ROLE_SITE_ADMIN)) {
+                _editableProjects.add(null);
+            }
+        }
+        return _editableProjects;
+    }
+
+    private boolean canModify(final String projectId) throws Exception{
+        if (checkRole(ROLE_SITE_ADMIN)) {
+            return true;
+        }
+        if (projectId == null) {
+            return false;
+        }
+        final List<ElementSecurity> secureElements = ElementSecurity.GetSecureElements();
+        for (ElementSecurity secureElement : secureElements) {
+            if (secureElement.getSchemaElement().instanceOf("xnat:imageSessionData")) {
+                if (canAction(secureElement.getElementName() + "/project", projectId, SecurityManager.EDIT)) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 }
 

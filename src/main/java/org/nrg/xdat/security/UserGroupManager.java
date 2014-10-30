@@ -62,6 +62,10 @@ public class UserGroupManager implements UserGroupServiceI{
     
 	
     public UserGroupI getGroup(String id){
+    	if(id==null){
+    		return null;
+    	}
+    	
     	//reintroduce caching as on-demand 11/09 TO
     	UserGroup g =(UserGroup) CacheManager.GetInstance().retrieve(XdatUsergroup.SCHEMA_ELEMENT_NAME, id);
     	if(g==null){

@@ -9,111 +9,133 @@
  */
 package org.nrg.xdat.services;
 
-import java.util.List;
-import java.util.Set;
+import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.services.NrgService;
 
-import org.nrg.framework.orm.hibernate.BaseHibernateService;
-import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xft.security.UserI;
+import java.util.Map;
 
-public interface AliasTokenService extends BaseHibernateService<AliasToken> {
-    /**
-     * Finds all active tokens for a particular user.
-     * @param xdatUserId    The user ID from the XdatUser table.
-     * @return An list of the {@link AliasToken alias tokens} issued to the indicated user.
-     */
-    abstract public List<AliasToken> findTokensForUser(String xdatUserId);
-    /**
-     * Finds and deactivates all active tokens for a particular user.
-     * @param xdatUserId    The user ID from the XdatUser table.
-     */
-    abstract public void deactivateAllTokensForUser(String xdatUserId);
-    /**
-     * Issues a token to the user with the indicated name.
-     *
-     * @param xdatUserId    The user ID from the XdatUser table.
-     * @return An {@link AliasToken} issued to the indicated user.
-     * @throws Exception When something goes wrong.
-     */
-    abstract public AliasToken issueTokenForUser(String xdatUserId) throws Exception;
-    /**
-     * Issues a token to the indicated user. This calls the {@link #issueTokenForUser(UserI, boolean)} version of
-     * this method, passing <b>false</b> by default for the boolean parameter.
-     *
-     * @param xdatUser    The user requesting a token.
-     * @return An {@link AliasToken} issued to the indicated user.
-     */
-    abstract public AliasToken issueTokenForUser(UserI xdatUser);
-    /**
-     * Issues a token to the indicated user. The <b>isSingleUse</b> parameter indicates whether the issued token should
-     * be disposed of when the token is used.
-     *
-     * @param xdatUser    The user requesting a token.
-     * @param isSingleUse Indicates whether the token should be disposed of once the token is used once.
-     * @return An {@link AliasToken} issued to the indicated user.
-     */
-    abstract public AliasToken issueTokenForUser(UserI xdatUser, boolean isSingleUse);
-    /**
-     * Issues a token to the indicated user. The <b>validIPAddresses</b> parameter indicates which originating IPs
-     * should be permitted to offer the returned alias tokens. Note that there is nothing in the issued token that
-     * indicates the acceptable IP addresses.
-     *
-     * @param xdatUser    The user requesting a token.
-     * @param validIPAddresses    The list of IP addresses from which the alias token will be accepted.
-     * @return An {@link AliasToken} issued to the indicated user.
-     */
-    abstract public AliasToken issueTokenForUser(UserI xdatUser, Set<String> validIPAddresses);
-    /**
-     * Issues a token to the indicated user.  The <b>isSingleUse</b> parameter indicates whether the issued token should
-     * be disposed of when the token is used.The <b>validIPAddresses</b> parameter indicates which originating IPs
-     * should be permitted to offer the returned alias tokens. Note that there is nothing in the issued token that
-     * indicates the acceptable IP addresses.
-     *
-     * @param xdatUser    The user requesting a token.
-     * @param isSingleUse Indicates whether the token should be disposed of once the token is used once.
-     * @param validIPAddresses    The list of IP addresses from which the alias token will be accepted.
-     * @return An {@link AliasToken} issued to the indicated user.
-     */
-    abstract public AliasToken issueTokenForUser(UserI xdatUser, boolean isSingleUse, Set<String> validIPAddresses);
+/**
+ * Manages study routing configurations. Routing configurations are stored and accessed by the study instance UID of the
+ * relevant DICOM study. Routing configurations determine the project, subject, or label applied to the study. If no
+ * routing configuration can be found for a particular study, it's up to the object identifier to determine a fall-back
+ * or default strategy.
+ */
+public interface StudyRoutingService extends NrgService {
+    public static final String PROJECT  = "project";
+    public static final String SUBJECT  = "subject";
+    public static final String LABEL    = "label";
+    public static final String USER     = "user";
+    public static final String CREATED  = "created";
+    public static final String ACCESSED = "accessed";
 
     /**
-     * Locates and returns the token indicated by the alias string. The returned token should not be considered fully
-     * validated until the {@link AliasToken#getSecret() token secret} and {@link AliasToken#getValidIPAddresses() IP
-     * addresses} have also been checked and validated against the requesting client.
+     * Creates a new routing configuration for the indicated attributes.
      *
-     * @param alias    The alias for the requested token.
-     * @return The token matching the indicated alias if one exists; otherwise this returns null.
+     * <b>Note:</b> Once a routing configuration has been created for a particular study instance UID, further calls to
+     * any of the <b>assign()</b> methods will not change that existing routing configuration. In that case, the return
+     * value will be <b>false</b>. To change an existing routing configuration, use the {@link #update(String,
+     * java.util.Map)} method.
+     *
+     * @param studyInstanceUid The study instance UID to be assigned.
+     * @param projectId        The ID of the destination project.
+     * @param userId           The login name for the user who created the routing configurations.
+     * @return This method returns <b>true</b> when the configuration was successfully created, <b>false</b> otherwise.
+     *         The <b>false</b> return value usually indicates that a routing configuration for the submitted study
+     *         instance UID already exists.
      */
-    abstract public AliasToken locateToken(String alias);
-
+    abstract public boolean assign(String studyInstanceUid, String projectId, String userId);
     /**
-     * Checks whether a token exists with the indicated alias and secret and no IP address restrictions. If so, this
-     * method returns the {@link UserI#getLogin() corresponding XDAT user login ID}. Otherwise, this method returns
-     * <b>null</b>.
+     * Creates a new routing configuration for the indicated attributes.
      *
-     * @param alias     The alias to check.
-     * @param secret    The secret to validate the indicated alias.
-     * @return The {@link UserI#getLogin() XDAT user login ID} of the matching token exists, or <b>null</b> if not.
+     * <b>Note:</b> Once a routing configuration has been created for a particular study instance UID, further calls to
+     * any of the <b>assign()</b> methods will not change that existing routing configuration. In that case, the return
+     * value will be <b>false</b>. To change an existing routing configuration, use the {@link #update(String,
+     * java.util.Map)} method.
+     *
+     * @param studyInstanceUid The study instance UID to be assigned.
+     * @param projectId        The ID of the destination project.
+     * @param subjectId        The ID of the destination subject.
+     * @param userId           The login name for the user who created the routing configurations.
+     * @return This method returns <b>true</b> when the configuration was successfully created, <b>false</b> otherwise.
+     *         The <b>false</b> return value usually indicates that a routing configuration for the submitted study
+     *         instance UID already exists.
      */
-    abstract public String validateToken(String alias, long secret);
-
+    abstract public boolean assign(String studyInstanceUid, String projectId, String subjectId, String userId);
     /**
-     * Checks whether a token exists with the indicated alias and secret and an IP address matching one of the defined
-     * IP addresses (if there are no IP address restrictions in the token, any given IP address will match). If so, this
-     * method returns the {@link UserI#getLogin() corresponding XDAT user login ID}. Otherwise, this method returns
-     * <b>null</b>.
+     * Creates a new routing configuration for the indicated attributes.
      *
-     * @param alias     The alias to check.
-     * @param secret    The secret to validate the indicated alias.
-     * @param address   The IP address to validate.
-     * @return The {@link UserI#getLogin() XDAT user login ID} of the matching token exists, or <b>null</b> if not.
+     * <b>Note:</b> Once a routing configuration has been created for a particular study instance UID, further calls to
+     * any of the <b>assign()</b> methods will not change that existing routing configuration. In that case, the return
+     * value will be <b>false</b>. To change an existing routing configuration, use the {@link #update(String,
+     * java.util.Map)} method.
+     *
+     * @param studyInstanceUid The study instance UID to be assigned.
+     * @param projectId        The ID of the destination project.
+     * @param subjectId        The ID of the destination subject.
+     * @param label            The label for the session.
+     * @param userId           The login name for the user who created the routing configurations.
+     * @return This method returns <b>true</b> when the configuration was successfully created, <b>false</b> otherwise.
+     *         The <b>false</b> return value usually indicates that a routing configuration for the submitted study
+     *         instance UID already exists.
      */
-    abstract public String validateToken(String alias, long secret, String address);
-
+    abstract public boolean assign(String studyInstanceUid, String projectId, String subjectId, String label, String userId);
     /**
-     * Invalidates the token with the given alias. No supporting validation is required for this operation.
+     * Updates the configuration for the indicated study instance UID. Only the attributes specified in the submitted
+     * configuration will be updated; all other existing attributes will remain the same (i.e. they will not be cleared
+     * or deleted). To clear an existing attribute, submit the attribute key with a null value.
      *
-     * @param alias    The alias of the token to be invalidated.
+     * <b>Note:</b> This method will not create a new routing configuration if one has not already been created for the
+     * submitted study instance UID. In that case, the return value will be <b>false</b>. To create a new routing
+     * configuration, use the {@link #assign(String, String, String)}, {@link #assign(String, String, String, String)},
+     * or {@link #assign(String, String, String, String, String)} method.
+     * @param studyInstanceUid    The study instance UID of the configuration to be updated.
+     * @param configuration       The attribute keys and values to be updated.
+     * @return This method returns <b>true</b> when the configuration was successfully updated, <b>false</b> otherwise.
+     *         The <b>false</b> return value usually indicates that a routing configuration for the submitted study
+     *         instance UID doesn't exist to be updated.
      */
-    abstract public void invalidateToken(String alias);
+    abstract public boolean update(String studyInstanceUid, Map<String, String> configuration);
+    /**
+     * Finds the active routing configuration for the indicated study instance UID. If there is no active routing
+     * configuration for that study instance UID, this method returns <b>null</b>.
+     * @param studyInstanceUid    The study instance UID to query.
+     * @return The active routing configuration, if any, for the indicated study instance UID. Returns <b>null</b> if
+     * there is no active routing configuration for that study.
+     */
+    abstract public Map<String, String> findStudyRouting(String studyInstanceUid);
+    /**
+     * Finds all active routing configurations for a particular project. This returns as a map of maps. The containing
+     * map is keyed on the study instance UIDs for the study configurations. The contained maps include all of the
+     * attributes for each routing configuration. The project ID configured for all routing configurations wil be the
+     * same as the requested project ID parameter.
+     * @param projectId    The ID of the destination project.
+     * @return A list of the routing configurations for the indicated project.
+     */
+    abstract public Map<String, Map<String, String>> findProjectRoutings(String projectId);
+    /**
+     * Finds all active routing configurations created by a particular user. This returns as a map of maps. The
+     * containing map is keyed on the study instance UIDs for the routing configurations. The contained maps include all
+     * of the attributes for each routing configuration. The user ID configured for all routing configurations wil be
+     * the same as the requested project ID parameter.
+     * @param userId    The login name for the user who created the routing configurations.
+     * @return A list of the routing configurations for the indicated user.
+     */
+    abstract public Map<String, Map<String, String>> findUserRoutings(String userId);
+    /**
+     * Finds all active routing configurations for a particular value of a particular attribute. This returns as a map
+     * of maps. The containing map is keyed on the study instance UIDs for the study configurations. The contained maps
+     * include all of the attributes for each routing configuration. The value for the requested attribute configured
+     * for all routing configurations wil be the same as the requested attribute value.
+     * @param attribute    The key for the attribute on which you wish to search.
+     * @param value        The value of the attribute on which you wish to search.
+     * @return A list of the routing configurations for the indicated attribute key and value.
+     */
+    abstract public Map<String, Map<String, String>> findRoutingsByAttribute(String attribute, String value);
+    /**
+     * Closes the routing configuration for the indicated study instance UID. This should only be done when the study
+     * has been fully received and archived. Any DICOM data for the study received later will not have the routing
+     * configuration available any more, which could lead to split sessions.
+     * @param studyInstanceUid    The UID of the routing configuration to close.
+     */
+    abstract public boolean close(String studyInstanceUid);
 }

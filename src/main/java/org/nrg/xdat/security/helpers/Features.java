@@ -6,7 +6,7 @@ import java.util.List;
 import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.UserGroup;
+import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xft.security.UserI;
@@ -129,7 +129,7 @@ public class Features {
 	 * @param group
 	 * @return
 	 */
-	public static Collection<String> getFeaturesForGroup(UserGroup group){
+	public static Collection<String> getFeaturesForGroup(UserGroupI group){
 		return getFeatureService().getFeaturesForGroup(group);
 	}
 	
@@ -138,7 +138,7 @@ public class Features {
 	 * @param group
 	 * @param feature
 	 */
-	public static void addFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser) throws Exception{
+	public static void addFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) throws Exception{
 		getFeatureService().addFeatureForGroup(group,feature,authenticatedUser);
 	}
 	
@@ -147,7 +147,7 @@ public class Features {
 	 * @param group
 	 * @param feature
 	 */
-	public static void enableFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser) throws Exception{
+	public static void enableFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) throws Exception{
 		getFeatureService().addFeatureForGroup(group,feature,authenticatedUser);
 	}
 	
@@ -156,7 +156,7 @@ public class Features {
 	 * @param group
 	 * @param feature
 	 */
-	public static void disableFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser) throws Exception{
+	public static void disableFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) throws Exception{
 		getFeatureService().disableFeatureForGroup(group,feature,authenticatedUser);
 	}
 	
@@ -165,7 +165,7 @@ public class Features {
 	 * @param group
 	 * @param feature
 	 */
-	public static void blockFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser) throws Exception{
+	public static void blockFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) throws Exception{
 		getFeatureService().blockFeatureForGroup(group,feature,authenticatedUser);
 	}
 	
@@ -174,7 +174,7 @@ public class Features {
 	 * @param group
 	 * @param feature
 	 */
-	public static void unblockFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser) throws Exception{
+	public static void unblockFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) throws Exception{
 		getFeatureService().unblockFeatureForGroup(group,feature,authenticatedUser);
 	}
 	
@@ -183,7 +183,7 @@ public class Features {
 	 * @param group
 	 * @param feature
 	 */
-	public static void deleteFeatureSettingFromGroup(UserGroup group, String feature, UserI authenticatedUser) throws Exception{
+	public static void deleteFeatureSettingFromGroup(UserGroupI group, String feature, UserI authenticatedUser) throws Exception{
 		getFeatureService().removeFeatureSettingFromGroup(group,feature,authenticatedUser);
 	}
 	
@@ -192,7 +192,7 @@ public class Features {
 	 * @param group
 	 * @param feature
 	 */
-	public static void deleteAllFeaturesFromGroup(UserGroup group, UserI authenticatedUser) throws Exception{
+	public static void deleteAllFeaturesFromGroup(UserGroupI group, UserI authenticatedUser) throws Exception{
 		getFeatureService().removeAllFeatureSettingsFromGroup(group,authenticatedUser);
 	}
 	
@@ -200,7 +200,7 @@ public class Features {
 	 * Check if group contains this feature
 	 * @param group
 	 */
-	public static boolean checkFeature(UserGroup group,String feature){
+	public static boolean checkFeature(UserGroupI group,String feature){
 		return getFeatureService().checkFeature(group,feature);
 	}
 
@@ -260,7 +260,7 @@ public class Features {
 	 * @param feature
 	 * @return
 	 */
-	public static boolean isBannedByGroup(UserGroup group, String feature){
+	public static boolean isBannedByGroup(UserGroupI group, String feature){
 		return getFeatureService().isBlockedByGroup(group,feature);
 	}
 	
@@ -292,7 +292,7 @@ public class Features {
 	 * @param feature
 	 * @return
 	 */
-	public static boolean isOnByDefaultByGroup(UserGroup group, String feature){
+	public static boolean isOnByDefaultByGroup(UserGroupI group, String feature){
 		return getFeatureService().isOnByDefaultForGroup(group,feature);
 	}
 	
@@ -346,6 +346,10 @@ public class Features {
 
 	public static List<String> getBlockedFeaturesByTag(String tag) {
 		return getFeatureService().getBlockedFeaturesByTag(tag);
+	}
+
+	public static Collection<String> getBlockedFeaturesForGroup(UserGroupI group) {
+		return getFeatureService().getBlockedFeaturesForGroup(group);
 	}
 
 	public static List<String> getEnabledFeaturesByTag(String tag) {

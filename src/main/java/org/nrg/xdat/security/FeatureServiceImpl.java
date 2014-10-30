@@ -24,16 +24,16 @@ public class FeatureServiceImpl implements FeatureServiceI{
     
 
 	@Override
-	public Collection<String> getFeaturesForGroup(UserGroup group) {
+	public Collection<String> getFeaturesForGroup(UserGroupI group) {
 		if(group!=null){
-			return group.getFeatures();
+			return ((UserGroup)group).getFeatures();
 		}else{
 			return null;
 		}
 	}
 
 	@Override
-	public void addFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser) {
+	public void addFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) {
 		if(!checkFeature(group,feature)){
 			GroupFeature gr=XDAT.getContextService().getBean(GroupFeatureService.class).findGroupFeature(group.getId(), feature);
 			if(gr==null){
@@ -43,7 +43,7 @@ public class FeatureServiceImpl implements FeatureServiceI{
 				XDAT.getContextService().getBean(GroupFeatureService.class).update(gr);
 			}
 			
-			group.getFeatures().add(feature);
+			((UserGroup)group).getFeatures().add(feature);
 			
 			try {
 				//group objects are cached by an old caching implementation which listened for events
@@ -55,12 +55,12 @@ public class FeatureServiceImpl implements FeatureServiceI{
 	}
 
 	@Override
-	public void removeFeatureSettingFromGroup(UserGroup group, String feature, UserI authenticatedUser) {
+	public void removeFeatureSettingFromGroup(UserGroupI group, String feature, UserI authenticatedUser) {
 		if(checkFeature(group,feature)){
 			XDAT.getContextService().getBean(GroupFeatureService.class).delete(group.getId(), feature);
 			
-			group.getFeatures().remove(feature);
-			group.getBlockedFeatures().remove(feature);
+			((UserGroup)group).getFeatures().remove(feature);
+			((UserGroup)group).getBlockedFeatures().remove(feature);
 			
 			try {
 				//group objects are cached by an old caching implementation which listened for events
@@ -72,11 +72,11 @@ public class FeatureServiceImpl implements FeatureServiceI{
 	}
 
 	@Override
-	public void removeAllFeatureSettingsFromGroup(UserGroup group, UserI authenticatedUser) {
+	public void removeAllFeatureSettingsFromGroup(UserGroupI group, UserI authenticatedUser) {
 		XDAT.getContextService().getBean(GroupFeatureService.class).deleteByGroup(group.getId());
 		
-		group.getFeatures().clear();
-		group.getBlockedFeatures().clear();
+		((UserGroup)group).getFeatures().clear();
+		((UserGroup)group).getBlockedFeatures().clear();
 		
 		try {
 			//group objects are cached by an old caching implementation which listened for events
@@ -105,7 +105,7 @@ public class FeatureServiceImpl implements FeatureServiceI{
 	}
 
 	@Override
-	public boolean checkFeature(UserGroup group, String feature) {
+	public boolean checkFeature(UserGroupI group, String feature) {
 		if(feature==null){
 			return false;
 		}
@@ -139,7 +139,7 @@ public class FeatureServiceImpl implements FeatureServiceI{
 
 	@Override
 	public boolean checkFeatureForAnyTag(UserI user, String feature) {
-		for(UserGroup group:((XDATUser)user).getGroups().values()){
+		for(UserGroupI group:((XDATUser)user).getGroups().values()){
 			if(checkFeature(group,feature)){
 				return true;
 			}
@@ -256,17 +256,17 @@ public class FeatureServiceImpl implements FeatureServiceI{
 	}
 
 	@Override
-	public boolean isBlockedByGroup(UserGroup group, String feature) {
-		return (group.getBlockedFeatures().contains(feature));
+	public boolean isBlockedByGroup(UserGroupI group, String feature) {
+		return (((UserGroup)group).getBlockedFeatures().contains(feature));
 	}
 
 	@Override
-	public boolean isOnByDefaultForGroup(UserGroup group, String feature) {
+	public boolean isOnByDefaultForGroup(UserGroupI group, String feature) {
 		return (getFeaturesForGroup(group)).contains(feature);
 	}
 
 	@Override
-	public void disableFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser) {
+	public void disableFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) {
 		if((getFeaturesForGroup(group)).contains(feature)){
 			GroupFeature gr=XDAT.getContextService().getBean(GroupFeatureService.class).findGroupFeature(group.getId(), feature);
 			if(gr.isOnByDefault()){
@@ -274,7 +274,7 @@ public class FeatureServiceImpl implements FeatureServiceI{
 				XDAT.getContextService().getBean(GroupFeatureService.class).update(gr);
 			}
 			
-			group.getFeatures().remove(feature);
+			((UserGroup)group).getFeatures().remove(feature);
 			
 			try {
 				//group objects are cached by an old caching implementation which listened for events
@@ -286,15 +286,15 @@ public class FeatureServiceImpl implements FeatureServiceI{
 	}
 
 	@Override
-	public void blockFeatureForGroup(UserGroup group, String feature,	UserI authenticatedUser) {
-		if(!group.getBlockedFeatures().contains(feature)){
+	public void blockFeatureForGroup(UserGroupI group, String feature,	UserI authenticatedUser) {
+		if(!((UserGroup)group).getBlockedFeatures().contains(feature)){
 			
 			XDAT.getContextService().getBean(GroupFeatureService.class).blockFeatureForGroup(group.getId(), group.getTag(), feature);
 			
-			group.getBlockedFeatures().add(feature);
+			((UserGroup)group).getBlockedFeatures().add(feature);
 			
-			if(group.getFeatures().contains(feature)){
-				group.getFeatures().remove(feature);
+			if(((UserGroup)group).getFeatures().contains(feature)){
+				((UserGroup)group).getFeatures().remove(feature);
 			}
 			
 			try {
@@ -307,8 +307,8 @@ public class FeatureServiceImpl implements FeatureServiceI{
 	}
 
 	@Override
-	public void unblockFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser) {
-		if(group.getBlockedFeatures().contains(feature)){
+	public void unblockFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) {
+		if(((UserGroup)group).getBlockedFeatures().contains(feature)){
 			GroupFeature gr=XDAT.getContextService().getBean(GroupFeatureService.class).findGroupFeature(group.getId(), feature);
 			if(gr.isBlocked()){
 				gr.setBlocked(false);
@@ -316,10 +316,10 @@ public class FeatureServiceImpl implements FeatureServiceI{
 			}
 			
 			if((getFeaturesForGroup(group)).contains(feature)){
-				group.getFeatures().remove(feature);
+				((UserGroup)group).getFeatures().remove(feature);
 			}
 			
-			group.getBlockedFeatures().add(feature);
+			((UserGroup)group).getBlockedFeatures().add(feature);
 			
 			try {
 				//group objects are cached by an old caching implementation which listened for events
@@ -374,6 +374,15 @@ public class FeatureServiceImpl implements FeatureServiceI{
 		}
 		
 		return features;
+	}
+
+	@Override
+	public Collection<String> getBlockedFeaturesForGroup(UserGroupI group) {
+		if(group!=null){
+			return ((UserGroup)group).getBlockedFeatures();
+		}else{
+			return null;
+		}
 	}
 
 }

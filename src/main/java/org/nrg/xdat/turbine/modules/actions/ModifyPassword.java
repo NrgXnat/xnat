@@ -107,6 +107,11 @@ public class ModifyPassword extends SecureAction {
 				if(validator.isValid(newPassword, existing)){
 					Users.save(existing, authenticatedUser, false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Password"));
 					
+					//need to update password expiration
+					XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(existing.getUsername(), XdatUserAuthService.LOCALDB, "");
+					auth.setPasswordUpdated(new java.util.Date());
+					XDAT.getXdatUserAuthService().update(auth);
+					
 					data.getSession().setAttribute("expired",new Boolean(false));
 				}else{
 					data.setMessage(validator.getMessage());

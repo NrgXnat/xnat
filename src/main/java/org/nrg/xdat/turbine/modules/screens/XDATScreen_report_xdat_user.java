@@ -21,6 +21,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.security.UserI;

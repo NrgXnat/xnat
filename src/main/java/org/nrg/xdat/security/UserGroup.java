@@ -8,10 +8,13 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.GroupFeature;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
 import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.services.GroupFeatureService;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;

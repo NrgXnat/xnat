@@ -11,8 +11,8 @@ package org.nrg.xdat.services.impl.hibernate;
 
 import javax.inject.Inject;
 
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.framework.orm.hibernate.BaseHibernateDAO;
 import org.nrg.xdat.daos.UserRegistrationDataDAO;
 import org.nrg.xdat.entities.UserRegistrationData;
 import org.nrg.xdat.services.UserRegistrationDataService;
@@ -27,7 +27,7 @@ public class HibernateUserRegistrationDataService extends AbstractHibernateEntit
 
     @Transactional
     @Override
-    public UserRegistrationData cacheUserRegistrationData(final UserI user, final String phone, final String organization, final String comments) {
+    public UserRegistrationData cacheUserRegistrationData(final UserI user, final String phone, final String organization, final String comments) throws NrgServiceException{
         if (_log.isDebugEnabled()) {
             _log.debug("Creating user registration data for login: " + user.getLogin());
         }

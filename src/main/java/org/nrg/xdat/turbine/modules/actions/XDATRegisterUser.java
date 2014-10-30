@@ -29,6 +29,7 @@ import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.security.PasswordValidatorChain;
@@ -214,7 +215,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
         }
     }
 
-    private void cacheRegistrationData(final UserI newUser, final String comments, final String phone, final String lab) {
+    private void cacheRegistrationData(final UserI newUser, final String comments, final String phone, final String lab) throws NrgServiceException {
         UserRegistrationDataService service = XDAT.getContextService().getBean(UserRegistrationDataService.class);
         service.cacheUserRegistrationData(newUser, phone, lab, comments);
     }

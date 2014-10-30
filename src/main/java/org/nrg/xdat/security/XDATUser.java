@@ -38,6 +38,7 @@ import org.nrg.xdat.om.XdatUserGroupid;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.QueryOrganizer;
+import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -89,6 +90,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public static final String USER_ELEMENT = "xdat:user";
     private Hashtable<String, ElementAccessManager> accessManagers = null;
     private final Map<String, UserGroupI> groups = Maps.newHashMap();
+    private final Map<String, String> groupsByTag = Maps.newHashMap();
     private boolean extended = false;
     private List<String> roleNames = null;
     private ArrayList<XdatStoredSearch> stored_searches = null;
@@ -221,6 +223,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
 
         this.groups.clear();
+        this.groupsByTag.clear();
         this.stored_searches = null;
         this.clearLocalCache();
 
@@ -564,13 +567,23 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             r.add(sub.getStringProperty("role_name"));
         }
         
-        //load from the new role store
-        List<UserRole> roles =XDAT.getContextService().getBean(UserRoleService.class).findRolesForUser(this.getLogin());
-        if(roles!=null){
-        	for(final UserRole ur: roles){
-        		r.add(ur.getRole());
-        	}
-        }
+        try {
+			//load from the new role store
+        	//TODO: Fix it so that this is required in tomcat mode, but optional in command line mode.
+			UserRoleService roleService=XDAT.getContextService().getBean(UserRoleService.class);
+			if(roleService!=null){
+			    List<UserRole> roles =roleService.findRolesForUser(this.getLogin());
+			    if(roles!=null){
+			    	for(final UserRole ur: roles){
+			    		r.add(ur.getRole());
+			    	}
+			    }
+			}else{
+				logger.error("skipping user role service review... service is null");
+			}
+		} catch (Throwable e) {
+			logger.error("",e);
+		}
         
         return r;
     }
@@ -835,6 +848,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                         UserGroupI group = Groups.getGroup(groupID);
                         if (group != null) {
                             groups.put(groupID, group);
+                            if(group.getTag()!=null){
+                            	groupsByTag.put(group.getTag(), group.getId());
+                            }
                         }
                     }
                 } catch (SQLException e) {
@@ -881,6 +897,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     private UserGroupI getGroup(String id) {
         return getGroups().get(id);
+    }
+
+    public UserGroupI getGroupByTag(String tag) {
+    	if(groupsByTag.size()==0){
+    		initGroups();
+    	}
+    	return Groups.getGroup(groupsByTag.get(tag));
     }
 
     protected ArrayList getRecentItems(String elementName, int limit) {
@@ -1329,5 +1352,71 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 	public void resetCriteria() {
 		criteria=null;
 	}
+
+	public Collection<String> getFeaturesForUserByTag(String tag) {
+		return Features.getFeaturesForGroup(getGroupByTag(tag));
+	}
+
+	public Collection<String> getFeaturesForUserByTags(Collection<String> tags) {
+		List<String> combined=Lists.newArrayList();
+		for(String tag: tags){
+			for(String feature: getFeaturesForUserByTag(tag)){
+				if(!combined.contains(feature)){
+					combined.add(feature);
+				}
+			}
+		}
+		return combined;
+	}
+
+	public boolean checkSiteRole(String role) {
+		try {
+			return this.checkRole(role);
+		} catch (Exception e) {
+			logger.error("",e);
+			return false;
+		}
+	}
+
+	/**
+	 * Returns true if the user is a part of a group with the matching tag and feature
+	 * @param tag
+	 * @param feature
+	 * @return
+	 */
+	public boolean checkFeature(String tag, String feature) {
+		return Features.checkFeature(getGroupByTag(tag), feature);
+	}
+
+	/**
+	 * Returns true if the user is part of any groups with the matching tag and feature
+	 * @param tags
+	 * @param feature
+	 * @return
+	 */
+	public boolean checkFeature(Collection<String> tags, String feature) {
+		for(String tag: tags){			
+			if(tag instanceof String && checkFeature(tag,feature)){
+				return true;
+			}
+		}
+		
+		return false;
+	}
+
+	/**
+	 * Returns true if the user is part of any groups with the matching tag and feature
+	 * @param tags
+	 * @param feature
+	 * @return
+	 */
+	public boolean checkFeature(BaseElement item, String feature) {
+		return checkFeature(item.getSecurityTags().getHash().values(),feature);
+	}
+	
+	public boolean checkFeatureForAnyTag(String feature){
+		return Features.checkFeatureForAnyTag(this, feature);
+	}
+
 }
 

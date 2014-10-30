@@ -3,7 +3,7 @@ package org.nrg.xdat.security.services;
 import java.util.Collection;
 import java.util.List;
 
-import org.nrg.xdat.security.UserGroup;
+import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xft.security.UserI;
 
 public interface FeatureServiceI {
@@ -27,35 +27,35 @@ public interface FeatureServiceI {
 	 * @param group
 	 * @return
 	 */
-	public Collection<String> getFeaturesForGroup(UserGroup group);
+	public Collection<String> getFeaturesForGroup(UserGroupI group);
 	
 	/**
 	 * Add feature for this group
 	 * @param group
 	 * @param feature
 	 */
-	public void addFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser) throws Exception;
+	public void addFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser) throws Exception;
 	
 	/**
 	 * Remove feature from this group
 	 * @param group
 	 * @param feature
 	 */
-	public void removeFeatureSettingFromGroup(UserGroup group, String feature, UserI authenticatedUser) throws Exception;
+	public void removeFeatureSettingFromGroup(UserGroupI group, String feature, UserI authenticatedUser) throws Exception;
 	
 	/**
 	 * Remove all features from this group
 	 * @param group
 	 * @param feature
 	 */
-	public void removeAllFeatureSettingsFromGroup(UserGroup group, UserI authenticatedUser) throws Exception;
+	public void removeAllFeatureSettingsFromGroup(UserGroupI group, UserI authenticatedUser) throws Exception;
 	
 	
 	/**
 	 * Check if group contains this feature
 	 * @param group
 	 */
-	public boolean checkFeature(UserGroup group,String feature);
+	public boolean checkFeature(UserGroupI group,String feature);
 
 	/**
 	 * Is this user a member of a group with the matching tag and feature
@@ -81,7 +81,7 @@ public interface FeatureServiceI {
 	 * @param group
 	 * @param feature
 	 */
-	public void blockFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser);
+	public void blockFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser);
 
 
 	/**
@@ -89,7 +89,7 @@ public interface FeatureServiceI {
 	 * @param group
 	 * @param feature
 	 */
-	public void unblockFeatureForGroup(UserGroup group, String feature, UserI authenticatedUser);
+	public void unblockFeatureForGroup(UserGroupI group, String feature, UserI authenticatedUser);
 
 	/**
 	 * returns default blocked setting for this feature for a given tag
@@ -116,11 +116,11 @@ public interface FeatureServiceI {
 
 	public void disableIsOnByDefaultByGroupType(String feature, String displayName,UserI authenticatedUser);
 
-	public boolean isBlockedByGroup(UserGroup group, String feature);
+	public boolean isBlockedByGroup(UserGroupI group, String feature);
 
-	public boolean isOnByDefaultForGroup(UserGroup group, String feature);
+	public boolean isOnByDefaultForGroup(UserGroupI group, String feature);
 
-	public void disableFeatureForGroup(UserGroup group, String feature,	UserI authenticatedUser);
+	public void disableFeatureForGroup(UserGroupI group, String feature,	UserI authenticatedUser);
 
 	public Collection<String> getEnabledFeaturesForGroupType(String type);
 
@@ -129,4 +129,6 @@ public interface FeatureServiceI {
 	public List<String> getEnabledFeaturesByTag(String tag);
 
 	public List<String> getBlockedFeaturesByTag(String tag);
+
+	public Collection<String> getBlockedFeaturesForGroup(UserGroupI group);
 }

@@ -384,7 +384,7 @@ public class HTMLPresenter extends PresentationA {
                                     if (secureVariable.toString().indexOf(">")!=-1){
                                         secureVariable = StringUtils.ReplaceStr(secureVariable.toString(), ">", "");
                                     }
-									values.put((String)link.getSecureProps().get(key),secureVariable);
+									values.put((String)link.getSecureProps().get(key),secureVariable.toString());
 								}
 							}
 

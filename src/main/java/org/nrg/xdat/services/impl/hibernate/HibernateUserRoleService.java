@@ -22,7 +22,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
-public class HibernateUserRoleService extends AbstractHibernateEntityService<UserRole> implements UserRoleService {
+public class HibernateUserRoleService extends AbstractHibernateEntityService<UserRole, UserRoleDAO> implements UserRoleService {
     
     /**
      * Finds all roles for the specified user

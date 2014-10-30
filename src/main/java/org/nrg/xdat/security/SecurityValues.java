@@ -11,8 +11,9 @@
 
 
 package org.nrg.xdat.security;
-import java.util.Hashtable;
 import java.util.Map;
+
+import com.google.common.collect.Maps;
 /**
  * @author Tim Olsen <tim@deck5consulting.com>
  *
@@ -22,20 +23,20 @@ import java.util.Map;
  *  Map{"xnat:subjectData/project":"proj1","xnat:subjectData/sharing/share":"proj2"}
  */
 public class SecurityValues {
-	private Map<String,Object> hash = new Hashtable<String,Object>();
+	private Map<String,String> hash = Maps.newHashMap();
 
 	
-	public void put(String field,Object value) throws Exception
+	public void put(String field,String value) throws Exception
 	{
 		hash.put(field,value);
 	}
 	
-	public void setHash(Map<String,Object> h)
+	public void setHash(Map<String,String> h)
 	{
 		hash = h;
 	}
 	
-	public Map<String,Object> getHash()
+	public Map<String,String> getHash()
 	{
 		return hash;
 	}

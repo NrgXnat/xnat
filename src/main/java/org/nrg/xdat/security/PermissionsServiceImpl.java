@@ -333,7 +333,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
             isOK = true;
         } else {
             SecurityValues sv = new SecurityValues();
-            sv.put(xmlPath, value);
+            sv.put(xmlPath, value.toString());
             if (securityCheckByXMLPath(user,action, SchemaElement.GetElement(rootElement), sv)) {
                 isOK = true;
             } else {

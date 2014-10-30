@@ -239,7 +239,6 @@ public class Features {
 	 */
 	public static Boolean isBanned(String feature){
 		FeatureDefinitionI def=getFeatureRepositoryService().getByKey(feature);
-		logger.error("Un-registered group feature: " + feature);
 		if(def==null){
 			return true;
 		}

@@ -346,6 +346,9 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         // we will punt on this for now and just create a new user account if their is already a local account
         // the Cadillac solution would be to link the two (assuming the user proves that they own the local account also)
 
+        ldapUsername=ldapUsername.replaceAll("[^A-Za-z0-9]", "_");
+        //This is necessary to ensure that the XNAT username for the LDAP user does not contain characters that will break XNAT.
+
         String usernameToTest = ldapUsername;
         int testCount = -1;
         List<String> existingLocalUsernames;

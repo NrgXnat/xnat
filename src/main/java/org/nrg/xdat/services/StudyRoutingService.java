@@ -9,7 +9,6 @@
  */
 package org.nrg.xdat.services;
 
-import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.NrgService;
 
 import java.util.Map;
@@ -131,6 +130,13 @@ public interface StudyRoutingService extends NrgService {
      * @return A list of the routing configurations for the indicated attribute key and value.
      */
     abstract public Map<String, Map<String, String>> findRoutingsByAttribute(String attribute, String value);
+
+    /**
+     * Finds all active routing configurations.
+     * @return A list of the routing configurations currently in the system.
+     */
+    abstract public Map<String, Map<String, String>> findAllRoutings();
+
     /**
      * Closes the routing configuration for the indicated study instance UID. This should only be done when the study
      * has been fully received and archived. Any DICOM data for the study received later will not have the routing
@@ -138,4 +144,11 @@ public interface StudyRoutingService extends NrgService {
      * @param studyInstanceUid    The UID of the routing configuration to close.
      */
     abstract public boolean close(String studyInstanceUid);
+
+    /**
+     * Closes all routing configurations on the site. This is a pretty extreme step and can only be performed by site
+     * administrators. This returns all existing routings to allow for restoring configurations later.
+     * @return The existing routings.
+     */
+    abstract public Map<String, Map<String, String>> closeAll();
 }

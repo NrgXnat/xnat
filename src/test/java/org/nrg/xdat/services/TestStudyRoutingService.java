@@ -17,6 +17,7 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.inject.Inject;
+import javax.print.DocFlavor;
 import java.util.Map;
 
 import static org.junit.Assert.*;
@@ -70,6 +71,18 @@ public class TestStudyRoutingService {
         assertEquals(2, assignments.size());
         assignments = _service.findUserRoutings(USR3);
         assertEquals(0, assignments.size());
+    }
+
+    @Test
+    public void testFindByAttribute() {
+        _service.assign(UID2, PRJ1, USR1);
+        _service.assign(UID3, PRJ1, USR2);
+        _service.assign(UID4, PRJ2, USR2);
+        _service.assign(UID5, PRJ1, USR1);
+        Map<String, Map<String, String>> assignments = _service.findRoutingsByAttribute(StudyRoutingService.PROJECT, PRJ1);
+        assertEquals(3, assignments.size());
+        assignments = _service.findRoutingsByAttribute(StudyRoutingService.USER, USR1);
+        assertEquals(2, assignments.size());
     }
 
     @Inject

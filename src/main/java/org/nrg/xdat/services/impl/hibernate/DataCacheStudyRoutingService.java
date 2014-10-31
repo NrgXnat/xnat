@@ -241,6 +241,20 @@ public class DataCacheStudyRoutingService implements StudyRoutingService {
     }
 
     /**
+     * Finds all active routing configurations.
+     *
+     * @return A list of the routing configurations currently in the system.
+     */
+    @Override
+    public Map<String, Map<String, String>> findAllRoutings() {
+        Map<String, Map<String, String>> found = new HashMap<String, Map<String, String>>();
+        for (final Map.Entry<String, HashMap<String, String>> entry : getConfigurations().entrySet()) {
+            found.put(entry.getKey(), entry.getValue());
+        }
+        return found;
+    }
+
+    /**
      * Closes the routing configuration for the indicated study instance UID. This should only be done when the study
      * has been fully received and archived. Any DICOM data for the study received later will not have the routing
      * configuration available any more, which could lead to split sessions. This method returns <b>true</b> if the
@@ -263,13 +277,30 @@ public class DataCacheStudyRoutingService implements StudyRoutingService {
     }
 
     /**
+     * Closes all routing configurations on the site. This is a pretty extreme step and can only be performed by site
+     * administrators. This returns all existing routings to allow for restoring configurations later.
+     *
+     * @return The existing routings.
+     */
+    @Override
+    public Map<String, Map<String, String>> closeAll() {
+        final Map<String, Map<String, String>> found = new HashMap<String, Map<String, String>>();
+        for (final Map.Entry<String, HashMap<String, String>> entry : getConfigurations().entrySet()) {
+            found.put(entry.getKey(), entry.getValue());
+        }
+        getConfigurations().clear();
+        _service.put(SERVICE_KEY, getConfigurations());
+        return found;
+    }
+
+    /**
      * Commits the routing configuration for the indicated study instance UID. Returns <b>true</b> if the commit
      * completed successfully, <b>false</b> otherwise.
      * @param studyInstanceUid    The study instance UID of the configuration to be created or updated.
      * @param configuration       The configuration itself.
      * @return <b>true</b> if the commit completed successfully, <b>false</b> otherwise.
      */
-    private boolean  commit(final String studyInstanceUid, final HashMap<String, String> configuration) {
+    private boolean commit(final String studyInstanceUid, final HashMap<String, String> configuration) {
         if (_log.isDebugEnabled()) {
             _log.debug(getConfigurations().containsKey(studyInstanceUid) ? "Updated existing" : "Created new" + " routing configuration for study instance UID: " + studyInstanceUid + "\n" + configuration.toString());
         }

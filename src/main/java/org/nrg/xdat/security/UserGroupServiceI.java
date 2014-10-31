@@ -4,6 +4,7 @@ import java.sql.SQLException;
 import java.util.List;
 import java.util.Map;
 
+import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventMetaI;
@@ -209,5 +210,4 @@ public interface UserGroupServiceI {
 	 * @throws InvalidValueException 
 	 */
 	public void save(UserGroupI tempGroup, UserI user, EventMetaI meta) throws InvalidValueException, Exception;
-
 }

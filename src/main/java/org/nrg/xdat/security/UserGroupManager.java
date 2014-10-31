@@ -32,6 +32,7 @@ import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
@@ -53,6 +54,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
+import org.restlet.data.Status;
 
 import com.google.common.collect.Lists;
 
@@ -611,7 +613,7 @@ public class UserGroupManager implements UserGroupServiceI{
 	}
 
 
-	private void validateGroupByTag(XdatUsergroup tempGroup, String tag) throws InvalidValueException{
+	public void validateGroupByTag(XdatUsergroup tempGroup, String tag) throws InvalidValueException{
 		//verify that the user isn't trying to gain access to other projects.
 		for(XdatElementAccess ea:tempGroup.getElementAccess()){
 			for(XdatFieldMappingSet set: ea.getPermissions_allowSet()){
@@ -669,7 +671,7 @@ public class UserGroupManager implements UserGroupServiceI{
 		
 		XdatUsergroup xdatGroup=((UserGroup)group).xdatGroup;
 		
-		if(!user.isSiteAdmin()){
+		if(!Roles.isSiteAdmin(user)){
 			String firstValue=null;
 			for(XdatElementAccess ea:xdatGroup.getElementAccess()){
 				for(XdatFieldMappingSet set: ea.getPermissions_allowSet()){

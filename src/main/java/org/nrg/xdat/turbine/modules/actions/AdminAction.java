@@ -11,6 +11,7 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.turbine.util.RunData;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -24,7 +25,7 @@ public abstract class AdminAction extends SecureAction {
         boolean authorized= super.isAuthorized(data);
         if (authorized)
         {
-            if (!TurbineUtils.getUser(data).checkRole("Administrator"))
+            if (!Roles.isSiteAdmin(TurbineUtils.getUser(data)))
             {
                 authorized=false;
                 data.setMessage("Unauthorized access.  Please login to gain access to this page.");

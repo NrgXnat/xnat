@@ -14,6 +14,7 @@ import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.FeatureDefinition;
 import org.nrg.xdat.security.helpers.FeatureDefinitionI;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.services.FeatureDefinitionService;
 import org.nrg.xft.XFT;
@@ -132,7 +133,7 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI {
 													if(!StringUtils.equals(ea.getSecureFeature(), def.getKey())){
 														//need to register this action
 														ea.getItem().setProperty("secureFeature", def.getKey());
-														SaveItemHelper.authorizedSave(ea.getItem(), new XDATUser("admin"), true, false, EventUtils.newEventInstance(CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Configure new feature."));
+														SaveItemHelper.authorizedSave(ea.getItem(), Users.getUser("admin"), true, false, EventUtils.newEventInstance(CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Configure new feature."));
 													}
 												}
 											} catch (Exception e) {

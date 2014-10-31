@@ -12,6 +12,7 @@ package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
@@ -24,7 +25,7 @@ public class XDATSudoLogin extends SecureAction{
 	@Override
 	public void doPerform(RunData data, Context context) throws Exception {
 		UserI user = TurbineUtils.getUser(data);
-        if (user.checkRole("Administrator")) {
+        if (Roles.isSiteAdmin(user)) {
 			String login = (String)TurbineUtils.GetPassedParameter("sudo_login", data);
 			UserI temp=Users.getUser(login);
 			TurbineUtils.setNewUser(data, temp, context);

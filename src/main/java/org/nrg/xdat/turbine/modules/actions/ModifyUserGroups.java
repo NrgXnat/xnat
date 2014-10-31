@@ -22,6 +22,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -42,7 +43,7 @@ public class ModifyUserGroups extends SecureAction {
         UserI oldUser=Users.getUser(newUser.getLogin());
         UserI authenticatedUser=TurbineUtils.getUser(data);
 
-        if(authenticatedUser.isSiteAdmin()){
+        if(Roles.isSiteAdmin(authenticatedUser)){
 	        PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), Users.getUserDataType(),oldUser.getID().toString(),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified user settings"));
 	        EventMetaI ci=wrk.buildEvent();
 	        

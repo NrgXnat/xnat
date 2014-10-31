@@ -58,6 +58,7 @@ import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -607,7 +608,7 @@ public class XDAT implements Initializable,Configurable{
         
 		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
         grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
-        if (user.isSiteAdmin()) {
+        if (Roles.isSiteAdmin(user)) {
             grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_ADMIN"));
         }
     	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
@@ -625,7 +626,7 @@ public class XDAT implements Initializable,Configurable{
 
     private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(UserI user) throws ConfigServiceException {
         String username = user.getUsername();
-        String reason = user.isSiteAdmin() ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
+        String reason = Roles.isSiteAdmin(user) ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
         return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
 }
 

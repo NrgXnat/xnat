@@ -43,9 +43,7 @@ public interface UserI extends UserDetails,Serializable{
 	 * @return
 	 */
 	public String getEmail();
-	public boolean checkRole(String roleSiteAdmin) throws Exception;
 
-	public boolean isSiteAdmin();
 	public String getDBName();
 	public String getPassword();
 	public boolean isEnabled();

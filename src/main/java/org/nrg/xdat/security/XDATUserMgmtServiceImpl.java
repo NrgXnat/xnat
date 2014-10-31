@@ -9,6 +9,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xdat.om.XdatUser;
 import org.nrg.xdat.security.Authenticator.Credentials;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.PasswordAuthenticationException;
@@ -176,7 +177,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		
 		if (existing == null) {
 			 // NEW USER
-		    if (overrideSecurity || authenticatedUser.checkRole("Administrator")) {
+		    if (overrideSecurity || Roles.isSiteAdmin(authenticatedUser)) {
 		        String tempPass = user.getPassword();
 		        if (!StringUtils.IsEmpty(tempPass)){
 		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
@@ -225,7 +226,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
             	user.setPassword(savedPass);
             }
 
-		    if (authenticatedUser.checkRole("Administrator") || overrideSecurity) {
+		    if (Roles.isSiteAdmin(authenticatedUser) || overrideSecurity) {
 		        SaveItemHelper.authorizedSave(((XDATUser)user), authenticatedUser, false, false,c);
 		    } else if (user.getLogin().equals(authenticatedUser.getLogin())) {
 		    	//not-admin user is modifying his own account.

@@ -18,7 +18,9 @@ import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.PoolDBUtils;
@@ -88,7 +90,7 @@ public class Authorizer implements AuthorizerI{
 	
 	private boolean requiresSecurity(String action,final GenericWrapperElement e, final UserI user) throws SQLException, Exception{
 		if(user != null){
-			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers()) || !user.checkRole("Administrator")));
+			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers()) || !Roles.isSiteAdmin(user)));
 		} else {
 			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers())));
 		}

@@ -20,6 +20,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTool;
@@ -85,7 +86,7 @@ public class RefreshAction extends AdminAction {
 
         {
 
-            if (!TurbineUtils.getUser(data).checkRole("Administrator"))
+            if (!Roles.isSiteAdmin(TurbineUtils.getUser(data)))
 
             {
 

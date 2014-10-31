@@ -513,7 +513,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception
      */
     public void deleteRole(UserI authenticatedUser, String dRole) throws Exception{
-		if(!authenticatedUser.isSiteAdmin()){
+		if(!((XDATUser)authenticatedUser).isSiteAdmin()){
 			throw new Exception("Invalid permissions for user modification.");
 		}
 		
@@ -547,7 +547,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public void addRole(UserI authenticatedUser, String dRole) throws Exception{
     	if(!StringUtils.IsEmpty(dRole)){
 	    	if(XDAT.getContextService().getBean(UserRoleService.class).findUserRole(this.getLogin(), dRole)==null){
-	    		if(!authenticatedUser.isSiteAdmin()){
+	    		if(!((XDATUser)authenticatedUser).isSiteAdmin()){
 	    			throw new Exception("Invalid permissions for user modification.");
 	    		}
 	    		
@@ -591,9 +591,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     /**
      * @return ArrayList of XFTItems
      */
-    public List<String> getRoleNames() throws Exception {
+    public List<String> getRoleNames() {
         if (roleNames == null) {
-            roleNames = loadRoleNames();
+            try {
+				roleNames = loadRoleNames();
+			} catch (Exception e) {
+				logger.error("",e);
+			}
         }
         return roleNames;
     }

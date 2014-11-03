@@ -12,22 +12,8 @@
 
 package org.nrg.xdat.security;
 
-import java.io.File;
-import java.io.Serializable;
-import java.security.SecureRandom;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -37,11 +23,7 @@ import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.nrg.xdat.om.XdatElementAccess;
-import org.nrg.xdat.om.XdatFieldMapping;
-import org.nrg.xdat.om.XdatFieldMappingSet;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.om.XdatUserGroupid;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.QueryOrganizer;
@@ -62,14 +44,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidItemException;
-import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.exception.InvalidValueException;
-import org.nrg.xft.exception.MetaDataException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.layeredSequence.LayeredSequenceCollection;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
@@ -82,8 +57,12 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.io.File;
+import java.io.Serializable;
+import java.security.SecureRandom;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.Map.Entry;
 
 /**
  * @author Tim
@@ -2844,7 +2823,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private List<String> _editableProjects;
 
     public boolean hasAccessTo(final String projectId) throws Exception {
-        return getAccessibleProjects().contains(projectId);
+        return isSiteAdmin() || getAccessibleProjects().contains(projectId);
     }
 
     /**

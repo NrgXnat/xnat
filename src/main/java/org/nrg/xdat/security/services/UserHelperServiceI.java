@@ -172,4 +172,6 @@ public abstract class UserHelperServiceI {
             return true;
         }
     }
+    
+    public abstract boolean hasEditAccessToSessionDataByTag(String tag) throws Exception;
 }

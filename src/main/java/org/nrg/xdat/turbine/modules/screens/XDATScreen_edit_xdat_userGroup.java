@@ -14,9 +14,8 @@ package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.security.UserGroup;
+import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.security.UserGroupI;
-import org.nrg.xdat.security.UserGroupManager;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
@@ -44,17 +43,21 @@ public class XDATScreen_edit_xdat_userGroup extends EditScreenA {
     public void finalProcessing(RunData data, Context context) {
 
         try {
-        	UserGroupI passedGroup=Groups.createGroup(TurbineUtils.GetDataParameterHash(data));
-            if(TurbineUtils.HasPassedParameter("tag", data) && passedGroup.getTag()==null){
-            	passedGroup.setTag((String)TurbineUtils.GetPassedParameter("tag", data));
-            }
-            
+        	XdatUsergroup g = new XdatUsergroup(item);
+        	if(TurbineUtils.HasPassedParameter("tag", data) && g.getTag()==null){
+        		g.setTag((String)TurbineUtils.GetPassedParameter("tag", data));
+        	}
+        	            
             UserGroupI storedGroup=null;
-            if(passedGroup.getId()!=null){
-            	storedGroup =Groups.getGroup(passedGroup.getId());
+            if(g.getId()!=null){
+            	storedGroup =Groups.getGroup(g.getId());
             }
             
             if(storedGroup==null){
+            	UserGroupI passedGroup=Groups.createGroup(TurbineUtils.GetDataParameterHash(data));
+                if(TurbineUtils.HasPassedParameter("tag", data) && passedGroup.getTag()==null){
+                	passedGroup.setTag((String)TurbineUtils.GetPassedParameter("tag", data));
+                }
             	storedGroup=passedGroup;
             }
             

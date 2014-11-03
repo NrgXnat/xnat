@@ -41,6 +41,7 @@ import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.ActivationException;
 import org.nrg.xdat.security.user.exceptions.EnabledException;
@@ -85,8 +86,6 @@ import com.google.common.collect.Maps;
  */
 @SuppressWarnings({"unchecked"})
 public class XDATUser extends XdatUser implements UserI, Serializable {
-    public static final String COMMON = "Unassigned";
-    public static final String ROLE_SITE_ADMIN = "Administrator";
     private static final long serialVersionUID = -8144623503683531831L;
     static Logger logger = Logger.getLogger(XDATUser.class);
     public static final String USER_ELEMENT = "xdat:user";
@@ -1435,7 +1434,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     private List<String> _editableProjects;
 
-    public boolean hasAccessTo(final String projectId) throws Exception {
+    protected boolean hasAccessTo(final String projectId) throws Exception {
         return getAccessibleProjects().contains(projectId);
     }
 
@@ -1444,7 +1443,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return All the projects where this user has edit permissions.
      * @throws Exception
      */
-    public List<String> getAccessibleProjects() throws Exception {
+    protected List<String> getAccessibleProjects() throws Exception {
         if (_editableProjects == null) {
             _editableProjects = new ArrayList<String>();
             for (final List<String> row : getQueryResults("xnat:projectData/ID", "xnat:projectData")) {
@@ -1460,7 +1459,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 }
             }
             // if the user is an admin also add unassigned projects
-            if (checkRole(ROLE_SITE_ADMIN)) {
+            if (Roles.isSiteAdmin(this)) {
                 _editableProjects.add(null);
             }
         }
@@ -1468,7 +1467,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     private boolean canModify(final String projectId) throws Exception{
-        if (checkRole(ROLE_SITE_ADMIN)) {
+        if (Roles.isSiteAdmin(this)) {
             return true;
         }
         if (projectId == null) {
@@ -1477,7 +1476,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         final List<ElementSecurity> secureElements = ElementSecurity.GetSecureElements();
         for (ElementSecurity secureElement : secureElements) {
             if (secureElement.getSchemaElement().instanceOf("xnat:imageSessionData")) {
-                if (canAction(secureElement.getElementName() + "/project", projectId, SecurityManager.EDIT)) {
+                if (Permissions.can(this, secureElement.getElementName() + "/project", projectId, SecurityManager.EDIT)) {
                     return true;
                 }
             }

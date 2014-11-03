@@ -123,6 +123,11 @@ public class XDATUserHelperService extends UserHelperServiceI {
 			return Lists.newArrayList();
 		}
 	}
+
+	@Override
+	public boolean hasEditAccessToSessionDataByTag(String tag) throws Exception {
+		return ((XDATUser)user).hasAccessTo(tag);
+	}
 	
 	
 

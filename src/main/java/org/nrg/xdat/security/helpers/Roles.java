@@ -80,4 +80,6 @@ public class Roles {
 	public static Collection<String> getRoles(UserI user) {
 		return getRoleService().getRoles(user);
 	}
+
+	public static final String ROLE_SITE_ADMIN = "Administrator";
 }

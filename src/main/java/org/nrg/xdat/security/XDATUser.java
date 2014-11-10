@@ -1435,7 +1435,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private List<String> _editableProjects;
 
     protected boolean hasAccessTo(final String projectId) throws Exception {
-        return getAccessibleProjects().contains(projectId);
+        return Roles.isSiteAdmin(this) || getAccessibleProjects().contains(projectId);
     }
 
     /**

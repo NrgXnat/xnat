@@ -67,9 +67,9 @@ public class XFT {
 //	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
 //	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 
-    public static void init(String location,boolean allowDBAccess) throws ElementNotFoundException
+    public static void init(String location) throws ElementNotFoundException
     {
-        init(location,allowDBAccess,true);
+        init(location);
     }
     /**
      * This method must be run before any XFT task is performed.
@@ -77,10 +77,9 @@ public class XFT {
      * XFT's settings and loads the schema.
      * @param location (Directory which includes the InstanceSettings.xml document)
      */
-    public static void init(String location,boolean allowDBAccess, boolean initLog4j) throws ElementNotFoundException
+    public static void init(String location, boolean initLog4j) throws ElementNotFoundException
     {
 
-        //XFT.LogCurrentTime("XFT INIT:1","ERROR");
         if (! location.endsWith(File.separator))
         {
             location = location + File.separator;
@@ -103,14 +102,11 @@ public class XFT {
         XFTReferenceManager.clean();
         XFTPseudonymManager.clean();
 
-        //XFT.LogCurrentTime("XFT INIT:2","ERROR");
         XFTManager.init(location);
 
-        //XFT.LogCurrentTime("XFT INIT:3","ERROR");
         try {
-            XFTMetaManager.init(allowDBAccess);
+            XFTMetaManager.init();
 
-            //XFT.LogCurrentTime("XFT INIT:4","ERROR");
             Iterator schemas = XFTManager.GetSchemas().iterator();
             while (schemas.hasNext())
             {
@@ -127,17 +123,13 @@ public class XFT {
                 }
             }
 
-           // XFT.LogCurrentTime("XFT INIT:5","ERROR");
             XFTReferenceManager.init();
 
-           //XFT.LogCurrentTime("XFT INIT:6","ERROR");
             schemas = XFTManager.GetSchemas().iterator();
             while (schemas.hasNext())
             {
                 XFTSchema s = (XFTSchema)schemas.next();
-            //	XFT.LogCurrentTime("XFT INIT " + s.getTargetNamespacePrefix() + ":1","ERROR");
                 Iterator elements = s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance()).iterator();
-            //	XFT.LogCurrentTime("XFT INIT " + s.getTargetNamespacePrefix() + ":2 " ,"ERROR");
                 while (elements.hasNext())
                 {
                     GenericWrapperElement input = (GenericWrapperElement)elements.next();
@@ -165,15 +157,13 @@ public class XFT {
 
                     }
                 }
-            //	XFT.LogCurrentTime("XFT INIT " + s.getTargetNamespacePrefix() + ":3","ERROR");
             }
         } catch (XFTInitException e) {
-            e.printStackTrace();
+            logger.error("",e);
         }
         if (XFT.VERBOSE)
          {
             System.out.print("");
-       // XFT.LogCurrentTime("XFT INIT:7","ERROR");
         }
     }
 
@@ -327,7 +317,7 @@ public class XFT {
 
     public static void LogInsert(String message, ItemI item)
     {
-        if (!item.getItem().getXSIType().startsWith("xdat:") && !item.getItem().getXSIType().startsWith("wrk:"))
+        if (!item.getItem().getXSIType().startsWith("wrk:"))
         {
             try {
                  String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
@@ -352,6 +342,8 @@ public class XFT {
 
                      fileName += "_" + pk;
                  }
+                 
+                 fileName=fileName.replace(":", "_");
 
                  if ((new File(s + fileName + ".sql")).exists())
                  {
@@ -367,7 +359,7 @@ public class XFT {
 
                  FileUtils.OutputToFile(message,s + fileName);
              } catch (Exception e) {
-                 logger.error("",e);
+                 e.printStackTrace();
              }
         }
     }

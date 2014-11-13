@@ -12,8 +12,8 @@
 
 package org.nrg.xdat.security;
 
-import java.io.File;
-import java.io.StringWriter;
+import java.io.IOException;
+import java.io.InputStream;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Collection;
@@ -23,11 +23,10 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
 
 import org.apache.log4j.Logger;
-import org.apache.velocity.Template;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.Velocity;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.om.XdatElementAccess;
@@ -35,13 +34,11 @@ import org.nrg.xdat.om.XdatElementSecurityListingAction;
 import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
 import org.nrg.xdat.om.XdatPrimarySecurityField;
-import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
-import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.XFT;
@@ -55,6 +52,7 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.Event;
 import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -64,6 +62,7 @@ import org.nrg.xft.references.XFTReferenceI;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.references.XFTRelationSpecification;
 import org.nrg.xft.references.XFTSuperiorReference;
+import org.nrg.xft.schema.DataModelDefinition;
 import org.nrg.xft.schema.XFTElement;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
@@ -73,11 +72,8 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.search.TableSearch;
-import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
-import org.nrg.xft.utils.VelocityUtils;
 
 import com.google.common.collect.Lists;
 
@@ -101,6 +97,7 @@ public class ElementSecurity extends ItemWrapper{
 	private static Object lock=new Object();
 	
 	public ElementSecurity(){}
+	
 	
 	/**
 	 * @return
@@ -127,6 +124,36 @@ public class ElementSecurity extends ItemWrapper{
 			}
 		}
 		return elements;
+	}
+	
+	/**
+	 * Reviews the classpath for additional data model definitions.  If those definitions 
+	 * contain references to new data types (that haven't been registerd already), they 
+	 * will be registered now.
+	 * 
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean registerNewTypes() throws Exception{
+		Map<String,ElementSecurity> elements=(Map<String,ElementSecurity>)GetElementSecurities().clone();
+				
+		boolean _new=false;
+		for(DataModelDefinition def:XFTManager.discoverDataModelDefs()){
+			for(String s:def.getSecuredElements()){
+				
+				if((!StringUtils.IsEmpty(s)) && elements.get(s)==null){
+					if(GenericWrapperElement.GetFieldForXMLPath(s+"/project")!=null){
+						ElementSecurity es=ElementSecurity.newElementSecurity(s);
+						es.initExistingPermissions("admin");
+						_new=true;
+					}
+				}
+			}
+		}
+		
+		ElementSecurity.refresh();
+		
+		return _new;
 	}
 	
 	public String toString()
@@ -175,6 +202,56 @@ public class ElementSecurity extends ItemWrapper{
 	public static ElementSecurity GetElementSecurity(String elementName) throws Exception
 	{
 		return (ElementSecurity)GetElementSecurities().get(elementName);
+	}
+	
+	public static ElementSecurity newElementSecurity(String elementName) throws Exception{
+		if(GetElementSecurity(elementName)!=null){
+			return GetElementSecurity(elementName);
+		}
+		
+		XDATUser user = new XDATUser("admin");
+		
+		XFTItem es= XFTItem.NewItem("xdat:element_security", user);
+		es.setProperty("element_name", elementName);
+		es.setProperty("secondary_password","0");
+		es.setProperty("secure_ip","0");
+		es.setProperty("secure","1");
+		es.setProperty("browse","1");
+		es.setProperty("sequence","2");
+		es.setProperty("quarantine","0");
+		es.setProperty("pre_load","0");
+		es.setProperty("searchable","1");
+		es.setProperty("secure_read","1");
+		es.setProperty("secure_edit","1");
+		es.setProperty("secure_create","1");
+		es.setProperty("secure_delete","1");
+		es.setProperty("accessible","1");
+		
+		es.setProperty("xdat:element_security/primary_security_fields/primary_security_field[0]/primary_security_field", elementName+"/sharing/share/project");
+		es.setProperty("xdat:element_security/primary_security_fields/primary_security_field[1]/primary_security_field", elementName+"/project");
+		
+		addElementAction(es,0,"xml","View XML","2","View","NULL"); 
+		addElementAction(es,1,"edit","Edit","0","NULL","edit"); 
+		addElementAction(es,2,"xml_file","Download XML","7","Download","NULL"); 
+		addElementAction(es,3,"email_report","Email","8","NULL","NULL");
+		
+		SaveItemHelper.authorizedSave(es, user, false, false, EventUtils.ADMIN_EVENT(user));
+		
+		ElementSecurity.refresh();
+		return ElementSecurity.GetElementSecurity(elementName);
+	}
+	
+	private static void addElementAction(XFTItem es,int index,String action_name, String displayName, String sequence, String grouping,String access)
+	{
+		try {
+			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/element_action_name",action_name);
+			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/display_name",displayName);
+			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/sequence",sequence);
+			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/grouping",grouping);
+			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/secureAccess",access);
+		} catch (Exception e) {
+			logger.error("",e);
+		}
 	}
 	
 	/**
@@ -1444,98 +1521,29 @@ public class ElementSecurity extends ItemWrapper{
     
     //method added to facilitate the adding of permissions once you've created a new data type.  It loads a vm to build the requisite SQL.
     public void initExistingPermissions(String userName){
-    	String templateName="new_dataType_permissions.vm";
-        try {
-	        boolean velocityInit = false;
-
-	        try {
-                Velocity.templateExists(templateName);
-                velocityInit=true;
-            } catch (Exception e1) {
-            }
-
-            if (velocityInit)
+    	InputStream is=null;
+    	try {            
+        	is = CustomClasspathResourceLoader.getInputStream("/screens/new_dataType_permissions.vm");
+            if (is!=null)
             {
-                boolean exists= Velocity.templateExists("/screens/" + templateName);
-                if (exists)
-                {
-                    VelocityContext context = new VelocityContext();
-                    context.put("element_name",this.getElementName());
-                    StringWriter sw = new StringWriter();
-                    Template template =Velocity.getTemplate("/screens/" + templateName);
-                    template.merge(context,sw);
-                    
-                    ArrayList<String> stmts=StringUtils.DelimitedStringToArrayList(sw.toString(), ";");
-                    PoolDBUtils.ExecuteBatch(stmts, this.getDBName(), userName);
-                }else{
-                    
-                }
-            }else
-            {
-                VelocityUtils.init();
-                boolean exists= Velocity.templateExists(getItem().getGenericSchemaElement().getFormattedName() +"_text.vm");
-                String path = XFTManager.GetInstance().getSourceDir() + "src/templates/text/"+ templateName;
-                File f = new File(path);
-                if (f.exists())
-                {
-                    VelocityContext context = new VelocityContext();
-                    context.put("element_name",this.getElementName());
-                    StringWriter sw = new StringWriter();
-
-                    Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-
-                    
-                    ArrayList<String> stmts=StringUtils.DelimitedStringToArrayList(sw.toString(), ";");
-                    PoolDBUtils.ExecuteBatch(stmts, this.getDBName(), userName);
-                }else {
-                    path = XFTManager.GetInstance().getSourceDir() + "src/xnat-templates/text/"+ templateName;
-                    f = new File(path);
-                    if (f.exists())
-                    {
-                        VelocityContext context = new VelocityContext();
-                        context.put("element_name",this.getElementName());
-                        StringWriter sw = new StringWriter();
-
-                        Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-
-                        
-                        ArrayList<String> stmts=StringUtils.DelimitedStringToArrayList(sw.toString(), ";");
-                        PoolDBUtils.ExecuteBatch(stmts, this.getDBName(), userName);
-                    }else{
-                        path = XFTManager.GetInstance().getSourceDir() + "src/xdat-templates/text/"+ templateName;
-                        f = new File(path);
-                        if (f.exists())
-                        {
-                            VelocityContext context = new VelocityContext();
-                            context.put("element_name",this.getElementName());
-                            StringWriter sw = new StringWriter();
-
-                            Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-
-                            
-                            ArrayList<String> stmts=StringUtils.DelimitedStringToArrayList(sw.toString(), ";");
-                            PoolDBUtils.ExecuteBatch(stmts, this.getDBName(), userName);
-                        }else{
-                            path = XFTManager.GetInstance().getSourceDir() + "src/base-templates/text/"+ templateName;
-                            f = new File(path);
-                            if (f.exists())
-                            {
-                                VelocityContext context = new VelocityContext();
-                                context.put("element_name",this.getElementName());
-                                StringWriter sw = new StringWriter();
-
-                                Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-
-                                
-                                ArrayList<String> stmts=StringUtils.DelimitedStringToArrayList(sw.toString(), ";");
-                                PoolDBUtils.ExecuteBatch(stmts, this.getDBName(), userName);
-                            }else{
-            	            }
-        	            }
-    	            }
-                }
+            	final List<String> stmts = Lists.newArrayList();
+            	final Scanner scanner= new Scanner(is).useDelimiter(";");
+            	while(scanner.hasNext()){
+            		String query = scanner.next();
+            		if(StringUtils.HasContent(query)){
+            			stmts.add(query.replace("$!element_name", this.getElementName()).replace("$element_name", this.getElementName()));
+            		}
+            	}
+                PoolDBUtils.ExecuteBatch(stmts, this.getDBName(), userName);
             }
         } catch (Exception e) {
+        }finally{
+        	try {
+				if(is!=null){
+					is.close();
+				}
+			} catch (IOException e) {
+			}
         }
         
         try {

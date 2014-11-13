@@ -11,6 +11,7 @@
 
 
 package org.nrg.xft.db;
+import java.io.File;
 import java.sql.CallableStatement;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
@@ -19,8 +20,11 @@ import java.sql.SQLException;
 import java.sql.Statement;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Collection;
 import java.util.Date;
 import java.util.Iterator;
+import java.util.List;
+import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFTItem;
@@ -32,6 +36,8 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
+
+import com.google.common.collect.Lists;
 public class PoolDBUtils {
 	static org.apache.log4j.Logger logger = Logger.getLogger(PoolDBUtils.class);
 	//private ResultSet rs = null;
@@ -236,7 +242,7 @@ public class PoolDBUtils {
 		return o;
 	}
 
-	private void sendBatchExec(ArrayList<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
+	private void sendBatchExec(List<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
 		if(db==null)db=PoolDBUtils.getDefaultDBName();
 	    Date start = Calendar.getInstance().getTime();
 	    try {
@@ -246,6 +252,7 @@ public class PoolDBUtils {
 
             	st = con.createStatement(resultSetType, resultSetConcurrency);
             	st.clearBatch();
+            	int c=0;
             	for (String stmt:statements)
             	{
             	    st.addBatch(stmt);
@@ -280,6 +287,31 @@ public class PoolDBUtils {
 		cache.finalize();
 		this.sendBatch(cache.getStatements(), db, userName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
     	cache.reset();
+	}
+
+
+
+	
+	/**
+	 * Check if the database type exists
+	 * @param _class
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean checkIfTypeExists(String _class) throws Exception{
+		Long count=(Long)PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) AS count FROM pg_catalog.pg_type WHERE  typname=LOWER('" + _class + "')", "count", null, null);
+		return (count>0);
+	}
+	
+	/**
+	 * Check if the database class exists
+	 * @param _class
+	 * @return
+	 * @throws Exception
+	 */
+	public static boolean checkIfClassExists(String _class) throws Exception{
+		Long count=(Long)PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) AS count FROM pg_catalog.pg_class WHERE  relname=LOWER('" + _class + "') GROUP BY relname", "count", null, null);
+		return (count>0);
 	}
 
 	/**
@@ -346,13 +378,25 @@ public class PoolDBUtils {
 		con.executeNonSelectQuery(query,db,userName);
 	}
 
-	public static void ExecuteBatch(ArrayList<String> queries,String db, String userName) throws SQLException,Exception
+	public static void ExecuteBatch(List<String> queries,String db, String userName) throws SQLException,Exception
 	{
 		PoolDBUtils con = new PoolDBUtils();
 
 		con.sendBatch(queries,db,userName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 	}
 
+	public static void ExecuteBatch(File sql,String db, String userName) throws SQLException,Exception
+	{
+		PoolDBUtils con = new PoolDBUtils();
+		
+		List<String> queries=Lists.newArrayList();
+		Scanner scanner=new Scanner(sql).useDelimiter(";");
+		while(scanner.hasNext()){
+			queries.add(scanner.next());
+		}
+
+		con.sendBatch(queries,db,userName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+	}
 	public Object returnStatisticQuery(String query,String column,String db, String userName) throws SQLException,Exception
 	{
 		Object o = null;
@@ -924,7 +968,7 @@ public class PoolDBUtils {
 		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
     }
 
-	public void sendBatch(ArrayList<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
+	public void sendBatch(List<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
 		try{
 			sendBatchExec(statements,db,userName,resultSetType,resultSetConcurrency);
 		}catch(SQLException e){
@@ -934,6 +978,56 @@ public class PoolDBUtils {
 				logger.error("",e);
 				throw e;
 			}
+		}
+	}
+
+	public static Transaction getTransaction(){
+		return new Transaction();
+	}
+	
+	
+	/**
+	 * @author tim@deck5consulting.com
+	 *
+	 * The transaction class is used to process db transactions which cannot be passed as a batch (include SELECTs).
+	 * It maintains a single open connection (locked) until the close method is called.
+	 */
+	public static class Transaction {	
+		PoolDBUtils pooledConnection=new PoolDBUtils();//pooled connection manager
+		Connection con;
+		Statement st;
+		
+		public void start() throws SQLException, DBPoolException{
+			con=pooledConnection.getConnection(PoolDBUtils.getDefaultDBName());
+	    	con.setAutoCommit(false);
+	    	
+	    	st=pooledConnection.getStatement(PoolDBUtils.getDefaultDBName());
+		}
+		
+		public void execute(String query) throws SQLException{
+			st.execute(query);
+		}
+		
+		public void execute(Collection<String> stmts) throws SQLException{
+			for(String s:stmts){
+				st.execute(s);
+			}
+		}
+		
+		public void commit() throws SQLException{
+	    	con.commit();
+		}
+		
+		public void rollback() throws SQLException{
+			con.rollback();
+		}
+		
+		public void close() {
+			try {
+				con.setAutoCommit(true);//reset pooled connection to auto-commit for next consumer
+			} catch (SQLException e) {}
+			
+	    	pooledConnection.closeConnection(null);//use the pool manager to close the connection
 		}
 	}
 }

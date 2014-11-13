@@ -64,6 +64,10 @@ public  class FileUtils
 
 		_outFile = new File(filePath);
 
+		if(!_outFile.getParentFile().exists()){
+			_outFile.getParentFile().mkdirs();
+		}
+		
 		try
 		{
 			_outFileStream = new FileOutputStream ( _outFile );

@@ -25,7 +25,7 @@ public class GeneratorUtils {
 		File file = new File(sourceFile);
 		String sourceDir = file.getParent();
 		try {
-			XFT.init(sourceFile,true);
+			XFT.init(sourceFile);
 			SQLCreateGenerator.generateDoc(sourceDir + File.separator + "createDB.sql");
 			TorqueSchemaGenerator.generateDoc(sourceDir + File.separator + "base-schema.xml");
 		} catch (Exception e) {

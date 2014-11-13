@@ -12,13 +12,18 @@
 
 package org.nrg.xft.schema;
 import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipException;
 
 import org.apache.log4j.Logger;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.db.DBConfig;
@@ -40,6 +45,9 @@ import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
 public class XFTManager {
     static org.apache.log4j.Logger logger = Logger.getLogger(XFTManager.class);
@@ -271,6 +279,8 @@ public class XFTManager {
             XFT.SetUserRegistration(user_registration);
         }
 
+        String lastDB=null;
+
         if (root.hasChildNodes())
         {
             for (int i=0;i<root.getChildNodes().getLength();i++)
@@ -349,7 +359,8 @@ public class XFTManager {
                                 }
                                 if (NodeUtils.HasAttribute(child2,"DB"))
                                 {
-                                    model.setDb(NodeUtils.GetAttributeValue(child2,"DB",""));
+                                	lastDB=NodeUtils.GetAttributeValue(child2,"DB","");
+                                    model.setDb(lastDB);
                                 }
                                 if (NodeUtils.HasAttribute(child2,"package"))
                                 {
@@ -369,6 +380,67 @@ public class XFTManager {
                 }
             }
         }
+        
+        try {
+			//retrieve schema from jars
+			List<XFTDataModel> models=discoverSchema(source);
+			for(XFTDataModel model:models){
+				model.setDb(lastDB);
+				DATA_MODELS.put(model.getFileName(), model);
+			}
+		} catch (XFTInitException e) {
+			e.printStackTrace();
+			logger.error("",e);
+		}
+    }
+
+    private List<XFTDataModel> discoverSchema(String source) throws XFTInitException, ElementNotFoundException {
+		List<XFTDataModel> models=Lists.newArrayList();
+		  	
+		List<DataModelDefinition> defs=discoverDataModelDefs();
+		for(DataModelDefinition annotation: defs){
+            InputStream in=this.getClass().getClassLoader().getResourceAsStream(annotation.getSchemaPath());
+            
+            if(in!=null){
+                XFTDataModel model=new XFTDataModel();
+				model.setFileLocation(annotation.getSchemaPath());
+				model.setFileName((annotation.getSchemaPath().contains("/"))?annotation.getSchemaPath().substring(annotation.getSchemaPath().lastIndexOf("/")):annotation.getSchemaPath());
+				model.setSchema(new XFTSchema(XMLUtils.GetDOM(in),annotation.getSchemaPath(),model));
+				models.add(model);
+            }
+        }
+		
+		return models;
+	}
+    
+    public static List<DataModelDefinition> discoverDataModelDefs(){
+    	List<DataModelDefinition> defs=Lists.newArrayList();
+    	//look for defined schema extensions
+        List<Class<?>> classes;
+        try {
+            classes = Reflection.getClassesForPackage("org.nrg.xft.schema.extensions");
+        } catch (Exception exception) {
+            throw new RuntimeException(exception);
+        }
+        
+        for (Class<?> clazz : classes) {
+            if (DataModelDefinition.class.isAssignableFrom(clazz)) {//must be a data model definition
+            	try {
+					DataModelDefinition annotation = (DataModelDefinition)clazz.newInstance();
+					String schemaPath=annotation.getSchemaPath();
+					InputStream in=clazz.getClassLoader().getResourceAsStream(schemaPath);
+					
+					if(in!=null){
+					    defs.add(annotation);
+					}
+				} catch (InstantiationException e) {
+					logger.error("",e);
+				} catch (IllegalAccessException e) {
+					logger.error("",e);
+				}
+            }
+        }
+        return defs;
     }
 
     @Override

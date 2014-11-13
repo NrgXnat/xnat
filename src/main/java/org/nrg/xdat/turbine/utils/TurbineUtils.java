@@ -17,6 +17,7 @@ import java.io.FileNotFoundException;
 import java.io.FilenameFilter;
 import java.io.IOException;
 import java.io.StringReader;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -37,6 +38,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
@@ -46,6 +48,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatSecurity;
@@ -55,6 +58,7 @@ import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
+import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -1105,6 +1109,23 @@ public class TurbineUtils {
 	        	            }
 	    	        	}
 	    	        }
+	    		}
+	    		
+	    		//add paths for files on the classpath
+	    		List<URL> uris=CustomClasspathResourceLoader.findVMsByClasspathDirectory("screens"+"/"+subFolder);
+	    		for(URL url: uris){
+	    			String fileName=FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
+	    			String path=CustomClasspathResourceLoader.safeJoin("/", subFolder,fileName);
+            		if(!exists.contains(path)){
+	            		try {
+							SecureScreen.addProps(fileName,CustomClasspathResourceLoader.getInputStream("screens/"+path), screens, _defaultScreens,path);
+							exists.add(path);
+						} catch (FileNotFoundException e) {
+							//this shouldn't happen
+						} catch (ResourceNotFoundException e) {
+							logger.error("",e);
+						}
+            		}
 	    		}
 	    		
 	    		Collections.sort(screens, new Comparator<Properties>() {

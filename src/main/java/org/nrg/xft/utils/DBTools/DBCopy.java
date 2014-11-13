@@ -418,7 +418,7 @@ logger.info("Copying " + table + " ...");
 			return;
 		}
 		try {
-			XFT.init("C:\\xdat\\projects\\cnda",false);
+			XFT.init("C:\\xdat\\projects\\cnda");
 		} catch (ElementNotFoundException e) {
 			e.printStackTrace();
 		}

@@ -93,13 +93,17 @@ public class XDATLoginUser extends VelocityAction{
 			// Authenticate the user and get the object;.
 			UserI user = Authenticator.Authenticate(new Authenticator.Credentials(username,password));
 
-			XFTItem item = XFTItem.NewItem("xdat:user_login",user);
-			java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-			item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
-			item.setProperty("xdat:user_login.login_date",today);
-			item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
-	        item.setProperty("xdat:user_login.session_id", data.getSession().getId());  
-			SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
+			try {
+				XFTItem item = XFTItem.NewItem("xdat:user_login",user);
+				java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
+				item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
+				item.setProperty("xdat:user_login.login_date",today);
+				item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
+				item.setProperty("xdat:user_login.session_id", data.getSession().getId());  
+				SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
+			} catch (Exception e1) {
+				logger.error("",e1);
+			}
 
 			
 			

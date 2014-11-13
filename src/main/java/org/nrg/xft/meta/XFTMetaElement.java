@@ -34,7 +34,7 @@ public class XFTMetaElement {
 	 * @param e
 	 * @param allowDBAccess
 	 */
-	public XFTMetaElement(XFTElement e, boolean allowDBAccess)
+	public XFTMetaElement(XFTElement e)
 	{
 		element = e;
 		GenericWrapperElement gwe = (GenericWrapperElement)GenericWrapperFactory.GetInstance().wrapElement(e);

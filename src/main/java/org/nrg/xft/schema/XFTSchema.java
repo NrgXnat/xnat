@@ -120,21 +120,6 @@ public class XFTSchema {
 			throw e1;
 		}
 		
-		Iterator importNodes = NodeUtils.GetLevelNNodes(rootElement,getXMLNS() + ":import",1).iterator();
-		while (importNodes.hasNext())
-		{
-			Node n = (Node)importNodes.next();
-			String namespace = NodeUtils.GetAttributeValue(n,"namespace","");
-			String schemaLocal = NodeUtils.GetAttributeValue(n,"schemaLocation","");
-			File f = new File(dir + schemaLocal);
-			if (!f.exists())
-			{
-			    f = new File(schemaLocal);
-			}
-			Document temp = XMLUtils.GetDOM(f);
-			String nameAbbr = (String)uRIToAbbr.get(namespace);
-//			imports.put(nameAbbr,temp.getDocumentElement());
-		}
 
 		NodeList elements = rootElement.getChildNodes();
 		
@@ -167,10 +152,7 @@ public class XFTSchema {
 				tempDir = schemaLocal;
 			}
 			File f = new File(tempDir);
-			if (! f.exists())
-			{
-				f.listFiles();
-			}else
+			if (f.exists())
 			{
 				String fileName = StringUtils.GetFileName(tempDir);
 				if (XFTManager.GetDataModels().get(fileName) == null)

@@ -59,7 +59,7 @@ import org.nrg.xft.utils.StringUtils;
 @SuppressWarnings({ "unchecked", "rawtypes" })
 public class DBAction {
 	private static final Logger logger = Logger.getLogger(DBAction.class);
-	private static boolean ADJUSTED_SEQUENCES = false;
+	public static boolean ADJUSTED_SEQUENCES = false;
 	private static Hashtable sequences = new Hashtable();
 
     private static final String QUERY_FIND_SEQLESS_TABLES = "SELECT table_name FROM information_schema.columns WHERE table_name LIKE 'xhbm_%' AND column_name = 'id' AND (column_default NOT LIKE 'nextval%' OR column_default IS NULL)";
@@ -3657,88 +3657,91 @@ public class DBAction {
                 XFTTable tables = XFTTable.Execute(QUERY_FIND_SEQLESS_TABLES, PoolDBUtils.getDefaultDBName(), null);
                 if (tables.size() > 0) {
                     for (Object table : tables.convertColumnToArrayList("table_name")) {
-                        logger.error("Preparing to convert table " + table + " to use sequence for default value.");
-                        ArrayList<String> queries = new ArrayList<String>();
-                        queries.add(String.format(QUERY_CREATE_SEQUENCE, table));
-                        queries.add(String.format(QUERY_SET_ID_DEFAULT, table, table));
-                        queries.add(String.format(QUERY_SET_ID_NOT_NULL, table));
-                        queries.add(String.format(QUERY_SET_SEQUENCE_OWNER, table, table));
-                        logger.error("Queries prepared for conversion:");
-                        for (String query : queries) {
-                            logger.error(" *** " + query);
-                        }
-                        PoolDBUtils.ExecuteBatch(queries, PoolDBUtils.getDefaultDBName(), null);
-                        Long start = (Long) PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_GET_SEQUENCE_START, table), "value", PoolDBUtils.getDefaultDBName(), null);
-                        if (start == null) {
-                            start = 1L;
-                        }
-                        logger.error("Ran the query " + String.format(QUERY_GET_SEQUENCE_START, table) + " and got the value " + start);
-                        logger.error("Now preparing to run the query: " + String.format(QUERY_SET_SEQUENCE_VALUE, table, start));
-                        PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_SET_SEQUENCE_VALUE, table, start), "value", PoolDBUtils.getDefaultDBName(), null);
+                         try{
+	                        logger.error("Preparing to convert table " + table + " to use sequence for default value.");
+	                        ArrayList<String> queries = new ArrayList<String>();
+	                        queries.add(String.format(QUERY_CREATE_SEQUENCE, table));
+	                        queries.add(String.format(QUERY_SET_ID_DEFAULT, table, table));
+	                        queries.add(String.format(QUERY_SET_ID_NOT_NULL, table));
+	                        queries.add(String.format(QUERY_SET_SEQUENCE_OWNER, table, table));
+	                        logger.error("Queries prepared for conversion:");
+	                        for (String query : queries) {
+	                            logger.error(" *** " + query);
+	                        }
+	                        PoolDBUtils.ExecuteBatch(queries, PoolDBUtils.getDefaultDBName(), null);
+	                        Long start = (Long) PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_GET_SEQUENCE_START, table), "value", PoolDBUtils.getDefaultDBName(), null);
+	                        if (start == null) {
+	                            start = 1L;
+	                        }
+	                        logger.error("Ran the query " + String.format(QUERY_GET_SEQUENCE_START, table) + " and got the value " + start);
+	                        logger.error("Now preparing to run the query: " + String.format(QUERY_SET_SEQUENCE_VALUE, table, start));
+	                        PoolDBUtils.ReturnStatisticQuery(String.format(QUERY_SET_SEQUENCE_VALUE, table, start), "value", PoolDBUtils.getDefaultDBName(), null);
+                    	}catch(Exception e){
+                    		logger.error("",e);
+                    	}
                     }
                 }
 
                 ArrayList dbs= new ArrayList();
                 for (final Object o1 : XFTManager.GetInstance().getAllElements()) {
-                    GenericWrapperElement input = (GenericWrapperElement) o1;
-                    if (input.isAutoIncrement() && !input.getSQLName().equalsIgnoreCase("xdat_history") && !input.getSQLName().equalsIgnoreCase("xdat_meta_data")) {
-                        String dbName = input.getDbName();
-                        if (!dbs.contains(dbName)) {
-                            dbs.add(dbName);
-                        }
-                        GenericWrapperField pk = input.getAllPrimaryKeys().get(0);
-                        String sequenceName = input.getSequenceName();
-                        Object o = PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + pk.getSQLName() + ") AS MAX_COUNT from " + input.getSQLName(), "MAX_COUNT", input.getDbName(), null);
-                        Object current = PoolDBUtils.ReturnStatisticQuery("SELECT last_value AS LAST_COUNT from " + sequenceName, "LAST_COUNT", input.getDbName(), null);
-                        if (o == null) {
-                            o = 1;
-                        }
+                        try{
+	                    GenericWrapperElement input = (GenericWrapperElement) o1;
+	                    if (input.isAutoIncrement() && !input.getSQLName().equalsIgnoreCase("xdat_history") && !input.getSQLName().equalsIgnoreCase("xdat_meta_data")) {
+	                        String dbName = input.getDbName();
+	                        if (!dbs.contains(dbName)) {
+	                            dbs.add(dbName);
+	                        }
+	                        GenericWrapperField pk = input.getAllPrimaryKeys().get(0);
+	                        String sequenceName = input.getSequenceName();
+	                        adjustSequence(sequenceName, pk.getSQLName(), input.getSQLName(), input.getDbName());
+	                    }
+                	}catch(Exception e){
+                		logger.error("",e);
+                	}
 
-                        if (current == null) {
-                            System.out.println("Adjusting missing sequence (" + input.getFullXMLName() + ");");
-                            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + o + ")", input.getDbName(), null);
-                        } else {
-                            int i1 = o instanceof Integer ? (Integer) o : (o instanceof Long ? ((Long) o).intValue() : Integer.parseInt(o.toString()));
-                            Long i2 = (Long) current;
-                            if (i1 > i2.intValue()) {
-                                System.out.println("Adjusting invalid sequence (" + input.getFullXMLName() + ");");
-                                PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('" + sequenceName + "'," + o + ")", input.getDbName(), null);
-                            }
-                        }
-                    }
                 }
 
 				for (Object object : XFTReferenceManager.GetInstance().getUniqueMappings())
 				{
-                    XFTManyToManyReference map = (XFTManyToManyReference) object;
-					String sequenceName = DBAction.getSequenceName(map.getMappingTable(),map.getMappingTable() + "_id",map.getElement1().getDbName());
-					Object o = PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + map.getMappingTable() + "_id) AS MAX_COUNT from "+map.getMappingTable(),"MAX_COUNT",map.getElement1().getDbName(),null);
-					//PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+ sequenceName +"',"+o+")",map.getElement1().getDbName(),null);
-                    Object current = PoolDBUtils.ReturnStatisticQuery("SELECT last_value AS LAST_COUNT from "+sequenceName,"LAST_COUNT",map.getElement1().getDbName(),null);
-                    if (o == null)
-                    {
-                        o = 1;
-                    }
-
-                    if (current == null)
-                    {
-                        System.out.println("Adjusting missing mapping sequence (" + map.getMappingTable() +");");
-                        PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+  map.getMappingTable() +"',"+o+")",map.getElement1().getDbName(),null);
-                    }else{
-                        Integer i1 = (Integer)o;
-                        Long i2 = (Long)current;
-                        if (i1.intValue()>i2.intValue()){
-                            System.out.println("Adjusting invalid mapping sequence (" + map.getMappingTable() +");");
-                            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+  map.getMappingTable() +"',"+o+")",map.getElement1().getDbName(),null);
-                        }
-                    }
+					try{
+					    XFTManyToManyReference map = (XFTManyToManyReference) object;
+						String sequenceName = DBAction.getSequenceName(map.getMappingTable(),map.getMappingTable() + "_id",map.getElement1().getDbName());
+						adjustSequence(sequenceName, map.getMappingTable() + "_id", map.getMappingTable(), map.getElement1().getDbName());
+								
+					}catch(Exception e){
+						logger.error("",e);
+					}
 				}
-            } catch (Exception e) {
-				e.printStackTrace();
+			} catch (Exception e) {
+				logger.error("",e);
 			}
 	        ADJUSTED_SEQUENCES = true;
-            if(XFT.VERBOSE)System.out.println("Finished db sequence check " + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
+		if(XFT.VERBOSE)System.out.println("Finished db sequence check " + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
 	    }
+	}
+
+	//be very careful about modifying the contents of this method.  Its easy to introduce bugs and not realize it here.
+	//It reviews the number of rows in the table and makes sure the sequence is set higher then that.
+	//the logic ends up changing the sequence to aggressively when the row count is 1.  I tried to fix it, but it introduced lots of bugs.
+	//so, this small issue is tolerable.  If you mess with it, test installing a new server, and creating some stuff.
+	private static void adjustSequence(String sequenceName, String column, String table,String dbName) throws SQLException, Exception{
+		Object numRows = (Number)PoolDBUtils.ReturnStatisticQuery("SELECT MAX(" + column + ") AS MAX_COUNT from "+table,"MAX_COUNT",dbName,null);
+		Object nextValue = PoolDBUtils.ReturnStatisticQuery("SELECT CASE WHEN (start_value >= last_value) THEN start_value ELSE (last_value + 1) END AS LAST_COUNT from "+sequenceName,"LAST_COUNT",dbName,null);
+        if (numRows == null) {
+            numRows = new Integer(0);
+        }
+        
+        if (nextValue == null) {
+        	logger.info("Adjusting missing sequence (" + table +");");
+            PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+  sequenceName +"',"+(((Number)numRows).intValue()+1)+")",dbName,null);
+        }else{
+            Number i1 = (Number)numRows;
+            Number i2 = (Number)nextValue;
+            if (i1.intValue()>=i2.intValue()){
+            	logger.info(String.format("Adjusting invalid sequence (%s) from %s to %s (%s max_row)", table,i2, (i1.intValue()+1),i1));
+                PoolDBUtils.ExecuteNonSelectQuery("SELECT setval('"+  sequenceName +"',"+(i1.intValue()+1)+")",dbName,null);
+            }
+        }
 	}
 
 	public static Long CountInstancesOfFieldValues(String tableName,String db,CriteriaCollection al) throws Exception

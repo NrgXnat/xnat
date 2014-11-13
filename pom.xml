@@ -69,7 +69,7 @@
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <commons-io.version>2.4</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.3.1</commons-lang3.version>
+        <commons-lang3.version>3.3.2</commons-lang3.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <commons-net.version>3.3</commons-net.version>
         <dcm4che.version>2.0.25</dcm4che.version>
@@ -78,17 +78,19 @@
         <ehcache.version>2.6.6</ehcache.version>
         <fastmd5.version>2.7.1</fastmd5.version>
         <fop.version>0.20.5-rc3-alpha</fop.version>
-        <guava.version>17.0</guava.version>
+        <groovy.version>2.3.7</groovy.version>
+        <guava.version>18.0</guava.version>
         <h2.version>1.3.175</h2.version>
-        <hibernate.version>4.3.1.Final</hibernate.version>
+        <hibernate.version>4.3.7.Final</hibernate.version>
         <hibernate-commons.version>4.0.4.Final</hibernate-commons.version>
         <hibernate-jpa-2.0.version>1.0.1.Final</hibernate-jpa-2.0.version>
         <hibernate-jpa-2.1.version>1.0.0.Final</hibernate-jpa-2.1.version>
-        <hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
-        <httpcomponents-client.version>4.3.3</httpcomponents-client.version>
-        <imagej.version>1.44.update</imagej.version>
+        <hibernate-validator.version>4.3.2.Final</hibernate-validator.version>
+        <httpcomponents-client.version>4.3.6</httpcomponents-client.version>
+        <imagej.version>1.49h</imagej.version>
         <itext.version>1.1.4</itext.version>
         <jackson.version>1.8.11</jackson.version>
+        <fasterxml-jackson.version>2.1.0</fasterxml-jackson.version>
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
         <javassist.version>3.16.1-GA</javassist.version>
@@ -100,22 +102,22 @@
         <jena-tdb.version>1.0.1</jena-tdb.version>
         <json.version>20140107</json.version>
         <jstl.version>1.2</jstl.version>
-        <junit.version>4.8.2</junit.version>
+        <junit.version>4.11</junit.version>
         <jzlib.version>1.1.3</jzlib.version>
         <log4j.version>1.2.17</log4j.version>
         <mockito.version>1.8.5</mockito.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
         <pipeline.version>1.6.3</pipeline.version>
-        <postgresql.version>9.3-1100-jdbc41</postgresql.version>
+        <postgresql.version>9.3-1102-jdbc41</postgresql.version>
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.9-RC1</reflections.version>
         <restlet.version>1.1.10</restlet.version>
         <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
         <slf4j.version>1.7.7</slf4j.version>
-        <spring-framework.version>4.0.4.RELEASE</spring-framework.version>
-        <spring-security.version>3.2.3.RELEASE</spring-security.version>
+        <spring-framework.version>4.1.2.RELEASE</spring-framework.version>
+        <spring-security.version>3.2.5.RELEASE</spring-security.version>
         <spring-ldap.version>2.0.2.RELEASE</spring-ldap.version>
         <stratum.version>1.0</stratum.version>
         <torque.version>3.1.1</torque.version>
@@ -233,7 +235,17 @@
                 <version>${nrg.ecat4xnat.version}</version>
             </dependency>
 
-            <!-- XDAT dependency definitions -->
+            <!-- XNAT/XDAT dependency definitions -->
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>builder</artifactId>
+                <version>${xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg.xnat</groupId>
+                <artifactId>xnat-builder</artifactId>
+                <version>${xnat.version}</version>
+            </dependency>
             <dependency>
                 <groupId>org.nrg.xdat</groupId>
                 <artifactId>core</artifactId>
@@ -283,7 +295,6 @@
                 <artifactId>xnat_tools</artifactId>
                 <version>${pipeline.version}</version>
             </dependency>
-
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>pipelineXNAT</artifactId>
@@ -464,11 +475,6 @@
                 <version>${ehcache.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.apache.activemq</groupId>
-                <artifactId>activemq-core</artifactId>
-                <version>5.7.0</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.jena</groupId>
                 <artifactId>jena-core</artifactId>
                 <version>${jena.version}</version>
@@ -620,9 +626,24 @@
                 <version>${dcm4che.version}</version>
             </dependency>
             <dependency>
+                <groupId>dcm4che.tool</groupId>
+                <artifactId>dcm4che-tool-dcmecho</artifactId>
+                <version>${dcm4che.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>dcm4che.tool</groupId>
+                <artifactId>dcm4che-tool-dcmqr</artifactId>
+                <version>${dcm4che.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.apache.geronimo.specs</groupId>
                 <artifactId>geronimo-jms_1.1_spec</artifactId>
                 <version>1.1.1</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.activemq</groupId>
+                <artifactId>activemq-core</artifactId>
+                <version>5.7.0</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xbean</groupId>
@@ -743,6 +764,11 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-databind</artifactId>
+                <version>${fasterxml-jackson.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.xml</groupId>
                 <artifactId>jaxrpc-api</artifactId>
                 <version>1.1</version>
@@ -764,8 +790,7 @@
             </dependency>
             <dependency>
                 <groupId>org.slf4j</groupId>
-                <artifactId>slf4j-simple
-                </artifactId>
+                <artifactId>slf4j-simple</artifactId>
                 <version>${slf4j.version}</version>
             </dependency>
             <dependency>
@@ -918,8 +943,8 @@
                 <version>${json.version}</version>
             </dependency>
             <dependency>
-                <groupId>imagej</groupId>
-                <artifactId>imagej</artifactId>
+                <groupId>net.imagej</groupId>
+                <artifactId>ij</artifactId>
                 <version>${imagej.version}</version>
             </dependency>
             <dependency>
@@ -938,6 +963,21 @@
                 <version>${org.apache.regexp.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.jetbrains</groupId>
+                <artifactId>annotations</artifactId>
+                <version>1.0</version>
+                <scope>provided</scope>
+            </dependency>
+
+            <!-- Scripting engine dependencies -->
+            <dependency>
+                <groupId>org.codehaus.groovy</groupId>
+                <artifactId>groovy-all</artifactId>
+                <version>${groovy.version}</version>
+            </dependency>
+
+            <!-- Test dependencies -->
+            <dependency>
                 <groupId>com.h2database</groupId>
                 <artifactId>h2</artifactId>
                 <version>${h2.version}</version>
@@ -947,8 +987,6 @@
                 <artifactId>postgresql</artifactId>
                 <version>${postgresql.version}</version>
             </dependency>
-
-            <!-- Test dependencies -->
             <dependency>
                 <groupId>junit</groupId>
                 <artifactId>junit</artifactId>
@@ -967,7 +1005,12 @@
                 <version>${spring-framework.version}</version>
                 <scope>test</scope>
             </dependency>
-
+            <dependency>
+                <groupId>org.kubek2k</groupId>
+                <artifactId>springockito</artifactId>
+                <version>1.0.5</version>
+                <scope>test</scope>
+            </dependency>
         </dependencies>
     </dependencyManagement>
 

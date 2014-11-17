@@ -15,13 +15,13 @@
 	<parent>
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
-		<version>1.6.4-SNAPSHOT</version>
+		<version>1.6.4</version>
 		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 	
 	<artifactId>transaction</artifactId>
 	
-	<name>Transaction</name>
+	<name>NRG Transaction Library</name>
 	<url>http://nrg.wustl.edu</url>
 	<description>Provide chainable transactions that can be run and rolled back.</description>
 	

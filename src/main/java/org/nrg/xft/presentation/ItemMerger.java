@@ -8,14 +8,6 @@ import java.util.Map;
 
 import org.nrg.xft.utils.DateUtils;
 
-/**
- * @author Radiologics
- *
- * Used to merge multiple copies of an item together. 
- * 
- * If you have two copies of the same MR, with the same scans, the output will be one MR with one copy of each scans.  
- * Historical copies of each object, will be placed in the getHistory() list for the most recent copy of the object.
- */
 public class ItemMerger {
 	
 	public FlattenedItemI call(List<FlattenedItemI> items) throws Exception {				

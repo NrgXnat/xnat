@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 28, 2005
+ * org.nrg.xft.db.ViewManager
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.db;
 import java.io.File;
 import java.util.ArrayList;
@@ -1045,21 +1048,16 @@ public class ViewManager {
 		return s;		
 	}
 	
-	public static void OutputFieldNames(final String target)
+	public static void OutputFieldNames()
 	{
 		try {
-            // MIGRATE: This tries to resolve from the file being used by the calling function.
-            File file = new File(target);
-            File destination;
-            if (file.isDirectory()) {
-                destination = new File(file.toURI().resolve("fields"));
-            } else {
-                destination = new File(file.getParentFile().toURI().resolve("fields"));
-            }
-            if (!destination.mkdir()) {
-                throw new RuntimeException("Failed to create destination folder: " + destination.getAbsolutePath());
-            }
-
+			String local = XFTTool.GetSettingsLocation() + "fields" + File.separator;
+			File f = new File(local);
+			if (! f.exists())
+			{
+				f.mkdir();
+			}
+			
 			StringBuffer hierarchy = new StringBuffer("Possible Parent Data-Types:");
 			
 			Iterator al = XFTMetaManager.GetElementNames().iterator();
@@ -1125,21 +1123,21 @@ public class ViewManager {
 					
 					
 					//OUTPUT TO FILE
-					File temp = new File(destination, e.getSQLName() + ".txt");
+					File temp = new File(local + e.getSQLName() + ".txt");
 					if (temp.exists())
 					{
 						temp.delete();
 					}
-					FileUtils.OutputToFile(sb.toString(), temp.getAbsolutePath());
+					FileUtils.OutputToFile(sb.toString(),local + e.getSQLName() + ".txt");
 				}
 			}
 			
-			File temp = new File(destination, "hierarchy.txt");
+			File temp = new File(local + "hierarchy.txt");
 			if (temp.exists())
 			{
 				temp.delete();
 			}
-			FileUtils.OutputToFile(hierarchy.toString(), temp.getAbsolutePath());
+			FileUtils.OutputToFile(hierarchy.toString(),local + "hierarchy.txt");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

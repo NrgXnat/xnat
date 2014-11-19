@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 4, 2005
+ * org.nrg.xdat.turbine.modules.screens.EditScreenA
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
@@ -73,11 +76,11 @@ public abstract class EditScreenA extends SecureScreen {
                 if (item !=null){
                     data.getSession().removeAttribute(getStringIdentifierForPassedItem(data));
                 }else{
-                    item = TurbineUtils.GetEditItem(data);
+                    item =(ItemI) TurbineUtils.GetEditItem(data);
                 }
                 
             }else{
-                item = TurbineUtils.GetEditItem(data);
+                item = (ItemI)TurbineUtils.GetEditItem(data);
             }
             
             if (item !=null)

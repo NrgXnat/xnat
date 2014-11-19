@@ -1,26 +1,21 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 17, 2004
+ * org.nrg.xft.schema.TorqueElement
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 
 import org.nrg.xft.utils.NodeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-/**
- * This class is used to defined the customized properties needed for Torque schema generation.
- * 
- * <BR><BR>Properties for this element are defined within a physical schema file as a sub element of 
- * the &#60;xft:element&#62; called &#60;xft:torqueElement&#62;.  The properties match one-to-one to the attributes of that element.
- * If torque is not being used, then this class will not be used.
- * 
- * @author Tim
- */
 public class TorqueElement extends XFTWebAppElement {
 	private String javaNamingMethod = "";
 	private String baseClass = "";

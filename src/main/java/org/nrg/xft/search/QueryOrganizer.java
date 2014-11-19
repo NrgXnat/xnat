@@ -1,14 +1,22 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Jun 24, 2005
+ * org.nrg.xft.search.QueryOrganizer
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.search;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -18,7 +26,7 @@ import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayFieldElement;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -83,6 +91,12 @@ public class QueryOrganizer implements QueryOrganizerI{
         setPKField();
     }
 
+    private List<String> keys=new ArrayList<String>();
+    
+    public List<String> getKeys(){
+    	return keys;
+    }
+    
     private void setPKField()
     {
         Iterator keys = rootElement.getGenericXFTElement().getAllPrimaryKeys().iterator();
@@ -90,7 +104,9 @@ public class QueryOrganizer implements QueryOrganizerI{
         {
             GenericWrapperField sf = (GenericWrapperField)keys.next();
             try {
-                addField(sf.getXMLPathString(rootElement.getFullXMLName()));
+            	String key=sf.getXMLPathString(rootElement.getFullXMLName());
+                addField(key);
+            	this.keys.add(key);
             } catch (ElementNotFoundException e) {
                 logger.error("",e);
             }
@@ -439,7 +455,7 @@ public class QueryOrganizer implements QueryOrganizerI{
        // SQLClause securityClause = null;
 		if (user != null)
 		{
-		    SQLClause coll = user.getCriteriaForBackendRead(rootElement);
+		    SQLClause coll = Permissions.getCriteriaForXFTRead(user,rootElement);
 			if (coll != null)
 			{
 			    if (coll.numClauses() > 0)
@@ -639,7 +655,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                       coll =where;
                     }
                 }else{
-                    coll = ((XDATUser)user).getCriteriaForDisplayRead(e);
+                    coll = Permissions.getCriteriaForXDATRead(user,new SchemaElement(e));
                 }
 
 

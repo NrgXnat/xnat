@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jul 15, 2004
+ * org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/30/13 5:36 PM
  */
+
+
 package org.nrg.xft.schema.Wrappers.GenericWrapper;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -41,16 +45,6 @@ import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.schema.design.XFTNode;
 import org.nrg.xft.utils.StringUtils;
-/**
- * This class is the primary access point for XFTFields.  It wraps an XFTField
- * and provides methods which access and format the information in that field.
- * 
- * The object maintains post-loaded collections of the direct children (level-1)
- * of this field and all children of this field.  Also, it maintains post-loaded
- * references to any associated XFTReferenceI.
- * 
- * @author Tim
- */
 @SuppressWarnings({"unchecked","rawtypes"})
 public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperField.class);

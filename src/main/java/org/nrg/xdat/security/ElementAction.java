@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 21, 2005
+ * org.nrg.xdat.security.ElementAction
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.security;
 
 import org.apache.commons.lang.StringUtils;
@@ -121,6 +124,15 @@ public class ElementAction extends ItemWrapper {
         }
         return popupHeight;
     }
+
+    public String getSecureFeature() throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+	{
+		try {
+			return (String)getProperty("secureFeature");
+		} catch (FieldEmptyException e) {
+			return "";
+		}
+	}
 
     public String getSecureAccess() throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{

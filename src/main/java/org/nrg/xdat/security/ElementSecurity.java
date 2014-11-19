@@ -1,25 +1,49 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 18, 2005
+ * org.nrg.xdat.security.ElementSecurity
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/13/14 11:48 AM
  */
+
+
 package org.nrg.xdat.security;
 
-import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.Scanner;
+
 import org.apache.log4j.Logger;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
-import org.nrg.xdat.om.*;
+import org.nrg.xdat.om.XdatElementAccess;
+import org.nrg.xdat.om.XdatElementSecurityListingAction;
+import org.nrg.xdat.om.XdatFieldMapping;
+import org.nrg.xdat.om.XdatFieldMappingSet;
+import org.nrg.xdat.om.XdatPrimarySecurityField;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser.UserNotFoundException;
+import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
-import org.nrg.xft.*;
+import org.nrg.xft.ItemI;
+import org.nrg.xft.ItemWrapper;
+import org.nrg.xft.XFT;
+import org.nrg.xft.XFTItem;
+import org.nrg.xft.XFTTable;
 import org.nrg.xft.cache.CacheManager;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
@@ -29,17 +53,21 @@ import org.nrg.xft.event.Event;
 import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.exception.*;
+import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.exception.InvalidItemException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.references.XFTReferenceI;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.references.XFTRelationSpecification;
 import org.nrg.xft.references.XFTSuperiorReference;
 import org.nrg.xft.schema.DataModelDefinition;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.XFTElement;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
@@ -47,10 +75,7 @@ import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.*;
+import com.google.common.collect.Lists;
 
 /**
  * @author Tim
@@ -155,15 +180,18 @@ public class ElementSecurity extends ItemWrapper{
 	 */
 	public static void refresh()
 	{
-	    elements = null;
-	    elementDistinctIds = new Hashtable();
-//	    XdatStoredSearch.RefreshPreLoadedSearches();
-//	    UserCache.Clear();
-//        UserGroupManager.Refresh();
-//        guestPermissions= new Hashtable();
-//        guestLoaded=false;
-	    
-		CacheManager.GetInstance().clearAll();
+
+		synchronized(lock){
+		    elements = null;
+		    elementDistinctIds = new Hashtable();
+	//	    XdatStoredSearch.RefreshPreLoadedSearches();
+	//	    UserCache.Clear();
+	//        UserGroupManager.Refresh();
+	//        guestPermissions= new Hashtable();
+	//        guestLoaded=false;
+		    
+			CacheManager.GetInstance().clearAll();
+		}
 	}
 	
 	/**
@@ -922,6 +950,26 @@ public class ElementSecurity extends ItemWrapper{
 		laJSON=null;
 	}
 	
+	public List<PermissionItem> getPermissionItemsForTag(String tag) throws XFTInitException, ElementNotFoundException, FieldNotFoundException{
+		List<PermissionItem> tempItems = Lists.newArrayList();
+        
+        for (String fieldName:getPrimarySecurityFields())
+        {
+            if (! fieldName.startsWith(this.getElementName()))
+            {
+                fieldName = this.getElementName() + XFT.PATH_SEPERATOR + fieldName;
+            }
+            
+            PermissionItem pi = new PermissionItem();
+            pi.setFullFieldName(fieldName);
+            pi.setDisplayName(tag);
+            pi.setValue(tag);
+            tempItems.add(pi);
+        }
+        
+        Collections.sort(tempItems,PermissionItem.GetComparator());
+        return tempItems;
+	}
     
     private ArrayList permissionItems = null;
 	/**
@@ -1362,7 +1410,7 @@ public class ElementSecurity extends ItemWrapper{
 	 * @return A sorted List of Strings
 	 * @throws Exception
 	 */
-	public static List<String> GetElementNames() throws Exception
+	public static ArrayList GetElementNames() throws Exception
 	{
 		ArrayList<String> al = new ArrayList<String>();
 		Collection<ElementSecurity> ess= GetElementSecurities().values();
@@ -1378,7 +1426,7 @@ public class ElementSecurity extends ItemWrapper{
 	 * @return A sorted List of Strings
 	 * @throws Exception
 	 */
-	public static List<String> GetNonXDATElementNames() throws Exception
+	public static ArrayList GetNonXDATElementNames() throws Exception
 	{
 		ArrayList<String> al = new ArrayList<String>();
 		Collection<ElementSecurity> ess= GetElementSecurities().values();
@@ -1441,31 +1489,7 @@ public class ElementSecurity extends ItemWrapper{
 	        return s;
 	    }
 	}
-    
         
-    public static XDATUser GetGuestUser()
-    {
-        XDATUser _guest=null;
-        try {
-            _guest = new XDATUser("guest");
-        } catch (UserNotFoundException e) {
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (DBPoolException e) {
-            logger.error("",e);
-        } catch (SQLException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
-            logger.error("",e);
-        } catch (Exception e) {
-            logger.error("",e);
-        }
-        
-        return _guest;
-    }
-    
     List<String> fields=null;
     
     public boolean hasField(String field){
@@ -1531,13 +1555,13 @@ public class ElementSecurity extends ItemWrapper{
 		}
         
         try {
-			EventManager.Trigger(XdatUsergroup.SCHEMA_ELEMENT_NAME,Event.UPDATE);
+			EventManager.Trigger(Groups.getGroupDatatype(),Event.UPDATE);
 		} catch (Exception e1) {
             logger.error("",e1);
 		}
 		
 		try {
-			PoolDBUtils.ClearCache(this.getDBName(), userName, XdatUsergroup.SCHEMA_ELEMENT_NAME);
+			PoolDBUtils.ClearCache(this.getDBName(), userName, Groups.getGroupDatatype());
 		} catch (Exception e) {
             logger.error("",e);
 		}

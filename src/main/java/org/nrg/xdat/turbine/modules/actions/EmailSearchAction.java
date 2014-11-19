@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Jan 12, 2006
+ * org.nrg.xdat.turbine.modules.actions.EmailSearchAction
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.util.ArrayList;
@@ -15,8 +22,8 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatStoredSearch;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -52,7 +59,7 @@ public class EmailSearchAction extends SearchAction {
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
                 DisplaySearch ds = TurbineUtils.getSearch(data);
                 XdatStoredSearch xss = ds.getStoredSearch();
                 
@@ -109,7 +116,7 @@ public class EmailSearchAction extends SearchAction {
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
 
                 DisplaySearch ds = TurbineUtils.getSearch(data);
                 

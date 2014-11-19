@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Sep 18, 2007
+ * org.nrg.xdat.turbine.modules.actions.EmailCustomSearchAction
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.net.URLEncoder;
@@ -10,9 +17,9 @@ import java.util.Calendar;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
 public class EmailCustomSearchAction extends SecureAction{
@@ -62,7 +69,7 @@ public class EmailCustomSearchAction extends SecureAction{
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
                 
                 StringBuffer sb = new StringBuffer();
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
@@ -92,7 +99,7 @@ public class EmailCustomSearchAction extends SecureAction{
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
 
                 StringBuffer sb = new StringBuffer();
                 sb.append("<html>");

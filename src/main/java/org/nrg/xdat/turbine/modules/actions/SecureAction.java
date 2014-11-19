@@ -1,19 +1,21 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 17, 2005
+ * org.nrg.xdat.turbine.modules.actions.SecureAction
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/11/14 4:11 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Iterator;
 import java.io.UnsupportedEncodingException;
-import java.util.UUID;
 import java.net.URLEncoder;
+import java.util.Enumeration;
+import java.util.UUID;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -22,7 +24,6 @@ import javax.servlet.http.HttpSession;
 import nl.bitwalker.useragentutils.Browser;
 import nl.bitwalker.useragentutils.BrowserType;
 
-import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.services.velocity.TurbineVelocity;
@@ -30,21 +31,19 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -163,7 +162,7 @@ public abstract class SecureAction extends VelocitySecureAction
     //checks for true/false. I know for a fact it doesn't in XnatSecureGuard.	
     public static boolean isCsrfTokenOk(HttpServletRequest request, String clientToken, boolean strict) throws Exception {
     	
-    	boolean csrfEmailEnabled = XDAT.getBoolSiteConfigurationProperty("enableCsrfEmail",true);
+    	boolean csrfEmailEnabled = XDAT.getBoolSiteConfigurationProperty("enableCsrfEmail", false);
     	
     	if(!XFT.GetEnableCsrfToken()){
     		return true;
@@ -219,7 +218,7 @@ public abstract class SecureAction extends VelocitySecureAction
             data.getParameters().setString("logout","true");
             boolean isAuthorized = false;
 
-            XDATUser user = TurbineUtils.getUser(data);
+            UserI user = TurbineUtils.getUser(data);
             if (user == null)
             {
                 String Destination = data.getTemplateInfo().getScreenTemplate();
@@ -241,34 +240,18 @@ public abstract class SecureAction extends VelocitySecureAction
             }
         }else{
             boolean isAuthorized = true;
-            XDATUser user = TurbineUtils.getUser(data);
+            UserI user = TurbineUtils.getUser(data);
             if (user ==null)
             {
                 if (!allowGuestAccess())isAuthorized=false;
 
                 HttpSession session = data.getSession();
                 session.removeAttribute("loggedin");
-                ItemSearch search = new ItemSearch();
-                SchemaElementI e = SchemaElement.GetElement(XDATUser.USER_ELEMENT);
-                search.setElement(e.getGenericXFTElement());
-				search.addCriteria(XDATUser.USER_ELEMENT +"/login", "guest");
-                ItemCollection items = search.exec(true);
-                if (items.size() > 0)
+                
+                UserI guest=Users.getGuest();
+                if (guest!=null)
                 {
-                    Iterator iter = items.iterator();
-                    while (iter.hasNext()){
-                        ItemI o = (ItemI)iter.next();
-                        XDATUser temp = new XDATUser(o);
-                        if (temp.getUsername().equalsIgnoreCase("guest"))
-                        {
-                            user = temp;
-                        }
-                    }
-                    if (user == null){
-                        ItemI o = items.getFirst();
-                        user = new XDATUser(o);
-                    }
-                    TurbineUtils.setUser(data,user);
+                    TurbineUtils.setUser(data,guest);
                     session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
                     String Destination = data.getTemplateInfo().getScreenTemplate();
@@ -353,9 +336,25 @@ public abstract class SecureAction extends VelocitySecureAction
         return;
     }
 	
-	public void notifyAdmin(XDATUser authenticatedUser, RunData data, int code, String subject, String message) throws IOException{
+	public void notifyAdmin(UserI authenticatedUser, RunData data, int code, String subject, String message) throws IOException{
 		AdminUtils.sendAdminEmail(authenticatedUser, subject,message);
 		data.getResponse().sendError(code);
+	}
+	
+	public void displayProjectEditError(RunData data, XFTItem item){
+		displayProjectEditError(null, data, item);
+	}
+	
+	// Displays an error to the user.
+	public void displayProjectEditError(String msg, RunData data, XFTItem item){
+		if(null != msg && !msg.isEmpty()){
+			data.addMessage(msg);
+		}
+		TurbineUtils.SetEditItem(item,data);
+		if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
+		{
+			data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
+		}
 	}
 }
 

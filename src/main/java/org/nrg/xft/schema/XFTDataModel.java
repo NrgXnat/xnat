@@ -1,23 +1,21 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Oct 11, 2004
+ * org.nrg.xft.schema.XFTDataModel
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 import java.io.File;
 
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-/**
- * This class specifies data about a particular XFTSchema and contains a reference to the XFTSchema.
- * 
- * <BR><BR>Specifies the location of the Schema file, its selected DB, and populates the XFTSchema.
- * 
- * @author Tim
- */
+import org.nrg.xft.utils.XMLUtils;
 public class XFTDataModel {
 	public String db = "";
 	public String fileLocation = "";
@@ -133,10 +131,14 @@ public class XFTDataModel {
 	}
 
 	/**
-	 * @param fileLocation
+	 * @param string
 	 */
-	public void setFileLocation(String fileLocation) {
-		this.fileLocation = fileLocation;
+	public void setFileLocation(String string) {
+		if (! string.endsWith(java.io.File.separator))
+		{
+			string = string + java.io.File.separator;
+		}
+		fileLocation = string;
 	}
 
 	/**
@@ -147,16 +149,17 @@ public class XFTDataModel {
 	}
 
 	/**
+	 * @param schema
 	 */
 	public void setSchema() throws XFTInitException,ElementNotFoundException {
-        this.schema = new XFTSchema(fileLocation, fileName, this);
+		this.schema = new XFTSchema(XMLUtils.GetDOM(new File(this.fileLocation + this.fileName)),fileLocation,this);
 	}
 
 	/**
 	 * @param schema
 	 */
-	public void setSchema(XFTSchema schema) {
-		this.schema = schema;
+	public void setSchema(XFTSchema s) {
+		this.schema = s;
 		schema.setDataModel(this);
 	}
 

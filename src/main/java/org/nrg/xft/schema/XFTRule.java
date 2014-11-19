@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 17, 2004
+ * org.nrg.xft.schema.XFTRule
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -14,12 +18,6 @@ import org.nrg.xft.utils.NodeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
-/**
- * This class details additional information about a given XFTField, usually derived from 
- * properties in the XML DOM structure or a &#60;xft:rule&#62; tag.
- * 
- * @author Tim
- */
 public class XFTRule {
 	private String baseType = "";
 	private String mask = "";

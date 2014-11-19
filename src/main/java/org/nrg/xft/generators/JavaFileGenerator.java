@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 9, 2005
+ * org.nrg.xft.generators.JavaFileGenerator
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 11/18/13 9:36 AM
  */
+
+
 package org.nrg.xft.generators;
 
 import java.io.File;
@@ -2341,7 +2344,7 @@ public class JavaFileGenerator {
         sb.append("@STATIC@");
         sb.append("\n\t\t\t\t\t</TD>");
         sb.append("\n\t\t\t\t\t<TD valign=\"top\" align=\"right\">");
-        sb.append("\n\t\t\t\t\t\t#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute(\"user\") $item)");
+        sb.append("\n\t\t\t\t\t\t#parse($turbineUtils.getTemplateName(\"actions\",$om.getXSIType(),$project))");
         sb.append("\n\t\t\t\t\t</TD>");
         sb.append("\n\t\t\t\t</TR>");
         sb.append("\n\t\t\t</TABLE>");

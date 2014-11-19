@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 19, 2004
+ * org.nrg.xft.references.XFTPseudonymManager
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.references;
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -18,14 +22,6 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.utils.FileUtils;
-/**
- * Object used to maintain a list of pseudonyms which can be used to describe a specific 
- * full xml name.  These usually include proper names, reference field names, and extensions.
- * 
- * <BR><BR>A static Hashtable is used to maintain all of the element types and their pseudonyms.
- * 
- * @author Tim
- */
 public class XFTPseudonymManager {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTPseudonymManager.class);
 	private String name = null;
@@ -312,7 +308,6 @@ public class XFTPseudonymManager {
 	/**
 	 * Outputs the list of pseudonyms to a file called 'pseudonyms.txt'.
 	 */
-    // MIGRATE: Doesn't look as if this is used at all.
 	public static void OutputPseudonyms()
 	{
 		try {
@@ -338,9 +333,9 @@ public class XFTPseudonymManager {
 					}
 				}
 			}
-			// FileUtils.OutputToFile(p.toString(),XFTManager.GetInstance().getSourceDir() + "pseudonyms.txt");
-//		} catch (org.nrg.xft.exception.XFTInitException e) {
-//			logger.error("",e);
+			FileUtils.OutputToFile(p.toString(),XFTManager.GetInstance().getSourceDir() + "pseudonyms.txt");
+		} catch (org.nrg.xft.exception.XFTInitException e) {
+			logger.error("",e);
 		} catch (Exception e) {
 			logger.error("",e);
 		}

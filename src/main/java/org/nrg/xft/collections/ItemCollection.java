@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Feb 4, 2005
+ * org.nrg.xft.collections.ItemCollection
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.collections;
 
 import java.util.ArrayList;
@@ -17,6 +20,7 @@ import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -125,7 +129,7 @@ public class ItemCollection {
 		{
 			ItemI item = (ItemI)iter.next();
 			try {
-                ItemI temp = user.secureItem(item);
+                ItemI temp = Permissions.secureItem(user,item);
                 if (temp == null)
                 {
                     remove.add(item);

@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Feb 7, 2005
+ * org.nrg.xft.search.ItemSearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.search;
 
 import java.util.ArrayList;
@@ -33,13 +36,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
-/**
- * The ItemSearch class is used to load XFTItem objects.  When an Item can be defined by
- * a single search criteria, the static methods can be used to load it.  Otherwise, an ItemSearch
- * object can be instanciated and complex search criteria can be added.
- * <BR><BR>
- * @author Tim
- */
 public class ItemSearch implements SearchI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(ItemSearch.class);
 	private UserI user = null;

@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Jul 26, 2006
+ * org.nrg.xdat.services.CreateServiceSession
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.services;
 
 import java.rmi.RemoteException;
@@ -15,13 +22,13 @@ import org.apache.axis.session.Session;
 import org.apache.axis.transport.http.AxisHttpSession;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author timo
@@ -38,7 +45,7 @@ public class CreateServiceSession  extends ServiceA{
         String s=null;
         try {
             Message rspmsg =mc.getResponseMessage();
-            XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
+            UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
             Session session = mc.getSession();
             session.set("user", user);
             session.set("state", "maintained");

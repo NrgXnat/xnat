@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Oct 21, 2004
+ * org.nrg.xft.XFTTable
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/11/14 2:34 PM
  */
+
+
 package org.nrg.xft;
 import java.io.BufferedWriter;
 import java.io.IOException;
@@ -23,33 +27,12 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
-import org.json.JSONArray;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.utils.StringUtils;
 import org.json.JSONException;
-import org.json.JSONObject;
-/**
- * Generic table structure used to hold tabular data and populate XFTItems.
- * 
- * <BR><BR>This table is constructed out of columns (String[]) and an ArrayList
- * of rows (Object[]).
- * 
- * <BR><BR>The XFTTable can be initialized using a collection of headers (String[]). 
- * Rows can be inserted using the insertRow() method.
- * 
- * <BR><BR>To access information in the rows directly, start by using the resetRowCursor().
- * Then, the hasMoreRows() and nextRow() methods can be used to iterate through the rows
- * in a while loop. The nextRow() method will return the next row (Object[]) or the getCellValue()
- * method can be used to access specific values based on header values.
- * 
- * <BR><BR>Data in the XFTTable can also be accessed using the populateItems() method to populate
- * XFTItems from the rows.  The XFTItems and all of their sub Items will be populated if matching
- * fields are found in the table.  
- * 
- * @author Tim
- */
+
 public class XFTTable implements XFTTableI {
 	static Logger logger = Logger.getLogger(XFTTable.class);
 	private String [] columns = null;
@@ -58,7 +41,6 @@ public class XFTTable implements XFTTableI {
 	private int numRows = 0;
 	
 	private int rowCursor = 0;
-	
 	public ArrayList quarantineIndexs = new ArrayList();
 		
 	public static XFTTable Execute(String query, String dbName, String userName) throws SQLException,DBPoolException{
@@ -239,7 +221,15 @@ public class XFTTable implements XFTTableI {
         }
 		return index;
 	}
-	
+
+    /**
+     * This is a pass-through method to avoid having to create an array for the {@link #insertRow(Object[]) method}.
+     * @param items    The items to pass through as an array.
+     */
+    public void insertRowItems(Object... items) {
+        insertRow(items);
+    }
+
 	/**
 	 * Inserts row into table and increments row counter.
 	 * @param row of Objects
@@ -258,6 +248,10 @@ public class XFTTable implements XFTTableI {
 		rowCursor = 0;
 	}
 	
+	/* (non-Javadoc)
+	 * Warning: Don't modify the contents of this ArrayList directly.  Use the insertRow and removeRow methods.  XFTTable is an old dumb ox and is not robust to your fancy pants ways.
+	 * @see org.nrg.xft.XFTTableI#rows()
+	 */
 	public ArrayList<Object[]> rows()
 	{
 	    return rows;
@@ -268,16 +262,14 @@ public class XFTTable implements XFTTableI {
 	 * @param delimiter
 	 * @return
 	 */
-	public String toString(String delimiter)
-	{
-		StringBuffer sb = new StringBuffer();
+	public String toString(String delimiter) {
+		StringBuilder buffer = new StringBuilder();
 		for (int i=0;i<this.numCols;i++)
 		{
-			if (i!=0)
-			{
-				sb.append(delimiter);
+			if (i!=0) {
+				buffer.append(delimiter);
 			}
-			sb.append(this.getColumns()[i]);
+			buffer.append(StringEscapeUtils.escapeCsv(this.getColumns()[i]));
 		}
 		
 		resetRowCursor();
@@ -289,19 +281,19 @@ public class XFTTable implements XFTTableI {
 			{
 				if (i!=0)
 				{
-					sb.append(delimiter);
+					buffer.append(delimiter);
 				}else
 				{
-					sb.append("\n");
+					buffer.append("\n");
 				}
-				sb.append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),delimiter," "),"\n"," "),"\r"," "));
-			}
+				buffer.append(StringEscapeUtils.escapeCsv(ValueParser(row[i])));
+            }
 		}
 		
-		return sb.toString();
+		return buffer.toString();
 	}
-	
-	public String toHTML(boolean insertTDTags,String lightColor,String darkColor,Hashtable tableProperties,int startCount)
+
+    public String toHTML(boolean insertTDTags,String lightColor,String darkColor,Hashtable tableProperties,int startCount)
 	{
 	    if (tableProperties ==null)
 	    {
@@ -358,10 +350,10 @@ public class XFTTable implements XFTTableI {
 				}
 				if (insertTDTags)
 				{
-					sb.append("<TD>").append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," ")).append("</TD>");
+					sb.append("<TD>").append(ValueParserNoNewline(row[i])).append("</TD>");
 				}else
 				{
-					sb.append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "));
+					sb.append(ValueParserNoNewline(row[i]));
 				}
 			}
 			sb.append("</TR>");
@@ -446,11 +438,11 @@ public class XFTTable implements XFTTableI {
                 if (insertTDTags)
                 {
                     pw.print("<TD>");
-                    pw.print(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "));
+                    pw.print(ValueParserNoNewline(row[i]));
                     pw.print("</TD>");
                 }else
                 {
-                    pw.print(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "));
+                    pw.print(ValueParserNoNewline(row[i]));
                 }
             }
             pw.print("</TR>");
@@ -460,7 +452,7 @@ public class XFTTable implements XFTTableI {
 
 	/**
 	 * Outputs table headers and contents into an HTML Table
-	 * @param delimiter
+	 * @param insertTDTags Indicates whether TD tags should be inserted.
 	 * @return
 	 */
 	public String toHTML(boolean insertTDTags)
@@ -495,10 +487,10 @@ public class XFTTable implements XFTTableI {
 				}
 				if (insertTDTags)
 				{
-					sb.append("<TH>").append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," ")).append("</TH>");
+					sb.append("<TH>").append(ValueParserNoNewline(row[i])).append("</TH>");
 				}else
 				{
-					sb.append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "));
+					sb.append(ValueParserNoNewline(row[i]));
 				}
 			}
 			sb.append("</TR>");
@@ -510,8 +502,7 @@ public class XFTTable implements XFTTableI {
 	
 	/**
 	 * Outputs table headers and contents without delimiters
-	 * @param delimiter
-	 * @return
+	 * @return A string representation of the table.
 	 */
 	public String toString()
 	{
@@ -536,7 +527,7 @@ public class XFTTable implements XFTTableI {
 				{
 					sb.append("\n");
 				}
-				sb.append(StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "),"<","&lt;"),">","&gt;"));
+				sb.append(ValueParser(row[i]).replace("<","&lt;").replace(">","&gt;"));
 			}
 		}
 		
@@ -586,13 +577,22 @@ public class XFTTable implements XFTTableI {
 //		
 //		return al;
 //	}
-//	
+//
+
+    public static String ValueParser(Object o) {
+        return ValueParser(o, "", "");
+    }
+
+    public static String ValueParserNoNewline(Object o) {
+        return ValueParser(o, "\\r\\n|\\r|\\n", " ");
+    }
+
 	/**
 	 * Formats BYTEA type to string
 	 * @param o
 	 * @return
 	 */
-	public static String ValueParser(Object o)
+	public static String ValueParser(Object o, String regexToReplace, String replacement)
 	{
 		if (o != null)
 		{
@@ -605,9 +605,9 @@ public class XFTTable implements XFTTableI {
 				} catch (java.io.IOException e) {
 					e.printStackTrace();
 				}
-				return baos.toString();
+				return baos.toString().replaceAll(regexToReplace, replacement);
 			}
-			return o.toString();
+			return o.toString().replaceAll(regexToReplace, replacement);
 		}else
 		{
 			return "";
@@ -754,41 +754,21 @@ public class XFTTable implements XFTTableI {
 	    al.trimToSize();
 	    return al;
 	}
-	
+
     /**
      * @param columns The columns to set.
      */
     public void setColumns(String[] columns) {
         this.columns = columns;
     }
-    /**
-     * @param numCols The numCols to set.
-     */
-    private void setNumCols(int numCols) {
-        this.numCols = numCols;
-    }
-    /**
-     * @param numRows The numRows to set.
-     */
-    private void setNumRows(int numRows) {
-        this.numRows = numRows;
-    }
-    /**
-     * @param rows The rows to set.
-     */
-    private void setRows(ArrayList rows) {
-        this.rows = rows;
-    }
-    
-    
+
     /**
      * @return Returns the rowCursor.
      */
     public int getRowCursor() {
         return rowCursor;
     }
-    
-    
+
     /**
      * Converts each row into a hashtable and inserts them into an ArrayList.
      * @return
@@ -806,8 +786,7 @@ public class XFTTable implements XFTTableI {
 	    al.trimToSize();
 	    return al;
     }
-    
-    
+
     /**
      * Converts each row into a hashtable and inserts them into an ArrayList.
      * @return
@@ -1029,8 +1008,7 @@ public class XFTTable implements XFTTableI {
 				writer.write("<row>");
 				for (int i=0;i<this.numCols;i++)
 				{
-					writer.write("<cell>" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," "),">","&gt;"),"<","&lt;") + "</cell>");
-					
+					writer.write("<cell>" + ValueParserNoNewline(row[i]).replace(">","&gt;").replace("<","&lt;") + "</cell>");
 				}
 				writer.write("</row>\n");
 				writer.flush();
@@ -1047,11 +1025,10 @@ public class XFTTable implements XFTTableI {
 			Writer writer = new BufferedWriter(w);
 			for (int i=0;i<this.numCols;i++)
 			{
-				if(i>0)
-					writer.write(",");
-				writer.write("\"");
-				writer.write(this.getColumns()[i]);
-				writer.write("\"");
+				if(i>0) {
+                    writer.write(",");
+                }
+                StringEscapeUtils.escapeCsv(writer, this.getColumns()[i]);
 			}
 			writer.write("\n");
 			writer.flush();
@@ -1063,10 +1040,8 @@ public class XFTTable implements XFTTableI {
 					if(i>0)
 						writer.write(",");
 					if(null!=row[i]){
-						if(row[i] instanceof String)writer.write("\"");
-						writer.write(StringUtils.ReplaceStr(ValueParser(row[i]),"\"","'"));
-						if(row[i] instanceof String)writer.write("\"");		
-					}			
+                        StringEscapeUtils.escapeCsv(writer, ValueParserNoNewline(row[i]));
+					}
 				}
 				writer.write("\n");
 				writer.flush();
@@ -1082,45 +1057,47 @@ public class XFTTable implements XFTTableI {
 	{
 		toJSON(writer,null);
 	}
+    
+	public void toJSON (Writer writer, Map<String,Map<String,String>> cp) throws IOException{
+		org.json.JSONArray array = new org.json.JSONArray();
+		ArrayList<ArrayList<String>> columnsWType=new ArrayList<ArrayList<String>>();
+		for (int i=0;i<this.numCols;i++)
+		{
+			ArrayList col= new ArrayList();
+			col.add(this.getColumns()[i]);
+			if(cp.containsKey(col.get(0))){
+				Map<String,String> props=cp.get(col.get(0));
+				if(props.containsKey("type")){
+					col.add(props.get("type"));
+				}
+			}
+			columnsWType.add(col);
+		}
+		
+		for (int j = 0; j<rows.size();j++){
+			Object[] row = rows.get(j);
+			org.json.JSONObject json = new org.json.JSONObject();
+			for (int i = 0; i <this.numCols;i++){
+				ArrayList<String> columnSpec=columnsWType.get(i);
+				try {
+					json.put(columnSpec.get(0), ValueParser(row[i]));
+				} catch (JSONException e) {
+					e.printStackTrace();
+			}
+				}
+			array.put(json);
+		}
+							try{
+			array.write(writer);
+		} catch (JSONException e) {
+			e.printStackTrace();
+							}
+						}
 
-    public void toJSON(Writer writer, Map<String, Map<String, String>> cp) throws IOException {
-        JSONArray array = new JSONArray();
-        List<List<String>> columnsWType = new ArrayList<>();
-        for (int i = 0; i < this.numCols; i++) {
-            List<String> col = new ArrayList<>();
-            col.add(this.getColumns()[i]);
-            if (cp.containsKey(col.get(0))) {
-                Map<String, String> props = cp.get(col.get(0));
-                if (props.containsKey("type")) {
-                    col.add(props.get("type"));
-                }
-            }
-            columnsWType.add(col);
-        }
-
-        for (Object[] row : rows) {
-            JSONObject json = new JSONObject();
-            for (int i = 0; i < this.numCols; i++) {
-                List<String> columnSpec = columnsWType.get(i);
-                try {
-                    json.put(columnSpec.get(0), ValueParser(row[i]));
-                } catch (JSONException e) {
-                    e.printStackTrace();
-                }
-            }
-            array.put(json);
-        }
-        try {
-            array.write(writer);
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-    }
-
-    /**
+	/**
 	 * Outputs table headers and contents into an HTML Table
-	 * @param delimiter
-	 * @return
+	 * @param insertTDTags    Indicates whether TD tags should be inserted.
+     * @param writer          The writer to use for output.
 	 */
 	public void toHTML(boolean insertTDTags,Writer writer) throws IOException
 	{
@@ -1129,8 +1106,9 @@ public class XFTTable implements XFTTableI {
 
 	/**
 	 * Outputs table headers and contents into an HTML Table
-	 * @param delimiter
-	 * @return
+	 * @param insertTDTags    Indicates whether TD tags should be inserted.
+     * @param writer          The writer to use for output.
+     * @param cp              Column properties.
 	 */
 	public void toHTML(boolean insertTDTags,Writer writer,Map <String,Map<String,String>> cp) throws IOException
 	{
@@ -1151,37 +1129,38 @@ public class XFTTable implements XFTTableI {
 		writer.write("<tbody id=\"dataRows\">\n");
 	
 		int rowC=0;
-		for(Object[] row: rows)
-		{
-			writer.write("<tr class=\"x_rs_tr_data");
-			if(rowC++% 2 != 0)writer.write(" even");
-			else writer.write(" odd");
-			writer.write("\">");
-			for (int i=0;i<this.numCols;i++)
-			{
-				if (i!=0)
-				{
-				}else
-				{
-					writer.write("\n");
-				}
-			
-				String value=StringUtils.ReplaceStr(StringUtils.ReplaceStr(ValueParser(row[i]),"\n"," "),"\r"," ");
-				
-				if(cp !=null &&cp.containsKey(this.getColumns()[i]) && cp.get(this.getColumns()[i]).containsKey("serverRoot"))
-				{
-					value= "<a href='" + cp.get(this.getColumns()[i]).get("serverRoot") + value + "'>" + value + "</a>";
-				}
-				if (insertTDTags)
-				{
-					writer.write("<td>" + value + "</td>");
-				}else
-				{
-					writer.write(value);
-				}
-			}
-			writer.write("</tr>");
-		}
+		if (rows != null) {
+            for(Object[] row: rows) {
+                writer.write("<tr class=\"x_rs_tr_data");
+                if(rowC++% 2 != 0)writer.write(" even");
+                else writer.write(" odd");
+                writer.write("\">");
+                for (int i=0;i<this.numCols;i++)
+                {
+                    if (i!=0)
+                    {
+                    }else
+                    {
+                        writer.write("\n");
+                    }
+
+                    String value=ValueParserNoNewline(row[i]);
+
+                    if(cp !=null &&cp.containsKey(this.getColumns()[i]) && cp.get(this.getColumns()[i]).containsKey("serverRoot"))
+                    {
+                        value= "<a href='" + cp.get(this.getColumns()[i]).get("serverRoot") + value + "'>" + value + "</a>";
+                    }
+                    if (insertTDTags)
+                    {
+                        writer.write("<td>" + value + "</td>");
+                    }else
+                    {
+                        writer.write(value);
+                    }
+                }
+                writer.write("</tr>");
+            }
+        }
 		writer.write("</tbody>\n</table>");
 		writer.flush();
 	}
@@ -1228,5 +1207,23 @@ public class XFTTable implements XFTTableI {
 	public void reverse(){
 		Collections.reverse(rows);
 	}
-}
 
+    /**
+     * @param numCols The numCols to set.
+     */
+    private void setNumCols(int numCols) {
+        this.numCols = numCols;
+    }
+    /**
+     * @param numRows The numRows to set.
+     */
+    private void setNumRows(int numRows) {
+        this.numRows = numRows;
+    }
+    /**
+     * @param rows The rows to set.
+     */
+    private void setRows(ArrayList rows) {
+        this.rows = rows;
+    }
+}

@@ -1,8 +1,15 @@
-//Copyright 2006 Harvard University / Washington University School of Medicine All Rights Reserved
 /*
- * Created on Oct 17, 2006
+ * org.nrg.xdat.turbine.modules.actions.CSVUpload1
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.io.File;
@@ -11,6 +18,7 @@ import java.util.List;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.utils.FieldMapping;
 
@@ -20,7 +28,7 @@ public class CSVUpload1 extends SecureAction {
     public void doPerform(RunData data, Context context) throws Exception {
         preserveVariables(data,context);
         String fm_id = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("fm_id",data));
-        File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
+        File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + fm_id + ".xml");
         FieldMapping fm = new FieldMapping(f);
         String[] fields = ((String[])org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedObjects("fields",data));
         if (fields==null)
@@ -58,7 +66,7 @@ public class CSVUpload1 extends SecureAction {
             fm.setElementName(root);
             fm.setTitle(title);
             fm.setID(id);
-            File f = TurbineUtils.getUser(data).getCachedFile("csv/" + id + ".xml");
+            File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + id + ".xml");
             f.getParentFile().mkdirs();
             fm.saveToFile(f);
             

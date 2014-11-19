@@ -1,17 +1,21 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 17, 2005
+ * org.nrg.xdat.turbine.utils.TurbineUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 11/18/13 9:36 AM
  */
+
+
 package org.nrg.xdat.turbine.utils;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
+import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
@@ -21,16 +25,17 @@ import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.exception.ResourceNotFoundException;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.om.XdatSecurity;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
+import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -44,6 +49,7 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SearchCriteria;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -51,6 +57,7 @@ import org.xml.sax.SAXException;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.text.NumberFormat;
 import java.text.ParseException;
@@ -271,12 +278,12 @@ public class TurbineUtils {
 	}
     
 	
-	public static void SetEditItem(ItemI item,RunData data)
+	public static void SetEditItem(Object item,RunData data)
 	{
 	    data.getSession().setAttribute(EDIT_ITEM,item);
 	}
 	
-	public static ItemI GetEditItem(RunData data)
+	public static Object GetEditItem(RunData data)
 	{
 		final ItemI edit_item = (ItemI)data.getSession().getAttribute(EDIT_ITEM);
 	    data.getSession().removeAttribute(EDIT_ITEM);
@@ -422,26 +429,26 @@ public class TurbineUtils {
         return s;
     }
 	
-	public static XDATUser getUser(RunData data)
+	public static UserI getUser(RunData data)
 	{
-		XDATUser user;
+		UserI user;
 		if (data.getSession().getAttribute("user") == null) {
 			user = XDAT.getUserDetails();
 			data.getSession().setAttribute("user", user);
 		} else {
-			user = (XDATUser) data.getSession().getAttribute("user");
+			user = (UserI) data.getSession().getAttribute("user");
 		}
 		return user;
 	}
 	
-	public static void setUser(RunData data, XDATUser user) throws Exception
+	public static void setUser(RunData data, UserI user) throws Exception
 	{
-		XDAT.setUserDetails(new XDATUserDetails(user));
+		XDAT.setUserDetails(user);
 	}
 	
-	public static void setNewUser(RunData data, XDATUser user, Context context) throws Exception
+	public static void setNewUser(RunData data, UserI user, Context context) throws Exception
 	{
-		XDAT.setNewUserDetails(new XDATUserDetails(user), data, context);
+		XDAT.setNewUserDetails(user, data, context);
 	}
 	
 	/**
@@ -468,7 +475,7 @@ public class TurbineUtils {
                 }
                 
                 try {
-                    ds = TurbineUtils.getUser(data).getSearch(displayElement,"listing");
+                    ds = UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data),displayElement,"listing");
                     
                     final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
                     final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
@@ -502,7 +509,7 @@ public class TurbineUtils {
 	}
     
     public static DisplaySearch getDSFromSearchXML(RunData data){
-    	final XDATUser user = TurbineUtils.getUser(data);
+    	final UserI user = TurbineUtils.getUser(data);
         
         if (user!=null){
 	        if (data.getParameters().get("search_xml") !=null)
@@ -542,7 +549,7 @@ public class TurbineUtils {
 	            try {
 	            	final String search_id = data.getParameters().get("search_id");
 	                    
-	            	final String search_xml = PoolDBUtils.RetrieveLoggedCustomSearch(user.getLogin(), user.getDBName(), search_id);
+	            	final String search_xml = PoolDBUtils.RetrieveLoggedCustomSearch(user.getUsername(), user.getDBName(), search_id);
 	                    
 	                    if (search_xml!=null){
 	                    	final StringReader sr = new StringReader(search_xml);
@@ -760,7 +767,7 @@ public class TurbineUtils {
 				final Enumeration<String> enumer = data.getSession().getAttributeNames();
 				while (enumer.hasMoreElements())
 				{
-					final String key = enumer.nextElement();
+					final String key = (String)enumer.nextElement();
 					final Object o = data.getSession().getAttribute(key);
 				    logger.debug("KEY: "+ key + " VALUE: " + o.getClass());
 				}
@@ -893,6 +900,10 @@ public class TurbineUtils {
 	
 	public Boolean toBoolean(String s){
 		return Boolean.valueOf(s);
+	}
+	
+	public String[] toList(String s){
+		return s.split(",");
 	}
     
     public String formatDate(Date d, String pattern){
@@ -1042,8 +1053,8 @@ public class TurbineUtils {
     
     /**
      * Note: much of this was copied from SecureScreen.  This version looks at the other templates directories (not just templates).  We may want to merge the two impls.
-     * @param subFolder like topBar/admin
-     * @return The properties from the located templates.
+     * @param subFolder Like topBar/admin
+     * @return
      */
     public List<Properties> getTemplates(String subFolder){
     	//first see if the props have been cached.
@@ -1051,15 +1062,13 @@ public class TurbineUtils {
     	List<String> _defaultScreens=new ArrayList<String>();
     	if(screens==null){
     		synchronized (this){
-    			//synchronized so that two calls don't overwrite each other.  I only synchronized this chunk in hopes that when the screens list is cached, the block wouldn't occur.
+    			//synchronized so that two calls don't overwrite eachother.  I only synchronized this chunk in hopes that when the screens list is cached, the block woudn't occur.
 	    		//need to build the list of props.
 	    		screens=new ArrayList<Properties>();
 	        	List<String> exists=new ArrayList<String>();
-	    		Set<String> screensFolders = XDAT.getScreenTemplateFolders();
-                // MIGRATE: This is pending a real fix.
-	    		for(final String screensFolder: screensFolders) {
-                    File folder = new File(screensFolder);
-	    	        if (folder.exists()) {
+	    		List<File> screensFolders = XDAT.getScreenTemplateFolders();
+	    		for(File screensFolder: screensFolders){
+	    	        if (screensFolder.exists()) {
 	    	        	File subFile=new File(screensFolder,subFolder);
 	    	        	if(subFile.exists()){
 	        	            File[] files = subFile.listFiles(new FilenameFilter() {
@@ -1084,6 +1093,23 @@ public class TurbineUtils {
 	        	            }
 	    	        	}
 	    	        }
+	    		}
+	    		
+	    		//add paths for files on the classpath
+	    		List<URL> uris=CustomClasspathResourceLoader.findVMsByClasspathDirectory("screens"+"/"+subFolder);
+	    		for(URL url: uris){
+	    			String fileName=FilenameUtils.getBaseName(url.toString()) + "." + FilenameUtils.getExtension(url.toString());
+	    			String path=CustomClasspathResourceLoader.safeJoin("/", subFolder,fileName);
+            		if(!exists.contains(path)){
+	            		try {
+							SecureScreen.addProps(fileName,CustomClasspathResourceLoader.getInputStream("screens/"+path), screens, _defaultScreens,path);
+							exists.add(path);
+						} catch (FileNotFoundException e) {
+							//this shouldn't happen
+						} catch (ResourceNotFoundException e) {
+							logger.error("",e);
+						}
+            		}
 	    		}
 	    		
 	    		Collections.sort(screens, new Comparator<Properties>() {
@@ -1157,6 +1183,28 @@ public class TurbineUtils {
 				final GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
 				mergePropsNoOverwrite(props,getTemplates(p.getSQLName()+"/"+subFolder),"fileName");
 			}
+    		
+    		Collections.sort(props, new Comparator<Properties>() {
+				@Override
+				public int compare(Properties arg0, Properties arg1) {
+					if(arg0.containsKey("Sequence") && arg1.containsKey("Sequence")){
+						try {
+							Integer sequence1=Integer.parseInt(arg0.getProperty("Sequence"));
+							Integer sequence2=Integer.parseInt(arg1.getProperty("Sequence"));
+							return sequence1.compareTo(sequence2);
+						} catch (NumberFormatException e) {
+							logger.error("Illegal sequence format.",e);
+							return 0;
+						}
+					}else if(arg0.containsKey("Sequence")){
+						return -1;
+					}else if(arg1.containsKey("Sequence")){
+						return 1;
+					}else{
+						return 0;
+					}
+				}
+			});
 		} catch (XFTInitException e) {
 			logger.error("",e);
 		} catch (ElementNotFoundException e) {

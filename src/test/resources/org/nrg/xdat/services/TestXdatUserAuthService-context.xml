@@ -1,51 +1,32 @@
 <?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ D:/Development/XNAT/1.6/xdat_1_6dev/src/test/resources/org/nrg/xdat/services/TestXdatUserAuthService-context.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 8/28/13 3:46 PM
+  -->
 <beans xmlns="http://www.springframework.org/schema/beans"
-	xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xmlns:context="http://www.springframework.org/schema/context"
-	xmlns:p="http://www.springframework.org/schema/p"
-	xmlns:tx="http://www.springframework.org/schema/tx"
-	xmlns:util="http://www.springframework.org/schema/util"
-	xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd
-		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-		http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context-3.0.xsd">
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <import resource="classpath:/TestDataSource-context.xml" />
+    <import resource="classpath:/META-INF/configuration/nrg-framework-context.xml" />
 
     <context:component-scan base-package="org.nrg.xdat.services" />
     <context:component-scan base-package="org.nrg.xdat.daos" />
 
-    <util:list id="xnatEntityPackages">
-        <value>org.nrg.xdat.entities</value>
-    </util:list>
-
-    <!-- Used the prefixed table naming strategy, class FooBar gives you prefix_foo_bar instead of FooBar. -->
-    <bean id="namingStrategy" class="org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy" p:prefix="xhbm" />
-
-    <!-- Set up default hibernate properties. -->
-    <bean id="hibernateProperties" class="org.springframework.beans.factory.config.PropertiesFactoryBean">
-        <property name="properties">
-            <props>
-                <prop key="hibernate.dialect">org.hibernate.dialect.H2Dialect</prop>
-                <prop key="hibernate.hbm2ddl.auto">create</prop>
-                <prop key="hibernate.show_sql">true</prop>
-                <prop key="hibernate.cache.use_second_level_cache">true</prop>
-                <prop key="hibernate.cache.use_query_cache">true</prop>
-            </props>
+    <bean id="testEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
+        <property name="items">
+            <list>
+                <value>org.nrg.xdat.entities</value>
+            </list>
         </property>
     </bean>
-
-    <bean id="cacheRegionFactory" class="org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory">
-        <constructor-arg index="0" ref="hibernateProperties" />
-    </bean>
-
-    <bean id="sessionFactory" class="org.springframework.orm.hibernate4.LocalSessionFactoryBean"
-          p:cacheRegionFactory-ref="cacheRegionFactory" p:dataSource-ref="dataSource"
-          p:hibernateProperties-ref="hibernateProperties" p:packagesToScan-ref="xnatEntityPackages"
-          p:namingStrategy-ref="namingStrategy" />
-
-    <bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager" p:sessionFactory-ref="sessionFactory" />
-
-    <tx:annotation-driven />
 
 </beans>

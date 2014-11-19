@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.schema.XFTField
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/30/13 5:36 PM
  */
-/*
- * Created on Mar 17, 2004
- */
+
+
 package org.nrg.xft.schema;
 
 import java.util.ArrayList;
@@ -22,21 +26,6 @@ import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-/**
- * This abstract class describes the basic properties of an XFTDataField or XFTReferenceField
- * and includes static classes that add Fields from XML DOM Structures.
- *
- * <BR><BR>Many of the values from these properties come directly from the XML DOM structure, but
- * several are defined by &#60;xft:field&#62; addIns which can be added to a XML Schema in the &#60;xs:appInfo&#62; tag.
- * The fields displayName,expose,required,size,unique,uniqueComposite,xmlOnly,xmlDisplay,
- * baseElement, and baseCol can all be specified in the &#60;xft:field&#62; tag.  The fields use,fixed,
- * maxOccurs, and minOccurs are defined directly in the XML DOM attributes.
- *
- * <BR><BR>Additionaly, the abstract class specifies relationships to XFTWebAppField,XFTSqlField,
- * XFTRule, and XFTRelation to provide additional details about the field.
- *
- * @author Tim
- */
 public abstract class XFTField extends XFTNode implements Identifier{
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTField.class);
 	public abstract String toString(String header);

@@ -1,19 +1,19 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 29, 2004
+ * org.nrg.xft.schema.NodeWrapper
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 import java.io.File;
-import java.io.InputStream;
 import java.util.Hashtable;
 
-import com.google.common.base.Joiner;
-import org.nrg.xdat.XDAT;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
@@ -22,29 +22,6 @@ import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 
-/**
- * The purpose of this class is to organize and maintain
- * access to every XML root node in every XML schema.
- * 
- * <BR><BR>When a new schema is loaded, the first thing it does 
- * is create a NodeWrapper for each root node in 
- * the schema.  The Node Wrapper is created using the static
- * AddNode method.  It uses the XFTSchema's definedPrefix and
- * the node's name to create an XMLType for the node.  It maintains
- * a reference to the XFTSchema and stores the name of the
- * corresponding XFTElement (if one was created).  This NodeWrapper
- * is then added to the ALL_NODES hashtable which maintains a list of
- * all loaded nodes with their XMLType.FullXMLType as the key value.<BR><BR>
- * 
- * When a schema is first loaded, the nodeWrappers are created before 
- * the XFTElements are created.  Thus, initially all NodeWrappers are initially
- * created with null values in the element parameter.  After the XFTElements are
- * loaded the NodeWrappers are overwritten by NodeWrappers with the correct
- * element name specified.
- * 
- * @author Tim
- *
- */
 public class NodeWrapper {
 	
 	/**
@@ -52,8 +29,8 @@ public class NodeWrapper {
 	 * the elements full local xml type (local prefix + type) as the key.
 	 */
 	public final static Hashtable ALL_NODES = new Hashtable();
-
-    /**
+	
+	/**
 	 * Adds a new NodeWrapper to the ALL_NODES collection of loaded nodes
 	 * using the input variables.  The schema's definedPrefix is used with the
 	 * name variable to create the node's XMLType.
@@ -181,22 +158,16 @@ public class NodeWrapper {
 	public Node getNode() {
 		if (s != null)
 		{
-            // MIGRATE: This is all modified to deal with difference loading in a WAR-packaged web application. It looks for a file first, classpath resource next, then web-app relative resource last.
-            XFTDataModel dataModel = s.getDataModel();
-            File f = new File(dataModel.getFileLocation(), dataModel.getFileName());
+			File f = new File(s.getDataModel().getFileLocation() + s.getDataModel().getFileName());
 			Document doc;
 			if(f.exists()){
 				doc = XMLUtils.GetDOM(f);
-			} else {
-                String relativePath = Joiner.on("/").join(dataModel.getFileLocation(), dataModel.getFileName());
-                InputStream stream = getClass().getClassLoader().getResourceAsStream(relativePath);
-                if (stream == null) {
-                    stream = XDAT.getContextService().getAppRelativeStream(relativePath);
-                    if (stream == null) {
-                        throw new RuntimeException("Unable to locate resource identified by path: " + relativePath);
-                    }
-                }
-                doc = XMLUtils.GetDOM(stream);
+			}else{
+				String path=s.getDataModel().getFileLocation();
+				if(path.endsWith(File.separator)){
+					path=path.substring(0,path.length()-1);
+				}
+				doc = XMLUtils.GetDOM(getClass().getClassLoader().getResourceAsStream(path));
 			}
 			
 			Element root = doc.getDocumentElement();

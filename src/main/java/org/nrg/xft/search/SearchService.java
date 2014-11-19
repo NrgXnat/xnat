@@ -1,21 +1,16 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jul 14, 2004
+ * org.nrg.xft.search.SearchService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.search;
-/**
- * This class is used to perform searches for particular data stored in XFT.
- * 
- * The search methods take in the GenericWrapperElement to search and the SearchCriteria
- * to search for.  They can output basic XFTTables or XFTItems (with sub-items populated
- * if desired).
- * 
- * @author Tim
- */
 public class SearchService {
 	public final static String EQUALS = "=";
 	public final static String LIKE = "LIKE";

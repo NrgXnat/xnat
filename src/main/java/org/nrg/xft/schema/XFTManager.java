@@ -1,18 +1,29 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.schema.XFTManager
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 8/28/13 3:19 PM
  */
-/*
- * Created on Mar 18, 2004
- */
-package org.nrg.xft.schema;
 
-import com.google.common.collect.Lists;
+
+package org.nrg.xft.schema;
+import java.io.File;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+import java.util.zip.ZipException;
+
 import org.apache.log4j.Logger;
-import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.db.DBConfig;
@@ -28,53 +39,31 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
+import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
-import java.io.InputStream;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 
-/**
- * This singleton class manages the creation and manipulation of XFTDataModels.
- *
- * <BR><BR>This class is in charge of loading and maintaining all of the Schemas used
- * used in the application.  Upon a call to the init() method, the XFTManager reads
- * the configuration from the InstanceSettings.xml document.  Using these specifications,
- * it finds the Schema files and creates XFTDataModels accordingly.
- *
- * <BR><BR>The singleton format of the class mandates that only one instance of the
- * XFTManager will be running at any given time.  It is loaded up init() and exists
- * until the application process ends.  After initialization, the XFTManager instance
- * is available through the GetInstance() method.  From the instance, one can access
- * the source Directory (where the InstanceSettings.xml was located).  Otherwise, all
- * access is done through the static methods.
- *
- * <BR><BR>This class also maintains a static reference to the XFTElement table (if it exists).
- * This Element maintains a list of all elements in the application.  Extended elements
- * use this Reference to create an Extended Element Reference Field which defines the type of
- * element which extended it.
- *
- * @author Tim
- */
 public class XFTManager {
     static org.apache.log4j.Logger logger = Logger.getLogger(XFTManager.class);
     private static XFTManager MANAGER = null;
 
     private static XFTElement ELEMENT_TABLE = null;
-    private static Hashtable<String, XFTDataModel> DATA_MODELS = new Hashtable<>();
-    private static Hashtable<String, String> ROOT_LEVEL_ELEMENTS= new Hashtable<>();
+    private static Hashtable DATA_MODELS = new Hashtable();
+
+    private static Hashtable ROOT_LEVEL_ELEMENTS= new Hashtable();
+
+    //private String packageName = "";
+    private String sourceDir = "";
 
     /**
      * Gets singleton instance of the Manager
-     * @return The requested instance of the manager.
+     * @return
      * @throws XFTInitException
      */
     public static XFTManager GetInstance() throws XFTInitException
@@ -88,33 +77,38 @@ public class XFTManager {
 
     /**
      * Initializes the XFTManager (if it hasn't been already)
-     * @return An initialized manager.
+     * @param schemaLocation
+     * @return
      * @throws ElementNotFoundException
      */
-    public static XFTManager init() throws ElementNotFoundException, MalformedURLException, URISyntaxException {
+    public static XFTManager init(String schemaLocation) throws ElementNotFoundException
+    {
         //XFT.LogCurrentTime("MANAGER INIT:1","ERROR");
-        MANAGER = new XFTManager();
+        MANAGER = new XFTManager(schemaLocation);
 
         //XFT.LogCurrentTime("MANAGER INIT:2","ERROR");
         try {
             MANAGER.manageAddins();
-        } catch (Exception e) {
-            logger.warn("Exception found", e);
+        }catch (XFTInitException e) {
+            e.printStackTrace();
+        }catch (Exception e) {
+            e.printStackTrace();
         }
         //XFT.LogCurrentTime("MANAGER INIT:3","ERROR");
         //FileUtils.OutputToFile(MANAGER.toString(),MANAGER.getSourceDir() +"xdat.xml");
         return MANAGER;
     }
 
-    public static void clean() {
+    public static void clean()
+    {
         MANAGER = null;
         ELEMENT_TABLE = null;
-        DATA_MODELS = new Hashtable<>();
+        DATA_MODELS = new Hashtable();
     }
 
     /**
      * returns the XFTElement which stores all of the element names.
-     * @return An element object.
+     * @return
      */
     public static XFTElement GetElementTable()
     {
@@ -123,7 +117,7 @@ public class XFTManager {
 
     /**
      * sets the XFTElement which stores all of the element names.
-     * @param xe    The element to set for the table.
+     * @param xe
      */
     public static void SetElementTable(XFTElement xe)
     {
@@ -134,21 +128,25 @@ public class XFTManager {
      * Re-Initializes the XFTManager
      * @throws XFTInitException
      */
-    public static void Refresh() throws XFTInitException, ElementNotFoundException, MalformedURLException, URISyntaxException {
+    public static void Refresh(String sourceDirectory) throws XFTInitException,ElementNotFoundException
+    {
         MANAGER = null;
-        init();
+        init(sourceDirectory);
     }
 
     /**
      * Gets the XFTSchemas contained in the XFTDataModels collection
-     * @return A list of available schema.
+     * @return
      * @see XFTSchema
      */
     public static ArrayList GetSchemas()
     {
         ArrayList al = new ArrayList();
-        for (final XFTDataModel model : DATA_MODELS.values()) {
-            al.add(model.getSchema());
+        XFTElement xe = null;
+        Enumeration enumer = DATA_MODELS.keys();
+        while(enumer.hasMoreElements())
+        {
+            al.add(((XFTDataModel)DATA_MODELS.get(enumer.nextElement())).getSchema());
         }
         return al;
     }
@@ -173,20 +171,43 @@ public class XFTManager {
     public static void AddRootElement(String name, String elementName) {
         ROOT_LEVEL_ELEMENTS.put(name,elementName);
     }
+    /**
+     * Source directory where the InstanceSettings.xml document can be found.
+     * @return
+     */
+    public String getSourceDir() {
+        return sourceDir;
+    }
+
+    /**
+     * Source directory where the InstanceSettings.xml document can be found.
+     * @param string
+     */
+    public void setSourceDir(String string) {
+        sourceDir = string;
+    }
 
     /**
      * Access the InstanceSettings.xml document, and parses it to create a
      * collection of DB Connections in the DBPool and a collection of XFTDataModels (local).
+     * @param source location where InstanceSettings.xml can be found.
      * @throws ElementNotFoundException
      */
-    private XFTManager() throws ElementNotFoundException {
+    private XFTManager(String source) throws ElementNotFoundException
+    {
         logger.debug("Java Version is: " + System.getProperty("java.version"));
-
-        // MIGRATE: This replaces the load of the database node from InstanceSettings.
-        DBPool.AddDBConfig(XDAT.getContextService().getBean(DBConfig.class));
-
-        // MIGRATE: It would be best to make this all go away. Once we have the database initialized, we can store schemas and everything else in there.
-        Document doc = XMLUtils.GetDOM(XDAT.getContextService().getConfigurationStream("InstanceSettings.xml"));
+        if (! source.endsWith(File.separator))
+        {
+            source = source + File.separator;
+        }
+        if (source.indexOf("WEB-INF")!=-1){
+            sourceDir = source.substring(0,source.indexOf("WEB-INF"));
+            System.out.println("SOURCE: " + sourceDir);
+        }else{
+            sourceDir = source;
+        }
+        File file = new File(source + "InstanceSettings.xml");
+        Document doc = XMLUtils.GetDOM(file);
         Element root = doc.getDocumentElement();
 
         ViewManager.PRE_LOAD_HISTORY = NodeUtils.GetBooleanAttributeValue(root,"Pre_Load_History",false);
@@ -265,8 +286,55 @@ public class XFTManager {
             for (int i=0;i<root.getChildNodes().getLength();i++)
             {
                 Node child1 = root.getChildNodes().item(i);
-                // MIGRATE: Removed check for database nodes here and am bootstrapping DBConfig off of init properties.
-                if (child1.getNodeName().equalsIgnoreCase("Models"))
+                if (child1.getNodeName().equalsIgnoreCase("Databases"))
+               {
+                   if (child1.hasChildNodes())
+                   {
+                       for (int j=0;j<child1.getChildNodes().getLength();j++)
+                       {
+                           Node child2 = child1.getChildNodes().item(j);
+                           if (child2.getNodeName().equalsIgnoreCase("Database"))
+                           {
+                                DBConfig db = new DBConfig();
+                                if (NodeUtils.HasAttribute(child2,"Type"))
+                                {
+                                    db.setType(NodeUtils.GetAttributeValue(child2,"Type",""));
+                                }
+                                if (NodeUtils.HasAttribute(child2,"Id"))
+                                {
+                                    db.setDbIdentifier(NodeUtils.GetAttributeValue(child2,"Id",""));
+                                }
+                                if (NodeUtils.HasAttribute(child2,"Url"))
+                                {
+                                    db.setUrl(NodeUtils.GetAttributeValue(child2,"Url",""));
+                                }
+                                if (NodeUtils.HasAttribute(child2,"User"))
+                                {
+                                    db.setUser(NodeUtils.GetAttributeValue(child2,"User",""));
+                                }
+                                if (NodeUtils.HasAttribute(child2,"Pass"))
+                                {
+                                    db.setPass(NodeUtils.GetAttributeValue(child2,"Pass",""));
+                                }
+                                if (NodeUtils.HasAttribute(child2,"Driver"))
+                                {
+                                    db.setDriver(NodeUtils.GetAttributeValue(child2,"Driver",""));
+                                }
+                                if (NodeUtils.HasAttribute(child2,"MaxConnections"))
+                                {
+                                    db.setMaxConnections(new Integer(NodeUtils.GetAttributeValue(child2,"MaxConnections","")).intValue());
+                                }
+                                DBPool.AddDBConfig(db);
+                           }
+                       }
+                   }
+               }else if (child1.getNodeName().equalsIgnoreCase("Package"))
+                {
+//					if (NodeUtils.HasAttribute(child1,"Name"))
+//					{
+//						this.setPackageName(NodeUtils.GetAttributeValue(child1,"Name",""));
+//					}
+                }else if (child1.getNodeName().equalsIgnoreCase("Models"))
                 {
                     if (child1.hasChildNodes())
                     {
@@ -282,11 +350,17 @@ public class XFTManager {
                                 }
                                 if (NodeUtils.HasAttribute(child2,"File_Location"))
                                 {
-                                    model.setFileLocation(NodeUtils.GetAttributeValue(child2,"File_Location",""));
+                                    String file_location = NodeUtils.GetAttributeValue(child2,"File_Location","");
+                                    if (!FileUtils.IsAbsolutePath(file_location))
+                                    {
+                                        file_location = sourceDir + file_location;
+                                    }
+                                    model.setFileLocation(file_location);
                                 }
                                 if (NodeUtils.HasAttribute(child2,"DB"))
                                 {
-                                    model.setDb(lastDB = NodeUtils.GetAttributeValue(child2,"DB",""));
+                                	lastDB=NodeUtils.GetAttributeValue(child2,"DB","");
+                                    model.setDb(lastDB);
                                 }
                                 if (NodeUtils.HasAttribute(child2,"package"))
                                 {
@@ -294,7 +368,9 @@ public class XFTManager {
                                 }
                                 try {
                                     model.setSchema();
-                                } catch (XFTInitException | ElementNotFoundException e) {
+                                } catch (XFTInitException e) {
+                                    e.printStackTrace();
+                                } catch (ElementNotFoundException e) {
                                     e.printStackTrace();
                                 }
                                 DATA_MODELS.put(model.getFileName(),model);
@@ -307,7 +383,7 @@ public class XFTManager {
         
         try {
 			//retrieve schema from jars
-			List<XFTDataModel> models=discoverSchema();
+			List<XFTDataModel> models=discoverSchema(source);
 			for(XFTDataModel model:models){
 				model.setDb(lastDB);
 				DATA_MODELS.put(model.getFileName(), model);
@@ -318,7 +394,7 @@ public class XFTManager {
 		}
     }
 
-    private List<XFTDataModel> discoverSchema() throws XFTInitException, ElementNotFoundException {
+    private List<XFTDataModel> discoverSchema(String source) throws XFTInitException, ElementNotFoundException {
 		List<XFTDataModel> models=Lists.newArrayList();
 		  	
 		List<DataModelDefinition> defs=discoverDataModelDefs();
@@ -338,7 +414,7 @@ public class XFTManager {
 	}
     
     public static List<DataModelDefinition> discoverDataModelDefs(){
-    	List<DataModelDefinition> defs= Lists.newArrayList();
+    	List<DataModelDefinition> defs=Lists.newArrayList();
     	//look for defined schema extensions
         List<Class<?>> classes;
         try {
@@ -357,7 +433,9 @@ public class XFTManager {
 					if(in!=null){
 					    defs.add(annotation);
 					}
-				} catch (InstantiationException | IllegalAccessException e) {
+				} catch (InstantiationException e) {
+					logger.error("",e);
+				} catch (IllegalAccessException e) {
 					logger.error("",e);
 				}
             }
@@ -377,15 +455,17 @@ public class XFTManager {
         XMLWriter writer = new XMLWriter();
         Document doc =writer.getDocument();
         Node main = doc.createElement("xdat-manager");
-        for (final Object o : GetSchemas()) {
-            XFTSchema schema = (XFTSchema) o;
+        Iterator schemas =  GetSchemas().iterator();
+        while (schemas.hasNext())
+        {
+            XFTSchema schema = (XFTSchema)schemas.next();
             main.appendChild(schema.toXML(doc));
         }
         doc.appendChild(main);
         return doc;
     }
 
-    private void manageAddins() throws Exception
+    private void manageAddins() throws ElementNotFoundException,XFTInitException,Exception
     {
         //XFT.LogCurrentTime("MANAGER ADD_INS:1","ERROR");
 

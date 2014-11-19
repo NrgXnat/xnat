@@ -1,17 +1,21 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Mar 15, 2005
+ * org.nrg.xdat.turbine.modules.actions.SearchA
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/13/14 11:48 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.io.StringWriter;
 import java.sql.SQLException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.Date;
@@ -31,13 +35,14 @@ import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.CriteriaCollection;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.StringUtils;
 
@@ -79,7 +84,7 @@ public abstract class SearchA extends SecureAction {
 		try {
 		    doPreliminaryProcessing(data,context);
 
-			XDATUser user = TurbineUtils.getUser(data);
+			UserI user = TurbineUtils.getUser(data);
 			String display = data.getParameters().getString("display","listing");
 			String elementName = ((String)TurbineUtils.GetPassedParameter("element",data));
 			Integer page = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger("page",data));
@@ -128,7 +133,7 @@ public abstract class SearchA extends SecureAction {
 				}
 				if (search == null || hasSuperSearchVariables(data) || queryType.equalsIgnoreCase("new"))
 				{
-					search = user.getSearch(elementName,display);
+					search = UserHelper.getSearchHelperService().getSearchForUser(user,elementName,display);
 
 					if (hasSuperSearchVariables(data))
 					{
@@ -226,8 +231,8 @@ public abstract class SearchA extends SecureAction {
     {
         ds.resetWebFormValues();
 
-        XDATUser user = TurbineUtils.getUser(data);
-        Iterator eds = user.getSearchableElementDisplays().iterator();
+        UserI user = TurbineUtils.getUser(data);
+        Iterator eds = UserHelper.getUserHelperService(user).getSearchableElementDisplays().iterator();
         while (eds.hasNext())
         {
             ElementDisplay ed = (ElementDisplay)eds.next();
@@ -540,7 +545,7 @@ public abstract class SearchA extends SecureAction {
         value = StringUtils.ReplaceStr(value.trim(),"IS NULL","IS_NULL");
         value = StringUtils.ReplaceStr(value.trim(),"IS NOT NULL","IS_NOT_NULL");
         value = StringUtils.ReplaceStr(value,"*","%");
-        while (value.indexOf(",")!=-1)
+        while (value.indexOf(",")!=-1 && !df.getId().equalsIgnoreCase("PROJECT_INVS")) // PROJECT_INVS has a comma in its middle
         {
             if (value.indexOf(",")==0)
             {
@@ -609,7 +614,7 @@ public abstract class SearchA extends SecureAction {
                                     s = s.substring(1);
                                 }
                                 //equals
-                                DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s);
+                                DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s.substring(1));
                                 subCC.add(dc);
                             }else{
                                 if (s.startsWith("/")){
@@ -660,7 +665,7 @@ public abstract class SearchA extends SecureAction {
                                 s = s.substring(1);
                             }
                             //equals
-                            DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s);
+                            DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s.substring(1));
                             cc.add(dc);
                         }else{
                             if (temp.startsWith("/")){
@@ -691,7 +696,12 @@ public abstract class SearchA extends SecureAction {
                 if (temp.indexOf(" ")!=-1)
                 {
                     CriteriaCollection subCC = new CriteriaCollection("OR");
-                    Iterator strings= StringUtils.DelimitedStringToArrayList(temp," ").iterator();
+                    Iterator strings = null;
+                    if (df.getId().equalsIgnoreCase("PROJECT_INVS")) {  //project_invs always has a space in it and we don't want it torn apart
+                        strings = Arrays.asList(new String[]{temp}).iterator(); // this is stupid, but it needs an iterator
+                    } else {
+                        strings= StringUtils.DelimitedStringToArrayList(temp," ").iterator();
+                    }
                     while (strings.hasNext())
                     {
                         String s= (String)strings.next();
@@ -733,7 +743,7 @@ public abstract class SearchA extends SecureAction {
                                 s = s.substring(1);
                             }
                             //equals
-                            DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s);
+                            DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s.substring(1));
                             subCC.add(dc);
                         }else{
                             if (s.startsWith("/")){
@@ -784,7 +794,7 @@ public abstract class SearchA extends SecureAction {
                             s = s.substring(1);
                         }
                         //equals
-                        DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s);
+                        DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",s.substring(1));
                         cc.add(dc);
                     }else{
                         if (temp.startsWith("/")){
@@ -1106,6 +1116,9 @@ public abstract class SearchA extends SecureAction {
                 cc.add(subCC);
             }else{
                 String s= integer;
+                
+                s=StringEscapeUtils.unescapeXml(s);
+                
                 if (s.indexOf("-")==-1)
                 {
                     if (s.startsWith(">="))

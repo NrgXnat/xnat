@@ -1,25 +1,20 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Aug 22, 2006
+ * org.nrg.xft.utils.zip.TarUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/18/14 7:55 PM
  */
+
+
 package org.nrg.xft.utils.zip;
 
-import java.io.BufferedOutputStream;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.OutputStream;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.zip.GZIPInputStream;
-import java.util.zip.GZIPOutputStream;
-import java.util.zip.ZipOutputStream;
-
-import org.apache.commons.lang.StringUtils;
+import edu.sdsc.grid.io.GeneralFile;
+import edu.sdsc.grid.io.srb.SRBFile;
+import edu.sdsc.grid.io.srb.SRBFileInputStream;
 import org.apache.tools.tar.TarEntry;
 import org.apache.tools.tar.TarInputStream;
 import org.apache.tools.tar.TarOutputStream;
@@ -29,9 +24,13 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xnat.srb.XNATDirectory;
 import org.nrg.xnat.srb.XNATSrbFile;
 
-import edu.sdsc.grid.io.GeneralFile;
-import edu.sdsc.grid.io.srb.SRBFile;
-import edu.sdsc.grid.io.srb.SRBFileInputStream;
+import java.io.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.zip.GZIPInputStream;
+import java.util.zip.GZIPOutputStream;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author timo
@@ -42,7 +41,8 @@ public class TarUtils implements ZipI {
     TarOutputStream out = null;
     int _compressionMethod = ZipOutputStream.STORED;
     boolean decompress = false;
-        
+    private List<String> _duplicates = new ArrayList<String>();
+
     public void setOutputStream(OutputStream outStream) throws IOException
     {
         //GZIPOutputStream gzip = new GZIPOutputStream(outStream);
@@ -67,52 +67,53 @@ public class TarUtils implements ZipI {
     public ArrayList extract(InputStream is, String dir) throws IOException{
     	return extract(is,dir,true,null);
     }
-    
-    public ArrayList extract(InputStream is, String dir,boolean overwrite,EventMetaI ci) throws IOException{
-        ArrayList extractedFiles = new ArrayList();
-        if (_compressionMethod==ZipOutputStream.DEFLATED)
-        {
+
+    public ArrayList extract(InputStream is, String dir, boolean overwrite, EventMetaI ci) throws IOException {
+        ArrayList<File> extractedFiles = new ArrayList<File>();
+        if (_compressionMethod == ZipOutputStream.DEFLATED) {
             //f = unGzip(f,dir,deleteZip);
             is = new GZIPInputStream(is);
         }
-    
+
         File dest = new File(dir);
         dest.mkdirs();
-        
+
         TarInputStream tis = new TarInputStream(is);
-        
+
         TarEntry te = tis.getNextEntry();
-        
-        while (te !=null){
-            File destPath = new File(dest,te.getName());
-            if (te.isDirectory())
-            {
+
+        while (te != null) {
+            File destPath = new File(dest, te.getName());
+            if (te.isDirectory()) {
                 destPath.mkdirs();
-            }else
-            {
-                if(destPath.exists() && !overwrite){
-                	throw new IOException("File already exists"+destPath.getCanonicalPath());
-                }else if(destPath.exists()){
-                	FileUtils.MoveToHistory(destPath,EventUtils.getTimestamp(ci));
+            } else {
+                if (destPath.exists() && !overwrite) {
+                    _duplicates.add(te.getName());
+                } else {
+                    if (destPath.exists()) {
+                        FileUtils.MoveToHistory(destPath, EventUtils.getTimestamp(ci));
+                    }
+                    destPath.getParentFile().mkdirs();
+                    //System.out.println("Writing: " + te.getName());
+                    FileOutputStream fout = new FileOutputStream(destPath);
+
+                    tis.copyEntryContents(fout);
+
+                    fout.close();
+                    extractedFiles.add(destPath);
                 }
-                
-            	destPath.getParentFile().mkdirs();
-                //System.out.println("Writing: " + te.getName());
-                FileOutputStream fout = new FileOutputStream(destPath); 
-
-                tis.copyEntryContents(fout); 
-
-                fout.close(); 
-            } 
-            extractedFiles.add(destPath);
-            te = tis.getNextEntry(); 
+            }
+            te = tis.getNextEntry();
         }
-    
         tis.close();
         return extractedFiles;
     }
 
-    
+    @Override
+    public List<String> getDuplicates() {
+        return _duplicates;
+    }
+
     public void extract(File f, String dir,boolean deleteZip) throws IOException{;
     
         InputStream is = new FileInputStream(f);
@@ -204,11 +205,11 @@ public class TarUtils implements ZipI {
     
     /**
      * @param relativePath path name for zip file
-     * @param f
+     * @param in           The input stream.
      * @throws FileNotFoundException
      * @throws IOException
      */
-    public void write(String relativePath, InputStream in) throws FileNotFoundException,IOException
+    public void write(String relativePath, InputStream in) throws IOException
     {
         if (out== null)
         {
@@ -231,11 +232,11 @@ public class TarUtils implements ZipI {
     
     /**
      * @param relativePath path name for zip file
-     * @param f
+     * @param file         The file
      * @throws FileNotFoundException
      * @throws IOException
      */
-    public void write(String relativePath, File file) throws FileNotFoundException,IOException
+    public void write(String relativePath, File file) throws IOException
     {
         if (out== null)
         {
@@ -261,12 +262,12 @@ public class TarUtils implements ZipI {
     
 
     
-    public void writeDirectory(File dir) throws FileNotFoundException, IOException
+    public void writeDirectory(File dir) throws IOException
     {
         writeDirectory("", dir);
     }
     
-    private void writeDirectory(String parentPath, File dir) throws FileNotFoundException, IOException
+    private void writeDirectory(String parentPath, File dir) throws IOException
     {
         String dirName = dir.getName() + "/";
         for(int i=0;i<dir.listFiles().length;i++)

@@ -1,26 +1,28 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 13, 2005
+ * org.nrg.xdat.security.PermissionCriteria
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
-package org.nrg.xdat.security;
 
-import java.util.ArrayList;
+
+package org.nrg.xdat.security;
 
 import org.apache.log4j.Logger;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.utils.StringUtils;
+
+import java.util.ArrayList;
 /**
  * @author Tim
  *
  */
 @SuppressWarnings("serial") //$NON-NLS-1$
-public class PermissionCriteria{
+public class PermissionCriteria implements PermissionCriteriaI{
 	private static final String SPACE = " ";
 	private static final String EMPTY = "";
 	private static final String COMMA = ",";
@@ -49,12 +51,14 @@ public class PermissionCriteria{
 
 	private boolean authorized=true;
 	
-	public PermissionCriteria(){
-		
+	public PermissionCriteria(String elementName){
+		this.elementName=elementName;
 	}
 	
-	public PermissionCriteria(ItemI i) throws Exception
+	public PermissionCriteria(String elementName, ItemI i) throws Exception
 	{
+		this.elementName=elementName;
+		
 		setField(i.getStringProperty(FIELD));
 		setFieldValue(i.getProperty(FIELD_VALUE));
 		setComparisonType(i.getStringProperty(COMPARISON_TYPE));
@@ -70,6 +74,9 @@ public class PermissionCriteria{
 	
 	public static final String SCHEMA_ELEMENT_NAME="xdat:field_mapping";
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getSchemaElementName()
+	 */
 	public String getSchemaElementName()
 	{
 	    return SCHEMA_ELEMENT_NAME;
@@ -79,6 +86,10 @@ public class PermissionCriteria{
 		return authorized;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getField()
+	 */
+	@Override
 	public String getField()
 	{
 		return field;
@@ -89,31 +100,55 @@ public class PermissionCriteria{
 		return (comparison==null)?EQUALS:comparison;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getFieldValue()
+	 */
+	@Override
 	public Object getFieldValue()
 	{
 		return value;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getCreate()
+	 */
+	@Override
 	public boolean getCreate()
 	{
 		return (canCreate==null)?false:canCreate;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getRead()
+	 */
+	@Override
 	public boolean getRead()
 	{
 		return (canRead==null)?false:canRead;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getEdit()
+	 */
+	@Override
 	public boolean getEdit()
 	{
 		return (canEdit==null)?false:canEdit;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getDelete()
+	 */
+	@Override
 	public boolean getDelete()
 	{
 		return (canDelete==null)?false:canDelete;
 	}
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#getActivate()
+	 */
+	@Override
 	public boolean getActivate()
 	{
 		return (canActivate==null)?false:canActivate;
@@ -136,23 +171,18 @@ public class PermissionCriteria{
 		}
 	}
 	
-	public boolean canAccess(String access,String headerFormat,SecurityValues values) throws Exception
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.security.PermissionCriteriaI#canAccess(java.lang.String, java.lang.String, org.nrg.xdat.security.SecurityValues)
+	 */
+	@Override
+	public boolean canAccess(String access,SecurityValues values) throws Exception
 	{
 		if (getAction(access))
 		{
 			Object value = null;
 			
-			if (headerFormat.equalsIgnoreCase(SecurityManager.SELECT_GRAND))
-			{
-				final Object[] field = GenericWrapperElement.GetViewBasedGrandColumnNameForXMLPath(getField());
-				if (field != null)
-				{
-					value = values.getHash().get((String)field[0]);
-				}
-			}else{
-				// dot syntax
-				value = values.getHash().get(getField());
-			}
+			// dot syntax
+			value = values.getHash().get(getField());
 									
 			if (value == null)
 			{
@@ -261,5 +291,12 @@ public class PermissionCriteria{
 		sb.append(SPACE).append(getActivate()); 
 		
 		return sb.toString();
+	}
+	
+	final String elementName;
+
+	@Override
+	public String getElementName() {
+		return elementName;
 	}
 }

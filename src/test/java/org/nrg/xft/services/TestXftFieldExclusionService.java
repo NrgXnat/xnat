@@ -1,12 +1,25 @@
+/*
+ * org.nrg.xft.services.TestXftFieldExclusionService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 9/12/13 4:29 PM
+ */
 package org.nrg.xft.services;
 
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xft.entities.XftFieldExclusion;
 import org.nrg.xft.entities.XftFieldExclusionScope;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TransactionConfiguration;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import java.util.List;
@@ -15,6 +28,8 @@ import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
+@TransactionConfiguration(defaultRollback = true)
+@Transactional
 public class TestXftFieldExclusionService {
     @Test
     public void testServiceInstance() {
@@ -22,7 +37,7 @@ public class TestXftFieldExclusionService {
     }
 
     @Test
-    public void testCRUDExclusions() {
+    public void testCRUDExclusions() throws NrgServiceException {
         XftFieldExclusion created = _service.newEntity();
         created.setScope(XftFieldExclusionScope.Project);
         created.setTargetId("testCRUDExclusions");
@@ -44,7 +59,7 @@ public class TestXftFieldExclusionService {
     }
 
     @Test(expected = ConstraintViolationException.class)
-    public void testConstraints() {
+    public void testConstraints() throws NrgServiceException {
         XftFieldExclusion exclusion1 = _service.newEntity();
         exclusion1.setScope(XftFieldExclusionScope.Project);
         exclusion1.setTargetId("testConstraints");
@@ -58,7 +73,7 @@ public class TestXftFieldExclusionService {
     }
 
     @Test
-    public void testExclusionsByScope() {
+    public void testExclusionsByScope() throws NrgServiceException {
         XftFieldExclusion exclusion1 = _service.newEntity();
         exclusion1.setPattern("name");
         _service.create(exclusion1);

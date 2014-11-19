@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Jan 3, 2005
+ * org.nrg.xdat.search.DisplaySearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 9/10/13 2:42 PM
  */
+
+
 package org.nrg.xdat.search;
 import java.sql.SQLException;
 import java.util.ArrayList;
@@ -35,7 +38,6 @@ import org.nrg.xdat.om.XdatCriteriaSet;
 import org.nrg.xdat.om.XdatSearchField;
 import org.nrg.xdat.presentation.PresentationA;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
@@ -95,7 +97,7 @@ public class DisplaySearch implements TableSearchI{
 	private XFTTableI presentedTable = null;
 	private PresentationA lastPresenter = null;
 
-	private XDATUser user = null;
+	private UserI user = null;
 
 	private String level = ViewManager.ACCESSIBLE;
 
@@ -334,7 +336,7 @@ public class DisplaySearch implements TableSearchI{
 		       DisplayField df=dfw.getDisplayField();
 		       if(df instanceof SQLQueryField){
 		    	   if(dfw.getValue()!=null && dfw.getValue().equals("{XDAT_USER_ID}")){
-		    		   dfw.setValue(user.getXdatUserId());
+		    		   dfw.setValue(user.getID());
 		    	   }
 		       }
 		   }catch(Exception e){
@@ -529,7 +531,7 @@ public class DisplaySearch implements TableSearchI{
                if (df instanceof SQLQueryField){
             	   if(dfr.getValue()!=null){
             		   if(dfr.getValue().equals("{XDAT_USER_ID}")){
-                		   dfr.setValue(user.getXdatUserId());
+                		   dfr.setValue(user.getID());
                 	   }
                        alias = df.getId() +"_" + cleanColumnName((dfr).getValue().toString());
             	   }
@@ -651,6 +653,12 @@ public class DisplaySearch implements TableSearchI{
 				    }
 				}
 		    }
+		}
+		
+		if(this.addKeyColumn()){
+			String keyCol = qo.getFieldAlias(qo.getKeys().get(0),"SEARCH");
+			select.append(", ");
+			select.append(keyCol).append(" AS KEY ");
 		}
 
 		orderBy.append(" ORDER BY ");
@@ -852,6 +860,17 @@ public class DisplaySearch implements TableSearchI{
 		return sb.toString();
 	}
 	
+	private boolean addKey=false;
+	
+	public boolean addKeyColumn() {
+		return addKey;
+	}
+	
+	public void addKeyColumn(boolean b) {
+		addKey=b;
+	}
+
+
 	public static String cleanColumnName(String s){
 		s=StringUtils.ReplaceStr(s, ",", "_com_");
 		s=StringUtils.ReplaceStr(s, ":", "_col_");
@@ -1455,7 +1474,7 @@ public class DisplaySearch implements TableSearchI{
 	 * @param user
 	 */
 	public void setUser(UserI user) {
-		this.user = (XDATUser)user;
+		this.user = user;
 	}
 
 	/**

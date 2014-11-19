@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 12, 2004
+ * org.nrg.xft.references.XFTSuperiorReference
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.references;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -17,11 +21,6 @@ import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.StringUtils;
-/**
- * Details a one-to-many reference 
- * 
- * @author Tim
- */
 public class XFTSuperiorReference implements org.nrg.xft.references.XFTReferenceI {
 	/**
 	 * value used for specifier field to say the relation was defined in the superior element (as a max occurs > 1).

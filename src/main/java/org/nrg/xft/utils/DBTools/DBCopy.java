@@ -1,12 +1,30 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jul 26, 2004
+ * org.nrg.xft.utils.DBTools.DBCopy
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/3/14 12:24 PM
  */
+
+
 package org.nrg.xft.utils.DBTools;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.Connection;
+import java.sql.DriverManager;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Iterator;
+import java.util.Properties;
+
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
@@ -14,12 +32,6 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
-
-import java.io.*;
-import java.sql.*;
-import java.util.ArrayList;
-import java.util.Iterator;
-import java.util.Properties;
 /**
  * @author Tim
  */
@@ -34,9 +46,13 @@ public class DBCopy {
 		try {
 			InputStream propsIn = new FileInputStream(propsLocation);
 			props.load(propsIn);
+		} catch (FileNotFoundException e) {
+			e.printStackTrace();
+			return;
 		} catch (IOException e) {
 			e.printStackTrace();
-        }
+			return;
+		}
 	}
 	
 	public void cleanDestinationDB()
@@ -64,15 +80,23 @@ public class DBCopy {
 		logger.info("Copy Destination DB: " + props.getProperty("dest.db.url"));
 		Connection con = null;
 		try {
+			File sourceDirinsert = new File(XFTManager.GetInstance().getSourceDir()+ "inserts");
+			if (! sourceDirinsert.exists())
+			{
+				sourceDirinsert.mkdir();
+			}
 			StringBuffer sb = new StringBuffer();
 			Class.forName(props.getProperty("src.db.driver"));
 			Class.forName(props.getProperty("dest.db.driver"));
 			con = DriverManager.getConnection(props.getProperty("src.db.url"),props.getProperty("src.db.user"),props.getProperty("src.db.password"));
 			Statement stmt = con.createStatement();
 			
-			ArrayList<String> tableNames = StringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
-			for (final String table : tableNames) {
-                logger.info("Copying " + table + " ...");
+			ArrayList tableNames = StringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
+			Iterator iter = tableNames.iterator();
+			while (iter.hasNext())
+			{
+				String table = (String)iter.next();
+logger.info("Copying " + table + " ...");
 				ArrayList columns = new ArrayList();
 				ResultSet rs = stmt.executeQuery("SELECT * FROM " + table);
 				
@@ -125,15 +149,13 @@ public class DBCopy {
 					
 					if (rowCounter++ == 10000)
 					{
-                        // MIGRATE: I'm not even sure what this is doing.
-						// FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir()+ "inserts" + File.separator + table +"_inserts.sql");
+						FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir()+ "inserts" + File.separator + table +"_inserts.sql");
 						this.execDestinationSQL(sb.toString());
 						sb = new StringBuffer();
 						rowCounter=0;
 					}
 				}
-                // MIGRATE: I'm not even sure what this is doing.
-				// FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir()+ "inserts" + File.separator + table +"_inserts.sql");
+				FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir()+ "inserts" + File.separator + table +"_inserts.sql");
 				this.execDestinationSQL(sb.toString());
 				sb = new StringBuffer();
 			}
@@ -142,8 +164,8 @@ public class DBCopy {
 			logger.error("",e);
 		} catch (SQLException e) {
 			logger.error("",e);
-//		} catch (org.nrg.xft.exception.XFTInitException e) {
-//			logger.error("",e);
+		} catch (org.nrg.xft.exception.XFTInitException e) {
+			logger.error("",e);
 		} catch (Exception e) {
 			logger.error("",e);
 		}finally
@@ -395,13 +417,12 @@ public class DBCopy {
 			System.out.println("Arguments: <Properties File location>");
 			return;
 		}
-// MIGRATE: Not really necessary, but this will require a way to specify a path in place of just the string file name.
-//		try {
-//			XFT.init(new File("C:\\xdat\\projects\\cnda").toURI(), false);
-//		} catch (ElementNotFoundException e) {
-//			e.printStackTrace();
-//		}
-        DBCopy db = new DBCopy(args[0]);
+		try {
+			XFT.init("C:\\xdat\\projects\\cnda");
+		} catch (ElementNotFoundException e) {
+			e.printStackTrace();
+		}
+		DBCopy db = new DBCopy(args[0]);
 		db.cleanDestinationDB();
 		db.copyDB();
 		db.validateCopy();

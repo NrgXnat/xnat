@@ -1,9 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * GENERATED FILE
- * Created on Fri May 13 14:19:01 CDT 2005
+ * org.nrg.xdat.security.XdatStoredSearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.security;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -46,23 +52,6 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
 		super(properties,user);
 	}
 
-//	public static ArrayList<XdatStoredSearch> GetPreLoadedSearches()
-//	{
-//	    if (ALL_STORED_SEARCHES == null)
-//	    {
-//	        try {
-//                long startTime = Calendar.getInstance().getTimeInMillis();
-//                ALL_STORED_SEARCHES = PopulateSearches();
-//                if(XFT.VERBOSE)System.out.println("Finished pre-loading stored searches " + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
-//            } catch (Exception e) {
-//                logger.error("",e);
-//                ALL_STORED_SEARCHES = new ArrayList<XdatStoredSearch>();
-//            }
-//	    }
-//	    
-//	    return ALL_STORED_SEARCHES;
-//	}
-//    
     public static ArrayList<XdatStoredSearch> GetSearches(CriteriaCollection cc,boolean withChildren) {
         ArrayList _ALL_STORED_SEARCHES = new ArrayList<XdatStoredSearch>();
         try {
@@ -78,30 +67,13 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
         
         return _ALL_STORED_SEARCHES;
     }
+    
     public static ArrayList<XdatStoredSearch> GetSearches(String field,String value,boolean withChildren) {
         CriteriaCollection cc = new CriteriaCollection("AND");
         cc.addClause(field, value);
         return GetSearches(cc,withChildren);
     }
-//    
-//    public static void ReplacePreLoadedSearch(XdatStoredSearch i){
-//        XdatStoredSearch xss = GetPreLoadedSearch(i.getId());
-//        if (xss!=null){
-//            ALL_STORED_SEARCHES.remove(xss);
-//        }
-//        ALL_STORED_SEARCHES.add(i);
-//    }
-//    
-//    public static boolean HasPreLoadedSearch(String bundle)
-//    {
-//        if (GetPreLoadedSearch(bundle)==null)
-//        {
-//            return false;
-//        }else{
-//            return true;
-//        }
-//    }
-//    
+
     public static XdatStoredSearch GetPreLoadedSearch(String id,boolean withChildren)
     {
     	try {
@@ -113,40 +85,6 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
 		
 		return null;
     }
-//    
-//
-//    public static ArrayList<XdatStoredSearch> GetPreLoadedSearches(String field, String login)
-//    {
-//        ArrayList<XdatStoredSearch> _return = new ArrayList<XdatStoredSearch>();
-//        for(XdatStoredSearch xss: GetPreLoadedSearches())
-//        {
-//            try {
-//                Boolean b = xss.getSecure();
-//                if (b==null)
-//                {
-//                    b=Boolean.TRUE;
-//                }
-//                if (b.booleanValue())
-//                {
-//                    if (xss.hasProperty(field,login))
-//                    {
-//                        _return.add(xss);
-//                    }
-//                }else{
-//                    _return.add(xss);
-//                }
-//            } catch (XFTInitException e) {
-//                logger.error("",e);
-//            } catch (ElementNotFoundException e) {
-//                logger.error("",e);
-//            } catch (FieldNotFoundException e) {
-//                logger.error("",e);
-//            }
-//        }
-//        
-//        return _return;
-//    }
-    
 
     public static ArrayList<XdatStoredSearch> GetPreLoadedSearchesByAllowedUser(String login)
 	{
@@ -158,11 +96,6 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
     {
         return GetSearches("xdat:stored_search.allowed_groups.groupID", groupID,true);
     }
-	
-//	public static void RefreshPreLoadedSearches()
-//	{
-//	    ALL_STORED_SEARCHES = null;
-//	}
     
     public boolean canRead(String login){
         Boolean b = getSecure();

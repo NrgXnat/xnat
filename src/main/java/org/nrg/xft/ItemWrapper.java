@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 13, 2005
+ * org.nrg.xft.ItemWrapper
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft;
 
 import java.io.ByteArrayOutputStream;
@@ -22,7 +25,6 @@ import java.util.Date;
 import java.util.Hashtable;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.om.XdatUserI;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.DBPoolException;
@@ -594,7 +596,7 @@ public abstract class ItemWrapper implements ItemI {
         getItem().writeExternal(out);
     }
     
-    public XdatUserI getInsertUser(){
+    public UserI getInsertUser(){
         return this.getItem().getInsertUser();
     }
     
@@ -616,7 +618,7 @@ public abstract class ItemWrapper implements ItemI {
 		}
 	}
 
-	public XdatUserI getMetaCreatedBy()
+	public UserI getMetaCreatedBy()
 	{
 	    return ((XFTItem)this.getItem()).getInsertUser();
 	}

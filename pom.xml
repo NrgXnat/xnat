@@ -6,7 +6,6 @@
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
 	    <version>1.7.0-SNAPSHOT</version>
-		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 
 	<groupId>org.nrg.xdat</groupId>
@@ -127,10 +126,12 @@
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
+            <version>10.0.1</version>
         </dependency>
 		<dependency>
 			<groupId>commons-net</groupId>
 			<artifactId>commons-net</artifactId>
+            <version>3.1</version>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>
@@ -167,10 +168,6 @@
 			<artifactId>velocity</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>stratum</groupId>
-			<artifactId>stratum</artifactId>
-		</dependency>
-		<dependency>
 			<groupId>ecs</groupId>
 			<artifactId>ecs</artifactId>
 		</dependency>
@@ -181,6 +178,10 @@
 		<dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
+		</dependency>
+		<dependency>
+			<groupId>stratum</groupId>
+			<artifactId>stratum</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>com.lowagie</groupId>
@@ -222,6 +223,7 @@
 		<dependency>
 			<groupId>nl.bitwalker</groupId>
 			<artifactId>UserAgentUtils</artifactId>
+			<version>1.2.4</version>
 		</dependency>
 		<dependency>
 			<groupId>ant</groupId>
@@ -254,12 +256,20 @@
 			<artifactId>hibernate-ehcache</artifactId>
             <scope>test</scope>
 		</dependency>
-		<dependency>
-			<groupId>net.sf.ehcache</groupId>
-			<artifactId>ehcache-core</artifactId>
-            <scope>test</scope>
-		</dependency>
 	</dependencies>
+
+	<pluginRepositories>
+		<pluginRepository>
+			<name>XNAT Snapshot Maven Plugin Repo</name>
+			<id>org.nrg.maven.plugins.snapshot</id>
+			<url>http://maven.xnat.org/plugins-snapshot</url>
+		</pluginRepository>
+		<pluginRepository>
+			<name>XNAT Release Maven Plugin Repo</name>
+			<id>org.nrg.maven.plugins.release</id>
+			<url>http://maven.xnat.org/plugins-release</url>
+		</pluginRepository>
+	</pluginRepositories>
 
 	<repositories>
 		<repository>

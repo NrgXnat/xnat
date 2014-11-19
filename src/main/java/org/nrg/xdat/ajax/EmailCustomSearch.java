@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Sep 19, 2007
+ * org.nrg.xdat.ajax.EmailCustomSearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.ajax;
 
 import java.io.IOException;
@@ -16,61 +23,68 @@ import javax.servlet.http.HttpSession;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.XFT;
 import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.security.UserI;
 
 public class EmailCustomSearch {
     static org.apache.log4j.Logger logger = Logger.getLogger(EmailCustomSearch.class);
 
     public void send(HttpServletRequest req, HttpServletResponse response,ServletConfig sc) throws IOException{
-        String xmlString = req.getParameter("search_xml");
+
+    	String xmlString = req.getParameter("search_xml");
         
         HttpSession session = req.getSession();
-        XDATUser user = ((XDATUser)session.getAttribute("user"));        
+        UserI user = ((UserI)session.getAttribute("user"));        
 
         String _return ="<DIV class=\"error\">Unknown Exception</DIV>";
-        if (user!=null){
-            String toAddress = req.getParameter("toAddress");
-            String ccAddress = req.getParameter("ccAddress");
-            String bccAddress = req.getParameter("bccAddress");
-            String subject = req.getParameter("subject");
-            String message = req.getParameter("message");
-            
-			if (AdminUtils.GetPageEmail()) {
-				if (StringUtils.isBlank(bccAddress)) {
-					bccAddress = AdminUtils.getAdminEmailId();
-				} else {
-					bccAddress += ", " + AdminUtils.getAdminEmailId();
-                        }
-                    }
-                    
-			// Split each string on commas and whitespace.
-			String[] tos = StringUtils.split(toAddress, ", ");
-			String[] ccs = StringUtils.split(ccAddress, ", ");
-			String[] bccs = StringUtils.split(bccAddress, ", ");
-
-			if (toAddress != null || ccAddress != null || bccAddress != null) {
-				try {
-                    Object search_id=PoolDBUtils.LogCustomSearch(user.getUsername(), xmlString, user.getDBName());
-					String formattedMessage = formatHtmlMessage(req, user, message, search_id);
-					XDAT.getMailService().sendHtmlMessage(user.getEmail(), tos, ccs, bccs, subject, formattedMessage);
-                        _return=("<DIV class=\"warning\">Message sent.</DIV>");
-                    } catch (Exception e) {
-                        logger.error("",e);
-                        _return=("<DIV class=\"error\">Unable to send mail.</DIV>");
-                    }
-            }
-        }else{
-            _return= "<DIV class=\"error\">Missing User Account</DIV>";
+		if(XFT.getBooleanProperty("smtp.enabled", true)){
+	        if (user!=null){
+	            String toAddress = req.getParameter("toAddress");
+	            String ccAddress = req.getParameter("ccAddress");
+	            String bccAddress = req.getParameter("bccAddress");
+	            String subject = req.getParameter("subject");
+	            String message = req.getParameter("message");
+	            
+				if (AdminUtils.GetPageEmail()) {
+					if (StringUtils.isBlank(bccAddress)) {
+						bccAddress = AdminUtils.getAdminEmailId();
+					} else {
+						bccAddress += ", " + AdminUtils.getAdminEmailId();
+	                        }
+	                    }
+	                    
+				// Split each string on commas and whitespace.
+				String[] tos = StringUtils.split(toAddress, ", ");
+				String[] ccs = StringUtils.split(ccAddress, ", ");
+				String[] bccs = StringUtils.split(bccAddress, ", ");
+	
+				if (toAddress != null || ccAddress != null || bccAddress != null) {
+					try {
+	                    Object search_id=PoolDBUtils.LogCustomSearch(user.getUsername(), xmlString, user.getDBName());
+						String formattedMessage = formatHtmlMessage(req, user, message, search_id);
+						XDAT.getMailService().sendHtmlMessage(user.getEmail(), tos, ccs, bccs, subject, formattedMessage);
+	                        _return=("<DIV class=\"warning\">Message sent.</DIV>");
+	                    } catch (Exception e) {
+	                        logger.error("",e);
+	                        _return=("<DIV class=\"error\">Unable to send mail.</DIV>");
+	                    }
+	            }
+	        }else{
+	            _return= "<DIV class=\"error\">Missing User Account</DIV>";
+	        }
+		}else{
+            _return= "<DIV class=\"error\">SMTP disabled.</DIV>";
         }
+		
         response.setContentType("text/html");
         response.setHeader("Cache-Control", "no-cache");
         response.getWriter().write(_return);
     }
 
-	public String getTxtMessage(HttpServletRequest req, XDATUser user, String msg, Object search_id) {
+	public String getTxtMessage(HttpServletRequest req, UserI user, String msg, Object search_id) {
 		if (req.getParameter("txtmessage") == null) {
             try {                
                 StringBuffer sb = new StringBuffer();
@@ -96,7 +110,7 @@ public class EmailCustomSearch {
 
     }
     
-	private String formatHtmlMessage(HttpServletRequest req, XDATUser user, String msg, Object search_id) {
+	private String formatHtmlMessage(HttpServletRequest req, UserI user, String msg, Object search_id) {
 		if (req.getParameter("htmlmessage") == null) {
             try {
                 StringBuffer sb = new StringBuffer();

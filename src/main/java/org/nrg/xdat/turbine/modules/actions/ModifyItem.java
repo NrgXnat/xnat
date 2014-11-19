@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Mar 4, 2005
+ * org.nrg.xdat.turbine.modules.actions.ModifyItem
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions; 
 
 import java.util.ArrayList;
@@ -39,7 +42,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 
 /**
  * @author Tim
@@ -182,9 +185,9 @@ public class ModifyItem  extends SecureAction {
 //                return;
 //            }
 
-            ValidationResults vr = null;
+            ValidationResultsI vr = null;
 
-            	ValidationResults temp = first.validate();
+            	ValidationResultsI temp = first.validate();
             	if (! temp.isValid())
             	{
             	   vr = temp;

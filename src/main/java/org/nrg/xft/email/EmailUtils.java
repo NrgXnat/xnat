@@ -13,9 +13,6 @@ import org.apache.log4j.Logger;
 import org.nrg.mail.services.impl.SpringBasedMailServiceImpl;
 import org.nrg.xft.cl.ExtensibleClassLoader;
 
-/**
- * @deprecated As of version 1.5.3, use the appropriate methods from the {@link SpringBasedMailServiceImpl} class. 
- */
 @Deprecated
 public class EmailUtils {
 	static Logger logger = Logger.getLogger(EmailUtils.class);

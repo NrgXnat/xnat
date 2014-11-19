@@ -1,3 +1,13 @@
+/*
+ * org.nrg.xft.entities.XftFieldExclusion
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 9/4/13 4:37 PM
+ */
 package org.nrg.xft.entities;
 
 import java.util.regex.Pattern;
@@ -13,16 +23,6 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 
-/**
- * Represents the basic XFT field exclusion criteria. This simple object includes
- * three unique attributes, exclusion scope, scope target ID, and element pattern.
- * The scope indicates the level at which the exclusion should be applied, e.g.
- * system, project, or something else. The scope target ID is used when the scope
- * indicates that the exclusion is restricted to a particular scope, e.g. to a project
- * or particular data type. Lastly, the element pattern is a regular expression that,
- * when an element names matches that pattern, indicates an element that should be
- * excluded from the final output.
- */
 @XmlRootElement
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"scope", "targetId", "pattern"}))
@@ -60,10 +60,7 @@ public class XftFieldExclusion extends AbstractHibernateEntity {
 
     @Override
     public String toString() {
-        StringBuilder buffer = new StringBuilder(_scope.toString());
-        buffer.append("[").append(_scope != XftFieldExclusionScope.System ? _targetId : "N/A").append("]");
-        buffer.append(": ").append(_pattern);
-        return buffer.toString();
+        return _scope.toString() + "[" + (_scope != XftFieldExclusionScope.System ? _targetId : "N/A") + "]" + ": " + _pattern;
     }
 
     @Override

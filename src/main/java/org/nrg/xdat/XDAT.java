@@ -1,17 +1,18 @@
 /*
  * org.nrg.xdat.XDAT
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2014, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  *
- * Last modified 7/1/13 9:13 AM
+ * Last modified 1/3/14 12:24 PM
  */
 
 package org.nrg.xdat;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -20,10 +21,11 @@ import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.hibernate.cache.spi.RegionFactory;
+import org.hibernate.cache.RegionFactory;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.SiteConfigurationService;
+import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.MarshallerCacheService;
 import org.nrg.framework.services.PropertiesService;
@@ -35,10 +37,9 @@ import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -47,11 +48,14 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.services.XftFieldExclusionService;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
@@ -68,7 +72,6 @@ import javax.servlet.http.HttpSession;
 import javax.sql.DataSource;
 import java.io.File;
 import java.net.InetAddress;
-import java.net.URI;
 import java.net.UnknownHostException;
 import java.util.*;
 
@@ -93,15 +96,16 @@ public class XDAT implements Initializable,Configurable{
     private static SiteConfigurationService _siteConfigurationService;
     private static RegionFactory _cacheRegionFactory;
     public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
-    private URI instanceSettingsLocation = null;
-    private static String _screenTemplatesFolder;
-    private static Set<String> _screenTemplatesFolders=new HashSet<>();
-    
-    public static List<String> getWhitelistedIPs(XDATUser user) throws ConfigServiceException {
+    private static String _configFilesLocation = null;
+    private String instanceSettingsLocation = null;
+    private static File _screenTemplatesFolder;
+    private static List<File> _screenTemplatesFolders=new ArrayList<File>();
+
+    public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
         return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
     }
 
-    public static String getWhitelistConfiguration(XDATUser user) throws ConfigServiceException {
+    public static String getWhitelistConfiguration(UserI user) throws ConfigServiceException {
         org.nrg.config.entities.Configuration whitelist = XDAT.getConfigService().getConfig(IP_WHITELIST_TOOL, IP_WHITELIST_PATH);
         if (whitelist == null || StringUtils.isBlank(whitelist.getContents())) {
             whitelist = createDefaultWhitelist(user);
@@ -117,7 +121,7 @@ public class XDAT implements Initializable,Configurable{
         	return _default;
         }
     }
-    
+
     public static boolean getBoolSiteConfigurationProperty(String property,boolean _default) {
     	try {
 			Properties properties = getSiteConfiguration();
@@ -130,37 +134,37 @@ public class XDAT implements Initializable,Configurable{
 			return _default;
 		}
     }
-    
+
 	public static boolean verificationOn() {
 		return getBoolSiteConfigurationProperty("emailVerification",false);
 	}
-	
+
 	public static boolean isAuthenticated() {
 		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
 	}
 
-	public static XDATUserDetails getUserDetails() {
+	public static UserI getUserDetails() {
 		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
 
 		if (authentication != null && authentication.getPrincipal() != null
-				&& authentication.getPrincipal() instanceof XDATUserDetails) {
-			return (XDATUserDetails) authentication.getPrincipal();
+				&& authentication.getPrincipal() instanceof UserI) {
+			return (UserI) authentication.getPrincipal();
 		}
 
 		return null;
 	}
 
-	public static void setUserDetails(XDATUserDetails userDetails) {
+	public static void setUserDetails(UserI userDetails) {
 		Authentication authentication = new UsernamePasswordAuthenticationToken(
 				userDetails, null);
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
-	
-	public static void setNewUserDetails(XDATUserDetails userDetails, RunData data, Context context) {
+
+	public static void setNewUserDetails(UserI userDetails, RunData data, Context context) {
 		//SecurityContextHolder.getContext().setAuthentication(null);
 		String username = userDetails.getLogin();
-		String password = userDetails.getPrimaryPassword();
-		XDATUser user;
+		String password = userDetails.getPassword();
+		UserI user;
 		try {
 			user = Authenticator.Authenticate(new Authenticator.Credentials(
                     username, password));
@@ -170,7 +174,7 @@ public class XDAT implements Initializable,Configurable{
 			item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
 			item.setProperty("xdat:user_login.login_date", today);
 			item.setProperty("xdat:user_login.ip_address", AccessLogger.GetRequestIp(data.getRequest()));
-	        item.setProperty("xdat:user_login.session_id", data.getSession().getId());  
+	        item.setProperty("xdat:user_login.session_id", data.getSession().getId());
 			SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI)null);
 
 			HttpSession session = data.getSession();
@@ -179,7 +183,7 @@ public class XDAT implements Initializable,Configurable{
 
 			session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
-			AccessLogger.LogActionAccess(data, "Valid Login:" + user.getLogin());
+			AccessLogger.LogActionAccess(data, "Valid Login:" + user.getUsername());
 
 		} catch (Exception exception) {
             logger.error("Error performing su operation", exception);
@@ -198,8 +202,8 @@ public class XDAT implements Initializable,Configurable{
 	 * @see org.apache.stratum.lifecycle.Configurable
 	 */
 	public void configure(Configuration configuration) 	{
-        instanceSettingsLocation = new File(configuration.getString("instance_settings_directory")).toURI();
-    }
+		instanceSettingsLocation = configuration.getString("instance_settings_directory");
+	}
 
 	/**
 	 * initialize Torque
@@ -210,16 +214,15 @@ public class XDAT implements Initializable,Configurable{
 	{
 		try {
 			logger.info("Starting Service XDAT");
-			init();
+			init(instanceSettingsLocation);
 		} catch (Exception exception) {
-            System.out.println(exception.getMessage());
-			exception.printStackTrace();
+            logger.error(exception);
 		}
 	}
 
-	public static void init() throws Exception
+	public static void init(String location) throws Exception
 	{
-		XDAT.init(true, true);
+		XDAT.init(location, true, true);
 	}
 
 	public static void RefreshDisplay()
@@ -228,22 +231,35 @@ public class XDAT implements Initializable,Configurable{
 		DisplayManager.GetInstance();
 	}
 
-	public static void init(boolean allowDBAccess) throws Exception
+	public static void init(String location,boolean allowDBAccess) throws Exception
 	{
-		init(allowDBAccess, true);
+		init(location, allowDBAccess, true);
 	}
 
-	public static void init(boolean allowDBAccess, boolean initLog4j) throws Exception
+	public static void init(String location,boolean allowDBAccess, boolean initLog4j) throws Exception
 	{
 		DisplayManager.clean();
+        if (StringUtils.isBlank(_configFilesLocation)) {
+            _configFilesLocation = FileUtils.AppendSlash(location);
+        }
 
-		if (initLog4j) {
-			PropertyConfigurator.configure(getContextService().getConfigurationStream("log4j.properties"));
+		if (initLog4j)
+		{
+			PropertyConfigurator.configure(_configFilesLocation + "log4j.properties");
+			initLog4j= false;
 		}
 
-		XFT.init(false);
+		XFT.init(_configFilesLocation, initLog4j);
 
-		if (allowDBAccess)
+		Long user_count;
+		try {
+			user_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
+		} catch (Throwable e) {
+			// xdat_user table doesn't exist
+			user_count = null;
+		}
+		
+		if (allowDBAccess && user_count!=null)
 		{
 			try {
                 for (ElementSecurity es : ElementSecurity.GetQuarantinedElements()) {
@@ -258,10 +274,8 @@ public class XDAT implements Initializable,Configurable{
 	        }
 		}
 
-		//XFT.LogCurrentTime("XDAT INIT: 2","ERROR");
 		logger.info("Initializing Display Manager");
 		DisplayManager.GetInstance();
-		//XFT.LogCurrentTime("XDAT INIT: 3","ERROR");
 	}
 
 	public static void GenerateUpdateSQL(String file) throws Exception
@@ -278,8 +292,18 @@ public class XDAT implements Initializable,Configurable{
 	    {
 	        buffer.append(item).append("\n--BR\n");
 	    }
+	    for (Object item : GenericWrapperUtils.GetExtensionTables())
+	    {
+	        buffer.append(item).append("\n--BR\n");
+	    }
+	    for (Object item : GenericWrapperUtils.GetFunctionSQL())
+	    {
+	        buffer.append(item).append("\n--BR\n");
+	    }
 		buffer.append("\n\n-- REMOVE OLD VIEWS FOR DISPLAY DOCS\n\n");
-		buffer.append("\n\nSELECT removeViews();\n--BR\n");
+
+		buffer.append("SELECT removeViews();\n--BR\n");
+
 		buffer.append("\n\n-- ADDED VIEWS FOR DISPLAY DOCS\n\n");
 	    for (Object item : DisplayManager.GetCreateViewsSQL(true))
 	    {
@@ -312,10 +336,21 @@ public class XDAT implements Initializable,Configurable{
 	    }
 	    buffer.append("\n-- commit transaction\n");
 	    buffer.append("COMMIT;");
-		FileUtils.OutputToFile(buffer.toString(), file);
+		FileUtils.OutputToFile(buffer.toString(),file);
 
-		ViewManager.OutputFieldNames(file);
+		ViewManager.OutputFieldNames();
 		logger.info("File Created: " + file);
+	}
+
+	public static List<String> GenerateCreateSQL() throws Exception
+	{
+        List<String> sql=Lists.newArrayList();
+
+        sql.addAll(SQLCreateGenerator.GetSQLCreate(true));
+
+        sql.addAll(DisplayManager.GetCreateViewsSQL(false));
+
+        return sql;
 	}
 
 	/**
@@ -351,7 +386,7 @@ public class XDAT implements Initializable,Configurable{
 	    }
 	    return _notificationService;
 	}
-	
+
 	/**
 	 * Returns an instance of the currently supported {@link NotificationService notification service}.
 	 * @return An instance of the {@link NotificationService notification service}.
@@ -385,42 +420,51 @@ public class XDAT implements Initializable,Configurable{
         return _marshallerCacheService;
     }
 
-    
+
     public static void addScreenTemplatesFolder(String screenTemplatesFolder) {
-        _screenTemplatesFolders.add(screenTemplatesFolder);
+        _screenTemplatesFolders.add(new File(screenTemplatesFolder));
     }
 
-    public static Set<String> getScreenTemplateFolders(){
+    public static List<File> getScreenTemplateFolders(){
     	return _screenTemplatesFolders;
     }
-    
+
     /**
      * Returns the folder containing screen templates. These are installed by custom datatypes, modules, and other
      * customizations that extend or override the default application behavior.
      * @return The full path to the screen templates folder.
      */
     public static String getScreenTemplatesFolder() {
-        return _screenTemplatesFolder;
+        return _screenTemplatesFolder.getAbsolutePath();
     }
 
     public static void setScreenTemplatesFolder(String screenTemplatesFolder) {
-        _screenTemplatesFolder = screenTemplatesFolder;
-        if (!_screenTemplatesFolders.contains(screenTemplatesFolder)) {
-            _screenTemplatesFolders.add(screenTemplatesFolder);
-        }
+        _screenTemplatesFolder = new File(screenTemplatesFolder);
     }
-    
-    public static String getScreenTemplatesSubfolder(String subfolder) {
-        // MIGRATE: This returns the value of a validated subfolder in the web application. If it's not validated, it'll return null.
+
+    public static File getScreenTemplatesSubfolder(String subfolder) {
         if (StringUtils.isBlank(subfolder)) {
-            return getScreenTemplatesFolder();
+            return new File(getScreenTemplatesFolder());
         }
 
-        final String composite = _screenTemplatesFolder + (_screenTemplatesFolder.endsWith("/") || subfolder.startsWith("/") ? "" : "/") + subfolder;
-        final URI result = getContextService().getAppRelativeLocation(composite);
-        return result == null ? null : composite;
+        File current = new File(getScreenTemplatesFolder(), "");
+
+        String[] subfolders = subfolder.split("/");
+        for (String folder : subfolders) {
+            current = new File(current, folder);
+            if (!current.exists()) {
+                // This is actually OK, it just means there are no overrides, so return null.
+                return null;
+            }
+            if (!current.isDirectory()) {
+                logger.error("",new NrgRuntimeException("The path indicated by " + current.getAbsolutePath() + " isn't a folder."));
+                return null;
+            }
+        }
+
+        return current;
     }
-    
+
 	/**
 	 * Returns an instance of the currently supported configuration service.
 	 * @return An instance of the {@link ConfigService} service.
@@ -446,13 +490,13 @@ public class XDAT implements Initializable,Configurable{
     public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
         return getSiteConfigurationService().getSiteConfigurationProperty(property);
     }
-    
+
     public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
         getSiteConfigurationService().setSiteConfigurationProperty(getUserDetails().getUsername(), property, value);
     }
-    
+
     public static Properties getSiteConfiguration() throws ConfigServiceException {
-    	return getSiteConfigurationService().getSiteConfiguration(); 
+    	return getSiteConfigurationService().getSiteConfiguration();
     }
 
     /**
@@ -558,7 +602,7 @@ public class XDAT implements Initializable,Configurable{
         return channel;
     }
     
-    public static boolean loginUser(RunData data, XDATUser user, boolean forcePasswordChange) throws Exception{
+    public static boolean loginUser(RunData data, UserI user, boolean forcePasswordChange) throws Exception{
     	PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
     	ItemI found = populater.getItem();
     	String tempPass = data.getParameters().getString("xdat:user.primary_password");
@@ -575,12 +619,12 @@ public class XDAT implements Initializable,Configurable{
         item.setProperty("xdat:user_login.user_xdat_user_id",user.getID());
         item.setProperty("xdat:user_login.login_date",today);
         item.setProperty("xdat:user_login.ip_address",AccessLogger.GetRequestIp(data.getRequest()));
-        item.setProperty("xdat:user_login.session_id", data.getSession().getId());  
+        item.setProperty("xdat:user_login.session_id", data.getSession().getId());
         SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
-        
+
 		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
         grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
-        if (user.isSiteAdmin()) {
+        if (Roles.isSiteAdmin(user)) {
             grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_ADMIN"));
         }
     	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
@@ -596,9 +640,9 @@ public class XDAT implements Initializable,Configurable{
         XDAT.getContextService().getBean(JmsTemplate.class).convertAndSend(destination, request);
 }
 
-    private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(XDATUser user) throws ConfigServiceException {
-        String username = user.getLogin();
-        String reason = user.isSiteAdmin() ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
+    private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(UserI user) throws ConfigServiceException {
+        String username = user.getUsername();
+        String reason = Roles.isSiteAdmin(user) ? "Site admin created default IP whitelist from localhost IP values." : "User hit site before default IP whitelist was constructed.";
         return XDAT.getConfigService().replaceConfig(username, reason, IP_WHITELIST_TOOL, IP_WHITELIST_PATH, Joiner.on("\n").join(getLocalhostIPs()));
 }
 

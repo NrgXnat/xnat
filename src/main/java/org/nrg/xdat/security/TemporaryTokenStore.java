@@ -1,19 +1,29 @@
+/*
+ * org.nrg.xdat.security.TemporaryTokenStore
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
+ */
 package org.nrg.xdat.security;
 
 import java.util.Calendar;
 import java.util.Map.Entry;
-import java.util.Set;
 import java.util.UUID;
-import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 
 import javax.mail.MessagingException;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.XFT;
+import org.nrg.xft.security.UserI;
 
 public final class TemporaryTokenStore {
 	static Logger logger = Logger.getLogger(TemporaryTokenStore.class);
@@ -140,7 +150,7 @@ public final class TemporaryTokenStore {
 	}
 	
  	public static void addTokenAndEmail(final String login, final String subject) throws Exception {
-		final XDATUser u = new XDATUser(login);
+		final UserI u = Users.getUser(login);
 		final String from = AdminUtils.getAdminEmailId();
 		final String[] tos = {u.getEmail()};
 		final String[] ccs = {};
@@ -148,10 +158,12 @@ public final class TemporaryTokenStore {
 		final String body = "Dear " + u.getFirstname() + " " + u.getLastname() + ",\n" + emailBody(null);
 		CallableWith<Void,String> emailAction = new CallableWith<Void,String>() {
 			public Void call(String login) {
-				try {
-					XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subj, body);
-				} catch (MessagingException exception) {
-					logger.error("Unable to send mail", exception);
+				if(XFT.getBooleanProperty("smtp.enabled", true)){
+					try {
+						XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subj, body);
+					} catch (MessagingException exception) {
+						logger.error("Unable to send mail", exception);
+					}
 				}
 				return null;
 			}

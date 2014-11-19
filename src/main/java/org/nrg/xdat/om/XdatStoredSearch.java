@@ -1,15 +1,22 @@
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
 /*
- * GENERATED FILE
- * Created on Mon Feb 26 14:11:51 CST 2007
+ * org.nrg.xdat.om.XdatStoredSearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/21/14 9:52 AM
  */
+
+
 package org.nrg.xdat.om;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.om.base.BaseXdatStoredSearch;
@@ -18,6 +25,7 @@ import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatCriteriaSet;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -71,6 +79,19 @@ public class XdatStoredSearch extends BaseXdatStoredSearch {
             _Secure=Boolean.TRUE;
         }
         return _Secure;
+    }
+    
+    public boolean hasAllowedUser(final String username){
+    	//implementation checks against database, in case local copy has been modified
+    	
+    	//PoolDBUtils.ReturnStatisticQuery(query, column, db, userName))
+    	for(XdatStoredSearchAllowedUserI au: this.getAllowedUser()){
+    		if(StringUtils.equals(au.getLogin(),username)){
+    			return true;
+    		}
+    	}
+    	
+    	return false;
     }
 
     public ItemSearch getItemSearch(UserI user) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,Exception

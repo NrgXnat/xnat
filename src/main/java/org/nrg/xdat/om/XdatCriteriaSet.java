@@ -1,17 +1,23 @@
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
 /*
- * GENERATED FILE
- * Created on Mon Feb 26 14:11:51 CST 2007
+ * org.nrg.xdat.om.XdatCriteriaSet
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/18/14 5:52 PM
  */
 package org.nrg.xdat.om;
-import java.util.Hashtable;
-import java.util.Iterator;
 
+import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.om.base.BaseXdatCriteriaSet;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.security.UserI;
+
+import java.util.*;
 
 /**
  * @author XDAT
@@ -46,14 +52,20 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
         int i = this.getCriteria().size();
 
         if (this.getChildSet().size()>0){
-            Iterator iter = getChildSet().iterator();
-            while(iter.hasNext()){
-                XdatCriteriaSet cs = (XdatCriteriaSet)iter.next();
-                i += cs.size();
+            for (final Object cs : getChildSet()) {
+                i += ((XdatCriteriaSet) cs).size();
             }
         }
 
         return i;
+    }
+    
+    public static boolean compareCriteriaSets(List<XdatCriteriaSet> set1, List<XdatCriteriaSet> set2){
+        return (CollectionUtils.subtract(set1, set2).size() == 0 && CollectionUtils.subtract(set2, set1).size() == 0);
+    }
+    
+    public static boolean compareCriteria(final List<XdatCriteria> set1, final List<XdatCriteria> set2){
+    	return (CollectionUtils.subtract(set1, set2).size() == 0 && CollectionUtils.subtract(set2, set1).size() == 0);
     }
 
     public void populateCriteria(org.nrg.xft.search.CriteriaCollection cc) throws Exception{
@@ -79,5 +91,19 @@ public class XdatCriteriaSet extends BaseXdatCriteriaSet {
             }
         }
     }
-}
 
+    public boolean equals(Object anObject) {
+        if (this == anObject) {
+            return true;
+        }
+        if (anObject instanceof XdatCriteriaSet) {
+            XdatCriteriaSet other = (XdatCriteriaSet) anObject;
+            if(StringUtils.equals(this.getMethod(),other.getMethod())){
+                if(compareCriteriaSets(this.getChildSet(),other.getChildSet()) && compareCriteria(this.getCriteria(),other.getCriteria())){
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
+}

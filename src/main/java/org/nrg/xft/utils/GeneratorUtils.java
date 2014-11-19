@@ -1,16 +1,21 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Apr 20, 2004
+ * org.nrg.xft.utils.GeneratorUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.utils;
+import java.io.File;
+
 import org.nrg.xft.XFT;
 import org.nrg.xft.generators.SQLCreateGenerator;
-
-import java.io.File;
+import org.nrg.xft.generators.TorqueSchemaGenerator;
 /**
  * @author Tim
  */
@@ -20,10 +25,9 @@ public class GeneratorUtils {
 		File file = new File(sourceFile);
 		String sourceDir = file.getParent();
 		try {
-			XFT.init(true);
+			XFT.init(sourceFile);
 			SQLCreateGenerator.generateDoc(sourceDir + File.separator + "createDB.sql");
-            // MIGRATE: Removed because Torque.
-			// TorqueSchemaGenerator.generateDoc(sourceDir + File.separator + "base-schema.xml");
+			TorqueSchemaGenerator.generateDoc(sourceDir + File.separator + "base-schema.xml");
 		} catch (Exception e) {
 			e.printStackTrace();
 		}

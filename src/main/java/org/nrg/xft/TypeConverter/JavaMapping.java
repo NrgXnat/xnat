@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jun 8, 2004
+ * org.nrg.xft.TypeConverter.JavaMapping
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.TypeConverter;
 /**
  * 
@@ -23,8 +27,8 @@ public class JavaMapping extends TypeMappingA {
 		mapping.put("integer", "java.lang.Integer");
 		mapping.put("nonPositiveInteger", "java.lang.Integer");
 		mapping.put("negativeInteger", "java.lang.Integer");
-		mapping.put("long", "java.lang.Integer");
-		mapping.put("bigserial", "java.lang.Integer");
+		mapping.put("long", "java.lang.Long");
+		mapping.put("bigserial", "java.lang.Long");
 		mapping.put("int", "java.lang.Integer");
 		mapping.put("short", "java.lang.Integer");
 		mapping.put("byte", "java.lang.Integer");

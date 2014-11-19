@@ -1,9 +1,15 @@
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
 /*
- * GENERATED FILE
- * Created on Mon Feb 26 14:11:51 CST 2007
+ * org.nrg.xdat.om.XdatCriteria
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/18/14 5:52 PM
  */
+
+
 package org.nrg.xdat.om;
 import java.util.Hashtable;
 
@@ -201,4 +207,19 @@ public class XdatCriteria extends BaseXdatCriteria {
         
         return null;
 	}
+
+    public boolean equals(Object anObject) {
+        if (this == anObject) {
+            return true;
+        }
+        if (anObject instanceof XdatCriteria) {
+            XdatCriteria other = (XdatCriteria) anObject;
+            return org.apache.commons.lang.StringUtils.equals(this.getComparisonType(), other.getComparisonType()) &&
+                    org.apache.commons.lang.StringUtils.equals(this.getCustomSearch(), other.getCustomSearch()) &&
+                    org.apache.commons.lang.StringUtils.equals(this.getSchemaElementName(), other.getSchemaElementName()) &&
+                    org.apache.commons.lang.StringUtils.equals(this.getSchemaField(), other.getSchemaField()) &&
+                    org.apache.commons.lang.StringUtils.equals(this.getValue(), other.getValue());
+        }
+        return false;
+    }
 }

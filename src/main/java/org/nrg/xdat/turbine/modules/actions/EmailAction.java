@@ -1,11 +1,12 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-
 /*
-
- * Created on Jun 23, 2005
-
+ * org.nrg.xdat.turbine.modules.actions.EmailAction
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
-
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
 
 package org.nrg.xdat.turbine.modules.actions;
@@ -50,26 +51,30 @@ public class EmailAction extends SecureAction {
 
 	public void sendMessage(RunData data, Context context) {
 
-		if (!StringUtils.isBlank(toAddress) || !StringUtils.isBlank(ccAddress) || !StringUtils.isBlank(bccAddress)) {
-			if (AdminUtils.GetPageEmail()) {
-				if (StringUtils.isBlank(bccAddress)) {
-					bccAddress = AdminUtils.getAdminEmailId();
-				} else {
-					bccAddress += ", " + AdminUtils.getAdminEmailId();
+		if(XFT.getBooleanProperty("smtp.enabled", true)){
+			if (!StringUtils.isBlank(toAddress) || !StringUtils.isBlank(ccAddress) || !StringUtils.isBlank(bccAddress)) {
+				if (AdminUtils.GetPageEmail()) {
+					if (StringUtils.isBlank(bccAddress)) {
+						bccAddress = AdminUtils.getAdminEmailId();
+					} else {
+						bccAddress += ", " + AdminUtils.getAdminEmailId();
+					}
+				}
+				// Split each string on commas and whitespace.
+				String[] tos = StringUtils.split(toAddress, ", ");
+				String[] ccs = StringUtils.split(ccAddress, ", ");
+				String[] bccs = StringUtils.split(bccAddress, ", ");
+	
+				try {
+					XDAT.getMailService().sendHtmlMessage(TurbineUtils.getUser(data).getEmail(), tos, ccs, bccs, getSubject(data, context), getMessage(data, context));
+					data.setMessage("Message sent.");
+				} catch (MessagingException exception) {
+					logger.error("Error sending email", exception);
+					data.setMessage("Failure sending message, please contact the system administrator.");
 				}
 			}
-			// Split each string on commas and whitespace.
-			String[] tos = StringUtils.split(toAddress, ", ");
-			String[] ccs = StringUtils.split(ccAddress, ", ");
-			String[] bccs = StringUtils.split(bccAddress, ", ");
-
-			try {
-				XDAT.getMailService().sendHtmlMessage(TurbineUtils.getUser(data).getEmail(), tos, ccs, bccs, getSubject(data, context), getMessage(data, context));
-				data.setMessage("Message sent.");
-			} catch (MessagingException exception) {
-				logger.error("Error sending email", exception);
-				data.setMessage("Failure sending message, please contact the system administrator.");
-			}
+		}else{
+			data.setMessage("Failure sending message, SMTP disabled.");
 		}
 	}
 

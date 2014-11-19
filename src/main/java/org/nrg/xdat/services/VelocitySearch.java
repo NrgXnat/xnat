@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on May 9, 2006
+ * org.nrg.xdat.services.VelocitySearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.services;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
@@ -12,8 +19,7 @@ import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
@@ -21,6 +27,7 @@ import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
+import org.nrg.xft.security.UserI;
 /**
  * @author Tim
  *
@@ -163,7 +170,7 @@ public class VelocitySearch{
         }
     }
     
-    private String output(ItemCollection items, String templateName,XDATUser user){
+    private String output(ItemCollection items, String templateName,UserI user){
     	StringBuffer sb= new StringBuffer();
         Iterator iter = items.getItemIterator();
         while (iter.hasNext())

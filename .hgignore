@@ -79,6 +79,7 @@ plugin-resources/webapp/xdat/xdat.iml
 plugin-resources/webapp/xnat/xnat.iml
 bin\initXnatDb.bat
 
+bin/*
 syntax: regexp
 ^.idea
 ^.*\.[ei]ml

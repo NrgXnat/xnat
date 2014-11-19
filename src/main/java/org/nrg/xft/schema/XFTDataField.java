@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 17, 2004
+ * org.nrg.xft.schema.XFTDataField
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 
 import java.util.Iterator;
@@ -19,17 +23,6 @@ import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-/**
- * This class is the basic field container for all elements in the schema which contain data.
- * 
- * <BR><BR>This class describes a xml element that stores a basic data type.  The majority
- * of its properties are inherited from XFTField.  The two fields which are derived 
- * from XFTField are XFTReferenceField and XFTDataField.  A XFTReferenceField references to another
- * XFTElement.  A XFTDataField does not reference any other Element.  It defines a basic simple
- * data type.
- * 
- * @author Tim
- */
 public class XFTDataField extends XFTField {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTDataField.class);
 	private String name = "";

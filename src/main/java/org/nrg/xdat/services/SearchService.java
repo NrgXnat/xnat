@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on May 5, 2006
+ * org.nrg.xdat.services.SearchService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.services;
 
 import java.sql.SQLException;
@@ -11,8 +18,7 @@ import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.collections.ItemCollection;
@@ -21,6 +27,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
 /**
@@ -44,7 +51,7 @@ public class SearchService {
         super();
     }
 
-    XDATUser user=null;
+    UserI user=null;
     
     public ItemCollection execute() throws ElementNotFoundException,DBPoolException,SQLException,FieldNotFoundException,FailedLoginException,Exception
     {
@@ -89,7 +96,7 @@ public class SearchService {
             {
                 user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
             }else{
-                user = (XDATUser)AxisEngine.getCurrentMessageContext().getSession().get("user");
+                user = (UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
             }
             if (user == null)
             {
@@ -254,7 +261,7 @@ public class SearchService {
         this.session_id = session_id;
     }
     
-    public XDATUser getUser(){
+    public UserI getUser(){
     	return user;
     }
 }

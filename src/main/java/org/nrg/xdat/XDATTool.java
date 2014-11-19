@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Jun 23, 2005
+ * org.nrg.xdat.XDATTool
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 11/18/13 9:36 AM
  */
+
+
 package org.nrg.xdat;
 
 import org.nrg.xdat.base.BaseElement;
@@ -12,7 +19,7 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xft.*;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventMetaI;
@@ -27,8 +34,10 @@ import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
@@ -53,39 +62,39 @@ import java.util.Iterator;
 public class XDATTool {
 	private static final Logger logger = LoggerFactory.getLogger(XDATTool.class);
 
-    private XDATUser user = null;
+    private UserI user = null;
     private boolean ignoreSecurity = false;
 
-    // MIGRATE: This is just a stand-in to see if this code is even necessary any more.
-    private static final String location = "SOME KIND OF BOGUS LOCATION I DONT THINK THIS IS EVEN CALLED";
+    public XDATTool() throws XFTInitException
+    {
+        location = XFTManager.GetInstance().getSourceDir();
+    }
 
+    /**
+     *
+     */
+    public XDATTool(String instanceLocation) throws Exception {
+        location = FileUtils.AppendSlash(instanceLocation);
+        XDAT.init(location,false);
+    }
+    /**
+     *
+     */
+    public XDATTool(String instanceLocation, UserI u) throws Exception {
+        user=u;
+        location= FileUtils.AppendSlash(instanceLocation);
+        XDAT.init(location,false);
+    }
 
-//    public XDATTool() throws XFTInitException
-//    {
-//        location = XFTManager.GetInstance().getSourceDir();
-//    }
-//    /**
-//     *
-//     */
-//    public XDATTool(String instanceLocation) throws Exception {
-//        location = new File(instanceLocation).toURI();
-//        XDAT.init(location,false);
-//    }
-//    /**
-//     *
-//     */
-//    public XDATTool(String instanceLocation,XDATUser u) throws Exception {
-//        user=u;
-//        location = new File(instanceLocation).toURI();
-//        XDAT.init(location,false);
-//    }
-//
-//    public XDATTool(String instanceLocation,String username, String password) throws Exception
-//    {
-//        location = new File(instanceLocation).toURI();
-//        XDAT.init(location,true);
-//        login(username,password);
-//    }
+	public XDATTool(String instanceLocation,String username, String password) throws Exception
+    {
+        location = new File(instanceLocation).toURI().toString();
+        XDAT.init(location,true);
+        login(username,password);
+    }
+
+	// MIGRATE: This is just a stand-in to see if this code is even necessary any more.
+    private static String location = "SOME KIND OF BOGUS LOCATION I DONT THINK THIS IS EVEN CALLED";
 
     private void login(String username, String password) throws Exception
     {
@@ -325,7 +334,7 @@ public class XDATTool {
 	        throw new Exception("Error: No username and password.");
 	    }
 	    String rootElement = StringUtils.GetRootElementName(xmlPath);
-	    DisplaySearch ds = user.getSearch(rootElement,"listing");
+	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user,rootElement,"listing");
 	    ds.addCriteria(xmlPath,comparisonType,value);
 	    XFTTableI table =ds.execute(new HTMLPresenter(""),user.getLogin());
 	    FileUtils.OutputToFile(table.toHTML(true,"FFFFFF","FFFFCC",new java.util.Hashtable(),0),getSearchFileName("html"));
@@ -371,7 +380,7 @@ public class XDATTool {
 	        throw new Exception("Error: No username and password.");
 	    }
 	    String rootElement = StringUtils.GetRootElementName(xmlPath);
-	    DisplaySearch ds = user.getSearch(rootElement,"listing");
+	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user, rootElement, "listing");
 	    ds.addCriteria(xmlPath,comparisonType,value);
 	    XFTTableI table =ds.execute(new CSVPresenter(),user.getLogin());
 	    FileUtils.OutputToFile(table.toString(","),getSearchFileName("csv"));
@@ -383,7 +392,7 @@ public class XDATTool {
 	    {
 	        throw new Exception("Error: No username and password.");
 	    }
-	    DisplaySearch ds = user.getSearch(elementName,"listing");
+	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user, elementName, "listing");
 	    XFTTableI table =ds.execute(new HTMLPresenter(""),user.getLogin());
 	    FileUtils.OutputToFile(table.toHTML(true,"FFFFFF","FFFFCC",new java.util.Hashtable(),0),getSearchFileName("html"));
 	}
@@ -394,7 +403,7 @@ public class XDATTool {
 	    {
 	        throw new Exception("Error: No username and password.");
 	    }
-	    DisplaySearch ds = user.getSearch(elementName,"listing");
+	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user, elementName, "listing");
 	    XFTTableI table =ds.execute(new CSVPresenter(),user.getLogin());
 	    FileUtils.OutputToFile(table.toString(","),getSearchFileName("csv"));
 	}
@@ -448,13 +457,13 @@ public class XDATTool {
     /**
      * @return Returns the user.
      */
-    public XDATUser getUser() {
+    public UserI getUser() {
         return user;
     }
     /**
      * @param user The user to set.
      */
-    public void setUser(XDATUser user) {
+    public void setUser(UserI user) {
         this.user = user;
     }
 

@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Sep 28, 2007
+ * org.nrg.xdat.services.RefreshServiceSession
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.services;
 
 import java.rmi.RemoteException;
@@ -15,13 +22,13 @@ import org.apache.axis.session.Session;
 import org.apache.axis.transport.http.AxisHttpSession;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 
 public class RefreshServiceSession extends ServiceA {
 
@@ -49,7 +56,7 @@ public class RefreshServiceSession extends ServiceA {
                     throw new Exception("Session Timeout");
                 }
                 if(XFT.VERBOSE)System.out.println("New User Session:" + s);
-                XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
+                UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
                 sess.set("user", user);
                 sess.set("state", "maintained");
             }

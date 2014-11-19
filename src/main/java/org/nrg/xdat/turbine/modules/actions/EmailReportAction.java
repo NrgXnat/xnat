@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Dec 2, 2005
+ * org.nrg.xdat.turbine.modules.actions.EmailReportAction
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.util.Calendar;
@@ -13,11 +20,11 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -41,9 +48,9 @@ public class EmailReportAction extends EmailAction {
 			String[] ccs = StringUtils.split(ccAddress == null ? "" : ccAddress, ", ");
 			String[] bccs = StringUtils.split(bccAddress == null ? "" : bccAddress, ", ");
 			
-			String subject = getSubject(data,context);
-			String message = getHtmlMessage(data,context);
-			String text = getTxtMessage(data,context);
+			String subject = getSubject(data,context).replace("&apos;", "'"); // standard email HTML doesn't use this tag;
+			String message = getHtmlMessage(data,context).replace("&apos;", "'");
+			String text = getTxtMessage(data,context).replace("&apos;", "'");
 
 			try {
 				XDAT.getMailService().sendHtmlMessage(AdminUtils.getAdminEmailId(), tos, ccs, bccs, subject, message, text);
@@ -70,7 +77,7 @@ public class EmailReportAction extends EmailAction {
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("txtmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
                 
                 StringBuffer sb = new StringBuffer();
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
@@ -101,7 +108,7 @@ public class EmailReportAction extends EmailAction {
         if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data))==null)
         {
             try {
-                XDATUser user = TurbineUtils.getUser(data);
+                UserI user = TurbineUtils.getUser(data);
                 
                 StringBuffer sb = new StringBuffer();
                 sb.append("<html>");

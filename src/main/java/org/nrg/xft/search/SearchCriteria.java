@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.search.SearchCriteria
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
-/*
- * Created on Nov 18, 2004
- */
+
+
 package org.nrg.xft.search;
 
 import java.util.ArrayList;
@@ -13,6 +17,7 @@ import java.util.Iterator;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplayCriteria;
+import org.nrg.xdat.security.PermissionCriteriaI;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
@@ -26,11 +31,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.StringUtils;
 
-/**
- * Object used to describe one search clause to be performed in the SearchService Class.
- *
- * @author Tim
- */
 public class SearchCriteria implements SQLClause {
 	static org.apache.log4j.Logger logger = Logger.getLogger(SearchCriteria.class);
 	private String elementName = "";
@@ -357,5 +357,17 @@ public class SearchCriteria implements SQLClause {
 	{
 	    return new ArrayList<DisplayCriteria>();
 	}
+    
+    public static SearchCriteria buildCriteria(PermissionCriteriaI c){
+    	final SearchCriteria newC = new SearchCriteria();
+        try {
+			newC.setFieldWXMLPath(c.getField());
+			newC.setValue(c.getFieldValue());
+		} catch (Exception e) {
+			logger.error("",e);
+		}
+        
+        return newC;
+    }
 }
 

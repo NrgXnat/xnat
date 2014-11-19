@@ -17,11 +17,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Repository;
 
-/**
- * UserRegistrationDataDAO class.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
- */
 @Repository
 public class UserRegistrationDataDAO extends AbstractHibernateDAO<UserRegistrationData> {
 

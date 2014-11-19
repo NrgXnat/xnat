@@ -1,161 +1,105 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Sep 12, 2007
+ * org.nrg.xdat.turbine.modules.actions.ModifyUserGroups
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.om.XdatRoleType;
-import org.nrg.xdat.om.XdatUserGroupid;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.security.UserGroupI;
+import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFT;
-import org.nrg.xft.db.DBAction;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xft.search.ItemSearch;
-import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xdat.services.AliasTokenService;
-import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xft.exception.InvalidPermissionException;
+import org.nrg.xft.security.UserI;
 
 public class ModifyUserGroups extends SecureAction {
 
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
-//      TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
-        //parameter specifying elementAliass and elementNames
-        String header = "ELEMENT_";
-        int counter = 0;
-        Hashtable hash = new Hashtable();
-        while (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter,data)) != null)
-        {
-            String elementToLoad = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(header + counter++,data));
-            Integer numberOfInstances = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger(elementToLoad,data));
-            if (numberOfInstances != null && numberOfInstances.intValue()!=0)
-            {
-                int subCount = 0;
-                while (subCount != numberOfInstances.intValue())
-                {
-                    hash.put(elementToLoad + (subCount++),elementToLoad);
-                }
-            }else{
-                hash.put(elementToLoad,elementToLoad);
-            }
-        }
-        
-        
-        PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
-        ItemI found = populater.getItem();
-        
-        ItemSearch search = new ItemSearch();
-        search.setAllowMultiples(false);
-        search.setElement("xdat:user");
-        search.addCriteria("xdat:user.login",found.getProperty("login"));
-        
-        ItemI temp = search.exec().getFirst();
+    	UserI newUser=Users.createUser(TurbineUtils.GetDataParameterHash(data));
+        UserI oldUser=Users.getUser(newUser.getLogin());
+        UserI authenticatedUser=TurbineUtils.getUser(data);
 
-        XDATUser oldUser = new XDATUser(temp);
-        XDATUser newUser = new XDATUser(found);
+        if(Roles.isSiteAdmin(authenticatedUser)){
+	        PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), Users.getUserDataType(),oldUser.getID().toString(),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified user settings"));
+	        EventMetaI ci=wrk.buildEvent();
+	        
+	        try {
+	            Map<String, UserGroupI> oldGroups=Groups.getGroupsForUser(oldUser);
+	            List<String> newGroups=Groups.getGroupIdsForUser(newUser);
+	            
+	            //remove old groups no longer needed
+	            for(UserGroupI uGroup : oldGroups.values()){
+	                boolean matched=false;
+	                if(!Groups.isMember(newUser, uGroup.getId())){
+	                	Groups.removeUserFromGroup(oldUser, uGroup.getId(), ci);
+	                }
+	            }
+	            
+	            try {
+	    			Users.save(newUser, authenticatedUser,false,ci);
+	    			
+	    			for(String group_id:newGroups){
+	    				if(!Groups.isMember(oldUser, group_id)){
+	    					Groups.addUserToGroup(group_id, newUser, authenticatedUser, ci);
+	    				}
+	    			}
+	                
+	                PersistentWorkflowUtils.complete(wrk, ci);
+	    		} catch (InvalidPermissionException e) {
+	                PersistentWorkflowUtils.fail(wrk, ci);
+	    			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
+	    			return;
+	    		} catch (Exception e) {
+	                PersistentWorkflowUtils.fail(wrk, ci);
+	    			logger.error("Error Storing User", e);
+	    			return;
+	    		}
+	            
+	            
+	        } catch (Exception e) {
+	            PersistentWorkflowUtils.fail(wrk, ci);
+	            logger.error("Error Storing User",e);
+	        }
+	        
+	        if(!newUser.isEnabled() && oldUser.isEnabled()){
+	        	//When a user is disabled, deactivate all their AliasTokens
+	        	XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(newUser.getLogin());
+	        }
+	        else if (newUser.isEnabled() && !oldUser.isEnabled()){
+	        	//When a user is enabled, notify the administrator
+	        	try {
+	                AdminUtils.sendNewUserEmailMessage(oldUser.getUsername(), oldUser.getEmail(), context);
+	            } catch (Exception e) {
+	                logger.error("",e);
+	            }
+	        }
 
-        PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, TurbineUtils.getUser(data), found.getXSIType(),oldUser.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified user settings"));
-        EventMetaI ci=wrk.buildEvent();
-        
-        try {
-            if (oldUser.checkRole("Administrator")){
-                if (!newUser.checkRole("Administrator")){
-                    Iterator iter= oldUser.getAssignedRoles_assignedRole().iterator();
-                    while(iter.hasNext()){
-                        XdatRoleType role = (XdatRoleType)iter.next();
-                        if (role.getStringProperty("role_name").equals("Administrator")){
-                            //DBAction.DeleteItem(role.getItem(), TurbineUtils.getUser(data));
-                        	SaveItemHelper.unauthorizedRemoveChild(oldUser.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), TurbineUtils.getUser(data),ci);
-                        }
-                    }
-                }
-            }
-            
-            ArrayList<XdatUserGroupid> newGroups = newUser.getGroups_groupid();
-            ArrayList<XdatUserGroupid> oldGroups = oldUser.getGroups_groupid();
-            
-            for(XdatUserGroupid uGroup : oldGroups){
-                boolean matched=false;
-                for (XdatUserGroupid newGroup:newGroups){
-                    if (newGroup.getGroupid().equals(uGroup.getGroupid())){
-                        matched=true;
-                    }
-                }
-                
-                if (!matched){
-                	SaveItemHelper.unauthorizedDelete(uGroup.getItem(), TurbineUtils.getUser(data),ci);
-                }
-            }
-
-            XDATUser authenticatedUser=TurbineUtils.getUser(data);
-            try {
-    			XDATUser.ModifyUser(authenticatedUser, found,ci);
-                found.getItem().removeEmptyItems();
-                
-                PersistentWorkflowUtils.complete(wrk, ci);
-    		} catch (InvalidPermissionException e) {
-                PersistentWorkflowUtils.fail(wrk, ci);
-    			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
-    			return;
-    		} catch (Exception e) {
-                PersistentWorkflowUtils.fail(wrk, ci);
-    			logger.error("Error Storing User", e);
-    			return;
-    		}
-            
-            
-            
-//            UserCache.Clear();
-            
-            
-//          if (temp == null)
-//          {
-//              AdminUtils.sendNewUserEmailMessage(found.getStringProperty("login"),found.getStringProperty("email"));
-//              
-//              
-//          }
-        } catch (Exception e) {
-            PersistentWorkflowUtils.fail(wrk, ci);
-            logger.error("Error Storing User",e);
+			this.redirectToReportScreen(DisplayItemAction.GetReportScreen(Users.getUserDataType()), (ItemI)Users.getUser(oldUser.getLogin()), data);
         }
-        
-        data.getParameters().setString("search_element",org.nrg.xft.XFT.PREFIX + ":user");
-        data.getParameters().setString("search_field",org.nrg.xft.XFT.PREFIX + ":user.login");
-        
-        data.getParameters().setString("search_value",found.getProperty(org.nrg.xft.XFT.PREFIX + ":user" + XFT.PATH_SEPERATOR + "login").toString());
-        data.setAction("DisplayItemAction");
-        VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance("DisplayItemAction");
-        
-        if(found.getStringProperty("enabled").equals("false")){
-        	//When a user is disabled, deactivate all their AliasTokens
-        	XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(found.getStringProperty("login"));
-        }
-        else if (found.getStringProperty("enabled").equals("true")){
-        	//When a user is enabled, notify the administrator
-        	try {
-                AdminUtils.sendNewUserEmailMessage(oldUser.getUsername(), oldUser.getEmail(), context);
-            } catch (Exception e) {
-                logger.error("",e);
-            }
-        }
-        action.doPerform(data, context);
     }
 
 }

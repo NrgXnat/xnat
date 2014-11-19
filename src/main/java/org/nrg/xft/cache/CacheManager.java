@@ -1,14 +1,14 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xft.cache;
 
-import java.util.Hashtable;
-import java.util.Map;
-
 import org.nrg.xft.event.Event;
 import org.nrg.xft.event.EventListener;
 import org.nrg.xft.event.EventManager;
 
-public class CacheManager extends Object implements EventListener {
+import java.util.Hashtable;
+import java.util.Map;
+
+public class CacheManager implements EventListener {
 	private Map<String,Map<Object,Object>> cache=new Hashtable<String,Map<Object,Object>>();
 	
 	private static CacheManager cm=null;
@@ -30,9 +30,15 @@ public class CacheManager extends Object implements EventListener {
 		cache.clear();
 	}
 	
-	public Object retrieve(String xsiType,Object id){
+	public Object retrieve(String xsiType, Object id){
+        // Fixes issue where null ID causes NPE inside of Hashtable code.
+        if (id == null) {
+            return null;
+        }
 		Map<Object,Object> items=cache.get(xsiType);
-		if(items==null)return null;
+		if(items==null) {
+            return null;
+        }
 		return items.get(id);
 	}
 	

@@ -1,8 +1,19 @@
+/*
+ * org.nrg.xdat.services.TestXdatUserAuthService
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 9/12/13 4:29 PM
+ */
 package org.nrg.xdat.services;
 
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -27,7 +38,7 @@ public class TestXdatUserAuthService {
     	created.setAuthMethodId("wustlkey");
     	_service.create(created);
     	
-    	XdatUserAuth retrieved = _service.getUserByNameAndAuth(created.getAuthUser(),created.getAuthMethod(),created.getAuthMethodId());
+    	UserAuthI retrieved = _service.getUserByNameAndAuth(created.getAuthUser(),created.getAuthMethod(),created.getAuthMethodId());
     	assertNotNull(retrieved);
 
         assertEquals(created, retrieved);

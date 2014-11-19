@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 19, 2005
+ * org.nrg.xdat.security.SecurityManager
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.security;
 import java.util.ArrayList;
 
@@ -18,8 +21,6 @@ import org.nrg.xft.security.SecurityManagerI;
  *
  */
 public class SecurityManager implements SecurityManagerI{
-	public static final String XML_PATH = "xml_path";
-	public static final String SELECT_GRAND = "selectGrandColumn";
 	public static final String READ = "read";
 	public static final String CREATE = "create";
 	public static final String EDIT = "edit";

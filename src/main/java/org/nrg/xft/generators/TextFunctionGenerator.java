@@ -365,9 +365,12 @@ public class TextFunctionGenerator {
                     }else if (type.equals("NUMERIC") || type.equals("DECIMAL")) {
                         sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
                         sb.append(":double)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
-                    }else if (type.equals("INTEGER") || type.equals("BIGINT") || type.equals("SMALLINT") || type.equals("TINYINT")) {
+                    }else if (type.equals("INTEGER") || type.equals("SMALLINT") || type.equals("TINYINT")) {
                         sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
                         sb.append(":integer)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
+                    }else if (type.equals("BIGINT")) {
+                        sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
+                        sb.append(":long)=('' || current_row.").append(field.getSQLName().toLowerCase()).append(" || '')'';");
                     } else if (type.startsWith("VARCHAR")) {
                         sb.append("\n              fullText := fullText || ''(").append(field.getSQLName().toLowerCase());
                         sb.append(":string)=('' || REPLACE(REPLACE(current_row.").append(field.getSQLName().toLowerCase()).append(",''('',''*OPEN*''),'')'',''*CLOSE*'') || '')'';");

@@ -1,26 +1,19 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Oct 25, 2004
+ * org.nrg.xft.schema.Wrappers.XMLWrapper.XMLReader
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
-package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
-//import java.util.ArrayList;
-//import java.util.Hashtable;
-//import java.util.Iterator;
-//
-//import javax.xml.transform.TransformerException;
+
+package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
 import org.apache.log4j.Logger;
 
-/**
- * Class used to translate an XML DOM document to an XFTItem.
- * 
- * @author Tim
- */
 public class XMLReader {
 	static org.apache.log4j.Logger logger = Logger.getLogger(XMLReader.class);
 //	

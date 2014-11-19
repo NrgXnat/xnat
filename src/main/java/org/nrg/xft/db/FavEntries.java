@@ -5,16 +5,16 @@ import java.sql.SQLException;
 import java.util.Hashtable;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
 
 public class FavEntries {
 	static org.apache.log4j.Logger logger = Logger.getLogger(FavEntries.class);
 	public final static String TABLE_NAME="xs_fav_entries";
 	private static boolean EXISTS=false;
 	
-	private XDATUser user=null;
+	private UserI user=null;
 	private String dataType=null;
 	private String id = null;
 	private Integer xdat_user_id=null;
@@ -36,11 +36,11 @@ public class FavEntries {
 		this.id = id;
 	}
 
-	public XDATUser getUser() {
+	public UserI getUser() {
 		return user;
 	}
 
-	public void setUser(XDATUser user) {
+	public void setUser(UserI user) {
 		this.user = user;
 	}
 
@@ -60,7 +60,7 @@ public class FavEntries {
 		}
 		
 		if(xdat_user_id==null){
-			xdat_user_id=user.getXdatUserId();
+			xdat_user_id=user.getID();
 		}
 		
 		if(FavEntries.GetFavoriteEntries(dataType, id, user)==null){
@@ -81,7 +81,7 @@ public class FavEntries {
 		}
 		
 		if(xdat_user_id==null){
-			xdat_user_id=user.getXdatUserId();
+			xdat_user_id=user.getID();
 		}
 		
 		String query = "DELETE FROM " + PoolDBUtils.search_schema_name + "." + TABLE_NAME + "" +
@@ -91,17 +91,17 @@ public class FavEntries {
 		PoolDBUtils.ExecuteNonSelectQuery(query, user.getDBName(), user.getLogin());
 	}
 	
-	public static XFTTable GetFavoriteEntries(String dataType, XDATUser user) throws DBPoolException,SQLException{
+	public static XFTTable GetFavoriteEntries(String dataType, UserI user) throws DBPoolException,SQLException{
 		VerifyTableExistence(user);
 		String query = "SELECT datatype,id FROM " + PoolDBUtils.search_schema_name + "." + TABLE_NAME + " WHERE" +
-				" dataType='" + dataType + "' AND xdat_user_id=" + user.getXdatUserId();
+				" dataType='" + dataType + "' AND xdat_user_id=" + user.getID();
 		return XFTTable.Execute(query, user.getDBName(), user.getLogin());
 	}
 	
-	public static FavEntries GetFavoriteEntries(String dataType, String id, XDATUser user) throws DBPoolException,SQLException{
+	public static FavEntries GetFavoriteEntries(String dataType, String id, UserI user) throws DBPoolException,SQLException{
 		VerifyTableExistence(user);
 		String query = "SELECT datatype,id FROM " + PoolDBUtils.search_schema_name + "." + TABLE_NAME + " WHERE" +
-				" dataType='" + dataType + "' AND id='" + id + "' AND xdat_user_id=" + user.getXdatUserId();
+				" dataType='" + dataType + "' AND id='" + id + "' AND xdat_user_id=" + user.getID();
 		XFTTable t= XFTTable.Execute(query, user.getDBName(), user.getLogin());
 		if(t.size()>0){
 			Hashtable h=t.rowHashs().get(0);
@@ -116,7 +116,7 @@ public class FavEntries {
 		}
 	}
 
-	public static void VerifyTableExistence(XDATUser user){
+	public static void VerifyTableExistence(UserI user){
 		try {
             if (!EXISTS){
         		PoolDBUtils.CreateTempSchema(user.getDBName(), user.getLogin());

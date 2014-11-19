@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Jan 6, 2005
+ * org.nrg.xdat.schema.SchemaElement
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 9/11/13 4:20 PM
  */
+
+
 package org.nrg.xdat.schema; 
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -235,7 +238,6 @@ public class SchemaElement implements SchemaElementI {
 		
 		return df;
 	}
-
 
 	public DisplayField createDisplayFieldForXMLPath(String s) throws XFTInitException,ElementNotFoundException,Exception
 	{
@@ -699,6 +701,10 @@ public class SchemaElement implements SchemaElementI {
 	    }else{
 	        return false;
 	    }
+	}
+	
+	public boolean instanceOf(String s){
+		return this.getGenericXFTElement().getExtendedXSITypes().contains(s);
 	}
 }
 

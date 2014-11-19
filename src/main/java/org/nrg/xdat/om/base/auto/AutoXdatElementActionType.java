@@ -1,9 +1,15 @@
-// Copyright 2010 Washington University School of Medicine All Rights Reserved
 /*
- * GENERATED FILE
- * Created on Thu Oct 25 16:43:04 CDT 2007
+ * org.nrg.xdat.om.base.auto.AutoXdatElementActionType
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.om.base.auto;
 import java.util.ArrayList;
 import java.util.Hashtable;
@@ -220,6 +226,36 @@ public abstract class AutoXdatElementActionType extends org.nrg.xdat.base.BaseEl
 		_Secureaccess=null;
 		} catch (Exception e1) {logger.error(e1);}
 	}
+
+	//FIELD
+
+	private String _Securefeature=null;
+
+	/**
+	 * @return Returns the securefeature.
+	 */
+	public String getSecurefeature(){
+		try{
+			if (_Securefeature==null){
+				_Securefeature=getStringProperty("secureFeature");
+				return _Securefeature;
+			}else {
+				return _Securefeature;
+			}
+		} catch (Exception e1) {logger.error(e1);return null;}
+	}
+
+	/**
+	 * Sets the value for secureFeature.
+	 * @param v Value to Set.
+	 */
+	public void setSecurefeature(String v){
+		try{
+		setProperty(SCHEMA_ELEMENT_NAME + "/secureFeature",v);
+		_Securefeature=null;
+		} catch (Exception e1) {logger.error(e1);}
+	}
+
 
 	//FIELD
 

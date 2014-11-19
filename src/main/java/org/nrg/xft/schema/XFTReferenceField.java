@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 17, 2004
+ * org.nrg.xft.schema.XFTReferenceField
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 
 import java.util.Iterator;
@@ -17,30 +21,6 @@ import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
-/**
- * This class is the reference field container for all elements in the schema which contain refer
- * to another element.
- * 
- * <BR><BR>This class describes a xml element that stores a reference data type.  The majority
- * of its properties are inherited from XFTField.  The two fields which are derived 
- * from XFTField are XFTReferenceField and XFTDataField.  A XFTReferenceField references another
- * XFTElement.  A XFTDataField does not reference any other Element.  It defines a basic simple
- * data type.
- * 
- * <BR><BR>The properties defined (not inherited) are name, refElement, type, createdChild, 
- * childXMLNode, and isInLineRepeaterElement.  The name is the local xml name of the field.  The
- * type specifies which element the reference is refering to.  The refElement maintains a 
- * link to that element.  createdChild is true if the referenced element was not defined at the
- * root level of the schema, but rather as a sub field of this field's parent.  The childXMLNode
- * specifies whether or not the referenced element will have its own XML DOM node or if its content
- * is mixed in with the parent field's content.  This isInLineRepeaterElement is true if the 
- * element was defined as a simpleType with max occurs > 1.  (i.e. a repeating String)
- * 
- * <BR><BR>The setProperties() method allows the user to set the properties for this Field
- * based on any node (not necessarily the original corresponding node).
- * 
- * @author Tim
- */
 public class XFTReferenceField extends XFTField {
 	private String name = "";
 	private XFTElement refElement = null;

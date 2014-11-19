@@ -309,76 +309,73 @@ public abstract class GenericItemObject implements ItemI {
         InvalidValueException error = null;
 		for (String key:hash.keySet())
 		{
-			if (key.toLowerCase().startsWith(this.getXSIType().toLowerCase()))
-			{
-				try {
-                    this.setProperty(key,validate(hash.get(key)));
-                } catch (XFTInitException e) {
-                } catch (ElementNotFoundException e) {
-                    if(throwException)
-                    {
-                        throw e;
-                    }else{
-                        exceptions.add(e);
-                    }
-                } catch (FieldNotFoundException e) {
-                    if(throwException)
-                    {
-                        throw new FieldNotFoundException(key);
-                    }else{
-                        exceptions.add(e);
-                    }
-                } catch (InvalidValueException e) {
-                    dateErrors.put(key,e);
-                }
-			}else if (StringUtils.OccursBefore(key,":","/") || StringUtils.OccursBefore(key,":","/"))
-			{
-				String temp=key.replace('.', '/');
-				String root=key.substring(0,key.indexOf("/"));
-				try {
-					GenericWrapperElement local=GenericWrapperElement.GetElement(this.getXSIType());
-					
-					if(local.instanceOf(root)){
-	                    this.setProperty(this.getXSIType()+key.substring(key.indexOf("/")),validate(hash.get(key)));
+			if (hash.get(key) != null) {
+				if (key.toLowerCase().startsWith(
+						this.getXSIType().toLowerCase())) {
+					try {
+						this.setProperty(key, validate(hash.get(key)));
+					} catch (XFTInitException e) {
+					} catch (ElementNotFoundException e) {
+						if (throwException) {
+							throw e;
+						} else {
+							exceptions.add(e);
+						}
+					} catch (FieldNotFoundException e) {
+						if (throwException) {
+							throw new FieldNotFoundException(key);
+						} else {
+							exceptions.add(e);
+						}
+					} catch (InvalidValueException e) {
+						dateErrors.put(key, e);
 					}
-                } catch (XFTInitException e) {
-                } catch (ElementNotFoundException e) {
-                } catch (FieldNotFoundException e) {
-                    if(throwException)
-                    {
-                        throw new FieldNotFoundException(key.substring(4));
-			}else{
-                        exceptions.add(e);
-                    }
-                } catch (InvalidValueException e) {
-                    dateErrors.put(key,e);
-                }
-			}else{
-				if (key.toUpperCase().startsWith("ELEMENT_"))
-				{
-					final String temp = key.substring(8);
-					if (temp.toLowerCase().startsWith(this.getXSIType().toLowerCase()))
-					{
-						try {
-							this.setProperty(temp,validate(hash.get(key)));
-						} catch (XFTInitException e) {
-		                } catch (ElementNotFoundException e) {
-		                    if(throwException)
-		                    {
-		                        throw e;
-		                    }else{
-                                exceptions.add(e);
-                            }
-		                } catch (FieldNotFoundException e) {
-		                    if(throwException)
-		                    {
-		                        throw e;
-		                    }else{
-                                exceptions.add(e);
-                            }
-		                } catch (InvalidValueException e) {
-		                    dateErrors.put(key,e);
-		                }
+				} else if (StringUtils.OccursBefore(key, ":", "/")
+						|| StringUtils.OccursBefore(key, ":", "/")) {
+					String temp = key.replace('.', '/');
+					String root = key.substring(0, key.indexOf("/"));
+					try {
+						GenericWrapperElement local = GenericWrapperElement.GetElement(this.getXSIType());
+						GenericWrapperElement other = GenericWrapperElement.GetElement(root);
+
+						if (local.instanceOf(other.getXSIType())) {
+							this.setProperty(this.getXSIType()+ key.substring(key.indexOf("/")),validate(hash.get(key)));
+						}
+					} catch (XFTInitException e) {
+					} catch (ElementNotFoundException e) {
+					} catch (FieldNotFoundException e) {
+						if (throwException) {
+							throw new FieldNotFoundException(key.substring(4));
+						} else {
+							exceptions.add(e);
+						}
+					} catch (InvalidValueException e) {
+						dateErrors.put(key, e);
+					}
+				} else {
+					if (key.toUpperCase().startsWith("ELEMENT_")) {
+						final String temp = key.substring(8);
+						if (temp.toLowerCase().startsWith(
+								this.getXSIType().toLowerCase())) {
+							try {
+								this.setProperty(temp, validate(hash.get(key)));
+							} catch (XFTInitException e) {
+							} catch (ElementNotFoundException e) {
+								if (throwException) {
+									throw e;
+								} else {
+									exceptions.add(e);
+								}
+							} catch (FieldNotFoundException e) {
+								if (throwException) {
+									throw e;
+								} else {
+									exceptions.add(e);
+								}
+							} catch (InvalidValueException e) {
+								dateErrors.put(key, e);
+							}
+						}
 					}
 				}
 			}

@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 9, 2004
+ * org.nrg.xft.references.XFTManyToManyReference
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.references;
 
 import java.util.ArrayList;
@@ -16,11 +20,6 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.StringUtils;
-/**
- * Class used to indentify a many-to-many reference within the schema.
- * 
- * @author Tim
- */
 public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferenceI{
 	private GenericWrapperElement element1 = null;
 	private GenericWrapperField field1 = null;

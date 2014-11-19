@@ -1,21 +1,30 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 4, 2005
+ * org.nrg.xdat.turbine.modules.screens.XDATScreen_edit_xdat_element_security
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.screens;
+
+import java.util.List;
 
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
+import org.nrg.xdat.security.helpers.FeatureDefinitionI;
+import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+
+import com.google.common.collect.Lists;
 
 /**
  * @author Tim
@@ -53,6 +62,12 @@ public class XDATScreen_edit_xdat_element_security extends AdminEditScreenA {
         } catch (FieldNotFoundException e) {
             logger.error("",e);
         }
+        
+        List<List> features=Lists.newArrayList();
+        for(FeatureDefinitionI def: Features.getAllFeatures()){
+        	features.add(Lists.newArrayList(def.getKey(),def.getName()));
+        }
+        context.put("features", features);
     }
 
 }

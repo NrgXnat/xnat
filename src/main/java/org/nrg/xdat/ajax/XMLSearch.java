@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Nov 26, 2007
+ * org.nrg.xdat.ajax.XMLSearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.ajax;
 
 import java.io.ByteArrayOutputStream;
@@ -19,7 +26,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
@@ -29,6 +35,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
 import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.security.UserI;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -41,7 +48,7 @@ public class XMLSearch {
         if (allowMultiples!=null){
             allowChildren=Boolean.valueOf(allowMultiples).booleanValue();
         }
-        XDATUser user = XDAT.getUserDetails();
+        UserI user = XDAT.getUserDetails();
         if (user!=null){
             StringReader sr = new StringReader(xmlString);
             InputSource is = new InputSource(sr);

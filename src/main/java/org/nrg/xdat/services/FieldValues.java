@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on May 15, 2006
+ * org.nrg.xdat.services.FieldValues
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.services;
 import java.rmi.RemoteException;
 import java.sql.SQLException;
@@ -16,8 +23,7 @@ import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.search.QueryOrganizer;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
@@ -76,7 +82,7 @@ public class FieldValues {
 			    comparison = _comparison;
 			}
 			Object o = _value;
-			XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
+			UserI user = Authenticator.Authenticate(new Authenticator.Credentials(_username,_password));
             if (user == null)
             {
                 throw new Exception("Invalid User.");
@@ -177,7 +183,7 @@ public class FieldValues {
 			    comparison = _comparison;
 			}
 			Object o = _value;
-			XDATUser user = (XDATUser)AxisEngine.getCurrentMessageContext().getSession().get("user");
+			UserI user = (UserI)AxisEngine.getCurrentMessageContext().getSession().get("user");
             if (user == null)
             {
                 throw new Exception("Invalid User.");

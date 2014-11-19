@@ -1,45 +1,21 @@
 /*
- * XFTItem
- * Copyright (c) 2013. Washington University School of Medicine
+ * org.nrg.xft.XFTItem
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
  * All Rights Reserved
  *
- * Released under the Simplified BSD License
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
 package org.nrg.xft;
-import java.io.ByteArrayOutputStream;
-import java.io.File;
-import java.io.IOException;
-import java.io.ObjectInput;
-import java.io.ObjectOutput;
-import java.io.OutputStream;
-import java.io.StringWriter;
-import java.io.Writer;
-import java.lang.reflect.Method;
-import java.sql.SQLException;
-import java.text.ParseException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.GregorianCalendar;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
-
-import javax.xml.transform.TransformerConfigurationException;
-import javax.xml.transform.TransformerFactoryConfigurationError;
-
 import org.apache.commons.collections.Predicate;
 import org.apache.log4j.Logger;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.om.XdatUserI;
 import org.nrg.xdat.security.SecurityManager;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.TypeConverter.JavaMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
 import org.nrg.xft.cache.CacheManager;
@@ -54,71 +30,41 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.db.loaders.XFTItemDBLoader;
 import org.nrg.xft.db.loaders.XFTItemDBLoader.ItemCache;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidItemException;
-import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.exception.InvalidReference;
-import org.nrg.xft.exception.InvalidValueException;
-import org.nrg.xft.exception.MetaDataException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.presentation.FlattenedItemA;
 import org.nrg.xft.presentation.ItemHtmlBuilder;
 import org.nrg.xft.presentation.ItemMerger;
 import org.nrg.xft.presentation.ItemPropBuilder;
-import org.nrg.xft.references.XFTManyToManyReference;
-import org.nrg.xft.references.XFTMappingColumn;
-import org.nrg.xft.references.XFTPseudonymManager;
-import org.nrg.xft.references.XFTReferenceI;
-import org.nrg.xft.references.XFTReferenceManager;
-import org.nrg.xft.references.XFTRelationSpecification;
-import org.nrg.xft.references.XFTSuperiorReference;
-import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.schema.XMLType;
+import org.nrg.xft.references.*;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperElement;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperFactory;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperField;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
+import org.nrg.xft.schema.Wrappers.XMLWrapper.*;
+import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
-import org.nrg.xft.search.CriteriaCollection;
-import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.search.*;
 import org.nrg.xft.search.ItemSearch.IdentifierResults;
-import org.nrg.xft.search.QueryOrganizer;
-import org.nrg.xft.search.SearchCriteria;
-import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.DateUtils;
-import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
-import org.nrg.xft.utils.VelocityUtils;
-import org.nrg.xft.utils.XMLUtils;
+import org.nrg.xft.utils.*;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
+import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 
-/**
- * This is a generic element used to store and manage data in XFT.
- * Each item corresponds to an data type in the schema and to a table in the database.
- *
- * <BR><BR>An item has a name (XSIType) (which specifies the XML Full Name of the element from
- * the schema which this item represents) and a Hashtable of properties
- * (which are stored using the sql-name of the property as corresponds to the database table).
- * XFTItems can contain other XFTItems in their properties hashtable when
- * references are defined for that data type in the schema.
- *
- * @author Tim
- * @since 24 March 2004
- */
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerFactoryConfigurationError;
+import java.io.*;
+import java.lang.reflect.Method;
+import java.sql.SQLException;
+import java.text.ParseException;
+import java.util.*;
+
 @SuppressWarnings({"unchecked","rawtypes"})
 public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	public static final String EQUALS = "=";
@@ -3419,7 +3365,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             s = null;
             if (user != null)
             {
-                user.secureItem(item);
+            	Permissions.secureItem(user,item);
             }
         } catch (XFTInitException e) {
             logger.error("",e);
@@ -4721,13 +4667,14 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
             			        }
             			    }else if (secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("dateTime") || secondToLastField.getXMLType().getLocalType().equalsIgnoreCase("string"))
             			    {
-            			        if (xmlPath.equalsIgnoreCase("date")
+                                // TODO: We don't support nulling out a date in this manner, so just ignore nulls for these cases.
+            			        if (value != null && (xmlPath.equalsIgnoreCase("date")
             			                || xmlPath.equalsIgnoreCase("month")
             			                || xmlPath.equalsIgnoreCase("year")
             			                || xmlPath.equalsIgnoreCase("day")
             			                || xmlPath.equalsIgnoreCase("minutes")
             			                || xmlPath.equalsIgnoreCase("hours")
-            			                || xmlPath.equalsIgnoreCase("seconds"))
+            			                || xmlPath.equalsIgnoreCase("seconds")))
             			        {
             			            Date date = (Date)getProperty(secondToLastField.getId());
             			            if (date==null)
@@ -5762,7 +5709,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    		boolean q = getGenericSchemaElement().isQuarantine();
 	    		return DBAction.StoreItem(this,user,false,q,false,allowItemRemoval,SecurityManager.GetInstance(),c);
             }else{
-                String error = user.canStoreItem(this,allowItemRemoval);
+                String error = Permissions.canStoreItem(user,this,allowItemRemoval);
                 if (error == null)
                 {
     	    		boolean q = getGenericSchemaElement().isQuarantine();
@@ -5808,7 +5755,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    		boolean q = getGenericSchemaElement().isQuarantine(quarantine);
                 DBAction.StoreItem(this,user,false,q,overrideQuarantine,allowItemRemoval,SecurityManager.GetInstance(),c);
             }else{
-                String error = user.canStoreItem(this,allowItemRemoval);
+                String error = Permissions.canStoreItem(user,this,allowItemRemoval);
                 if (error == null)
                 {
     	    		boolean q = getGenericSchemaElement().isQuarantine(quarantine);
@@ -6096,7 +6043,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 */
 	public boolean isValid() throws Exception
 	{
-	    ValidationResults vr = validate();
+	    ValidationResultsI vr = validate();
 	    return vr.isValid();
 	}
 
@@ -6493,37 +6440,37 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @see org.nrg.xft.ItemI#canRead(org.nrg.xft.security.UserI)
 	 */
 	public boolean canRead(UserI user) throws Exception{
-	    return user.canRead(this);
+	    return Permissions.canRead(user,this);
 	}
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#canEdit(org.nrg.xft.security.UserI)
 	 */
 	public boolean canEdit(UserI user) throws Exception{
-	    return user.canEdit(this);
+	    return Permissions.canEdit(user,this);
 	}
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#canEdit(org.nrg.xft.security.UserI)
 	 */
 	public boolean canCreate(UserI user) throws Exception{
-	    return user.canCreate(this);
+	    return Permissions.canCreate(user,this);
 	}
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#canActivate(org.nrg.xft.security.UserI)
 	 */
 	public boolean canActivate(UserI user) throws Exception{
-	    return user.canActivate(this);
+	    return Permissions.canActivate(user,this);
 	}
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.ItemI#canActivate(org.nrg.xft.security.UserI)
 	 */
 	public boolean canDelete(UserI user) throws Exception{
-	    return user.canDelete(this);
+	    return Permissions.canDelete(user,this);
 	}
     /**
      * @return Returns the validationResults.
      */
     @SuppressWarnings("unused")
-    private ValidationResults getValidationResults() {
+    private ValidationResultsI getValidationResults() {
         return validationResults;
     }
 
@@ -6619,8 +6566,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         return null;
     }
 
-    private XdatUser activation_user=null;
-    public XdatUser getActivationUser()
+    private UserI activation_user=null;
+    public UserI getActivationUser()
     {
     	if(activation_user==null)
         {
@@ -6630,7 +6577,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     Integer i= (Integer)this.getMeta().getProperty("activation_user_xdat_user_id");
 
                     if (i!=null){
-                    	activation_user = XdatUser.getXdatUsersByXdatUserId(i, user, false);
+                    	activation_user = Users.getUser(i);
                     }
                 } catch (XFTInitException e) {
                     logger.error("",e);
@@ -6638,7 +6585,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     logger.error("",e);
                 } catch (FieldNotFoundException e) {
                     logger.error("",e);
-                }
+                } catch (Exception e) {
+					logger.error("",e);
+				}
             }
         }
 
@@ -6650,9 +6599,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         }
     }
 
-    private XdatUserI insert_user = null;
+    private UserI insert_user = null;
 
-    public XdatUserI getInsertUser()
+    public UserI getInsertUser()
     {
         if(insert_user==null)
         {
@@ -6662,7 +6611,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     Integer i= (Integer)this.getMeta().getProperty("insert_user_xdat_user_id");
 
                     if (i!=null){
-                        insert_user = XdatUser.getXdatUsersByXdatUserId(i, user, false);
+                        insert_user = Users.getUser(i);
                     }
                 } catch (XFTInitException e) {
                     logger.error("",e);
@@ -6670,7 +6619,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                     logger.error("",e);
                 } catch (FieldNotFoundException e) {
                     logger.error("",e);
-                }
+                } catch (Exception e) {
+                    logger.error("",e);
+				}
             }
         }
 

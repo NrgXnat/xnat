@@ -1,19 +1,36 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 17, 2005
+ * org.nrg.xdat.servlet.XDATServlet
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.servlet;
 
-import com.google.common.collect.Lists;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilenameFilter;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Properties;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
+
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
-import org.nrg.framework.services.ContextService;
+import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.ElementSecurity;
@@ -23,57 +40,60 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.PoolDBUtils.Transaction;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.*;
-import java.util.logging.Handler;
-import java.util.logging.LogManager;
+import com.google.common.collect.Lists;
 
 /**
  * @author Tim
- *
+ * @param <T>
+ * 
  * This is the servlet that initializes XDAT, XFT, and all the other underlying goodness that makes XDAT & XFT work.
  * 
  * MODIFIED (11/20/2013) to auto-update the database when it is out of sync.
  */
 @SuppressWarnings("serial")
 public class XDATServlet extends HttpServlet{
-    private static final Logger logger = LoggerFactory.getLogger(XDATServlet.class);
-
+    static org.apache.log4j.Logger logger = Logger.getLogger(XDATServlet.class);
+    
+    public static String WEBAPP_ROOT;
+    
 	/* (non-Javadoc)
 	 * @see javax.servlet.GenericServlet#init(javax.servlet.ServletConfig)
 	 */
-	public void init(ServletConfig config) throws ServletException {
+	public void init(ServletConfig config) throws ServletException
+	{
 		//this was added to XNAT a really really long time ago.  I believe it was because config files on the classpath 
 		// were overriding the log4j.properties on the file system.  But, later it was modified to bridge the SLF4J divide.
 		replaceLogging();
 
 		super.init(config);
-
+		
 		try {
-			XDAT.init(true, false); //initializes the XDAT engine (and XFT implicitly)
+			//stores some paths for convenient access later.
+			final String webConf=insertPath("WEB-INF","conf");
+            final String path = this.getServletContext().getRealPath(webConf);
+
+            String webapp = path.substring(0,path.lastIndexOf(File.separator + webConf.substring(0,webConf.length()-1)));
+            webapp = webapp.substring(webapp.lastIndexOf(File.separator));
+            System.out.println("WEBAPP:" + webapp);
+            
+            XDATServlet.WEBAPP_ROOT=this.getServletContext().getRealPath("");
+            
+			XDAT.init(path,true,false);//initializes the XDAT engine (and XFT implicitly)
 			
 			//store some  more convenience paths
-			XDAT.setScreenTemplatesFolder("templates/screens");
-            XDAT.addScreenTemplatesFolder("xnat-templates/screens");
-            XDAT.addScreenTemplatesFolder("xdat-templates/screens");
+			XDAT.setScreenTemplatesFolder(this.getServletContext().getRealPath(insertPath("templates","screens")));
+            XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath(insertPath("templates","screens")));
+            XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath(insertPath("xnat-templates","screens")));
+            XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath(insertPath("xdat-templates","screens")));
 			
             //call the logic to check if the database is up to date.
-            if(updateDatabase("resources/default-sql")) {
+            if(updateDatabase(this.getServletContext().getRealPath(insertPath("resources","default-sql")))){
             	//reset loaded stuff, because database changed
             	ElementSecurity.refresh();
             }
@@ -82,16 +102,107 @@ public class XDATServlet extends HttpServlet{
 		}
 	}
 	
+	private <T extends String> String insertPath(T... elements){
+		StringBuilder sb=new StringBuilder();
+		for(String s: elements){
+			sb.append(s).append(File.separator);
+		}
+		
+		return sb.toString();
+	}
+
+	/**
+	 * Method used to manage auto-updates to the database.  It will onlly auto update the database, if the auto-update parameter is null or true.
+	 * 
+	 * It uses a query on the user table to identify if the user table to see if users have been populated.
+	 * @param conf
+	 * @return
+	 * @throws Exception
+	 */
+	private boolean updateDatabase(String conf) throws Exception {
+        Long user_count;
+		try {
+			user_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
+		} catch (SQLException e) {
+			// xdat_user table doesn't exist
+			user_count = null;
+		}
+		
+		//this should use the config service.. but I couldn't get it to work because of servlet init issues.
+		Properties prop = new Properties();
+		File f = new File(insertPath(conf,"properties") + "database.properties");
+		if(f.exists()){
+			prop.load(new FileInputStream(f));
+		}
+
+		//currently defaults to true, if the file isn't there.
+		if(!prop.containsKey("auto-update")){
+			prop.setProperty("auto-update", "true");
+		}
+		
+		if((prop.containsKey("auto-update")) && (BooleanUtils.toBoolean(prop.getProperty("auto-update")))){
+			if (user_count != null) {
+				final DatabaseUpdater du = new DatabaseUpdater((user_count == 0)?conf:null);//user_count==0 means users need to be created.
+
+				//only interested in the required ones here.
+				final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
+				if (sql.size() > 0) {
+					System.out.println("===========================");
+					System.out.println("Database out of date... updating");
+					for(String s:sql)System.out.println(s);
+					System.out.println("===========================");
+					// changes have been made to the actual db schema, they
+					// should be done before we continue
+					// the user can't use the site until these are
+					// completed.
+					du.addStatements(sql);
+					du.run();// use run to prevent a second thread.
+					return true;
+				} else {
+					System.out.println("Database up to date.");
+					// the database tables are up to date. But, we should
+					// still make sure the functions and views are up to
+					// date.
+					// However, this can be done in a separate thread so
+					// that the user can start using the site.
+					
+					//commenting this out because it is very slow.... they certainly don't need to be run every startup.  But, we need some way of getting them updated when it is needed.
+					//du.addStatements(sql);
+					//du.start();// start in a separate thread
+					(new SequenceUpdater()).start();//this isn't necessary if we did the du.start();
+					return false;
+				}
+			} else {
+				System.out.println("===========================");
+				System.out.println("New Database -- BEGINNING Initialization");
+				System.out.println("===========================");
+				// xdat-user table doesn't exist, assume this is an empty
+				// database
+				final DatabaseUpdater du = new DatabaseUpdater(conf);
+				du.addStatements(SQLCreateGenerator.GetSQLCreate(false));
+				du.run();// start and wait for it
+
+				System.out.println("===========================");
+				System.out.println("Database initialization complete.");
+				System.out.println("===========================");
+				return true;
+			}
+		} else {
+			(new SequenceUpdater()).start();
+			return false;
+		}
+	}
+
 	public void destroy()
 	{
 	    try {
             XFT.closeConnections();
-        } catch (SQLException ignored) {
+        } catch (SQLException e) {
         }
         super.destroy();
 	}
-
-    public class SequenceUpdater extends Thread{
+    
+	public class SequenceUpdater extends Thread{
 		public void run(){
 			DBAction.AdjustSequences();
 		}
@@ -109,7 +220,7 @@ public class XDATServlet extends HttpServlet{
     	final List<String> sql=Lists.newArrayList();
     	
     	/**
-         * Updates the database from init files in the conf folder.
+    	 * @param o: Location to output
     	 * @param conf: Location of the WEB-INF/conf.  Should be NULL if you don't want to look for init scripts and run them.
     	 */
     	public DatabaseUpdater(String conf){
@@ -202,8 +313,8 @@ public class XDATServlet extends HttpServlet{
     	 * 
     	 * These files should initialize the server, its settings and the users.
     	 * 
-    	 * @param conf     The configuration folder.
-    	 * @return Any initialization scripts located in the conf folder.
+    	 * @param conf
+    	 * @return
     	 */
     	public List<String> getInitScripts(String conf) {
     		File sql_conf=new File(conf);
@@ -254,96 +365,8 @@ public class XDATServlet extends HttpServlet{
     		return stmts;
     	}
     }
-
-    /**
-     * Method used to manage auto-updates to the database.  It will only auto update the database, if the auto-update parameter is null or true.
-     *
-     * It uses a query on the user table to identify if the user table to see if users have been populated.
-     * @param config    The configuration folder.
-     * @return Whether the database update was successful or not.
-     * @throws Exception
-     */
-    private boolean updateDatabase(final String config) throws Exception {
-        Long user_count;
-        try {
-            user_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xdat_user", "count", null, null);
-        } catch (SQLException e) {
-            // xdat_user table doesn't exist
-            user_count = null;
-        }
-
-        //this should use the config service.. but I couldn't get it to work because of servlet init issues.
-        Properties prop = new Properties();
-        String dbProperties = ContextService.joinPaths(config, "properties", "database.properties");
-        File f = new File(dbProperties);
-        if(f.exists()){
-            prop.load(new FileInputStream(f));
-        } else {
-            InputStream stream = XDAT.getContextService().getAppRelativeStream(config);
-            if (stream != null) {
-                prop.load(stream);
-            }
-        }
-
-        //currently defaults to true, if the file isn't there.
-        if(!prop.containsKey("auto-update")){
-            prop.setProperty("auto-update", "true");
-        }
-
-        if((prop.containsKey("auto-update")) && (BooleanUtils.toBoolean(prop.getProperty("auto-update")))){
-            if (user_count != null) {
-                final DatabaseUpdater du = new DatabaseUpdater((user_count == 0) ? config : null);//user_count==0 means users need to be created.
-
-                //only interested in the required ones here.
-                final List<String> sql = SQLUpdateGenerator.GetSQLCreate()[0];
-                if (sql.size() > 0) {
-                    System.out.println("===========================");
-                    System.out.println("Database out of date... updating");
-                    for(String s:sql)System.out.println(s);
-                    System.out.println("===========================");
-                    // changes have been made to the actual db schema, they
-                    // should be done before we continue
-                    // the user can't use the site until these are
-                    // completed.
-                    du.addStatements(sql);
-                    du.run();// use run to prevent a second thread.
-                    return true;
-                } else {
-                    System.out.println("Database up to date.");
-                    // the database tables are up to date. But, we should
-                    // still make sure the functions and views are up to
-                    // date.
-                    // However, this can be done in a separate thread so
-                    // that the user can start using the site.
-
-                    //commenting this out because it is very slow.... they certainly don't need to be run every startup.  But, we need some way of getting them updated when it is needed.
-                    //du.addStatements(sql);
-                    //du.start();// start in a separate thread
-                    (new SequenceUpdater()).start();//this isn't necessary if we did the du.start();
-                    return false;
-                }
-            } else {
-                System.out.println("===========================");
-                System.out.println("New Database -- BEGINNING Initialization");
-                System.out.println("===========================");
-                // xdat-user table doesn't exist, assume this is an empty
-                // database
-                final DatabaseUpdater du = new DatabaseUpdater(config);
-                du.addStatements(SQLCreateGenerator.GetSQLCreate(false));
-                du.run();// start and wait for it
-
-                System.out.println("===========================");
-                System.out.println("Database initialization complete.");
-                System.out.println("===========================");
-                return true;
-            }
-        } else {
-            (new SequenceUpdater()).start();
-            return false;
-        }
-    }
-
-    private void replaceLogging() {
+    
+	private void replaceLogging() {
 		// remove the java.util.logging handlers so that nothing is logged to stdout/stderr
 		java.util.logging.Logger rootLogger = LogManager.getLogManager().getLogger("");
 		for (Handler h : rootLogger.getHandlers()){
@@ -357,6 +380,6 @@ public class XDATServlet extends HttpServlet{
 			e.printStackTrace();
 		} 
 	}
-
+    
 }
 

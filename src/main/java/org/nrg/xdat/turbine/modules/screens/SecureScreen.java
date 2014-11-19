@@ -1,57 +1,46 @@
 /*
  * org.nrg.xdat.turbine.modules.screens.SecureScreen
  * XNAT http://www.xnat.org
- * Copyright (c) 2013, Washington University School of Medicine
+ * Copyright (c) 2014, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  *
- * Last modified 7/10/13 7:44 PM
+ * Last modified 7/10/13 7:54 PM
  */
 
 package org.nrg.xdat.turbine.modules.screens;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.io.FilenameFilter;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.ServletResponse;
-import javax.servlet.http.HttpServletResponse;
-import javax.servlet.http.HttpSession;
-
+import com.google.common.base.Joiner;
 import org.apache.commons.io.FileUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
 
-import com.google.common.base.Joiner;
+import javax.servlet.ServletResponse;
+import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
+import java.io.*;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 /**
  * @author Tim
  *
@@ -135,7 +124,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                     if (sessionIds.size() > 0) {
                         String query = "SELECT session_id, ip_address FROM xdat_user_login WHERE session_id in ('" + Joiner.on("','").join(sessionIds) + "')";
        
-                		XDATUser user = TurbineUtils.getUser(data);
+                		UserI user = TurbineUtils.getUser(data);
                         _whitelistedIPs = XDAT.getWhitelistedIPs(user);
 
                 		try {
@@ -217,7 +206,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 			data.getParameters().setString("logout","true");
 			boolean isAuthorized = false;
 
-			XDATUser user = TurbineUtils.getUser(data);
+			UserI user = TurbineUtils.getUser(data);
             if (user == null) {
 		        //logger.debug("isAuthorized() Login Required:true user:null");
 				String Destination = data.getTemplateInfo().getScreenTemplate();
@@ -248,31 +237,15 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 		}else{
             boolean isAuthorized = true;
 	        logger.debug("isAuthorized() Login Required:false");
-			XDATUser user = TurbineUtils.getUser(data);
+			UserI user = TurbineUtils.getUser(data);
             if (user == null) {
                 if (!allowGuestAccess())isAuthorized=false;
 
                 HttpSession session = data.getSession();
                 session.removeAttribute("loggedin");
-				ItemSearch search = new ItemSearch();
-				SchemaElementI e = SchemaElement.GetElement(XDATUser.USER_ELEMENT);
-				search.setElement(e.getGenericXFTElement());
-				search.addCriteria(XDATUser.USER_ELEMENT +"/login", "guest");
-				ItemCollection items = search.exec(true);
-                if (items.size() > 0) {
-                    Iterator iter = items.iterator();
-                    while (iter.hasNext()){
-                        ItemI o = (ItemI)iter.next();
-                        XDATUser temp = new XDATUser(o);
-                        if (temp.getUsername().equalsIgnoreCase("guest")) {
-                            user = temp;
-                        }
-                    }
-                    if (user == null){
-                        ItemI o = items.getFirst();
-                        user = new XDATUser(o);
-                    }
-					TurbineUtils.setUser(data,user);
+                UserI guest=Users.getGuest();
+                if (guest!=null) {
+					TurbineUtils.setUser(data,guest);
 					session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
                     String Destination = data.getTemplateInfo().getScreenTemplate();
                     data.getParameters().add("nextPage", Destination);
@@ -339,10 +312,17 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
     protected List<Properties> findTabs(String subfolder) throws FileNotFoundException {
         List<Properties> tabs = new ArrayList<Properties>();
-        String path = XDAT.getScreenTemplatesSubfolder(subfolder);
-        File tabsFolder = new File(path);
-        if (tabsFolder.exists()) {
-            File[] files = tabsFolder.listFiles(VM_FILENAME_FILTER);
+        File tabsFolder = XDAT.getScreenTemplatesSubfolder(subfolder);
+        if (tabsFolder!=null && tabsFolder.exists()) {
+            File[] files = tabsFolder.listFiles(new FilenameFilter() {
+                @Override
+                public boolean accept(File folder, String name) {
+                    if (logger.isDebugEnabled()) {
+                        logger.debug("Testing the name: " + name + " in folder: " + folder.getAbsolutePath());
+                    }
+                    return name.endsWith(".vm");
+                }
+            });
 
             for (File file: files) {
                 try {
@@ -350,11 +330,6 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 				} catch (IOException e) {
 					logger.error("",e);
 				}
-            }
-        } else {
-            Set<String> files = XDAT.getContextService().getAppRelativeLocationContents(VM_FILENAME_FILTER, path);
-            for (final String file : files) {
-                addProps(getFileName(file), XDAT.getContextService().getAppRelativeStream(file), tabs, _defaultTabs, file);
             }
         }
         return tabs;
@@ -457,25 +432,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 	        response.setHeader("Pragma", "no-cache");
     	}
     }
-
-    // MIGRATE: This is used both here and in XDATServlet. Probably this should all be moved into a helper class.
-    private static String getFileName(final String path) {
-        if (path.contains("/")) {
-            return path.substring(path.lastIndexOf("/") + 1);
-        }
-        return path;
-    }
-
+    
     private List<String> _defaultTabs;
-
-    private static FilenameFilter VM_FILENAME_FILTER = new FilenameFilter() {
-        @Override
-        public boolean accept(File folder, String name) {
-            if (logger.isDebugEnabled()) {
-                logger.debug("Testing the name: " + name + (folder == null ? ", no folder specified" : " in folder: " + folder.getAbsolutePath()));
-            }
-            return name.endsWith(".vm");
-        }
-    };
 }
 

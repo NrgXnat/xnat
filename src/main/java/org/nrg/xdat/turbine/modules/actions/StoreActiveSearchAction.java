@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Jan 17, 2006
+ * org.nrg.xdat.turbine.modules.actions.StoreActiveSearchAction
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.util.ArrayList;
@@ -22,10 +29,10 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.ElementCriteria;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.SQLClause;
+import org.nrg.xft.security.UserI;
 
 /**
  * @author Tim
@@ -44,7 +51,7 @@ public class StoreActiveSearchAction extends SearchAction {
 
     public void doFinalProcessing(RunData data, Context context) throws Exception
     {
-        XDATUser user = TurbineUtils.getUser(data);
+        UserI user = TurbineUtils.getUser(data);
         DisplaySearch ds = TurbineUtils.getSearch(data);
         
         XdatStoredSearch xss = new XdatStoredSearch();

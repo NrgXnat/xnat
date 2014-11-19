@@ -1,14 +1,16 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 25, 2005
+ * org.nrg.xdat.turbine.modules.actions.ModifyUser
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/3/14 9:54 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
-import java.io.IOException;
 import java.util.Hashtable;
 
 import org.apache.commons.lang.StringUtils;
@@ -17,19 +19,13 @@ import org.apache.turbine.modules.ActionLoader;
 import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.security.XDATUser.PasswordComplexityException;
-import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.nrg.xdat.turbine.utils.PopulateItem;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.ItemI;
-import org.nrg.xft.XFT;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.search.ItemSearch;
+import org.nrg.xft.security.UserI;
 /**
  * 
  * @author Tim
@@ -62,45 +58,38 @@ public class ModifyUser extends SecureAction {
 				hash.put(elementToLoad, elementToLoad);
 			}
 		}
+
+		UserI authenticatedUser=TurbineUtils.getUser(data);
 		
-		
-		PopulateItem populater = PopulateItem.Populate(data,
-				org.nrg.xft.XFT.PREFIX + ":user", true);
-		ItemI found = populater.getItem();
-		String emailWithWhite = found.getStringProperty("email");
+		UserI submitted=Users.createUser(TurbineUtils.GetDataParameterHash(data));
+				
+		String emailWithWhite = submitted.getEmail();
 		if(emailWithWhite != null) {
 			String noWhiteEmail = emailWithWhite.trim();
-			found.setProperty("email", noWhiteEmail);
+			submitted.setEmail(noWhiteEmail);
 		}
-		XDATUser authenticatedUser=TurbineUtils.getUser(data);
 		
-		String login=found.getStringProperty("login");
+		String login=submitted.getLogin();
 		if(login==null){
 			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 			return;
 		}
 		
-		XdatUser oldUser=XdatUser.getXdatUsersByLogin(login, null, false);
+		UserI oldUser=null;
+		try {
+			oldUser = Users.getUser(login);
+		} catch (Exception e1) {
+		}
 		
-		if(oldUser!=null && found.getProperty("xdat_user_id")==null){
+		if(oldUser!=null && submitted.getID()==null){
 			data.setMessage("User " + login + " already exists");
 			data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");
 			return;
 		}
 		
-        final Object xdatUserId = found.getProperty("xdat_user_id");
+        final Integer xdatUserId = submitted.getID();
 		if (xdatUserId != null) {
-            int parsedId;
-            if (xdatUserId instanceof Integer) {
-                parsedId = (Integer) xdatUserId;
-            } else {
-                try {
-                    parsedId = Integer.parseInt(xdatUserId.toString());
-                } catch (NumberFormatException exception) {
-                    throw new RuntimeException("You must submit a valid integer as a user ID, invalid value: " + xdatUserId);
-                }
-            }
-            XdatUser byId=XdatUser.getXdatUsersByXdatUserId(parsedId, authenticatedUser, false);
+            UserI byId=Users.getUser(xdatUserId);
 			if(!byId.getLogin().equals(login)){
 				data.setMessage("Unable to rename user accounts");
 				data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");
@@ -108,10 +97,11 @@ public class ModifyUser extends SecureAction {
 			}
 		}
 
-		String newPassword=data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
-		found.setProperty("primary_password", newPassword);
+		String newPassword=data.getParameters().getString("xdat:user.primary_password"); // the object in submitted will have run the password through escape character encoding, potentially altering it
+		
         if(StringUtils.isNotEmpty(newPassword)){
-			found.setProperty("verified", "1");
+        	submitted.setVerified(Boolean.TRUE);
+        	submitted.setPassword(newPassword);
 		}else{
 			data.setMessage("Password cannot be empty.");
 			data.setScreenTemplate("XDATScreen_edit_xdat_user.vm");
@@ -119,7 +109,7 @@ public class ModifyUser extends SecureAction {
 		}
 		
 		try {
-			XDATUser.ModifyUser(authenticatedUser, found,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM,((oldUser==null))?"Added User "+login:"Modified User "+login));
+			Users.save(submitted, authenticatedUser,false,EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM,((oldUser==null))?"Added User "+login:"Modified User "+login));
 		} catch (InvalidPermissionException e) {
 			notifyAdmin(authenticatedUser, data,403,"Possible Authorization Bypass event", "User attempted to modify a user account other then his/her own.  This typically requires tampering with the HTTP form submission process.");
 			return;
@@ -137,10 +127,7 @@ public class ModifyUser extends SecureAction {
 		data.getParameters().setString("search_field",
 				org.nrg.xft.XFT.PREFIX + ":user.login");
 		data.getParameters().setString(
-				"search_value",
-				found.getProperty(
-						org.nrg.xft.XFT.PREFIX + ":user" + XFT.PATH_SEPERATOR
-								+ "login").toString());
+				"search_value",submitted.getLogin());
 		data.setAction("DisplayItemAction");
 		VelocityAction action = (VelocityAction) ActionLoader.getInstance()
 				.getInstance("DisplayItemAction");

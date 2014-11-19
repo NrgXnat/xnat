@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on Jun 7, 2006
+ * org.nrg.xdat.turbine.modules.screens.XMLSearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.screens;
 
 import java.io.IOException;
@@ -16,7 +23,6 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.DBAction;
@@ -27,6 +33,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
+import org.nrg.xft.security.UserI;
 import org.xml.sax.SAXException;
 
 /**
@@ -60,7 +67,7 @@ created in buildPDF.
 	{
 	    String username = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("username",data));
 	    String password = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("password",data));
-	    XDATUser user = TurbineUtils.getUser(data);
+	    UserI user = TurbineUtils.getUser(data);
         if(user==null){
             if (username != null && password !=null)
             {

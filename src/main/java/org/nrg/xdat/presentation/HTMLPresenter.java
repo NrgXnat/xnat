@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Jan 5, 2005
+ * org.nrg.xdat.presentation.HTMLPresenter
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.presentation;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -25,11 +28,12 @@ import org.nrg.xdat.display.SQLQueryField;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.SecurityValues;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.XFTTableI;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.schema.design.SchemaElementI;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 /**
  * @author Tim
@@ -358,7 +362,7 @@ public class HTMLPresenter extends PresentationA {
 						if (link.isSecure() && dfr.getElementName()!=null && !dfr.getElementName().equals(getRootElement().getFullXMLName()))
 						{
 							SchemaElementI secureElement = SchemaElement.GetElement(link.getSecureLinkTo());
-							XDATUser user = (XDATUser)search.getUser();
+							UserI user = search.getUser();
 
 							SecurityValues values = new SecurityValues();
 							Enumeration secureKeys = link.getSecureProps().keys();
@@ -380,13 +384,13 @@ public class HTMLPresenter extends PresentationA {
                                     if (secureVariable.toString().indexOf(">")!=-1){
                                         secureVariable = StringUtils.ReplaceStr(secureVariable.toString(), ">", "");
                                     }
-									values.put((String)link.getSecureProps().get(key),secureVariable);
+									values.put((String)link.getSecureProps().get(key),secureVariable.toString());
 								}
 							}
 
 							if (values.getHash().size()>0)
 							{
-								if (user.canReadByXMLPath(secureElement,values))
+								if (Permissions.canRead(user,secureElement,values))
 								{
 									hasLink = true;
 									sb.append("<A");

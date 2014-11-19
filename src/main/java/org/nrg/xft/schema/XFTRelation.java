@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 22, 2004
+ * org.nrg.xft.schema.XFTRelation
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema;
 
 import java.util.ArrayList;
@@ -14,12 +18,6 @@ import java.util.Iterator;
 import org.nrg.xft.utils.NodeUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-/**
- * This class details additional information about an XFTReferenceField, usually maps
- * to a &#60;xft:relation&#62; tag.
- * 
- * @author Tim
- */
 public class XFTRelation {
     public final static String DEFAULT_RELATION_TYPE = "single";
 	private String foreignKeyName = "";

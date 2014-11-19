@@ -1,12 +1,26 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.XFT
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 1/3/14 12:24 PM
  */
-/*
- * Created on Nov 3, 2004
- */
+
+
 package org.nrg.xft;
+
+import java.io.File;
+import java.sql.SQLException;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Properties;
+import java.util.Random;
 
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
@@ -14,7 +28,6 @@ import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.spi.LoggerRepository;
 import org.nrg.config.exceptions.ConfigServiceException;
-import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -23,29 +36,19 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.references.XFTPseudonymManager;
 import org.nrg.xft.references.XFTReferenceManager;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
-
-import java.io.File;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
-import java.sql.SQLException;
-import java.text.NumberFormat;
-import java.util.*;
-
-/**
- * @author Tim
- *
- * This class is used to initialize the settings for XFT tasks.
- */
 public class XFT {
     private static String ADMIN_EMAIL = "nrgtech@nrg.wustl.edu";
     private static String ADMIN_EMAIL_HOST = "";
+
+    private static String CONF_DIR=null;
+
     private static String SITE_URL = "";
     private static String ARCHIVE_ROOT_PATH = "";
     private static String PREARCHIVE_PATH = "";
@@ -53,40 +56,57 @@ public class XFT {
     static org.apache.log4j.Logger logger = Logger.getLogger(XFT.class);
     public static final String PREFIX = "xdat";
     public static final char PATH_SEPERATOR = '/';
+    private static String WEBAPP_NAME = null;
 
     public static boolean VERBOSE = false;
     private static Boolean REQUIRE_REASON = null;
     private static Boolean SHOW_REASON = null;
     
+
     private static Boolean REQUIRE_EVENT_NAME = false;//used to configure whether event names are required on modifications
+//	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
+//	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 
-    public static void init() throws ElementNotFoundException, MalformedURLException, URISyntaxException {
-        init(true);
+    public static void init(String location) throws ElementNotFoundException
+    {
+        init(location);
     }
-
     /**
      * This method must be run before any XFT task is performed.
      * Using the InstanceSettings.xml document, it initializes the
      * XFT's settings and loads the schema.
+     * @param location (Directory which includes the InstanceSettings.xml document)
      */
-    public static void init(final boolean initLog4j) throws ElementNotFoundException, MalformedURLException, URISyntaxException {
-        if (initLog4j) {
-            initLog4j();
+    public static void init(String location, boolean initLog4j) throws ElementNotFoundException
+    {
+
+        if (! location.endsWith(File.separator))
+        {
+            location = location + File.separator;
         }
+
+        if (XFT.VERBOSE) {
+            System.out.println("SETTINGS LOCATION: " + location);
+        }
+
+        CONF_DIR=location;
+
+        if (initLog4j)
+        {
+            initLog4j(location);
+        }
+
 
         XFTManager.clean();
         XFTMetaManager.clean();
         XFTReferenceManager.clean();
         XFTPseudonymManager.clean();
 
-        //XFT.LogCurrentTime("XFT INIT:2","ERROR");
-        XFTManager.init();
+        XFTManager.init(location);
 
-        //XFT.LogCurrentTime("XFT INIT:3","ERROR");
         try {
             XFTMetaManager.init();
 
-            //XFT.LogCurrentTime("XFT INIT:4","ERROR");
             Iterator schemas = XFTManager.GetSchemas().iterator();
             while (schemas.hasNext())
             {
@@ -103,17 +123,13 @@ public class XFT {
                 }
             }
 
-           // XFT.LogCurrentTime("XFT INIT:5","ERROR");
             XFTReferenceManager.init();
 
-           //XFT.LogCurrentTime("XFT INIT:6","ERROR");
             schemas = XFTManager.GetSchemas().iterator();
             while (schemas.hasNext())
             {
                 XFTSchema s = (XFTSchema)schemas.next();
-            //	XFT.LogCurrentTime("XFT INIT " + s.getTargetNamespacePrefix() + ":1","ERROR");
                 Iterator elements = s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance()).iterator();
-            //	XFT.LogCurrentTime("XFT INIT " + s.getTargetNamespacePrefix() + ":2 " ,"ERROR");
                 while (elements.hasNext())
                 {
                     GenericWrapperElement input = (GenericWrapperElement)elements.next();
@@ -141,24 +157,28 @@ public class XFT {
 
                     }
                 }
-            //	XFT.LogCurrentTime("XFT INIT " + s.getTargetNamespacePrefix() + ":3","ERROR");
             }
         } catch (XFTInitException e) {
-            e.printStackTrace();
+            logger.error("",e);
         }
         if (XFT.VERBOSE)
          {
             System.out.print("");
-       // XFT.LogCurrentTime("XFT INIT:7","ERROR");
         }
     }
 
-    public static void initLog4j()
+    public static void initLog4j(String location)
     {
-        PropertyConfigurator.configure(XDAT.getContextService().getConfigurationStream("log4j.properties"));
+        if (! location.endsWith(File.separator))
+        {
+            location = location + File.separator;
+        }
+
+        PropertyConfigurator.configure(location + "log4j.properties");
 
         logger.info("");
         Logger.getLogger("org.nrg.xft.db.PoolDBUtils").error("");
+
 
         LoggerRepository lr = logger.getLoggerRepository();
         Enumeration enum1 = lr.getCurrentLoggers();
@@ -215,9 +235,13 @@ public class XFT {
        DBPool.GetPool().closeConnections();
     }
 
+    public static void LogError(Object message, Throwable e)
+    {
+        logger.error(message,e);
+    }
+
     public static String buildLogFileName(ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException{
-        // MIGRATE: This is iffy but I'm not sure it's ever used here.
-        String s = XDAT.getContextService().getAppRelativeLocation("logs").getPath();
+        String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
         if(!(new File(s)).exists())
         {
             (new File(s)).mkdir();
@@ -260,8 +284,7 @@ public class XFT {
         if (!fileName.startsWith("xdat:"))
         {
             try {
-                // MIGRATE: This is iffy but I'm not sure it's ever used here.
-                String s = XDAT.getContextService().getAppRelativeLocation("logs").getPath();
+                 String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
                  if(!(new File(s)).exists())
                  {
                      (new File(s)).mkdir();
@@ -294,11 +317,10 @@ public class XFT {
 
     public static void LogInsert(String message, ItemI item)
     {
-        if (!item.getItem().getXSIType().startsWith("xdat:") && !item.getItem().getXSIType().startsWith("wrk:"))
+        if (!item.getItem().getXSIType().startsWith("wrk:"))
         {
             try {
-                // MIGRATE: This is iffy but I'm not sure it's ever used here.
-                 String s = XDAT.getContextService().getAppRelativeLocation("logs").getPath();
+                 String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
                  if(!(new File(s)).exists())
                  {
                      (new File(s)).mkdir();
@@ -320,7 +342,7 @@ public class XFT {
 
                      fileName += "_" + pk;
                  }
-
+                 
                  fileName=fileName.replace(":", "_");
 
                  if ((new File(s + fileName + ".sql")).exists())
@@ -337,7 +359,7 @@ public class XFT {
 
                  FileUtils.OutputToFile(message,s + fileName);
              } catch (Exception e) {
-                 logger.error("",e);
+                 e.printStackTrace();
              }
         }
     }
@@ -768,7 +790,12 @@ public class XFT {
     private static String UserRegistration = "";
     public static boolean GetUserRegistration()
     {
-        return !(XFT.UserRegistration != null && (XFT.UserRegistration.equalsIgnoreCase("false") || XFT.UserRegistration.equalsIgnoreCase("1")));
+        if(XFT.UserRegistration != null && (XFT.UserRegistration.equalsIgnoreCase("false") || XFT.UserRegistration.equalsIgnoreCase("1")))
+        {
+            return false;
+        }else{
+            return true;
+        }
     }
 
     public static void SetUserRegistration(String s)
@@ -776,10 +803,26 @@ public class XFT {
         XFT.UserRegistration=s;
     }
 
+    public static String GetSettingsDirectory() throws XFTInitException
+    {
+        return XFTManager.GetInstance().getSourceDir();
+    }
+
+    public static String GetConfDir(){
+        return CONF_DIR;
+    }
+    
     private static String EnableCsrfToken = "";
     public static boolean GetEnableCsrfToken()
     {
-        return XFT.EnableCsrfToken == null || !(XFT.EnableCsrfToken.equalsIgnoreCase("false") || XFT.EnableCsrfToken.equalsIgnoreCase("1"));
+        if(XFT.EnableCsrfToken==null){
+            return true;
+        }else if(XFT.EnableCsrfToken.equalsIgnoreCase("false") || XFT.EnableCsrfToken.equalsIgnoreCase("1"))
+        {
+            return false;
+        }else{
+            return true;
+        }
     }
 
     public static void SetEnableCsrfToken(String s)

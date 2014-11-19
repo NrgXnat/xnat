@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Aug 3, 2007
+ * org.nrg.xdat.turbine.modules.actions.ModifyStoredSearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.util.ArrayList;
@@ -13,6 +20,7 @@ import org.apache.velocity.context.Context;
 import org.nrg.xdat.om.XdatSearchField;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.design.SchemaElementI;
@@ -27,11 +35,9 @@ public class ModifyStoredSearch extends ModifyItem {
         SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
                 
         XdatStoredSearch xss = new XdatStoredSearch(item);
-        //XdatStoredSearch.ReplacePreLoadedSearch(xss);
         
-        TurbineUtils.getUser(data).replacePreLoadedSearch(xss);
+        UserHelper.getSearchHelperService().replacePreLoadedSearchForUser(TurbineUtils.getUser(data), xss);
         
-        //UserGroupManager.ReplacePreLoadedSearch(xss);
         
         if (TurbineUtils.HasPassedParameter("destination", data)){
             this.redirectToReportScreen((String)TurbineUtils.GetPassedParameter("destination", data), item, data);

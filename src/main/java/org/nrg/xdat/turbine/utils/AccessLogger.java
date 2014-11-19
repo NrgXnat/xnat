@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on May 3, 2005
+ * org.nrg.xdat.turbine.utils.AccessLogger
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.turbine.utils;
 
 import java.io.File;
@@ -23,7 +30,7 @@ import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.session.TurbineSession;
 import org.apache.turbine.util.RunData;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 
 /**
@@ -185,7 +192,7 @@ public class AccessLogger {
 	{
         if (!data.getAction().equalsIgnoreCase(""))
         {
-		    XDATUser user=TurbineUtils.getUser(data);
+		    UserI user=TurbineUtils.getUser(data);
         	String text= ((user!=null)?user.getUsername():"NULL") + " " + GetRequestIp(data.getRequest()) + " ACTION: " + data.getAction() + " " + message;
 		    
 			try {

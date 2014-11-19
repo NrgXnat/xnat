@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Nov 1, 2007
+ * org.nrg.xdat.turbine.modules.screens.CreateCSVTemplate
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.screens;
 
 import java.io.File;
@@ -13,6 +20,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.turbine.modules.screens.RawScreen;
 import org.apache.turbine.util.RunData;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.utils.FieldMapping;
 
@@ -26,7 +34,7 @@ public class CreateCSVTemplate extends RawScreen {
         FieldMapping fm = (FieldMapping)TurbineUtils.GetPassedParameter("fm", data);
         String fm_id = (String)TurbineUtils.GetPassedParameter("fm_id", data);
         if (fm==null && fm_id!=null){
-            File f = TurbineUtils.getUser(data).getCachedFile("csv/" + fm_id + ".xml");
+            File f = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv/" + fm_id + ".xml");
             fm  = new FieldMapping(f);
         }
 

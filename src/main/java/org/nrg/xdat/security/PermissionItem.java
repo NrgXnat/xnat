@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Jan 25, 2005
+ * org.nrg.xdat.security.PermissionItem
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.security;
 
 import java.util.Comparator;
@@ -16,6 +19,8 @@ import org.nrg.xft.utils.StringUtils;
 
 
 /**
+ * PermissionItem represents potential permission objects.
+ * 
  * @author Tim
  *
  */
@@ -33,7 +38,7 @@ public class PermissionItem {
 	private boolean authenticated = false;
 	private boolean wasSet = false;
 	
-	public void set(PermissionCriteria c) throws MetaDataException
+	public void set(PermissionCriteriaI c) throws MetaDataException
 	{
 		if (c.getField().equalsIgnoreCase(StringUtils.StandardizeXMLPath(fullFieldName)) && c.getFieldValue().toString().equalsIgnoreCase(value.toString()))
 		{
@@ -42,7 +47,7 @@ public class PermissionItem {
 			this.setDelete(c.getDelete());
 			this.setRead(c.getRead());
 			this.setActivate(c.getActivate());
-			this.setComparison_type(c.getComparisonType());
+			this.setComparison_type("=");
 			wasSet = true;
 		}
 	}

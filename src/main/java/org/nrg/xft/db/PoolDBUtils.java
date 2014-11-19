@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+ * org.nrg.xft.db.PoolDBUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
-/*
- * Created on Oct 22, 2004
- */
+
+
 package org.nrg.xft.db;
 import java.io.File;
 import java.sql.CallableStatement;
@@ -23,7 +27,6 @@ import java.util.List;
 import java.util.Scanner;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
@@ -31,18 +34,10 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
 import com.google.common.collect.Lists;
-/**
- * This class is in charge of performing all sql queries against a database.
- *
- * <BR><BR>  This class allows for sql processing without interation with any of
- * the java.sql classes.  It can process inserts, updates, and selects.  All connection
- * closures are handled within the methods.
- *
- * @author Tim
- */
 public class PoolDBUtils {
 	static org.apache.log4j.Logger logger = Logger.getLogger(PoolDBUtils.class);
 	//private ResultSet rs = null;
@@ -853,7 +848,7 @@ public class PoolDBUtils {
         }
     }
 
-    public static Long CreateManagedTempTable(String tablename, String query,XDATUser user) throws Exception{
+    public static Long CreateManagedTempTable(String tablename, String query,UserI user) throws Exception{
         MaterializedView mv = new MaterializedView(user);
         mv.setTable_name(tablename);
         mv.setSearch_sql(query);
@@ -862,7 +857,7 @@ public class PoolDBUtils {
         return mv.getSize();
     }
 
-    public static XFTTable RetrieveManagedTempTable(String tablename,XDATUser user,int offset, int rowsPerPage) throws Exception{
+    public static XFTTable RetrieveManagedTempTable(String tablename,UserI user,int offset, int rowsPerPage) throws Exception{
         MaterializedView mv = MaterializedView.GetMaterializedView(tablename, user);
         if(mv==null){
         	return null;

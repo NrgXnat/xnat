@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Nov 27, 2007
+ * org.nrg.xdat.ajax.StoreXML
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.ajax;
 
 import java.io.IOException;
@@ -11,20 +18,17 @@ import java.io.StringReader;
 import javax.servlet.ServletConfig;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import org.nrg.xdat.XDAT;
+
 import org.apache.log4j.Logger;
-import org.nrg.xdat.security.XDATUser;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTItem;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.persist.PersistentWorkflowI;
-import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
@@ -40,7 +44,7 @@ public class StoreXML {
         }
         response.setContentType("text/plain");
         response.setHeader("Cache-Control", "no-cache");
-        XDATUser user = XDAT.getUserDetails();
+        UserI user = XDAT.getUserDetails();
         if (user!=null){
             StringReader sr = new StringReader(xmlString);
             InputSource is = new InputSource(sr);

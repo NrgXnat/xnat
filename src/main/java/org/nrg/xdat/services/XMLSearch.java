@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * Created on May 9, 2006
+ * org.nrg.xdat.services.XMLSearch
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.services;
 
 import java.io.BufferedWriter;
@@ -17,7 +24,7 @@ import javax.xml.transform.TransformerFactoryConfigurationError;
 import org.apache.axis.AxisEngine;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.Authorizer;
-import org.nrg.xdat.security.XDATUser.FailedLoginException;
+import org.nrg.xdat.security.user.exceptions.FailedLoginException;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;

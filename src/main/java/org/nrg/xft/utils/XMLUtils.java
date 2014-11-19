@@ -1,8 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
+/*
+ * org.nrg.xft.utils.XMLUtils
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 
 package org.nrg.xft.utils;
 
@@ -25,10 +32,6 @@ import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.xml.sax.InputSource;
 
-/** 
- * XMLUtils contains methods which allow easy access, manipulation, and generation of XML Documents.
- * @author Tim
- */
 public  class XMLUtils
 {	
 	static org.apache.log4j.Logger logger = Logger.getLogger(XMLUtils.class);

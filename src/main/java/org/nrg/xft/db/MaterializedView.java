@@ -2,16 +2,22 @@
 package org.nrg.xft.db;
 
 import java.sql.SQLException;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Collection;
+import java.util.Date;
+import java.util.Hashtable;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
 import com.google.common.collect.Lists;
@@ -29,13 +35,13 @@ public class MaterializedView {
 	private String search_xml;
 	private Date created;
 	private Date last_access;
-	private XDATUser user;
+	private UserI user;
 	
-	public XDATUser getUser() {
+	public UserI getUser() {
 		return user;
 	}
 
-	public void setUser(XDATUser user) {
+	public void setUser(UserI user) {
 		this.user = user;
 	}
 
@@ -106,7 +112,7 @@ public class MaterializedView {
 		this.user_name = user_name;
 	}
 	
-	public MaterializedView(Hashtable t,XDATUser u){
+	public MaterializedView(Hashtable t,UserI u){
 		if(u==null){
 			throw new NullPointerException();
 		}
@@ -121,7 +127,7 @@ public class MaterializedView {
 		this.setUser(u);
 	}
 	
-	public MaterializedView(XDATUser u){
+	public MaterializedView(UserI u){
 		if(u==null){
 			throw new NullPointerException();
 		}
@@ -149,7 +155,7 @@ public class MaterializedView {
 		return (Long) PoolDBUtils.ReturnStatisticQuery( query + ";","RECORD_COUNT",user.getDBName(),user.getLogin());
 	}
 
-	public synchronized static void VerifyManagerExistence(XDATUser user){
+	public synchronized static void VerifyManagerExistence(UserI user){
 		PoolDBUtils.CreateTempSchema(user.getDBName(), user.getLogin());
 		try {
             if (!EXISTS){
@@ -204,7 +210,7 @@ public class MaterializedView {
 		}
 		
 		if(sortBy!=null){
-			query+=" ORDER BY " + sortBy;
+			query+=" ORDER BY " + sortBy + ", key";
 		}
 		
 		if(offset!=null){
@@ -424,7 +430,7 @@ public class MaterializedView {
 	}
 	}
 
-	public static MaterializedView GetMaterializedView(String table_name, XDATUser user)throws DBPoolException, SQLException{
+	public static MaterializedView GetMaterializedView(String table_name, UserI user)throws DBPoolException, SQLException{
 		MaterializedView.VerifyManagerExistence(user);
 		XFTTable t = XFTTable.Execute("SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE table_name='" + table_name+"';", user.getDBName(), user.getLogin());
 		if(t.size()>0){
@@ -434,7 +440,7 @@ public class MaterializedView {
 		}
 	}
 
-	public static MaterializedView GetMaterializedViewBySearchID(String search_id, XDATUser user)throws DBPoolException, SQLException{
+	public static MaterializedView GetMaterializedViewBySearchID(String search_id, UserI user)throws DBPoolException, SQLException{
 		MaterializedView.VerifyManagerExistence(user);
 		XFTTable t = XFTTable.Execute("SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE search_id='" + search_id+"' AND username='" + user.getLogin() + "';", user.getDBName(), user.getLogin());
 		if(t.size()>0){
@@ -444,7 +450,7 @@ public class MaterializedView {
 		}
 	}
 	
-	public static void DeleteBySearchID(String search_id, XDATUser user)throws Exception{
+	public static void DeleteBySearchID(String search_id, UserI user)throws Exception{
 		MaterializedView.VerifyManagerExistence(user);
 		XFTTable t = XFTTable.Execute("SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE search_id='" + search_id+"';", user.getDBName(), user.getLogin());
 		if(t.size()>0){
@@ -453,7 +459,7 @@ public class MaterializedView {
 		}
 	}
 	
-	public static void DeleteByUser(XDATUser user)throws Exception{
+	public static void DeleteByUser(UserI user)throws Exception{
 		MaterializedView.VerifyManagerExistence(user);
 		XFTTable t = XFTTable.Execute("SELECT * FROM " +PoolDBUtils.search_schema_name + "." + MATERIALIZED_VIEWS + " WHERE username='" + user.getLogin() + "';", user.getDBName(), user.getLogin());
 		if(t.size()>0){
@@ -515,7 +521,7 @@ public class MaterializedView {
 		}
 	}
 	
-	public DisplaySearch getDisplaySearch(XDATUser user)throws Exception{
+	public DisplaySearch getDisplaySearch(UserI user)throws Exception{
 		XFTItem item = XFTItem.PopulateItemFromFlatString(this.getSearch_xml(),user,true);
 		XdatStoredSearch search = new XdatStoredSearch(item);
 		

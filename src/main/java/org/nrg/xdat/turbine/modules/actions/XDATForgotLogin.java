@@ -1,11 +1,21 @@
-//Copyright Washington University School of Medicine All Rights Reserved
 /*
- * Created on Dec 12, 2006
+ * org.nrg.xdat.turbine.modules.actions.XDATForgotLogin
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.util.Date;
+import java.util.List;
+
+import javax.mail.MessagingException;
 
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
@@ -15,24 +25,18 @@ import org.apache.velocity.context.Context;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.ItemI;
-import org.nrg.xft.XFT;
-import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.search.ItemSearch;
-import org.nrg.xft.utils.SaveItemHelper;
-
-import javax.mail.MessagingException;
+import org.nrg.xft.security.UserI;
 
 public class XDATForgotLogin extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATForgotLogin.class);
     
     private final EmailRequestLogService requestLog = XDAT.getContextService().getBean(EmailRequestLogService.class);
 
-    public void additionalProcessing(RunData data, Context context,XDATUser user) throws Exception{
+    public void additionalProcessing(RunData data, Context context,UserI user) throws Exception{
     	
     }
     
@@ -44,17 +48,14 @@ public class XDATForgotLogin extends VelocitySecureAction {
 		String admin = AdminUtils.getAdminEmailId();
 		if (!StringUtils.isBlank(email)) {
             //check email
-            ItemSearch search = new ItemSearch();
-            search.setAllowMultiples(false);
-            search.setElement("xdat:user");
-            search.addCriteria("xdat:user.email",email);
-
-            ItemI temp = search.exec().getFirst();
-            if (temp==null){
+			
+			List<UserI> users=Users.getUsersByEmail(email);
+			
+            if (users==null || users.size()==0){
                 data.setMessage("Unknown email address.");
                 data.setScreenTemplate("ForgotLogin.vm");
             }else{
-				XDATUser user = new XDATUser(temp, false);
+            	UserI user =users.get(0);
                 
                 try{
 					additionalProcessing(data, context, user);
@@ -82,18 +83,16 @@ public class XDATForgotLogin extends VelocitySecureAction {
             }
 		} else if (!StringUtils.isBlank(username)) {
             //check user
-                ItemSearch search = new ItemSearch();
-                search.setAllowMultiples(false);
-                search.setElement("xdat:user");
-                search.addCriteria("xdat:user.login",username);
+                UserI user=null;
+				try {
+					user = Users.getUser(username);
+				} catch (Exception e1) {
+				}
 
-                ItemI temp = search.exec().getFirst();
-                if (temp==null){
+                if (user==null){
                     data.setMessage("Unknown username.");
                     data.setScreenTemplate("ForgotLogin.vm");
                 }else{
-                	XDATUser user = new XDATUser(temp, false);
-
                     try{
                     	additionalProcessing(data, context, user);
                     }catch(Exception e){

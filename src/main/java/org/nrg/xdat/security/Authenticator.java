@@ -1,37 +1,41 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.security;
 
-import org.nrg.framework.services.ContextService;
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.AliasToken;
-import org.nrg.xdat.services.AliasTokenService;
-
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Properties;
 
+import org.nrg.xdat.XDAT;
+import org.nrg.xdat.entities.AliasToken;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xft.XFT;
+import org.nrg.xft.security.UserI;
+
 public class Authenticator {
-
-    public static final String DEFAULT_AUTHENTICATOR = "org.nrg.xdat.security.Authenticator";
-
     public synchronized static String RetrieveAuthenticatorClassName() {
-        // MIGRATE: Went straight to inputstream instead of file.
         if (AUTH_CLASS == null) {
-            InputStream inputs = XDAT.getContextService().getConfigurationStream("authentication.properties");
-            if (inputs != null) {
+            File AUTH_PROPS = new File(XFT.GetConfDir(), "authentication.properties");
+            if (!AUTH_PROPS.exists()) {
+                System.out.println("No authentication.properties file found in conf directory. Skipping enhanced authentication method.");
+                AUTH_CLASS = "org.nrg.xdat.security.Authenticator";
+            } else {
                 try {
+                    InputStream inputs = new FileInputStream(AUTH_PROPS);
                     Properties properties = new Properties();
                     properties.load(inputs);
+
                     if (properties.containsKey(AUTH_CLASS_NAME)) {
                         AUTH_CLASS = properties.getProperty(AUTH_CLASS_NAME);
+                    } else {
+                        AUTH_CLASS = "org.nrg.xdat.security.Authenticator";
                     }
-                } catch (IOException ignored) {
-                    // Ignore, we'll handle later.
+                } catch (IOException e) {
+                    AUTH_CLASS = "org.nrg.xdat.security.Authenticator";
                 }
-            }
-            if (AUTH_CLASS == null) {
-                AUTH_CLASS = DEFAULT_AUTHENTICATOR;
             }
         }
 
@@ -43,25 +47,28 @@ public class Authenticator {
         return (Authenticator) authClass.newInstance();
     }
 
-    public static XDATUser Authenticate(Credentials cred) throws Exception {
+    public static UserI Authenticate(Credentials cred) throws Exception {
         return CreateAuthenticator().authenticate(cred);
     }
 
-    public static boolean Authenticate(XDATUser u, Credentials cred) throws Exception {
+    public static boolean Authenticate(UserI u, Credentials cred) throws Exception {
         return CreateAuthenticator().authenticate(u, cred);
     }
 
-    public XDATUser authenticate(Credentials cred) throws Exception {
-        XDATUser user;
+    public UserI authenticate(Credentials cred) throws Exception {
+    	UserI user;
         try {
-            user = new XDATUser(cred.username, cred.password);
+            user= Users.getUser(cred.username);
+            if(!authenticate(user,cred)){
+            	user=null;
+            }
         } catch (Exception e) {
             user = null;
         }
         if (user == null && AliasToken.isAliasFormat(cred.username)) {
             AliasToken token = getAliasTokenService().locateToken(cred.username);
             try {
-                user = new XDATUser(token.getXdatUserId());
+                user = Users.getUser(token.getXdatUserId());
             } catch (Exception exception) {
                 user = null;
             }
@@ -69,8 +76,8 @@ public class Authenticator {
         return user;
     }
 
-    public boolean authenticate(XDATUser u, Credentials cred) throws Exception {
-        return u.login(cred.password);
+    public boolean authenticate(UserI u, Credentials cred) throws Exception {
+    	return Users.authenticate(u,cred);
     }
 
     private AliasTokenService getAliasTokenService() {

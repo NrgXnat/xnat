@@ -1,3 +1,13 @@
+/*
+ * org.nrg.xdat.security.Authorizer
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 2/11/14 12:00 PM
+ */
 package org.nrg.xdat.security;
 
 import java.sql.SQLException;
@@ -7,14 +17,16 @@ import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.SaveItemHelper;
 
 public class Authorizer implements AuthorizerI{
 	static Logger logger = Logger.getLogger(Authorizer.class);
@@ -78,7 +90,7 @@ public class Authorizer implements AuthorizerI{
 	
 	private boolean requiresSecurity(String action,final GenericWrapperElement e, final UserI user) throws SQLException, Exception{
 		if(user != null){
-			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers()) || !((XDATUser)user).checkRole("Administrator")));
+			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers()) || !Roles.isSiteAdmin(user)));
 		} else {
 			return (!unsecured.get(action).contains(e.getXSIType()) && ((user==null && hasUsers())));
 		}
@@ -87,7 +99,11 @@ public class Authorizer implements AuthorizerI{
 	public void authorize(String action,final GenericWrapperElement e, final UserI user) throws Exception{
 		if (requiresSecurity(action,e,user))
         {
-			if(protectedNamespace.get(action).contains(e.getType().getForeignPrefix())){
+            if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
+                throwException(new InvalidPermissionException("Guest users can not perform the requested operation " + action + " on the element type " + e.getXSIType()));
+            }
+
+            if(protectedNamespace.get(action).contains(e.getType().getForeignPrefix())){
 	    		AdminUtils.sendAdminEmail(user,"Unauthorized Admin Data Access Attempt", "Unauthorized access of '" + e.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
 	    		throwException(new InvalidPermissionException("Only site administrators can read core documents."));
 	        }else if(!ElementSecurity.IsSecureElement(e.getXSIType())){
@@ -102,7 +118,7 @@ public class Authorizer implements AuthorizerI{
         {
 			authorize(action,item.getGenericSchemaElement(),user);
 			if(ElementSecurity.IsSecureElement(item.getXSIType())){
-	        	if(!user.can(item,action)){
+	        	if(!Permissions.can(user,item,action)){
 	        		AdminUtils.sendAdminEmail(user,"Unauthorized Data Retrieval Attempt", "Unauthorized access of '" + item.getXSIType() + "' by '" + ((user==null)?null:user.getUsername()) + "' prevented.");
 		    		throwException(new InvalidPermissionException("Unsecured data Access attempt"));
 		        }

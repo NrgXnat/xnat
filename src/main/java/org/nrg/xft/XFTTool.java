@@ -1,43 +1,40 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Nov 3, 2004
+ * org.nrg.xft.XFTTool
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft;
+
+import java.io.File;
+import java.sql.SQLException;
+import java.util.ArrayList;
 
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.ValidationException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.generators.SQLCreateGenerator;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xft.utils.XMLValidator;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
-import org.nrg.xft.utils.XMLValidator;
 import org.w3c.dom.Document;
-
-import java.io.File;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.ArrayList;
-/**
- * This class is used as the primary access point for XFT features.  Any access to
- * sub objects should be avoided.  Instead methods should be created in this class to
- * allow for one centralized point of access to XFT.
- * 
- * @author Tim
- */
 public class XFTTool {
 	
 	/**
@@ -135,15 +132,15 @@ public class XFTTool {
 	/**
 	 * Returns a table with the results of an SQL select based on the elements which 
 	 * match the SearchCriteria in the supplied ArrayList.
-	 * @param elementName    The name of the element on which to search.
-	 * @param values         The list of search criteria.
+	 * @param element
+	 * @param values (ArrayList of SearchCriteria)
 	 * @return
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws java.sql.SQLException
 	 * @throws DBPoolException
 	 */
-	public static XFTTable Search(String elementName,CriteriaCollection values) throws Exception
+	public static XFTTable Search(String elementName,CriteriaCollection values) throws XFTInitException,ElementNotFoundException, java.sql.SQLException,DBPoolException,FieldNotFoundException,Exception
 	{
 		GenericWrapperElement element = GenericWrapperElement.GetElement(elementName);
 		TableSearch search = new TableSearch();
@@ -213,16 +210,15 @@ public class XFTTool {
 	
 	/**
 	 * Saves this item and all of its children (refs) to the database, and returns the updated xml.
-     * @param f                   The file containing the XML to store.
-     * @param user                The user storing the file
-     * @param quarantine          Whether the changes should be quarantined.
-     * @param allowItemRemoval    Whether existing items should be removed.
-     * @return The document object for the XML.
-     * @throws Exception All kinds of things can go wrong.
+	 * @param doc
+	 * @return
+	 * @throws XFTInitException
+	 * @throws ElementNotFoundException
 	 */
-	public static Document StoreXMLToDB(InputStream f, UserI user,Boolean quarantine,boolean allowItemRemoval) throws Exception
+	public static Document StoreXMLToDB(File f, UserI user,Boolean quarantine,boolean allowItemRemoval) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,Exception
 	{
-        if (user == null)
+	    boolean overrideSecurity = false;
+	    if (user == null)
 	    {
 	        throw new Exception("Error: No username and password.");
 	    }
@@ -233,7 +229,7 @@ public class XFTTool {
 		boolean override;
 		if (quarantine!=null)
 		{
-		    q = quarantine;
+		    q = quarantine.booleanValue();
 		    override = true;
 		}else{
 		    q = item.getGenericSchemaElement().isQuarantine();
@@ -247,18 +243,17 @@ public class XFTTool {
 	/**
 	 * Accesses the supplied XML File, and saves the included item and all of its children (refs)
 	 * to the database, and returns the updated xml.
-	 * @param location The location of the file to be stored.
-     * @param user The user storing the file
-     * @param quarantine Whether the changes should be quarantined.
-     * @param allowItemRemoval Whether existing items should be removed.
-	 * @throws Exception
+	 * @param doc
+	 * @return
+	 * @throws XFTInitException
+	 * @throws ElementNotFoundException
 	 */
-	public static void StoreXMLFileToDB(String location, UserI user, Boolean quarantine, boolean allowItemRemoval) throws Exception
+	public static void StoreXMLFileToDB(String location, UserI user, Boolean quarantine, boolean allowItemRemoval) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,ValidationException,Exception
 	{
 		StoreXMLFileToDB(new File(location),user,quarantine,allowItemRemoval);
 	}
 	
-	public static void StoreXMLFileToDB(File location, UserI user, Boolean quarantine,boolean allowItemRemoval) throws Exception
+	public static void StoreXMLFileToDB(File location, UserI user, Boolean quarantine,boolean allowItemRemoval) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,ValidationException,Exception
 	{
 	    boolean overrideSecurity = false;
 	    if (user == null)
@@ -308,6 +303,11 @@ public class XFTTool {
 		{
 			throw new ValidationException(vr);
 		}
+	}
+	
+	public static String GetSettingsLocation() throws XFTInitException
+	{
+		return XFTManager.GetInstance().getSourceDir();
 	}
 }
 

@@ -1,12 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 /*
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
-/*
- * Created on Jan 17, 2005
+ * org.nrg.xdat.turbine.modules.actions.XDATLoginUser
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/9/13 1:06 PM
  */
+
+
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.sql.SQLException;
@@ -25,12 +28,12 @@ import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.security.TurbineSecurityException;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.Authenticator;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 /**
  * @author Tim
@@ -88,7 +91,7 @@ public class XDATLoginUser extends VelocityAction{
 		try
 		{
 			// Authenticate the user and get the object;.
-			XDATUser user = Authenticator.Authenticate(new Authenticator.Credentials(username,password));
+			UserI user = Authenticator.Authenticate(new Authenticator.Credentials(username,password));
 
 			try {
 				XFTItem item = XFTItem.NewItem("xdat:user_login",user);
@@ -154,7 +157,7 @@ public class XDATLoginUser extends VelocityAction{
 		}
 	}
 
-	public void doRedirect(RunData data, Context context,XDATUser user) throws Exception{
+	public void doRedirect(RunData data, Context context,UserI user) throws Exception{
 		String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
 		String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
 		/*

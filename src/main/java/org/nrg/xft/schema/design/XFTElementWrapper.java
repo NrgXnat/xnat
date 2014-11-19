@@ -1,11 +1,15 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 26, 2004
+ * org.nrg.xft.schema.design.XFTElementWrapper
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xft.schema.design;
 import java.util.ArrayList;
 import java.util.Iterator;
@@ -16,11 +20,6 @@ import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.schema.XFTElement;
 import org.nrg.xft.schema.XFTField;
 import org.nrg.xft.schema.XMLType;
-/**
- * Generic Element wrapper which allows for access to XFT Elements which are stored as wrapped objects.
- * 
- * @author Tim
- */
 public abstract class XFTElementWrapper implements SchemaElementI {
 	private ArrayList attributes = null;
 	private ArrayList childElements = null;

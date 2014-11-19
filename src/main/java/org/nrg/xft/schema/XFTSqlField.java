@@ -1,23 +1,21 @@
-//Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-/* 
- * XDAT eXtensible Data Archive Toolkit
- * Copyright (C) 2005 Washington University
- */
 /*
- * Created on Mar 17, 2004
+ * org.nrg.xft.schema.XFTSqlField
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 11/18/13 9:36 AM
  */
+
+
 package org.nrg.xft.schema;
 
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.StringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
-/**
- * This class stores additional details about a XFTField which relate to its
- * db representation.
- * 
- * @author Tim
- */
 public class XFTSqlField {
 	private String sqlName = "";
 	private String type = "";

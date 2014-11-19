@@ -1,8 +1,15 @@
-//Copyright 2007 Washington University School of Medicine All Rights Reserved
 /*
- * Created on Nov 1, 2007
+ * org.nrg.xdat.turbine.modules.screens.XDATScreen_uploadCSV
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
  *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:13 AM
  */
+
+
 package org.nrg.xdat.turbine.modules.screens;
 
 import java.io.File;
@@ -11,6 +18,7 @@ import java.util.ArrayList;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.security.ElementSecurity;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.utils.FieldMapping;
@@ -25,7 +33,7 @@ public class XDATScreen_uploadCSV extends SecureScreen {
         context.put("all_elements", GenericWrapperElement.GetAllElements(false));
         
         ArrayList<FieldMapping> fms = new ArrayList<FieldMapping>();
-        File dir = TurbineUtils.getUser(data).getCachedFile("csv");
+        File dir = Users.getUserCacheFile(TurbineUtils.getUser(data),"csv");
         File[] files = dir.listFiles();
         if (files!=null){
             for(File f : dir.listFiles()){

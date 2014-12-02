@@ -36,7 +36,7 @@ public class Groups {
     public static UserGroupServiceI getUserGroupService(){
     	if(singleton==null){
     		 try {
-				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.getSiteConfigurationProperty("security.userGroupService.package", "org.nrg.xdat.groups.custom"));
+				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.safeSiteConfigProperty("security.userGroupService.package", "org.nrg.xdat.groups.custom"));
 
 				 if(classes!=null && classes.size()>0){
 					 for(Class<?> clazz: classes){
@@ -53,22 +53,18 @@ public class Groups {
 				logger.error("",e);
 			} catch (IOException e) {
 				logger.error("",e);
-			} catch (ConfigServiceException e) {
-				logger.error("",e);
 			}
 	       	 
 	       	 //default to PermissionsServiceImpl implementation (unless a different default is configured)
 	       	 if(singleton==null){
 	       		try {
-					String className=XDAT.getSiteConfigurationProperty("security.userGroupService.default", "org.nrg.xdat.security.UserGroupManager");
+					String className=XDAT.safeSiteConfigProperty("security.userGroupService.default", "org.nrg.xdat.security.UserGroupManager");
 					singleton=(UserGroupServiceI)Class.forName(className).newInstance();
 				} catch (ClassNotFoundException e) {
 					logger.error("",e);
 				} catch (InstantiationException e) {
 					logger.error("",e);
 				} catch (IllegalAccessException e) {
-					logger.error("",e);
-				} catch (ConfigServiceException e) {
 					logger.error("",e);
 				}
 	       	 }

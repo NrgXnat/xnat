@@ -44,7 +44,7 @@ public class Permissions {
     public static PermissionsServiceI getPermissionsService(){
     	if(singleton==null){
     		 try {
-				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.getSiteConfigurationProperty("security.permissionsService.package", "org.nrg.xdat.permissions.custom"));
+				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.safeSiteConfigProperty("security.permissionsService.package", "org.nrg.xdat.permissions.custom"));
 
 				 if(classes!=null && classes.size()>0){
 					 for(Class<?> clazz: classes){
@@ -61,22 +61,18 @@ public class Permissions {
 				logger.error("",e);
 			} catch (IOException e) {
 				logger.error("",e);
-			} catch (ConfigServiceException e) {
-				logger.error("",e);
 			}
 	       	 
 	       	 //default to PermissionsServiceImpl implementation (unless a different default is configured)
 	       	 if(singleton==null){
 	       		try {
-					String className=XDAT.getSiteConfigurationProperty("security.permissionsService.default", "org.nrg.xdat.security.PermissionsServiceImpl");
+					String className=XDAT.safeSiteConfigProperty("security.permissionsService.default", "org.nrg.xdat.security.PermissionsServiceImpl");
 					singleton=(PermissionsServiceI)Class.forName(className).newInstance();
 				} catch (ClassNotFoundException e) {
 					logger.error("",e);
 				} catch (InstantiationException e) {
 					logger.error("",e);
 				} catch (IllegalAccessException e) {
-					logger.error("",e);
-				} catch (ConfigServiceException e) {
 					logger.error("",e);
 				}
 	       	 }

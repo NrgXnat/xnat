@@ -134,6 +134,19 @@ public class XDAT implements Initializable,Configurable{
 			return _default;
 		}
     }
+    
+    public static String safeSiteConfigProperty(String property, String _default){
+    	try{
+	    	Properties properties = getSiteConfiguration();
+	        if(properties.containsKey(property)){
+	        	return properties.getProperty(property);
+	        }else{
+	        	return _default;
+	        }
+    	}catch(Throwable e){
+        	return _default;
+    	}
+    }
 
 	public static boolean verificationOn() {
 		return getBoolSiteConfigurationProperty("emailVerification",false);

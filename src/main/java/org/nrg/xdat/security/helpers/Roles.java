@@ -21,15 +21,13 @@ public class Roles {
     		//we can swap in other ones later by setting a default 
     		//we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
        		try {
-				String className=XDAT.getSiteConfigurationProperty("security.roleRepositoryService.default", "org.nrg.xdat.security.services.impl.RoleRepositoryServiceImpl");
+				String className=XDAT.safeSiteConfigProperty("security.roleRepositoryService.default", "org.nrg.xdat.security.services.impl.RoleRepositoryServiceImpl");
 				repository=(RoleRepositoryServiceI)Class.forName(className).newInstance();
 			} catch (ClassNotFoundException e) {
 				logger.error("",e);
 			} catch (InstantiationException e) {
 				logger.error("",e);
 			} catch (IllegalAccessException e) {
-				logger.error("",e);
-			} catch (ConfigServiceException e) {
 				logger.error("",e);
 			}
     	}
@@ -46,15 +44,13 @@ public class Roles {
     		//we can swap in other ones later by setting a default 
     		//we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
        		try {
-				String className=XDAT.getSiteConfigurationProperty("security.roleService.default", "org.nrg.xdat.security.services.impl.RoleServiceImpl");
+				String className=XDAT.safeSiteConfigProperty("security.roleService.default", "org.nrg.xdat.security.services.impl.RoleServiceImpl");
 				roleService=(RoleServiceI)Class.forName(className).newInstance();
 			} catch (ClassNotFoundException e) {
 				logger.error("",e);
 			} catch (InstantiationException e) {
 				logger.error("",e);
 			} catch (IllegalAccessException e) {
-				logger.error("",e);
-			} catch (ConfigServiceException e) {
 				logger.error("",e);
 			}
     	}

@@ -55,7 +55,7 @@ public class Users {
     public static UserManagementServiceI getUserManagementService(){
     	if(singleton==null){
     		 try {
-				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.getSiteConfigurationProperty("security.userManagementService.package", "org.nrg.xdat.security.user.custom"));
+				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.safeSiteConfigProperty("security.userManagementService.package", "org.nrg.xdat.security.user.custom"));
 
 				 if(classes!=null && classes.size()>0){
 					 for(Class<?> clazz: classes){
@@ -72,22 +72,18 @@ public class Users {
 				logger.error("",e);
 			} catch (IOException e) {
 				logger.error("",e);
-			} catch (ConfigServiceException e) {
-				logger.error("",e);
 			}
 	       	 
 	       	 //default to XDATUser implementation (unless a different default is configured)
 	       	 if(singleton==null){
 	       		try {
-					String className=XDAT.getSiteConfigurationProperty("security.userManagementService.default", DEFAULT_USER_SERVICE);
+					String className=XDAT.safeSiteConfigProperty("security.userManagementService.default", DEFAULT_USER_SERVICE);
 					singleton=(UserManagementServiceI)Class.forName(className).newInstance();
 				} catch (ClassNotFoundException e) {
 					logger.error("",e);
 				} catch (InstantiationException e) {
 					logger.error("",e);
 				} catch (IllegalAccessException e) {
-					logger.error("",e);
-				} catch (ConfigServiceException e) {
 					logger.error("",e);
 				}
 	       	 }

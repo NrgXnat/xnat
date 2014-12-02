@@ -27,7 +27,7 @@ public class UserHelper {
     public static SearchHelperServiceI getSearchHelperService(){
     	if(search_singleton==null){
     		 try {
-				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.getSiteConfigurationProperty("security.searchHelperService.package", "org.nrg.xdat.search.helper.custom"));
+				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.safeSiteConfigProperty("security.searchHelperService.package", "org.nrg.xdat.search.helper.custom"));
 
 				 if(classes!=null && classes.size()>0){
 					 for(Class<?> clazz: classes){
@@ -44,22 +44,18 @@ public class UserHelper {
 				logger.error("",e);
 			} catch (IOException e) {
 				logger.error("",e);
-			} catch (ConfigServiceException e) {
-				logger.error("",e);
 			}
 	       	 
 	       	 //default to XDATUserHelperService implementation (unless a different default is configured)
 	       	 if(search_singleton==null){
 	       		try {
-					String className=XDAT.getSiteConfigurationProperty("security.searchHelperService.default", "org.nrg.xdat.security.XDATSearchHelperService");
+					String className=XDAT.safeSiteConfigProperty("security.searchHelperService.default", "org.nrg.xdat.security.XDATSearchHelperService");
 					search_singleton=(SearchHelperServiceI)Class.forName(className).newInstance();
 				} catch (ClassNotFoundException e) {
 					logger.error("",e);
 				} catch (InstantiationException e) {
 					logger.error("",e);
 				} catch (IllegalAccessException e) {
-					logger.error("",e);
-				} catch (ConfigServiceException e) {
 					logger.error("",e);
 				}
 	       	 }
@@ -81,7 +77,7 @@ public class UserHelper {
     private static Class<UserHelperServiceI> getUserHelperImpl(){
     	if(userHelperImpl==null){
     		 try {
-				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.getSiteConfigurationProperty("security.userHelperService.package", "org.nrg.xdat.user.helper.custom"));
+				List<Class<?>> classes = Reflection.getClassesForPackage(XDAT.safeSiteConfigProperty("security.userHelperService.package", "org.nrg.xdat.user.helper.custom"));
 
 				 if(classes!=null && classes.size()>0){
 					 for(Class<?> clazz: classes){
@@ -94,18 +90,14 @@ public class UserHelper {
 				logger.error("",e);
 			} catch (IOException e) {
 				logger.error("",e);
-			} catch (ConfigServiceException e) {
-				logger.error("",e);
 			}
 	       	 
 	       	 //default to XDATUserHelperService implementation (unless a different default is configured)
 	       	 if(search_singleton==null){
 	       		try {
-					String className=XDAT.getSiteConfigurationProperty("security.userHelperService.default", "org.nrg.xdat.security.XDATUserHelperService");
+					String className=XDAT.safeSiteConfigProperty("security.userHelperService.default", "org.nrg.xdat.security.XDATUserHelperService");
 					userHelperImpl=(Class<UserHelperServiceI>)Class.forName(className);
 				} catch (ClassNotFoundException e) {
-					logger.error("",e);
-				}catch (ConfigServiceException e) {
 					logger.error("",e);
 				}
 	       	 }

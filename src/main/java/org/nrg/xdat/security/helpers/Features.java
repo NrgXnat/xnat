@@ -31,15 +31,13 @@ public class Features {
     		//we can swap in other ones later by setting a default 
     		//we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
        		try {
-				String className=XDAT.getSiteConfigurationProperty("security.featureService.default", "org.nrg.xdat.security.FeatureServiceImpl");
+				String className=XDAT.safeSiteConfigProperty("security.featureService.default", "org.nrg.xdat.security.FeatureServiceImpl");
 				singleton=(FeatureServiceI)Class.forName(className).newInstance();
 			} catch (ClassNotFoundException e) {
 				logger.error("",e);
 			} catch (InstantiationException e) {
 				logger.error("",e);
 			} catch (IllegalAccessException e) {
-				logger.error("",e);
-			} catch (ConfigServiceException e) {
 				logger.error("",e);
 			}
     	}

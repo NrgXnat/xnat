@@ -20,19 +20,17 @@ public class RegExpValidator implements PasswordValidator{
 	String message="Password is not sufficiently complex.";
 	
 	public RegExpValidator(){
-		
+
+	}
+
+	public RegExpValidator(final String regexp, final String message){
+		setRegexp(regexp);
+		setMessage(message);
 	}
 	
 	@Override
 	public boolean isValid(String password, UserI user) {
-		boolean valid = false;
-		if((regexp.equals(""))){
-			valid = true;
-		}
-		else{
-			valid = Pattern.matches(regexp, password);
-		}
-		return valid;
+		return (regexp.equals("")) || Pattern.matches(regexp, password);
 	}
 
 	public String getRegexp() {
@@ -54,5 +52,4 @@ public class RegExpValidator implements PasswordValidator{
 			this.message = message;
 		}
 	}
-
 }

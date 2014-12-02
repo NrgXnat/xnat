@@ -17,8 +17,7 @@ import org.apache.log4j.Logger;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;
-import org.nrg.framework.services.ContextService;
-import org.nrg.xdat.XDAT;
+import org.nrg.xdat.servlet.XDATServlet;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
 import java.io.*;
@@ -29,57 +28,60 @@ import java.util.*;
  * @author Tim Olsen <tim@deck5consulting.com>
  *
  * This custom implementation of the Velocity ResourceLoader will manage the loading of VM files from the file system OR the classpath.
- * 
- * This allows VMs to be loaded from within JAR files but is still backwards compatible with the old file system structure.  Also, the loading enforces 
+ *
+ * This allows VMs to be loaded from within JAR files but is still backwards compatible with the old file system structure.  Also, the loading enforces
  * the templates/xnat-templates/xdat-templates/base-templates hierarchy.
  */
 // MIGRATE: This will probably fail because it's not properly loading the resources from the web app.
 public class CustomClasspathResourceLoader extends ResourceLoader {
-	static Logger logger = Logger.getLogger(CustomClasspathResourceLoader.class);
+	private static final Logger logger = Logger.getLogger(CustomClasspathResourceLoader.class);
 
 	public static final String META_INF_RESOURCES = "META-INF/resources/";
-	
+
 	@SuppressWarnings("unchecked")
 	@Override
 	public void init(ExtendedProperties arg0) {
+		if (logger.isInfoEnabled()) {
+			logger.info("Creating customer classpath resource loader with extended properties: " + (arg0 == null ? "null" : arg0.toString()));
+		}
 	}
 
     private static final List<String> paths = Arrays.asList("templates","module-templates","xnat-templates","xdat-templates","base-templates");
     private static Map<String,String> templatePaths = Collections.synchronizedMap(new HashMap<String,String>());
-    
+
 	/* (non-Javadoc)
 	 * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#getResourceStream(java.lang.String)
-	 * 
-	 * Expected paths are like: 
+	 *
+	 * Expected paths are like:
 	 */
 	@Override
 	public InputStream getResourceStream(String name)
 			throws ResourceNotFoundException {
 		InputStream result = null;
-        
+
         if (StringUtils.isEmpty(name))
         {
             throw new ResourceNotFoundException ("No template name provided");
         }
-        
+
         if(name.contains("//")){
         	name=name.replace("//", "/");
         }
-        
-        try 
+
+        try
         {
             final ClassLoader classLoader = this.getClass().getClassLoader();
-            
+
             //VMs can be located in alot of places.  file system vs classpath, xnat-templates vs templates
             //for improved efficiency, we cache the location were we last found a template, that way the loader doesn't have to look for it each time.
             final String known=templatePaths.get(name);
-            
+
             if(known!=null){
             	try {
             		if(known.startsWith("f:")){
             			//VMs found on the file system, will have f: on the start of their path.
     					try {
-							result = XDAT.getContextService().getAppRelativeStream(known.substring(2));
+							result=new BufferedInputStream(new FileInputStream(new File(XDATServlet.WEBAPP_ROOT,known.substring(2))));
 							if(result!=null){
 								return result;
 							}else{
@@ -103,20 +105,21 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 					//ignore
 				}
             }
-            
+
             for(final String path:paths){
             	//iterate through potential sub-directories (templates, xnat-templates, etc) looking for a match.
             	//ordering of the paths is significant as it enforces the VM overwriting model
+				final String possible  = safeJoin("/", path, name);
                 try {
-                	result=findMatch(name,safeJoin("/", path,name));
+					result=findMatch(name, possible);
 					if(result!=null){
 						return result;
 					}
 				} catch (Exception e) {
-					//ignore this
+					logger.error("Got an error trying to find a match for " + name + " at path " + possible, e);
 				}
             }
-            
+
             //check root (without sub directories... allowing one last location to plug in matches)
         	result=findMatch(name,name);
         	if(result!=null){
@@ -128,39 +131,46 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             /*
              *  log and convert to a general Velocity ResourceNotFoundException
              */
-            
+
             throw new ResourceNotFoundException( fnfe.getMessage() );
         }
-        
+
         throw new ResourceNotFoundException(String.format("CustomClasspathResourceLoader: cannot find resource {}", name));
 	}
-	
+
 	/**
 	 * Looks for matching resource at the give possible path.  If its found, it caches the path and returns an InputStream.
-	 * 
+	 *
 	 * Returns null if no match is found.
-	 * 
+	 *
 	 * @param name
 	 * @param possible
 	 * @return
 	 */
 	private InputStream findMatch(String name, String possible){
-        // MIGRATE: This changed from opening a file to using the stream. Check on this.
-        InputStream result = XDAT.getContextService().getAppRelativeStream(possible);
-        if (result != null) {
-            templatePaths.put(name.intern(), ("f:"+possible).intern());
-            return result;
-        }
+		try {
+			File f = new File(XDATServlet.WEBAPP_ROOT,possible);
+			if(f.exists()){
+				InputStream result= new BufferedInputStream(new FileInputStream(f));
+				templatePaths.put(name.intern(), ("f:"+possible).intern());
+				return result;
+			}
+		} catch (FileNotFoundException e) {
+			//ignore.  shouldn't happen because we check if it exists first.
+		}
 
-        result = this.getClass().getClassLoader().getResourceAsStream(safeJoin("/", META_INF_RESOURCES,possible));
+		final InputStream result= this.getClass().getClassLoader().getResourceAsStream(safeJoin("/", META_INF_RESOURCES,possible));
 		if(result!=null){
 			//once we find a match, lets cache the name of it
 			templatePaths.put(name.intern(), ("c:"+possible).intern());
+		}else{
+			//check for file system file
+
 		}
 
 		return result;
 	}
-	
+
 	/**
 	 * Joins together multiple strings using the referenced separator.  However, it will not duplicate the separator if the joined strings already include them.
 	 * @param <T>
@@ -178,10 +188,10 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 				}
 			}
 		}
-		
+
 		return sb.toString();
 	}
-	
+
 	/**
 	 * Identifies all of the VM files in the specified directory
 	 * Adds META-INF/resources to the package.
@@ -199,7 +209,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
         		final org.springframework.core.io.Resource[] resources=new PathMatchingResourcePatternResolver((ClassLoader)null).getResources("classpath*:"+safeJoin("/",META_INF_RESOURCES,folder,dir,"*.vm"));
 				for(org.springframework.core.io.Resource r:resources){
 					matches.add(r.getURL());
-				} 
+				}
         	}
 		} catch (IOException e) {
 			//not sure if we care about this, I don't think so
@@ -207,7 +217,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 		}
 		return matches;
 	}
-	
+
 	/**
 	 * Static convenience method for retrieving an InputStream outside of the normal Turbine context.
 	 * @param resource
@@ -218,7 +228,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 		CustomClasspathResourceLoader loader= new CustomClasspathResourceLoader();
 		return loader.getResourceStream(resource);
 	}
-	
+
 	@Override
 	public boolean isSourceModified(Resource arg0) {
 		return false;
@@ -227,5 +237,5 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 	@Override
 	public long getLastModified(Resource arg0) {
 		return 0;
-	}	
+	}
 }

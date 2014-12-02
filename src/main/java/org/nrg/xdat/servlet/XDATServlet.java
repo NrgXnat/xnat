@@ -12,21 +12,7 @@
 
 package org.nrg.xdat.servlet;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
-import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Properties;
-import java.util.logging.Handler;
-import java.util.logging.LogManager;
-
-import javax.servlet.ServletConfig;
-import javax.servlet.ServletException;
-import javax.servlet.http.HttpServlet;
-
+import com.google.common.collect.Lists;
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.lang.math.NumberUtils;
@@ -40,18 +26,29 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.PoolDBUtils.Transaction;
 import org.nrg.xft.generators.SQLCreateGenerator;
 import org.nrg.xft.generators.SQLUpdateGenerator;
-import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
+import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 
-import com.google.common.collect.Lists;
+import javax.servlet.ServletConfig;
+import javax.servlet.ServletException;
+import javax.servlet.http.HttpServlet;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FilenameFilter;
+import java.sql.SQLException;
+import java.util.Arrays;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Properties;
+import java.util.logging.Handler;
+import java.util.logging.LogManager;
 
 /**
  * @author Tim
- * @param <T>
- * 
+ *
  * This is the servlet that initializes XDAT, XFT, and all the other underlying goodness that makes XDAT & XFT work.
  * 
  * MODIFIED (11/20/2013) to auto-update the database when it is out of sync.
@@ -220,8 +217,7 @@ public class XDATServlet extends HttpServlet{
     	final List<String> sql=Lists.newArrayList();
     	
     	/**
-    	 * @param o: Location to output
-    	 * @param conf: Location of the WEB-INF/conf.  Should be NULL if you don't want to look for init scripts and run them.
+    	 * @param conf Location of the WEB-INF/conf.  Should be NULL if you don't want to look for init scripts and run them.
     	 */
     	public DatabaseUpdater(String conf){
     		this.conf=conf;

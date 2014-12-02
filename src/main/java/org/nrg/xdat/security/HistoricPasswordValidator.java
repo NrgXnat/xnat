@@ -23,7 +23,15 @@ public class HistoricPasswordValidator implements PasswordValidator {
 
 	private String message="Password has been used previously.";
 	private int durationInDays = 365;
-	
+
+    public HistoricPasswordValidator() {
+
+    }
+
+    public HistoricPasswordValidator(final int durationInDays) {
+        setDurationInDays(durationInDays);
+    }
+
 	@Override
 	public boolean isValid(String password, UserI user) {
 		//if there's no user, they're probably new so there's nothing to do here.

@@ -16,7 +16,7 @@
 
     <groupId>org.nrg</groupId>
     <artifactId>nrg</artifactId>
-    <version>1.6.4</version>
+    <version>1.6.5-SNAPSHOT</version>
     <packaging>pom</packaging>
 
     <name>NRG Parent POM</name>

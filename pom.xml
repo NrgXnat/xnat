@@ -1053,11 +1053,31 @@
             <id>org.nrg.maven.artifacts.snapshot</id>
             <name>XNAT Snapshot Maven Repo</name>
             <url>http://maven.xnat.org/libs-snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
         </repository>
         <repository>
             <id>org.nrg.maven.artifacts.release</id>
             <name>XNAT Release Maven Repo</name>
             <url>http://maven.xnat.org/libs-release</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </snapshots>
         </repository>
     </repositories>
 
@@ -1066,11 +1086,31 @@
             <id>org.nrg.maven.plugins.snapshot</id>
             <name>XNAT Snapshot Maven Plugin Repo</name>
             <url>http://maven.xnat.org/plugins-snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
         </pluginRepository>
         <pluginRepository>
             <id>org.nrg.maven.plugins.release</id>
             <name>XNAT Release Maven Plugin Repo</name>
             <url>http://maven.xnat.org/plugins-release</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </snapshots>
         </pluginRepository>
     </pluginRepositories>
 
@@ -1079,11 +1119,31 @@
             <id>XNAT Server</id>
             <name>XNAT Maven Library Release</name>
             <url>http://maven.xnat.org/libs-release-local</url>
+            <releases>
+                <enabled>true</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </snapshots>
         </repository>
         <snapshotRepository>
             <id>XNAT Server</id>
             <name>XNAT Maven Library Snapshots</name>
             <url>http://maven.xnat.org/libs-snapshot-local</url>
+            <releases>
+                <enabled>false</enabled>
+                <updatePolicy>always</updatePolicy>
+                <checksumPolicy>warn</checksumPolicy>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+                <updatePolicy>never</updatePolicy>
+                <checksumPolicy>fail</checksumPolicy>
+            </snapshots>
         </snapshotRepository>
     </distributionManagement>
 

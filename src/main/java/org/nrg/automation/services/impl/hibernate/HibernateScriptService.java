@@ -30,7 +30,7 @@ public class HibernateScriptService extends AbstractHibernateEntityService<Scrip
     @Transactional
     public boolean hasScript(final String scriptId) {
         final Session session = _sessionFactory.getCurrentSession();
-        final Query query = session.createQuery("select count(*) from Script where scriptId = :scriptId").setString("scriptId", scriptId);
+        final Query query = session.createQuery("select count(*) from Script where scriptId = :scriptId and enabled = true").setString("scriptId", scriptId);
         return ((Long) query.uniqueResult()) > 0;
     }
 

@@ -7,7 +7,7 @@
     <parent>
         <artifactId>nrg</artifactId>
         <groupId>org.nrg</groupId>
-        <version>1.6.4</version>
+        <version>1.6.5-SNAPSHOT</version>
         <relativePath>../nrg/pom.xml</relativePath>
     </parent>
 

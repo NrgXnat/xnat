@@ -82,51 +82,102 @@ public interface ScriptRunnerService extends NrgService {
     public abstract List<Script> getScripts();
 
     /**
-     * A pared down version of {@link #setScript(String, String, Scope, String, String, String, String)} that sets the
-     * scope, event, language, and language version arguments to default values. This is useful for creating a site-wide
-     * script that can be run on demand.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
+     * site-wide script that can be run on demand.
      *
      * @param scriptId The ID of the script to set.
-     * @param code     The code to set for the script.
+     * @param content  The content to set for the script.
      */
-    public abstract void setScript(final String scriptId, final String code);
+    public abstract void setScript(final String scriptId, final String content);
 
     /**
-     * A pared down version of {@link #setScript(String, String, Scope, String, String, String, String)} that sets the
-     * event, language, and language version arguments to default values.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
+     * site-wide script that can be run on demand.
+     *
+     * @param scriptId    The ID of the script to set.
+     * @param content     The content to set for the script.
+     * @param description The description of the script.
+     */
+    public abstract void setScript(final String scriptId, final String content, final String description);
+
+    /**
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the event, language, and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
-     * @param code     The code to set for the script.
+     * @param content  The content to set for the script.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
      */
-    public abstract void setScript(final String scriptId, final String code, final Scope scope, final String entityId);
+    public abstract void setScript(final String scriptId, final String content, final Scope scope, final String entityId);
 
     /**
-     * A pared down version of {@link #setScript(String, String, Scope, String, String, String, String)} that sets the
-     * language and language version arguments to default values.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the language and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
-     * @param code     The code to set for the script.
+     * @param content  The content to set for the script.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
      * @param event    The event for the script.
      */
-    public abstract void setScript(final String scriptId, final String code, final Scope scope, final String entityId, final String event);
+    public abstract void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event);
 
     /**
-     * Creates a script and trigger with the indicated attributes and saves them to the script repository. If objects
-     * with the same unique constraints already exist, they will be retrieved then updated.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the description to the default value.
      *
      * @param scriptId        The ID of the script to set.
-     * @param code            The code to set for the script.
+     * @param content         The content to set for the script.
      * @param scope           The scope for the script.
      * @param entityId        The associated entity for the script.
      * @param event           The event for the script.
      * @param language        The script language for this script.
      * @param languageVersion The compatible language version(s).
      */
-    public abstract void setScript(final String scriptId, final String code, final Scope scope, final String entityId, final String event, final String language, final String languageVersion);
+    public abstract void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language, final String languageVersion);
+
+    /**
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the event, language, and language version arguments to default values.
+     *
+     * @param scriptId    The ID of the script to set.
+     * @param content     The content to set for the script.
+     * @param description The description of the script.
+     * @param scope       The scope for the script.
+     * @param entityId    The associated entity for the script.
+     */
+    public abstract void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId);
+
+    /**
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the language and language version arguments to default values.
+     *
+     * @param scriptId    The ID of the script to set.
+     * @param content     The content to set for the script.
+     * @param description The description of the script.
+     * @param scope       The scope for the script.
+     * @param entityId    The associated entity for the script.
+     * @param event       The event for the script.
+     */
+    public abstract void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event);
+
+    /**
+     * Creates a script and trigger with the indicated attributes and saves them to the script repository. If objects
+     * with the same unique constraints already exist, they will be retrieved then updated.
+     *
+     * @param scriptId        The ID of the script to set.
+     * @param content         The content to set for the script.
+     * @param description     The description of the script.
+     * @param scope           The scope for the script.
+     * @param entityId        The associated entity for the script.
+     * @param event           The event for the script.
+     * @param language        The script language for this script.
+     * @param languageVersion The compatible language version(s).
+     */
+    public abstract void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language, final String languageVersion);
 
     /**
      * Takes the submitted script object and creates a trigger for it with the indicated scope, entity ID, and event. If

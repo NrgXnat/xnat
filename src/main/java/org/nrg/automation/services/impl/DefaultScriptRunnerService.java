@@ -151,21 +151,35 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, Scope, String, String, String, String)} that sets the
-     * scope, event, language, and language version arguments to default values. This is useful for creating a site-wide
-     * script that can be run on demand.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
+     * site-wide script that can be run on demand.
      *
      * @param scriptId The ID of the script to set.
      * @param content  The content to set for the script.
      */
     @Override
     public void setScript(final String scriptId, final String content) {
-        setScript(scriptId, content, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScript(scriptId, content, null, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, Scope, String, String, String, String)} that sets the
-     * event, language, and language version arguments to default values.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
+     * site-wide script that can be run on demand.
+     *
+     * @param scriptId    The ID of the script to set.
+     * @param content     The content to set for the script.
+     * @param description The description of the script.
+     */
+    @Override
+    public void setScript(final String scriptId, final String content, final String description) {
+        setScript(scriptId, content, description, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+    }
+
+    /**
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the event, language, and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
      * @param content  The content to set for the script.
@@ -174,12 +188,12 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final Scope scope, final String entityId) {
-        setScript(scriptId, content, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScript(scriptId, content, null, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, Scope, String, String, String, String)} that sets the
-     * language and language version arguments to default values.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the language and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
      * @param content  The content to set for the script.
@@ -189,12 +203,12 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event) {
-        setScript(scriptId, content, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScript(scriptId, content, null, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
     }
 
     /**
-     * Creates a script and trigger with the indicated attributes and saves them to the script repository. If objects
-     * with the same unique constraints already exist, they will be retrieved then updated.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the description to the default value.
      *
      * @param scriptId        The ID of the script to set.
      * @param content         The content to set for the script.
@@ -206,6 +220,55 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language, final String languageVersion) {
+        setScript(scriptId, content, null, scope, entityId, event, language, languageVersion);
+    }
+
+    /**
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the event, language, and language version arguments to default values.
+     *
+     * @param scriptId    The ID of the script to set.
+     * @param content     The content to set for the script.
+     * @param description The description of the script.
+     * @param scope       The scope for the script.
+     * @param entityId    The associated entity for the script.
+     */
+    @Override
+    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId) {
+
+    }
+
+    /**
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * sets the language and language version arguments to default values.
+     *
+     * @param scriptId    The ID of the script to set.
+     * @param content     The content to set for the script.
+     * @param description The description of the script.
+     * @param scope       The scope for the script.
+     * @param entityId    The associated entity for the script.
+     * @param event       The event for the script.
+     */
+    @Override
+    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event) {
+
+    }
+
+    /**
+     * Creates a script and trigger with the indicated attributes and saves them to the script repository. If objects
+     * with the same unique constraints already exist, they will be retrieved then updated.
+     *
+     * @param scriptId        The ID of the script to set.
+     * @param content         The content to set for the script.
+     * @param description     The description of the script.
+     * @param scope           The scope for the script.
+     * @param entityId        The associated entity for the script.
+     * @param event           The event for the script.
+     * @param language        The script language for this script.
+     * @param languageVersion The compatible language version(s).
+     */
+    @Override
+    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language, final String languageVersion) {
         final Script script;
         if (_scriptService.hasScript(scriptId)) {
             script = _scriptService.getByScriptId(scriptId);
@@ -214,10 +277,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             script.setScriptId(scriptId);
         }
 
-        script.setDescription("Default description: script ID " + scriptId + " configured to run with " + language + " v" + languageVersion);
         script.setLanguage(language);
         script.setLanguageVersion(languageVersion);
         script.setContent(content);
+
+        script.setDescription(StringUtils.isEmpty(description) ? getDefaultScriptDescription(script) : description);
 
         if (scope == null) {
             saveScript(script);
@@ -279,12 +343,13 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             throw new NrgServiceException(NrgServiceError.Unknown, "You must specify the script ID to use this method.");
         }
         final String content = properties.getProperty("content");
+        final String description = properties.getProperty("description");
         final Scope scope = properties.containsKey("scope") ? Scope.getScope(properties.getProperty("scope")) : null;
         final String entityId = properties.getProperty("entityId");
         final String event = properties.getProperty("event", ScriptTrigger.DEFAULT_EVENT);
         final String language = properties.getProperty("language", ScriptRunner.DEFAULT_LANGUAGE);
         final String languageVersion = properties.getProperty("languageVersion", ScriptRunner.DEFAULT_VERSION);
-        setScript(scriptId, content, scope, entityId, event, language, languageVersion);
+        setScript(scriptId, content, description, scope, entityId, event, language, languageVersion);
     }
 
     /**
@@ -510,6 +575,10 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             }
         }
         return buffer.toString();
+    }
+
+    private String getDefaultScriptDescription(final Script script) {
+        return "Default description: script ID " + script.getScriptId() + " configured to run with " + script.getLanguage() + " v" + script.getLanguageVersion();
     }
 
     private String getDefaultTriggerDescription(final String scriptId, final Scope scope, final String entityId, final String event) {

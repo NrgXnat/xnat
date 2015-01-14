@@ -14,6 +14,7 @@ package org.nrg.xdat.security;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+
 import org.apache.commons.lang.RandomStringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -2771,6 +2772,20 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 			return false;
 		}
 	}
+	
+	private boolean checkFeatureBySiteRoles(String feature){
+        try {
+			for(String role: getRoleNames()){
+				if(Features.isOnByDefaultBySiteRole(feature, role)){
+					return true;
+				}
+			}
+		} catch (Exception e) {
+			logger.error("",e);
+		}
+        
+        return false;
+	}
 
 	/**
 	 * Returns true if the user is a part of a group with the matching tag and feature
@@ -2779,6 +2794,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 	 * @return
 	 */
 	public boolean checkFeature(String tag, String feature) {
+        if (Features.isBanned(feature)) {
+            return false;
+        }
+        
+        if(checkFeatureBySiteRoles(feature)){
+        	return true;
+        }
+        
 		return Features.checkFeature(getGroupByTag(tag), feature);
 	}
 
@@ -2792,9 +2815,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         if (Features.isBanned(feature)) {
             return false;
         }
-
-        if (this.isSiteAdmin()) {
-            return true;
+        
+        if(checkFeatureBySiteRoles(feature)){
+        	return true;
         }
 
 		for(String tag: tags){
@@ -2817,6 +2840,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 	}
 	
 	public boolean checkFeatureForAnyTag(String feature){
+        if (Features.isBanned(feature)) {
+            return false;
+        }
+        
+        if(checkFeatureBySiteRoles(feature)){
+        	return true;
+        }
+
 		return Features.checkFeatureForAnyTag(this, feature);
 	}
 

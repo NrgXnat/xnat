@@ -351,6 +351,25 @@ public class Features {
 		return getFeatureService().getEnabledFeaturesByTag(tag);
 	}
 
+	
+	/**
+	 * returns default setting for this site wide role
+	 * @param feature
+	 * @return
+	 */
+	public static boolean isOnByDefaultBySiteRole(String feature, String role){
+		return getFeatureService().isOnByDefaultForGroupType(feature, "role:"+role);
+	}
+
+	/**
+	 * returns default blocked setting for this feature for a given role
+	 * @param feature
+	 * @return
+	 */
+	public static boolean isBlockedBySiteRole(String feature, String role){
+		return getFeatureService().isBlockedByGroupType(feature, "role"+role);
+	}
+
 	public static final String SITE_WIDE="_SITE_WIDE";
 
 }

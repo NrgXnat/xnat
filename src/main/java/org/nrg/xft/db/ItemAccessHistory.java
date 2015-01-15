@@ -14,7 +14,7 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.StringUtils;
 
 public class ItemAccessHistory {
-	static org.apache.log4j.Logger logger = Logger.getLogger(MaterializedView.class);
+	static org.apache.log4j.Logger logger = Logger.getLogger(ItemAccessHistory.class);
 	public final static String TABLE_NAME="xs_item_access";
 	private static boolean EXISTS=false;
 	

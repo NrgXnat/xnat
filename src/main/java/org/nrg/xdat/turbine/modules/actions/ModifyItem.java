@@ -215,7 +215,7 @@ public class ModifyItem  extends SecureAction {
                     	PersistentWorkflowUtils.confirmID(first, wrk);
                     	PersistentWorkflowUtils.complete(wrk,c);
                     }
-					MaterializedView.DeleteByUser(TurbineUtils.getUser(data));
+					MaterializedView.deleteByUser(TurbineUtils.getUser(data));
         		} catch (Exception e) {
                     if(wrk!=null){
                     	PersistentWorkflowUtils.confirmID(first, wrk);

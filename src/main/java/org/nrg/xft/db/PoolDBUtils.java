@@ -23,7 +23,6 @@ import java.util.Date;
 import java.util.Iterator;
 
 import org.apache.log4j.Logger;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
@@ -802,24 +801,6 @@ public class PoolDBUtils {
             logger.error("",e);
         } catch (Exception e) {
             logger.error("",e);
-        }
-    }
-
-    public static Long CreateManagedTempTable(String tablename, String query,XDATUser user) throws Exception{
-        MaterializedView mv = new MaterializedView(user);
-        mv.setTable_name(tablename);
-        mv.setSearch_sql(query);
-        mv.save();
-
-        return mv.getSize();
-    }
-
-    public static XFTTable RetrieveManagedTempTable(String tablename,XDATUser user,int offset, int rowsPerPage) throws Exception{
-        MaterializedView mv = MaterializedView.GetMaterializedView(tablename, user);
-        if(mv==null){
-        	return null;
-        }else{
-        	return mv.getData(null, offset, rowsPerPage);
         }
     }
 

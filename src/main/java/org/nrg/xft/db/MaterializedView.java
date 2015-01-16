@@ -25,8 +25,8 @@ public class MaterializedView {
 	public static final String DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE="default";
 	
 	private static Map<String,Class<?>> services=null;
-    
-    public static MaterializedViewServiceI getViewManagementService(String code){
+
+    private static void getServices(){
         if(services==null){
             //default to LegacyMaterializedViewServiceImpl implementation (unless a different default is configured)
             //we can swap in other ones later by setting a default
@@ -62,7 +62,11 @@ public class MaterializedView {
                 logger.error("",e);
             }
 
-    	}
+        }
+    }
+
+    public static MaterializedViewServiceI getViewManagementService(String code){
+        getServices();
     	
 	    try{
 	    	if(services.containsKey(code)){
@@ -86,6 +90,7 @@ public class MaterializedView {
     }
 	
 	public static void deleteByUser(UserI user)throws Exception{
+        getServices();
 		for(Class<?> serviceC : services.values()){
 			MaterializedViewServiceI service=(MaterializedViewServiceI)serviceC.newInstance();
 			service.deleteViewsByUser(user);

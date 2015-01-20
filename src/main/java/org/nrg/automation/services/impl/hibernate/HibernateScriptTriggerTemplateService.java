@@ -32,7 +32,7 @@ public class HibernateScriptTriggerTemplateService extends AbstractHibernateEnti
 
     @Override
     @Transactional
-    public List<ScriptTriggerTemplate> getTemplatesForEntity(Long entityId) {
+    public List<ScriptTriggerTemplate> getTemplatesForEntity(final String entityId) {
         if (_log.isDebugEnabled()) {
             _log.debug("Finding templates associated with the entity ID {}", entityId);
         }

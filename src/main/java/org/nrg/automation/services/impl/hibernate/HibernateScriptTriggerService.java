@@ -138,8 +138,8 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
     public String getDefaultTriggerName(final String scriptId, final Scope scope, final String entityId, final String event) {
         final Map<String, String> values = new HashMap<String, String>();
         values.put("scriptId", scriptId);
-        values.put("event", event);
-        values.put("association", Scope.encode(scope, entityId));
+        values.put("event", event.replace(" ", "_").replace("/", "_").replace(":", "_"));
+        values.put("association", Scope.encode(scope, entityId).replace(" ", "_").replace("/", "_").replace(":", "_"));
         return new StrSubstitutor(values, "%(", ")").replace(_defaultTriggerIdTemplate);
     }
 

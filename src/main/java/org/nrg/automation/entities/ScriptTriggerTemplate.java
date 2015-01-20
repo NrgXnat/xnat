@@ -45,7 +45,7 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
         this(templateId, description, triggers, null);
     }
 
-    public ScriptTriggerTemplate(final String templateId, final String description, final Set<ScriptTrigger> triggers, final Set<Long> associatedEntities) {
+    public ScriptTriggerTemplate(final String templateId, final String description, final Set<ScriptTrigger> triggers, final Set<String> associatedEntities) {
         setTemplateId(templateId);
         setDescription(description);
         setTriggers(triggers);
@@ -86,11 +86,11 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
      * @return A set of project IDs in the form of the project data info ID.
      */
     @ElementCollection(fetch = FetchType.EAGER)
-    public Set<Long> getAssociatedEntities() {
+    public Set<String> getAssociatedEntities() {
         return _associatedEntities;
     }
 
-    public void setAssociatedEntities(final Set<Long> associatedEntities) {
+    public void setAssociatedEntities(final Set<String> associatedEntities) {
         _associatedEntities = associatedEntities;
     }
 
@@ -132,5 +132,5 @@ public class ScriptTriggerTemplate extends AbstractHibernateEntity {
     private String _templateId;
     private String _description;
     private Set<ScriptTrigger> _triggers;
-    private Set<Long> _associatedEntities;
+    private Set<String> _associatedEntities;
 }

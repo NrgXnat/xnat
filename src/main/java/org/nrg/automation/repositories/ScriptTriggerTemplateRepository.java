@@ -28,11 +28,11 @@ public class ScriptTriggerTemplateRepository extends AbstractHibernateDAO<Script
     private static final Logger _log = LoggerFactory.getLogger(ScriptTriggerTemplateRepository.class);
 
     @SuppressWarnings("unchecked")
-    public List<ScriptTriggerTemplate> getTemplatesForEntity(final Long entityId) {
+    public List<ScriptTriggerTemplate> getTemplatesForEntity(final String entityId) {
         if (_log.isDebugEnabled()) {
             _log.debug("Finding templates associated with the entity ID {}", entityId);
         }
-        return getSession().createQuery("from org.nrg.automation.entities.ScriptTriggerTemplate as template where :entityId in elements(template.associatedEntities)").setLong("entityId", entityId).list();
+        return getSession().createQuery("from org.nrg.automation.entities.ScriptTriggerTemplate as template where :entityId in elements(template.associatedEntities)").setString("entityId", entityId).list();
     }
 
     @SuppressWarnings("unchecked")

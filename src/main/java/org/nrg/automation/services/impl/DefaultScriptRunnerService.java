@@ -4,6 +4,7 @@ import org.apache.commons.lang.StringUtils;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
+import org.nrg.automation.runners.ScriptRunnerOutputAdapter;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.ScriptTriggerService;
@@ -18,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
+import java.io.PrintWriter;
 import java.util.*;
 
 @Service
@@ -420,7 +422,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
 
         final ScriptRunner runner = getRunner(script.getLanguage(), script.getLanguageVersion());
 
-        final Properties properties = script.getAsProperties();
+        final Properties properties = script.toProperties();
         for (final String key : properties.stringPropertyNames()) {
             // Don't override properties that are passed in explicitly.
             if (!parameters.containsKey(key)) {
@@ -439,6 +441,10 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
                 parameters.put("event", trigger.getEvent());
             }
         }
+        final PrintWriter writer = _adapter != null ? _adapter.getWriter(script) : null;
+        if (writer != null) {
+            parameters.put("out", writer);
+        }
         try {
             final Object results = runner.run(parameters);
             if (_log.isDebugEnabled()) {
@@ -456,6 +462,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             String message = "Found an error while running a " + script.getLanguage() + " v" + script.getLanguageVersion() + " script";
             _log.error(message, e);
             throw new RuntimeException(message, e);
+        } finally {
+            if (writer != null) {
+                writer.flush();
+                writer.close();
+            }
         }
     }
 
@@ -510,6 +521,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         for (final ScriptRunner runner : runners) {
             addRunner(runner);
         }
+    }
+
+    @Autowired (required=false)
+    public void setOutputAdapter(ScriptRunnerOutputAdapter adapter) {
+        _adapter = adapter;
     }
 
     private void saveScript(final Script script) {
@@ -589,8 +605,10 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
 
     @Inject
     private ScriptService _scriptService;
+
     @Inject
     private ScriptTriggerService _triggerService;
 
     private final Map<String, Map<String, ScriptRunner>> _runners = new HashMap<String, Map<String, ScriptRunner>>();
+    private ScriptRunnerOutputAdapter _adapter;
 }

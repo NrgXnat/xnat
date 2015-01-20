@@ -64,7 +64,7 @@ public class TestScriptTriggerAndTemplateServices {
         ScriptTrigger[] triggers = { _triggerService.newEntity("trigger1", "Trigger 1", "script1", "associatedThing1", "Something happened!"),
                 _triggerService.newEntity("trigger2", "Trigger 2", "script2", "associatedThing2", "Something happened!"),
                 _triggerService.newEntity("trigger3", "Trigger 3", "script3", "associatedThing3", "Something happened!")};
-        ScriptTriggerTemplate template = _templateService.newEntity("template1", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(triggers)), new HashSet<Long>(Arrays.asList(0L, 1L, 2L)));
+        ScriptTriggerTemplate template = _templateService.newEntity("template1", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(triggers)), new HashSet<String>(Arrays.asList("0", "1", "2")));
         List<ScriptTriggerTemplate> retrieved = _templateService.getAll();
         assertNotNull(retrieved);
         assertEquals(1, retrieved.size());
@@ -79,7 +79,7 @@ public class TestScriptTriggerAndTemplateServices {
         ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "Trigger 1", "script1", "associatedThing1", "Something happened!");
         ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "Trigger 2", "script2", "associatedThing2", "Something happened!");
 
-        ScriptTriggerTemplate template = _templateService.newEntity("template1", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger0, trigger1, trigger2)), new HashSet<Long>(Arrays.asList(0L, 1L, 2L)));
+        ScriptTriggerTemplate template = _templateService.newEntity("template1", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger0, trigger1, trigger2)), new HashSet<String>(Arrays.asList("0", "1", "2")));
 
         List<ScriptTriggerTemplate> all = _templateService.getAll();
         assertNotNull(all);
@@ -117,9 +117,9 @@ public class TestScriptTriggerAndTemplateServices {
         assertEquals(1, templates2.size());
         assertTrue(templates2.contains(template));
 
-        List<ScriptTriggerTemplate> entities0 = _templateService.getTemplatesForEntity(0L);
-        List<ScriptTriggerTemplate> entities1 = _templateService.getTemplatesForEntity(1L);
-        List<ScriptTriggerTemplate> entities2 = _templateService.getTemplatesForEntity(2L);
+        List<ScriptTriggerTemplate> entities0 = _templateService.getTemplatesForEntity("0");
+        List<ScriptTriggerTemplate> entities1 = _templateService.getTemplatesForEntity("1");
+        List<ScriptTriggerTemplate> entities2 = _templateService.getTemplatesForEntity("2");
 
         assertNotNull(entities0);
         assertEquals(1, entities0.size());
@@ -134,8 +134,8 @@ public class TestScriptTriggerAndTemplateServices {
         ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "Trigger 1", "script1", "associatedThing1", "Something happened!");
         ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "Trigger 2", "script2", "associatedThing2", "Something happened!");
 
-        ScriptTriggerTemplate template0 = _templateService.newEntity("template0", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger0, trigger1)), new HashSet<Long>(Arrays.asList(0L, 1L)));
-        ScriptTriggerTemplate template1 = _templateService.newEntity("template1", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger1, trigger2)), new HashSet<Long>(Arrays.asList(1L, 2L)));
+        ScriptTriggerTemplate template0 = _templateService.newEntity("template0", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger0, trigger1)), new HashSet<String>(Arrays.asList("0", "1")));
+        ScriptTriggerTemplate template1 = _templateService.newEntity("template1", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger1, trigger2)), new HashSet<String>(Arrays.asList("1", "2")));
 
         List<ScriptTriggerTemplate> all = _templateService.getAll();
         assertNotNull(all);
@@ -179,9 +179,9 @@ public class TestScriptTriggerAndTemplateServices {
         assertEquals(1, templates2.size());
         assertTrue(templates2.contains(template1));
 
-        List<ScriptTriggerTemplate> entities0 = _templateService.getTemplatesForEntity(0L);
-        List<ScriptTriggerTemplate> entities1 = _templateService.getTemplatesForEntity(1L);
-        List<ScriptTriggerTemplate> entities2 = _templateService.getTemplatesForEntity(2L);
+        List<ScriptTriggerTemplate> entities0 = _templateService.getTemplatesForEntity("0");
+        List<ScriptTriggerTemplate> entities1 = _templateService.getTemplatesForEntity("1");
+        List<ScriptTriggerTemplate> entities2 = _templateService.getTemplatesForEntity("2");
 
         assertNotNull(entities0);
         assertEquals(1, entities0.size());
@@ -201,9 +201,9 @@ public class TestScriptTriggerAndTemplateServices {
         ScriptTrigger trigger5 = _triggerService.newEntity("trigger5", "Trigger 5", "script5", "associatedThing5", "Something happened!");
         ScriptTrigger trigger6 = _triggerService.newEntity("trigger6", "Trigger 6", "script6", "associatedThing6", "Something happened!");
 
-        ScriptTriggerTemplate template0 = _templateService.newEntity("template1", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger0, trigger1, trigger2)), new HashSet<Long>(Arrays.asList(0L, 1L, 2L)));
-        ScriptTriggerTemplate template1 = _templateService.newEntity("template2", "Yet another template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger2, trigger3, trigger4)), new HashSet<Long>(Arrays.asList(2L, 3L, 4L)));
-        ScriptTriggerTemplate template2 = _templateService.newEntity("template3", "Yet another template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger4, trigger5, trigger6)), new HashSet<Long>(Arrays.asList(4L, 5L, 6L)));
+        ScriptTriggerTemplate template0 = _templateService.newEntity("template1", "Here's a template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger0, trigger1, trigger2)), new HashSet<String>(Arrays.asList("0", "1", "2")));
+        ScriptTriggerTemplate template1 = _templateService.newEntity("template2", "Yet another template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger2, trigger3, trigger4)), new HashSet<String>(Arrays.asList("2", "3", "4")));
+        ScriptTriggerTemplate template2 = _templateService.newEntity("template3", "Yet another template!", new HashSet<ScriptTrigger>(Arrays.asList(trigger4, trigger5, trigger6)), new HashSet<String>(Arrays.asList("4", "5", "6")));
 
         List<ScriptTriggerTemplate> retrieved = _templateService.getAll();
         assertNotNull(retrieved);
@@ -281,13 +281,13 @@ public class TestScriptTriggerAndTemplateServices {
         assertEquals(1, triggers6.size());
         assertTrue(triggers6.contains(retrieved2));
 
-        List<ScriptTriggerTemplate> entities0 = _templateService.getTemplatesForEntity(0L);
-        List<ScriptTriggerTemplate> entities1 = _templateService.getTemplatesForEntity(1L);
-        List<ScriptTriggerTemplate> entities2 = _templateService.getTemplatesForEntity(2L);
-        List<ScriptTriggerTemplate> entities3 = _templateService.getTemplatesForEntity(3L);
-        List<ScriptTriggerTemplate> entities4 = _templateService.getTemplatesForEntity(4L);
-        List<ScriptTriggerTemplate> entities5 = _templateService.getTemplatesForEntity(5L);
-        List<ScriptTriggerTemplate> entities6 = _templateService.getTemplatesForEntity(6L);
+        List<ScriptTriggerTemplate> entities0 = _templateService.getTemplatesForEntity("0");
+        List<ScriptTriggerTemplate> entities1 = _templateService.getTemplatesForEntity("1");
+        List<ScriptTriggerTemplate> entities2 = _templateService.getTemplatesForEntity("2");
+        List<ScriptTriggerTemplate> entities3 = _templateService.getTemplatesForEntity("3");
+        List<ScriptTriggerTemplate> entities4 = _templateService.getTemplatesForEntity("4");
+        List<ScriptTriggerTemplate> entities5 = _templateService.getTemplatesForEntity("5");
+        List<ScriptTriggerTemplate> entities6 = _templateService.getTemplatesForEntity("6");
 
         assertNotNull(entities0);
         assertEquals(1, entities0.size());

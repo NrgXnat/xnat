@@ -8,7 +8,10 @@ import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.*;
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.Table;
+import javax.persistence.UniqueConstraint;
 import java.util.Properties;
 
 /**
@@ -80,8 +83,7 @@ public class Script extends AbstractHibernateEntity {
         _content = content;
     }
 
-    @Transient
-    public Properties getAsProperties() {
+    public Properties toProperties() {
         final Properties properties = new Properties();
         properties.setProperty(ScriptProperty.ScriptId.key(), _scriptId);
         properties.setProperty(ScriptProperty.Description.key(), _description);
@@ -98,5 +100,4 @@ public class Script extends AbstractHibernateEntity {
     private String _language;
     private String _languageVersion;
     private String _content;
-
 }

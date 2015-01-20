@@ -29,7 +29,7 @@ public interface ScriptTriggerTemplateService extends BaseHibernateService<Scrip
      * @return A list of any {@link org.nrg.automation.entities.ScriptTriggerTemplate templates} associated with the
      * submitted entity ID.
      */
-    abstract public List<ScriptTriggerTemplate> getTemplatesForEntity(final Long entityId);
+    abstract public List<ScriptTriggerTemplate> getTemplatesForEntity(final String entityId);
     /**
      * Returns all of the templates with which the indicated {@link org.nrg.automation.entities.ScriptTrigger} is
      * associated. This means that the trigger is contained in the {@link org.nrg.automation.entities.ScriptTriggerTemplate#getTriggers()}
@@ -39,6 +39,10 @@ public interface ScriptTriggerTemplateService extends BaseHibernateService<Scrip
      * submitted trigger.
      */
     abstract public List<ScriptTriggerTemplate> getTemplatesForTrigger(final ScriptTrigger trigger);
-
+    /**
+     * Gets the script trigger template with the indicated name.
+     * @param name    The name of the template to retrieve.
+     * @return The template with the indicated name if it exists, <b>null</b> otherwise.
+     */
     abstract public ScriptTriggerTemplate getByName(final String name);
 }

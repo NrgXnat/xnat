@@ -45,6 +45,7 @@
         <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
         <nrg.extattr.version>4.1.0</nrg.extattr.version>
         <nrg.sessionbuilders.version>${project.version}</nrg.sessionbuilders.version>
+        <pipeline.version>${project.version}</pipeline.version>
 
         <!-- These are default property values to be overridden for specific applets and signing requirements. -->
         <applet.main.class>AppletMainClass</applet.main.class>
@@ -108,7 +109,6 @@
         <junit.version>4.11</junit.version>
         <log4j.version>1.2.17</log4j.version>
         <mockito.version>1.8.5</mockito.version>
-        <pipeline.version>1.6.4</pipeline.version>
         <postgresql.version>9.0-801.jdbc4</postgresql.version>
         <org.postgresql.version>9.3-1101-jdbc41</org.postgresql.version>
         <reflections.version>0.9.9-RC1</reflections.version>
@@ -265,7 +265,7 @@
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>
                 <artifactId>catalog</artifactId>
-                <version>${pipeline.version}</version>
+                <version>1.6</version>
             </dependency>
             <dependency>
                 <groupId>org.nrg.xnat.pipeline</groupId>

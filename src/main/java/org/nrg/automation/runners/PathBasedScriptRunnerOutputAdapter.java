@@ -1,9 +1,12 @@
 package org.nrg.automation.runners;
 
+import org.apache.commons.lang.StringUtils;
 import org.nrg.automation.entities.Script;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileWriter;
 import java.io.IOException;
@@ -18,9 +21,19 @@ import java.util.Map;
 public class PathBasedScriptRunnerOutputAdapter implements ScriptRunnerOutputAdapter {
 
     public PathBasedScriptRunnerOutputAdapter(final String path) throws NrgServiceException {
-        _path = Paths.get(path);
-        if (!_path.toFile().exists()) {
-            throw new NrgServiceException(NrgServiceError.Unknown, "The path " + path + " doesn't exist.");
+        if (StringUtils.isNotBlank(path)) {
+            if (_log.isDebugEnabled()) {
+                _log.debug("Initializing the path-based script runner output adapter with the path: " + path);
+            }
+            setPath(path);
+        } else {
+            if (_log.isDebugEnabled()) {
+                _log.debug("Initializing the path-based script runner output adapter without a path specified. Using temp path.");
+            }
+            final Path tmpdir = Paths.get(System.getProperty("java.io.tmpdir"));
+            final Path scripts = tmpdir.resolve("scripts");
+            scripts.toFile().mkdir();
+            setPath(scripts.toString());
         }
     }
 
@@ -36,6 +49,17 @@ public class PathBasedScriptRunnerOutputAdapter implements ScriptRunnerOutputAda
         }
     }
 
+    public void setPath(final String path) {
+        if (StringUtils.isBlank(path) || (_path != null &&  Paths.get(path).compareTo(_path) == 0)) {
+            return;
+        }
+        _path = Paths.get(path);
+        if (!_path.toFile().exists()) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "The path " + path + " doesn't exist.");
+        }
+        _folders.clear();
+    }
+
     private Path getScriptFolder(final String scriptId) {
         final Path scriptFolder = _path.resolve(scriptId);
         if (!scriptFolder.toFile().exists()) {
@@ -47,7 +71,7 @@ public class PathBasedScriptRunnerOutputAdapter implements ScriptRunnerOutputAda
         return scriptFolder;
     }
 
-
-    final Path _path;
-    final Map<String, Path> _folders = new HashMap<String, Path>();
+    private static final Logger _log = LoggerFactory.getLogger(PathBasedScriptRunnerOutputAdapter.class);
+    private Path _path;
+    private final Map<String, Path> _folders = new HashMap<String, Path>();
 }

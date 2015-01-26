@@ -16,6 +16,7 @@ import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.generic.EscapeTool;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
@@ -85,9 +86,10 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 
         String systemName = TurbineUtils.GetSystemName();
         c.put("turbineUtils",TurbineUtils.GetInstance());
-	c.put("displayManager", DisplayManager.GetInstance());
+    	c.put("displayManager", DisplayManager.GetInstance());
         c.put("systemName",systemName);
-        
+        c.put("esc", new EscapeTool());
+
         c.put("showReason", XFT.getShowChangeJustification());
         c.put("requireReason", XFT.getRequireChangeJustification());
         

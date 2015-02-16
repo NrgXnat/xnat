@@ -17,7 +17,7 @@ import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
-import org.nrg.prefs.entities.Preference;
+import org.nrg.prefs.entities.Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
@@ -30,12 +30,13 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
 
 /**
- * Tests the NRG preferences service framework.
+ * Tests the NRG Hibernate tool service. This is a sanity test of the plumbing for the tool entity management. All
+ * end-use operations should use an implementation of the {@link NrgPrefsService} interface.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
-public class PreferencesServiceTests {
-    public PreferencesServiceTests() {
+public class ToolServiceTests {
+    public ToolServiceTests() {
         _log.info("Creating test class");
     }
 
@@ -50,18 +51,18 @@ public class PreferencesServiceTests {
     }
 
     @Test
-    public void testSimplePreference() throws NrgServiceException {
-        Preference preference = _service.newEntity();
-        preference.setName("Preference 1");
-        _service.create(preference);
-        List<Preference> preferences = _service.getAll();
-        assertNotNull(preferences);
-        assertEquals(1, preferences.size());
-        assertEquals("Preference 1", preferences.get(0).getName());
+    public void testSimpleTool() throws NrgServiceException {
+        Tool tool = _service.newEntity();
+        tool.setToolName("Tool 1");
+        _service.create(tool);
+        List<Tool> tools = _service.getAll();
+        assertNotNull(tools);
+        assertEquals(1, tools.size());
+        assertEquals("Tool 1", tools.get(0).getToolName());
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(PreferencesServiceTests.class);
+    private static final Logger _log = LoggerFactory.getLogger(ToolServiceTests.class);
 
     @Inject
-    private PreferencesService _service;
+    private ToolService _service;
 }

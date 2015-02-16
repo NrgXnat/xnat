@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.prefs.entities.Preference;
+import org.nrg.prefs.entities.Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
@@ -52,17 +53,33 @@ public class PreferenceServiceTests {
 
     @Test
     public void testSimplePreference() throws NrgServiceException {
-        Preference preference = _service.newEntity();
+        Tool tool = _toolService.newEntity();
+        tool.setToolId("tool1");
+        tool.setToolName("Tool 1");
+        _toolService.create(tool);
+        List<Tool> tools = _toolService.getAll();
+        assertNotNull(tools);
+        assertEquals(1, tools.size());
+        assertEquals("tool1", tools.get(0).getToolId());
+        assertEquals("Tool 1", tools.get(0).getToolName());
+
+        Preference preference = _prefService.newEntity();
+        preference.setTool(tool);
         preference.setName("Preference 1");
-        _service.create(preference);
-        List<Preference> preferences = _service.getAll();
+        preference.setValue("Value 1");
+        _prefService.create(preference);
+        List<Preference> preferences = _prefService.getAll();
         assertNotNull(preferences);
         assertEquals(1, preferences.size());
+        assertEquals(tool, preference.getTool());
         assertEquals("Preference 1", preferences.get(0).getName());
+        assertEquals("Value 1", preferences.get(0).getValue());
     }
 
     private static final Logger _log = LoggerFactory.getLogger(PreferenceServiceTests.class);
 
     @Inject
-    private PreferenceService _service;
+    private ToolService _toolService;
+    @Inject
+    private PreferenceService _prefService;
 }

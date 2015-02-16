@@ -53,11 +53,13 @@ public class ToolServiceTests {
     @Test
     public void testSimpleTool() throws NrgServiceException {
         Tool tool = _service.newEntity();
+        tool.setToolId("tool1");
         tool.setToolName("Tool 1");
         _service.create(tool);
         List<Tool> tools = _service.getAll();
         assertNotNull(tools);
         assertEquals(1, tools.size());
+        assertEquals("tool1", tools.get(0).getToolId());
         assertEquals("Tool 1", tools.get(0).getToolName());
     }
 

@@ -2583,6 +2583,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		//check if it was added since init
     	Integer u;
 		try {
+			try{
+				PoolDBUtils.CheckSpecialSQLChars(username);
+			}catch (Exception e){
+				return null;
+			}
+			
 			u=(Integer)PoolDBUtils.ReturnStatisticQuery("select xdat_user_id FROM xdat_user WHERE login='"+username+"'", "xdat_user_id", null, null);
 			if(u!=null){
 				getCachedUserIds().put(u,username);

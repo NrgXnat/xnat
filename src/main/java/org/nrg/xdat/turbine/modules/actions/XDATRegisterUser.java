@@ -46,6 +46,7 @@ import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.servlet.http.HttpSession;
+
 import java.util.*;
 
 public class XDATRegisterUser extends VelocitySecureAction {
@@ -53,6 +54,14 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
+    	try {
+			SecureAction.isCsrfTokenOk(data);
+		} catch (Exception e1) {
+			data.setMessage("Due to a technical issue, the requested action cannot be performed.");
+			data.setScreenTemplate("Login.vm");
+			return;
+		}
+    	
 		try {
         	PopulateItem populater = PopulateItem.Populate(data, XFT.PREFIX + ":user", true);
         	ItemI found = populater.getItem();

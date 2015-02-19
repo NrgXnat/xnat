@@ -45,6 +45,14 @@ public class XDATForgotLogin extends VelocitySecureAction {
     
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
+    	try {
+			SecureAction.isCsrfTokenOk(data);
+		} catch (Exception e1) {
+			data.setMessage("Due to a technical issue, the requested action cannot be performed.");
+			data.setScreenTemplate("Login.vm");
+			return;
+		}
+    	
         String email = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("email",data));
         String username = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("username",data));
 		String subject = TurbineUtils.GetSystemName() + " Login Request";

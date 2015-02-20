@@ -762,10 +762,10 @@ public class TurbineUtils {
 			if (data != null)
 			{
 				logger.debug("\n\nSession Parameters");
-				final Enumeration<Object> enumer = data.getSession().getAttributeNames();
+				final Enumeration<String> enumer = data.getSession().getAttributeNames();
 				while (enumer.hasMoreElements())
 				{
-					final String key = (String)enumer.nextElement();
+					final String key = enumer.nextElement();
 					final Object o = data.getSession().getAttribute(key);
 				    logger.debug("KEY: "+ key + " VALUE: " + o.getClass());
 				}

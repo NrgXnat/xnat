@@ -40,7 +40,7 @@
     <dependencies>
         <dependency>
             <groupId>org.nrg</groupId>
-            <artifactId>framework</artifactId>
+            <artifactId>prefs</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-beanutils</groupId>

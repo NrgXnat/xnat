@@ -37,17 +37,11 @@ import java.util.Properties;
 
 import static org.junit.Assert.*;
 
-/**
- * This should be exactly the same as the {@link PrefsBasedSiteConfigurationServiceTests} test suite. They're each
- * testing the same service, but with different implementations. Any changes in these tests should be reflected in the
- * tests in the other suite. This is necessary because there's no easy way to run the same set of tests for each
- * different implementation.
- */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 @TransactionConfiguration(defaultRollback = true)
 @Transactional
-public class DefaultSiteConfigurationServiceTests {
+public class PrefsBasedSiteConfigurationServiceTests {
 
     @Before
     public void setUp() throws SiteConfigurationException {
@@ -60,6 +54,10 @@ public class DefaultSiteConfigurationServiceTests {
         // for subsequent tests. The transactional boundaries from the test class @Transactional* annotations will clear
         // out the database.
         _service.resetSiteConfiguration();
+        DefaultNamespacePropertyLevelListener.resetInvokedCount();
+        FooNamespaceLevelListener.resetInvokedCount();
+        FooPropertyLevelListener.resetInvokedCount();
+        SiteLevelListener.resetInvokedCount();
     }
 
     @Test
@@ -156,7 +154,7 @@ public class DefaultSiteConfigurationServiceTests {
     }
 
     @Autowired
-    @Qualifier("defaultSiteConfigurationService")
+    @Qualifier("prefsBasedSiteConfigurationService")
     private SiteConfigurationService _service;
 
     private List<String> _configFilesLocations = new ArrayList<>();

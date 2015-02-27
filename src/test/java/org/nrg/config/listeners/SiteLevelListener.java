@@ -29,5 +29,9 @@ public class SiteLevelListener implements
 		return _invokedCount;
 	}
 
-	private static int _invokedCount;
+    public static void resetInvokedCount() {
+        _invokedCount = 0;
+    }
+
+    private static int _invokedCount;
 }

@@ -10,17 +10,13 @@
  */
 package org.nrg.config.exceptions;
 
-import java.util.List;
-
 import com.google.common.base.Joiner;
 
+import java.util.List;
 
-public final class SiteConfigurationFileNotFoundException extends
-		RuntimeException {
 
-	/**
-	 * 
-	 */
+public final class SiteConfigurationFileNotFoundException extends SiteConfigurationException {
+
 	private static final long serialVersionUID = -5608639365180565044L;
 	
 	public SiteConfigurationFileNotFoundException(String configFileName, List<String> configFilesLocations) {
@@ -29,7 +25,4 @@ public final class SiteConfigurationFileNotFoundException extends
 				, Joiner.on("\n").join(configFilesLocations)
 		));
 	}
-
-	@SuppressWarnings("unused")
-	private SiteConfigurationFileNotFoundException() {}
 }

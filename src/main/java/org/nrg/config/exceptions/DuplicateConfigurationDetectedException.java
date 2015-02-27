@@ -24,6 +24,6 @@ public class DuplicateConfigurationDetectedException extends RuntimeException {
 	}
 
 	public DuplicateConfigurationDetectedException(String propertyName) {
-		super(String.format("The configuration property '%s' was detected either in two different properties files.", propertyName)); 
+		super(String.format("The configuration property '%s' was detected in two different properties files.", propertyName));
 	}
 }

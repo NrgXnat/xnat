@@ -17,6 +17,7 @@
 
     <import resource="classpath:/org/nrg/config/TestDataSource-context.xml" />
     <import resource="classpath:/META-INF/configuration/nrg-config-context.xml" />
+    <import resource="classpath:/META-INF/configuration/nrg-prefs-context.xml" />
 
     <!--  <bean id="namingStrategy" class="org.hibernate.cfg.ImprovedNamingStrategy" />  -->
     <bean id="namingStrategy" class="org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy" p:prefix="xhbm" />
@@ -37,10 +38,9 @@
         <constructor-arg index="0" ref="hibernateProperties"/>
     </bean>
 
-    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean"
+    <bean id="sessionFactory" class="org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean"
           p:cacheRegionFactory-ref="cacheRegionFactory" p:dataSource-ref="dataSource"
-          p:hibernateProperties-ref="hibernateProperties" p:packagesToScan-ref="nrgConfigEntityPackages"
-          p:namingStrategy-ref="namingStrategy" />
+          p:hibernateProperties-ref="hibernateProperties" p:namingStrategy-ref="namingStrategy" />
 
     <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager"
         p:sessionFactory-ref="sessionFactory" />
@@ -50,5 +50,7 @@
     <util:list id="configFilesLocations" value-type="java.lang.String">
 	    <value>src/test/resources/org/nrg/config</value>
 	</util:list>
+
+    <bean id="defaultResolver" class="org.nrg.framework.scope.NoOpEntityResolver" />
 
 </beans>

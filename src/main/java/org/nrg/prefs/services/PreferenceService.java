@@ -5,6 +5,8 @@ import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
 
+import java.util.Properties;
+
 // TODO: Remove the versions of calls that take the Tool object. It would be best to get these directly via the tool ID if possible.
 public interface PreferenceService extends BaseHibernateService<Preference> {
     /**
@@ -46,4 +48,14 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * @param value             The value to set for the preference.
      */
     public abstract void setPreference(final Tool tool, final String preferenceName, final Scope scope, final String entityId, String value);
+
+    /**
+     * Returns all of the properties for the selected tool at the indicated scope.
+     *
+     * @param toolId    The ID of the tool.
+     * @param scope     The scope for which properties should be retrieved.
+     * @param entityId  The entity for which properties should be retrieved.
+     * @return All of the properties for the selected tool at the indicated scope, returned as a Java properties object.
+     */
+    public abstract Properties getToolProperties(final String toolId, final Scope scope, final String entityId);
 }

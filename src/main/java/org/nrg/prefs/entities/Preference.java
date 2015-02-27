@@ -114,7 +114,7 @@ public class Preference extends AbstractHibernateEntity {
      * be interpreted by the specific tool.
      * @return The value for this preference.
      */
-    @Column(nullable = false)
+    @Column(nullable = false, length = 65535)
     public String getValue() {
         return _value;
     }

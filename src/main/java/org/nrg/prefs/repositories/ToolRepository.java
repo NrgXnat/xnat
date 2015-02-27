@@ -1,9 +1,23 @@
 package org.nrg.prefs.repositories;
 
+import org.hibernate.type.StandardBasicTypes;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
 import org.nrg.prefs.entities.Tool;
 import org.springframework.stereotype.Repository;
 
+import java.util.HashSet;
+import java.util.List;
+import java.util.Set;
+
 @Repository
 public class ToolRepository extends AbstractHibernateDAO<Tool> {
+    public Set<String> getToolIds() {
+        @SuppressWarnings("all")
+        final List<String> results = getSession().createSQLQuery("select tool_id from xhbm_tool")
+                .addScalar("tool_id", StandardBasicTypes.STRING)
+                .list();
+        final Set<String> toolIds = new HashSet<>();
+        toolIds.addAll(results);
+        return toolIds;
+    }
 }

@@ -31,4 +31,6 @@
         </property>
     </bean>
 
+    <bean id="defaultResolver" class="org.nrg.framework.scope.NoOpEntityResolver" />
+
 </beans>

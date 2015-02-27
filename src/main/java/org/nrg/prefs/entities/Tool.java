@@ -9,8 +9,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javax.persistence.*;
+import java.util.HashMap;
 import java.util.Map;
-import java.util.Properties;
 
 /**
  * Represents a tool or feature for the purposes of grouping {@link Preference preferences} into functional areas. The
@@ -121,8 +121,9 @@ public class Tool extends AbstractHibernateEntity {
      * @return The list of preferences for the tool.
      */
     @ElementCollection
+    @Column(length = 65535)
     public Map<String, String> getToolPreferences() {
-        return _preferences;
+        return _preferences != null ? _preferences : new HashMap<String, String>();
     }
 
     /**
@@ -131,12 +132,6 @@ public class Tool extends AbstractHibernateEntity {
      */
     public void setToolPreferences(final Map<String, String> preferences) {
         _preferences = preferences;
-    }
-
-    @Transient
-    public Properties getToolPreferencesAsProperties() {
-        Properties properties = new Properties();
-        return null;
     }
 
     @Override
@@ -170,5 +165,5 @@ public class Tool extends AbstractHibernateEntity {
     private String _id;
     private String _name;
     private String _description;
-    private Map<String, String> _preferences;
+    private Map<String, String> _preferences = new HashMap<>();
 }

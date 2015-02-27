@@ -20,12 +20,16 @@ import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
 import org.springframework.stereotype.Repository;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Manages preferences within the preferences service framework.
  */
 @Repository
 public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
     public Preference findByToolIdNameAndEntity(final String toolId, final String preferenceName, final Scope scope, final String entityId) {
+        @SuppressWarnings("all")
         final Object results = getSession().createSQLQuery("select * from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.name = :preferenceName and pref.scope = :scope and pref.entity_id = :entityId")
                 .addScalar("id", StandardBasicTypes.LONG)
                 .setString("toolId", toolId)
@@ -53,6 +57,26 @@ public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
         // }
         // return found.get(0);
         return findByToolIdNameAndEntity(tool.getToolId(), preferenceName, scope, entityId);
+    }
+
+    public List<Preference> findByToolIdAndEntity(final String toolId, final Scope scope, final String entityId) {
+        @SuppressWarnings("all")
+        final List results = getSession().createSQLQuery("select * from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.scope = :scope and pref.entity_id = :entityId")
+                .addScalar("id", StandardBasicTypes.LONG)
+                .setString("toolId", toolId)
+                .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal())
+                .setString("entityId", entityId == null ? EntityId.Default.getEntityId() : entityId)
+                .list();
+        if (results == null || results.size() == 0) {
+            return new ArrayList<>();
+        }
+        final List<Preference> preferences = new ArrayList<>();
+        for (final Object result : results) {
+            if (result instanceof Long) {
+                preferences.add(retrieve((Long) result));
+            }
+        }
+        return preferences;
     }
 
     // private static final String[] EXCLUDE_PROPERTY = new String[]{"id", "enabled", "created", "timestamp", "disabled", "value"};

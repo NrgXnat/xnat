@@ -24,7 +24,9 @@ import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.inject.Inject;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
@@ -52,15 +54,24 @@ public class ToolServiceTests {
 
     @Test
     public void testSimpleTool() throws NrgServiceException {
-        Tool tool = _service.newEntity();
+        final Map<String, String> prefs = new HashMap<>();
+        prefs.put("pref1", "value1");
+        final Tool tool = _service.newEntity();
         tool.setToolId("tool1");
         tool.setToolName("Tool 1");
+        tool.setToolDescription("This is the first tool of them all!");
+        tool.setToolPreferences(prefs);
         _service.create(tool);
-        List<Tool> tools = _service.getAll();
+
+        final List<Tool> tools = _service.getAll();
         assertNotNull(tools);
         assertEquals(1, tools.size());
         assertEquals("tool1", tools.get(0).getToolId());
         assertEquals("Tool 1", tools.get(0).getToolName());
+        assertEquals("This is the first tool of them all!", tool.getToolDescription());
+        assertNotNull(tool.getToolPreferences());
+        assertEquals(1, tool.getToolPreferences().size());
+
     }
 
     private static final Logger _log = LoggerFactory.getLogger(ToolServiceTests.class);

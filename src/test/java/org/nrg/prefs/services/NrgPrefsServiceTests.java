@@ -10,8 +10,10 @@ import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
+import java.io.IOException;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import static org.junit.Assert.*;
@@ -103,6 +105,30 @@ public class NrgPrefsServiceTests {
         assertEquals("defaultValue4", _service.getPreferenceValue("tool1", "preference4"));
         assertEquals("defaultValue5", _service.getPreferenceValue("tool1", "preference5"));
 
+        final Set<String> tools = _service.getToolIds();
+        assertNotNull(tools);
+        assertEquals(1, tools.size());
+        assertTrue(tools.contains("tool1"));
+
+        final Set<String> propertyNames = _service.getToolPropertyNames("tool1");
+        assertTrue(propertyNames.contains("preference1"));
+        assertTrue(propertyNames.contains("preference2"));
+        assertTrue(propertyNames.contains("preference3"));
+        assertTrue(propertyNames.contains("preference4"));
+        assertTrue(propertyNames.contains("preference5"));
+
+        final Properties properties = _service.getToolProperties("tool1");
+        assertTrue(properties.containsKey("preference1"));
+        assertTrue(properties.containsKey("preference2"));
+        assertTrue(properties.containsKey("preference3"));
+        assertTrue(properties.containsKey("preference4"));
+        assertTrue(properties.containsKey("preference5"));
+        assertEquals("defaultValue1", properties.getProperty("preference1"));
+        assertEquals("defaultValue2", properties.getProperty("preference2"));
+        assertEquals("defaultValue3", properties.getProperty("preference3"));
+        assertEquals("defaultValue4", properties.getProperty("preference4"));
+        assertEquals("defaultValue5", properties.getProperty("preference5"));
+
         // Now set some values scoped to specific entities.
         _service.setPreferenceValue("tool1", "preference2", Scope.Project, "project1", "t1p2p1");
         _service.setPreferenceValue("tool1", "preference3", Scope.Subject, "p2s2", "t1p3p2s2");
@@ -138,6 +164,17 @@ public class NrgPrefsServiceTests {
         assertEquals("defaultValue5", _service.getPreferenceValue("tool1", "preference5", Scope.Experiment, "p2s3e3"));
         assertEquals("t1p4p2s3e3", _service.getPreferenceValue("tool1", "preference4", Scope.Experiment, "p2s3e3"));
         assertEquals("t1p5p2s6e2", _service.getPreferenceValue("tool1", "preference5", Scope.Experiment, "p2s6e2"));
+    }
+
+    @Test
+    public void testLoadSiteConfigurationProperties() throws IOException {
+        final Properties siteConfiguration = new Properties();
+        siteConfiguration.load(Properties.class.getResourceAsStream("/org/nrg/prefs/services/siteConfiguration.properties"));
+        assertNotNull(siteConfiguration);
+        assertTrue(siteConfiguration.size() > 0);
+        _service.createTool("siteConfig", "Site Configuration", "This is the main tool for mapping the site configuration", siteConfiguration);
+        assertEquals("true", _service.getPreferenceValue("siteConfig", "enableDicomReceiver"));
+        assertEquals("org.nrg.xnat.utils.ChecksumsSiteConfigurationListener", _service.getPreferenceValue("siteConfig", "checksums.property.changed.listener"));
     }
 
     @Inject

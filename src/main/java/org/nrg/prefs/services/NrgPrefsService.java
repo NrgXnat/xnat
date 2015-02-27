@@ -28,7 +28,32 @@ import java.util.Set;
  * within the XNAT service context.
  */
 public interface NrgPrefsService extends NrgService {
+    /**
+     * Creates a {@link Tool tool} with no default properties or values set.
+     * @param toolId         The unique tool ID.
+     * @param toolName       The readable tool name.
+     * @param description    The readable description of the tool.
+     * @return The object representing the persisted tool definition.
+     */
+    public abstract Tool createTool(final String toolId, final String toolName, final String description);
+    /**
+     * Creates a {@link Tool tool} with the indicated default properties and optional values.
+     * @param toolId         The unique tool ID.
+     * @param toolName       The readable tool name.
+     * @param description    The readable description of the tool.
+     * @param defaults       The default properties and values for the tool.
+     * @return The object representing the persisted tool definition.
+     */
     public abstract Tool createTool(final String toolId, final String toolName, final String description, final Map<String, String> defaults);
+    /**
+     * Creates a {@link Tool tool} with the indicated default properties and optional values.
+     * @param toolId         The unique tool ID.
+     * @param toolName       The readable tool name.
+     * @param description    The readable description of the tool.
+     * @param defaults       The default properties and values for the tool.
+     * @return The object representing the persisted tool definition.
+     */
+    public abstract Tool createTool(final String toolId, final String toolName, final String description, final Properties defaults);
 
     public abstract Preference getPreference(final String toolId, final String preferenceName, final Scope scope, final String entityId);
 

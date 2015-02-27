@@ -149,21 +149,6 @@ public class DefaultNrgPrefsService implements NrgPrefsService {
     }
 
     @Override
-    public String getPropertyValue(final String toolId, final String property) {
-        return null;
-    }
-
-    @Override
-    public String getPropertyValue(final String toolId, final String property, final EntityId entityId) {
-        return null;
-    }
-
-    @Override
-    public String getPropertyValue(final String toolId, final String property, final Scope scope, final String entityId) {
-        return null;
-    }
-
-    @Override
     public void setEntityResolver(final String toolId, final EntityResolver resolver) {
         _resolvers.put(toolId, resolver);
     }

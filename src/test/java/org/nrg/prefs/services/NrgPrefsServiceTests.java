@@ -42,12 +42,25 @@ public class NrgPrefsServiceTests {
     }
 
     @Test
+    public void testCreateToolWithoutDefaults() {
+        final Tool tool = _service.createTool("tool1", "Tool 1", "This is tool 1, let's have some fun.");
+        final Set<Tool> tools = _service.getTools();
+        assertNotNull(tools);
+        assertEquals(1, tools.size());
+        assertTrue(tools.contains(tool));
+        assertEquals(tool, tools.toArray()[0]);
+        assertEquals(0, tool.getToolPreferences().size());
+    }
+
+    @Test
     public void testCreateTool() {
         final Tool tool = _service.createTool("tool1", "Tool 1", "This is tool 1, let's have some fun.", prefs1);
         final Set<Tool> tools = _service.getTools();
         assertNotNull(tools);
         assertEquals(1, tools.size());
         assertTrue(tools.contains(tool));
+        assertEquals(tool, tools.toArray()[0]);
+        assertEquals(3, tool.getToolPreferences().size());
     }
 
     @Test

@@ -13,7 +13,6 @@
 package org.nrg.prefs.services;
 
 import org.nrg.framework.constants.Scope;
-import org.nrg.framework.scope.EntityId;
 import org.nrg.framework.scope.EntityResolver;
 import org.nrg.framework.services.NrgService;
 import org.nrg.prefs.entities.Preference;
@@ -88,35 +87,6 @@ public interface NrgPrefsService extends NrgService {
      * @return All of the properties for the indicated tool.
      */
     public abstract Properties getToolProperties(final String toolId);
-
-    /**
-     * Gets the value for a particular property on the specified tool.
-     * @param toolId      The ID of the tool.
-     * @param property    The property to retrieve.
-     * @return The value of the property for the tool.
-     */
-    public abstract String getPropertyValue(final String toolId, final String property);
-
-    /**
-     * Gets the value for a particular property on the specified tool as associated with a particular entity. How the
-     * entity is resolved is dependent on the entity resolver specified for the tool.
-     * @param toolId      The ID of the tool.
-     * @param property    The property to retrieve.
-     * @param entityId    The ID of the entity for which the property value should be retrieved.
-     * @return The value of the property for the tool.
-     */
-    public abstract String getPropertyValue(final String toolId, final String property, final EntityId entityId);
-
-    /**
-     * Gets the value for a particular property on the specified tool as associated with a particular entity. How the
-     * entity is resolved is dependent on the entity resolver specified for the tool.
-     * @param toolId      The ID of the tool.
-     * @param property    The property to retrieve.
-     * @param scope       The scope of the specified entity ID.
-     * @param entityId    The ID of the entity for which the property value should be retrieved.
-     * @return The value of the property for the tool.
-     */
-    public abstract String getPropertyValue(final String toolId, final String property, final Scope scope, final String entityId);
 
     /**
      * Sets the entity resolver implementation for the specified tool ID.

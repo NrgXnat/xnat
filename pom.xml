@@ -164,6 +164,11 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
+                <artifactId>prefs</artifactId>
+                <version>${nrg.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
                 <artifactId>mail</artifactId>
                 <version>${nrg.framework.version}</version>
             </dependency>

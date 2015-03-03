@@ -42,7 +42,7 @@ import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.XFTTableI;
-import org.nrg.xft.db.PoolDBUtils;
+import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -134,7 +134,7 @@ public class DisplaySearch implements TableSearchI{
 			query = StringUtils.ReplaceStr(query,"'","*'*");
 			query = StringUtils.ReplaceStr(query,"*'*","''");
 
-			Long count = PoolDBUtils.CreateManagedTempTable(this.getResultsTableName(), query, user);
+			Long count = MaterializedView.createView(this.getResultsTableName(), query, user,MaterializedView.DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE);
 			try {
 
 				if (count.intValue()==0)
@@ -146,7 +146,7 @@ public class DisplaySearch implements TableSearchI{
 					int offset = currentPageNum * rowsPerPage;
 					if (offset < count.intValue())
 					{
-						table = PoolDBUtils.RetrieveManagedTempTable(this.getResultsTableName(), user, offset,rowsPerPage);
+						table = MaterializedView.retrieveView(this.getResultsTableName(), user, offset,rowsPerPage);
 						this.numRows = Integer.valueOf(count.toString()).intValue();
 						calculatePages();
 						newQuery=false;
@@ -189,7 +189,7 @@ public class DisplaySearch implements TableSearchI{
 		query = StringUtils.ReplaceStr(query,"'","*'*");
 		query = StringUtils.ReplaceStr(query,"*'*","''");
 
-		return PoolDBUtils.CreateManagedTempTable(this.getResultsTableName(), query, user);
+		return MaterializedView.createView(this.getResultsTableName(), query, user,MaterializedView.DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE);
 
 	}
 
@@ -1152,8 +1152,8 @@ public class DisplaySearch implements TableSearchI{
 			currentPageNum=pageNumber;
 			int offset = currentPageNum * rowsPerPage;
 
-            Long count = PoolDBUtils.CreateManagedTempTable(this.getResultsTableName(), query, user);
-            table = PoolDBUtils.RetrieveManagedTempTable(this.getResultsTableName(), user, offset, rowsPerPage);
+            Long count = MaterializedView.createView(this.getResultsTableName(), query, user,MaterializedView.DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE);
+            table = MaterializedView.retrieveView(this.getResultsTableName(), user, offset, rowsPerPage);
 			lastPresenter=p;
 			if (lastPresenter != null)
 			{

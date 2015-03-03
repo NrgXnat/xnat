@@ -1,69 +1,69 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-	<modelVersion>4.0.0</modelVersion>
+    xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
 
-	<parent>
-		<groupId>org.nrg</groupId>
-		<artifactId>nrg</artifactId>
+    <parent>
+        <groupId>org.nrg</groupId>
+        <artifactId>nrg</artifactId>
 	    <version>1.7.0-SNAPSHOT</version>
-	</parent>
+    </parent>
 
-	<groupId>org.nrg.xdat</groupId>
-	<artifactId>core</artifactId>
+    <groupId>org.nrg.xdat</groupId>
+    <artifactId>core</artifactId>
 
-	<name>XDAT Core</name>
-	<url>http://bitbucket.org/nrg/xdat</url>
+    <name>XDAT Core</name>
+    <url>http://bitbucket.org/nrg/xdat</url>
 
-	<scm>
-		<url>http://bitbucket.org/nrg/xdat</url>
-	</scm>
+    <scm>
+        <url>http://bitbucket.org/nrg/xdat</url>
+    </scm>
 
-	<organization>
-		<name>Neuroinformatics Research Group</name>
-		<url>http://nrg.wustl.edu</url>
-	</organization>
+    <organization>
+        <name>Neuroinformatics Research Group</name>
+        <url>http://nrg.wustl.edu</url>
+    </organization>
 
-	<build>
+    <build>
         <finalName>xdat-${project.version}</finalName>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>findbugs-maven-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<artifactId>maven-compiler-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<artifactId>maven-source-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<artifactId>maven-javadoc-plugin</artifactId>
-			</plugin>
-			<plugin>
-				<artifactId>maven-surefire-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</build>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>findbugs-maven-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-surefire-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
 
-	<reporting>
-		<plugins>
-			<plugin>
-				<groupId>org.codehaus.mojo</groupId>
-				<artifactId>cobertura-maven-plugin</artifactId>
-			</plugin>
-		</plugins>
-	</reporting>
+    <reporting>
+        <plugins>
+            <plugin>
+                <groupId>org.codehaus.mojo</groupId>
+                <artifactId>cobertura-maven-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </reporting>
 
-	<dependencies>
-		<dependency>
-			<groupId>org.nrg</groupId>
-			<artifactId>notify</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.nrg</groupId>
-			<artifactId>config</artifactId>
-		</dependency>
-		<dependency>
+    <dependencies>
+        <dependency>
+            <groupId>org.nrg</groupId>
+            <artifactId>notify</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.nrg</groupId>
+            <artifactId>config</artifactId>
+        </dependency>
+        <dependency>
 			<groupId>org.nrg</groupId>
 			<artifactId>mail</artifactId>
 		</dependency>
@@ -72,216 +72,222 @@
 			<artifactId>framework</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-web</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-jms</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-context-support</artifactId>
-		</dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-web</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-jms</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-context-support</artifactId>
+        </dependency>
         <dependency>
             <groupId>org.springframework.security</groupId>
             <artifactId>spring-security-web</artifactId>
         </dependency>
-		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
-		</dependency>
-		<dependency>
+        <dependency>
+            <groupId>log4j</groupId>
+            <artifactId>log4j</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-log4j12</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>jul-to-slf4j</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>javax.servlet</groupId>
             <artifactId>javax.servlet-api</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>javax.activation</groupId>
             <artifactId>activation</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>javax.mail</groupId>
             <artifactId>mail</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>javax.inject</groupId>
             <artifactId>javax.inject</artifactId>
-		</dependency>
+        </dependency>
         <dependency>
-            <groupId>org.apache.geronimo.specs</groupId>
-            <artifactId>geronimo-jms_1.1_spec</artifactId>
+            <groupId>javax.jms</groupId>
+            <artifactId>javax.jms-api</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>javax.management.j2ee</groupId>
+            <artifactId>javax.management.j2ee-api</artifactId>
         </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
-            <version>10.0.1</version>
         </dependency>
-		<dependency>
-			<groupId>commons-net</groupId>
-			<artifactId>commons-net</artifactId>
-            <version>3.1</version>
-		</dependency>
-		<dependency>
-			<groupId>org.apache.commons</groupId>
-			<artifactId>commons-email</artifactId>
-		</dependency>
-		<dependency>
+        <dependency>
+            <groupId>commons-net</groupId>
+            <artifactId>commons-net</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-email</artifactId>
+        </dependency>
+        <dependency>
             <groupId>org.apache.httpcomponents</groupId>
             <artifactId>httpclient</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>commons-lang</groupId>
             <artifactId>commons-lang</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>commons-fileupload</groupId>
             <artifactId>commons-fileupload</artifactId>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
             <groupId>axis</groupId>
             <artifactId>axis</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>turbine</groupId>
-			<artifactId>turbine</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>turbine</groupId>
+            <artifactId>turbine</artifactId>
             <exclusions>
                 <exclusion>
                     <groupId>velocity</groupId>
                     <artifactId>velocity</artifactId>
                 </exclusion>
             </exclusions>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
 			<groupId>org.apache.velocity</groupId>
-			<artifactId>velocity</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>ecs</groupId>
-			<artifactId>ecs</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>torque</groupId>
-			<artifactId>torque</artifactId>
-		</dependency>
-		<dependency>
+            <artifactId>velocity</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.apache.velocity</groupId>
+            <artifactId>velocity-tools</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>ecs</groupId>
+            <artifactId>ecs</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>torque</groupId>
+            <artifactId>torque</artifactId>
+        </dependency>
+        <dependency>
             <groupId>commons-configuration</groupId>
             <artifactId>commons-configuration</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>stratum</groupId>
-			<artifactId>stratum</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>com.lowagie</groupId>
-			<artifactId>itext</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>fop</groupId>
-			<artifactId>fop</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>avalon-framework</groupId>
-			<artifactId>avalon-framework</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.dspace</groupId>
-			<artifactId>jargon</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.nrg.xnat</groupId>
-			<artifactId>xnatsrb</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>org.json</groupId>
-			<artifactId>json</artifactId>
-			<scope>compile</scope>
-		</dependency>
-		<dependency>
+        </dependency>
+        <dependency>
+            <groupId>stratum</groupId>
+            <artifactId>stratum</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>com.lowagie</groupId>
+            <artifactId>itext</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>fop</groupId>
+            <artifactId>fop</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>avalon-framework</groupId>
+            <artifactId>avalon-framework</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.dspace</groupId>
+            <artifactId>jargon</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.nrg.xnat</groupId>
+            <artifactId>xnatsrb</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>org.json</groupId>
+            <artifactId>json</artifactId>
+            <scope>compile</scope>
+        </dependency>
+        <dependency>
             <groupId>commons-io</groupId>
             <artifactId>commons-io</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>commons-codec</groupId>
-			<artifactId>commons-codec</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>commons-dbcp</groupId>
-			<artifactId>commons-dbcp</artifactId>
-		</dependency>
-		<dependency>
-			<groupId>nl.bitwalker</groupId>
-			<artifactId>UserAgentUtils</artifactId>
-			<version>1.2.4</version>
-		</dependency>
-		<dependency>
-			<groupId>ant</groupId>
-			<artifactId>ant</artifactId>
-		</dependency>
+        </dependency>
+        <dependency>
+            <groupId>commons-codec</groupId>
+            <artifactId>commons-codec</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>commons-dbcp</groupId>
+            <artifactId>commons-dbcp</artifactId>
+        </dependency>
+        <dependency>
+            <groupId>nl.bitwalker</groupId>
+            <artifactId>UserAgentUtils</artifactId>
+            <version>1.2.4</version>
+        </dependency>
+        <dependency>
+            <groupId>ant</groupId>
+            <artifactId>ant</artifactId>
+        </dependency>
 
-		<!-- Unit testing dependencies -->
-		<dependency>
+        <!-- Unit testing dependencies -->
+        <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
                 <scope>test</scope>
             </dependency>
-		<dependency>
-			<groupId>org.mockito</groupId>
-			<artifactId>mockito-all</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.springframework</groupId>
-			<artifactId>spring-test</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>com.h2database</groupId>
-			<artifactId>h2</artifactId>
-			<scope>test</scope>
-		</dependency>
-		<dependency>
-			<groupId>org.hibernate</groupId>
-			<artifactId>hibernate-ehcache</artifactId>
+        <dependency>
+            <groupId>org.mockito</groupId>
+            <artifactId>mockito-all</artifactId>
             <scope>test</scope>
-		</dependency>
-	</dependencies>
+        </dependency>
+        <dependency>
+            <groupId>org.springframework</groupId>
+            <artifactId>spring-test</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.h2database</groupId>
+            <artifactId>h2</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-ehcache</artifactId>
+            <scope>test</scope>
+        </dependency>
+    </dependencies>
 
-	<pluginRepositories>
-		<pluginRepository>
-			<name>XNAT Snapshot Maven Plugin Repo</name>
-			<id>org.nrg.maven.plugins.snapshot</id>
-			<url>http://maven.xnat.org/plugins-snapshot</url>
-		</pluginRepository>
-		<pluginRepository>
-			<name>XNAT Release Maven Plugin Repo</name>
-			<id>org.nrg.maven.plugins.release</id>
-			<url>http://maven.xnat.org/plugins-release</url>
-		</pluginRepository>
-	</pluginRepositories>
+    <pluginRepositories>
+        <pluginRepository>
+            <name>XNAT Snapshot Maven Plugin Repo</name>
+            <id>org.nrg.maven.plugins.snapshot</id>
+            <url>http://maven.xnat.org/plugins-snapshot</url>
+        </pluginRepository>
+        <pluginRepository>
+            <name>XNAT Release Maven Plugin Repo</name>
+            <id>org.nrg.maven.plugins.release</id>
+            <url>http://maven.xnat.org/plugins-release</url>
+        </pluginRepository>
+    </pluginRepositories>
 
-	<repositories>
-		<repository>
-			<name>XNAT Release Maven Repo</name>
-			<id>org.nrg.maven.artifacts.release</id>
-			<url>http://maven.xnat.org/libs-release</url>
-		</repository>
-		<repository>
-			<name>XNAT Snapshot Maven Repo</name>
-			<id>org.nrg.maven.artifacts.snapshot</id>
-			<url>http://maven.xnat.org/libs-snapshot</url>
-		</repository>		
-	</repositories>
+    <repositories>
+        <repository>
+            <name>XNAT Release Maven Repo</name>
+            <id>org.nrg.maven.artifacts.release</id>
+            <url>http://maven.xnat.org/libs-release</url>
+        </repository>
+        <repository>
+            <name>XNAT Snapshot Maven Repo</name>
+            <id>org.nrg.maven.artifacts.snapshot</id>
+            <url>http://maven.xnat.org/libs-snapshot</url>
+        </repository>       
+    </repositories>
 
 </project>

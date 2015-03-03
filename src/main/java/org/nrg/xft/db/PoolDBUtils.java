@@ -848,24 +848,6 @@ public class PoolDBUtils {
         }
     }
 
-    public static Long CreateManagedTempTable(String tablename, String query,UserI user) throws Exception{
-        MaterializedView mv = new MaterializedView(user);
-        mv.setTable_name(tablename);
-        mv.setSearch_sql(query);
-        mv.save();
-
-        return mv.getSize();
-    }
-
-    public static XFTTable RetrieveManagedTempTable(String tablename,UserI user,int offset, int rowsPerPage) throws Exception{
-        MaterializedView mv = MaterializedView.GetMaterializedView(tablename, user);
-        if(mv==null){
-        	return null;
-        }else{
-        	return mv.getData(null, offset, rowsPerPage);
-        }
-    }
-
     public static boolean HackCheck(String value)
     {
     	if(value.matches("[a-zA-z0-9 _\\.]*")){

@@ -299,7 +299,7 @@ public class CSVUpload2 extends SecureAction {
 
 			Users.clearCache(user);
 			try {
-				MaterializedView.DeleteByUser(user);
+				MaterializedView.deleteByUser(user);
 			} catch (DBPoolException e) {
 	            logger.error("",e);
 			} catch (SQLException e) {

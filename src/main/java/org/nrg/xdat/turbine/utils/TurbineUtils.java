@@ -62,6 +62,7 @@ import java.net.URLDecoder;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
+import java.util.*;
 /**
  * @author Tim
  *
@@ -137,7 +138,7 @@ public class TurbineUtils {
 			return site_id;
 		}
 	}
-	
+
 	public boolean loginRequired()
 	{
 		return XFT.GetRequireLogin();
@@ -767,7 +768,7 @@ public class TurbineUtils {
 				final Enumeration<String> enumer = data.getSession().getAttributeNames();
 				while (enumer.hasMoreElements())
 				{
-					final String key = (String)enumer.nextElement();
+					final String key = enumer.nextElement();
 					final Object o = data.getSession().getAttribute(key);
 				    logger.debug("KEY: "+ key + " VALUE: " + o.getClass());
 				}
@@ -1013,7 +1014,101 @@ public class TurbineUtils {
     	
     	return null;
     }
-    
+
+	/**
+	 * Object type disambiguation helper.
+	 * @param objectModel    The object model.
+	 * @param projectId      The project ID.
+	 * @return The display ID if it can be determined.
+	 */
+	public String getProjectDisplayID(final Object objectModel, final String projectId) {
+		if (objectModel == null) {
+			return "";
+		}
+		// Can we call the getProject(String, boolean) method on this object? If so, then call the getDisplayID() method
+		// on the resulting project object.
+		try {
+			final Object project = getProject(objectModel, projectId);
+			if (project != null) {
+				final Method getDisplayID = project.getClass().getMethod("getDisplayID");
+				return (String) getDisplayID.invoke(project);
+			}
+		} catch (NoSuchMethodException ignored) {
+			// If this doesn't exist, we'll just move onto the next one.
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
+		}
+		// OK, if not that, then let's see if there's a getDisplayID() method (i.e. this is a project itself). We can
+		// use that directly to get the display ID.
+		try {
+			final Method getDisplayID = objectModel.getClass().getMethod("getDisplayID");
+			return (String) getDisplayID.invoke(objectModel);
+		} catch (NoSuchMethodException e) {
+			//
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException("Something went wrong invoking the getDisplayID() method.", e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Something went wrong invoking the getDisplayID() method.", e);
+		}
+		return projectId;
+	}
+
+	/**
+	 * Object type disambiguation helper.
+	 * @param objectModel    The object model.
+	 * @param projectId      The project ID.
+	 * @return The display ID if it can be determined.
+	 */
+	public String getProjectName(final Object objectModel, final String projectId) {
+		if (objectModel == null) {
+			return "";
+		}
+		// Can we call the getProject(String, boolean) method on this object? If so, then call the getDisplayID() method
+		// on the resulting project object.
+		try {
+			final Object project = getProject(objectModel, projectId);
+			if (project != null) {
+				final Method getName = project.getClass().getMethod("getName");
+				return (String) getName.invoke(project);
+			}
+		} catch (NoSuchMethodException ignored) {
+			// If this doesn't exist, we'll just move onto the next one.
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException("Something went wrong invoking the project getName() method.", e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Something went wrong invoking the project getName() method.", e);
+		}
+		// OK, if not that, then let's see if there's a getDisplayID() method (i.e. this is a project itself). We can
+		// use that directly to get the display ID.
+		try {
+			final Method getName = objectModel.getClass().getMethod("getName");
+			return (String) getName.invoke(objectModel);
+		} catch (NoSuchMethodException e) {
+			//
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException("Something went wrong invoking the getName() method.", e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Something went wrong invoking the getName() method.", e);
+		}
+		return projectId;
+	}
+
+	public Object getProject(final Object objectModel, final String projectId) {
+		try {
+			final Method getProject = objectModel.getClass().getMethod("getProject", String.class, Boolean.class);
+			return getProject.invoke(objectModel, projectId, false);
+		} catch (NoSuchMethodException ignored) {
+			// If this doesn't exist, just return null.
+			return null;
+		} catch (InvocationTargetException e) {
+			throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
+		} catch (IllegalAccessException e) {
+			throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
+		}
+	}
+
     public String getTemplateName(String module,String dataType,String project){
     	try {
     		final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);

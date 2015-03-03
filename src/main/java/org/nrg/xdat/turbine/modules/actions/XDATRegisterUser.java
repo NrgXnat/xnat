@@ -53,11 +53,20 @@ import org.springframework.security.core.authority.GrantedAuthorityImpl;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
+
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
 
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
+    	try {
+			SecureAction.isCsrfTokenOk(data);
+		} catch (Exception e1) {
+			data.setMessage("Due to a technical issue, the requested action cannot be performed.");
+			data.setScreenTemplate("Login.vm");
+			return;
+		}
+    	
 		try {
 			UserI found=Users.createUser(TurbineUtils.GetDataParameterHash(data));
 			

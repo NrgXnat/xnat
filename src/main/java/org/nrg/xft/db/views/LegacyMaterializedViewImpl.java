@@ -69,7 +69,7 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 	}
 
 	/* (non-Javadoc)
-	 * @see org.nrg.xft.db.MaterializedViewI#setUser(org.nrg.xdat.security.XDATUser)
+	 * @see org.nrg.xft.db.MaterializedViewI#setUser(org.nrg.xdat.security.UserI)
 	 */
 	@Override
 	public void setUser(UserI user) {
@@ -400,7 +400,7 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 	}
 	
 	/* (non-Javadoc)
-	 * @see org.nrg.xft.db.MaterializedViewI#getDisplaySearch(org.nrg.xdat.security.XDATUser)
+	 * @see org.nrg.xft.db.MaterializedViewI#getDisplaySearch(org.nrg.xdat.security.UserI)
 	 */
 	@Override
 	public DisplaySearch getDisplaySearch(UserI user)throws Exception{

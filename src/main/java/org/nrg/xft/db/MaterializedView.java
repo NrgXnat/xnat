@@ -8,10 +8,8 @@ import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.views.service.CustomMaterializedViewService;
-import org.nrg.xft.db.views.service.MaterializedViewManager;
 import org.nrg.xft.db.views.service.MaterializedViewServiceI;
 import org.nrg.xft.security.UserI;
 
@@ -102,7 +100,7 @@ public class MaterializedView {
 		return service.createView(user);
 	}
 
-	public static Long createView(String tablename, String query,XDATUser user, String code) throws Exception{
+	public static Long createView(String tablename, String query,UserI user, String code) throws Exception{
 	    MaterializedViewI mv = createView(user,code);
 	    mv.setTable_name(tablename);
 	    mv.setSearch_sql(query);

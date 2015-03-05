@@ -38,6 +38,7 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
@@ -72,6 +73,7 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.search.TableSearch;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 
@@ -209,7 +211,7 @@ public class ElementSecurity extends ItemWrapper{
 			return GetElementSecurity(elementName);
 		}
 		
-		XDATUser user = new XDATUser("admin");
+		UserI user = Users.getUser("admin");
 		
 		XFTItem es= XFTItem.NewItem("xdat:element_security", user);
 		es.setProperty("element_name", elementName);

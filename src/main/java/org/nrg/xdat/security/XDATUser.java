@@ -1271,7 +1271,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		        }
 	
 			try{
-				PoolDBUtils.CheckSpecialSQLChars(username);
+				PoolDBUtils.CheckSpecialSQLChars(type);
 			}catch (Exception e){
 				return null;
 			}

@@ -9,15 +9,20 @@
   ~
   ~ Last modified 9/19/13 3:15 PM
   -->
-<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xmlns:p="http://www.springframework.org/schema/p" xmlns:tx="http://www.springframework.org/schema/tx" xmlns:util="http://www.springframework.org/schema/util"
+<beans xmlns="http://www.springframework.org/schema/beans" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:p="http://www.springframework.org/schema/p" xmlns:tx="http://www.springframework.org/schema/tx"
+       xmlns:util="http://www.springframework.org/schema/util"
+       xmlns:context="http://www.springframework.org/schema/context"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-		http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
-		http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd"
->
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+                           http://www.springframework.org/schema/tx http://www.springframework.org/schema/tx/spring-tx-3.0.xsd
+                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util-3.0.xsd">
 
     <import resource="classpath:/org/nrg/config/TestDataSource-context.xml" />
     <import resource="classpath:/META-INF/configuration/nrg-config-context.xml" />
     <import resource="classpath:/META-INF/configuration/nrg-prefs-context.xml" />
+
+    <context:component-scan base-package="org.nrg.config.util"/>
 
     <!--  <bean id="namingStrategy" class="org.hibernate.cfg.ImprovedNamingStrategy" />  -->
     <bean id="namingStrategy" class="org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy" p:prefix="xhbm" />
@@ -34,7 +39,7 @@
         </property>
     </bean>
 
-    <bean id="cacheRegionFactory" class="net.sf.ehcache.hibernate.SingletonEhCacheRegionFactory">
+    <bean id="cacheRegionFactory" class="org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory">
         <constructor-arg index="0" ref="hibernateProperties"/>
     </bean>
 
@@ -42,7 +47,7 @@
           p:cacheRegionFactory-ref="cacheRegionFactory" p:dataSource-ref="dataSource"
           p:hibernateProperties-ref="hibernateProperties" p:namingStrategy-ref="namingStrategy" />
 
-    <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager"
+    <bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager"
         p:sessionFactory-ref="sessionFactory" />
 
     <tx:annotation-driven />

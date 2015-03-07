@@ -17,8 +17,9 @@
     <description>Default configuration for NRG Config</description>
 
     <context:annotation-config/>
- 
-    <context:component-scan base-package="org.nrg.config" />
+
+    <context:component-scan base-package="org.nrg.config.daos" />
+    <context:component-scan base-package="org.nrg.config.services.impl" />
 
     <bean id="nrgConfigEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
         <property name="items">

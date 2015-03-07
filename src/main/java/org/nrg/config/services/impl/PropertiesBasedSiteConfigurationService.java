@@ -12,9 +12,11 @@ import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.services.NrgPrefsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.env.Environment;
 import org.springframework.web.context.ServletContextAware;
 
 import javax.annotation.Resource;
+import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import java.io.*;
 import java.util.*;
@@ -58,6 +60,9 @@ public abstract class PropertiesBasedSiteConfigurationService implements SiteCon
     public void initSiteConfiguration() throws SiteConfigurationException {
         if (_siteConfiguration == null) {
             _log.debug("Initializing the site configuration");
+            if (_environment != null) {
+                _environment.getActiveProfiles();
+            }
             processSiteConfiguration();
         }
     }
@@ -464,6 +469,9 @@ public abstract class PropertiesBasedSiteConfigurationService implements SiteCon
     private static final String CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME = "persist";
     private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME = "siteConfiguration.properties";
     private static final String PROPERTY_CHANGED_LISTENER_PROPERTY = "property.changed.listener";
+
+    @Inject
+    private Environment _environment;
 
     private List<String> _configFilesLocations = new ArrayList<>();
     private ServletContext _context;

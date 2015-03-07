@@ -1,8 +1,8 @@
 package org.nrg.automation.services.impl.hibernate;
 
 import org.hibernate.Query;
+import org.hibernate.Session;
 import org.hibernate.SessionFactory;
-import org.hibernate.classic.Session;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.repositories.ScriptRepository;
 import org.nrg.automation.services.ScriptService;

@@ -34,16 +34,16 @@
         </property>
     </bean>
 
-    <bean id="cacheRegionFactory" class="net.sf.ehcache.hibernate.SingletonEhCacheRegionFactory">
+    <bean id="cacheRegionFactory" class="org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory">
         <constructor-arg index="0" ref="hibernateProperties" />
     </bean>
 
-    <bean id="sessionFactory" class="org.springframework.orm.hibernate3.annotation.AnnotationSessionFactoryBean"
+    <bean id="sessionFactory" class="org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean"
           p:cacheRegionFactory-ref="cacheRegionFactory" p:dataSource-ref="dataSource"
           p:hibernateProperties-ref="hibernateProperties" p:packagesToScan-ref="nrgNotificationEntityPackages"
           p:namingStrategy-ref="namingStrategy" />
 
-    <bean id="transactionManager" class="org.springframework.orm.hibernate3.HibernateTransactionManager"
+    <bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager"
           p:sessionFactory-ref="sessionFactory" />
 
     <!-- TODO: This is required to satisfy the @Inject dependency for the ChannelRendererService. May need to do something to make this unnecessary.-->

@@ -15,7 +15,7 @@
 	<parent>
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
-        <version>1.6.5-SNAPSHOT</version>
+        <version>1.7.0-SNAPSHOT</version>
 		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 
@@ -47,10 +47,10 @@
 			<groupId>org.springframework</groupId>
 			<artifactId>spring-context-support</artifactId>
 		</dependency>
-		<dependency>
-            <groupId>commons-httpclient</groupId>
-            <artifactId>commons-httpclient</artifactId>
-		</dependency>
+        <dependency>
+            <groupId>org.apache.httpcomponents</groupId>
+            <artifactId>httpclient</artifactId>
+        </dependency>
         <dependency>
             <groupId>commons-codec</groupId>
             <artifactId>commons-codec</artifactId>
@@ -70,7 +70,6 @@
 		<dependency>
 			<groupId>org.apache.commons</groupId>
 			<artifactId>commons-email</artifactId>
-            <version>1.2</version>
 		</dependency>
         <dependency>
             <groupId>javax.inject</groupId>

@@ -9,21 +9,16 @@
  */
 package org.nrg.mail.services.impl;
 
-import org.apache.commons.httpclient.Credentials;
-import org.apache.commons.httpclient.HostConfiguration;
-import org.apache.commons.httpclient.HttpClient;
-import org.apache.commons.httpclient.UsernamePasswordCredentials;
-import org.apache.commons.httpclient.auth.AuthScope;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.framework.net.AuthenticatedClientHttpRequestFactory;
 import org.nrg.mail.api.MailMessage;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.http.client.CommonsClientHttpRequestFactory;
 import org.springframework.http.converter.*;
 import org.springframework.util.LinkedMultiValueMap;
 import org.springframework.util.MultiValueMap;
@@ -38,6 +33,14 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+/**
+ * Provides relatively implementation-independent mail service to allow access
+ * to Spring application context mail service without requiring context
+ * initialization outside of Spring classes.
+ *
+ * @author Rick Herrick <rick.herrick@wustl.edu>
+
+ */
 public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
     public RestBasedMailServiceImpl(String address) throws NrgServiceException {
@@ -66,19 +69,10 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
     /**
      * Sets the server address for the desired proxy server. If not set, no proxy is used.
-     * @param proxyHost    The address of the proxy server.
+     * @param proxy    The URI of the proxy server.
      */
-    public void setProxyHost(String proxyHost) {
-        _proxyHost = proxyHost;
-    }
-
-    /**
-     * Sets the server port for the desired proxy server. If not set, but the {@link #setProxyHost(String) proxy host}
-     * is specified, the default HTTP port 8888 is used.
-     * @param proxyPort    The port of the proxy server.
-     */
-    public void setProxyPort(int proxyPort) {
-        _proxyPort = proxyPort;
+    public void setProxy(URI proxy) {
+        _proxy = proxy;
     }
 
     /**
@@ -108,7 +102,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
         assert message.getTos() != null && message.getTos().size() > 0 : "You must specify at least one address to which to send an email.";
         assert message.getSubject() != null : "You must specify a subject for your email.";
 
-        MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<String, Object>();
+        MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<>();
         parameters.add("from", message.getFrom());
         for (String to : message.getTos()) {
             parameters.add("to", to);
@@ -145,26 +139,19 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
                 parameters.add(id, new FileSystemResource(attachments.get(id)));
             }
         }
-        Map<String, List<String>> headers = message.getHeaders();
+        Map<String, String> headers = message.getHeaders();
         if (headers != null) {
             for (String header : headers.keySet()) {
-                List<String> values = headers.get(header);
-                for (String value : values) {
-                    parameters.add("header:" + header, value);
+                parameters.add("header:" + header, headers.get(header));
                 }
             }
+
+        AuthenticatedClientHttpRequestFactory factory = new AuthenticatedClientHttpRequestFactory(username, password);
+        if (_proxy != null) {
+            factory.setProxy(_proxy);
         }
 
-        HttpClient client = new HttpClient();
-        client.getParams().setAuthenticationPreemptive(true);
-        if (!StringUtils.isEmpty(_proxyHost)) {
-            final HostConfiguration configuration = new HostConfiguration();
-            configuration.setProxy(_proxyHost, _proxyPort);
-            client.setHostConfiguration(configuration);
-        }
-        Credentials credentials = new UsernamePasswordCredentials(username, password);
-        client.getState().setCredentials(new AuthScope(_address.getHost(), _address.getPort(), AuthScope.ANY_REALM), credentials);
-        RestTemplate template = new RestTemplate(new CommonsClientHttpRequestFactory(client));
+        RestTemplate template = new RestTemplate(factory);
         template.setMessageConverters(Arrays.asList(messageConverters));
         ResponseEntity<String> response = template.postForEntity(_address, parameters, String.class);
 
@@ -183,11 +170,11 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
     }
 
     private static final Log _log = LogFactory.getLog(RestBasedMailServiceImpl.class);
+
     private final HttpMessageConverter<?>[] messageConverters = new HttpMessageConverter<?>[] { new FormHttpMessageConverter(), new StringHttpMessageConverter(), new ResourceHttpMessageConverter(), new ByteArrayHttpMessageConverter() };
     private URI _address;
+    private URI _proxy;
     private String _username;
     private String _password;
-    private String _proxyHost;
-    private int _proxyPort = 8888;
 }
 

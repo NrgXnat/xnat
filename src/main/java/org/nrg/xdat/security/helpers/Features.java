@@ -31,16 +31,12 @@ public class Features {
     		//we can swap in other ones later by setting a default 
     		//we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
        		try {
-				String className=XDAT.safeSiteConfigProperty("security.featureService.default", "org.nrg.xdat.security.FeatureServiceImpl");
+				String className=XDAT.safeSiteConfigProperty("security.featureService.default", "org.nrg.xdat.security.services.impl.FeatureServiceImpl");
 				singleton=(FeatureServiceI)Class.forName(className).newInstance();
-			} catch (ClassNotFoundException e) {
-				logger.error("",e);
-			} catch (InstantiationException e) {
-				logger.error("",e);
-			} catch (IllegalAccessException e) {
+			} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
 				logger.error("",e);
 			}
-    	}
+        }
     	return singleton;
     }
     
@@ -56,18 +52,12 @@ public class Features {
     		//we can swap in other ones later by setting a default 
     		//we can even have a config tab in the admin ui which allows sites to select their configuration of choice.
        		try {
-				String className=XDAT.getSiteConfigurationProperty("security.featureRepositoryService.default", "org.nrg.xdat.security.FeatureRepositoryServiceImpl");
+				String className=XDAT.getSiteConfigurationProperty("security.featureRepositoryService.default", "org.nrg.xdat.security.services.impl.FeatureRepositoryServiceImpl");
 				repository=(FeatureRepositoryServiceI)Class.forName(className).newInstance();
-			} catch (ClassNotFoundException e) {
-				logger.error("",e);
-			} catch (InstantiationException e) {
-				logger.error("",e);
-			} catch (IllegalAccessException e) {
-				logger.error("",e);
-			} catch (ConfigServiceException e) {
+			} catch (ClassNotFoundException | InstantiationException | ConfigServiceException | IllegalAccessException e) {
 				logger.error("",e);
 			}
-    	}
+        }
     	return repository;
     }
     

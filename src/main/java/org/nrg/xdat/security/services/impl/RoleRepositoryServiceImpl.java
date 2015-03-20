@@ -1,21 +1,18 @@
 package org.nrg.xdat.security.services.impl;
 
-import java.io.File;
-import java.io.FilenameFilter;
-import java.util.Collection;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeSet;
-
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.security.services.RoleRepositoryServiceI;
-import org.nrg.xft.XFT;
+import org.nrg.xdat.turbine.utils.PropertiesHelper;
+import org.springframework.stereotype.Service;
 
-import com.google.common.collect.Lists;
+import java.util.*;
+import java.util.regex.Pattern;
 
+@Service
 public class RoleRepositoryServiceImpl implements RoleRepositoryServiceI {
 
-	private static final String ROLE_DEFINITION_PROPERTIES = "-role-definition.properties";
+    private static final String ROLE_DEFINITION_PACKAGE = "config.roles";
+	private static final Pattern ROLE_DEFINITION_PROPERTIES = Pattern.compile(".*-role-definition\\.properties");
 	private static final String NAME="name";
 	private static final String DESC="description";
 	private static final String KEY="key";
@@ -40,22 +37,20 @@ public class RoleRepositoryServiceImpl implements RoleRepositoryServiceI {
 			//org.nrg.Role.Role1.name=Role One
 			//org.nrg.Role.Role1.description=A sample Role that does something.
 			
-			File[] propFiles=new File(XFT.GetConfDir()).listFiles(new FilenameFilter(){
-				@Override
-				public boolean accept(File dir, String name) {
-					return name.endsWith(ROLE_DEFINITION_PROPERTIES);
-				}});
-			
-			allRoles=new TreeSet<RoleDefinitionI>(new Comparator(){
-				@Override
-				public int compare(Object o1, Object o2) {
-					return ((RoleDefinitionI)o1).getKey().compareTo(((RoleDefinitionI)o2).getKey());
-				}});
-			
-			if(propFiles!=null){
-				for(File props: propFiles){
-					final Map<String,Map<String,Object>> roles=org.nrg.xdat.turbine.utils.PropertiesHelper.RetrievePropertyObjects(props, PROP_OBJECT_IDENTIFIER, PROP_OBJECT_FIELDS);
-					
+			allRoles=new TreeSet<>(new Comparator<RoleDefinitionI>(){
+                @Override
+                public int compare(final RoleDefinitionI o1, final RoleDefinitionI o2) {
+                    return o1.getKey().compareTo(o2.getKey());
+                }
+            });
+
+            final Set<String> propFiles = Reflection.findResources(ROLE_DEFINITION_PACKAGE, ROLE_DEFINITION_PROPERTIES);
+
+            if(propFiles!=null){
+                for(final String props: propFiles) {
+
+                    final Map<String,Map<String,Object>> roles = PropertiesHelper.RetrievePropertyObjects(props, PROP_OBJECT_IDENTIFIER, PROP_OBJECT_FIELDS);
+
 					for(Map<String,Object> role:roles.values()){
 						
 						POJORole def=new POJORole();

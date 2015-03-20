@@ -16,30 +16,52 @@ import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.configuration.PropertiesConfiguration;
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
+import org.springframework.util.ResourceUtils;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.lang.reflect.InvocationTargetException;
+import java.net.MalformedURLException;
+import java.net.URL;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
 
-public class PropertiesHelper<T extends Object>  {
+public class PropertiesHelper<T>  {
     static org.apache.log4j.Logger logger = Logger.getLogger(PropertiesHelper.class);
-    
-	public static Map<String,Map<String,Object>> RetrievePropertyObjects(final File props,final String identifier,final String[] fields){
-		try {
-			if(props.exists()){
-				final Configuration config=new PropertiesConfiguration(props);
-				
-				return ParseStandardizedConfig(config,identifier,fields);
-			}
-		} catch (ConfigurationException e) {
-			logger.error("",e);
-		}
-		
-		return new Hashtable<String,Map<String,Object>>();
-	}
-	
+
+    public static Map<String,Map<String,Object>> RetrievePropertyObjects(final String props,final String identifier,final String[] fields){
+        try {
+            return RetrievePropertyObjects(ResourceUtils.getURL("classpath:" + props), identifier, fields);
+        } catch (FileNotFoundException e) {
+            logger.error("", e);
+        }
+        return new HashMap<>();
+    }
+
+    public static Map<String,Map<String,Object>> RetrievePropertyObjects(final File props,final String identifier,final String[] fields){
+        try {
+            if(props.exists()) {
+                return RetrievePropertyObjects(props.toURI().toURL(), identifier, fields);
+            }
+        } catch (MalformedURLException e) {
+            logger.error("", e);
+        }
+
+        return new HashMap<>();
+    }
+
+    public static Map<String, Map<String, Object>> RetrievePropertyObjects(final URL props, final String identifier, final String[] fields) {
+        try {
+            final Configuration config = new PropertiesConfiguration(props);
+            return ParseStandardizedConfig(config, identifier, fields);
+        } catch (ConfigurationException e) {
+            logger.error("", e);
+        }
+
+        return new HashMap<>();
+    }
+
 	public static Configuration RetrieveConfiguration(final File props) throws ConfigurationException{
 		if(props.exists()){
 			return new PropertiesConfiguration(props);
@@ -49,7 +71,7 @@ public class PropertiesHelper<T extends Object>  {
 	}
 	
 	public static Map<String,Map<String,Object>> ParseStandardizedConfig(final Configuration config,final String identifier,final String[] fields){
-		final Map<String,Map<String,Object>> objects=new Hashtable<String,Map<String,Object>>();
+		final Map<String,Map<String,Object>> objects=new Hashtable<>();
 		
 				final String[] sA=config.getStringArray(identifier);
 				if(sA!=null){
@@ -68,7 +90,7 @@ public class PropertiesHelper<T extends Object>  {
 	}
 	
 	
-	
+	@SuppressWarnings("unused")
 	public static String GetStringProperty(final File props,final String identifier){
 		try {
 			if(props.exists()){
@@ -101,7 +123,7 @@ public class PropertiesHelper<T extends Object>  {
 		return defaultValue;
 	}
 	
-	@SuppressWarnings({ "rawtypes" })
+	@SuppressWarnings({ "rawtypes", "unused" })
 	public Map<String,T> buildObjectsFromProps(final String fileName, final String identifier,final String[] propFields, final String classNameProp, final Class[] contructorArgT, final Object[] contructorArgs) throws ConfigurationException{
 		return buildObjectsFromProps(new File(XFT.GetConfDir(),fileName), identifier, propFields, classNameProp, contructorArgT, contructorArgs);
 	}
@@ -113,7 +135,7 @@ public class PropertiesHelper<T extends Object>  {
 	
 	@SuppressWarnings({ "unchecked", "rawtypes" })
 	public Map<String,T> buildObjectsFromProps(final Configuration config, final String identifier,final String[] propFields, final String classNameProp, final Class[] contructorArgT, final Object[] contructorArgs){
-		final Map<String,T> objs=new HashMap<String,T>();
+		final Map<String,T> objs=new HashMap<>();
 		   
 	    if(config!=null){
 		   final Map<String,Map<String,Object>> confBuilders=PropertiesHelper.ParseStandardizedConfig(config, identifier, propFields);
@@ -132,7 +154,7 @@ public class PropertiesHelper<T extends Object>  {
 	}
 	
 	public Map<String,Class<? extends T>> buildClassesFromProps(final String fileName, final String identifier,final String[] propFields, final String classNameProp) throws ConfigurationException{
-		return buildClassesFromProps(new File(XFT.GetConfDir(),fileName), identifier, propFields, classNameProp);
+		return buildClassesFromProps(new File(XFT.GetConfDir(), fileName), identifier, propFields, classNameProp);
 	}
 	
 	public Map<String,Class<? extends T>> buildClassesFromProps(final File f, final String identifier,final String[] propFields, final String classNameProp) throws ConfigurationException{
@@ -141,7 +163,7 @@ public class PropertiesHelper<T extends Object>  {
 	
 	@SuppressWarnings({ "unchecked"})
 	public Map<String,Class<? extends T>> buildClassesFromProps(final Configuration config, final String identifier,final String[] propFields, final String classNameProp){
-		final Map<String,Class<? extends T>> objs=new HashMap<String,Class<? extends T>>();
+		final Map<String,Class<? extends T>> objs=new HashMap<>();
 		   
 	    if(config!=null){
 		   final Map<String,Map<String,Object>> confBuilders=PropertiesHelper.ParseStandardizedConfig(config, identifier, propFields);

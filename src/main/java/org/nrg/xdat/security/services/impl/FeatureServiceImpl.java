@@ -1,28 +1,31 @@
-package org.nrg.xdat.security;
+package org.nrg.xdat.security.services.impl;
 
-import java.util.Collection;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.GroupFeature;
 import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.security.UserGroup;
+import org.nrg.xdat.security.UserGroupI;
+import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.services.GroupFeatureService;
 import org.nrg.xft.event.Event;
 import org.nrg.xft.event.EventManager;
 import org.nrg.xft.security.UserI;
+import org.springframework.stereotype.Service;
 
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.util.Collection;
+import java.util.List;
+import java.util.Map;
 
-public class FeatureServiceImpl implements FeatureServiceI{
+@Service
+public class FeatureServiceImpl implements FeatureServiceI {
     private static final String __ = "__";
-	static Logger logger = Logger.getLogger(FeatureServiceImpl.class);
+	private static final Logger logger = Logger.getLogger(FeatureServiceImpl.class);
     
-
 	@Override
 	public Collection<String> getFeaturesForGroup(UserGroupI group) {
 		if(group!=null){
@@ -116,16 +119,13 @@ public class FeatureServiceImpl implements FeatureServiceI{
 		if(group!=null && isOnByDefaultForGroup(group,feature)){
 			//if feature configured to have access, then return true
 			return true;
-		}else if(group!=null && isOnByDefaultForGroupType(feature,group.getDisplayname())){
-			//if not blocked return true, else false
-			return !isBlockedByGroup(group, feature);
-		}else if(Features.isOnByDefault(feature)){
-			//if not blocked return true, else false
-			return (!(group!=null && isBlockedByGroup(group, feature)) && !(group!=null && isBlockedByGroupType(feature, group.getDisplayname())));
-		}else{
-			return false;
-		}
-	}
+		}else if (group != null && isOnByDefaultForGroupType(feature, group.getDisplayname())) {
+            //if not blocked return true, else false
+            return !isBlockedByGroup(group, feature);
+        } else
+            //if not blocked return true, else false
+            return Features.isOnByDefault(feature) && (!(group != null && isBlockedByGroup(group, feature)) && !(group != null && isBlockedByGroupType(feature, group.getDisplayname())));
+    }
 
 	@Override
 	public boolean checkFeature(UserI user, String tag, String feature) {
@@ -148,17 +148,22 @@ public class FeatureServiceImpl implements FeatureServiceI{
 		return false;
 	}
 
-	public enum STATUS{ON,OFF,BLOCKED};
+	public enum STATUS {
+        ON,
+        OFF,
+        BLOCKED
+    }
 
-	/**
+    /**
 	 * Cached features by type 
 	 */
 	static Map<String,STATUS> byType=null;
-	
-	private static void initCacheByType(){
+    private static final Object MUTEX = new Object();
+
+    private static void initCacheByType(){
 		if(byType==null){
 			byType=Maps.newHashMap();
-			synchronized(byType){
+			synchronized(MUTEX){
 				List<GroupFeature> all=XDAT.getContextService().getBean(GroupFeatureService.class).findFeaturesForTag(Features.SITE_WIDE);
 				for(GroupFeature gr: all){
 					byType.put((gr.getGroupId()+"."+gr.getFeature()).intern(), (gr.isBlocked())?STATUS.BLOCKED:((gr.isOnByDefault())?STATUS.ON:STATUS.OFF));
@@ -176,7 +181,7 @@ public class FeatureServiceImpl implements FeatureServiceI{
 	private static void setCachedSettingByType(String type, String feature, STATUS setting) {
 		initCacheByType();
 		
-		synchronized(byType){
+		synchronized(MUTEX){
 			byType.put((__ +type+"."+feature).intern(),setting);
 			
 			GroupFeature gr = XDAT.getContextService().getBean(GroupFeatureService.class).findGroupFeature(__ + type, feature);
@@ -215,24 +220,16 @@ public class FeatureServiceImpl implements FeatureServiceI{
 	@Override
 	public boolean isOnByDefaultForGroupType(String feature, String displayName) {
 		STATUS cache=getCachedSettingByType(displayName,feature);
-		
-		if(cache!=null && STATUS.ON.equals(cache)){
-			return true;
-		}else{
-			return false;
-		}
+
+        return cache != null && STATUS.ON.equals(cache);
 		
 	}
 	
 	@Override
 	public boolean isBlockedByGroupType(String feature, String displayName) {
 		STATUS cache=getCachedSettingByType(displayName,feature);
-		
-		if(cache!=null && STATUS.BLOCKED.equals(cache)){
-			return true;
-		}else{
-			return false;
-		}
+
+        return cache != null && STATUS.BLOCKED.equals(cache);
 	}
 
 	@Override

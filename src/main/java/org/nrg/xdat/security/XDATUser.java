@@ -840,7 +840,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
     }
  
-    protected Map<String, UserGroupI> getGroups() {
+    public Map<String, UserGroupI> getGroups() {
         synchronized (groups) {
             if (groups.size() == 0) {
                 try {

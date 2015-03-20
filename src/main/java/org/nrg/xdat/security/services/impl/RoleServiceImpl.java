@@ -1,12 +1,14 @@
 package org.nrg.xdat.security.services.impl;
 
-import java.util.Collection;
-
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.services.RoleServiceI;
 import org.nrg.xft.security.UserI;
+import org.springframework.stereotype.Service;
 
+import java.util.Collection;
+
+@Service
 public class RoleServiceImpl implements RoleServiceI {
     static Logger logger = Logger.getLogger(RoleServiceImpl.class);
 

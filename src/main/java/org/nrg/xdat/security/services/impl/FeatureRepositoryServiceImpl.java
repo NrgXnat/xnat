@@ -1,39 +1,41 @@
-package org.nrg.xdat.security;
-
-import java.io.File;
-import java.io.FilenameFilter;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+package org.nrg.xdat.security.services.impl;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.FeatureDefinition;
+import org.nrg.xdat.security.ElementAction;
+import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.FeatureDefinitionI;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.services.FeatureDefinitionService;
-import org.nrg.xft.XFT;
+import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.EventUtils.CATEGORY;
 import org.nrg.xft.utils.SaveItemHelper;
+import org.springframework.stereotype.Service;
 
+import java.util.*;
+import java.util.regex.Pattern;
+
+@Service
 public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI {
 	static Logger logger = Logger.getLogger(FeatureRepositoryServiceImpl.class);
 	private static final String ELEMENT_ACTION_NAME = "element_action_name";
 	private static final String ON_BY_DEFAULT = "OnByDefault";
-	private static final String FEATURE_DEFINITION_PROPERTIES = "-feature-definition.properties";
+	private static final String FEATURE_DEFINITION_PACKAGE = "config.features";
+	private static final Pattern FEATURE_DEFINITION_PROPERTIES = Pattern.compile(".*-feature-definition\\.properties");
 	private static final String NAME="name";
 	private static final String DESC="description";
 	private static final String KEY="key";
 	private static final String[] PROP_OBJECT_FIELDS = new String[]{NAME,DESC,KEY,ON_BY_DEFAULT,ELEMENT_ACTION_NAME};
 	private static final String PROP_OBJECT_IDENTIFIER = "org.nrg.Feature";
-	
-	static Boolean initd=false;//used to check if we've initialized yet and used for synchronization
+
+    private static final Object MUTEX = new Object();
+	static Boolean initd=false;//used to check if we've initialized yet
 	
 	public FeatureRepositoryServiceImpl(){
 		if(!initd){
@@ -44,7 +46,8 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI {
 	
 	@Override
 	public Collection<? extends FeatureDefinitionI> getAllFeatures() {
-		if(!initd){
+		if(!initd)
+        {
 			init();
 		}
 		
@@ -60,7 +63,7 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI {
 	}
 	
 	private void init(){
-		synchronized (initd){
+		synchronized (MUTEX){
 			if(initd){
 				//if we had a race condition and a second thread was waiting here, while the first executed
 				return ;
@@ -78,15 +81,11 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI {
 			
 			//TODO: This is not safe for load balancing.  If two different servers hit this logic at the same time, you would have a problem.
 			
-			File[] propFiles=new File(XFT.GetConfDir()).listFiles(new FilenameFilter(){
-				@Override
-				public boolean accept(File dir, String name) {
-					return name.endsWith(FEATURE_DEFINITION_PROPERTIES);
-				}});
-			
-			if(propFiles!=null){
-				for(File props: propFiles){
-					final Map<String,Map<String,Object>> features=org.nrg.xdat.turbine.utils.PropertiesHelper.RetrievePropertyObjects(props, PROP_OBJECT_IDENTIFIER, PROP_OBJECT_FIELDS);
+			final Set<String> propFiles = Reflection.findResources(FEATURE_DEFINITION_PACKAGE, FEATURE_DEFINITION_PROPERTIES);
+			if(propFiles.size() > 0){
+				for(final String props: propFiles) {
+
+					final Map<String,Map<String,Object>> features = PropertiesHelper.RetrievePropertyObjects(props, PROP_OBJECT_IDENTIFIER, PROP_OBJECT_FIELDS);
 					
 					List<FeatureDefinition> allfeatures=XDAT.getContextService().getBean(FeatureDefinitionService.class).getAllWithDisabled();
 					
@@ -213,5 +212,4 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI {
 			update(def);
 		}
 	}
-
 }

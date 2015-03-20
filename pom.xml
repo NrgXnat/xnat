@@ -130,7 +130,7 @@
         <org.postgresql.version>9.3-1101-jdbc41</org.postgresql.version>
 
         <quartz.version>2.2.1</quartz.version>
-        <reflections.version>0.9.9-RC1</reflections.version>
+        <reflections.version>0.9.9</reflections.version>
         <restlet.version>1.1.10</restlet.version>
         <saxon.version>8.7</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>

@@ -10,26 +10,6 @@
  */
 package org.nrg.config;
 
-import static org.junit.Assert.assertArrayEquals;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.fail;
-
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.StringWriter;
-import java.sql.Connection;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.List;
-
-import javax.inject.Inject;
-
 import org.apache.commons.io.IOUtils;
 import org.junit.After;
 import org.junit.Before;
@@ -42,6 +22,20 @@ import org.nrg.config.util.TestDBUtils;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+
+import javax.inject.Inject;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.StringWriter;
+import java.sql.Connection;
+import java.sql.ResultSet;
+import java.sql.SQLException;
+import java.sql.Statement;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.List;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
@@ -124,7 +118,7 @@ public class ConfigPlatformTests {
     	//clean up from the @before
 		_testDBUtils.cleanDb();
     	
-    	ArrayList<String> paths = new ArrayList<String>();
+    	ArrayList<String> paths = new ArrayList<>();
     	paths.add(path);
     	paths.add("newPath");
     	paths.add("another");
@@ -136,7 +130,7 @@ public class ConfigPlatformTests {
     	
     	assertEquals(list.size(), 3);
     	
-    	List<String> returnedPaths = new ArrayList<String>();
+    	List<String> returnedPaths = new ArrayList<>();
     	for(Configuration c:list){
     		returnedPaths.add(c.getPath());
     	}
@@ -163,7 +157,7 @@ public class ConfigPlatformTests {
     @Test
     public void testGetTools() throws ConfigServiceException {
 		_testDBUtils.cleanDb();
-    	ArrayList<String> tools = new ArrayList<String>();
+    	ArrayList<String> tools = new ArrayList<>();
     	tools.add(toolName);
     	tools.add("Frank");
     	tools.add("Bill");
@@ -182,7 +176,7 @@ public class ConfigPlatformTests {
     
     @Test
     public void testGetToolsByProject() throws ConfigServiceException {
-    	ArrayList<String> tools = new ArrayList<String>();
+    	ArrayList<String> tools = new ArrayList<>();
     	tools.add(toolName);
     	tools.add("Frank");
     	
@@ -339,7 +333,7 @@ public class ConfigPlatformTests {
     	
     	List<Configuration> list = _configService.getHistory(toolName, path, encode(project));
     	assertEquals(3,list.size());	
-    	assertEquals(replaceReasonString, ((Configuration)list.get(1)).getReason());
+    	assertEquals(replaceReasonString, list.get(1).getReason());
     }
     
     @Test

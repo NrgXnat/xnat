@@ -41,6 +41,8 @@
         <nrg.dicomdb.version>[4.0.0,5.0.0)</nrg.dicomdb.version>
         <nrg.dicom-xnat.version>${project.version}</nrg.dicom-xnat.version>
         <nrg.ecat4xnat.version>${project.version}</nrg.ecat4xnat.version>
+        <nrg.ecat-io.version>0.1.0</nrg.ecat-io.version>
+        <nrg.ecat-edit.version>0.2.0</nrg.ecat-edit.version>
         <nrg.nrgutil.version>2.0.0</nrg.nrgutil.version>
         <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
         <nrg.extattr.version>4.1.0</nrg.extattr.version>
@@ -123,7 +125,13 @@
         <junit.version>4.11</junit.version>
         <jzlib.version>1.1.3</jzlib.version>
         <log4j.version>1.2.17</log4j.version>
+        <joda-time.version>2.7</joda-time.version>
+        <jcalendar.version>1.4</jcalendar.version>
+        <wizard.version>1.1</wizard.version>
         <mockito.version>1.8.5</mockito.version>
+        <jetty.version>6.1.25</jetty.version>
+        <fest-swing.version>1.2.1</fest-swing.version>
+        <springockito.version>1.0.5</springockito.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
         <pipeline.version>1.6.3</pipeline.version>
@@ -254,6 +262,16 @@
                 <groupId>org.nrg</groupId>
                 <artifactId>ecat4xnat</artifactId>
                 <version>${nrg.ecat4xnat.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>ecat-io</artifactId>
+                <version>${nrg.ecat-io.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>ecat-edit</artifactId>
+                <version>${nrg.ecat-edit.version}</version>
             </dependency>
 
             <!-- XNAT/XDAT dependency definitions -->
@@ -950,6 +968,16 @@
                 <version>${fastmd5.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.toedter</groupId>
+                <artifactId>jcalendar</artifactId>
+                <version>${jcalendar.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.swinglabs</groupId>
+                <artifactId>wizard</artifactId>
+                <version>${wizard.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>fop</groupId>
                 <artifactId>fop</artifactId>
                 <version>${fop.version}</version>
@@ -985,6 +1013,11 @@
                 <version>${jzlib.version}</version>
             </dependency>
             <dependency>
+                <groupId>joda-time</groupId>
+                <artifactId>joda-time</artifactId>
+                <version>${joda-time.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>nifti_io</groupId>
                 <artifactId>nifti_io</artifactId>
                 <version>${nifti_io.version}</version>
@@ -994,7 +1027,7 @@
                 <artifactId>com.springsource.org.apache.regexp</artifactId>
                 <version>${org.apache.regexp.version}</version>
             </dependency>
-<dependency>
+            <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
                 <version>1.0</version>
@@ -1040,7 +1073,25 @@
             <dependency>
                 <groupId>org.kubek2k</groupId>
                 <artifactId>springockito</artifactId>
-                <version>1.0.5</version>
+                <version>${springockito.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.easytesting</groupId>
+                <artifactId>fest-swing</artifactId>
+                <version>${fest-swing.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.easytesting</groupId>
+                <artifactId>fest-swing-junit</artifactId>
+                <version>${fest-swing.version}</version>
+                <scope>test</scope>
+            </dependency>
+            <dependency>
+                <groupId>org.mortbay.jetty</groupId>
+                <artifactId>jetty</artifactId>
+                <version>${jetty.version}</version>
                 <scope>test</scope>
             </dependency>
         </dependencies>

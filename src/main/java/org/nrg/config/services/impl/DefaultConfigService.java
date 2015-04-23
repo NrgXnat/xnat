@@ -37,17 +37,9 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
 
     @Transactional
     @Override
-    public Configuration getById(Long id) {
-        return getById(id, false);
-    }
-
-    @Transactional
-    @Override
-    public Configuration getById(Long id, boolean preload) {
+    public Configuration getById(long id) {
         Configuration configuration = _dao.findById(id);
-        if (preload) {
-            Hibernate.initialize(configuration);
-        }
+        Hibernate.initialize(configuration);
         return configuration;
     }
 
@@ -77,7 +69,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
 
     @Override
     public List<String> getTools(final Scope scope, final String entityId) {
-        throw new UnsupportedOperationException("Support for scoped entities other than projects is not yet available.");
+        return getToolsImpl(scope, entityId);
     }
 
     @Transactional
@@ -94,9 +86,8 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
 
     @Override
     public List<Configuration> getConfigsByTool(final String toolName, final Scope scope, final String entityId) {
-        throw new UnsupportedOperationException();
+        return getConfigsByToolImpl(toolName, scope, entityId);
     }
-
 
     @Transactional
     @Override
@@ -110,9 +101,10 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return getConfigImpl(toolName, path, projectID);
     }
 
+    @Transactional
     @Override
     public Configuration getConfig(final String toolName, final String path, final Scope scope, final String entityId) {
-        throw new UnsupportedOperationException("Support for scoped entities other than projects is not yet available.");
+        return getConfigImpl(toolName, path, scope, entityId);
     }
 
     @Transactional
@@ -127,26 +119,28 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return getConfigContentsImpl(toolName, path, projectID);
     }
 
+    @Transactional
     @Override
     public String getConfigContents(final String toolName, final String path, final Scope scope, final String entityId) {
-        throw new UnsupportedOperationException();
+        return getConfigContentsImpl(toolName, path, scope, entityId);
     }
 
     @Transactional
     @Override
     public Configuration getConfigById(String toolName, String path, String id) {
-        return getConfigByIdImpl(toolName, path, id, null);
+        return getConfigByIdImpl(toolName, path, id, null, null, null);
     }
 
     @Transactional
     @Override
     public Configuration getConfigById(String toolName, String path, String id, Long projectID) {
-        return getConfigByIdImpl(toolName, path, id, projectID);
+        return getConfigByIdImpl(toolName, path, id, projectID, null, null);
     }
 
+    @Transactional
     @Override
     public Configuration getConfigById(final String toolName, final String path, final String id, final Scope scope, final String entityId) {
-        throw new UnsupportedOperationException();
+        return getConfigByIdImpl(toolName, path, id, null, scope, entityId);
     }
 
     @Transactional
@@ -161,9 +155,10 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return getConfigByVersionImpl(toolName, path, version, projectID);
     }
 
+    @Transactional
     @Override
     public Configuration getConfigByVersion(final String toolName, final String path, final int version, final Scope scope, final String entityId) {
-        throw new UnsupportedOperationException();
+        return getConfigByVersionImpl(toolName, path, version, scope, entityId);
     }
 
     @Transactional
@@ -178,26 +173,28 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return replaceConfig(xnatUser, reason, toolName, path, null, contents, projectID);
     }
 
+    @Transactional
     @Override
     public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final String contents, final Scope scope, final String entityId) throws ConfigServiceException {
-        throw new UnsupportedOperationException();
+        return replaceConfigImpl(xnatUser, reason, toolName, path, null, null, contents, null, scope, entityId);
     }
 
     @Transactional
     @Override
     public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final Boolean unversioned, final String contents) throws ConfigServiceException {
-        return replaceConfigImpl(xnatUser, reason, toolName, path, null, unversioned, contents, null);
+        return replaceConfigImpl(xnatUser, reason, toolName, path, null, unversioned, contents, null, null, null);
     }
 
     @Transactional
     @Override
     public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final Boolean unversioned, final String contents, final Long projectID) throws ConfigServiceException {
-        return replaceConfigImpl(xnatUser, reason, toolName, path, null, unversioned, contents, projectID);
+        return replaceConfigImpl(xnatUser, reason, toolName, path, null, unversioned, contents, projectID, null, null);
     }
 
+    @Transactional
     @Override
     public Configuration replaceConfig(final String xnatUser, final String reason, final String toolName, final String path, final Boolean unversioned, final String contents, final Scope scope, final String entityId) throws ConfigServiceException {
-        throw new UnsupportedOperationException();
+        return replaceConfigImpl(xnatUser, reason, toolName, path, null, unversioned, contents, null, scope, entityId);
     }
 
     @Transactional
@@ -212,9 +209,10 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return getStatusImpl(toolName, path, projectID);
     }
 
+    @Transactional
     @Override
     public String getStatus(final String toolName, final String path, final Scope scope, final String entityId) {
-        throw new UnsupportedOperationException();
+        return getStatusImpl(toolName, path, scope, entityId);
     }
 
     @Transactional
@@ -230,9 +228,10 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         setStatusImpl(xnatUser, reason, toolName, path, Configuration.ENABLED_STRING, projectID);
     }
 
+    @Transactional
     @Override
     public void enable(final String xnatUser, final String reason, final String toolName, final String path, final Scope scope, final String entityId) throws ConfigServiceException {
-
+        setStatusImpl(xnatUser, reason, toolName, path, Configuration.ENABLED_STRING, scope == Scope.Site ? null : Long.parseLong(entityId));
     }
 
     //fail silently if the configuration does not exist...
@@ -249,9 +248,10 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         setStatusImpl(xnatUser, reason, toolName, path, Configuration.DISABLED_STRING, projectID);
     }
 
+    @Transactional
     @Override
     public void disable(final String xnatUser, final String reason, final String toolName, final String path, final Scope scope, final String entityId) throws ConfigServiceException {
-
+        setStatusImpl(xnatUser, reason, toolName, path, Configuration.DISABLED_STRING, scope == Scope.Site ? null : Long.parseLong(entityId));
     }
 
     @Transactional
@@ -266,23 +266,43 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         return getHistoryImpl(toolName, path, projectID);
     }
 
+    @Transactional
     @Override
     public List<Configuration> getHistory(final String toolName, final String path, final Scope scope, final String entityId) {
-        throw new UnsupportedOperationException();
+        return getHistoryImpl(toolName, path, scope, entityId);
     }
 
     private List<String> getToolsImpl(Long projectID) {
         return _dao.getTools(projectID);
-}
+    }
+
+    private List<String> getToolsImpl(Scope scope, String entityId) {
+        return _dao.getTools(scope, entityId);
+    }
 
     private List<Configuration> getConfigsByToolImpl(String toolName, Long projectID) {
         return _dao.getConfigurationsByTool(toolName, projectID);
+    }
+
+    private List<Configuration> getConfigsByToolImpl(String toolName, Scope scope, String entityId) {
+        return _dao.getConfigurationsByTool(toolName, scope, entityId);
     }
 
     //return the most recent configuration. Null if it does not exist.
     @SuppressWarnings("unchecked")
     private Configuration getConfigImpl(String toolName, String path, Long projectID) {
         List<Configuration> list = _dao.findByToolPathProject(toolName, path, projectID);
+        if (list == null || list.size() == 0) {
+            return null;
+        } else {
+            Collections.sort(list, ConfigComparatorByCreateDate);
+            return list.get(list.size() - 1);
+        }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Configuration getConfigImpl(String toolName, String path, Scope scope, String entityId) {
+        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() == 0) {
             return null;
         } else {
@@ -303,7 +323,18 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         }
     }
 
-    private Configuration getConfigByIdImpl(String toolName, String path, String id, Long projectID) {
+    @SuppressWarnings("unchecked")
+    private String getConfigContentsImpl(String toolName, String path, Scope scope, String entityId) {
+        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
+        if (list == null || list.size() == 0) {
+            return null;
+        } else {
+            Collections.sort(list, ConfigComparatorByCreateDate);
+            return list.get(list.size() - 1).getContents();
+        }
+    }
+
+    private Configuration getConfigByIdImpl(String toolName, String path, String id, Long projectID, Scope scope, String entityId) {
         //I think it is more efficient to just pull by the ID and make sure it matches the other passed in variables.
         Configuration c = _dao.findById(Long.parseLong(id));
 
@@ -315,7 +346,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         } catch (Exception e) {
             return null;
         }
-        if (StringUtils.equals(c.getTool(), toolName) && StringUtils.equals(c.getPath(), path) && ObjectUtils.nullSafeEquals((c.getProject()), projectID)) {
+        if (StringUtils.equals(c.getTool(), toolName) && StringUtils.equals(c.getPath(), path) && (ObjectUtils.nullSafeEquals((c.getProject()), projectID) || (c.getScope() == scope && StringUtils.equals(entityId, c.getEntityId())))) {
             return c;
         } else {
             return null;
@@ -345,14 +376,38 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         }
     }
 
-    private Configuration replaceConfigImpl(String xnatUser, String reason, String toolName, String path, String status, Boolean unversioned, String contents, Long projectID) throws ConfigServiceException {
+    @SuppressWarnings("unchecked")
+    private Configuration getConfigByVersionImpl(String toolName, String path, int version, Scope scope, String entityId) {
+        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
+        if (list == null || list.size() < version) {
+            return null;
+        } else {
+            Collections.sort(list, ConfigComparatorByVersion);
+            Configuration ret = list.get(version - 1);
+            //this will only fail if something truly stupid happened. Still should check, though.
+            if (ret.getVersion() == version) {
+                return ret;
+            } else {
+                //something odd happened, let's search the list for the version
+                for (Configuration c : list) {
+                    if (c.getVersion() == version) {
+                        return c;
+                    }
+                }
+                return null;
+            }
+        }
+    }
+
+    private Configuration replaceConfigImpl(String xnatUser, String reason, String toolName, String path, String status, Boolean unversioned, String contents, Long projectID, final Scope scope, final String entityId) throws ConfigServiceException {
 
         if (contents != null && contents.length() > ConfigService.MAX_FILE_LENGTH) {
             throw new ConfigServiceException("file size must be less than " + ConfigService.MAX_FILE_LENGTH + " characters.");
         }
 
         //if a current config exists and the contents are the same as the previous version, share the config data
-        Configuration oldConfig = getConfig(toolName, path, projectID);
+        final boolean usesProjectId = scope == null && StringUtils.isBlank(entityId);
+        Configuration oldConfig = usesProjectId ? getConfigImpl(toolName, path, projectID) : getConfigImpl(toolName, path, scope, entityId);
 
         // We will version the configuration if:
         //  Case1) There is no config and unversioned is not specified (defaults to versioned) or unversioned is false
@@ -395,7 +450,12 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
 
         configuration.setTool(toolName);
         configuration.setPath(path);
-        configuration.setProject(projectID);
+        if (usesProjectId) {
+            configuration.setProject(projectID);
+        } else {
+            configuration.setScope(scope);
+            configuration.setEntityId(entityId);
+        }
         configuration.setXnatUser(xnatUser);
         configuration.setReason(reason);
         configuration.setStatus(StringUtils.isBlank(status) ? Configuration.ENABLED_STRING : status);
@@ -413,6 +473,14 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     @SuppressWarnings("unchecked")
     private String getStatusImpl(String toolName, String path, Long projectID) {
         List<Configuration> list = _dao.findByToolPathProject(toolName, path, projectID);
+        if (list == null || list.size() == 0) return null;
+        Collections.sort(list, ConfigComparatorByCreateDate);
+        return list.get(list.size() - 1).getStatus();
+    }
+
+    @SuppressWarnings("unchecked")
+    private String getStatusImpl(String toolName, String path, Scope scope, String entityId) {
+        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() == 0) return null;
         Collections.sort(list, ConfigComparatorByCreateDate);
         return list.get(list.size() - 1).getStatus();
@@ -438,7 +506,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
             if (StringUtils.isBlank(reason)) {
                 reason = "Setting status to " + status;
             }
-            replaceConfigImpl(xnatUser, reason, toolName, path, status, entity.isUnversioned(), entity.getContents(), entity.getProject());
+            replaceConfigImpl(xnatUser, reason, toolName, path, status, entity.isUnversioned(), entity.getContents(), entity.getProject(), null, null);
         }
     }
 
@@ -446,6 +514,15 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     private List<Configuration> getHistoryImpl(String toolName, String path, Long projectID) {
 
         List<Configuration> list = _dao.findByToolPathProject(toolName, path, projectID);
+        if (list == null || list.size() == 0) return null;
+        Collections.sort(list, ConfigComparatorByCreateDate);
+        return list;
+    }
+
+    @SuppressWarnings("unchecked")
+    private List<Configuration> getHistoryImpl(String toolName, String path, Scope scope, String entityId) {
+
+        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() == 0) return null;
         Collections.sort(list, ConfigComparatorByCreateDate);
         return list;

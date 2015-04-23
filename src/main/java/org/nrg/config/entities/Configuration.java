@@ -13,6 +13,7 @@ package org.nrg.config.entities;
 import org.apache.commons.lang.builder.ToStringBuilder;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
@@ -29,15 +30,17 @@ public class Configuration extends AbstractHibernateEntity {
     private static final long serialVersionUID = -8112028990905366714L;
 
     private Long project;
+	private Scope scope;
+	private String entityId;
 	private String tool;
 	private String path;
-	private ConfigurationData configData;
 
+	private ConfigurationData configData;
 	private String xnatUser;
 	private String reason;
 	private String status;
 	private int version;
-    private boolean unversioned;
+	private boolean unversioned;
 
 	@Transient
 	public String getContents(){
@@ -78,6 +81,22 @@ public class Configuration extends AbstractHibernateEntity {
 
 	public void setProject(Long project) {
 		this.project = project;
+	}
+
+	public Scope getScope() {
+		return scope;
+	}
+
+	public void setScope(final Scope scope) {
+		this.scope = scope;
+	}
+
+	public String getEntityId() {
+		return entityId;
+	}
+
+	public void setEntityId(String entityId) {
+		this.entityId = entityId;
 	}
 
 	public String getTool() {
@@ -126,10 +145,13 @@ public class Configuration extends AbstractHibernateEntity {
 		return ToStringBuilder.reflectionToString(this);
 	}
 
+	@SuppressWarnings("unused")
     public Properties asProperties() {
         final Properties properties = new Properties();
         setNonblankProperty(properties, "xnatUser", xnatUser);
         setNonblankProperty(properties, "project", project);
+        setNonblankProperty(properties, "scope", scope);
+        setNonblankProperty(properties, "entityId", entityId);
         setNonblankProperty(properties, "tool", tool);
         setNonblankProperty(properties, "path", path);
         setNonblankProperty(properties, "reason", reason);

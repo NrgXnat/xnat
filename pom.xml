@@ -99,7 +99,9 @@
         <imagej.version>1.49h</imagej.version>
         <itext.version>1.1.4</itext.version>
         <jackson.version>1.8.11</jackson.version>
-        <fasterxml-jackson.version>2.1.0</fasterxml-jackson.version>
+        <jruby.version>1.7.19</jruby.version>
+        <jython.version>2.7-rc2</jython.version>
+        <fasterxml-jackson.version>2.5.2</fasterxml-jackson.version>
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
         <javassist.version>3.16.1-GA</javassist.version>
@@ -160,6 +162,11 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>framework</artifactId>
+                <version>${nrg.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>automation</artifactId>
                 <version>${nrg.framework.version}</version>
             </dependency>
             <dependency>
@@ -784,6 +791,16 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${fasterxml-jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${fasterxml-jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${fasterxml-jackson.version}</version>
             </dependency>
@@ -986,7 +1003,7 @@
                 <artifactId>com.springsource.org.apache.regexp</artifactId>
                 <version>${org.apache.regexp.version}</version>
             </dependency>
-<dependency>
+            <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
                 <version>1.0</version>
@@ -998,6 +1015,16 @@
                 <groupId>org.codehaus.groovy</groupId>
                 <artifactId>groovy-all</artifactId>
                 <version>${groovy.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.python</groupId>
+                <artifactId>jython</artifactId>
+                <version>${jython.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jruby</groupId>
+                <artifactId>jruby</artifactId>
+                <version>${jruby.version}</version>
             </dependency>
 
             <!-- Test dependencies -->

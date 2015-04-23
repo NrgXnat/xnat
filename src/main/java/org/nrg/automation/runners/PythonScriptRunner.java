@@ -1,35 +1,35 @@
 package org.nrg.automation.runners;
 
-import org.codehaus.groovy.jsr223.GroovyScriptEngineFactory;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import javax.script.ScriptEngine;
+import javax.script.ScriptEngineManager;
 
 @Component
-public class GroovyScriptRunner extends AbstractScriptRunner {
+public class PythonScriptRunner extends AbstractScriptRunner {
 
     @Override
     public String getLanguage() {
-        return "groovy";
+        return "python";
     }
 
     @Override
     public String getLanguageVersion() {
-        return "2.3.6";
+        return "2.7";
     }
 
     @Override
     public ScriptEngine getEngine() {
         if (_engine == null) {
             synchronized (_log) {
-                _engine = new GroovyScriptEngineFactory().getScriptEngine();
+                _engine = new ScriptEngineManager().getEngineByName("python");
             }
         }
         return _engine;
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(GroovyScriptRunner.class);
+    private static final Logger _log = LoggerFactory.getLogger(PythonScriptRunner.class);
     private ScriptEngine _engine;
 }

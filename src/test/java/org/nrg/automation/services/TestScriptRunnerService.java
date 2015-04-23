@@ -24,51 +24,65 @@ import static org.junit.Assert.*;
 @Transactional
 public class TestScriptRunnerService {
 
-    public static final String SCRIPT_HELLO_WORLD = "println \"hi there\"\n" +
-            "\"hi there\"";
-    public static final String SCRIPT_HELLO_PROJECT = "def message = \"hi there ${scope} ${entityId}\"\n" +
+    public static final String GROOVY_HELLO_PAYLOAD = "hi there";
+    public static final String GROOVY_HELLO_WORLD = "println \""+ GROOVY_HELLO_PAYLOAD + "\"\n" +
+            "\""+ GROOVY_HELLO_PAYLOAD + "\"";
+    public static final String GROOVY_HELLO_PROJECT = "def message = \"hi there ${scope} ${entityId}\"\n" +
             "println message\n" +
             "message.toString()";
-    public static final String SCRIPT_IMPORT = "import org.apache.commons.lang3.StringUtils\n" +
+    public static final String GROOVY_IMPORT = "import org.apache.commons.lang3.StringUtils\n" +
             "def isBlank = StringUtils.isBlank(\"hi there\")\n" +
             "def sentence = \"'hi there' \" + (isBlank ? \"is\" : \"is not\") + \" blank\"\nsentence";
-    public static final String SCRIPT_VARIABLE = "println \"I found this variable: ${variable}\"\n" +
+    public static final String GROOVY_VARIABLE = "println \"I found this variable: ${variable}\"\n" +
             "variable";
-    public static final String SCRIPT_OBJECT = "def map = [\"one\" : 1, \"two\" : 2, \"three\" : 3]\n" +
+    public static final String GROOVY_OBJECT = "def map = [\"one\" : 1, \"two\" : 2, \"three\" : 3]\n" +
             "map << [\"four\" : submit]\n" +
             "map.each { key, value ->\n" +
             "    println \"${key}: ${value}\"\n" +
             "}\n" +
             "map\n";
+    public static final String JS_HELLO_PAYLOAD = "Hello there from Javascript";
+    public static final String JS_HELLO_WORLD = "print('" + JS_HELLO_PAYLOAD + "');\n'" + JS_HELLO_PAYLOAD + "';";
     public static final String ID_PROJECT_1 = "1";
     public static final String SCRIPT_ID_1 = "one";
+    public static final String SCRIPT_ID_2 = "two";
 
     @Test
-    public void addRetrieveAndRunSiteScriptTest() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, SCRIPT_HELLO_WORLD, Scope.Site, null);
-        final Script script = _service.getScript(SCRIPT_ID_1);
-        assertNotNull(script);
-        assertEquals(SCRIPT_HELLO_WORLD, script.getContent());
+    public void addRetrieveAndRunSiteScriptTests() throws NrgServiceException {
+        _service.setScript(SCRIPT_ID_1, GROOVY_HELLO_WORLD, Scope.Site, null);
+        _service.setScript(SCRIPT_ID_2, JS_HELLO_WORLD, Scope.Site, null, null, "JavaScript", "1.6");
 
-        final Script retrieved = _service.getScript(SCRIPT_ID_1);
-        assertNotNull(retrieved);
+        final Script script1 = _service.getScript(SCRIPT_ID_1);
+        assertNotNull(script1);
+        assertEquals(GROOVY_HELLO_WORLD, script1.getContent());
+        assertEquals("groovy", script1.getLanguage());
 
-        final Object output = _service.runScript(retrieved);
-        assertNotNull(output);
-        assertTrue(output instanceof String);
-        assertEquals("hi there", output);
+        final Script script2 = _service.getScript(SCRIPT_ID_2);
+        assertNotNull(script2);
+        assertEquals(JS_HELLO_WORLD, script2.getContent());
+        assertEquals("JavaScript", script2.getLanguage());
+
+        final Object output1 = _service.runScript(script1);
+        assertNotNull(output1);
+        assertTrue(output1 instanceof String);
+        assertEquals(GROOVY_HELLO_PAYLOAD, output1);
+
+        final Object output2 = _service.runScript(script2);
+        assertNotNull(output2);
+        assertTrue(output2 instanceof String);
+        assertEquals(JS_HELLO_PAYLOAD, output2);
     }
 
     @Test
     public void addRetrieveAndRunProjectScriptTest() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, SCRIPT_HELLO_PROJECT, Scope.Project, ID_PROJECT_1);
+        _service.setScript(SCRIPT_ID_1, GROOVY_HELLO_PROJECT, Scope.Project, ID_PROJECT_1);
         final List<Script> scripts = _service.getScripts(Scope.Project, ID_PROJECT_1);
         assertNotNull(scripts);
         assertEquals(1, scripts.size());
 
         final Script script = scripts.get(0);
         assertEquals(SCRIPT_ID_1, script.getScriptId());
-        assertEquals(SCRIPT_HELLO_PROJECT, script.getContent());
+        assertEquals(GROOVY_HELLO_PROJECT, script.getContent());
 
         final Map<String, Object> parameters = new HashMap<String, Object>();
         parameters.put("scope", Scope.Project.code());
@@ -82,7 +96,7 @@ public class TestScriptRunnerService {
 
     @Test
     public void useImportedClassTest() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, SCRIPT_IMPORT);
+        _service.setScript(SCRIPT_ID_1, GROOVY_IMPORT);
         final Script script = _service.getScript(SCRIPT_ID_1);
         assertNotNull(script);
         assertEquals(SCRIPT_ID_1, script.getScriptId());
@@ -94,7 +108,7 @@ public class TestScriptRunnerService {
 
     @Test
     public void returnComplexObject() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, SCRIPT_OBJECT);
+        _service.setScript(SCRIPT_ID_1, GROOVY_OBJECT);
 
         final Script script = _service.getScript(SCRIPT_ID_1);
         assertNotNull(script);
@@ -114,7 +128,7 @@ public class TestScriptRunnerService {
 
     @Test
     public void passVariablesTest() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, SCRIPT_VARIABLE);
+        _service.setScript(SCRIPT_ID_1, GROOVY_VARIABLE);
 
         final Script script = _service.getScript(SCRIPT_ID_1);
         assertNotNull(script);

@@ -34,6 +34,42 @@
             <artifactId>groovy-all</artifactId>
         </dependency>
         <dependency>
+            <groupId>org.python</groupId>
+            <artifactId>jython</artifactId>
+        </dependency>
+        <!--
+            TODO: The jruby dependency causes unit tests to fail. First there's a different version of asm that causes errors
+            with cglib. Excluding the asm libraries referenced by jruby seems to fix that problem, but then it gets NoClassDefFoundError
+            Could not initialize class net.sf.cglib.proxy.Enhancer. I think it's another class missing, not Enhancer, but can't
+            tell exactly what. Probably the whole framework just needs an updated cglib and asm dependency.
+        -->
+        <!-- dependency>
+            <groupId>org.jruby</groupId>
+            <artifactId>jruby</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm-commons</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm-tree</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm-analysis</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.ow2.asm</groupId>
+                    <artifactId>asm-util</artifactId>
+                </exclusion>
+            </exclusions>
+        </dependency -->
+        <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>
         </dependency>
@@ -125,5 +161,18 @@
             </plugin>
         </plugins>
     </build>
+
+    <repositories>
+        <repository>
+            <id>org.nrg.maven.artifacts.snapshot</id>
+            <name>XNAT Snapshot Maven Repo</name>
+            <url>http://maven.xnat.org/libs-snapshot</url>
+        </repository>
+        <repository>
+            <id>org.nrg.maven.artifacts.release</id>
+            <name>XNAT Release Maven Repo</name>
+            <url>http://maven.xnat.org/libs-release</url>
+        </repository>
+    </repositories>
 
 </project>

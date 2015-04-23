@@ -267,6 +267,8 @@ public interface ScriptRunnerService extends NrgService {
      */
     public abstract void setRunners(final Collection<ScriptRunner> runners);
 
+    boolean hasRunner(String language);
+
     /**
      * Indicates whether a {@link ScriptRunner script runner} compatible with the indicated language and version exists
      * on the system.
@@ -277,6 +279,8 @@ public interface ScriptRunnerService extends NrgService {
      * @return <b>true</b> if a compatible version exists, <b>false</b> otherwise.
      */
     public abstract boolean hasRunner(final String language, final String version);
+
+    ScriptRunner getRunner(String language);
 
     /**
      * Gets the {@link ScriptRunner script runner} compatible with the indicated language and version, if one exists on

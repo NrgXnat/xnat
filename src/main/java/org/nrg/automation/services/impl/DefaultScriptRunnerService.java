@@ -102,9 +102,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     public List<Script> getScripts(final Scope scope, final String entityId) {
         final List<ScriptTrigger> triggers = _triggerService.getByScope(scope, entityId);
         if (triggers == null || triggers.size() == 0) {
-            return new ArrayList<Script>();
+            return new ArrayList<>();
         }
-        final List<Script> scripts = new ArrayList<Script>(triggers.size());
+        final List<Script> scripts = new ArrayList<>(triggers.size());
         for (final ScriptTrigger trigger : triggers) {
             scripts.add(_scriptService.getByScriptId(trigger.getScriptId()));
         }
@@ -162,7 +162,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content) {
-        setScript(scriptId, content, null, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScriptImpl(scriptId, content, null, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
     }
 
     /**
@@ -176,7 +176,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final String description) {
-        setScript(scriptId, content, description, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScriptImpl(scriptId, content, description, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
     }
 
     /**
@@ -190,7 +190,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final Scope scope, final String entityId) {
-        setScript(scriptId, content, null, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScriptImpl(scriptId, content, null, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
     }
 
     /**
@@ -205,7 +205,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event) {
-        setScript(scriptId, content, null, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScriptImpl(scriptId, content, null, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
     }
 
     /**
@@ -222,7 +222,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language, final String languageVersion) {
-        setScript(scriptId, content, null, scope, entityId, event, language, languageVersion);
+        setScriptImpl(scriptId, content, null, scope, entityId, event, language, languageVersion);
     }
 
     /**
@@ -237,7 +237,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId) {
-
+        setScriptImpl(scriptId, content, description, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
     }
 
     /**
@@ -253,7 +253,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event) {
-
+        setScriptImpl(scriptId, content, description, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
     }
 
     /**
@@ -271,35 +271,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language, final String languageVersion) {
-        final Script script;
-        if (_scriptService.hasScript(scriptId)) {
-            script = _scriptService.getByScriptId(scriptId);
-        } else {
-            script = new Script();
-            script.setScriptId(scriptId);
-        }
-
-        script.setLanguage(language);
-        script.setLanguageVersion(languageVersion);
-        script.setContent(content);
-
-        script.setDescription(StringUtils.isEmpty(description) ? getDefaultScriptDescription(script) : description);
-
-        if (scope == null) {
-            saveScript(script);
-        } else {
-            ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
-            if (trigger == null) {
-                trigger = new ScriptTrigger();
-                trigger.setTriggerId(_triggerService.getDefaultTriggerName(scriptId, scope, entityId, event));
-            }
-            trigger.setDescription(getDefaultTriggerDescription(scriptId, scope, entityId, event));
-            trigger.setScriptId(scriptId);
-            trigger.setAssociation(Scope.encode(scope, entityId));
-            trigger.setEvent(event);
-
-            setScript(script, trigger);
-        }
+        setScriptImpl(scriptId, content, description, scope, entityId, event, language, languageVersion);
     }
 
     /**
@@ -313,9 +285,10 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final Script script, final Scope scope, final String entityId, final String event) {
-        String triggerName = _triggerService.getDefaultTriggerName(script.getScriptId(), scope, entityId, event);
-        String triggerDescription = getDefaultTriggerDescription(script.getScriptId(), scope, entityId, event);
-        final ScriptTrigger trigger = new ScriptTrigger(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), event);
+        final String resolved = StringUtils.isBlank(event) ? ScriptTrigger.DEFAULT_EVENT : event;
+        String triggerName = _triggerService.getDefaultTriggerName(script.getScriptId(), scope, entityId, resolved);
+        String triggerDescription = getDefaultTriggerDescription(script.getScriptId(), scope, entityId, resolved);
+        final ScriptTrigger trigger = new ScriptTrigger(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), resolved);
         setScript(script, trigger);
     }
 
@@ -483,14 +456,32 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     }
 
     @Override
+    public boolean hasRunner(final String language) {
+        return _runners.containsKey(language.toLowerCase());
+    }
+
+    @Override
     public boolean hasRunner(final String language, final String version) {
-        return _runners.containsKey(language) && _runners.get(language).containsKey(version);
+        return hasRunner(language) && _runners.get(language.toLowerCase()).containsKey(version.toLowerCase());
+    }
+
+    @Override
+    public ScriptRunner getRunner(final String language) {
+        if (!hasRunner(language)) {
+            return null;
+        }
+        final Map<String, ScriptRunner> these = _runners.get(language.toLowerCase());
+        if (these.size() > 1) {
+            throw new NrgServiceRuntimeException(NrgServiceError.UnknownScriptRunner, "There are multiple supported versions for the " + language + " script runner. You must provide an explicit version.");
+        }
+        final Collection<ScriptRunner> values = these.values();
+        return values.toArray(new ScriptRunner[values.size()])[0];
     }
 
     @Override
     public ScriptRunner getRunner(final String language, final String version) {
-        if (_runners.containsKey(language)) {
-            return _runners.get(language).get(version);
+        if (_runners.containsKey(language.toLowerCase())) {
+            return _runners.get(language.toLowerCase()).get(version.toLowerCase());
         }
         return null;
     }
@@ -502,12 +493,13 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void addRunner(final ScriptRunner runner) {
-        final String language = runner.getLanguage();
+        final String language = runner.getLanguage().toLowerCase();
+        final String languageVersion = runner.getLanguageVersion().toLowerCase();
         if (_runners.containsKey(language)) {
-            _runners.get(language).put(runner.getLanguageVersion(), runner);
+            _runners.get(language).put(languageVersion, runner);
         } else {
             _runners.put(language, new HashMap<String, ScriptRunner>());
-            _runners.get(language).put(runner.getLanguageVersion(), runner);
+            _runners.get(language).put(languageVersion, runner);
         }
     }
 
@@ -526,6 +518,44 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     @Autowired (required=false)
     public void setOutputAdapter(ScriptRunnerOutputAdapter adapter) {
         _adapter = adapter;
+    }
+
+    private void setScriptImpl(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language, final String languageVersion) {
+        if (StringUtils.isBlank(scriptId)) {
+            throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save a script with an empty script ID!");
+        }
+        if (StringUtils.isBlank(content)) {
+            throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save the script " + scriptId + " with an empty script ID!");
+        }
+        final Script script;
+        if (_scriptService.hasScript(scriptId)) {
+            script = _scriptService.getByScriptId(scriptId);
+        } else {
+            script = new Script();
+            script.setScriptId(scriptId);
+        }
+
+        script.setDescription(StringUtils.isNotBlank(description) ? description : getDefaultScriptDescription(script));
+        script.setLanguage(StringUtils.isNotBlank(language) ? language : ScriptRunner.DEFAULT_LANGUAGE);
+        script.setLanguageVersion(StringUtils.isNotBlank(languageVersion) ? languageVersion : ScriptRunner.DEFAULT_VERSION);
+        script.setContent(content);
+
+        if (scope == null) {
+            saveScript(script);
+        } else {
+            final String resolvedEvent = StringUtils.isNotBlank(event) ? event : ScriptTrigger.DEFAULT_EVENT;
+            ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, resolvedEvent);
+            if (trigger == null) {
+                trigger = new ScriptTrigger();
+                trigger.setTriggerId(_triggerService.getDefaultTriggerName(scriptId, scope, entityId, resolvedEvent));
+            }
+            trigger.setDescription(getDefaultTriggerDescription(scriptId, scope, entityId, resolvedEvent));
+            trigger.setScriptId(scriptId);
+            trigger.setAssociation(Scope.encode(scope, entityId));
+            trigger.setEvent(resolvedEvent);
+
+            setScript(script, trigger);
+        }
     }
 
     private void saveScript(final Script script) {
@@ -609,6 +639,6 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     @Inject
     private ScriptTriggerService _triggerService;
 
-    private final Map<String, Map<String, ScriptRunner>> _runners = new HashMap<String, Map<String, ScriptRunner>>();
+    private final Map<String, Map<String, ScriptRunner>> _runners = new HashMap<>();
     private ScriptRunnerOutputAdapter _adapter;
 }

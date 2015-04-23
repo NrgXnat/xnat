@@ -1,15 +1,18 @@
 package org.nrg.automation.runners;
 
+import javax.script.ScriptEngine;
 import java.util.Map;
 
 public interface ScriptRunner {
 
-    public static final String DEFAULT_LANGUAGE = "groovy";
-    public static final String DEFAULT_VERSION = "2.3.6";
+    String DEFAULT_LANGUAGE = "groovy";
+    String DEFAULT_VERSION = "2.3.6";
 
-    public abstract String getLanguage();
+    String getLanguage();
 
-    public abstract String getLanguageVersion();
+    String getLanguageVersion();
 
-    public abstract Object run(final Map<String, Object> parameters);
+    Object run(final Map<String, Object> parameters);
+
+    ScriptEngine getEngine();
 }

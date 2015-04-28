@@ -2,8 +2,11 @@
 package org.nrg.xft.utils;
 
 import java.sql.SQLException;
+import java.util.List;
+import java.util.Map;
 
 import org.apache.log4j.Logger;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.security.Authorizer;
 import org.nrg.xdat.security.XDATUser;
@@ -16,6 +19,8 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
+
+import com.google.common.collect.Maps;
 
 public class SaveItemHelper {
 	private static final String ID_PLACEHOLDER = "NULL";
@@ -41,8 +46,10 @@ public class SaveItemHelper {
 				return;
 			}
 			temp.preSave();
+			doDynamicActions(temp,user,c,"preSave",true);
 			temp.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);
-			temp.postSave();
+        	temp.postSave();
+			doDynamicActions(temp,user,c,"postSave",false);
 		}
 	}
 
@@ -62,18 +69,52 @@ public class SaveItemHelper {
 				return i.save(user,overrideSecurity,allowItemRemoval,c);				
 			}
 			temp.preSave();
+			doDynamicActions(temp,user,c,"preSave",true);
 	        final boolean _success= temp.save(user,overrideSecurity,allowItemRemoval,c);
-	        if(_success)temp.postSave();
+	        if(_success){
+	        	temp.postSave();
+				doDynamicActions(temp,user,c,"postSave",false);
+	        }
 	        return _success;
 		}
 	}
 	
 	protected void delete(ItemI i, UserI user,EventMetaI c) throws SQLException, Exception{
+		doDynamicActions(i,user,c,"preDelete",true);
 		DBAction.DeleteItem(i.getItem(),user,c);
+		doDynamicActions(i,user,c,"postDelete",false);
 	}
 	
 	protected void removeItemReference(ItemI parent,String s, ItemI child, UserI user,EventMetaI c) throws SQLException, Exception{
+		doDynamicActions(parent,user,c,"preSave",true);
         DBAction.RemoveItemReference(parent.getItem(),s,child.getItem(),user,c);
+		doDynamicActions(child,user,c,"postSave",false);
+	}
+	
+	private void doDynamicActions(ItemI i, UserI user, EventMetaI c, String actionType, boolean failOnException) throws Exception{
+		String element=i.getItem().getGenericSchemaElement().getJAVAName();
+		final String packageName="org.nrg.xnat.extensions." + actionType + "." + element;
+		
+		if(Reflection.getClassesForPackage(packageName).size()>0){
+			ItemWrapper temp;
+			try {
+				if(i instanceof XFTItem){
+					temp=(ItemWrapper)BaseElement.GetGeneratedItem(i);
+				}else{
+					temp=(ItemWrapper)i;
+				}
+			} catch (Throwable e) {
+				logger.error("",e);
+				return;
+			}
+			
+			Map<String,Object> params=Maps.newHashMap();
+			params.put("item", temp);
+			params.put("user", user);
+			params.put("eventMeta", c);
+			
+			Reflection.injectDynamicImplementations(packageName, failOnException, params);
+		}
 	}
 	
 	/**

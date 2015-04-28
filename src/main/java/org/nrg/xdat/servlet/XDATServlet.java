@@ -21,6 +21,8 @@ import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
 
+import org.apache.log4j.Logger;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
@@ -32,6 +34,7 @@ import org.slf4j.bridge.SLF4JBridgeHandler;
  */
 @SuppressWarnings("serial")
 public class XDATServlet extends HttpServlet{
+	static org.apache.log4j.Logger logger = Logger.getLogger(XDATServlet.class);
 	public void init(ServletConfig config) throws ServletException
 	{
 		replaceLogging();
@@ -52,7 +55,9 @@ public class XDATServlet extends HttpServlet{
             XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath("templates" + File.separator + "screens" + File.separator));
             XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath("xnat-templates" + File.separator + "screens" + File.separator));
             XDAT.addScreenTemplatesFolder(this.getServletContext().getRealPath("xdat-templates" + File.separator + "screens" + File.separator));
-			
+
+            Reflection.injectDynamicImplementations("org.nrg.xnat.extensions.server.startup.sync", null);
+            
             Thread t = new DelayedSequenceChecker();
             t.start();
 		} catch (Exception e) {
@@ -74,6 +79,9 @@ public class XDATServlet extends HttpServlet{
             public void run()                       
             {              
                 DBAction.AdjustSequences();
+                
+                Reflection.injectDynamicImplementations("org.nrg.xnat.extensions.server.startup.async", null);
+
             }
     }
 //    
@@ -107,6 +115,5 @@ public class XDATServlet extends HttpServlet{
 			e.printStackTrace();
 		} 
 	}
-    
 }
 

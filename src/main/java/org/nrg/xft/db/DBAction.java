@@ -2062,6 +2062,8 @@ public class DBAction {
 		{
 			con.insertItem(query,element.getDbName(),login,cache);
 		}
+		
+		cache.handlePostModificationAction(item,"insert");
 
 		if (!element.getFullXMLName().toLowerCase().startsWith("xdat"))
 		{
@@ -2396,6 +2398,7 @@ public class DBAction {
 		try {
 			con = new PoolDBUtils();
 			con.updateItem(query,element.getDbName(),login,cache);
+			cache.handlePostModificationAction(item,"update");
 
 			if (!element.getFullXMLName().toLowerCase().startsWith("xdat"))
 			{
@@ -3555,6 +3558,7 @@ public class DBAction {
 		try {
 			con = new PoolDBUtils();
 			con.updateItem(query,element.getDbName(),login,cache);
+			cache.handlePostModificationAction(item,"delete");
 			logger.info(element.getFullXMLName() +" Removed.");
 		} catch (ClassNotFoundException e) {
 			e.printStackTrace();

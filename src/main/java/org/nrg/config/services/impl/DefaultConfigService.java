@@ -10,8 +10,16 @@
  */
 package org.nrg.config.services.impl;
 
+import java.util.Collections;
+import java.util.List;
+import java.util.concurrent.Callable;
+
+import javax.inject.Inject;
+
 import org.apache.commons.beanutils.BeanComparator;
 import org.apache.commons.lang.StringUtils;
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.hibernate.Hibernate;
 import org.nrg.config.daos.ConfigurationDAO;
 import org.nrg.config.daos.ConfigurationDataDAO;
@@ -21,13 +29,12 @@ import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
+import org.nrg.framework.utilities.Reflection;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.util.ObjectUtils;
 
-import javax.inject.Inject;
-import java.util.Collections;
-import java.util.List;
+import com.google.common.base.Joiner;
 
 @Service
 public class DefaultConfigService extends AbstractHibernateEntityService<Configuration, ConfigurationDAO> implements ConfigService {
@@ -462,15 +469,101 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         configuration.setVersion(1 + ((oldConfig != null && doVersion) ? oldConfig.getVersion() : 0));
         configuration.setUnversioned(!doVersion);
 
+        notifyListeners("preChange",(usesProjectId)?Scope.Project.code():scope.code(),entityId,toolName, path, configuration,true);//developers can insert pre-change logic that can prevent the storage of the configuration by throwing an exception
+        
         if (update) {
             _dao.update(configuration);
         } else {
             _dao.create(configuration);
         }
+        
+        notifyListeners("postChange",(usesProjectId)?Scope.Project.code():scope.code(),entityId,toolName, path, configuration,false);//developers can insert post-change logic
+        
         return configuration;
     }
 
-    @SuppressWarnings("unchecked")
+    private void notifyListeners(String action, String scope, String entityId, String toolName, String path, Configuration configuration, boolean ignoreExceptions) throws ConfigServiceException{
+    	toolName=formatForJava(toolName);
+    	path=formatForJava(path);
+    	entityId=formatForJava(entityId);
+    	
+    	doDynamicActions(configuration, ignoreExceptions,"org.nrg.config.extensions",action,toolName,path);
+	}
+    
+	/**
+	 * Removes special characters and capitalizes the next character.
+	 * @param name
+	 * @return
+	 */
+	public static String formatForJava(String name)
+	{
+		if(name==null)return name;
+		
+		StringBuffer sb = new StringBuffer();
+
+		name=name.replace('/','.');
+		name=name.replaceAll("[^A-Za-z0-9\\.]", "_");
+
+		String first = name.substring(0,1);
+		sb.append(first.toUpperCase());
+		name = name.substring(1).toLowerCase();
+
+		while(name.indexOf("_") != -1)
+		{
+			int i=name.indexOf("_");
+			if (i+2>name.length())
+			{
+				break;
+			}else if (i != 0)
+			{
+				sb.append(name.substring(0,i));
+				sb.append(name.substring(i+1,i+2).toUpperCase());
+				name = name.substring(i+2);
+			}else
+			{
+				name = name.substring(1);
+			}
+		}
+		sb.append(name);
+		return sb.toString();
+	}
+
+	private void doDynamicActions(Configuration config, boolean ignoreExceptions,String... _package) throws ConfigServiceException{
+		try {
+			String packageTemplate=Joiner.on('.').skipNulls().join(_package);
+			
+			List<Class<?>> classes = Reflection.getClassesForPackage(packageTemplate);
+
+			if(classes!=null && classes.size()>0){
+				for(Class<?> clazz: classes){
+				    try {
+						if(ConfigurationModificationListenerI.class.isAssignableFrom(clazz)){			
+							ConfigurationModificationListenerI action=(ConfigurationModificationListenerI)clazz.newInstance();
+						    try {
+								action.execute(config);
+							} catch (ConfigServiceException e) {
+								if(ignoreExceptions){
+									_log.error("",e);
+								}else{
+									throw e;
+								}
+							}
+						}
+					} catch (Exception e) {
+						_log.error("",e);
+					}
+				}
+			}
+		} catch (Exception e) {
+			_log.error("",e);
+		}
+	}
+	
+	public static interface ConfigurationModificationListenerI{
+		public void execute(Configuration config) throws ConfigServiceException;
+	}
+
+	@SuppressWarnings("unchecked")
     private String getStatusImpl(String toolName, String path, Long projectID) {
         List<Configuration> list = _dao.findByToolPathProject(toolName, path, projectID);
         if (list == null || list.size() == 0) return null;
@@ -533,4 +626,6 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
 
     @Inject
     private ConfigurationDataDAO _dataDAO;
+
+    private static final Log _log = LogFactory.getLog(DefaultConfigService.class);
 }

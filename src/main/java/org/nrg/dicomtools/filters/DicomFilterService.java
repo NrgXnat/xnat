@@ -4,7 +4,6 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import org.apache.commons.lang.StringUtils;
-import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
@@ -22,6 +21,7 @@ import java.util.LinkedHashMap;
 public class DicomFilterService {
     public static final String SERIES_IMPORT_TOOL = "seriesImportFilter";
     public static final String SERIES_IMPORT_PATH = "config";
+    public static final String SERIES_IMPORT_LABEL_FORMAT = "labelFormat";
 
     public SeriesImportFilter getSeriesImportFilter() {
         return getSeriesImportFilter(null);
@@ -29,7 +29,7 @@ public class DicomFilterService {
 
     public SeriesImportFilter getSeriesImportFilter(final String entityId) {
         final Configuration configuration = StringUtils.isBlank(entityId)
-                ? _configService.getConfig(SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH)
+                ? _configService.getConfig(SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Site, null)
                 : _configService.getConfig(SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Project, entityId);
         if (configuration == null) {
             return null;
@@ -42,8 +42,15 @@ public class DicomFilterService {
         return filter;
     }
 
-    public SeriesImportFilter buildSeriesImportFilter(final String json) {
+    public static SeriesImportFilter buildSeriesImportFilter(final String json) {
         final LinkedHashMap<String, String> map = getSeriesFilterAsMap(json);
+        return buildSeriesImportFilter(map);
+    }
+
+    public static SeriesImportFilter buildSeriesImportFilter(final LinkedHashMap<String, String> map) {
+        if (map.containsKey("contents")) {
+            return buildSeriesImportFilter(map.get("contents"));
+        }
         if (map.get(SeriesImportFilter.KEY_MODE).equals(SeriesImportFilterMode.ModalityMap.getValue())) {
             return new ModalityMapSeriesImportFilter(map);
         } else {
@@ -89,8 +96,8 @@ public class DicomFilterService {
         final boolean enabled = filter.isEnabled();
 
         // Get the config if it exists.
-        final Configuration existing = projectId == null
-                ? _configService.getConfig(SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH)
+        final Configuration existing = StringUtils.isBlank(projectId)
+                ? _configService.getConfig(SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Site, null)
                 : _configService.getConfig(SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Project, projectId);
 
         // If the config is null, we can't very well enable or disable it.
@@ -121,8 +128,8 @@ public class DicomFilterService {
                     }
                 }
                 try {
-                    if (projectId == null) {
-                        _configService.replaceConfig(username, message.toString(), SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, persisted);
+                    if (StringUtils.isBlank(projectId)) {
+                        _configService.replaceConfig(username, message.toString(), SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, persisted, Scope.Site, null);
                     } else {
                         _configService.replaceConfig(username, message.toString(), SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, persisted, Scope.Project, projectId);
                     }
@@ -132,19 +139,19 @@ public class DicomFilterService {
             }
             if (enabled && !existing.getStatus().equals("enabled") && !isModeChanged && !isFilterChanged) { // if mode or list changed, the updated version is already enabled
                 try {
-                    if (projectId == null) {
-                        _configService.enable(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH);
+                    if (StringUtils.isBlank(projectId)) {
+                        _configService.enable(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Site, null);
                     } else {
                         _configService.enable(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Project, projectId);
                     }
                 } catch (ConfigServiceException exception) {
-                    final String message = projectId == null ? "Error enabling the site-wide series import filter" : "Error enabling the series import filter for project " + projectId;
+                    final String message = StringUtils.isBlank(projectId) ? "Error enabling the site-wide series import filter" : "Error enabling the series import filter for project " + projectId;
                     throw new NrgServiceRuntimeException(NrgServiceError.Unknown, message, exception);
                 }
             } else if (!enabled && (existing.getStatus().equals("enabled") || isModeChanged || isFilterChanged)) { // if we are disabling a filter, or need to disable a newly updated filter
                 try {
-                    if (projectId == null) {
-                        _configService.disable(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH);
+                    if (StringUtils.isBlank(projectId)) {
+                        _configService.disable(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Site, null);
                     } else {
                         _configService.disable(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Project, projectId);
                     }
@@ -154,15 +161,15 @@ public class DicomFilterService {
             }
         } else {
             try {
-                if (projectId == null) {
-                    _configService.replaceConfig(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, true, persisted);
+                if (StringUtils.isBlank(projectId)) {
+                    _configService.replaceConfig(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, true, persisted, Scope.Site, null);
                 } else {
                     _configService.replaceConfig(username, reason, SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, true, persisted, Scope.Project, projectId);
                 }
                 // In reality, this shouldn't ever really happen. You can't disable the filter and send filter values, but just in case...
                 if (!enabled) {
-                    if (projectId == null) {
-                        _configService.disable(username, "Disabled on creation", SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH);
+                    if (StringUtils.isBlank(projectId)) {
+                        _configService.disable(username, "Disabled on creation", SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Site, null);
                     } else {
                         _configService.disable(username, "Disabled on creation", SERIES_IMPORT_TOOL, SERIES_IMPORT_PATH, Scope.Project, projectId);
                     }
@@ -174,6 +181,9 @@ public class DicomFilterService {
     }
 
     static LinkedHashMap<String, String> getContentsAsMap(final String contents) throws IOException {
+        if (StringUtils.isBlank(contents)) {
+            return new LinkedHashMap<>();
+        }
         return MAPPER.readValue(contents, SeriesImportFilter.MAP_TYPE_REFERENCE);
     }
 
@@ -188,7 +198,4 @@ public class DicomFilterService {
 
     @Autowired
     private ConfigService _configService;
-
-    @Autowired
-    private ScriptRunnerService _scriptRunnerService;
 }

@@ -15,7 +15,9 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
     public AbstractSeriesImportFilter(final LinkedHashMap<String, String> values) {
         setProjectId(values.containsKey(KEY_PROJECT_ID) ? values.get(KEY_PROJECT_ID) : "");
         setEnabled(!values.containsKey(KEY_ENABLED) || Boolean.parseBoolean(values.get(KEY_ENABLED)));
-        setMode(SeriesImportFilterMode.mode(values.get(KEY_MODE)));
+        if (values.containsKey(KEY_MODE)) {
+            setMode(SeriesImportFilterMode.mode(values.get(KEY_MODE)));
+        }
         initialize(values);
     }
 

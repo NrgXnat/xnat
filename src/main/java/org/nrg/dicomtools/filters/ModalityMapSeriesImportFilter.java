@@ -1,7 +1,10 @@
 package org.nrg.dicomtools.filters;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
+import com.fasterxml.jackson.annotation.JsonProperty;
 import com.google.common.base.Joiner;
 import org.apache.commons.lang.StringUtils;
+import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
 import org.slf4j.Logger;
@@ -16,6 +19,15 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
+
+    public static final String MODALITY_EXCLUDED = "excluded";
+
+    public ModalityMapSeriesImportFilter() throws IOException {
+        super("");
+        _engine = new ScriptEngineManager().getEngineByName("JavaScript");
+        setMode(SeriesImportFilterMode.ModalityMap);
+        _log.debug("Creating a default instance of the " + getClass().getName() + " class.");
+    }
 
     public ModalityMapSeriesImportFilter(final String json) throws IOException {
         super(json);
@@ -36,7 +48,7 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
     public ModalityMapSeriesImportFilter(final String contents, final String projectId, final boolean enabled) {
         super(projectId, SeriesImportFilterMode.ModalityMap, enabled);
         _engine = new ScriptEngineManager().getEngineByName("JavaScript");
-        _filterProperties = processModalityMap(contents);
+        _modalityMap = processModalityMap(contents);
     }
 
     /**
@@ -45,14 +57,14 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
      */
     @Override
     protected void initialize(final Map<String, String> values) {
-        _filterProperties = new LinkedHashMap<>();
-        _filterProperties.putAll(values);
-        _filterProperties.remove(KEY_ENABLED);
-        _filterProperties.remove(KEY_MODE);
-        _filterProperties.remove(KEY_PROJECT_ID);
+        _modalityMap = new LinkedHashMap<>();
+        _modalityMap.putAll(values);
+        _modalityMap.remove(KEY_ENABLED);
+        _modalityMap.remove(KEY_MODE);
+        _modalityMap.remove(KEY_PROJECT_ID);
         if (values.containsKey(KEY_STRICT)) {
             setStrict(Boolean.parseBoolean(values.get(KEY_STRICT)));
-            _filterProperties.remove(KEY_STRICT);
+            _modalityMap.remove(KEY_STRICT);
         }
     }
 
@@ -62,7 +74,7 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
      */
     @Override
     protected Map<String, String> getImplementationProperties() {
-        return _filterProperties;
+        return _modalityMap;
     }
 
     @Override
@@ -78,16 +90,17 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
         if (isExcluded(dicomObject)) {
             return "";
         }
-        for(final Map.Entry<String, String> modalityEntry : _filterProperties.entrySet()) {
+        for(final Map.Entry<String, String> modalityEntry : _modalityMap.entrySet()) {
             final String modality = modalityEntry.getKey();
             if(modality.equals(KEY_MODE) || modality.equals(KEY_DEFAULT_MODALITY)) {
                 continue;
             }
-            if (evaluate(modalityEntry.getValue(), dicomObject)) {
+            final String script = modalityEntry.getValue();
+            if (evaluate(script, getScriptParameters(script), getDicomHeadersAsMap(getScriptParameters(script), dicomObject))) {
                 return modality;
             }
         }
-        return _filterProperties.containsKey(KEY_DEFAULT_MODALITY) ? _filterProperties.get(KEY_DEFAULT_MODALITY) : null;
+        return _modalityMap.containsKey(KEY_DEFAULT_MODALITY) ? _modalityMap.get(KEY_DEFAULT_MODALITY) : null;
     }
 
     @Override
@@ -95,16 +108,17 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
         if (isExcluded(headers)) {
             return "";
         }
-        for(final Map.Entry<String, String> modalityEntry : _filterProperties.entrySet()) {
+        for(final Map.Entry<String, String> modalityEntry : _modalityMap.entrySet()) {
             final String modality = modalityEntry.getKey();
             if(modality.equals(KEY_MODE) || modality.equals(KEY_DEFAULT_MODALITY)) {
                 continue;
             }
-            if (evaluate(modalityEntry.getValue(), headers)) {
+            final String script = modalityEntry.getValue();
+            if (evaluate(script, getScriptParameters(script), headers)) {
                 return modality;
             }
         }
-        return _filterProperties.containsKey(KEY_DEFAULT_MODALITY) ? _filterProperties.get(KEY_DEFAULT_MODALITY) : null;
+        return _modalityMap.containsKey(KEY_DEFAULT_MODALITY) ? _modalityMap.get(KEY_DEFAULT_MODALITY) : null;
     }
 
     @Override
@@ -114,7 +128,21 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
 
     @Override
     public boolean shouldIncludeDicomObject(final DicomObject dicomObject, final String targetModality) {
-        return !isExcluded(dicomObject) && evaluate(_filterProperties.get(StringUtils.isBlank(targetModality) ? getModality() : targetModality), dicomObject);
+        if (_modalityMap.containsKey(KEY_EXCLUDED)) {
+            final Map<String, String> headers = getDicomHeadersAsMap(getScriptParameters(_modalityMap.get(KEY_EXCLUDED)), dicomObject);
+            if (isExcluded(headers)) {
+                return false;
+            }
+        }
+        final String modality = StringUtils.isBlank(targetModality) ? getModality() : targetModality;
+        if (StringUtils.isNotBlank(modality)) {
+            final String script = _modalityMap.get(modality);
+            final Map<String, String> headers = getDicomHeadersAsMap(getScriptParameters(script), dicomObject);
+            return evaluate(script, getScriptParameters(script), headers);
+        } else {
+            // If there is no specified modality, then assume it matches.
+            return true;
+        }
     }
 
     @Override
@@ -124,7 +152,17 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
 
     @Override
     public boolean shouldIncludeDicomObject(final Map<String, String> headers, final String targetModality) {
-        return !isExcluded(headers) && evaluate(_filterProperties.get(StringUtils.isBlank(targetModality) ? getModality() : targetModality), headers);
+        if (isExcluded(headers)) {
+            return false;
+        }
+        final String modality = StringUtils.isBlank(targetModality) ? getModality() : targetModality;
+        if (StringUtils.isNotBlank(modality)) {
+            final String script = _modalityMap.get(modality);
+            return evaluate(script, getScriptParameters(script), headers);
+        } else {
+            // If there is no specified modality, then assume it matches.
+            return true;
+        }
     }
 
     @Override
@@ -137,12 +175,12 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
         return isStrict() == that.isStrict() &&
                isEnabled() == that.isEnabled() &&
                getProjectId().equals(that.getProjectId()) &&
-               _filterProperties.equals(that._filterProperties);
+               _modalityMap.equals(that._modalityMap);
     }
 
     @Override
     public int hashCode() {
-        int result = _filterProperties.hashCode();
+        int result = _modalityMap.hashCode();
         result = 31 * result + (isStrict() ? 1 : 0);
         result = 31 * result + (isEnabled() ? 1 : 0);
         result = 31 * result + getProjectId().hashCode();
@@ -173,27 +211,82 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
         _strict = strict;
     }
 
+    /**
+     * Gets the modality filters as a map keyed by modality.
+     * @return A map of all recognized modalities and their corresponding expressions.
+     */
+    @JsonProperty("modalities")
+    public LinkedHashMap<String, String> getModalityMap() {
+        return _modalityMap;
+    }
+
+    /**
+     * Sets the modality filters as a map keyed by modality.
+     * @param modalityMap    A map of all recognized modalities and their corresponding expressions.
+     */
+    public void setModalityMap(final LinkedHashMap<String, String> modalityMap) {
+        _modalityMap = modalityMap;
+    }
+
+    /**
+     * Gets the filter for the indicated modality. This method returns <b>null</b> if there is no
+     * filter for that modality.
+     * @param modality    The modality to retrieve.
+     * @return The filter expression associated with the indicated modality.
+     */
+    @JsonIgnore
+    public String getModalityFilter(final String modality) {
+        return _modalityMap.get(modality);
+    }
+
+    /**
+     * Sets the filter for the indicated modality. If the modality already exists, the filter is replaced.
+     * If the modality doesn't already exist, the filter is entered as a new filter expression.
+     * @param modality    The modality to set.
+     * @param filter      The filter to set with the modality.
+     */
+    @JsonIgnore
+    public void setModalityFilter(final String modality, final String filter) {
+        _modalityMap.put(modality, filter);
+    }
+
     private LinkedHashMap<String, String> processModalityMap(final String contents) {
         final List<String> filters = AbstractSeriesImportFilter.parsePersistedFilters(contents);
         final LinkedHashMap<String, String> map = new LinkedHashMap<>(filters.size());
         for (final String filter : filters) {
             final String[] atoms = filter.split(":", 2);
-            map.put(atoms[0], atoms[1]);
+            if (!isReservedKey(atoms[0])) {
+                map.put(atoms[0], atoms[1]);
+            }
         }
         return map;
     }
 
-    private boolean evaluate(final String script, final DicomObject dicomObject) {
-        final Set<String> parameters = getScriptParameters(script);
-        final Map<String, String> values = new HashMap<>();
-        for (final String parameter : parameters) {
-            values.put(parameter, dicomObject.getString(Tag.forName(parameter))); // TODO: Need to figure out how to handle non-string tags.
-        }
-        return evaluate(script, parameters, values);
+    private boolean isReservedKey(final String key) {
+        return StringUtils.isNotBlank(key) && !key.equals("enabled") && !key.equals("strict") && !key.equals("projectId") && !key.equals("modality") && !key.equals("mode");
     }
 
-    private boolean evaluate(final String script, final Map<String, String> values) {
-        return evaluate(script, getScriptParameters(script), values);
+    private Map<String, String> getDicomHeadersAsMap(final Set<String> parameters, final DicomObject dicomObject) {
+        final Map<String, String> values = new HashMap<>();
+        for (final String parameter : parameters) {
+            final int tag = Tag.forName(parameter);
+            if (dicomObject.contains(tag)) {
+                final DicomElement element = dicomObject.get(tag);
+                if (!element.hasItems()) {
+                    final String value = element.getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
+                    if (StringUtils.isNotBlank(value)) {
+                        values.put(parameter, value);
+                    }
+                } else {
+                    if (isStrict()) {
+                        throw new RuntimeException("You are trying to run a script, but the specified DICOM header " + parameter + " specifies a sequence or embedded DICOM object.");
+                    }
+                }
+            } else {
+                values.put(parameter, "");
+            }
+        }
+        return values;
     }
 
     private boolean evaluate(final String script, final Set<String> parameters, final Map<String, String> values) {
@@ -214,11 +307,15 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
     }
 
     private boolean isExcluded(final DicomObject dicomObject) {
-        return _filterProperties.containsKey(KEY_EXCLUDED) && evaluate(_filterProperties.get(KEY_EXCLUDED), dicomObject);
+        return _modalityMap.containsKey(KEY_EXCLUDED) && isExcluded(getDicomHeadersAsMap(getScriptParameters(_modalityMap.get(KEY_EXCLUDED)), dicomObject));
     }
 
     private boolean isExcluded(final Map<String, String> headers) {
-        return _filterProperties.containsKey(KEY_EXCLUDED) && evaluate(_filterProperties.get(KEY_EXCLUDED), headers);
+        if (_modalityMap.containsKey(KEY_EXCLUDED)) {
+            final String script = _modalityMap.get(KEY_EXCLUDED);
+            return evaluate(script, getScriptParameters(script), headers);
+        }
+        return false;
     }
 
     private Set<String> getScriptParameters(final String script) {
@@ -266,6 +363,6 @@ public class ModalityMapSeriesImportFilter extends AbstractSeriesImportFilter {
     private static final Logger _log = LoggerFactory.getLogger(ModalityMapSeriesImportFilter.class);
     private static final Pattern PATTERN_SCRIPT_PARAMETERS = Pattern.compile("#(.*?)#");
     private final ScriptEngine _engine;
-    private LinkedHashMap<String, String> _filterProperties;
+    private LinkedHashMap<String, String> _modalityMap;
     private boolean _strict = false;
 }

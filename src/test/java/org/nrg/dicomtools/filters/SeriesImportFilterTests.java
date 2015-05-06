@@ -62,15 +62,15 @@ public class SeriesImportFilterTests {
 
     @Test
     public void testDicomFilterService() {
-        final SeriesImportFilter whitelistRegexFilter = _service.buildSeriesImportFilter(_whitelistRegexFilter);
+        final SeriesImportFilter whitelistRegexFilter = DicomFilterService.buildSeriesImportFilter(_whitelistRegexFilter);
         assertTrue(whitelistRegexFilter.isEnabled());
         whitelistRegexFilter.setProjectId("1");
         _service.commit(whitelistRegexFilter, "admin");
-        final SeriesImportFilter blacklistRegexFilter = _service.buildSeriesImportFilter(_blacklistRegexFilter);
+        final SeriesImportFilter blacklistRegexFilter = DicomFilterService.buildSeriesImportFilter(_blacklistRegexFilter);
         assertTrue(blacklistRegexFilter.isEnabled());
         blacklistRegexFilter.setProjectId("2");
         _service.commit(blacklistRegexFilter, "admin");
-        final SeriesImportFilter modalityMapFilter = _service.buildSeriesImportFilter(_modalityMapFilter);
+        final SeriesImportFilter modalityMapFilter = DicomFilterService.buildSeriesImportFilter(_modalityMapFilter);
         assertTrue(modalityMapFilter.isEnabled());
         _service.commit(modalityMapFilter, "admin");
 

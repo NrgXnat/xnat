@@ -19,6 +19,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
+import javax.script.ScriptEngine;
 import java.io.PrintWriter;
 import java.util.*;
 
@@ -452,7 +453,17 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     @Autowired
     public void setRunners(final Collection<ScriptRunner> runners) {
         _runners.clear();
-        addRunners(runners);
+        for (final ScriptRunner runner : runners) {
+            // Sometimes a runner can't find its engine (missing dependency, etc.), so we need to throw it out.
+            if (runner.getEngine() != null) {
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Adding runner for {} version {} using engine {} version {}", runner.getLanguage(), runner.getLanguageVersion(), runner.getEngine().get(ScriptEngine.ENGINE), runner.getEngine().get(ScriptEngine.ENGINE_VERSION));
+                }
+                addRunner(runner);
+            } else if (_log.isInfoEnabled()) {
+                _log.debug("Not adding the runner for {} version {}, no engine found", runner.getLanguage(), runner.getLanguageVersion());
+            }
+        }
     }
 
     @Override
@@ -466,16 +477,21 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     }
 
     @Override
-    public ScriptRunner getRunner(final String language) {
+    public List<ScriptRunner> getRunners() {
+        final List<ScriptRunner> runners = new ArrayList<>();
+        for (final Map<String, ScriptRunner> language : _runners.values()) {
+            runners.addAll(language.values());
+        }
+        return runners;
+    }
+
+    @Override
+    public List<ScriptRunner> getRunners(final String language) {
         if (!hasRunner(language)) {
             return null;
         }
         final Map<String, ScriptRunner> these = _runners.get(language.toLowerCase());
-        if (these.size() > 1) {
-            throw new NrgServiceRuntimeException(NrgServiceError.UnknownScriptRunner, "There are multiple supported versions for the " + language + " script runner. You must provide an explicit version.");
-        }
-        final Collection<ScriptRunner> values = these.values();
-        return values.toArray(new ScriptRunner[values.size()])[0];
+        return new ArrayList<>(these.values());
     }
 
     @Override

@@ -10,5 +10,5 @@ public interface ScriptRunnerOutputAdapter {
      * by the implementing class to create separate outputs based on script name or the like.
      * @return A print writer object that can be bound to the script at execution time to capture the script output.
      */
-    public abstract PrintWriter getWriter(final Script script);
+    PrintWriter getWriter(final Script script);
 }

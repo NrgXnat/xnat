@@ -1,9 +1,13 @@
 package org.nrg.automation.services;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptTrigger;
+import org.nrg.automation.runners.ScriptRunner;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.springframework.test.context.ContextConfiguration;
@@ -48,6 +52,14 @@ public class TestScriptRunnerService {
     public static final String SCRIPT_ID_2 = "two";
 
     @Test
+    public void testRunnerSerialization() throws JsonProcessingException {
+        final ObjectMapper mapper = new ObjectMapper();
+        final List<ScriptRunner> runners = _service.getRunners();
+        final String json = mapper.writeValueAsString(runners);
+        assertNotNull(json);
+    }
+
+    @Test
     public void addRetrieveAndRunSiteScriptTests() throws NrgServiceException {
         _service.setScript(SCRIPT_ID_1, GROOVY_HELLO_WORLD, Scope.Site, null);
         _service.setScript(SCRIPT_ID_2, JS_HELLO_WORLD, Scope.Site, null, null, "JavaScript", "1.6");
@@ -84,7 +96,7 @@ public class TestScriptRunnerService {
         assertEquals(SCRIPT_ID_1, script.getScriptId());
         assertEquals(GROOVY_HELLO_PROJECT, script.getContent());
 
-        final Map<String, Object> parameters = new HashMap<String, Object>();
+        final Map<String, Object> parameters = new HashMap<>();
         parameters.put("scope", Scope.Project.code());
         parameters.put("entityId", ID_PROJECT_1);
         parameters.put("event", ScriptTrigger.DEFAULT_EVENT);
@@ -114,7 +126,7 @@ public class TestScriptRunnerService {
         assertNotNull(script);
         assertEquals(SCRIPT_ID_1, script.getScriptId());
 
-        Map<String, Object> parameters = new HashMap<String, Object>();
+        Map<String, Object> parameters = new HashMap<>();
         parameters.put("submit", 4);
 
         final Object output = _service.runScript(script, parameters);
@@ -134,12 +146,29 @@ public class TestScriptRunnerService {
         assertNotNull(script);
         assertEquals(SCRIPT_ID_1, script.getScriptId());
 
-        Map<String, Object> parameters = new HashMap<String, Object>();
+        Map<String, Object> parameters = new HashMap<>();
         parameters.put("variable", "This is a value!");
         final Object output = _service.runScript(script, parameters);
         assertNotNull(output);
         assertTrue(output instanceof String);
         assertEquals("This is a value!", output);
+    }
+
+    @Test
+    @Ignore("These methods need to be tested, but aren't right now.")
+    public void callOtherSetScriptFunctions() {
+        final Script script = new Script();
+        final String scriptId = "";
+        final String content = "";
+        final String description = "";
+        final Scope scope = Scope.Project;
+        final String entityId = "";
+        final String event = "";
+        _service.setScript(scriptId, content, description);
+        _service.setScript(scriptId, content, scope, entityId, event);
+        _service.setScript(scriptId, content, description, scope, entityId);
+        _service.setScript(scriptId, content, description, scope, entityId, event);
+        _service.setScript(script, scope, entityId, event);
     }
 
     @Inject

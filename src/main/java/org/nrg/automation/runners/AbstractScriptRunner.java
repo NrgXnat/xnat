@@ -1,13 +1,11 @@
 package org.nrg.automation.runners;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.nrg.automation.services.ScriptProperty;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.script.Bindings;
-import javax.script.Compilable;
-import javax.script.CompiledScript;
-import javax.script.ScriptException;
+import javax.script.*;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -43,6 +41,30 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
         }
     }
 
+    @Override
+    @JsonIgnore
+    public ScriptEngine getEngine() {
+        if (_engine == null) {
+            synchronized (_log) {
+                _engine = getEngineByName();
+            }
+        }
+        return _engine;
+    }
+
+    /**
+     * This gets the engine associated with the name corresponding to the value returned by the
+     * {@link #getLanguage()} method in the concrete class implementation. This should not be
+     * invoked directly, but only called through the {@link #getEngine()} method, which provides
+     * protection from concurrent writes. This method is provided for cases where the concrete
+     * implementing class needs to retrieve its particular implementation of the {@link ScriptEngine}
+     * interface in a non-standard way.
+     * @return An instance of the script engine.
+     */
+    protected ScriptEngine getEngineByName() {
+        return new ScriptEngineManager().getEngineByName(getLanguage());
+    }
+
     protected CompiledScript getScript(final Map<String, Object> properties) throws ScriptException {
         final String scriptId = (String) properties.get(ScriptProperty.ScriptId.key());
         final String source = (String) properties.remove(ScriptProperty.Script.key());
@@ -57,7 +79,8 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
     }
 
     private static final Logger _log = LoggerFactory.getLogger(AbstractScriptRunner.class);
-    private Map<String, CompiledScript> _scripts = new HashMap<>();
 
+    private ScriptEngine _engine;
+    private Map<String, CompiledScript> _scripts = new HashMap<>();
     private Map<String, Integer> _sources = new HashMap<>();
 }

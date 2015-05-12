@@ -61,7 +61,7 @@ public class SeriesImportFilterTests {
     }
 
     @Test
-    public void testDicomFilterService() {
+    public void testDicomFilterService() throws IOException {
         final SeriesImportFilter whitelistRegexFilter = DicomFilterService.buildSeriesImportFilter(_whitelistRegexFilter);
         assertTrue(whitelistRegexFilter.isEnabled());
         whitelistRegexFilter.setProjectId("1");
@@ -73,14 +73,23 @@ public class SeriesImportFilterTests {
         final SeriesImportFilter modalityMapFilter = DicomFilterService.buildSeriesImportFilter(_modalityMapFilter);
         assertTrue(modalityMapFilter.isEnabled());
         _service.commit(modalityMapFilter, "admin");
+        final ModalityMapSeriesImportFilter handRolledFilter = new ModalityMapSeriesImportFilter();
+        handRolledFilter.setModalityFilter("exclude", "/^yes$/i.test('#BurnedInAnnotation#')");
+        handRolledFilter.setModalityFilter("PT", "'#Modality#' == 'PT' || ('#Modality#' == 'MR' && '#SeriesDescription#' == 'PET Data')");
+        handRolledFilter.setModalityFilter("MR", "'#Modality#' != 'PT' && !('#Modality#' == 'MR' && '#SeriesDescription#' == 'PET Data')");
+        handRolledFilter.setProjectId("3");
+        _service.commit(handRolledFilter, "admin");
 
         final SeriesImportFilter retrievedWhitelistRegexFilter = _service.getSeriesImportFilter("1");
         final SeriesImportFilter retrievedBlacklistRegexFilter = _service.getSeriesImportFilter("2");
         final SeriesImportFilter retrievedModalityMapFilter = _service.getSeriesImportFilter();
+        final SeriesImportFilter retrievedHandRolledFilter = _service.getSeriesImportFilter("3");
 
         assertEquals(whitelistRegexFilter, retrievedWhitelistRegexFilter);
         assertEquals(blacklistRegexFilter, retrievedBlacklistRegexFilter);
         assertEquals(modalityMapFilter, retrievedModalityMapFilter);
+        assertEquals(handRolledFilter, retrievedHandRolledFilter);
+        assertNotNull(handRolledFilter.getModalityFilter("PT"));
     }
 
     @Inject

@@ -1,8 +1,14 @@
 package org.nrg.dicomtools.filters;
 
 import org.apache.commons.lang.StringUtils;
+import org.dcm4che2.data.DicomElement;
+import org.dcm4che2.data.DicomObject;
+import org.dcm4che2.data.Tag;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.lang.reflect.Field;
 import java.util.*;
 
 public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
@@ -37,6 +43,26 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
 
     public static List<String> parsePersistedFilters(final String list) {
         return Arrays.asList(list.split((list.contains("\\n") ? "\\\\n+" : "\\n+")));
+    }
+
+    // TODO: Eventually this can be replaced with a lambda that tells the target methods how to get tags from maps and DicomObjects.
+    public static Map<String, String> convertDicomObjectToMap(final DicomObject dicomObject) {
+        final Map<String, String> values = new HashMap<>();
+        for (final String parameter : DICOM_TAG_NAMES) {
+            final int tag = Tag.forName(parameter);
+            if (dicomObject.contains(tag)) {
+                final DicomElement element = dicomObject.get(tag);
+                if (!element.hasItems()) {
+                    final String value = element.getValueAsString(dicomObject.getSpecificCharacterSet(), 0);
+                    if (StringUtils.isNotBlank(value)) {
+                        values.put(parameter, value);
+                    }
+                } else {
+                    _log.info("The specified DICOM header " + parameter + " specifies a sequence or embedded DICOM object, which isn't currently supported.");
+                }
+            }
+        }
+        return values;
     }
 
     /**
@@ -110,7 +136,7 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
         return toQualifiedMap("seriesImportFilter");
     }
 
-    private LinkedHashMap<String, String> toQualifiedMap(final String prefix) {
+    protected LinkedHashMap<String, String> toQualifiedMap(final String prefix) {
         LinkedHashMap<String, String> map = new LinkedHashMap<>();
         map.put(prefix(prefix, KEY_MODE), _mode.getValue());
         map.put(prefix(prefix, KEY_ENABLED), Boolean.toString(_enabled));
@@ -124,9 +150,55 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
         return map;
     }
 
-    private String prefix(final String prefix, final String key) {
+    protected String prefix(final String prefix, final String key) {
         return prefix + StringUtils.capitalize(key);
     }
+
+
+    private static class DicomTag {
+        private final String _tag;
+        private final int _value;
+
+        public DicomTag(int value, String tag) {
+            _value = value;
+            _tag = tag;
+        }
+    }
+
+    private static class DicomTagComparator implements Comparator<DicomTag> {
+        @Override
+        public int compare(final DicomTag first, final DicomTag second) {
+            if (first._value < second._value) {
+                return -1;
+            }
+            if (first._value > second._value) {
+                return 1;
+            }
+            return 0;
+        }
+    }
+
+    private static TreeSet<DicomTag> DICOM_TAGS = new TreeSet<DicomTag>(new DicomTagComparator()) {{
+        final Field[] fields = Tag.class.getFields();
+        for (final Field field : fields) {
+            try {
+                final int value = field.getInt(null);
+                if (value >= 0) {
+                    add(new DicomTag(value, field.getName()));
+                }
+            } catch (IllegalAccessException ignored) {
+                // Ignore this, if we're not allowed to see it, we don't care about it.
+            }
+        }
+    }};
+
+    private static List<String> DICOM_TAG_NAMES = new ArrayList<String>() {{
+        for (final DicomTag tag : DICOM_TAGS) {
+            add(tag._tag);
+        }
+    }};
+
+    private static final Logger _log = LoggerFactory.getLogger(AbstractSeriesImportFilter.class);
 
     private String _projectId;
     private boolean _enabled;

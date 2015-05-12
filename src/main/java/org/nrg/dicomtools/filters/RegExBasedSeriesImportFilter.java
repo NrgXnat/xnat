@@ -44,12 +44,12 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
     @Override
     public String findModality(final DicomObject dicomObject) {
-        return dicomObject.getString(Tag.Modality);
+        return "";
     }
 
     @Override
     public String findModality(final Map<String, String> headers) {
-        return headers.get("Modality");
+        return "";
     }
 
     @Override

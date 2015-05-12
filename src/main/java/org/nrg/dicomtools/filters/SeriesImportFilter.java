@@ -26,10 +26,12 @@ public interface SeriesImportFilter {
     String KEY_ENABLED = "enabled";
     String KEY_MODE = "mode";
     String KEY_STRICT = "strict";
-    String KEY_EXCLUDED = "excluded";
+    String KEY_EXCLUDE = "exclude";
     String KEY_LIST = "list";
     String KEY_SERIES_DESCRIPTION = "SeriesDescription";
-    String KEY_DEFAULT_MODALITY = "defaultModality";
+    String KEY_DEFAULT_MODALITY = "default";
+    String DEFAULT_MODALITY = "MR";
+
     TypeReference<LinkedHashMap<String, String>> MAP_TYPE_REFERENCE = new TypeReference<LinkedHashMap<String, String>>() {};
 
     String getProjectId();

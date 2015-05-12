@@ -20,213 +20,253 @@ import java.util.List;
 
 
 public interface ConfigService extends BaseHibernateService<Configuration> {
-	
-	int MAX_FILE_LENGTH = ConfigurationData.MAX_FILE_LENGTH;
-	
+
+    int MAX_FILE_LENGTH = ConfigurationData.MAX_FILE_LENGTH;
+
 	/*
 	 *    HEY, YOU. All methods will return null if no configuration exists
 	 *    "disabled" configurations are always returned. it is up to the client
 	 *    to determine what to do with a configuration. 
 	 */
-	
-	//return the most recent version of active configurations.
-	List<Configuration> getAll();
-	
-	//retrieve a Configuration by the ID set by the persistence mechanism
-	Configuration getById(long id);
 
-	//retrieve a String list of all tools (and project) that have configurations. 
-	public List<String> getTools();
+    //return the most recent version of active configurations.
+    List<Configuration> getAll();
 
-	/**
-	 * @param projectID
-	 * @return
-	 * @deprecated Call {@link #getTools(Scope,String)} instead.
-	 */
-	@Deprecated
-	List<String> getTools(Long projectID);
-	public List<String> getTools(Scope scope, String entityId);
+    /**
+     * Retrieves a particular configuration by the ID set by the persistence mechanism.
+     *
+     * @param id The ID of the persisted configuration.
+     *
+     * @return The requested configuration if it exists.
+     */
+    Configuration getById(long id);
 
-	//retrieve a list of all Configuration objects for a specified tool (and project)
-	public List<Configuration> getConfigsByTool(String toolName);
+    /**
+     * Gets all of the tools associated with the system.
+     *
+     * @return The tools associated with the system.
+     */
+    List<String> getTools();
 
-	/**
-	 *
-	 * @param toolName
-	 * @param projectID
-	 * @return
-	 * @deprecated Call {@link #getConfigsByTool(String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public List<Configuration> getConfigsByTool(String toolName, Long projectID);
-	public List<Configuration> getConfigsByTool(String toolName, Scope scope, String entityId);
+    /**
+     * Gets all of the tools associated with the indicated project.
+     *
+     * @param projectID The project data info attribute of the desired project.
+     *
+     * @return The tools associated with the indicated project.
+     *
+     * @deprecated Call {@link #getTools(Scope, String)} instead.
+     */
+    @Deprecated
+    List<String> getTools(Long projectID);
 
-	//retrieve the most recent configuration by tool and path. You can store a configuration at a null tool and path (and project)
-	public Configuration getConfig(String toolName, String path);
+    /**
+     * Gets all of the tools associated with the indicated entity.
+     *
+     * @param entityId The ID of the entity with which the configuration is associated.
+     *
+     * @return The tools associated with the indicated entity.
+     */
+    List<String> getTools(Scope scope, String entityId);
 
-	/**
-	 *
-	 * @param toolName
-	 * @param path
-	 * @param projectID
-	 * @return
-	 * @deprecated Call {@link #getConfig(String, String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public Configuration getConfig(String toolName, String path, Long projectID);
-	public Configuration getConfig(String toolName, String path, Scope scope, String entityId);
+    //retrieve a list of all Configuration objects for a specified tool (and project)
+    List<Configuration> getConfigsByTool(String toolName);
 
-	//retrieve the most recent configuration by tool and path (and project). Do not include any meta data. only the configuration.
-	public String getConfigContents(String toolName, String path);
+    /**
+     * @param toolName
+     * @param projectID
+     *
+     * @return
+     *
+     * @deprecated Call {@link #getConfigsByTool(String, Scope, String)} instead.
+     */
+    @Deprecated
+    List<Configuration> getConfigsByTool(String toolName, Long projectID);
 
-	/**
-	 *
-	 * @param toolName
-	 * @param path
-	 * @param projectID
-	 * @return
-	 * @deprecated Call {@link #getConfigContents(String, String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public String getConfigContents(String toolName, String path, Long projectID);
-	public String getConfigContents(String toolName, String path, Scope scope, String entityId);
+    List<Configuration> getConfigsByTool(String toolName, Scope scope, String entityId);
 
-	//retrieve the configuration by tool, path, and the ID set by the persistence mechanism (and project) 
-	//if the ID is valid, but the configuration does not match toolName and path, return null
-	public Configuration getConfigById(String toolName, String path, String id);
+    //retrieve the most recent configuration by tool and path. You can store a configuration at a null tool and path (and project)
+    Configuration getConfig(String toolName, String path);
 
-	/**
-	 *
-	 * @param toolName
-	 * @param path
-	 * @param id
-	 * @param projectID
-	 * @return
-	 * @deprecated Call {@link #getConfigById(String, String, String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public Configuration getConfigById(String toolName, String path, String id, Long projectID);
-	public Configuration getConfigById(String toolName, String path, String id, Scope scope, String entityId);
+    /**
+     * @param toolName
+     * @param path
+     * @param projectID
+     *
+     * @return
+     *
+     * @deprecated Call {@link #getConfig(String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration getConfig(String toolName, String path, Long projectID);
 
-	//retrieve the configuration by tool, path, and version (and project) 
-	//if the ID is valid, but the configuration does not match toolName and path, return null
-	public Configuration getConfigByVersion(String toolName, String path, int version);
+    Configuration getConfig(String toolName, String path, Scope scope, String entityId);
 
-	/**
-	 *
-	 * @param toolName
-	 * @param path
-	 * @param version
-	 * @param projectID
-	 * @return
-	 * @deprecated Call {@link #getConfigByVersion(String, String, int, Scope, String)} instead.
-	 */
-	@Deprecated
-	public Configuration getConfigByVersion(String toolName, String path, int version, Long projectID);
-	public Configuration getConfigByVersion(String toolName, String path, int version, Scope scope, String entityId);
+    //retrieve the most recent configuration by tool and path (and project). Do not include any meta data. only the configuration.
+    String getConfigContents(String toolName, String path);
 
-	//create or replace a configuration specified by the parameters. This will set the status to enabled.
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents) throws ConfigServiceException;
+    /**
+     * @param toolName
+     * @param path
+     * @param projectID
+     *
+     * @return
+     *
+     * @deprecated Call {@link #getConfigContents(String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    String getConfigContents(String toolName, String path, Long projectID);
 
-	/**
-	 *
-	 * @param xnatUser
-	 * @param reason
-	 * @param toolName
-	 * @param path
-	 * @param contents
-	 * @param projectID
-	 * @return
-	 * @throws ConfigServiceException
-	 * @deprecated Call {@link #replaceConfig(String, String, String, String, String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Long projectID) throws ConfigServiceException;
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Scope scope, String entityId) throws ConfigServiceException;
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents) throws ConfigServiceException;
+    String getConfigContents(String toolName, String path, Scope scope, String entityId);
 
-	/**
-	 *
-	 * @param xnatUser
-	 * @param reason
-	 * @param toolName
-	 * @param path
-	 * @param unversioned
-	 * @param contents
-	 * @param projectID
-	 * @return
-	 * @throws ConfigServiceException
-	 * @deprecated Call {@link #replaceConfig(String, String, String, String, Boolean, String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Long projectID) throws ConfigServiceException;
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Scope scope, String entityId) throws ConfigServiceException;
+    /**
+     * @param toolName
+     * @param path
+     * @param id
+     * @param projectID
+     *
+     * @return
+     *
+     * @deprecated Call {@link #getConfigById(String, String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration getConfigById(String toolName, String path, String id, Long projectID);
 
-	//return the status property for the configuration specified by the parameters.
-	public String getStatus(String toolName, String path);
+    Configuration getConfigById(String toolName, String path, String id, Scope scope, String entityId);
 
-	/**
-	 *
-	 * @param toolName
-	 * @param path
-	 * @param projectID
-	 * @return
-	 * @deprecated Call {@link #getStatus(String, String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public String getStatus(String toolName, String path, Long projectID);
-	public String getStatus(String toolName, String path, Scope scope, String entityId);
+    //retrieve the configuration by tool, path, and version (and project)
+    //if the ID is valid, but the configuration does not match toolName and path, return null
+    Configuration getConfigByVersion(String toolName, String path, int version);
 
-	//set the configuration's status property to "enabled"
-	public void enable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
+    /**
+     * @param toolName
+     * @param path
+     * @param version
+     * @param projectID
+     *
+     * @return
+     *
+     * @deprecated Call {@link #getConfigByVersion(String, String, int, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration getConfigByVersion(String toolName, String path, int version, Long projectID);
 
-	/**
-	 *
-	 * @param xnatUser
-	 * @param reason
-	 * @param toolName
-	 * @param path
-	 * @param projectID
-	 * @throws ConfigServiceException
-	 * @deprecated Call {@link #enable(String, String, String, String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public void enable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
-	public void enable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
+    Configuration getConfigByVersion(String toolName, String path, int version, Scope scope, String entityId);
 
-	//set the configuration's status property to "disabled"
-	public void disable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
+    //create or replace a configuration specified by the parameters. This will set the status to enabled.
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents) throws ConfigServiceException;
 
-	/**
-	 *
-	 * @param xnatUser
-	 * @param reason
-	 * @param toolName
-	 * @param path
-	 * @param projectID
-	 * @throws ConfigServiceException
-	 * @deprecated Call {@link #disable(String, String, String, String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public void disable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
-	public void disable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
+    /**
+     * @param xnatUser
+     * @param reason
+     * @param toolName
+     * @param path
+     * @param contents
+     * @param projectID
+     *
+     * @return
+     *
+     * @throws ConfigServiceException
+     * @deprecated Call {@link #replaceConfig(String, String, String, String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Long projectID) throws ConfigServiceException;
 
-	//return a list of all configurations specified by the path ordered by date uploaded.
-	public List<Configuration> getHistory(String toolName, String path);
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Scope scope, String entityId) throws ConfigServiceException;
 
-	/**
-	 *
-	 * @param toolName
-	 * @param path
-	 * @param projectID
-	 * @return
-	 * @deprecated Call {@link #getHistory(String, String, Scope, String)} instead.
-	 */
-	@Deprecated
-	public List<Configuration> getHistory(String toolName, String path, Long projectID);
-	public List<Configuration> getHistory(String toolName, String path, Scope scope, String entityId);
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents) throws ConfigServiceException;
 
-	//retrieve a String list of all projects that have a configuration.
-	public List<Long> getProjects();
-	public List<Long> getProjects(String toolName);
+    /**
+     * @param xnatUser
+     * @param reason
+     * @param toolName
+     * @param path
+     * @param unversioned
+     * @param contents
+     * @param projectID
+     *
+     * @return
+     *
+     * @throws ConfigServiceException
+     * @deprecated Call {@link #replaceConfig(String, String, String, String, Boolean, String, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Long projectID) throws ConfigServiceException;
+
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Scope scope, String entityId) throws ConfigServiceException;
+
+    //return the status property for the configuration specified by the parameters.
+    String getStatus(String toolName, String path);
+
+    /**
+     * @param toolName
+     * @param path
+     * @param projectID
+     *
+     * @return
+     *
+     * @deprecated Call {@link #getStatus(String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    String getStatus(String toolName, String path, Long projectID);
+
+    String getStatus(String toolName, String path, Scope scope, String entityId);
+
+    //set the configuration's status property to "enabled"
+    void enable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
+
+    /**
+     * @param xnatUser
+     * @param reason
+     * @param toolName
+     * @param path
+     * @param projectID
+     *
+     * @throws ConfigServiceException
+     * @deprecated Call {@link #enable(String, String, String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    void enable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
+
+    void enable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
+
+    //set the configuration's status property to "disabled"
+    void disable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
+
+    /**
+     * @param xnatUser
+     * @param reason
+     * @param toolName
+     * @param path
+     * @param projectID
+     *
+     * @throws ConfigServiceException
+     * @deprecated Call {@link #disable(String, String, String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    void disable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
+
+    void disable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
+
+    //return a list of all configurations specified by the path ordered by date uploaded.
+    List<Configuration> getHistory(String toolName, String path);
+
+    /**
+     * @param toolName
+     * @param path
+     * @param projectID
+     *
+     * @return
+     *
+     * @deprecated Call {@link #getHistory(String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    List<Configuration> getHistory(String toolName, String path, Long projectID);
+
+    List<Configuration> getHistory(String toolName, String path, Scope scope, String entityId);
+
+    //retrieve a String list of all projects that have a configuration.
+    List<String> getProjects();
+
+    List<String> getProjects(String toolName);
 }

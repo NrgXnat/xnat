@@ -75,10 +75,12 @@ public class Configuration extends AbstractHibernateEntity {
 		this.status = status;
 	}
 
+    @Deprecated
 	public Long getProject() {
 		return project;
 	}
 
+    @Deprecated
 	public void setProject(Long project) {
 		this.project = project;
 	}
@@ -107,7 +109,7 @@ public class Configuration extends AbstractHibernateEntity {
 		this.tool = tool;
 	}
 
-	@ManyToOne(cascade = CascadeType.PERSIST)
+	@ManyToOne(cascade = CascadeType.PERSIST, fetch = FetchType.EAGER)
 	public ConfigurationData getConfigData() {
 		return configData;
 	}
@@ -143,6 +145,44 @@ public class Configuration extends AbstractHibernateEntity {
 
 	public String toString(){
 		return ToStringBuilder.reflectionToString(this);
+	}
+
+	@Override
+	public boolean equals(final Object o) {
+        if (this == o) {
+            return true;
+        }
+        if (!(o instanceof Configuration)) {
+            return false;
+        }
+
+        final Configuration that = (Configuration) o;
+
+        return getVersion() == that.getVersion() &&
+                isUnversioned() == that.isUnversioned() &&
+                getScope() == that.getScope() &&
+                !(getEntityId() != null ? !getEntityId().equals(that.getEntityId()) : that.getEntityId() != null) &&
+                getTool().equals(that.getTool()) &&
+                getPath().equals(that.getPath()) &&
+                !(getConfigData() != null ? !getConfigData().equals(that.getConfigData()) : that.getConfigData() != null) &&
+                !(getXnatUser() != null ? !getXnatUser().equals(that.getXnatUser()) : that.getXnatUser() != null) &&
+                !(getReason() != null ? !getReason().equals(that.getReason()) : that.getReason() != null) &&
+                !(getStatus() != null ? !getStatus().equals(that.getStatus()) : that.getStatus() != null);
+    }
+
+	@Override
+	public int hashCode() {
+		int result = getScope().hashCode();
+		result = 31 * result + (getEntityId() != null ? getEntityId().hashCode() : 0);
+		result = 31 * result + getTool().hashCode();
+		result = 31 * result + getPath().hashCode();
+		result = 31 * result + (getConfigData() != null ? getConfigData().hashCode() : 0);
+		result = 31 * result + (getXnatUser() != null ? getXnatUser().hashCode() : 0);
+		result = 31 * result + (getReason() != null ? getReason().hashCode() : 0);
+		result = 31 * result + (getStatus() != null ? getStatus().hashCode() : 0);
+		result = 31 * result + getVersion();
+		result = 31 * result + (isUnversioned() ? 1 : 0);
+		return result;
 	}
 
 	@SuppressWarnings("unused")

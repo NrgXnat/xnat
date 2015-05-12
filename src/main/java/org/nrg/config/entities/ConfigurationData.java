@@ -10,16 +10,16 @@
  */
 package org.nrg.config.entities;
 
-import java.util.Set;
-
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.OneToMany;
-
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
+
+import javax.persistence.Column;
+import javax.persistence.Entity;
+import javax.persistence.FetchType;
+import javax.persistence.OneToMany;
+import java.util.Set;
 
 @Auditable
 @Entity
@@ -43,7 +43,7 @@ public class ConfigurationData  extends AbstractHibernateEntity{
 		this.contents = contents;
 	}
 	
-	@OneToMany
+	@OneToMany(fetch = FetchType.EAGER)
 	public Set<Configuration> getConfigurations() {
 		return configurations;
 	}
@@ -51,4 +51,19 @@ public class ConfigurationData  extends AbstractHibernateEntity{
 	public void setConfigurations(Set<Configuration> configurations) {
 		this.configurations = configurations;
 	}
+
+    /**
+     * This method looks only at the contents of the configuration data and ignores the associated configurations.
+     * @param object    The object to which this object should be compared.
+     * @return True if the contents of the configuration data object are equal.
+     */
+    @Override
+    public boolean equals(final Object object) {
+        return this == object || object instanceof ConfigurationData && getContents().equals(((ConfigurationData) object).getContents());
+    }
+
+    @Override
+    public int hashCode() {
+        return getContents().hashCode();
+    }
 }

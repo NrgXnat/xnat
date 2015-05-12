@@ -10,23 +10,11 @@
  */
 package org.nrg.config;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assert.assertFalse;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Properties;
-
-import javax.inject.Inject;
-
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.config.daos.ConfigurationDataDAO;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.exceptions.DuplicateConfigurationDetectedException;
@@ -40,9 +28,21 @@ import org.nrg.config.services.impl.DefaultSiteConfigurationService;
 import org.nrg.config.util.TestDBUtils;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.test.context.transaction.TransactionConfiguration;
+import org.springframework.transaction.annotation.Transactional;
+
+import javax.inject.Inject;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Properties;
+
+import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
+@TransactionConfiguration(defaultRollback = true)
+@Transactional
 public class DefaultSiteConfigurationServiceTests {
 	
 	private List<String> savedConfigFileLocations;
@@ -50,7 +50,7 @@ public class DefaultSiteConfigurationServiceTests {
 	@Before
 	public void setUp() {
 		_testDBUtils.cleanDb();
-		savedConfigFileLocations = new ArrayList<String>(((DefaultSiteConfigurationService) _service).getConfigFilesLocations());
+		savedConfigFileLocations = new ArrayList<>(((DefaultSiteConfigurationService) _service).getConfigFilesLocations());
 	}
 	
 	@After
@@ -83,22 +83,22 @@ public class DefaultSiteConfigurationServiceTests {
     public void initSiteConfigurationSuccessWithAdditionalPropertiesOnSecondLaunch() throws ConfigServiceException {
     	Properties props = _service.getSiteConfiguration();
     	assertNull(props.getProperty("prop2"));
-    	List<String> mockConfigFileLocations = new ArrayList<String>(savedConfigFileLocations);
+    	List<String> mockConfigFileLocations = new ArrayList<>(savedConfigFileLocations);
     	mockConfigFileLocations.set(0, mockConfigFileLocations.get(0).concat("/additionalProperties"));
     	((DefaultSiteConfigurationService) _service).setConfigFilesLocations(mockConfigFileLocations);
    		props = _service.getSiteConfiguration();
     	assertNotNull(props.getProperty("prop2"));
-    	assertEquals(2, _testDBUtils.countConfigurationDataRows());
+    	assertEquals(2, _dataDAO.findAll().size());
     }
     
     @Test
     public void initSiteConfigurationSuccessWithNoAdditionalPropertiesOnSecondLaunch() throws ConfigServiceException {
     	_service.getSiteConfiguration();
-    	List<String> mockConfigFileLocations = new ArrayList<String>(savedConfigFileLocations);
+    	List<String> mockConfigFileLocations = new ArrayList<>(savedConfigFileLocations);
     	((DefaultSiteConfigurationService) _service).setConfigFilesLocations(mockConfigFileLocations);
     	// it shouldn't be writing the config to DB again, since nothing's changed
    		_service.getSiteConfiguration();
-    	assertEquals(1, _testDBUtils.countConfigurationDataRows());
+    	assertEquals(1, _dataDAO.findAll().size());
     }
     
     @Test(expected=SiteConfigurationFileNotFoundException.class)
@@ -110,7 +110,7 @@ public class DefaultSiteConfigurationServiceTests {
     
     @Test(expected=DuplicateConfigurationDetectedException.class)
     public void initSiteConfigurationFailsWhenDuplicateSiteConfigFileIsFound() throws ConfigServiceException {
-    	List<String> mockConfigFileLocations = new ArrayList<String>(savedConfigFileLocations);
+    	List<String> mockConfigFileLocations = new ArrayList<>(savedConfigFileLocations);
     	mockConfigFileLocations.add(mockConfigFileLocations.get(0));
     	((DefaultSiteConfigurationService) _service).setConfigFilesLocations(mockConfigFileLocations);
    		_service.getSiteConfiguration();
@@ -118,7 +118,7 @@ public class DefaultSiteConfigurationServiceTests {
     
     @Test(expected=DuplicateConfigurationDetectedException.class)
     public void initSiteConfigurationFailsWhenDuplicateCustomConfigFileIsFound() throws ConfigServiceException {
-    	List<String> mockConfigFileLocations = new ArrayList<String>(savedConfigFileLocations);
+    	List<String> mockConfigFileLocations = new ArrayList<>(savedConfigFileLocations);
     	mockConfigFileLocations.add(mockConfigFileLocations.get(0).concat("/duplicateFiles"));
     	((DefaultSiteConfigurationService) _service).setConfigFilesLocations(mockConfigFileLocations);
    		_service.getSiteConfiguration();
@@ -126,7 +126,7 @@ public class DefaultSiteConfigurationServiceTests {
     
     @Test(expected=DuplicateConfigurationDetectedException.class)
     public void initSiteConfigurationFailsWhenDuplicateCustomConfigPropertyIsFound() throws ConfigServiceException {
-    	List<String> mockConfigFileLocations = new ArrayList<String>(savedConfigFileLocations);
+    	List<String> mockConfigFileLocations = new ArrayList<>(savedConfigFileLocations);
     	mockConfigFileLocations.add(mockConfigFileLocations.get(0).concat("/duplicateProperties"));
     	((DefaultSiteConfigurationService) _service).setConfigFilesLocations(mockConfigFileLocations);
    		_service.getSiteConfiguration();
@@ -134,7 +134,6 @@ public class DefaultSiteConfigurationServiceTests {
     
     @Test
     public void setSiteConfiguration() throws ConfigServiceException {
-    	
     	Properties props = _service.getSiteConfiguration();
     	assertNull(props.getProperty("foo.prop3"));
     	props.setProperty("foo.prop3", "fooval3");
@@ -145,7 +144,6 @@ public class DefaultSiteConfigurationServiceTests {
     
     @Test
     public void getSiteConfigurationReturnedPropertiesShouldBeReadOnly() throws ConfigServiceException {
-    	
     	Properties props = _service.getSiteConfiguration();
     	assertNull(props.getProperty("foo.prop3"));
     	props.setProperty("foo.prop3", "fooval3");
@@ -155,13 +153,11 @@ public class DefaultSiteConfigurationServiceTests {
     
     @Test
     public void getSiteConfigurationProperty() throws ConfigServiceException {
-    	
     	assertEquals(_service.getSiteConfigurationProperty("foo.prop1"), "fooval1");
     }
     
     @Test
     public void setSiteConfigurationProperty() throws ConfigServiceException {
-    	
     	_service.setSiteConfigurationProperty(ADMIN_USER, "prop1", "newprop1Val");
     	assertEquals(1, DefaultNamespacePropertyLevelListener.getInvokedCount());
     	assertEquals("fooval1", _service.getSiteConfigurationProperty("foo.prop1"));
@@ -183,6 +179,10 @@ public class DefaultSiteConfigurationServiceTests {
     
     @Inject
     private TestDBUtils _testDBUtils;
-    
+
+    @Inject
+    private ConfigurationDataDAO _dataDAO;
+
+
     private static final String ADMIN_USER = "admin";
 }

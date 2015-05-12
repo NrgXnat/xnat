@@ -9,10 +9,10 @@
  */
 package org.nrg.config.services;
 
-import java.util.Properties;
-
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.services.NrgService;
+
+import java.util.Properties;
 
 public interface SiteConfigurationService extends NrgService {
 
@@ -21,7 +21,7 @@ public interface SiteConfigurationService extends NrgService {
      * @return The initialized Java {@link java.util.Properties} object.
      * @throws ConfigServiceException Thrown when an error occurs resolving or accessing the configuration service.
      */
-    public abstract Properties getSiteConfiguration() throws ConfigServiceException;
+    Properties getSiteConfiguration() throws ConfigServiceException;
 
     /**
      * Sets the site configuration from the submitted Java {@link Properties} object. This updates the data stored in the
@@ -29,7 +29,7 @@ public interface SiteConfigurationService extends NrgService {
      * @param siteConfiguration    The initialized Java {@link Properties} object.
      * @throws ConfigServiceException Thrown when an error occurs resolving or accessing the configuration service.
      */
-    public abstract void setSiteConfiguration(String username, Properties siteConfiguration) throws ConfigServiceException;
+    void setSiteConfiguration(String username, Properties siteConfiguration) throws ConfigServiceException;
 
     /**
      * Gets the value of the indicated property from the site configuration.
@@ -37,7 +37,7 @@ public interface SiteConfigurationService extends NrgService {
      * @return The value of the property.
      * @throws ConfigServiceException
      */
-    public abstract String getSiteConfigurationProperty(String property) throws ConfigServiceException;
+    String getSiteConfigurationProperty(String property) throws ConfigServiceException;
 
     /**
      * Sets the value of the indicated property to the submitted value.
@@ -45,11 +45,11 @@ public interface SiteConfigurationService extends NrgService {
      * @param value       The value to set for the property.
      * @throws ConfigServiceException
      */
-    public abstract void setSiteConfigurationProperty(String username, String property, String value) throws ConfigServiceException;
+    void setSiteConfigurationProperty(String username, String property, String value) throws ConfigServiceException;
     
     /**
      * The absolute path to prepend to any paths in the injected configFilesLocations that are relative.
      * @return The root location for configuration files.
      */
-    public abstract String getConfigFilesLocationsRoot();
+    String getConfigFilesLocationsRoot();
 }

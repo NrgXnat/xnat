@@ -853,19 +853,23 @@ public class TurbineUtils {
 		return _ret;
 	}
 	
-	public static Object GetPassedParameter(String s, RunData data, Object defualt)
+	public static Object GetPassedParameter(String s, RunData data, Object defaultValue)
 	{
-	    if (data.getParameters().get(s.toLowerCase())!=null)
+		final ParameterParser parameters = data.getParameters();
+		if (parameters == null) {
+			return defaultValue;
+		}
+		if (parameters.get(s.toLowerCase())!=null)
 	    {
-	    	final Object o = TurbineUtils.escapeParam(data.getParameters().get(s.toLowerCase()));
-	        if(o.toString().equalsIgnoreCase(""))
+	    	final Object o = TurbineUtils.escapeParam(parameters.get(s.toLowerCase()));
+			if(o == null || o.toString().trim().equalsIgnoreCase(""))
 	        {
-	            return defualt;
+	            return defaultValue;
 	        }else{
 		        return o;
 	        }
 	    }else{
-	        return defualt;
+	        return defaultValue;
 	    }
 	}
 	
@@ -1145,7 +1149,7 @@ public class TurbineUtils {
     
     /**
      * Note: much of this was copied from SecureScreen.  This version looks at the other templates directories (not just templates).  We may want to merge the two impls.
-     * @param subFolderAndPatttern : like topBar/admin
+     * @param subFolder : like topBar/admin
      * @return
      */
     public List<Properties> getTemplates(String subFolder){

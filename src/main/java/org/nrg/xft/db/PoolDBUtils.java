@@ -11,33 +11,26 @@
 
 
 package org.nrg.xft.db;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.Iterator;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.StringUtils;
+
+import java.sql.*;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.Iterator;
 public class PoolDBUtils {
 	static org.apache.log4j.Logger logger = Logger.getLogger(PoolDBUtils.class);
 	//private ResultSet rs = null;
 	private Connection con = null;
 	private Statement st = null;
-	int queryLogSize = 90;
 
 	/**
 	 * Processes the specified query on the specified db with a pooled connection.
@@ -764,8 +757,8 @@ public class PoolDBUtils {
 
     /**
      * @param login
-     * @param search_xml
      * @param dbname
+     * @param search_id
      * @return
      */
     public static String RetrieveLoggedCustomSearch(String login,String dbname,Object search_id)throws SQLException,DBPoolException,Exception{
@@ -889,7 +882,12 @@ public class PoolDBUtils {
 		try {
 			st.execute(query);
 		} catch (SQLException e) {
-			if(e.getMessage().contains("Connection reset")){
+			final String message = e.getMessage();
+			if (message.contains("relation \"xdat_meta_element_meta_data\" does not exist")) {
+				// Honestly, we don't care much about this. It goes away once the metadata table is initialized,
+				// has no real effect beforehand, and is a pretty scary message with an enormous stacktrace.
+				logger.info("Metadata error occurred: " + message);
+			} else if(message.contains("Connection reset")){
 				closeConnection();
 				resetConnections();
 				st = getStatement(db);

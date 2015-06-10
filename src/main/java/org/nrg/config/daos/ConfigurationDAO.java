@@ -24,7 +24,8 @@ import java.util.List;
 @Repository
 public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 
-	//Configurations are immutable, so override delete and update
+	// Configurations are immutable, so override delete; update remains default, since "deleting"
+    // a versioned configuration requires updating the existing row to a disabled state.
     @Override
     public void delete(Configuration entity) {
         if (entity.isUnversioned()) {
@@ -34,15 +35,6 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
         }
     }
     
-    @Override
-    public void update(Configuration entity) {
-    	if (entity.isUnversioned()) {
-            super.update(entity);
-        } else {
-            throw new UnsupportedOperationException();
-        }
-    }
-
     //HEY, YOU. every method in here will return null
 	//if nothing found... even for LIST<T> return
 	//types. that makes it easy to know if nothing came back... no need to test the size.

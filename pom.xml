@@ -119,7 +119,6 @@
         <mockito.version>1.8.5</mockito.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
-        <pipeline.version>1.6.3</pipeline.version>
         <org.postgresql.version>9.3-1101-jdbc41</org.postgresql.version>
 
         <quartz.version>2.2.1</quartz.version>

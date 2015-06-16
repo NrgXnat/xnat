@@ -66,7 +66,7 @@ import java.util.*;
  */
 public class TurbineUtils {
 	public static final String EDIT_ITEM = "edit_item";
-	static Logger logger = Logger.getLogger(TurbineUtils.class);
+	private static final Logger logger = Logger.getLogger(TurbineUtils.class);
 	private XdatSecurity _security = null;
 	
 	private static TurbineUtils INSTANCE = null;
@@ -1016,6 +1016,23 @@ public class TurbineUtils {
     	return null;
     }
 
+    /**
+     * This should only happen when objectModel and project are both actually projects. In that case, we'll get the displayID from
+     * the project object.
+     * @param objectModel    The object model.
+     * @param project        The project.
+     * @return The project display ID (if all goes well).
+     */
+    public String getProjectDisplayID(final Object objectModel, final Object project) {
+        if (logger.isDebugEnabled()) {
+            logger.debug("Got an object model of type " + objectModel.getClass().getName() + " and a project of type " + project.getClass().getName());
+        }
+        if (project instanceof String) {
+            return getProjectDisplayID(objectModel, (String) project);
+        }
+        return getMethodResult(project, "getDisplayID");
+    }
+
 	/**
 	 * Object type disambiguation helper.
 	 * @param objectModel    The object model.
@@ -1028,35 +1045,19 @@ public class TurbineUtils {
 		}
 		// Can we call the getProject(String, boolean) method on this object? If so, then call the getDisplayID() method
 		// on the resulting project object.
-		try {
-			final Object project = getProject(objectModel, projectId);
-			if (project != null) {
-				final Method getDisplayID = project.getClass().getMethod("getDisplayID");
-				return (String) getDisplayID.invoke(project);
-			}
-		} catch (NoSuchMethodException ignored) {
-			// If this doesn't exist, we'll just move onto the next one.
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
-		}
-		// OK, if not that, then let's see if there's a getDisplayID() method (i.e. this is a project itself). We can
+        final Object project = getProject(objectModel, projectId);
+        if (project != null) {
+            final String displayID = getMethodResult(project, "getDisplayID");
+            if (displayID != null) {
+                return displayID;
+            }
+        }
+        // OK, if not that, then let's see if there's a getDisplayID() method (i.e. this is a project itself). We can
 		// use that directly to get the display ID.
-		try {
-			final Method getDisplayID = objectModel.getClass().getMethod("getDisplayID");
-			return (String) getDisplayID.invoke(objectModel);
-		} catch (NoSuchMethodException e) {
-			//
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Something went wrong invoking the getDisplayID() method.", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Something went wrong invoking the getDisplayID() method.", e);
-		}
-		return projectId;
+        return projectId;
 	}
 
-	/**
+    /**
 	 * Object type disambiguation helper.
 	 * @param objectModel    The object model.
 	 * @param projectId      The project ID.
@@ -1068,47 +1069,40 @@ public class TurbineUtils {
 		}
 		// Can we call the getProject(String, boolean) method on this object? If so, then call the getDisplayID() method
 		// on the resulting project object.
-		try {
-			final Object project = getProject(objectModel, projectId);
-			if (project != null) {
-				final Method getName = project.getClass().getMethod("getName");
-				return (String) getName.invoke(project);
-			}
-		} catch (NoSuchMethodException ignored) {
-			// If this doesn't exist, we'll just move onto the next one.
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Something went wrong invoking the project getName() method.", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Something went wrong invoking the project getName() method.", e);
-		}
-		// OK, if not that, then let's see if there's a getDisplayID() method (i.e. this is a project itself). We can
+        final Object project = getProject(objectModel, projectId);
+        if (project != null) {
+            return getMethodResult(project, "getName");
+        }
+        // OK, if not that, then let's see if there's a getDisplayID() method (i.e. this is a project itself). We can
 		// use that directly to get the display ID.
-		try {
-			final Method getName = objectModel.getClass().getMethod("getName");
-			return (String) getName.invoke(objectModel);
-		} catch (NoSuchMethodException e) {
-			//
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Something went wrong invoking the getName() method.", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Something went wrong invoking the getName() method.", e);
-		}
-		return projectId;
+        final String objectName = getMethodResult(objectModel, "getName");
+        if (org.apache.commons.lang.StringUtils.isNotBlank(objectName)) {
+            return objectName;
+        }
+        return projectId;
 	}
 
 	public Object getProject(final Object objectModel, final String projectId) {
-		try {
-			final Method getProject = objectModel.getClass().getMethod("getProject", String.class, Boolean.class);
-			return getProject.invoke(objectModel, projectId, false);
-		} catch (NoSuchMethodException ignored) {
-			// If this doesn't exist, just return null.
-			return null;
-		} catch (InvocationTargetException e) {
-			throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
-		} catch (IllegalAccessException e) {
-			throw new RuntimeException("Something went wrong invoking the project getDisplayID() method.", e);
-		}
-	}
+        return getMethodResult(objectModel, projectId, new Class<?>[] { String.class, Boolean.class }, new Object[] { projectId, false });
+    }
+
+    private String getMethodResult(final Object object, final String methodName) {
+        return getMethodResult(object, methodName, null, null);
+    }
+
+    private String getMethodResult(final Object object, final String methodName, final Class<?>[] parameterTypes, final Object[] parameters) {
+        if (object == null) {
+            return null;
+        }
+        try {
+            final Method method = (parameterTypes != null && parameterTypes.length > 0) ? object.getClass().getMethod(methodName, parameterTypes) : object.getClass().getMethod(methodName);
+            return (String) ((parameters != null && parameters.length > 0) ? method.invoke(object, parameters) : method.invoke(object));
+        } catch (NoSuchMethodException ignored) {
+            return null;
+        } catch (InvocationTargetException | IllegalAccessException e) {
+            throw new RuntimeException("Something went wrong invoking the " + methodName + "() method.", e);
+        }
+    }
 
     public String getTemplateName(String module,String dataType,String project){
     	try {

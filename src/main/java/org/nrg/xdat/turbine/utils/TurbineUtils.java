@@ -12,9 +12,10 @@
 
 package org.nrg.xdat.turbine.utils;
 
+import com.google.common.base.Predicate;
+import com.google.common.base.Predicates;
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.collections.Predicate;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
@@ -48,6 +49,7 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.utils.StringUtils;
+import org.reflections.ReflectionUtils;
 import org.xml.sax.InputSource;
 import org.xml.sax.SAXException;
 
@@ -55,11 +57,16 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Member;
 import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.net.URLDecoder;
 import java.text.NumberFormat;
 import java.text.ParseException;
 import java.util.*;
+
+import static org.reflections.ReflectionUtils.*;
+
 /**
  * @author Tim
  *
@@ -1027,13 +1034,30 @@ public class TurbineUtils {
         if (logger.isDebugEnabled()) {
             logger.debug("Got an object model of type " + objectModel.getClass().getName() + " and a project of type " + project.getClass().getName());
         }
+        if (objectModel == null && project == null) {
+            logger.debug("Something is calling getProjectDisplayID() with a null object model and null project.");
+            return "";
+        }
+        if (objectModel == null) {
+            return getProjectDisplayIDFromObject(project);
+        }
+        if (project == null) {
+            return getProjectDisplayIDFromObject(objectModel);
+        }
         if (project instanceof String) {
             return getProjectDisplayID(objectModel, (String) project);
         }
-        return getMethodResult(project, "getDisplayID");
+        final String displayId = getProjectDisplayId(project);
+        if (org.apache.commons.lang.StringUtils.isNotBlank(displayId)) {
+            return displayId;
+        }
+        if (logger.isInfoEnabled()) {
+            logger.info("Couldn't find any way to map the project display ID for an object model of type " + objectModel.getClass().getName() + " and a project of type " + project.getClass().getName() + ", returning an empty string.");
+        }
+        return "";
     }
 
-	/**
+    /**
 	 * Object type disambiguation helper.
 	 * @param objectModel    The object model.
 	 * @param projectId      The project ID.
@@ -1041,11 +1065,11 @@ public class TurbineUtils {
 	 */
 	public String getProjectDisplayID(final Object objectModel, final String projectId) {
 		if (objectModel == null) {
-			return "";
+			return projectId;
 		}
 		// Can we call the getProject(String, boolean) method on this object? If so, then call the getDisplayID() method
 		// on the resulting project object.
-        final Object project = getProject(objectModel, projectId);
+		final Object project = getProject(objectModel, projectId);
         if (project != null) {
             final String displayID = getMethodResult(project, "getDisplayID");
             if (displayID != null) {
@@ -1083,7 +1107,26 @@ public class TurbineUtils {
 	}
 
 	public Object getProject(final Object objectModel, final String projectId) {
-        return getMethodResult(objectModel, projectId, new Class<?>[] { String.class, Boolean.class }, new Object[] { projectId, false });
+        return getMethodResult(objectModel, "getProject", new Class<?>[] { String.class, Boolean.class }, new Object[] { projectId, false });
+    }
+
+    private String getProjectDisplayIDFromObject(final Object object) {
+        final String displayId = getProjectDisplayId(object);
+        if (displayId != null) {
+            return displayId;
+        }
+        final Object project = getMethodResult(object, "getProject");
+        if (project != null) {
+            return getProjectDisplayId(project);
+        }
+        return "";
+    }
+
+    private String getProjectDisplayId(final Object project) {
+        if (project.getClass().getName().contains("XnatProjectdata")) {
+            return getMethodResult(project, "getDisplayID");
+        }
+        return "";
     }
 
     private String getMethodResult(final Object object, final String methodName) {
@@ -1095,13 +1138,24 @@ public class TurbineUtils {
             return null;
         }
         try {
-            final Method method = (parameterTypes != null && parameterTypes.length > 0) ? object.getClass().getMethod(methodName, parameterTypes) : object.getClass().getMethod(methodName);
-            return (String) ((parameters != null && parameters.length > 0) ? method.invoke(object, parameters) : method.invoke(object));
-        } catch (NoSuchMethodException ignored) {
+            final Method method = getNamedMethod(object, methodName, parameterTypes);
+            if (method != null) {
+                return (String) ((parameters != null && parameters.length > 0) ? method.invoke(object, parameters) : method.invoke(object));
+            }
             return null;
         } catch (InvocationTargetException | IllegalAccessException e) {
             throw new RuntimeException("Something went wrong invoking the " + methodName + "() method.", e);
         }
+    }
+
+    @SuppressWarnings("unchecked")
+    private Method getNamedMethod(final Object object, final String name, final Class<?>... parameterTypes) {
+        final Predicate<Member> parameters = parameterTypes == null || parameterTypes.length == 0 ? withParametersCount(0) : withParameters(parameterTypes);
+        final Set<Method> methods = ReflectionUtils.getAllMethods(object.getClass(), Predicates.and(withModifier(Modifier.PUBLIC), withName(name), parameters));
+        if (methods == null || methods.size() == 0) {
+            return null;
+        }
+        return methods.toArray(new Method[1])[0];
     }
 
     public String getTemplateName(String module,String dataType,String project){
@@ -1217,15 +1271,11 @@ public class TurbineUtils {
     	if(!prop.containsKey(property)){
     		return false;
     	}
-		return (CollectionUtils.find(props, new Predicate(){
+		return (CollectionUtils.find(props, new org.apache.commons.collections.Predicate() {
 			@Override
 			public boolean evaluate(Object arg0) {
-				if(((Properties)arg0).getProperty(property)!=null){
-					return ObjectUtils.equals(prop.getProperty(property), ((Properties)arg0).getProperty(property));
-				}else{
-					return false;
-				}
-			}})!=null);
+                return ((Properties) arg0).getProperty(property) != null && ObjectUtils.equals(prop.getProperty(property), ((Properties) arg0).getProperty(property));
+            }})!=null);
     }
     
     private void mergePropsNoOverwrite(final List<Properties> props, final List<Properties> add, final String property){
@@ -1237,13 +1287,14 @@ public class TurbineUtils {
     }
 
     /**
-     * Looks for templates in the give subFolder underneath the give dataType in the xdat-templatea, xnat-templates, or templates.
+     * Looks for templates in the give subFolder underneath the give dataType in the xdat-templates, xnat-templates, or templates.
      * dataType/subFolder
      * 
-     * @param dataType
-     * @param subFolder
-     * @return
+     * @param dataType     The data type.
+     * @param subFolder    The subfolder.
+     * @return A list of the templates in the subfolders for the indicated data type.
      */
+    @SuppressWarnings("unchecked")
     public List<Properties> getTemplates(String dataType, String subFolder){
     	List<Properties> props= Lists.newArrayList();
 		try {
@@ -1252,7 +1303,7 @@ public class TurbineUtils {
 			props.addAll(getTemplates(root.getSQLName()+"/"+subFolder));
 			mergePropsNoOverwrite(props,getTemplates(root.getSQLName()+"/"+subFolder),"fileName");
 			
-			for(List<Object> primary: root.getExtendedElements()){
+			for(final List<Object> primary : root.getExtendedElements()){
 				final GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
 				mergePropsNoOverwrite(props,getTemplates(p.getSQLName()+"/"+subFolder),"fileName");
 			}
@@ -1279,13 +1330,14 @@ public class TurbineUtils {
 				}
 			});
 		} catch (XFTInitException e) {
-			logger.error("",e);
+			logger.error("There was an error initializing XFT",e);
 		} catch (ElementNotFoundException e) {
-			logger.error("",e);
+			logger.error("Couldn't find the requested element: " + dataType, e);
 		}
 		return props;
     }
-    
+
+    @SuppressWarnings("unchecked")
     public String getTemplateName(String module,String dataType,String project,String subFolder){
     	try {
     		final GenericWrapperElement root = GenericWrapperElement.GetElement(dataType);
@@ -1299,7 +1351,7 @@ public class TurbineUtils {
 				return temp;
 			}
 			
-			for(List<Object> primary: root.getExtendedElements()){
+			for(final List<Object> primary: root.getExtendedElements()){
 				final GenericWrapperElement p= ((SchemaElementI)primary.get(0)).getGenericXFTElement();
 				temp = validateTemplate("/screens/"+ p.getSQLName()+ "/" + subFolder + "/" + p.getSQLName() + module,project);
 				if (temp!=null){
@@ -1311,11 +1363,11 @@ public class TurbineUtils {
 					return temp;
 				}
 			}
-		} catch (XFTInitException e) {
-            logger.error("",e);
-		} catch (ElementNotFoundException e) {
-            logger.error("",e);
-		}
+        } catch (XFTInitException e) {
+            logger.error("There was an error initializing XFT",e);
+        } catch (ElementNotFoundException e) {
+            logger.error("Couldn't find the requested element: " + dataType, e);
+        }
     	
     	return null;
     }
@@ -1348,11 +1400,12 @@ public class TurbineUtils {
             return o.toString();
         }
     }
-    
+
+    @SuppressWarnings("unused")
     public Object getArrayIndex(Object[] array, int index){
         return array[index];
     }
-    
+
     public static String escapeParam(String o){
     	return (o==null)?null:StringEscapeUtils.escapeXml(o);
     }
@@ -1373,7 +1426,7 @@ public class TurbineUtils {
      * otherwise the value will be XML-encoded, and it will be double-encoded on re-tranmission to the server.
      * (e.g. "&quot;" will become "&amp;quot;"). 
      * This is not necessary for form fields populated via HTML, as the browser will automatically decode the entities.
-     * @param o
+     * @param o    The object to be unescaped.
      * @return The input string, with any XML entities decoded.
      */
     public static Object unescapeParam(Object o){

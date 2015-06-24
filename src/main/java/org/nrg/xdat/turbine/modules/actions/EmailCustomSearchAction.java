@@ -106,15 +106,15 @@ public class EmailCustomSearchAction extends SecureAction{
                 sb.append("<body>");
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
                 sb.append(" thought you might be interested in a data set contained in the ").append(TurbineUtils.GetSystemName()).append(".");
-                sb.append(" Please follow <A HREF=\"" +TurbineUtils.GetFullServerPath() + "/app/action/DisplaySearchAction");
+                sb.append(" Please follow <A HREF=\"").append(TurbineUtils.GetFullServerPath()).append("/app/action/DisplaySearchAction");
                 sb.append("/search_xml/").append(search_xml);
                                 
                 sb.append("\">this link</A> to view the data.<BR><BR>");
                 
                 sb.append("Message from sender:<BR>");
                 sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
-                sb.append("<BR><BR>This email was sent by the <A HREF=\"" +TurbineUtils.GetFullServerPath() + "\">XNAT</A> data management system on ").append(Calendar.getInstance().getTime()).append(".");
-                sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:" + org.nrg.xft.XFT.GetAdminEmail() + "\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
+                sb.append("<BR><BR>This email was sent by the <A HREF=\"").append(TurbineUtils.GetFullServerPath()).append("\">").append(TurbineUtils.GetSystemName()).append("</A> data management system on ").append(Calendar.getInstance().getTime()).append(".");
+                sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:").append(XFT.GetAdminEmail()).append("\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
                 
                 sb.append("</body>");
                 sb.append("</html>");

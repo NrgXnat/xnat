@@ -190,7 +190,7 @@ public abstract class SecureAction extends VelocitySecureAction
     		if(csrfEmailEnabled){
     			AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
     		}
-    		throw new Exception("Invalid submit value (" + errorMessage + ")");
+    		throw new Exception("INVALID CSRF (" + errorMessage + ")");
     	}
     	
     	String method = request.getMethod();
@@ -204,7 +204,7 @@ public abstract class SecureAction extends VelocitySecureAction
     			if(csrfEmailEnabled){
     				AdminUtils.sendAdminEmail("Possible CSRF Attempt", errorMessage);
     			}
-	    		throw new Exception("Invalid submit value (" + errorMessage + ")");
+	    		throw new Exception("INVALID CSRF (" + errorMessage + ")");
     		}
     			
     	} else {

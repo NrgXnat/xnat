@@ -23,6 +23,7 @@ import org.nrg.config.entities.ConfigurationData;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.utilities.Reflection;
 import org.springframework.dao.DataAccessException;
@@ -593,7 +594,9 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
 
     @SuppressWarnings("unchecked")
     private List<Configuration> getHistoryImpl(String toolName, String path, Scope scope, String entityId) {
-
+        if (StringUtils.isBlank(entityId) && scope != Scope.Site) {
+            throw new NrgServiceRuntimeException("You've specified scope " + scope + " without an entity ID. Scope MUST be set to Site if entity ID is blank.");
+        }
         List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() == 0) return null;
         Collections.sort(list, ConfigComparatorByCreateDate);

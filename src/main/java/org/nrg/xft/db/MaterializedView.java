@@ -1,9 +1,7 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xft.db;
 
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Maps;
 import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.utilities.Reflection;
@@ -11,11 +9,11 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.views.service.CustomMaterializedViewService;
-import org.nrg.xft.db.views.service.MaterializedViewManager;
 import org.nrg.xft.db.views.service.MaterializedViewServiceI;
 import org.nrg.xft.security.UserI;
 
-import com.google.common.collect.Maps;
+import java.util.List;
+import java.util.Map;
 
 public class MaterializedView {
 	public static final String CACHING_HANDLER = "cachingHandler";
@@ -106,10 +104,20 @@ public class MaterializedView {
 	    MaterializedViewI mv = createView(user,code);
 	    mv.setTable_name(tablename);
 	    mv.setSearch_sql(query);
-	    mv.save();
+	    save(mv,code);
 	
 	    return mv.getSize();
 	}
+
+    public static void save(MaterializedViewI viewI, String code) throws Exception {
+        MaterializedViewServiceI service=getViewManagementService(code);
+        service.save(viewI);
+    }
+
+    public static void delete(MaterializedViewI viewI) throws Exception{
+        MaterializedViewServiceI service=getViewManagementService(viewI.getCode());
+        service.delete(viewI);
+    }
 
 	public static XFTTable retrieveView(String tablename,UserI user,int offset, int rowsPerPage) throws Exception{
 	    MaterializedViewI mv = retrieveView(tablename, user);

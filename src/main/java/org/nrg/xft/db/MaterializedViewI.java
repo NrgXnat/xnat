@@ -1,17 +1,19 @@
 package org.nrg.xft.db;
 
+import org.nrg.xdat.search.DisplaySearch;
+import org.nrg.xft.XFTTable;
+import org.nrg.xft.security.UserI;
+
 import java.sql.SQLException;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
-import org.nrg.xdat.search.DisplaySearch;
-import org.nrg.xft.XFTTable;
-import org.nrg.xft.security.UserI;
-
 public interface MaterializedViewI {
 
-	public abstract UserI getUser();
+    public abstract String getCode();
+
+    public abstract UserI getUser();
 
 	public abstract void setUser(UserI user);
 
@@ -68,8 +70,6 @@ public interface MaterializedViewI {
 			Map<String, Object> filters) throws Exception;
 
 	public abstract void delete() throws Exception;
-
-	public abstract void save() throws Exception;
 
 	public abstract DisplaySearch getDisplaySearch(UserI user)
 			throws Exception;

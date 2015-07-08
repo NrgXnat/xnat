@@ -1,11 +1,11 @@
 package org.nrg.xft.db.views.service;
 
-import java.util.Hashtable;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.db.MaterializedViewI;
 import org.nrg.xft.db.views.LegacyMaterializedViewImpl;
 import org.nrg.xft.security.UserI;
+
+import java.util.Hashtable;
 
 public class LegacyMaterializedViewServiceImpl implements MaterializedViewServiceI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(LegacyMaterializedViewServiceImpl.class);
@@ -14,7 +14,7 @@ public class LegacyMaterializedViewServiceImpl implements MaterializedViewServic
 	public void deleteViewsByUser(UserI user) throws Exception {
 		MaterializedViewManager manager=MaterializedViewManager.getMaterializedViewManager();
 		for(MaterializedViewI view: manager.getViewsByUser(user,this)){
-			view.delete();
+            ((LegacyMaterializedViewImpl)view).delete();
 		}
 		
 	}
@@ -40,6 +40,16 @@ public class LegacyMaterializedViewServiceImpl implements MaterializedViewServic
 	public MaterializedViewI populateView(Hashtable t, UserI u) {
 		return new LegacyMaterializedViewImpl(t, u);
 	}
-	
-	
+
+    @Override
+    public void save(MaterializedViewI i) throws Exception{
+        ((LegacyMaterializedViewImpl)i).save();
+    }
+
+    @Override
+    public void delete(MaterializedViewI i) throws Exception {
+        ((LegacyMaterializedViewImpl)i).delete();
+    }
+
+
 }

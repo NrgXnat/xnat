@@ -61,7 +61,16 @@ public class ItemJSONBuilder {
 				if(!headers.contains(key)){
 					headers.add(key);
 				}
-				fields.put(key, params.getFields().getParams().get(key));
+				final Object value = params.getFields().getParams().get(key);
+				try {
+					fields.put(key, value);
+				} catch (JSONException e) {
+					if (value != null && value instanceof Number && (value.equals(Double.NaN) || value.equals(Float.NaN))) {
+						fields.put(key, value.toString());
+					} else {
+						throw e;
+					}
+				}
 			}
 			o.put("data_fields",fields);
 			

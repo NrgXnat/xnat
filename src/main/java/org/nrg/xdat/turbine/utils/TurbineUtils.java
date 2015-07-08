@@ -1376,8 +1376,8 @@ public class TurbineUtils {
     	return formatDate(new Date(d),pattern);
     }
     
-    public String formatNumber(Object o, int roundTo){
-    	final NumberFormat formatter = java.text.NumberFormat.getInstance();
+    public String formatNumber(Object o, int roundTo) {
+    	final NumberFormat formatter = NumberFormat.getInstance();
         if (o==null){
             return "";
         }
@@ -1391,6 +1391,9 @@ public class TurbineUtils {
         }
         
         if (o instanceof Number){
+			if (o.equals(Double.NaN) || o.equals(Float.NaN)) {
+				return o.toString();
+			}
         	final Number n = (Number)o;
             formatter.setGroupingUsed(false);
             formatter.setMaximumFractionDigits(roundTo);

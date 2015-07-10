@@ -22,10 +22,9 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.StringUtils;
 
 import java.sql.*;
-import java.util.ArrayList;
-import java.util.Calendar;
+import java.util.*;
 import java.util.Date;
-import java.util.Iterator;
+
 public class PoolDBUtils {
 	static org.apache.log4j.Logger logger = Logger.getLogger(PoolDBUtils.class);
 	//private ResultSet rs = null;
@@ -282,7 +281,7 @@ public class PoolDBUtils {
 	 * @throws SQLException
 	 * @throws Exception
 	 */
-	public void insertItem(String query,String db, String userName,DBItemCache cache) throws SQLException, Exception
+	public void insertItem(String query, String db, String userName, DBItemCache cache) throws SQLException, Exception
 	{
 		cache.addStatement(query);
 	}
@@ -797,24 +796,31 @@ public class PoolDBUtils {
         }
     }
 
-    public static boolean HackCheck(String value)
-    {
-    	if(value.matches("[a-zA-z0-9 _\\.]*")){
-    		return false;
-    	}
-    	
-    	value=value.toUpperCase();
-    	
-    	if(value.matches("<*SCRIPT"))return true;
-    	if(StringContains(value,"SELECT")) return true;
-    	if(StringContains(value,"INSERT")) return true;
-    	if(StringContains(value,"UPDATE")) return true;
-    	if(StringContains(value,"DELETE")) return true;
-    	if(StringContains(value,"DROP")) return true;
-    	if(StringContains(value,"ALTER")) return true;
-    	if(StringContains(value,"CREATE")) return true;
+    public static boolean HackCheck(final Iterable<String> values) {
+		for (final String value : values) {
+			if(HackCheck(value)) {
+				return true;
+			}
+		}
+		return false;
+	}
 
-    	return false;
+    public static boolean HackCheck(String value) {
+		if (value.matches("^[a-zA-z0-9 _\\.]*[^\\\\]$")) {
+			return false;
+		}
+
+		final String normalized = value.toUpperCase();
+
+		return  normalized.matches("^.*[\\\\]$") ||
+				normalized.matches("<*SCRIPT") ||
+				StringContains(value, "SELECT") ||
+				StringContains(value, "INSERT") ||
+				StringContains(value, "UPDATE") ||
+				StringContains(value, "DELETE") ||
+				StringContains(value, "DROP") ||
+				StringContains(value, "ALTER") ||
+				StringContains(value, "CREATE");
     }
 
     public static boolean StringContains(String value, String s){

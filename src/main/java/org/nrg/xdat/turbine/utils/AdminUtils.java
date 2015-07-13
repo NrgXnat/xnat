@@ -236,7 +236,7 @@ public class AdminUtils {
         if(!XFT.GetUserRegistration()){
             // Send admin email
             AdminUtils.sendNewUserRequestNotification(username, firstName, lastName, email, comments, phone, organization, context);
-        } else {
+        } else if((!XDAT.verificationOn()) || user.getVerified()) {
             AdminUtils.sendNewUserCreationNotification(username, firstName, lastName, email, comments, phone, organization, context);
             AdminUtils.sendNewUserEmailMessage(username, email, context);
         }

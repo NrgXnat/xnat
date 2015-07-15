@@ -55,7 +55,7 @@
         <signing.alias>nrg</signing.alias>
         <signing.storepass>keypass</signing.storepass>
         <signing.keypass>keypass</signing.keypass>
-        <signing.tsa>https://timestamp.geotrust.com/tsa</signing.tsa>
+        <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
         <activemq.version>5.7.0</activemq.version>
         <ant.version>1.6.1</ant.version>

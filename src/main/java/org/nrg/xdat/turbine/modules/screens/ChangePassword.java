@@ -29,14 +29,17 @@ public class ChangePassword extends VelocitySecureScreen {
     @Override
     protected void doBuildTemplate(RunData data, Context context) {
         try {
-            if (data != null && TurbineUtils.getUser(data) != null &&
-                    !StringUtils.isBlank(TurbineUtils.getUser(data).getUsername()) &&
-                    !TurbineUtils.getUser(data).getUsername().equalsIgnoreCase("guest") &&
+            XDATUser user;
+            if (TurbineUtils.getUser(data) != null) {
+                user = TurbineUtils.getUser(data);
+                if (!StringUtils.isBlank(user.getUsername()) &&
+                    !user.getUsername().equalsIgnoreCase("guest") &&
                     !TurbineUtils.HasPassedParameter("a", data) && !TurbineUtils.HasPassedParameter("s", data)) {
-                context.put("login", TurbineUtils.getUser(data).getUsername());
-                context.put("topMessage", "Your password has expired. Please choose a new one.");
+                    context.put("login", user.getUsername());
+                    context.put("topMessage", "Your password has expired. Please choose a new one.");
+                }
             } else {
-                XDATUser user = (XDATUser) data.getSession().getAttribute("user");
+                user = (XDATUser) data.getSession().getAttribute("user");
 
                 // If the user isn't already logged in...
                 if(user == null || user.getUsername().equals("guest")) {
@@ -44,14 +47,13 @@ public class ChangePassword extends VelocitySecureScreen {
                     String secret = (String) TurbineUtils.GetPassedParameter("s", data);
 
                     if(alias != null && secret != null) {
-                        String userID="";
+                        String userID = "";
                         try
                         {
                             userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,Long.parseLong(secret));
                             if(userID!=null){
                                 user = new XDATUser(userID);
-                                boolean forcePasswordChange = true;
-                                XDAT.loginUser(data, user, forcePasswordChange);
+                                XDAT.loginUser(data, user, true);
                             }
                             else{
                                 invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");
@@ -64,7 +66,7 @@ public class ChangePassword extends VelocitySecureScreen {
 
                             AccessLogger.LogActionAccess(data, "Failed Login by alias '" + alias +"': " +e.getMessage());
 
-                            if(userID.toLowerCase().contains("script"))
+                            if(StringUtils.equalsIgnoreCase(userID, "script"))
                             {
                                 e= new Exception("Illegal username &lt;script&gt; usage.");
                                 AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml(userID));
@@ -104,27 +106,27 @@ public class ChangePassword extends VelocitySecureScreen {
     protected boolean isAuthorized(RunData arg0) throws Exception {
         return false;
     }
-    
-    public void invalidInformation(RunData data,Context context, String message){
-      	try {
-    			String nextPage = (String)TurbineUtils.GetPassedParameter("nextPage",data);
-    			String nextAction = (String)TurbineUtils.GetPassedParameter("nextAction",data);
-    			String par = (String)TurbineUtils.GetPassedParameter("par",data);
-    			
-    			if(!StringUtils.isEmpty(par)){
-    				context.put("par", par);
-    			}
+
+    public void invalidInformation(RunData data, Context context, String message) {
+        try {
+            String nextPage = (String) TurbineUtils.GetPassedParameter("nextPage", data);
+            String nextAction = (String) TurbineUtils.GetPassedParameter("nextAction", data);
+            String par = (String) TurbineUtils.GetPassedParameter("par", data);
+
+            if (!StringUtils.isEmpty(par)) {
+                context.put("par", par);
+            }
             if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))) {
-    				context.put("nextAction", nextAction);
-    			}else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
-    				context.put("nextPage", nextPage);
-    			}
-    			data.setMessage(message);
-    		} catch (Exception e) {
-              log.error(message,e);
-    			data.setMessage(message);
-    		}finally{
-    			data.setScreenTemplate("ChangePassword.vm");
-    		}
-      }
+                context.put("nextAction", nextAction);
+            } else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home"))) {
+                context.put("nextPage", nextPage);
+            }
+            data.setMessage(message);
+        } catch (Exception e) {
+            log.error(message, e);
+            data.setMessage(message);
+        } finally {
+            data.setScreenTemplate("ChangePassword.vm");
+        }
+    }
 }

@@ -139,7 +139,11 @@ public class ModifyUserGroups extends SecureAction {
         
         if(found.getStringProperty("enabled").equals("false")){
         	//When a user is disabled, deactivate all their AliasTokens
-        	XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(found.getStringProperty("login"));
+            try {
+                XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(found.getStringProperty("login"));
+            } catch (Exception e) {
+                logger.error("",e);
+            }
         }
         else if (found.getStringProperty("enabled").equals("true")){
         	//When a user is enabled, notify the administrator

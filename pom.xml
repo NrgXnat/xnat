@@ -1157,6 +1157,8 @@
                             <Permissions>all-permissions</Permissions>
                             <Codebase>*</Codebase>
                             <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
+                            <Caller-Allowable-Codebase>*</Caller-Allowable-Codebase>
+                            <Trusted-Library>true</Trusted-Library>
                         </updateManifestEntries>
                         <sign>
                             <keystore>${signing.keystore}</keystore>
@@ -1250,6 +1252,7 @@
                         </execution>
                     </executions>
                     <configuration>
+                        <skip>true</skip>
                         <keystore>${signing.keystore}</keystore>
                         <alias>${signing.alias}</alias>
                         <storepass>${signing.storepass}</storepass>

@@ -32,7 +32,7 @@ import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.DisplayVersion;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.display.SQLQueryField;
-import org.nrg.xdat.exceptions.IllegalAccessException;
+import org.nrg.xdat.exceptions.InvalidSearchException;
 import org.nrg.xdat.om.XdatCriteria;
 import org.nrg.xdat.om.XdatCriteriaSet;
 import org.nrg.xdat.om.XdatSearchField;
@@ -52,10 +52,8 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.SchemaFieldI;
-import org.nrg.xft.search.ItemSearch;
-import org.nrg.xft.search.SQLClause;
-import org.nrg.xft.search.TableSearch;
-import org.nrg.xft.search.TableSearchI;
+import org.nrg.xft.search.*;
+import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 /**
@@ -64,6 +62,11 @@ import org.nrg.xft.utils.StringUtils;
  */
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class DisplaySearch implements TableSearchI{
+	public static final String QUERY_MODE_CRITERIA = "criteria";
+	public static final String QUERY_MODE_BYID = "byId";
+	private static final int QUERY_MODE_VAL_CRITERIA = 0;
+	private static final int QUERY_MODE_VAL_BYID = 1;
+	private static final int QUERY_MODE_VAL_NONE = 2;
 	static org.apache.log4j.Logger logger = Logger.getLogger(DisplaySearch.class);
 	private SchemaElement rootElement = null;
 	private String display = "default";
@@ -80,7 +83,7 @@ public class DisplaySearch implements TableSearchI{
 
 	private DisplayFieldWrapperCollection fields = new DisplayFieldWrapperCollection();
 
-	private Hashtable<String,String> inClauses = new Hashtable<String,String>();
+	private Hashtable<String,String> inClauses = new Hashtable<>();
 
 	private org.nrg.xft.search.CriteriaCollection criteria = new org.nrg.xft.search.CriteriaCollection("OR");
 
@@ -115,10 +118,10 @@ public class DisplaySearch implements TableSearchI{
 
 
 	/**
-	 * @param presenter
-	 * @return
+	 * @param presenter    The presenter.
+	 * @return The table resulting from the query.
 	 */
-	public XFTTableI execute(PresentationA presenter, String login) throws XFTInitException,ElementNotFoundException,DBPoolException,SQLException,IllegalAccessException,Exception
+	public XFTTableI execute(PresentationA presenter, String login) throws Exception
 	{
 //		if (user == null)
 //		{
@@ -148,7 +151,7 @@ public class DisplaySearch implements TableSearchI{
 					if (offset < count.intValue())
 					{
 						table = MaterializedView.retrieveView(this.getResultsTableName(), user, offset,rowsPerPage);
-						this.numRows = Integer.valueOf(count.toString()).intValue();
+						this.numRows = count.intValue();
 						calculatePages();
 						newQuery=false;
 					}else{
@@ -180,13 +183,13 @@ public class DisplaySearch implements TableSearchI{
 		return presentedTable;
 	}
 
-	public Long createSearchCache(PresentationA presenter, String login) throws XFTInitException,ElementNotFoundException,DBPoolException,SQLException,IllegalAccessException,Exception{
+	@SuppressWarnings("unused")
+	public Long createSearchCache(PresentationA presenter, String login) throws Exception {
 		lastPresenter = presenter;
 
 		query = this.getSQLQuery(presenter);
 		resetResultsTableName();
 
-		String db = rootElement.getGenericXFTElement().getDbName();
 		query = StringUtils.ReplaceStr(query,"'","*'*");
 		query = StringUtils.ReplaceStr(query,"*'*","''");
 
@@ -194,7 +197,7 @@ public class DisplaySearch implements TableSearchI{
 
 	}
 
-
+	@SuppressWarnings("unused")
     public void clearTables(){
         presentedTable=null;
 
@@ -202,11 +205,7 @@ public class DisplaySearch implements TableSearchI{
     }
 
     private boolean hasSchemaOnlyCriteria(){
-        if(this.criteria!=null && this.criteria.numClauses()>0 && this.criteria.numClauses()==this.criteria.numSchemaClauses()){
-            return true;
-        }else{
-            return false;
-        }
+		return this.criteria != null && this.criteria.numClauses() > 0 && this.criteria.numClauses() == this.criteria.numSchemaClauses();
     }
 
 	public String getSQLQuery(PresentationA presenter) throws Exception
@@ -230,22 +229,18 @@ public class DisplaySearch implements TableSearchI{
 
 			if (additionalViews != null && additionalViews.size() > 0)
 			{
-			    Iterator keys = additionalViews.iterator();
-				while (keys.hasNext())
-				{
-				    String[] key = (String[])keys.next();
+				for (Object additionalView : additionalViews) {
+					String[] key = (String[]) additionalView;
 					String elementName = key[0];
 					String version = key[1];
 					SchemaElementI foreign = SchemaElement.GetElement(elementName);
 
 					ElementDisplay foreignEd = DisplayManager.GetElementDisplay(foreign.getFullXMLName());
-					DisplayVersion foreignDV = null;
-					if (presenter != null && !presenter.getVersionExtension().equalsIgnoreCase(""))
-					{
-						foreignDV = foreignEd.getVersion(version+ "_" + presenter.getVersionExtension(),version);
-					}else
-					{
-						foreignDV = foreignEd.getVersion(version,"default");
+					DisplayVersion foreignDV;
+					if (presenter != null && !presenter.getVersionExtension().equalsIgnoreCase("")) {
+						foreignDV = foreignEd.getVersion(version + "_" + presenter.getVersionExtension(), version);
+					} else {
+						foreignDV = foreignEd.getVersion(version, "default");
 					}
 					displayFields.addAll(foreignDV.getSortedDisplayFieldRefs());
 				}
@@ -267,23 +262,20 @@ public class DisplaySearch implements TableSearchI{
 
 		                        boolean found = false;
 
-		                        Iterator dfs = displayFields.iterator();
-		                        while (dfs.hasNext())
-		                        {
-		                            DisplayFieldReferenceI temp = (DisplayFieldReferenceI)dfs.next();
-		                            if (temp.getId().equalsIgnoreCase(df.getId()) && temp.getElementName().equalsIgnoreCase(ref.getElementName()))
-		                            {
-		                                found = true;
-		                                break;
-		                            }
-		                        }
+								for (Object displayField : displayFields) {
+									DisplayFieldReferenceI temp = (DisplayFieldReferenceI) displayField;
+									if (temp.getId().equalsIgnoreCase(df.getId()) && temp.getElementName().equalsIgnoreCase(ref.getElementName())) {
+										found = true;
+										break;
+									}
+								}
 
 		                        if (!found)
 		                        {
 		                            displayFields.add(ref);
 		                        }
 				        	}
-				        }catch(Exception e)
+				        }catch(Exception ignored)
 				        {}
 			        }
 			    }
@@ -306,23 +298,20 @@ public class DisplaySearch implements TableSearchI{
 
 		                        boolean found = false;
 
-		                        Iterator dfs = displayFields.iterator();
-		                        while (dfs.hasNext())
-		                        {
-		                            DisplayFieldReferenceI temp = (DisplayFieldReferenceI)dfs.next();
-		                            if (temp.getId().equalsIgnoreCase(df.getId()) && temp.getElementName().equalsIgnoreCase(ref.getElementName()))
-		                            {
-		                                found = true;
-		                                break;
-		                            }
-		                        }
+								for (Object displayField : displayFields) {
+									DisplayFieldReferenceI temp = (DisplayFieldReferenceI) displayField;
+									if (temp.getId().equalsIgnoreCase(df.getId()) && temp.getElementName().equalsIgnoreCase(ref.getElementName())) {
+										found = true;
+										break;
+									}
+								}
 
 		                        if (!found)
 		                        {
 		                            displayFields.add(ref);
 		                        }
 				        	}
-				        }catch(Exception e)
+				        }catch(Exception ignored)
 				        {}
 			        }
 			    }
@@ -340,16 +329,16 @@ public class DisplaySearch implements TableSearchI{
 		    		   dfw.setValue(user.getXdatUserId());
 		    	   }
 		       }
-		   }catch(Exception e){
+		   }catch(Exception ignored){
 			   
 		   }
 		}
 
-		StringBuffer sb = new StringBuffer();
-		StringBuffer where = new StringBuffer();
-		StringBuffer join = new StringBuffer();
-		StringBuffer select = new StringBuffer();
-		StringBuffer orderBy= new StringBuffer();
+		StringBuilder sb = new StringBuilder();
+		StringBuilder where = new StringBuilder();
+		StringBuilder join = new StringBuilder();
+		StringBuilder select = new StringBuilder();
+		StringBuilder orderBy= new StringBuilder();
 
 		QueryOrganizer qo = new QueryOrganizer(this.getRootElement(),user,level);
 
@@ -798,7 +787,7 @@ public class DisplaySearch implements TableSearchI{
 		{
 	        sb.append(query);
 
-		    StringBuffer sb2 = new StringBuffer();
+			StringBuilder sb2 = new StringBuilder();
 		    sb2.append("SELECT DISTINCT DISPLAY_SEARCH.*");
 
 		    int inCounter =0;
@@ -907,8 +896,8 @@ public class DisplaySearch implements TableSearchI{
 	}
 
     /**
-     * @param foreign
-     * @return
+     * @param foreign    The foreign relationship.
+     * @return Indicates whether the foreign key schema element is a multiple relationship.
      */
     public boolean isMultipleRelationship(SchemaElementI foreign)
     {
@@ -918,12 +907,10 @@ public class DisplaySearch implements TableSearchI{
             Boolean b = (Boolean)this.isMultipleRelationship.get(foreign.getSQLName());
             if (b==null)
             {
-                boolean isMultiple = IsMultipleReference(rootElement,foreign);
-
-               b = new Boolean(isMultiple);
+               b = IsMultipleReference(rootElement,foreign);
                this.isMultipleRelationship.put(foreign.getSQLName(),b);
             }
-            return b.booleanValue();
+            return b;
         }
     }
 
@@ -931,7 +918,7 @@ public class DisplaySearch implements TableSearchI{
     {
         boolean isMultiple = true;
         //XFT.LogCurrentTime("isMultipleRelationship :1");
-        String connectionType = QueryOrganizer.GetConnectionType(rootElement.getFullXMLName(),foreign.getFullXMLName());
+        String connectionType = QueryOrganizer.GetConnectionType(rootElement.getFullXMLName(), foreign.getFullXMLName());
         if (connectionType.equals("schemaelement"))
         {
             isMultiple=  false;
@@ -946,12 +933,7 @@ public class DisplaySearch implements TableSearchI{
                     return false;
                 }else{
                     String s = arcDefine.getClosestField();
-                    if (s==null)
-                    {
-                        return false;
-                    }else{
-                        return true;
-                    }
+					return s != null;
                 }
             }
         }else if (connectionType.equals("connection"))
@@ -1279,12 +1261,12 @@ public class DisplaySearch implements TableSearchI{
 
 	public void addAdditionalView(String element, String display)
 	{
-		additionalViews.add(new String[]{element,display});
+		additionalViews.add(new String[]{element, display});
 		newQuery = true;
 	}
 
 	/**
-	 * @param ArrayList of Criteria and/or CriteriaCollections
+	 * @param list    A list of Criteria and/or CriteriaCollections
 	 */
 	public void setCriteria(ArrayList list) {
 		criteria.addCriteria(list);
@@ -1305,7 +1287,7 @@ public class DisplaySearch implements TableSearchI{
 	public void addCriteria(String element, String displayField, String comparisonType, Object value,boolean overrideDataTypeFormatting)throws Exception
 	{
 	    DisplayCriteria dc = new DisplayCriteria();
-	    dc.setSearchFieldByDisplayField(element,displayField);
+	    dc.setSearchFieldByDisplayField(element, displayField);
 	    dc.setComparisonType(comparisonType);
 	    dc.setValue(value,true);
 	    dc.setOverrideDataFormatting(overrideDataTypeFormatting);
@@ -1858,7 +1840,7 @@ public class DisplaySearch implements TableSearchI{
         return isStoredSearch;
     }
     /**
-     * @param customSearch The customSearch to set.
+     * @param isStoredSearch    Indicates whether this is a stored search.
      */
     public void setStoredSearch(boolean isStoredSearch) {
         this.isStoredSearch = isStoredSearch;
@@ -1890,190 +1872,221 @@ public class DisplaySearch implements TableSearchI{
         this.allowDiffs = allowDiffs;
     }
 
-    public XdatStoredSearch convertToStoredSearch(String identifier){
-        XdatStoredSearch xss = null;
-        try {
-            xss = new XdatStoredSearch((UserI)this.getUser());
+	/**
+	 * Converts the display search object to an {@link XdatStoredSearch} object. This method calls the
+	 * {@link #convertToStoredSearch(String, String)} version of this method, passing in a default value for the
+	 * query-mode parameter.
+	 * @param identifier    The identifier for the stored search.
+	 * @return The resulting stored search object.
+	 */
+	public XdatStoredSearch convertToStoredSearch(final String identifier) {
+		return convertToStoredSearch(identifier, null);
+	}
 
-            xss.setRootElementName(this.getRootElement().getFullXMLName());
-            String sortBy=this.getSortBy();
+	/**
+	 * Converts the display search object to an {@link XdatStoredSearch} object.
+	 * @param identifier    The identifier for the stored search.
+	 * @param queryMode     The query mode. This can be null, "criteria", or "byId".
+	 * @return The resulting stored search object.
+	 */
+	@SuppressWarnings("unused")
+	public XdatStoredSearch convertToStoredSearch(final String identifier, final String queryMode) {
+		XdatStoredSearch xss = null;
+		try {
+			xss = new XdatStoredSearch(getUser());
 
-            if (sortBy.indexOf(".")==-1)
-            {
-                if (!sortBy.equals("")){
-                    xss.setSortBy_elementName(xss.getRootElementName());
-                    xss.setSortBy_fieldId(sortBy);
-                }
-            }else{
-                String elementName = sortBy.substring(0,sortBy.indexOf("."));
-                String fieldId = sortBy.substring(sortBy.indexOf(".")+1);
-                xss.setSortBy_elementName(elementName);
-                xss.setSortBy_fieldId(fieldId);
-            }
+			xss.setRootElementName(this.getRootElement().getFullXMLName());
+			String sortBy = this.getSortBy();
 
-            ElementDisplay ed = DisplayManager.GetElementDisplay(xss.getRootElementName());
-            if(this.getFields().size()>0){
-                int sequence = 0;
-                
-            	for(DisplayFieldReferenceI ref:this.getFields().getSortedVisibleFields()){
-            		XdatSearchField xsf = new XdatSearchField();
-                    if (ref.getElementName()!=null){
-                        xsf.setElementName(ref.getElementName());
-                    }else{
-                        xsf.setElementName(this.getRootElement().getFullXMLName());
-                    }
-                    if(ref.getId().indexOf(".")==-1){
-                    	String f=ref.getId();
-                    	if(f.indexOf("=")==-1){
-                    		xsf.setFieldId(f);
-                    	}else{
-                    		xsf.setFieldId(f.substring(0,f.indexOf("=")));
-                    		xsf.setValue(f.substring(f.indexOf("=")+1));
-                    	}
-                    }else{
-                    	String f=ref.getId().substring(ref.getId().indexOf(".")+1);
-                    	if(f.indexOf("=")==-1){
-                    		xsf.setFieldId(f);
-                    	}else{
-                    		xsf.setFieldId(f.substring(0,f.indexOf("=")));
-                    		xsf.setValue(f.substring(f.indexOf("=")+1));
-                    	}
-                    }
-                    if (ref.getHeader()==null || ref.getHeader().equals(""))
-                        xsf.setHeader("  ");
-                    else
-                        xsf.setHeader(ref.getHeader());
-                    xsf.setType(ref.getDisplayField().getDataType());
-                    xsf.setSequence(new Integer(sequence++));
-                    if (ref.getValue()!=null && !ref.getValue().equals(""))
-                        xsf.setValue(ref.getValue().toString());
-                    if(!ref.isVisible()){
-                 	   xsf.setVisible(false);
-                    }
-                    xss.setSearchField(xsf);
-            	}
-            }else{
-                DisplayVersion rootdv = ed.getVersion(this.getDisplay(),"listing");
+			if (sortBy.contains(".")) {
+				String elementName = sortBy.substring(0, sortBy.indexOf("."));
+				String fieldId = sortBy.substring(sortBy.indexOf(".") + 1);
+				xss.setSortBy_elementName(elementName);
+				xss.setSortBy_fieldId(fieldId);
+			} else if (!sortBy.equals("")) {
+				xss.setSortBy_elementName(xss.getRootElementName());
+				xss.setSortBy_fieldId(sortBy);
+			}
 
-                ArrayList<DisplayVersion> displayVersions = new ArrayList<DisplayVersion>();
-                displayVersions.add(rootdv);
+			ElementDisplay ed = DisplayManager.GetElementDisplay(xss.getRootElementName());
+			if (this.getFields().size() > 0) {
+				int sequence = 0;
 
+				for (DisplayFieldReferenceI ref : this.getFields().getSortedVisibleFields()) {
+					XdatSearchField xsf = new XdatSearchField();
+					if (ref.getElementName() != null) {
+						xsf.setElementName(ref.getElementName());
+					} else {
+						xsf.setElementName(this.getRootElement().getFullXMLName());
+					}
+					if (!ref.getId().contains(".")) {
+						String f = ref.getId();
+						if (!f.contains("=")) {
+							xsf.setFieldId(f);
+						} else {
+							xsf.setFieldId(f.substring(0, f.indexOf("=")));
+							xsf.setValue(f.substring(f.indexOf("=") + 1));
+						}
+					} else {
+						String f = ref.getId().substring(ref.getId().indexOf(".") + 1);
+						if (!f.contains("=")) {
+							xsf.setFieldId(f);
+						} else {
+							xsf.setFieldId(f.substring(0, f.indexOf("=")));
+							xsf.setValue(f.substring(f.indexOf("=") + 1));
+						}
+					}
+					if (ref.getHeader() == null || ref.getHeader().equals(""))
+						xsf.setHeader("  ");
+					else
+						xsf.setHeader(ref.getHeader());
+					xsf.setType(ref.getDisplayField().getDataType());
+					xsf.setSequence(new Integer(sequence++));
+					if (ref.getValue() != null && !ref.getValue().equals(""))
+						xsf.setValue(ref.getValue().toString());
+					if (!ref.isVisible()) {
+						xsf.setVisible(false);
+					}
+					xss.setSearchField(xsf);
+				}
+			} else {
+				DisplayVersion rootdv = ed.getVersion(this.getDisplay(), "listing");
 
-                if (this.getAdditionalViews() != null && this.getAdditionalViews().size() > 0)
-                {
-                    Iterator keys = this.getAdditionalViews().iterator();
-                    while (keys.hasNext())
-                    {
-                        String[] key = (String[])keys.next();
-                        String elementName = key[0];
-                        String version = key[1];
-                        SchemaElementI foreign = SchemaElement.GetElement(elementName);
+				ArrayList<DisplayVersion> displayVersions = new ArrayList<>();
+				displayVersions.add(rootdv);
 
-                        ElementDisplay foreignEd = DisplayManager.GetElementDisplay(foreign.getFullXMLName());
-                        DisplayVersion foreignDV = null;
-                        foreignDV = foreignEd.getVersion(version,"default");
-                        displayVersions.add(foreignDV);
-                    }
-                }
+				if (this.getAdditionalViews() != null && this.getAdditionalViews().size() > 0) {
+					for (Object o : this.getAdditionalViews()) {
+						String[] key = (String[]) o;
+						String elementName = key[0];
+						String version = key[1];
+						SchemaElementI foreign = SchemaElement.GetElement(elementName);
 
-                int sequence = 0;
-                
-                for(DisplayVersion dv:displayVersions)
-                {
-                   Iterator iter = dv.getDisplayFieldRefIterator();
-                   while(iter.hasNext())
-                   {
-                       DisplayFieldRef ref = (DisplayFieldRef)iter.next();
-                       try {
-                        if (ref.getDisplayField()!=null){
-                               XdatSearchField xsf = new XdatSearchField();
-                               if (ref.getElementName()!=null){
-                                   xsf.setElementName(ref.getElementName());
-                               }else{
-                                   xsf.setElementName(dv.getParentElementDisplay().getElementName());
-                               }
-                               xsf.setFieldId(ref.getId());
-                               if (ref.getHeader()==null || ref.getHeader().equals(""))
-                                   xsf.setHeader("  ");
-                               else
-                                   xsf.setHeader(ref.getHeader());
-                               xsf.setType(ref.getDisplayField().getDataType());
-                               xsf.setSequence(new Integer(sequence++));
-                               if (ref.getValue()!=null && !ref.getValue().equals(""))
-                                   xsf.setValue(ref.getValue().toString());
-                               if(!ref.isVisible()){
-                            	   xsf.setVisible(false);
-                               }
-                               xss.setSearchField(xsf);
-                           }
-                        } catch (DisplayFieldNotFoundException e) {
-                            logger.error("",e);
-                        }
-                   }
-                }
-            }
+						ElementDisplay foreignEd = DisplayManager.GetElementDisplay(foreign.getFullXMLName());
+						DisplayVersion foreignDV = foreignEd.getVersion(version, "default");
+						displayVersions.add(foreignDV);
+					}
+				}
 
-            if(this.getCriteria().size()>0){
-                XdatCriteriaSet set = new XdatCriteriaSet();
-        		for(int i=0;i<this.getCriteria().size();i++){
-        			set.setMethod("AND");
-        	        Iterator iter = this.getCriteria().iterator();
-        	        while (iter.hasNext())
-        	        {
-        	            SQLClause c = (SQLClause)iter.next();
-        	            if (c instanceof org.nrg.xft.search.CriteriaCollection)
-        	            {
-        	                XdatCriteriaSet subset = new XdatCriteriaSet();
-        	                subset.populateCriteria((org.nrg.xft.search.CriteriaCollection)c);
+				int sequence = 0;
 
-        	                if (subset.size()> 0)
-        	                {
-        	                    set.setChildSet(subset);
-        	                }
-        	            }else{
-        	                XdatCriteria criteria = new XdatCriteria();
-        	                criteria.populateCriteria(c);
-        	                
-        	                set.setCriteria(criteria);
-        	            }
-        	        }
-        		}
-                if (set.size()> 0)
-                {
-                    xss.setSearchWhere(set);
-                }
-            }else if(this.getInClauses().size()>0){
-                XdatCriteriaSet set = new XdatCriteriaSet();
-                set.setMethod("OR");
-                for(Map.Entry<String, String> entry : this.getInClauses().entrySet()){
-                    XdatCriteria crit = new XdatCriteria();
-                    crit.setSchemaField(entry.getKey());
-                    crit.setValue(entry.getValue());
-                    crit.setComparisonType("IN");
-                    set.setCriteria(crit);
-                }
-                xss.setSearchWhere(set);
-            }
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (DisplayFieldNotFoundException e) {
-            logger.error("",e);
-        } catch (Exception e) {
-            logger.error("",e);
-        }
+				for (DisplayVersion dv : displayVersions) {
+					Iterator iter = dv.getDisplayFieldRefIterator();
+					while (iter.hasNext()) {
+						DisplayFieldRef ref = (DisplayFieldRef) iter.next();
+						try {
+							if (ref.getDisplayField() != null) {
+								XdatSearchField xsf = new XdatSearchField();
+								if (ref.getElementName() != null) {
+									xsf.setElementName(ref.getElementName());
+								} else {
+									xsf.setElementName(dv.getParentElementDisplay().getElementName());
+								}
+								xsf.setFieldId(ref.getId());
+								if (ref.getHeader() == null || ref.getHeader().equals(""))
+									xsf.setHeader("  ");
+								else
+									xsf.setHeader(ref.getHeader());
+								xsf.setType(ref.getDisplayField().getDataType());
+								xsf.setSequence(new Integer(sequence++));
+								if (ref.getValue() != null && !ref.getValue().equals(""))
+									xsf.setValue(ref.getValue().toString());
+								if (!ref.isVisible()) {
+									xsf.setVisible(false);
+								}
+								xss.setSearchField(xsf);
+							}
+						} catch (DisplayFieldNotFoundException e) {
+							logger.error("", e);
+						}
+					}
+				}
+			}
 
-        return xss;
-    }
+			final boolean hasCriteria = getCriteria().size() > 0;
+			final boolean hasInclauses = getInClauses().size() > 0;
+			final int resolvedQueryMode = resolveQueryMode(queryMode);
+			if (hasCriteria && hasInclauses && resolvedQueryMode == QUERY_MODE_VAL_NONE) {
+				throw new InvalidSearchException("The specified query contains both query criteria and specific IDs without specifying a query mode. Queries by criteria or IDs are exclusive of each other. You should either use criteria or IDs exclusively or indicate a query mode to specify which should be used for the query.");
+			}
+			final boolean useCriteria = resolvedQueryMode == QUERY_MODE_VAL_CRITERIA || hasCriteria;
+			final boolean useInclauses = resolvedQueryMode == QUERY_MODE_VAL_BYID || hasInclauses;
+			if (useCriteria) {
+				XdatCriteriaSet set = new XdatCriteriaSet();
+				for (int i = 0; i < this.getCriteria().size(); i++) {
+					set.setMethod("AND");
+					for (Object o : this.getCriteria()) {
+						SQLClause c = (SQLClause) o;
+						if (c instanceof org.nrg.xft.search.CriteriaCollection) {
+							XdatCriteriaSet subset = new XdatCriteriaSet();
+							subset.populateCriteria((CriteriaCollection) c);
 
+							if (subset.size() > 0) {
+								set.setChildSet(subset);
+							}
+						} else {
+							XdatCriteria criteria = new XdatCriteria();
+							criteria.populateCriteria(c);
+
+							set.setCriteria(criteria);
+						}
+					}
+				}
+				if (set.size() > 0) {
+					xss.setSearchWhere(set);
+				}
+			} else if (useInclauses) {
+				XdatCriteriaSet set = new XdatCriteriaSet();
+				set.setMethod("OR");
+				for (Map.Entry<String, String> entry : this.getInClauses().entrySet()) {
+					XdatCriteria crit = new XdatCriteria();
+					crit.setSchemaField(entry.getKey());
+					crit.setValue(entry.getValue());
+					crit.setComparisonType("IN");
+					set.setCriteria(crit);
+				}
+				xss.setSearchWhere(set);
+			}
+		} catch (Exception e) {
+			if (e instanceof InvalidSearchException) {
+				throw (InvalidSearchException) e;
+			}
+			logger.error("", e);
+		}
+
+		return xss;
+	}
+
+	/**
+	 * Returns the query mode based on the value of the submitted parameter. Returns the following values if
+	 * <b>queryMode</b> equals:
+	 *
+	 * <ul>
+	 *     <li>{@link #QUERY_MODE_CRITERIA} returns {@link #QUERY_MODE_VAL_CRITERIA}</li>
+	 *     <li>{@link #QUERY_MODE_BYID} returns {@link #QUERY_MODE_VAL_BYID}</li>
+	 *     <li>Any other value, including blank or null, returns {@link #QUERY_MODE_VAL_NONE}</li>
+	 * </ul>
+	 *
+	 * @param queryMode    The submitted query mode value.
+	 * @return {@link #QUERY_MODE_VAL_CRITERIA}, {@link #QUERY_MODE_VAL_BYID}, or {@link #QUERY_MODE_VAL_NONE} based on
+	 * the query mode parameter.
+	 */
+	private int resolveQueryMode(final String queryMode) {
+		if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(queryMode, QUERY_MODE_CRITERIA)) {
+			return QUERY_MODE_VAL_CRITERIA;
+		}
+		if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(queryMode, QUERY_MODE_BYID)) {
+			return QUERY_MODE_VAL_BYID;
+		}
+		return QUERY_MODE_VAL_NONE;
+	}
 
 
 	public List<DisplayFieldReferenceI> getAllFields(String versionExtension) throws ElementNotFoundException, XFTInitException
 	{
 		final ElementDisplay ed = DisplayManager.GetElementDisplay(getRootElement().getFullXMLName());
 	    final DisplayVersion dv;
-		List<DisplayFieldReferenceI> allfields=new ArrayList<DisplayFieldReferenceI>();
+		List<DisplayFieldReferenceI> allfields;
 		if (this.useVersions())
 		{
 			if (! versionExtension.equalsIgnoreCase(""))
@@ -2116,8 +2129,8 @@ public class DisplaySearch implements TableSearchI{
 	public ArrayList<DisplayFieldReferenceI> getVisibleFields(String versionExtension) throws ElementNotFoundException, XFTInitException
 	{
 		ElementDisplay ed = DisplayManager.GetElementDisplay(getRootElement().getFullXMLName());
-	    DisplayVersion dv = null;
-		ArrayList<DisplayFieldReferenceI> visibleFields=new ArrayList<DisplayFieldReferenceI>();
+	    DisplayVersion dv;
+		ArrayList<DisplayFieldReferenceI> visibleFields;
 		if (this.useVersions())
 		{
 			if (! versionExtension.equalsIgnoreCase(""))
@@ -2130,21 +2143,18 @@ public class DisplaySearch implements TableSearchI{
 
 			if (getAdditionalViews() != null && getAdditionalViews().size() > 0)
 			{
-				Iterator keys = getAdditionalViews().iterator();
-				while (keys.hasNext())
-				{
-				    String[] key = (String[])keys.next();
+				for (Object o : getAdditionalViews()) {
+					String[] key = (String[]) o;
 					String elementName = key[0];
 					String version = key[1];
 					GenericWrapperElement foreign = GenericWrapperElement.GetElement(elementName);
 
 					ElementDisplay foreignEd = DisplayManager.GetElementDisplay(foreign.getType().getFullForeignType());
-					DisplayVersion foreignDV = null;
-					if (! versionExtension.equalsIgnoreCase(""))
-					{
-						foreignDV = foreignEd.getVersion(version + "_" + versionExtension,version);
-					}else{
-						foreignDV = foreignEd.getVersion(version,"default");
+					DisplayVersion foreignDV;
+					if (!versionExtension.equalsIgnoreCase("")) {
+						foreignDV = foreignEd.getVersion(version + "_" + versionExtension, version);
+					} else {
+						foreignDV = foreignEd.getVersion(version, "default");
 					}
 
 					visibleFields.addAll(foreignDV.getVisibleFields());

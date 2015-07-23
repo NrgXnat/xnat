@@ -435,7 +435,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         } catch (Throwable e) {
             String message = "Found an error while running a " + script.getLanguage() + " v" + script.getLanguageVersion() + " script";
             _log.error(message, e);
-            throw new RuntimeException(message, e);
+            throw new NrgServiceException(message, e);
         } finally {
             if (writer != null) {
                 writer.flush();

@@ -317,5 +317,6 @@ public interface ScriptRunnerService extends NrgService {
      *
      * @param runners The {@link ScriptRunner script runners} to be added to the system.
      */
+    @SuppressWarnings("unused")
     void addRunners(final Collection<ScriptRunner> runners);
 }

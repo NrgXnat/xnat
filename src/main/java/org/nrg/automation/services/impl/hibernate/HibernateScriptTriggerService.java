@@ -136,7 +136,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
 
     @Override
     public String getDefaultTriggerName(final String scriptId, final Scope scope, final String entityId, final String event) {
-        final Map<String, String> values = new HashMap<String, String>();
+        final Map<String, String> values = new HashMap<>();
         values.put("scriptId", scriptId);
         values.put("event", event.replace(" ", "_").replace("/", "_").replace(":", "_"));
         values.put("association", Scope.encode(scope, entityId).replace(" ", "_").replace("/", "_").replace(":", "_"));

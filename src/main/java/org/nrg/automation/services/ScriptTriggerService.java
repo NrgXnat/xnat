@@ -28,7 +28,7 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      *
      * @return The trigger with the indicated ID, if it exists, <b>null</b> otherwise.
      */
-    public abstract ScriptTrigger getByTriggerId(final String triggerId);
+    ScriptTrigger getByTriggerId(final String triggerId);
 
     /**
      * Returns the script triggers associated with the indicated script ID.
@@ -37,7 +37,7 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      *
      * @return A list of all {@link ScriptTrigger script triggers} that are associated with the indicated script ID.
      */
-    public abstract List<ScriptTrigger> getByScriptId(final String scriptId);
+    List<ScriptTrigger> getByScriptId(final String scriptId);
 
     /**
      * Retrieves all triggers associated with the site scope. This is basically a convenience wrapper around the full
@@ -46,7 +46,7 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      * @return All triggers associated with the site scope.
      * @see #getByScope(Scope, String)
      */
-    public abstract List<ScriptTrigger> getSiteTriggers();
+    List<ScriptTrigger> getSiteTriggers();
 
     /**
      * Retrieves all triggers associated with the site scope and indicated event. This is basically a convenience
@@ -58,7 +58,8 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      * @return All triggers associated with the site scope and indicated event.
      * @see #getByScopeEntityAndEvent(Scope, String, String)
      */
-    public abstract ScriptTrigger getSiteTrigger(final String event);
+    @SuppressWarnings("unused")
+    ScriptTrigger getSiteTrigger(final String event);
 
     /**
      * Retrieves all triggers for the indicated scope and entity.
@@ -69,7 +70,7 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      * @return All triggers associated with the indicated scope and entity.
      * @see #getSiteTriggers()
      */
-    public abstract List<ScriptTrigger> getByScope(final Scope scope, final String entityId);
+    List<ScriptTrigger> getByScope(final Scope scope, final String entityId);
 
     /**
      * Retrieves the {@link ScriptTrigger trigger} with the indicated association and event. Generally the association
@@ -80,7 +81,7 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      *
      * @return All triggers associated with the indicated association and event
      */
-    public abstract ScriptTrigger getByAssociationAndEvent(final String association, final String event);
+    ScriptTrigger getByAssociationAndEvent(final String association, final String event);
 
     /**
      * Retrieves all triggers for the indicated scope and entity.
@@ -91,14 +92,15 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      *
      * @return The trigger associated with the indicated scope and entity and event, if any.
      */
-    public abstract ScriptTrigger getByScopeEntityAndEvent(final Scope scope, final String entityId, final String event);
+    ScriptTrigger getByScopeEntityAndEvent(final Scope scope, final String entityId, final String event);
 
     /**
      * Sets the default trigger ID format. This is used when composing trigger IDs from trigger metadata.
      *
      * @param defaultTriggerIdFormat The format string for composing trigger IDs.
      */
-    public abstract void setDefaultTriggerIdFormat(final String defaultTriggerIdFormat);
+    @SuppressWarnings("unused")
+    void setDefaultTriggerIdFormat(final String defaultTriggerIdFormat);
 
     /**
      * Gets the default trigger name based on a format string.
@@ -108,5 +110,5 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
      * @param event       The event associated with the trigger.
      * @return A trigger name based on the submitted parameters and configured template.
      */
-    public abstract String getDefaultTriggerName(final String scriptId, final Scope scope, final String entityId, final String event);
+    String getDefaultTriggerName(final String scriptId, final Scope scope, final String entityId, final String event);
 }

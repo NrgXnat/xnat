@@ -51,6 +51,9 @@ public class DicomFilterService {
         if (map.containsKey("contents")) {
             return buildSeriesImportFilter(map.get("contents"));
         }
+        if (map.containsKey("content")) {
+            return buildSeriesImportFilter(map.get("content"));
+        }
         if (map.get(SeriesImportFilter.KEY_MODE).equals(SeriesImportFilterMode.ModalityMap.getValue())) {
             return new ModalityMapSeriesImportFilter(map);
         } else {

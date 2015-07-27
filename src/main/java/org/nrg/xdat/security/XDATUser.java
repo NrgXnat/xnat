@@ -1486,6 +1486,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return isOK;
     }
 
+    public void clearBrowseableElementDisplays() {
+        browseable = null;
+        readable_counts = null;
+    }
+
     public ArrayList<ElementDisplay> getBrowseableElementDisplays() {
         if (browseable == null) {
             browseable = new ArrayList<ElementDisplay>();

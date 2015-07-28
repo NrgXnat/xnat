@@ -31,39 +31,6 @@ import java.util.Map;
 @Service
 public class HibernateEventService extends AbstractHibernateEntityService<Event, EventRepository> implements EventService {
 
-    public static final String POPULATE_EVENTS_QUERY_NAME = "populateEventsQuery";
-
-    @Override
-    @Transactional
-    public void afterPropertiesSet() throws Exception {
-        super.afterPropertiesSet();
-        final Session session = _sessionFactory.openSession();
-        final long count = (long) session.createQuery("select count(*) from Event where enabled = true").uniqueResult();
-        if (count == 0) {
-            try {
-                final String populate = getContext().getBean(POPULATE_EVENTS_QUERY_NAME, String.class);
-
-                if (StringUtils.isNotEmpty(populate)) {
-                    final DataSource dataSource = getContext().getBean(DataSource.class);
-                    final JdbcTemplate template = new JdbcTemplate(dataSource);
-                    final List<Map<String, Object>> results = template.queryForList(populate);
-
-                    try {
-                        getDao().setSession(session);
-                        for (final Map<String, Object> result : results) {
-                            final Event event = newEntity(result.get("event_id").toString(), result.get("event_label").toString());
-                            create(event);
-                        }
-                    } finally {
-                        getDao().clearSession();
-                    }
-                }
-            } catch (NoSuchBeanDefinitionException e) {
-                _log.warn("Couldn't find the " + POPULATE_EVENTS_QUERY_NAME + " bean. This may or may not be a big deal depending on whether you need the event repository pre-populated.");
-            }
-        }
-    }
-
     /**
      * A convenience test for the existence of a event with the indicated event ID.
      *
@@ -93,6 +60,7 @@ public class HibernateEventService extends AbstractHibernateEntityService<Event,
         return getDao().findByUniqueProperty("eventId", eventId);
     }
 
+    @SuppressWarnings("unused")
     private static final Logger _log = LoggerFactory.getLogger(HibernateEventService.class);
 
     @Inject

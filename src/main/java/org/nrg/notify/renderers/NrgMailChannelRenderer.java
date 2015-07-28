@@ -15,9 +15,9 @@ import java.util.Map;
 
 import javax.mail.MessagingException;
 
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
-import org.codehaus.jackson.map.ObjectMapper;
-import org.codehaus.jackson.type.TypeReference;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.exceptions.InvalidMailAttachmentException;
 import org.nrg.mail.services.MailService;
@@ -48,7 +48,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     public void render(Subscription subscription, Notification notification, String format) throws ChannelRendererProcessingException {
         try {
             // TODO: For now, this is only supporting JSON. This should actually branch on notification.getParameterFormat();
-            Map<String, Object> parameters = new ObjectMapper().readValue(notification.getParameters(), new TypeReference<HashMap<String, Object>>() {});
+            Map<String, Object> parameters = MAPPER.readValue(notification.getParameters(), TYPEREF_HASHMAP_STRING_OBJECT);
             parameters.put(MailMessage.PROP_FROM, _fromAddress);
             parameters.put(MailMessage.PROP_SUBJECT, formatSubject((String) parameters.get(MailMessage.PROP_SUBJECT)));
             parameters.put(MailMessage.PROP_TOS, subscription.getSubscriber().getEmailList());
@@ -59,9 +59,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
             _mailService.sendMessage(new MailMessage(parameters));
         } catch (IOException exception) {
             throw new ChannelRendererProcessingException("An error occurred processing the notification parameters in format: " + notification.getParameterFormat(), exception);
-        } catch (MessagingException exception) {
-            throw new ChannelRendererProcessingException("An error occurred sending the mail message", exception);
-        } catch (InvalidMailAttachmentException exception) {
+        } catch (MessagingException | InvalidMailAttachmentException exception) {
             throw new ChannelRendererProcessingException("An error occurred sending the mail message", exception);
         }
     }
@@ -90,6 +88,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     /**
      * @return Returns the fromAddress property.
      */
+    @SuppressWarnings("unused")
     public String getFromAddress() {
         return _fromAddress;
     }
@@ -97,6 +96,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     /**
      * @param onBehalfOf Sets the onBehalfOf property.
      */
+    @SuppressWarnings("unused")
     public void setOnBehalfOf(String onBehalfOf) {
         _onBehalfOf = onBehalfOf;
     }
@@ -104,6 +104,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     /**
      * @return Returns the onBehalfOf property.
      */
+    @SuppressWarnings("unused")
     public String getOnBehalfOf() {
         return _onBehalfOf;
     }
@@ -118,13 +119,14 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     /**
      * @return Returns the subjectPrefix property.
      */
+    @SuppressWarnings("unused")
     public String getSubjectPrefix() {
         return _subjectPrefix;
     }
 
     /**
-     * @param parameters
-     * @return
+     * @param subject    The subject to be formatted.
+     * @return The subject formatted with the configured subject prefix.
      */
     private String formatSubject(String subject) {
         if (StringUtils.isBlank(subject)) {
@@ -142,6 +144,9 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
         }
         return subject;
     }
+
+    private static final TypeReference<HashMap<String, Object>> TYPEREF_HASHMAP_STRING_OBJECT = new TypeReference<HashMap<String, Object>>() {};
+    private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Autowired
     private MailService _mailService;

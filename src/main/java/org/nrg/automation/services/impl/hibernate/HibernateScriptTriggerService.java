@@ -113,6 +113,17 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return results;
     }
 
+    @Override
+    public List<ScriptTrigger> getByEvent(String eventId) {
+        ScriptTrigger example = new ScriptTrigger();
+        example.setEvent(eventId);
+        List<ScriptTrigger> results = getDao().findByExample(example, EXCLUDE_PROPS_EVENT);
+        if (_log.isDebugEnabled()) {
+            _log.debug("Found {} triggers for event {}", results == null ? "no" : results.size(), eventId);
+        }
+        return results;
+    }
+
     /**
      * Retrieves all triggers for the indicated scope and entity.
      *
@@ -172,6 +183,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return triggers.get(0);
     }
 
+    private static final String[] EXCLUDE_PROPS_EVENT = new String[]{"id", "verified", "created", "timestamp", "disabled", "triggerId", "description", "scriptId", "association"};
     private static final String[] EXCLUDE_PROPS_SCOPE = new String[]{"id", "verified", "created", "timestamp", "disabled", "triggerId", "description", "scriptId", "event"};
     private static final String[] EXCLUDE_PROPS_SCOPE_EVENT = new String[]{"id", "verified", "created", "timestamp", "disabled", "triggerId", "description", "scriptId"};
     private static final String[] EXCLUDE_PROPS_SCRIPT_ID = new String[]{"id", "verified", "created", "timestamp", "disabled", "triggerId", "description", "association", "event"};

@@ -73,6 +73,13 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
     List<ScriptTrigger> getByScope(final Scope scope, final String entityId);
 
     /**
+     * Gets all triggers associated with the indicated event.
+     * @param eventId    The event associated with the trigger.
+     * @return All triggers associated with the indicated event.
+     */
+    List<ScriptTrigger> getByEvent(final String eventId);
+
+    /**
      * Retrieves the {@link ScriptTrigger trigger} with the indicated association and event. Generally the association
      * is an encoded {@link Scope#code() scope code} and entity ID. This search performs no scope fail-over.
      *

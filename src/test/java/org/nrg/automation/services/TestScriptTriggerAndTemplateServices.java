@@ -39,6 +39,8 @@ import static org.junit.Assert.*;
 @Transactional
 public class TestScriptTriggerAndTemplateServices {
 
+    public static final String EVENT_ID = "Something happened!";
+
     @Test
     public void testSimpleScript() {
         Script script = _scriptService.newEntity("script1", "This is my first script!", "groovy", "2.3.6", "println \"Hello world!\"");
@@ -128,6 +130,7 @@ public class TestScriptTriggerAndTemplateServices {
         assertNotNull(entities2);
         assertEquals(1, entities2.size());
     }
+
     @Test
     public void testDoubleTemplatesAndEntities() throws JsonProcessingException {
         ScriptTrigger trigger0 = _triggerService.newEntity("trigger0", "Trigger 0", "script0", "associatedThing0", "Something happened!");
@@ -314,6 +317,43 @@ public class TestScriptTriggerAndTemplateServices {
         System.out.println(template0json);
         System.out.println(template1json);
     }
+
+    @Test
+    public void testCascadedEventDeletion() {
+        try {
+            ScriptTrigger trigger = _triggerService.newEntity("trigger1", "This is my first trigger!", "script1", "associatedThing1", EVENT_ID);
+            assertNotNull(trigger);
+            assertEquals(EVENT_ID, trigger.getEvent().getEventId());
+
+            List<ScriptTrigger> retrieved = _triggerService.getByEvent("Something happened!");
+            assertNotNull(retrieved);
+            assertEquals(1, retrieved.size());
+
+            _eventService.delete(EVENT_ID, true);
+
+            assertFalse(_eventService.hasEvent("Something happened!"));
+            ScriptTrigger nope = _triggerService.getByTriggerId("trigger1");
+            assertNull(nope);
+        } catch (EventReferencedException e) {
+            fail("An EventReferencedException occurred even though the cascade flag was set to true. ");
+        }
+    }
+
+    @Test(expected = EventReferencedException.class)
+    public void testUncascadedEventDeletion() throws EventReferencedException {
+        ScriptTrigger trigger = _triggerService.newEntity("trigger1", "This is my first trigger!", "script1", "associatedThing1", "Something happened!");
+        assertNotNull(trigger);
+        assertEquals(EVENT_ID, trigger.getEvent().getEventId());
+
+        List<ScriptTrigger> retrieved = _triggerService.getByEvent("Something happened!");
+        assertNotNull(retrieved);
+        assertEquals(1, retrieved.size());
+
+        _eventService.delete(EVENT_ID, false);
+    }
+
+    @Inject
+    private EventService _eventService;
 
     @Inject
     private ScriptService _scriptService;

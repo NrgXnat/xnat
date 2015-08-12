@@ -1,10 +1,12 @@
 package org.nrg.automation.services.impl;
 
 import org.apache.commons.lang.StringUtils;
+import org.nrg.automation.entities.Event;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
 import org.nrg.automation.runners.ScriptRunnerOutputAdapter;
+import org.nrg.automation.services.EventService;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.ScriptTriggerService;
@@ -289,7 +291,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         final String resolved = StringUtils.isBlank(event) ? ScriptTrigger.DEFAULT_EVENT : event;
         String triggerName = _triggerService.getDefaultTriggerName(script.getScriptId(), scope, entityId, resolved);
         String triggerDescription = getDefaultTriggerDescription(script.getScriptId(), scope, entityId, resolved);
-        final ScriptTrigger trigger = new ScriptTrigger(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), resolved);
+        final ScriptTrigger trigger = _triggerService.create(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), resolved);
         setScript(script, trigger);
     }
 
@@ -568,10 +570,14 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             trigger.setDescription(getDefaultTriggerDescription(scriptId, scope, entityId, resolvedEvent));
             trigger.setScriptId(scriptId);
             trigger.setAssociation(Scope.encode(scope, entityId));
-            trigger.setEvent(resolvedEvent);
+            trigger.setEvent(getEvent(resolvedEvent));
 
             setScript(script, trigger);
         }
+    }
+
+    private Event getEvent(final String eventId) {
+        return _eventService.hasEvent(eventId) ? _eventService.getByEventId(eventId) : _eventService.create(eventId, eventId);
     }
 
     private void saveScript(final Script script) {
@@ -648,6 +654,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     }
 
     private static final Logger _log = LoggerFactory.getLogger(DefaultScriptRunnerService.class);
+
+    @Inject
+    private EventService _eventService;
 
     @Inject
     private ScriptService _scriptService;

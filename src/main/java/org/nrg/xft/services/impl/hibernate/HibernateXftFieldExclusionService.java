@@ -15,6 +15,7 @@ import java.util.List;
 import javax.inject.Inject;
 
 import org.apache.commons.lang.StringUtils;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xft.daos.XftFieldExclusionDAO;
 import org.nrg.xft.entities.XftFieldExclusion;
@@ -26,8 +27,8 @@ import org.springframework.transaction.annotation.Transactional;
 @Service
 public class HibernateXftFieldExclusionService extends AbstractHibernateEntityService<XftFieldExclusion, XftFieldExclusionDAO> implements XftFieldExclusionService {
 
-    private static final String[] EXCLUSION_PROPERTIES_SYSTEM_SCOPE = new String[] { "targetId", "pattern", "id", "enabled", "created", "timestamp", "disabled" };
-    private static final String[] EXCLUSION_PROPERTIES_TARGET_SCOPE = new String[] { "pattern", "id", "enabled", "created", "timestamp", "disabled" };
+    private static final String[] EXCLUSION_PROPERTIES_SYSTEM_SCOPE = AbstractHibernateEntity.getExcludedProperties("targetId", "pattern");
+    private static final String[] EXCLUSION_PROPERTIES_TARGET_SCOPE = AbstractHibernateEntity.getExcludedProperties("pattern");
 
     @Override
     @Transactional

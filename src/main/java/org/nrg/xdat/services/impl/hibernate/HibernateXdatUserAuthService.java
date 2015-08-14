@@ -26,6 +26,7 @@ import javax.sql.DataSource;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.daos.XdatUserAuthDAO;
@@ -54,6 +55,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 @Service
+@SuppressWarnings({"JpaQlInspection", "SqlDialectInspection"})
 public class HibernateXdatUserAuthService extends AbstractHibernateEntityService<XdatUserAuth, XdatUserAuthDAO> implements XdatUserAuthService {
 
     @Override
@@ -197,11 +199,11 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 
         UserDetails user = users.get(0); // contains no GrantedAuthority[]
 
-        Set<GrantedAuthority> dbAuthsSet = new HashSet<GrantedAuthority>();
+        Set<GrantedAuthority> dbAuthsSet = new HashSet<>();
 
         dbAuthsSet.addAll(loadUserAuthorities(user.getUsername()));
 
-        List<GrantedAuthority> dbAuths = new ArrayList<GrantedAuthority>(dbAuthsSet);
+        List<GrantedAuthority> dbAuths = new ArrayList<>(dbAuthsSet);
 
         if (dbAuths.size() == 0) {
             _log.debug("User '" + username + "' has no authorities and will be treated as 'not found'");
@@ -272,7 +274,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     }
 
     private XDATUser createXDATUser(final String username, final String email, final String firstName, final String lastName) throws Exception {
-        Map<String, String> newUserProperties = new HashMap<String, String>();
+        Map<String, String> newUserProperties = new HashMap<>();
         newUserProperties.put(XFT.PREFIX + ":user.login", username);
         newUserProperties.put(XFT.PREFIX + ":user.email", email);
         newUserProperties.put(XFT.PREFIX + ":user.primary_password", null);
@@ -371,10 +373,10 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return usernameToTest;
     }
 
-    private static final String[] EXCLUSION_PROPERTIES                      = new String[] { "xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "failedLoginAttempts"};
-    private static final String[] EXCLUSION_PROPERTIES_XDAT_USER_DETAILS    = new String[] { "authUser", "id", "enabled", "verified", "created", "timestamp", "disabled", "failedLoginAttempts"};
-    private static final String[] EXCLUSION_PROPERTIES_USERNAME             = new String[] { "xdatUsername", "id", "enabled", "verified", "created", "timestamp", "disabled", "authMethodId", "failedLoginAttempts"};
-    private static final String[] EXCLUSION_PROPERTIES_XDATUSER             = new String[] { "authUser",     "id", "enabled", "verified", "created", "timestamp", "disabled", "authMethodId", "failedLoginAttempts"};
+    private static final String[] EXCLUSION_PROPERTIES                      = AbstractHibernateEntity.getExcludedProperties("xdatUsername", "verified", "failedLoginAttempts");
+    private static final String[] EXCLUSION_PROPERTIES_XDAT_USER_DETAILS    = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "failedLoginAttempts");
+    private static final String[] EXCLUSION_PROPERTIES_USERNAME             = AbstractHibernateEntity.getExcludedProperties("xdatUsername", "verified", "authMethodId", "failedLoginAttempts");
+    private static final String[] EXCLUSION_PROPERTIES_XDATUSER             = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "authMethodId", "failedLoginAttempts");
 
     private static final Log _log = LogFactory.getLog(HibernateXdatUserAuthService.class);
 

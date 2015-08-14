@@ -61,8 +61,8 @@ public class TestScriptRunnerService {
 
     @Test
     public void addRetrieveAndRunSiteScriptTests() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, GROOVY_HELLO_WORLD, Scope.Site, null);
-        _service.setScript(SCRIPT_ID_2, JS_HELLO_WORLD, Scope.Site, null, null, "JavaScript", "1.6");
+        _service.setScript(SCRIPT_ID_1, GROOVY_HELLO_WORLD, Scope.Site, null, "EVENT1");
+        _service.setScript(SCRIPT_ID_2, JS_HELLO_WORLD, Scope.Site, null, "EVENT2", "JavaScript", "1.6");
 
         final Script script1 = _service.getScript(SCRIPT_ID_1);
         assertNotNull(script1);

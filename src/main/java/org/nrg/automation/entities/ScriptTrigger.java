@@ -24,10 +24,8 @@ import javax.persistence.*;
  *
  * @author Rick Herrick
  */
-@Auditable
 @Entity
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"triggerId", "disabled"}),
-        @UniqueConstraint(columnNames = {"association", "event", "disabled"})})
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"association", "event"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class ScriptTrigger extends AbstractHibernateEntity implements Comparable<ScriptTrigger> {
 
@@ -48,7 +46,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         }
     }
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     public String getTriggerId() {
         return _triggerId;
     }

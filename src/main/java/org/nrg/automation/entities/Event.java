@@ -5,6 +5,7 @@ import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 
+import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Table;
 import javax.persistence.UniqueConstraint;
@@ -14,10 +15,7 @@ import javax.persistence.UniqueConstraint;
  *
  * @author Rick Herrick
  */
-@Auditable
 @Entity
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"eventId", "disabled"}),
-        @UniqueConstraint(columnNames = {"eventLabel", "disabled"})})
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class Event extends AbstractHibernateEntity implements Comparable<Event> {
 
@@ -30,6 +28,7 @@ public class Event extends AbstractHibernateEntity implements Comparable<Event> 
         _eventLabel = eventLabel;
     }
 
+    @Column(unique = true)
     public String getEventId() {
         return _eventId;
     }
@@ -38,6 +37,7 @@ public class Event extends AbstractHibernateEntity implements Comparable<Event> 
         _eventId = eventId;
     }
 
+    @Column(unique = true)
     public String getEventLabel() {
         return _eventLabel;
     }

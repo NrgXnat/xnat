@@ -138,10 +138,11 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
 
     @Override
     @Transactional
-    public List<ScriptTrigger> getByEvent(String eventId) {
-        ScriptTrigger example = new ScriptTrigger();
-        example.setEvent(getEvent(eventId));
-        List<ScriptTrigger> results = getDao().findByExample(example, EXCLUDE_PROPS_EVENT);
+    public List<ScriptTrigger> getByEvent(final String eventId) {
+        if (!_eventService.hasEvent(eventId)) {
+            return null;
+        }
+        final List<ScriptTrigger> results = getDao().findByProperty("event", _eventService.getByEventId(eventId));
         if (_log.isDebugEnabled()) {
             _log.debug("Found {} triggers for event {}", results == null ? "no" : results.size(), eventId);
         }

@@ -13,7 +13,6 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

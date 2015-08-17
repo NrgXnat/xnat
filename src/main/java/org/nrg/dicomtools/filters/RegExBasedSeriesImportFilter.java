@@ -14,8 +14,11 @@ import com.google.common.base.Joiner;
 import org.apache.commons.lang.StringUtils;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.Tag;
+import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.*;
@@ -38,8 +41,7 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
     public RegExBasedSeriesImportFilter(final String contents, final String projectId, final SeriesImportFilterMode mode, final boolean enabled) {
         super(projectId, mode, enabled);
-        _filters = parsePersistedFilters(contents);
-        compileFilterList(_filters);
+        getFilters().putAll(createFilterConfiguration(parsePersistedFilters(contents)));
     }
 
     @Override
@@ -54,9 +56,12 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
     @Override
     public boolean shouldIncludeDicomObject(final DicomObject dicomObject) {
-        final String seriesDescription = dicomObject.getString(Tag.SeriesDescription);
-        return shouldIncludeDicomObject(new LinkedHashMap<String, String>() {{
-            put(KEY_SERIES_DESCRIPTION, seriesDescription);
+        final Map<Integer, String> values = new HashMap<>();
+        for (final int header : getFilters().keySet()) {
+            values.put(header, dicomObject.get(header).toString());
+        }
+        return shouldIncludeDicomObjectImpl(new LinkedHashMap<Integer, String>() {{
+            putAll(values);
         }});
     }
 
@@ -66,38 +71,13 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
     }
 
     @Override
-    public boolean shouldIncludeDicomObject(final Map<String,String> headers) {
-        final String seriesDescription = headers.get(KEY_SERIES_DESCRIPTION);
-        for (String filter : _filters) {
-            // Finding a match is insufficient, we need to check the mode.
-            if (StringUtils.isNotEmpty(filter) && StringUtils.isNotBlank(seriesDescription) && seriesDescription.matches(filter)) {
-                // So if we matched, then this should be included if this is a whitelist. If
-                // it's a blacklist, this will return false and indicate that this DicomObject
-                // should not be included.
-                return getMode() == SeriesImportFilterMode.Whitelist;
-            }
+    public boolean shouldIncludeDicomObject(final Map<String, String> headers) {
+        final Map<Integer, String> converted = new HashMap<>(headers.size());
+        for (final String header : headers.keySet()) {
+            final int tag = DicomUtils.parseDicomHeaderId(header);
+            converted.put(tag, headers.get(header));
         }
-
-        // We didn't match anything. That means that, if this is a blacklist, we should include
-        // this DicomObject, but if it's a whitelist, we should not.
-        return getMode() == SeriesImportFilterMode.Blacklist;
-    }
-
-    @Override
-    public boolean shouldIncludeDicomObject(final Map<String, String> headers, final String targetModality) {
-        return shouldIncludeDicomObject(headers);
-    }
-
-    @Override
-    protected Map<String, String> getImplementationProperties() {
-        return new HashMap<String, String>() {{ put(KEY_LIST, Joiner.on("\\n").join(getFilters())); }};
-    }
-
-    @Override
-    protected void initialize(final Map<String, String> values) {
-        final String list = values.get(KEY_LIST);
-        _filters = parsePersistedFilters(list);
-        compileFilterList(_filters);
+        return shouldIncludeDicomObjectImpl(converted);
     }
 
     @Override
@@ -113,42 +93,146 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
         return isEnabled() == that.isEnabled() &&
                 getProjectId().equals(that.getProjectId()) &&
-                _filters.equals(that._filters);
+                getFilterList().equals(that.getFilterList());
     }
 
     @Override
     public int hashCode() {
-        int result = _filters.hashCode();
+        int result = Objects.hash(getFilterList());
         result = 31 * result + (isEnabled() ? 1 : 0);
         result = 31 * result + getProjectId().hashCode();
         return result;
     }
 
-    public static List<Pattern> compileFilterList(final List<String> candidates) {
-        final List<String> failed = new ArrayList<>();
-        final List<Pattern> patterns = new ArrayList<>();
-        for (String candidate : candidates) {
-            try {
-                patterns.add(Pattern.compile(candidate));
-            } catch (PatternSyntaxException ignored) {
-                failed.add(candidate);
-            }
-        }
-        if (failed.size() > 0) {
-            String failedPatterns;
-            if (failed.size() == 1) {
-                failedPatterns = failed.get(0);
-            } else {
-                failedPatterns = Joiner.on(", ").join(failed);
-            }
-            throw new NrgServiceRuntimeException(NrgServiceError.UnsupportedFeature, "The series import filter contains the following invalid pattern(s): " + failedPatterns);
-        }
-        return patterns;
+    @Override
+    public boolean shouldIncludeDicomObject(final Map<String, String> headers, final String targetModality) {
+        return shouldIncludeDicomObject(headers);
     }
 
-    private List<String> getFilters() {
+    @Override
+    protected Map<String, String> getImplementationProperties() {
+        return new HashMap<String, String>() {{
+            final String marshaled = getFilterList();
+            put(KEY_LIST, marshaled); }};
+    }
+
+    @Override
+    protected void initialize(final Map<String, String> values) {
+        final String list = values.get(KEY_LIST);
+        getFilters().putAll(createFilterConfiguration(parsePersistedFilters(list)));
+    }
+
+    private boolean shouldIncludeDicomObjectImpl(final Map<Integer, String> headers) {
+        for (final int header : getFilters().keySet()) {
+            final String value = headers.get(header);
+
+            final List<Pattern> patterns = getFilters().get(header);
+            for (final Pattern filter : patterns) {
+                // Finding a match is insufficient, we need to check the mode.
+                if (filter.matcher(value).find()) {
+                    if (_log.isDebugEnabled()) {
+                        _log.debug("Matched  " + DicomUtils.getDicomAttribute(header) + " tag value " + value + " against filter, " + filter.toString() + (getMode() == SeriesImportFilterMode.Whitelist ? "accepting" : "rejecting"));
+                    }
+                    // So if we matched, then this should be included if this is a whitelist. If
+                    // it's a blacklist, this will return false and indicate that this DicomObject
+                    // should not be included.
+                    return getMode() == SeriesImportFilterMode.Whitelist;
+                } else if (_log.isDebugEnabled()) {
+                    _log.debug("Didn't match " + DicomUtils.getDicomAttribute(header) + " tag value " + value + " against filter " + filter.toString());
+                }
+
+            }
+        }
+
+        if (_log.isDebugEnabled()) {
+            _log.debug("Didn't match any headers, " + (getMode() == SeriesImportFilterMode.Blacklist ? "rejecting" : "accepting"));
+        }
+
+        return getMode() == SeriesImportFilterMode.Blacklist;
+    }
+
+    private Map<Integer, List<Pattern>> getFilters() {
+        if (_filters == null) {
+            _filters = new HashMap<>();
+        }
         return _filters;
     }
 
-    private List<String> _filters;
+    private String getFilterList() {
+        final List<String> lines = new ArrayList<>();
+        if (getFilters().size() == 1 && getFilters().containsKey(Tag.SeriesDescription)) {
+            for (final Pattern expression : getFilters().get(Tag.SeriesDescription)) {
+                lines.add(expression.toString());
+            }
+        } else {
+            for (final int key : getFilters().keySet()) {
+                lines.add("[" + DicomUtils.getDicomAttribute(key) + "]");
+                for (final Pattern expression : getFilters().get(key)) {
+                    lines.add(expression.toString());
+                }
+            }
+        }
+        return Joiner.on("\\n").join(lines);
+    }
+
+    private static Map<Integer, List<Pattern>> createFilterConfiguration(final List<String> strings) {
+        final Map<Integer, List<Pattern>> filters = new HashMap<>();
+        final Map<String, List<String>> failed = new HashMap<>();
+
+        int currentField = DEFAULT_FIELD;
+        filters.put(currentField, new ArrayList<Pattern>());
+
+        for (final String current : strings) {
+            // A blank line or comment is ignored.
+            if (StringUtils.isBlank(current) || current.startsWith("#")) {
+                continue;
+            }
+
+            // Trim off white space and work with that.
+            final String trimmed = current.trim();
+
+            // Check for the config header delimiters, e.g. [BurnedInAnnotations]
+            if (trimmed.startsWith("[") && trimmed.endsWith("]")) {
+                currentField = DicomUtils.parseDicomHeaderId(trimmed.substring(1, trimmed.length() - 1));
+                if (!filters.containsKey(currentField)) {
+                    filters.put(currentField, new ArrayList<Pattern>());
+                }
+            } else {
+                try {
+                    filters.get(currentField).add(Pattern.compile(trimmed));
+                } catch (PatternSyntaxException ignored) {
+                    final String attribute = DicomUtils.getDicomAttribute(currentField);
+                    if (!failed.containsKey(attribute)) {
+                        failed.put(attribute, new ArrayList<String>());
+                    }
+                    failed.get(current).add(trimmed);
+                }
+            }
+        }
+
+        if (failed.size() > 0) {
+            final List<String> failedSections = new ArrayList<>(failed.size());
+            for (final String failedSection : failed.keySet()) {
+                final List<String> failedPatterns = failed.get(failedSection);
+                failedSections.add(failedPatterns.size() == 1 ? failedSection + ": " + failedPatterns.get(0) : failedSection + ": " + Joiner.on(", ").join(failedPatterns));
+            }
+            final StringBuilder buffer = new StringBuilder("The series import filter contains the following invalid pattern(s):\n");
+            for (final String failedSection : failedSections) {
+                buffer.append(" * ").append(failedSection).append("\n");
+            }
+            throw new NrgServiceRuntimeException(NrgServiceError.UnsupportedFeature, buffer.toString());
+        }
+
+        if (filters.get(DEFAULT_FIELD).isEmpty()) {
+            filters.remove(DEFAULT_FIELD);
+        }
+
+        return filters;
+    }
+
+    private static final Logger _log = LoggerFactory.getLogger(RegExBasedSeriesImportFilter.class);
+
+    private static final int DEFAULT_FIELD = Tag.SeriesDescription;
+
+    private Map<Integer, List<Pattern>> _filters;
 }

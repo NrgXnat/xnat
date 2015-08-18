@@ -21,15 +21,21 @@ public class SeriesImportFilterTests {
     @Test
     public void testStandaloneFilterCreation() throws IOException {
         assertTrue(StringUtils.isNotBlank(_whitelistRegexFilter));
+        assertTrue(StringUtils.isNotBlank(_whitelistWithTagNamesRegexFilter));
         assertTrue(StringUtils.isNotBlank(_blacklistRegexFilter));
+        assertTrue(StringUtils.isNotBlank(_blacklistWithTagNamesRegexFilter));
         assertTrue(StringUtils.isNotBlank(_modalityMapFilter));
 
         SeriesImportFilter whitelistRegexFilter = new RegExBasedSeriesImportFilter(_whitelistRegexFilter);
+        SeriesImportFilter whitelistWithTagNamesRegexFilter = new RegExBasedSeriesImportFilter(_whitelistWithTagNamesRegexFilter);
         SeriesImportFilter blacklistRegexFilter = new RegExBasedSeriesImportFilter(_blacklistRegexFilter);
+        SeriesImportFilter blacklistWithTagNamesRegexFilter = new RegExBasedSeriesImportFilter(_blacklistWithTagNamesRegexFilter);
         SeriesImportFilter modalityMapFilter = new ModalityMapSeriesImportFilter(_modalityMapFilter);
 
         assertNotNull(whitelistRegexFilter);
+        assertNotNull(whitelistWithTagNamesRegexFilter);
         assertNotNull(blacklistRegexFilter);
+        assertNotNull(blacklistWithTagNamesRegexFilter);
         assertNotNull(modalityMapFilter);
 
         assertTrue(whitelistRegexFilter.shouldIncludeDicomObject(_t1SpinEcho));
@@ -37,10 +43,16 @@ public class SeriesImportFilterTests {
         assertTrue(whitelistRegexFilter.shouldIncludeDicomObject(_localizer2));
         assertFalse(whitelistRegexFilter.shouldIncludeDicomObject(_petData));
         assertFalse(whitelistRegexFilter.shouldIncludeDicomObject(_massivePhi));
+        assertTrue(whitelistWithTagNamesRegexFilter.shouldIncludeDicomObject(_mrScan));
+        assertFalse(whitelistWithTagNamesRegexFilter.shouldIncludeDicomObject(_burnedInAnnotation));
         assertTrue(blacklistRegexFilter.shouldIncludeDicomObject(_t1SpinEcho));
         assertTrue(blacklistRegexFilter.shouldIncludeDicomObject(_localizer1));
         assertFalse(blacklistRegexFilter.shouldIncludeDicomObject(_petData));
         assertFalse(blacklistRegexFilter.shouldIncludeDicomObject(_massivePhi));
+        assertTrue(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(_mrScan));
+        assertTrue(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(_mrWithImageTypeDerivedScan));
+        assertFalse(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(_mrWithImageTypePatientDataScan));
+        assertFalse(blacklistWithTagNamesRegexFilter.shouldIncludeDicomObject(_burnedInAnnotation));
 
         modalityMapFilter.setModality("MR");
         assertFalse(modalityMapFilter.shouldIncludeDicomObject(_burnedInAnnotation));
@@ -97,8 +109,12 @@ public class SeriesImportFilterTests {
 
     @Value("${whitelistRegexFilter}")
     private String _whitelistRegexFilter;
+    @Value("${whitelistWithTagNamesRegexFilter}")
+    private String _whitelistWithTagNamesRegexFilter;
     @Value("${blacklistRegexFilter}")
     private String _blacklistRegexFilter;
+    @Value("${blacklistWithTagNamesRegexFilter}")
+    private String _blacklistWithTagNamesRegexFilter;
     @Value("${modalityMapFilter}")
     private String _modalityMapFilter;
 
@@ -120,6 +136,16 @@ public class SeriesImportFilterTests {
     private final Map<String, String> _mrScan = new HashMap<String, String>() {{
         put("SeriesDescription", "T1 Spin Echo");
         put("Modality", "MR");
+    }};
+    private final Map<String, String> _mrWithImageTypePatientDataScan = new HashMap<String, String>() {{
+        put("SeriesDescription", "T1 Spin Echo");
+        put("Modality", "MR");
+        put("ImageType", "Captured Patient Data");
+    }};
+    private final Map<String, String> _mrWithImageTypeDerivedScan = new HashMap<String, String>() {{
+        put("SeriesDescription", "T1 Spin Echo");
+        put("Modality", "MR");
+        put("ImageType", "DERIVED");
     }};
     private final Map<String, String> _mrWithPetDataScan = new HashMap<String, String>() {{
         put("SeriesDescription", "PET Data");

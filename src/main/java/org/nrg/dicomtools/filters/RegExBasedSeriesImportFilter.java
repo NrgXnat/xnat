@@ -12,7 +12,9 @@ package org.nrg.dicomtools.filters;
 
 import com.google.common.base.Joiner;
 import org.apache.commons.lang.StringUtils;
+import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
+import org.dcm4che2.data.SpecificCharacterSet;
 import org.dcm4che2.data.Tag;
 import org.nrg.dicomtools.utilities.DicomUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
@@ -56,13 +58,18 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
     @Override
     public boolean shouldIncludeDicomObject(final DicomObject dicomObject) {
-        final Map<Integer, String> values = new HashMap<>();
+        final Map<Integer, String> values = new LinkedHashMap<>();
+        final SpecificCharacterSet characterSet = dicomObject.getSpecificCharacterSet();
         for (final int header : getFilters().keySet()) {
-            values.put(header, dicomObject.get(header).toString());
+            if (dicomObject.contains(header)) {
+                final DicomElement dicomElement = dicomObject.get(header);
+                final String value = dicomElement.getValueAsString(characterSet, 300);
+                values.put(header, StringUtils.isNotBlank(value) ? value : "");
+            } else {
+                values.put(header, null);
+            }
         }
-        return shouldIncludeDicomObjectImpl(new LinkedHashMap<Integer, String>() {{
-            putAll(values);
-        }});
+        return shouldIncludeDicomObjectImpl(values);
     }
 
     @Override
@@ -71,8 +78,13 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
     }
 
     @Override
+    public boolean shouldIncludeDicomObject(final Map<String, String> headers, final String targetModality) {
+        return shouldIncludeDicomObject(headers);
+    }
+
+    @Override
     public boolean shouldIncludeDicomObject(final Map<String, String> headers) {
-        final Map<Integer, String> converted = new HashMap<>(headers.size());
+        final Map<Integer, String> converted = new LinkedHashMap<>(headers.size());
         for (final String header : headers.keySet()) {
             final int tag = DicomUtils.parseDicomHeaderId(header);
             converted.put(tag, headers.get(header));
@@ -105,11 +117,6 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
     }
 
     @Override
-    public boolean shouldIncludeDicomObject(final Map<String, String> headers, final String targetModality) {
-        return shouldIncludeDicomObject(headers);
-    }
-
-    @Override
     protected Map<String, String> getImplementationProperties() {
         return new HashMap<String, String>() {{
             final String marshaled = getFilterList();
@@ -128,6 +135,17 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
             final List<Pattern> patterns = getFilters().get(header);
             for (final Pattern filter : patterns) {
+                // Check for EXISTS pattern.
+                if (filter.pattern().equals("EXISTS") && value != null) {
+                    // As long as the value is not null, the header exists.
+                    return getMode() == SeriesImportFilterMode.Whitelist;
+                }
+                if (filter.pattern().equals("!EXISTS") && value == null) {
+                    return getMode() == SeriesImportFilterMode.Whitelist;
+                }
+                if (value == null) {
+                    continue;
+                }
                 // Finding a match is insufficient, we need to check the mode.
                 if (filter.matcher(value).find()) {
                     if (_log.isDebugEnabled()) {
@@ -140,7 +158,6 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
                 } else if (_log.isDebugEnabled()) {
                     _log.debug("Didn't match " + DicomUtils.getDicomAttribute(header) + " tag value " + value + " against filter " + filter.toString());
                 }
-
             }
         }
 

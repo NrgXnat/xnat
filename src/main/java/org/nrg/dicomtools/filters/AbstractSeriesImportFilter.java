@@ -42,7 +42,7 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
     }
 
     public static List<String> parsePersistedFilters(final String list) {
-        return Arrays.asList(list.split((list.contains("\\n") ? "\\\\n+" : "\\n+")));
+        return Arrays.asList(list.split((list.contains("\\n") ? "\\\\n" : "\\n"), -1));
     }
 
     // TODO: Eventually this can be replaced with a lambda that tells the target methods how to get tags from maps and DicomObjects.

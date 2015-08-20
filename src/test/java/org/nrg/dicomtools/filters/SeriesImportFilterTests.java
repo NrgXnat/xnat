@@ -91,17 +91,31 @@ public class SeriesImportFilterTests {
         handRolledFilter.setModalityFilter("MR", "'#Modality#' != 'PT' && !('#Modality#' == 'MR' && '#SeriesDescription#' == 'PET Data')");
         handRolledFilter.setProjectId("3");
         _service.commit(handRolledFilter, "admin");
+        final SeriesImportFilter whitelistWithTagNamesRegexFilter = DicomFilterService.buildSeriesImportFilter(_whitelistWithTagNamesRegexFilter);
+        assertTrue(whitelistWithTagNamesRegexFilter.isEnabled());
+        whitelistWithTagNamesRegexFilter.setProjectId("4");
+        _service.commit(whitelistWithTagNamesRegexFilter, "admin");
+        final SeriesImportFilter blacklistWithTagNamesRegexFilter = DicomFilterService.buildSeriesImportFilter(_blacklistWithTagNamesRegexFilter);
+        assertTrue(blacklistWithTagNamesRegexFilter.isEnabled());
+        blacklistWithTagNamesRegexFilter.setProjectId("5");
+        _service.commit(blacklistWithTagNamesRegexFilter, "admin");
 
         final SeriesImportFilter retrievedWhitelistRegexFilter = _service.getSeriesImportFilter("1");
         final SeriesImportFilter retrievedBlacklistRegexFilter = _service.getSeriesImportFilter("2");
         final SeriesImportFilter retrievedModalityMapFilter = _service.getSeriesImportFilter();
         final SeriesImportFilter retrievedHandRolledFilter = _service.getSeriesImportFilter("3");
+        final SeriesImportFilter retrievedWhitelistWithTagNamesRegexFilter = _service.getSeriesImportFilter("4");
+        final SeriesImportFilter retrievedBlacklistWithTagNamesRegexFilter = _service.getSeriesImportFilter("5");
 
         assertEquals(whitelistRegexFilter, retrievedWhitelistRegexFilter);
         assertEquals(blacklistRegexFilter, retrievedBlacklistRegexFilter);
         assertEquals(modalityMapFilter, retrievedModalityMapFilter);
         assertEquals(handRolledFilter, retrievedHandRolledFilter);
         assertNotNull(handRolledFilter.getModalityFilter("PT"));
+        assertEquals(whitelistWithTagNamesRegexFilter, retrievedWhitelistWithTagNamesRegexFilter);
+        assertEquals(blacklistWithTagNamesRegexFilter, retrievedBlacklistWithTagNamesRegexFilter);
+        assertEquals(whitelistWithTagNamesRegexFilter.toMap().get(SeriesImportFilter.KEY_LIST), retrievedWhitelistWithTagNamesRegexFilter.toMap().get(SeriesImportFilter.KEY_LIST));
+        assertEquals(blacklistWithTagNamesRegexFilter.toMap().get(SeriesImportFilter.KEY_LIST), retrievedBlacklistWithTagNamesRegexFilter.toMap().get(SeriesImportFilter.KEY_LIST));
     }
 
     @Inject

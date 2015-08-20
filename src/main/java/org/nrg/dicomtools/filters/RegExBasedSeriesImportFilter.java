@@ -37,13 +37,12 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
         super(map);
     }
 
-    public RegExBasedSeriesImportFilter(final String contents, final SeriesImportFilterMode mode, final boolean enabled) {
+    public RegExBasedSeriesImportFilter(final String contents, final SeriesImportFilterMode mode, final boolean enabled) throws IOException {
         this(contents, "", mode, enabled);
     }
 
-    public RegExBasedSeriesImportFilter(final String contents, final String projectId, final SeriesImportFilterMode mode, final boolean enabled) {
-        super(projectId, mode, enabled);
-        getFilters().putAll(createFilterConfiguration(parsePersistedFilters(contents)));
+    public RegExBasedSeriesImportFilter(final String contents, final String projectId, final SeriesImportFilterMode mode, final boolean enabled) throws IOException {
+        super(createMap(contents, projectId, mode, enabled));
     }
 
     @Override
@@ -105,12 +104,12 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
 
         return isEnabled() == that.isEnabled() &&
                 getProjectId().equals(that.getProjectId()) &&
-                getFilterList().equals(that.getFilterList());
+                StringUtils.equals(_contents, that._contents);
     }
 
     @Override
     public int hashCode() {
-        int result = Objects.hash(getFilterList());
+        int result = _contents.hashCode();
         result = 31 * result + (isEnabled() ? 1 : 0);
         result = 31 * result + getProjectId().hashCode();
         return result;
@@ -119,14 +118,13 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
     @Override
     protected Map<String, String> getImplementationProperties() {
         return new HashMap<String, String>() {{
-            final String marshaled = getFilterList();
-            put(KEY_LIST, marshaled); }};
+            put(KEY_LIST, _contents); }};
     }
 
     @Override
     protected void initialize(final Map<String, String> values) {
-        final String list = values.get(KEY_LIST);
-        getFilters().putAll(createFilterConfiguration(parsePersistedFilters(list)));
+        _contents = values.get(KEY_LIST);
+        getFilters().putAll(createFilterConfiguration(parsePersistedFilters(_contents)));
     }
 
     private boolean shouldIncludeDicomObjectImpl(final Map<Integer, String> headers) {
@@ -189,7 +187,7 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
                 }
             }
         }
-        return Joiner.on("\\n").join(lines);
+        return Joiner.on("\n").join(lines);
     }
 
     private static Map<Integer, List<Pattern>> createFilterConfiguration(final List<String> strings) {
@@ -247,9 +245,21 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
         return filters;
     }
 
+    private static LinkedHashMap<String, String> createMap(final String contents, final String projectId, final SeriesImportFilterMode mode, final boolean enabled) {
+        final LinkedHashMap<String, String> map = new LinkedHashMap<>();
+        map.put(KEY_LIST, contents);
+        if (StringUtils.isNotBlank(projectId)) {
+            map.put(KEY_PROJECT_ID, projectId);
+        }
+        map.put(KEY_MODE, mode.getValue());
+        map.put(KEY_ENABLED, Boolean.toString(enabled));
+        return map;
+    }
+
     private static final Logger _log = LoggerFactory.getLogger(RegExBasedSeriesImportFilter.class);
 
     private static final int DEFAULT_FIELD = Tag.SeriesDescription;
 
     private Map<Integer, List<Pattern>> _filters;
+    private String _contents;
 }

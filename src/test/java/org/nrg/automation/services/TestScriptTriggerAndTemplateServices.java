@@ -233,6 +233,12 @@ public class TestScriptTriggerAndTemplateServices {
         assertTrue(compareByAssociation.contains(trigger0));
         assertTrue(compareByAssociation.contains(trigger7));
 
+        ScriptTrigger getByEventAndAssociation = _triggerService.getByScopeEntityAndEvent(Scope.Project, "0", EVENT_ID_1);
+        assertNotNull(getByEventAndAssociation);
+        assertEquals("script0", getByEventAndAssociation.getScriptId());
+        assertEquals(Scope.encode(Scope.Project, "0"), getByEventAndAssociation.getAssociation());
+        assertEquals(EVENT_ID_1, getByEventAndAssociation.getEvent().getEventId());
+
         ScriptTriggerTemplate template0 = _templateService.newEntity("template1", "Here's a template!", new HashSet<>(Arrays.asList(trigger0, trigger1, trigger2)), new HashSet<>(Arrays.asList("0", "1", "2")));
         ScriptTriggerTemplate template1 = _templateService.newEntity("template2", "Yet another template!", new HashSet<>(Arrays.asList(trigger2, trigger3, trigger4)), new HashSet<>(Arrays.asList("2", "3", "4")));
         ScriptTriggerTemplate template2 = _templateService.newEntity("template3", "Yet another template!", new HashSet<>(Arrays.asList(trigger4, trigger5, trigger6)), new HashSet<>(Arrays.asList("4", "5", "6")));

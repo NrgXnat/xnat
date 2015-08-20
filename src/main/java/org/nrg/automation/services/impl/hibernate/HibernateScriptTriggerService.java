@@ -9,7 +9,6 @@
  */
 package org.nrg.automation.services.impl.hibernate;
 
-import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.text.StrSubstitutor;
 import org.nrg.automation.entities.Event;
 import org.nrg.automation.entities.ScriptTrigger;
@@ -19,7 +18,6 @@ import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
-import org.nrg.framework.orm.NrgEntity;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
@@ -184,25 +182,26 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
      * is an encoded {@link Scope#code() scope code} and entity ID. This search performs no scope fail-over.
      *
      * @param association The association for the trigger. Association
-     * @param event       The event associated with the trigger.
+     * @param eventId       The event associated with the trigger.
      *
      * @return The requested script trigger, if it exists.
      */
     @Override
     @Transactional
-    public ScriptTrigger getByAssociationAndEvent(final String association, final String event) {
-        ScriptTrigger example = new ScriptTrigger();
-        example.setAssociation(association);
-        example.setEvent(getEvent(event));
-        List<ScriptTrigger> triggers = getDao().findByExample(example, EXCLUDE_PROPS_SCOPE_EVENT);
+    public ScriptTrigger getByAssociationAndEvent(final String association, final String eventId) {
+        final Map<String, Object> properties = new HashMap<>();
+        properties.put("association", association);
+        properties.put("event", _eventService.getByEventId(eventId));
+
+        List<ScriptTrigger> triggers = getDao().findByProperties(properties);
         if (triggers == null || triggers.size() == 0) {
             if (_log.isDebugEnabled()) {
-                _log.debug("Found no trigger for association {} and event {}", association, event);
+                _log.debug("Found no trigger for association {} and event {}", association, eventId);
             }
             return null;
         }
         if (_log.isDebugEnabled()) {
-            _log.debug("Found {} triggers for association {} and event {}, should be *1*.", triggers.size(), association, event);
+            _log.debug("Found {} triggers for association {} and event {}, should be *1*.", triggers.size(), association, eventId);
         }
         return triggers.get(0);
     }
@@ -220,9 +219,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return true;
     }
 
-    private static final String[] EXCLUDE_PROPS_EVENT = AbstractHibernateEntity.getExcludedProperties("triggerId", "description", "scriptId", "association");
     private static final String[] EXCLUDE_PROPS_SCOPE = AbstractHibernateEntity.getExcludedProperties("triggerId", "description", "scriptId", "event");
-    private static final String[] EXCLUDE_PROPS_SCOPE_EVENT = AbstractHibernateEntity.getExcludedProperties("triggerId", "description", "scriptId");
     private static final String[] EXCLUDE_PROPS_SCRIPT_ID = AbstractHibernateEntity.getExcludedProperties("triggerId", "description", "association", "event");
 
     private static final Logger _log = LoggerFactory.getLogger(HibernateScriptTriggerService.class);

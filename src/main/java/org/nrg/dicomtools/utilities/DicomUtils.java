@@ -68,7 +68,7 @@ public class DicomUtils {
         return getDicomAttribute(parseDicomHeaderId(tag));
     }
 
-    public static final Pattern DICOM_TAG = Pattern.compile("^[(]*(\\d{4}),(\\d{4})[)]*$");
+    public static final Pattern DICOM_TAG = Pattern.compile("^[(]*([\\dA-Fa-f]{4}),([\\dA-Fa-f]{4})[)]*$");
 
     private static final Map<Integer, String> DICOM_TAGS = new HashMap<>();
 }

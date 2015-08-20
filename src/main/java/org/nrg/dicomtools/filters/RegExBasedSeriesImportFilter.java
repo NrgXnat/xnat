@@ -103,6 +103,8 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
         final RegExBasedSeriesImportFilter that = (RegExBasedSeriesImportFilter) o;
 
         return isEnabled() == that.isEnabled() &&
+                getMode() == that.getMode() &&
+                StringUtils.equals(getModality(), that.getModality()) &&
                 getProjectId().equals(that.getProjectId()) &&
                 StringUtils.equals(_contents, that._contents);
     }
@@ -130,40 +132,66 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
     private boolean shouldIncludeDicomObjectImpl(final Map<Integer, String> headers) {
         for (final int header : getFilters().keySet()) {
             final String value = headers.get(header);
-
             final List<Pattern> patterns = getFilters().get(header);
             for (final Pattern filter : patterns) {
-                // Check for EXISTS pattern.
-                if (filter.pattern().equals("EXISTS") && value != null) {
-                    // As long as the value is not null, the header exists.
+                if (testValueAgainstFilter(header, value, filter)) {
+                    _log.debug("Matched " + DicomUtils.getDicomAttribute(header) + " tag with value \"" + value + "\" against filter \"" + filter.pattern() + "\". Mode is " + getMode().getValue() + " so object is " + (getMode() == SeriesImportFilterMode.Whitelist ? "accepted" : "rejected"));
                     return getMode() == SeriesImportFilterMode.Whitelist;
-                }
-                if (filter.pattern().equals("!EXISTS") && value == null) {
-                    return getMode() == SeriesImportFilterMode.Whitelist;
-                }
-                if (value == null) {
-                    continue;
-                }
-                // Finding a match is insufficient, we need to check the mode.
-                if (filter.matcher(value).find()) {
-                    if (_log.isDebugEnabled()) {
-                        _log.debug("Matched  " + DicomUtils.getDicomAttribute(header) + " tag value " + value + " against filter, " + filter.toString() + (getMode() == SeriesImportFilterMode.Whitelist ? "accepting" : "rejecting"));
-                    }
-                    // So if we matched, then this should be included if this is a whitelist. If
-                    // it's a blacklist, this will return false and indicate that this DicomObject
-                    // should not be included.
-                    return getMode() == SeriesImportFilterMode.Whitelist;
-                } else if (_log.isDebugEnabled()) {
-                    _log.debug("Didn't match " + DicomUtils.getDicomAttribute(header) + " tag value " + value + " against filter " + filter.toString());
                 }
             }
         }
 
         if (_log.isDebugEnabled()) {
-            _log.debug("Didn't match any headers, " + (getMode() == SeriesImportFilterMode.Blacklist ? "rejecting" : "accepting"));
+            _log.debug("Didn't match any headers. Mode is " + getMode().getValue() + " so object is " + (getMode() == SeriesImportFilterMode.Blacklist ? "accepted" : "rejected"));
         }
 
         return getMode() == SeriesImportFilterMode.Blacklist;
+    }
+
+    private boolean testValueAgainstFilter(final int header, final String value, final Pattern filter) {
+        // Check for EXISTS pattern. As long as the value isn't null, then this header exists, so the filter pattern matches.
+        if (filter.pattern().equals("EXISTS") && value != null) {
+            // As long as the value is not null, the header exists.
+            if (_log.isDebugEnabled()) {
+                _log.debug(getFilterDescription(header, filter) + " matched value \"" + value + "\", returning true");
+            }
+            return true;
+        }
+        // Check for !EXISTS pattern. If the value is null, then this header does not exist, so the filter pattern matches.
+        if (filter.pattern().equals("!EXISTS") && value == null) {
+            if (_log.isDebugEnabled()) {
+                _log.debug(getFilterDescription(header, filter) + " matched null (i.e. header doesn't exist), returning true");
+            }
+            return true;
+        }
+        if (value == null) {
+            if (_log.isDebugEnabled()) {
+                _log.debug("Header " + DicomUtils.getDicomAttribute(header) + " is null, can't match anything other than !EXISTS so returning false");
+            }
+            return false;
+        }
+        // Finding a match is insufficient, we need to check the mode.
+        if (filter.matcher(value).find()) {
+            if (_log.isDebugEnabled()) {
+                _log.debug(getFilterDescription(header, filter) + " matched value \"" + value + "\", returning true");
+            }
+            return true;
+        }
+        if (_log.isDebugEnabled()) {
+            _log.debug(getFilterDescription(header, filter) + " didn't match value \"" + value + "\", returning false");
+        }
+        return false;
+    }
+
+    private String getFilterDescription(final int header, final Pattern filter) {
+        final StringBuilder buffer = new StringBuilder("Filter ");
+        if (StringUtils.isNotBlank(getProjectId())) {
+            buffer.append(getProjectId());
+        } else {
+            buffer.append("site");
+        }
+        buffer.append("/").append(DicomUtils.getDicomAttribute(header)).append("/").append(filter.pattern());
+        return buffer.toString();
     }
 
     private Map<Integer, List<Pattern>> getFilters() {
@@ -171,23 +199,6 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
             _filters = new HashMap<>();
         }
         return _filters;
-    }
-
-    private String getFilterList() {
-        final List<String> lines = new ArrayList<>();
-        if (getFilters().size() == 1 && getFilters().containsKey(Tag.SeriesDescription)) {
-            for (final Pattern expression : getFilters().get(Tag.SeriesDescription)) {
-                lines.add(expression.toString());
-            }
-        } else {
-            for (final int key : getFilters().keySet()) {
-                lines.add("[" + DicomUtils.getDicomAttribute(key) + "]");
-                for (final Pattern expression : getFilters().get(key)) {
-                    lines.add(expression.toString());
-                }
-            }
-        }
-        return Joiner.on("\n").join(lines);
     }
 
     private static Map<Integer, List<Pattern>> createFilterConfiguration(final List<String> strings) {
@@ -214,7 +225,7 @@ public class RegExBasedSeriesImportFilter extends AbstractSeriesImportFilter {
                 }
             } else {
                 try {
-                    filters.get(currentField).add(Pattern.compile(trimmed));
+                    filters.get(currentField).add(Pattern.compile(trimmed, Pattern.CASE_INSENSITIVE));
                 } catch (PatternSyntaxException ignored) {
                     final String attribute = DicomUtils.getDicomAttribute(currentField);
                     if (!failed.containsKey(attribute)) {

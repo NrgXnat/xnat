@@ -21,7 +21,6 @@ import java.util.LinkedHashMap;
 public class DicomFilterService {
     public static final String SERIES_IMPORT_TOOL = "seriesImportFilter";
     public static final String SERIES_IMPORT_PATH = "config";
-    public static final String SERIES_IMPORT_LABEL_FORMAT = "labelFormat";
 
     public SeriesImportFilter getSeriesImportFilter() {
         return getSeriesImportFilter(null);

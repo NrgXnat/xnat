@@ -154,7 +154,6 @@ public abstract class AbstractSeriesImportFilter implements SeriesImportFilter {
         return prefix + StringUtils.capitalize(key);
     }
 
-
     private static class DicomTag {
         private final String _tag;
         private final int _value;

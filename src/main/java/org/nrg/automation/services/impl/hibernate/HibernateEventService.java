@@ -65,14 +65,30 @@ public class HibernateEventService extends AbstractHibernateEntityService<Event,
                     if (eventCount == 0) {
                         final Map<String, String> events = new HashMap<>();
                         try {
-                            @SuppressWarnings("unchecked")
-                            final List<String> defaultEvents = (List<String>) getContext().getBean("defaultEvents");
-                            if (defaultEvents != null) {
-                                for (final String event : defaultEvents) {
-                                    events.put(event, event);
+                            final Object bean = getContext().getBean("defaultEvents");
+                            if (bean != null) {
+                                final int size;
+                                if (bean instanceof Map) {
+                                    @SuppressWarnings("unchecked")
+                                    final Map<String, String> defaultEvents = (Map<String, String>) bean;
+                                    size = defaultEvents.size();
+                                    for (final String event : defaultEvents.keySet()) {
+                                        events.put(event, defaultEvents.get(event));
+                                    }
+                                } else if (bean instanceof List) {
+                                    @SuppressWarnings("unchecked")
+                                    final List<String> defaultEvents = (List<String>) bean;
+                                    size = defaultEvents.size();
+                                    for (final String event : defaultEvents) {
+                                        events.put(event, event);
+                                    }
+                                } else {
+                                    size = 0;
                                 }
+                                _log.info("Processed " + size + " events from the defaultEvents list.");
+                            } else {
+                                _log.info("No default events source found.");
                             }
-                            _log.info("Processed " + (defaultEvents != null ? defaultEvents.size() : 0) + " events from the defaultEvents list.");
                         } catch (NoSuchBeanDefinitionException ignored) {
                             // We don't care, this just means it wasn't defined anywhere.
                         }

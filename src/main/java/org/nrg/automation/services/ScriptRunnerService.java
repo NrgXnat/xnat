@@ -1,6 +1,7 @@
 package org.nrg.automation.services;
 
 import org.nrg.automation.entities.Script;
+import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
 import org.nrg.framework.constants.Scope;
@@ -82,8 +83,8 @@ public interface ScriptRunnerService extends NrgService {
     List<Script> getScripts();
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
-     * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
+     * sets the scope, event, and language arguments to default values. This is useful for creating a
      * site-wide script that can be run on demand.
      *
      * @param scriptId The ID of the script to set.
@@ -92,8 +93,8 @@ public interface ScriptRunnerService extends NrgService {
     void setScript(final String scriptId, final String content);
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
-     * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
+     * sets the scope, event, and language arguments to default values. This is useful for creating a
      * site-wide script that can be run on demand.
      *
      * @param scriptId    The ID of the script to set.
@@ -103,8 +104,8 @@ public interface ScriptRunnerService extends NrgService {
     void setScript(final String scriptId, final String content, final String description);
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
-     * sets the event, language, and language version arguments to default values.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
+     * sets the event, and language arguments to default values.
      *
      * @param scriptId The ID of the script to set.
      * @param content  The content to set for the script.
@@ -114,8 +115,8 @@ public interface ScriptRunnerService extends NrgService {
     void setScript(final String scriptId, final String content, final Scope scope, final String entityId);
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
-     * sets the language and language version arguments to default values.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
+     * sets the language argument to default values.
      *
      * @param scriptId The ID of the script to set.
      * @param content  The content to set for the script.
@@ -126,7 +127,7 @@ public interface ScriptRunnerService extends NrgService {
     void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event);
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the description to the default value.
      *
      * @param scriptId        The ID of the script to set.
@@ -135,13 +136,13 @@ public interface ScriptRunnerService extends NrgService {
      * @param entityId        The associated entity for the script.
      * @param event           The event for the script.
      * @param language        The script language for this script.
-     * @param languageVersion The compatible language version(s).
      */
-    void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language, final String languageVersion);
+    @SuppressWarnings("unused")
+    void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language);
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
-     * sets the event, language, and language version arguments to default values.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
+     * sets the event, and language arguments to default values.
      *
      * @param scriptId    The ID of the script to set.
      * @param content     The content to set for the script.
@@ -152,8 +153,8 @@ public interface ScriptRunnerService extends NrgService {
     void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId);
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
-     * sets the language and language version arguments to default values.
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
+     * sets the language argument to default values.
      *
      * @param scriptId    The ID of the script to set.
      * @param content     The content to set for the script.
@@ -175,9 +176,8 @@ public interface ScriptRunnerService extends NrgService {
      * @param entityId        The associated entity for the script.
      * @param event           The event for the script.
      * @param language        The script language for this script.
-     * @param languageVersion The compatible language version(s).
      */
-    void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language, final String languageVersion);
+    void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language);
 
     /**
      * Takes the submitted script object and creates a trigger for it with the indicated scope, entity ID, and event. If
@@ -218,7 +218,7 @@ public interface ScriptRunnerService extends NrgService {
      *
      * @return The results of the script execution.
      */
-    Object runScript(final Script script) throws NrgServiceException;
+    ScriptOutput runScript(final Script script) throws NrgServiceException;
 
     /**
      * This attempts to run the submitted script, passing in the <b>parameters</b> map as parameters to the script. Note
@@ -231,7 +231,7 @@ public interface ScriptRunnerService extends NrgService {
      *
      * @return The results of the script execution.
      */
-    Object runScript(final Script script, Map<String, Object> parameters) throws NrgServiceException;
+    ScriptOutput runScript(final Script script, Map<String, Object> parameters) throws NrgServiceException;
 
     /**
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
@@ -244,7 +244,7 @@ public interface ScriptRunnerService extends NrgService {
      *
      * @return The results of the script execution.
      */
-    Object runScript(final Script script, final ScriptTrigger trigger) throws NrgServiceException;
+    ScriptOutput runScript(final Script script, final ScriptTrigger trigger) throws NrgServiceException;
 
     /**
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
@@ -258,59 +258,47 @@ public interface ScriptRunnerService extends NrgService {
      *
      * @return The results of the script execution.
      */
-    Object runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException;
+    ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException;
 
     /**
      * Set the system's {@link ScriptRunner script runners} to the submitted collection.
      *
      * @param runners The {@link ScriptRunner script runners} to be added to the system.
      */
-    void setRunners(final Collection<ScriptRunner> runners);
-
-    boolean hasRunner(String language);
+    void setRunners(final Collection<Class<? extends ScriptRunner>> runners);
 
     /**
-     * Indicates whether a {@link ScriptRunner script runner} compatible with the indicated language and version exists
-     * on the system.
+     * Indicates whether a {@link ScriptRunner script runner} compatible with the indicated language exists on the 
+     * system.
      *
      * @param language The script language for the script.
-     * @param version  The script version.
      *
      * @return <b>true</b> if a compatible version exists, <b>false</b> otherwise.
      */
-    boolean hasRunner(final String language, final String version);
+    boolean hasRunner(final String language);
 
     /**
      * Gets a list of the available script runners.
      * @return A list of all available script runners in the system.
      */
-    List<ScriptRunner> getRunners();
+    List<String> getRunners();
 
     /**
-     * Gets the runners for the specified language. This would only have multiple runners if more than one
-     * version of a language was supported, e.g. Python 2.6, 2.7, and 3.0.
-     * @param language    The script language for the script.
-     * @return A list of all runners for the specified language.
-     */
-    List<ScriptRunner> getRunners(String language);
-
-    /**
-     * Gets the {@link ScriptRunner script runner} compatible with the indicated language and version, if one exists on
+     * Gets the {@link ScriptRunner script runner} compatible with the indicated language, if one exists on
      * the system. This returns <b>null</b> if no compatible runner is found.
      *
      * @param language The script language for the script.
-     * @param version  The script version.
      *
      * @return The compatible {@link ScriptRunner script runner} if a compatible version exists, <b>null</b> otherwise.
      */
-    ScriptRunner getRunner(final String language, final String version);
+    ScriptRunner getRunner(final String language);
 
     /**
      * Adds the submitted {@link ScriptRunner script runner} to the system.
      *
      * @param runner The {@link ScriptRunner script runner} to be added to the system.
      */
-    void addRunner(final ScriptRunner runner);
+    void addRunner(final Class<? extends ScriptRunner> runner);
 
     /**
      * Adds the submitted {@link ScriptRunner script runners} to the system.
@@ -318,5 +306,5 @@ public interface ScriptRunnerService extends NrgService {
      * @param runners The {@link ScriptRunner script runners} to be added to the system.
      */
     @SuppressWarnings("unused")
-    void addRunners(final Collection<ScriptRunner> runners);
+    void addRunners(final Collection<Class<? extends ScriptRunner>> runners);
 }

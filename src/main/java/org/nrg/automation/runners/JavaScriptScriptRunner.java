@@ -1,16 +1,7 @@
 package org.nrg.automation.runners;
 
-import org.springframework.stereotype.Component;
+import org.nrg.automation.annotations.Supports;
 
-@Component
+@Supports("JavaScript")
 public class JavaScriptScriptRunner extends AbstractScriptRunner {
-    @Override
-    public String getLanguage() {
-        return "JavaScript";
-    }
-
-    @Override
-    public String getLanguageVersion() {
-        return "1.6";
-    }
 }

@@ -66,13 +66,13 @@ public class HibernateEventService extends AbstractHibernateEntityService<Event,
                         final Map<String, String> events = new HashMap<>();
                         try {
                             @SuppressWarnings("unchecked")
-                            final List<String> eventUtilsEvents = (List<String>) getContext().getBean("eventUtilsEvents");
-                            if (eventUtilsEvents != null) {
-                                for (final String event : eventUtilsEvents) {
+                            final List<String> defaultEvents = (List<String>) getContext().getBean("defaultEvents");
+                            if (defaultEvents != null) {
+                                for (final String event : defaultEvents) {
                                     events.put(event, event);
                                 }
                             }
-                            _log.info("Processed " + (eventUtilsEvents != null ? eventUtilsEvents.size() : 0) + " events from the eventUtilsEvents list.");
+                            _log.info("Processed " + (defaultEvents != null ? defaultEvents.size() : 0) + " events from the defaultEvents list.");
                         } catch (NoSuchBeanDefinitionException ignored) {
                             // We don't care, this just means it wasn't defined anywhere.
                         }
@@ -108,7 +108,7 @@ public class HibernateEventService extends AbstractHibernateEntityService<Event,
                             _jdbcTemplate.batchUpdate(inserts.toArray(new String[inserts.size()]));
                             _log.info("Created " + inserts.size() + " new event objects.");
                         } else {
-                            _log.info("Found no existing events, but couldn't retrieve the eventUtilsEvents list of events nor the populateEventsQuery query to bootstrap the events.");
+                            _log.info("Found no existing events, but couldn't retrieve the default list of events nor the populateEventsQuery query to bootstrap the events.");
                         }
                     }
                 } catch (DataAccessException exception) {

@@ -30,7 +30,7 @@
         </dependency>
         <dependency>
             <groupId>org.python</groupId>
-            <artifactId>jython</artifactId>
+            <artifactId>jython-standalone</artifactId>
         </dependency>
         <!--
             TODO: The jruby dependency causes unit tests to fail. First there's a different version of asm that causes errors
@@ -64,6 +64,10 @@
                 </exclusion>
             </exclusions>
         </dependency -->
+        <dependency>
+            <groupId>org.reflections</groupId>
+            <artifactId>reflections</artifactId>
+        </dependency>
         <dependency>
             <groupId>com.google.guava</groupId>
             <artifactId>guava</artifactId>

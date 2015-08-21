@@ -18,13 +18,30 @@ import org.nrg.framework.services.NrgService;
 import org.nrg.mail.api.MailMessage;
 
 public interface MailService extends NrgService {
-    public static String SERVICE_NAME = "MailService";
-    
+
     /**
      * The prefix to be used for attachments that are intended as inline attachments
      * (e.g. formatted graphics) in emails.
      */
-    public final static String PREFIX_INLINE_ATTACHMENT = "cid:";
+	String PREFIX_INLINE_ATTACHMENT = "cid:";
+
+	/**
+	 * Gets the prefix to add to the subject of emails.
+	 * @return The prefix to add to the subject of emails.
+	 */
+	String getSubjectPrefix();
+
+	/**
+	 * Sets the prefix to add to the subject of emails.
+	 * @param subjectPrefix    The prefix to add to the subject of emails.
+	 */
+	void setSubjectPrefix(final String subjectPrefix);
+
+	/**
+	 * Indicates whether a {@link #getSubjectPrefix() subject prefix} has been set.
+	 * @return <b>true</b> if a non-blank subject prefix has been set.
+	 */
+	boolean hasSubjectPrefix();
 
     /**
      * Sends a {@link MailMessage mail message object}. This allows for more free-form composition of mail messages
@@ -32,7 +49,7 @@ public interface MailService extends NrgService {
      * @param message The {@link MailMessage mail message} object to send.
      * @throws javax.mail.MessagingException When a messaging error occurs.
      */
-    public abstract void sendMessage(MailMessage message) throws MessagingException;
+	void sendMessage(MailMessage message) throws MessagingException;
 
     /**
      * Sends a {@link MailMessage}. The XDAT mail message class abstracts the plain-text, HTML,
@@ -46,7 +63,7 @@ public interface MailService extends NrgService {
      * @param username    The username to use to validate against the mail service.
      * @param password    The password to use to validate against the mail service.
      */
-    public abstract void sendMessage(MailMessage message, String username, String password) throws MessagingException;
+	void sendMessage(MailMessage message, String username, String password) throws MessagingException;
 
     /**
 	 * Send a simple mail message. This supports multiple addresses on the to,
@@ -69,7 +86,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String, String, String)
      * @throws javax.mail.MessagingException When a message error occurs.
 	 */
-	public abstract void sendMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String body) throws MessagingException;
+	void sendMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String body) throws MessagingException;
 
 	/**
 	 * Send a simple mail message. This supports multiple addresses on the to
@@ -89,7 +106,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String, String, String)
      * @throws javax.mail.MessagingException When a message error occurs.
 	 */
-	public abstract void sendMessage(String from, String[] to, String[] ccs, String subject, String message) throws MessagingException;
+	void sendMessage(String from, String[] to, String[] ccs, String subject, String message) throws MessagingException;
 
 	/**
 	 * Send a simple mail message. This supports multiple addresses on the to
@@ -108,7 +125,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String, String, String)
      * @throws javax.mail.MessagingException When a message error occurs.
 	 */
-	public abstract void sendMessage(String from, String[] to, String subject, String message) throws MessagingException;
+	void sendMessage(String from, String[] to, String subject, String message) throws MessagingException;
 
 	/**
 	 * Send a simple mail message. This supports a single address on the to
@@ -127,7 +144,7 @@ public interface MailService extends NrgService {
 	 * @see #sendMessage(String, String[], String, String)
      * @throws javax.mail.MessagingException When a message error occurs.
 	 */
-	public abstract void sendMessage(String from, String to, String subject, String message) throws MessagingException;
+	void sendMessage(String from, String to, String subject, String message) throws MessagingException;
 
     /**
      * Send an HTML-based mail message. This method takes both an HTML-formatted
@@ -210,7 +227,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text, Map<String, File> attachments) throws MessagingException;
+	void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text, Map<String, File> attachments) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method takes both an HTML-formatted
@@ -244,7 +261,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text) throws MessagingException;
+	void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -274,7 +291,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html) throws MessagingException;
+	void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -301,7 +318,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String[] ccs, String subject, String html) throws MessagingException;
+	void sendHtmlMessage(String from, String[] to, String[] ccs, String subject, String html) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -327,7 +344,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String[] to, String subject, String html) throws MessagingException;
+	void sendHtmlMessage(String from, String[] to, String subject, String html) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -356,7 +373,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String to, String ccs, String bccs, String subject, String html) throws MessagingException;
+	void sendHtmlMessage(String from, String to, String ccs, String bccs, String subject, String html) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -383,7 +400,7 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String to, String ccs, String subject, String html) throws MessagingException;
+	void sendHtmlMessage(String from, String to, String ccs, String subject, String html) throws MessagingException;
 
 	/**
 	 * Send an HTML-based mail message. This method expects the body parameter
@@ -408,5 +425,5 @@ public interface MailService extends NrgService {
 	 * @see #sendHtmlMessage(String, String, String, String, String, String)
 	 * @see #sendHtmlMessage(String, String, String, String, String)
 	 */
-	public abstract void sendHtmlMessage(String from, String to, String subject, String message) throws MessagingException;
+	void sendHtmlMessage(String from, String to, String subject, String message) throws MessagingException;
 }

@@ -38,6 +38,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 
+@SuppressWarnings("unused")
 public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
     public RestBasedMailServiceImpl(String address) throws NrgServiceException {
@@ -108,7 +109,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
         assert message.getTos() != null && message.getTos().size() > 0 : "You must specify at least one address to which to send an email.";
         assert message.getSubject() != null : "You must specify a subject for your email.";
 
-        MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<String, Object>();
+        MultiValueMap<String, Object> parameters = new LinkedMultiValueMap<>();
         parameters.add("from", message.getFrom());
         for (String to : message.getTos()) {
             parameters.add("to", to);
@@ -129,7 +130,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
                 }
             }
         }
-        parameters.add("subject", message.getSubject());
+        parameters.add("subject", prefixSubject(message.getSubject()));
 
         String text = message.getText();
         if (!StringUtils.isBlank(text)) {

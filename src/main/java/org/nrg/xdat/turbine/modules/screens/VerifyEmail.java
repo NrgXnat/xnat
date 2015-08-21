@@ -9,7 +9,6 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.entities.XDATUserDetails;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -22,11 +21,11 @@ import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.search.ItemSearch;
-import org.springframework.security.core.userdetails.UserDetails;
 
 import java.sql.SQLException;
 import java.util.ArrayList;
 
+@SuppressWarnings("unused")
 public class VerifyEmail extends VelocitySecureScreen {
 	private static final Logger logger = Logger.getLogger(VerifyEmail.class);
 	
@@ -39,7 +38,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 
     @Override
     protected void doBuildTemplate(final RunData data, final Context context) {
-    	String alias = "";
+    	final String alias = (String) TurbineUtils.GetPassedParameter("a", data);
 
         try {
             if (XFT.GetUserRegistration()) {
@@ -48,13 +47,12 @@ public class VerifyEmail extends VelocitySecureScreen {
                 context.put("autoApproval", "false");
             }
 
-            alias = (String) TurbineUtils.GetPassedParameter("a", data);
             String secret = (String) TurbineUtils.GetPassedParameter("s", data);
 			String userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias, Long.parseLong(secret));
 	    	if (userID!=null) {
 	    		XDATUser u = new XDATUser(userID);
 	    		ItemCollection users = getAllUsersWithEmail(u.getEmail());
-	    		ArrayList<XDATUser> verified = new ArrayList<XDATUser>();
+	    		ArrayList<XDATUser> verified = new ArrayList<>();
 
 	    		for(ItemI i : users.getItems()){
 	    			XDATUser curUser = new XDATUser(i.getItem(),false);
@@ -100,8 +98,10 @@ public class VerifyEmail extends VelocitySecureScreen {
 								msgBuilder.append(uv.getUsername()).append(", ");
 							}
                             // If this user has never logged in, they're new, send the appropriate notification.
-                            if (uv.getLastLogin() == null || disabledDueToInactivity(uv)) {
+                            if (uv.getLastLogin() == null) {
                                 AdminUtils.sendNewUserNotification(uv, context);
+                            } else if (disabledDueToInactivity(uv)) {
+                                AdminUtils.sendDisabledUserVerificationNotification(uv, context);
                             }
 						}
 						// Set the user message.

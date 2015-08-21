@@ -12,13 +12,7 @@
 
 package org.nrg.xdat.turbine.utils;
 
-import java.io.StringWriter;
-import java.util.*;
-
-import javax.mail.MessagingException;
-
 import org.apache.commons.lang.StringUtils;
-import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -26,9 +20,9 @@ import org.apache.velocity.app.Velocity;
 import org.apache.velocity.context.Context;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.mail.api.MailMessage;
-import org.nrg.xdat.XDAT;
 import org.nrg.mail.api.NotificationSubscriberProvider;
 import org.nrg.mail.api.NotificationType;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserRegistrationData;
 import org.nrg.xdat.om.XdatUser;
@@ -37,20 +31,23 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
-import org.nrg.xft.collections.ItemCollection;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.AuthUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.mail.MessagingException;
+import java.io.StringWriter;
+import java.util.Calendar;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * @author Tim
  * 
  */
 public class AdminUtils {
-	static Logger logger = Logger.getLogger(AdminUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(AdminUtils.class);
 	private static String authorizerEmailAddress = null;
 	private static boolean NEW_USER_REGISTRATIONS = true;
 	private static boolean PAGE_EMAIL = true;
@@ -163,11 +160,11 @@ public class AdminUtils {
         context.put("lab", lab);
 
         String body = populateVmTemplate(context, "/screens/email/NewUserRequest.vm");
-        String subject = TurbineUtils.GetSystemName() + " New User Request: " + first + " " + last;
+        String subject = "New User Request: " + first + " " + last;
 
         AdminUtils.sendAdminEmail(subject, body);
 
-        Map<String, Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<>();
         properties.put(MailMessage.PROP_FROM, getAdminEmailId());
         properties.put(MailMessage.PROP_SUBJECT, subject);
         properties.put(MailMessage.PROP_HTML, body);
@@ -199,16 +196,35 @@ public class AdminUtils {
         context.put("lab", lab);
 
         String body = populateVmTemplate(context, "/screens/email/NewUserNotification.vm");
-        String subject = TurbineUtils.GetSystemName() + " New User Created: " + first + " " + last;
+        String subject = "New User Created: " + first + " " + last;
 
         AdminUtils.sendAdminEmail(subject, body);
 
-        Map<String, Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<>();
         properties.put(MailMessage.PROP_FROM, getAdminEmailId());
         properties.put(MailMessage.PROP_SUBJECT, subject);
         properties.put(MailMessage.PROP_HTML, body);
         XDAT.verifyNotificationType(NotificationType.NewUser);
         XDAT.getNotificationService().createNotification(NotificationType.NewUser.toString(), properties);
+	}
+
+	public static void sendDisabledUserVerificationNotification(final XDATUser user, final Context context) throws Exception {
+        context.put("time", Calendar.getInstance().getTime());
+        context.put("server", TurbineUtils.GetFullServerPath());
+        context.put("system", TurbineUtils.GetSystemName());
+        context.put("user", user);
+
+        final String body = populateVmTemplate(context, "/screens/email/DisabledUserVerification.vm");
+        final String subject = "Disabled User Verified: " + user.getFirstname() + " " + user.getLastname();
+
+        AdminUtils.sendAdminEmail(subject, body);
+
+        Map<String, Object> properties = new HashMap<>();
+        properties.put(MailMessage.PROP_FROM, getAdminEmailId());
+        properties.put(MailMessage.PROP_SUBJECT, subject);
+        properties.put(MailMessage.PROP_HTML, body);
+        XDAT.verifyNotificationType(NotificationType.Issue);
+        XDAT.getNotificationService().createNotification(NotificationType.Issue.toString(), properties);
 	}
 
     public static void sendNewUserNotification(final XDATUser user, final Context context) throws Exception {
@@ -251,8 +267,8 @@ public class AdminUtils {
    public static void sendNewUserVerificationEmail(ItemI i) throws Exception {
       // If the Item is null, don't continue.
       if(i == null){ throw new Exception("Unable to send verification email. Required Item is null."); }
-      sendNewUserVerificationEmail((String)i.getProperty("email"), (String)i.getProperty("firstName"), 
-                                   (String)i.getProperty("lastName"), (String)i.getProperty("login"));
+      sendNewUserVerificationEmail((String) i.getProperty("email"), (String) i.getProperty("firstName"),
+			  (String) i.getProperty("lastName"), (String) i.getProperty("login"));
    }
    
    public static void sendNewUserVerificationEmail(String email, String firstName, String lastName, String userName) throws Exception{
@@ -330,21 +346,15 @@ public class AdminUtils {
 		}
 	}
 
-    public static boolean sendUserHTMLEmail(String subject, String message, boolean ccAdmin, String[] email_addresses) {
-		boolean successful = false;
+    public static void sendUserHTMLEmail(String subject, String message, boolean ccAdmin, String[] email_addresses) {
 		if (email_addresses.length>0) {
 			String from = getAdminEmailId();
 			try {
 				XDAT.getMailService().sendHtmlMessage(from, email_addresses, ccAdmin ? new String[] { from } : null, null, subject, message);
 			} catch (MessagingException exception) {
 				logger.error("Unable to send mail", exception);
-				successful = false;
 			}
-		} else {
-			successful = false;
 		}
-
-		return successful;
 	}
 
 	public static void sendErrorNotification(RunData data, String message, Context context) throws Exception {
@@ -361,7 +371,7 @@ public class AdminUtils {
 
 			try {
 				// XDAT.getMailService().sendHtmlMessage(getAdminEmailId(), getErrorEmailIds(), TurbineUtils.GetSystemName() + ": Error Thrown", body);
-                Map<String, Object> properties = new HashMap<String, Object>();
+                Map<String, Object> properties = new HashMap<>();
                 properties.put(MailMessage.PROP_FROM, getAdminEmailId());
                 properties.put(MailMessage.PROP_SUBJECT, TurbineUtils.GetSystemName() + ": Error Thrown");
                 properties.put(MailMessage.PROP_HTML, body);

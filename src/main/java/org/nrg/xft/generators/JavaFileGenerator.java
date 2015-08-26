@@ -942,7 +942,7 @@ public class JavaFileGenerator {
         return StringUtils.FormatStringToClassName("Auto_" + e.getFormattedName());
     }
     /**
-     * @param e
+     * @param s
      * @return
      */
     private String formatFieldName(String s)
@@ -1301,7 +1301,15 @@ public class JavaFileGenerator {
             
            String header = "\n";
            StringBuffer sb = new StringBuffer();
-           sb.append(header).append("<TABLE VALIGN=\"top\" style=\"border-right:1px solid #6D99B6;border-left:1px solid #6D99B6;border-top:1px solid #6D99B6;border-bottom:1px solid #6D99B6;\">");
+           sb.append(header).append("" +
+                   "<div class=\"advanced-search-fields autogen\">" +
+                   "<div class=\"search-group by-criteria\">" +
+                   "<h3>" +
+                   "<label>" +
+                   "Search by Criteria " +
+                   "<input type=\"checkbox\" class=\"search-method by-criteria\" value=\"by-criteria\">" +
+                   "</label>" +
+                   "</h3>");
 
            SchemaElement se = new SchemaElement(e);
            
@@ -1309,26 +1317,29 @@ public class JavaFileGenerator {
            
            if (ed != null)
            {
+               //sb.append(header).append("<table>");
                Iterator iter = ed.getSearchableFields(4).iterator();
                while (iter.hasNext())
                {
-                   sb.append(header).append("\t").append("<TR>");
+                   //sb.append(header).append("<tr>");
                    ArrayList dfs = (ArrayList)iter.next();
                    Iterator iter2 = dfs.iterator();
                    while (iter2.hasNext())
                    {
                        DisplayField df = (DisplayField)iter2.next();
-                       sb.append(header).append("\t\t").append("<TD>").append(df.getHeader()).append("</TD>");
-                       sb.append(header).append("\t\t").append("<TD>");
-                       sb.append(header).append("\t\t\t").append("#xdatSearchField($schemaElement $schemaElement.getDisplayField(\"").append(df.getId()).append("\"))");
-                       sb.append(header).append("\t\t").append("</TD>");
-                       sb.append(header).append("\t\t").append("");
+                       //sb.append(header).append("<td>");
+                       sb.append(header).append("<div class=\"search-item\">");
+                       sb.append(header).append("<h5>").append(df.getHeader()).append(":</h5>");
+                       sb.append(header).append("#xdatSearchField($schemaElement $schemaElement.getDisplayField(\"").append(df.getId()).append("\"))");
+                       sb.append(header).append("</div>");
+                       //sb.append(header).append("</td>");
                    }
-                   sb.append(header).append("\t").append("</TR>");
+                   //sb.append(header).append("</tr>");
                }
+               //sb.append(header).append("</table>");
            }
             
-            sb.append(header).append("</TABLE>");
+            sb.append(header).append("<div class=\"clear\"></div></div></div>");
             
          
 

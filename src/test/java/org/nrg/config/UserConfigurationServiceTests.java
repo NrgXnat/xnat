@@ -11,7 +11,7 @@
 
 package org.nrg.config;
 
-import org.codehaus.jackson.map.ObjectMapper;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -32,13 +32,13 @@ import static org.junit.Assert.assertNotNull;
 public class UserConfigurationServiceTests {
     @Test
     public void testCreateUserConfiguration() throws IOException, ConfigServiceException {
-        Map<String, String> configuration = new Hashtable<String, String>();
+        final Map<String, String> configuration = new Hashtable<>();
         for (int i = 0; i < 10; i++) {
             configuration.put("item" + i, "Item value " + i);
         }
-        String marshaled = new ObjectMapper().writeValueAsString(configuration);
+        final String marshaled = new ObjectMapper().writeValueAsString(configuration);
         _service.setUserConfiguration("foo", "stuff", marshaled);
-        String retrieved = _service.getUserConfiguration("foo", "stuff");
+        final String retrieved = _service.getUserConfiguration("foo", "stuff");
         assertNotNull(retrieved);
         assertEquals(marshaled, retrieved);
     }

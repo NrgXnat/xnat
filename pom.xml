@@ -98,7 +98,7 @@
         <itext.version>1.1.4</itext.version>
         <jackson.version>1.8.11</jackson.version>
         <jruby.version>1.7.19</jruby.version>
-        <jython.version>2.7-rc2</jython.version>
+        <jython.version>2.7.0</jython.version>
         <fasterxml-jackson.version>2.5.2</fasterxml-jackson.version>
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
@@ -1024,6 +1024,11 @@
                 <version>${jython.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.python</groupId>
+                <artifactId>jython-standalone</artifactId>
+                <version>${jython.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>org.jruby</groupId>
                 <artifactId>jruby</artifactId>
                 <version>${jruby.version}</version>
@@ -1259,11 +1264,6 @@
                         <keypass>${signing.keypass}</keypass>
                         <tsa>${signing.tsa}</tsa>
                         <certs>true</certs>
-                        <verify>true</verify>
-                        <keystoreConfig>
-                            <delete>false</delete>
-                            <gen>false</gen>
-                        </keystoreConfig>
                         <excludes>
                             <exclude>*-sources.jar</exclude>
                             <exclude>*-javadoc.jar</exclude>
@@ -1295,7 +1295,7 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
-                <version>2.6</version>
+                <version>2.7</version>
                 <configuration>
                     <check/>
                     <formats>

@@ -84,7 +84,6 @@ public class VerifyEmail extends VelocitySecureScreen {
                 String userMessage = "All users with the email, " + u.getEmail() + ", have been previously verified.";
 
                 try{
-
 					// If we verified any of the above users.
 					if(verified.size() > 0){
 						// Build the user message

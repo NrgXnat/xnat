@@ -24,6 +24,8 @@ import org.nrg.xft.utils.StringUtils;
 import java.sql.*;
 import java.util.*;
 import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class PoolDBUtils {
 	static org.apache.log4j.Logger logger = Logger.getLogger(PoolDBUtils.class);
@@ -864,12 +866,17 @@ public class PoolDBUtils {
 		try {
 			rs = st.executeQuery(query);
 		} catch (SQLException e) {
-			if(e.getMessage().contains("Connection reset")){
+			final String message = e.getMessage();
+			if(message.contains("Connection reset")){
 				closeConnection();
 				resetConnections();
 				st = getStatement(db);
 				rs = st.executeQuery(query);
-			}else{
+			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
+				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
+				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+				return null;
+			} else {
 				throw e;
 			}
 		}
@@ -898,6 +905,9 @@ public class PoolDBUtils {
 				resetConnections();
 				st = getStatement(db);
 				st.execute(query);
+			}else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
+				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
+				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
 			}else{
 				throw e;
 			}
@@ -922,5 +932,8 @@ public class PoolDBUtils {
 			}
 		}
 	}
+
+	private static final String EXPR_COLUMN_NOT_FOUND = "column \"([A-z0-9_-]+)\" does not exist";
+	private static final Pattern PATTERN_COLUMN_NOT_FOUND = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
 }
 

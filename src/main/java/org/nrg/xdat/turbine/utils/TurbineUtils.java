@@ -155,6 +155,10 @@ public class TurbineUtils {
 	
 	public static ItemI GetItemBySearch(RunData data, boolean preLoad) throws Exception
 	{
+		if (data == null) {
+			return null;
+		}
+
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
 		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
 		final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
@@ -186,6 +190,10 @@ public class TurbineUtils {
 	
 	public static SchemaElementI GetSchemaElementBySearch(RunData data)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
 		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
 		final String searchElement = TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
@@ -211,6 +219,10 @@ public class TurbineUtils {
 	
 	public static XFTItem GetItemBySearch(RunData data) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
 	{
+		if (data == null) {
+			return null;
+		}
+
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
 		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
 		final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
@@ -244,6 +256,10 @@ public class TurbineUtils {
 	
 	public static ItemI GetItemBySearch(RunData data,Boolean preload) throws IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
 	{
+		if (data == null) {
+			return null;
+		}
+
 		//TurbineUtils.OutputPassedParameters(data,null,"GetItemBySearch()");
 		final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
 		final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
@@ -285,11 +301,17 @@ public class TurbineUtils {
 	
 	public static void SetEditItem(ItemI item,RunData data)
 	{
-	    data.getSession().setAttribute(EDIT_ITEM,item);
+		if (data != null) {
+			data.getSession().setAttribute(EDIT_ITEM,item);
+		}
 	}
 	
 	public static ItemI GetEditItem(RunData data)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		final ItemI edit_item = (ItemI)data.getSession().getAttribute(EDIT_ITEM);
 	    data.getSession().removeAttribute(EDIT_ITEM);
 	    return edit_item;
@@ -297,11 +319,17 @@ public class TurbineUtils {
 	
 	public static void SetParticipantItem(ItemI item,RunData data)
 	{
-	    data.getSession().setAttribute("participant",item);
+		if (data != null) {
+			data.getSession().setAttribute("participant",item);
+		}
 	}
 	
 	public static ItemI GetParticipantItem(RunData data)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		final ItemI edit_item = (ItemI)data.getSession().getAttribute("participant");
 	    if (edit_item==null)
 	    {
@@ -342,6 +370,10 @@ public class TurbineUtils {
 	
 	public static String GetSearchElement(RunData data)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		String s =  TurbineUtils.escapeParam(data.getParameters().getString("search_element"));
 		if (s==null)
 		{
@@ -376,7 +408,11 @@ public class TurbineUtils {
      */
     public static String GetRelativeServerPath(RunData data)
     {
-    	return GetRelativePath(data.getRequest());
+		if (data == null) {
+			return null;
+		}
+
+		return GetRelativePath(data.getRequest());
     }
     
     public static String GetRelativePath(HttpServletRequest req){
@@ -436,6 +472,10 @@ public class TurbineUtils {
 	
 	public static XDATUser getUser(RunData data)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		XDATUser user;
 		if (data.getSession().getAttribute("user") == null) {
 			user = XDAT.getUserDetails();
@@ -462,7 +502,11 @@ public class TurbineUtils {
 	 */
 	public static DisplaySearch getSearch(RunData data)
 	{
-        if (data.getParameters().get("search_xml")!=null || data.getParameters().get("search_id") !=null){
+		if (data == null) {
+			return null;
+		}
+
+		if (data.getParameters().get("search_xml")!=null || data.getParameters().get("search_id") !=null){
             return TurbineUtils.getDSFromSearchXML(data);
         }else{
             DisplaySearch ds =  (DisplaySearch)data.getSession().getAttribute("search");
@@ -510,11 +554,17 @@ public class TurbineUtils {
 	 */
 	public static void setSearch(RunData data, DisplaySearch search)
 	{
-		data.getSession().setAttribute("search",search);
+		if (data != null) {
+			data.getSession().setAttribute("search",search);
+		}
 	}
     
     public static DisplaySearch getDSFromSearchXML(RunData data){
-    	final XDATUser user = TurbineUtils.getUser(data);
+		if (data == null) {
+			return null;
+		}
+
+		final XDATUser user = TurbineUtils.getUser(data);
         
         if (user!=null){
 	        if (data.getParameters().get("search_xml") !=null)
@@ -610,6 +660,10 @@ public class TurbineUtils {
 	
 	public static RunData SetSearchProperties(RunData data, ItemI item)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		data.getParameters().setString("search_element",item.getXSIType());
 		try {
 			final SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
@@ -639,6 +693,10 @@ public class TurbineUtils {
 	
 	public static ItemI getDataItem(RunData data)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		final ItemI item = (ItemI)data.getSession().getAttribute("data_item");
 		data.getSession().removeAttribute("data_item");
 		return item;
@@ -646,12 +704,20 @@ public class TurbineUtils {
 	
 	public static RunData setDataItem(RunData data, ItemI item)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		data.getSession().setAttribute("data_item",item);
 		return data;
 	}
 	
 	public static String getStoredElementName(RunData data)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		final String s= (String)data.getSession().getAttribute("stored_element");
 		data.getSession().removeAttribute("stored_element");
 		return s;
@@ -659,7 +725,9 @@ public class TurbineUtils {
 	
 	public static void setStoredElementName(RunData data, String elementName)
 	{
-		data.getSession().setAttribute("stored_element",elementName);
+		if (data != null) {
+			data.getSession().setAttribute("stored_element",elementName);
+		}
 	}
 	
 	public static void OutputDataParameters(RunData data)
@@ -678,6 +746,10 @@ public class TurbineUtils {
 		public static List<String> GetDataParameterList(RunData data)
 		{
 			final List<String> al = new ArrayList<String>();
+			if (data == null) {
+				return al;
+			}
+
 			for(int i=0; i < data.getParameters().getKeys().length; i++)
 			{
 				al.add(escapeParam(data.getParameters().getKeys()[i].toString()));
@@ -691,7 +763,11 @@ public class TurbineUtils {
 		{
 		    //TurbineUtils.OutputDataParameters(data);
         	final Map<String,String> hash = new Hashtable<String,String>();
-            ParameterParser pp = data.getParameters();
+			if (data == null) {
+				return hash;
+			}
+
+			ParameterParser pp = data.getParameters();
             Enumeration<Object> penum = pp.keys();
             while (penum.hasMoreElements()){
             	final String key = penum.nextElement().toString();
@@ -706,12 +782,12 @@ public class TurbineUtils {
 		{
 			final Map<String,String> hash = new Hashtable<String,String>();
 			final Object[] keys = context.getKeys();
-            for (int i =0;i<keys.length;i++){
-            	final String key = (String)keys[i];
-            	final Object value = context.get(key);
-                if (value!=null && !value.equals(""))
-                    hash.put(key,value.toString());
-            }
+			for (final Object key1 : keys) {
+				final String key = (String) key1;
+				final Object value = context.get(key);
+				if (value != null && !value.equals(""))
+					hash.put(key, value.toString());
+			}
 			return hash;
 		}
 		
@@ -790,15 +866,14 @@ public class TurbineUtils {
 	
 	public static boolean HasPassedParameter(String s, RunData data)
 	{
-	    if (data.getParameters().get(s.toLowerCase())!=null)
+		if (data == null) {
+			return false;
+		}
+
+		if (data.getParameters().get(s.toLowerCase())!=null)
 	    {
 	    	final Object o = TurbineUtils.escapeParam(data.getParameters().get(s.toLowerCase()));
-	        if(o.toString().equalsIgnoreCase(""))
-	        {
-	            return false;
-	        }else{
-		        return true;
-	        }
+			return !o.toString().equalsIgnoreCase("");
 	    }else{
 	        return false;
 	    }
@@ -811,7 +886,7 @@ public class TurbineUtils {
 	
 	public static Boolean GetPassedBoolean(String s, RunData data)
 	{
-		return data.getParameters().getBool(s);
+		return data != null ? data.getParameters().getBool(s) : null;
 	}
 	
 	public static Integer GetPassedInteger(String s, RunData data)
@@ -819,8 +894,11 @@ public class TurbineUtils {
 		return TurbineUtils.GetPassedInteger(s, data,null);
 	}
 	
-	public static Integer GetPassedInteger(String s, RunData data,Integer defualt) 
-	{
+	public static Integer GetPassedInteger(String s, RunData data,Integer defualt) {
+		if (data == null) {
+			return defualt;
+		}
+
 		if (data.getParameters().get(s.toLowerCase())!=null)
 	    {
 	    	final Object o = TurbineUtils.escapeParam(data.getParameters().getInteger(s.toLowerCase()));
@@ -837,6 +915,10 @@ public class TurbineUtils {
 	
 	public static Object[] GetPassedObjects(String s, RunData data)
 	{
+		if (data == null) {
+			return null;
+		}
+
 		final Object[] v=data.getParameters().getObjects(s);
 		if(v!=null){
 			for(int i=0;i<v.length;i++){
@@ -849,19 +931,24 @@ public class TurbineUtils {
 	public static Collection<String> GetPassedStrings(String s, RunData data)
 	{
 		final Collection<String> _ret = Lists.newArrayList();
+		if (data == null) {
+			return _ret;
+		}
 		final String[] v=data.getParameters().getStrings(s);
 		if(v!=null){
-			for(int i=0;i<v.length;i++){
-				if(!StringUtils.IsEmpty(v[i]) && !StringUtils.IsEmpty(TurbineUtils.escapeParam(v[i]))){
-					_ret.add(TurbineUtils.escapeParam(v[i]));
+			for (final String aV : v) {
+				if (!StringUtils.IsEmpty(aV) && !StringUtils.IsEmpty(TurbineUtils.escapeParam(aV))) {
+					_ret.add(TurbineUtils.escapeParam(aV));
 				}
 			}
 		}
 		return _ret;
 	}
 	
-	public static Object GetPassedParameter(String s, RunData data, Object defaultValue)
-	{
+	public static Object GetPassedParameter(String s, RunData data, Object defaultValue) {
+		if (data == null) {
+			return defaultValue;
+		}
 		final ParameterParser parameters = data.getParameters();
 		if (parameters == null) {
 			return defaultValue;

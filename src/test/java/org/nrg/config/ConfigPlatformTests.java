@@ -17,6 +17,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
+import org.nrg.config.extensions.postChange.Separatepetmr.Bool.PETMRSettingChange;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.util.TestDBUtils;
 import org.nrg.framework.constants.Scope;
@@ -46,6 +47,8 @@ public class ConfigPlatformTests {
     static final String path = "/path/to/config";
     static final String project = "project1";
     static final String toolName = "coloringTool";
+    static final String listenerToolName = "separatePetMr";
+    static final String listenerPath = "Bool";
     static final String xnatUser = "admin";
     static final String reasonCreated = "created";
 
@@ -465,6 +468,16 @@ public class ConfigPlatformTests {
         assertEquals(v2.getContents(), v1Check.getContents());
         assertEquals(v2.getVersion(), v1Check.getVersion());
         assertEquals(v1.getVersion(), v1Check.getVersion());
+    }
+
+    @Test
+    public void testPostChangeListener() throws ConfigServiceException {
+        _configService.replaceConfig(xnatUser, reasonCreated, listenerToolName, listenerPath, "true");
+        final Configuration separatePetMr = _configService.getConfig(listenerToolName, listenerPath);
+        assertNotNull(separatePetMr);
+        assertEquals(1, PETMRSettingChange.getChanges());
+        _configService.replaceConfig(xnatUser, reasonCreated, listenerToolName, listenerPath, "false");
+        assertEquals(2, PETMRSettingChange.getChanges());
     }
 
     @Inject

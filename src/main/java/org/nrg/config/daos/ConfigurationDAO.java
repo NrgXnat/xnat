@@ -21,6 +21,7 @@ import org.springframework.stereotype.Repository;
 
 import java.util.List;
 
+@SuppressWarnings("JpaQlInspection")
 @Repository
 public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
 
@@ -44,7 +45,7 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
         Criteria criteria = getCriteriaForType();
 		addNullableCriteria(criteria, "tool", tool);
 		addNullableCriteria(criteria, "path", path);
-		addNullableCriteria(criteria, "scope", scope);
+		addNullableCriteria(criteria, "scope", scope == null ? null : (StringUtils.isBlank(entityId) ? Scope.Site : scope));
 		addNullableCriteria(criteria, "entityId", entityId);
 		@SuppressWarnings("rawtypes")
         List list = criteria.list();

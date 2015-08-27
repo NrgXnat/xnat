@@ -41,6 +41,7 @@ import javax.sql.DataSource;
 import java.util.Collections;
 import java.util.List;
 
+@SuppressWarnings("SqlDialectInspection")
 @Service
 public class DefaultConfigService extends AbstractHibernateEntityService<Configuration, ConfigurationDAO> implements ConfigService {
 
@@ -387,19 +388,19 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     }
 
     @SuppressWarnings("unchecked")
-    private Configuration getConfigByVersionImpl(String toolName, String path, int version, Scope scope, String entityId) {
-        List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
+    private Configuration getConfigByVersionImpl(final String toolName, final String path, final int version, final Scope scope, final String entityId) {
+        final List<Configuration> list = _dao.findByToolPathProject(toolName, path, scope, entityId);
         if (list == null || list.size() < version) {
             return null;
         } else {
             Collections.sort(list, ConfigComparatorByVersion);
-            Configuration ret = list.get(version - 1);
+            final Configuration ret = list.get(version - 1);
             //this will only fail if something truly stupid happened. Still should check, though.
             if (ret.getVersion() == version) {
                 return ret;
             } else {
                 //something odd happened, let's search the list for the version
-                for (Configuration c : list) {
+                for (final Configuration c : list) {
                     if (c.getVersion() == version) {
                         return c;
                     }
@@ -410,7 +411,6 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     }
 
     private Configuration replaceConfigImpl(String xnatUser, String reason, String toolName, String path, String status, Boolean unversioned, String contents, final Scope scope, final String entityId) throws ConfigServiceException {
-
         if (contents != null && contents.length() > ConfigService.MAX_FILE_LENGTH) {
             throw new ConfigServiceException("file size must be less than " + ConfigService.MAX_FILE_LENGTH + " characters.");
         }
@@ -467,7 +467,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         configuration.setVersion(1 + ((oldConfig != null && doVersion) ? oldConfig.getVersion() : 0));
         configuration.setUnversioned(!doVersion);
 
-        notifyListeners("preChange", scope.code(), entityId, toolName, path, configuration, true);//developers can insert pre-change logic that can prevent the storage of the configuration by throwing an exception
+        notifyListeners("preChange", toolName, path, configuration, true);//developers can insert pre-change logic that can prevent the storage of the configuration by throwing an exception
 
         if (update) {
             _dao.update(configuration);
@@ -475,15 +475,14 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
             _dao.create(configuration);
         }
 
-        notifyListeners("postChange", scope.code(), entityId, toolName, path, configuration, false);//developers can insert post-change logic
+        notifyListeners("postChange", toolName, path, configuration, false);//developers can insert post-change logic
 
         return configuration;
     }
 
-    private void notifyListeners(String action, String scope, String entityId, String toolName, String path, Configuration configuration, boolean ignoreExceptions) throws ConfigServiceException {
+    private void notifyListeners(String action, String toolName, String path, Configuration configuration, boolean ignoreExceptions) throws ConfigServiceException {
         toolName = formatForJava(toolName);
         path = formatForJava(path);
-        entityId = formatForJava(entityId);
 
         doDynamicActions(configuration, ignoreExceptions, "org.nrg.config.extensions", action, toolName, path);
     }
@@ -491,9 +490,9 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     /**
      * Removes special characters and capitalizes the next character.
      *
-     * @param name
+     * @param name    The name to format.
      *
-     * @return
+     * @return A Java-formatted string.
      */
     public static String formatForJava(String name) {
         if (StringUtils.isBlank(name)) {

@@ -5,7 +5,7 @@
     <parent>
         <artifactId>nrg</artifactId>
         <groupId>org.nrg</groupId>
-        <version>1.6.5-SNAPSHOT</version>
+        <version>1.6.5</version>
         <relativePath>../nrg/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>

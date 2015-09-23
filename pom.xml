@@ -25,6 +25,8 @@
 
     <properties>
 
+        <java.source.version>1.7</java.source.version>
+        <java.target.version>1.7</java.target.version>
         <project.build.sourceEncoding>ISO-8859-1</project.build.sourceEncoding>
         <project.reporting.outputEncoding>ISO-8859-1</project.reporting.outputEncoding>
 
@@ -47,7 +49,6 @@
         <nrg.nrgstatus.version>2.0.0</nrg.nrgstatus.version>
         <nrg.extattr.version>4.1.0</nrg.extattr.version>
         <nrg.sessionbuilders.version>${project.version}</nrg.sessionbuilders.version>
-
         <pipeline.version>${project.version}</pipeline.version>
 
         <!-- These are default property values to be overridden for specific applets and signing requirements. -->
@@ -57,9 +58,7 @@
         <signing.alias>nrg</signing.alias>
         <signing.storepass>keypass</signing.storepass>
         <signing.keypass>keypass</signing.keypass>
-
-        <!-- TODO: We will need to add trusted TSA timestamping for security purposes. See XNAT-2976 for information. -->
-        <!-- signing.tsa>http://nrg115.nrg.mir:8081/tsa.aspx</signing.tsa -->
+        <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
         <activemq.version>5.7.0</activemq.version>
         <ant.version>1.6.1</ant.version>
@@ -105,10 +104,12 @@
         <hibernate-jpa-2.1.version>1.0.0.Final</hibernate-jpa-2.1.version>
         <hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
         <httpcomponents-client.version>4.3.6</httpcomponents-client.version>
-        <imagej.version>1.49h</imagej.version>
+        <imagej.version>1.49t</imagej.version>
         <itext.version>1.1.4</itext.version>
         <jackson.version>1.8.11</jackson.version>
-        <fasterxml-jackson.version>2.1.0</fasterxml-jackson.version>
+        <jruby.version>1.7.19</jruby.version>
+        <jython.version>2.7.0</jython.version>
+        <fasterxml-jackson.version>2.5.2</fasterxml-jackson.version>
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
         <javassist.version>3.16.1-GA</javassist.version>
@@ -134,11 +135,10 @@
         <springockito.version>1.0.5</springockito.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
-        <pipeline.version>1.6.3</pipeline.version>
         <org.postgresql.version>9.3-1101-jdbc41</org.postgresql.version>
 
         <quartz.version>2.2.1</quartz.version>
-        <reflections.version>0.9.9</reflections.version>
+        <reflections.version>0.9.10</reflections.version>
         <restlet.version>1.1.10</restlet.version>
         <saxon.version>8.7</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
@@ -157,6 +157,21 @@
         <xmlbeans.version>2.6.0</xmlbeans.version>
         <xml-apis.version>1.4.01</xml-apis.version>
 
+        <!-- Plugin versions -->
+        <findbugs-maven-plugin.version>3.0.2</findbugs-maven-plugin.version>
+        <!-- TODO: Remove Emma, which is unsupported. Probably just replace with Cobertura. -->
+        <emma-maven-plugin.version>1.0-alpha-3</emma-maven-plugin.version>
+        <cobertura-maven-plugin.version>2.7</cobertura-maven-plugin.version>
+        <maven-compiler-plugin.version>3.3</maven-compiler-plugin.version>
+        <maven-war-plugin.version>2.6</maven-war-plugin.version>
+        <maven-resources-plugin.version>2.7</maven-resources-plugin.version>
+        <maven-source-plugin.version>2.4</maven-source-plugin.version>
+        <maven-javadoc-plugin.version>2.10.3</maven-javadoc-plugin.version>
+        <webstart-maven-plugin.version>1.0-beta-6</webstart-maven-plugin.version>
+        <maven-surefire-plugin.version>2.18.1</maven-surefire-plugin.version>
+        <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
+        <maven-jar-plugin.version>2.6</maven-jar-plugin.version>
+        <maven-jarsigner-plugin.version>1.4</maven-jarsigner-plugin.version>
     </properties>
 
     <dependencyManagement>
@@ -176,6 +191,16 @@
             <dependency>
                 <groupId>org.nrg</groupId>
                 <artifactId>framework</artifactId>
+                <version>${nrg.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>automation</artifactId>
+                <version>${nrg.framework.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
+                <artifactId>dicomtools</artifactId>
                 <version>${nrg.framework.version}</version>
             </dependency>
             <dependency>
@@ -810,6 +835,16 @@
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
+                <version>${fasterxml-jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-annotations</artifactId>
+                <version>${fasterxml-jackson.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
                 <version>${fasterxml-jackson.version}</version>
             </dependency>
@@ -1040,6 +1075,21 @@
                 <artifactId>groovy-all</artifactId>
                 <version>${groovy.version}</version>
             </dependency>
+            <dependency>
+                <groupId>org.python</groupId>
+                <artifactId>jython</artifactId>
+                <version>${jython.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.python</groupId>
+                <artifactId>jython-standalone</artifactId>
+                <version>${jython.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.jruby</groupId>
+                <artifactId>jruby</artifactId>
+                <version>${jruby.version}</version>
+            </dependency>
 
             <!-- Test dependencies -->
             <dependency>
@@ -1103,7 +1153,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>findbugs-maven-plugin</artifactId>
-                    <version>2.5.3</version>
+                    <version>${findbugs-maven-plugin.version}</version>
                     <configuration>
                         <includeTests>true</includeTests>
                     </configuration>
@@ -1111,21 +1161,21 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>emma-maven-plugin</artifactId>
-                    <version>1.0-alpha-3</version>
+                    <version>${emma-maven-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-compiler-plugin</artifactId>
-                    <version>2.3.2</version>
+                    <version>${maven-compiler-plugin.version}</version>
                     <configuration>
-                        <source>1.7</source>
-                        <target>1.7</target>
+                        <source>${java.source.version}</source>
+                        <target>${java.target.version}</target>
                     </configuration>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-war-plugin</artifactId>
-                    <version>2.3</version>
+                    <version>${maven-war-plugin.version}</version>
                     <configuration>
                         <webXml>src\main\webapp\WEB-INF\web.xml</webXml>
                     </configuration>
@@ -1133,12 +1183,12 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-resources-plugin</artifactId>
-                    <version>2.5</version>
+                    <version>${maven-resources-plugin.version}</version>
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-source-plugin</artifactId>
-                    <version>2.1.2</version>
+                    <version>${maven-source-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>attach-sources</id>
@@ -1151,7 +1201,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-javadoc-plugin</artifactId>
-                    <version>2.8</version>
+                    <version>${maven-javadoc-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>attach-javadocs</id>
@@ -1167,7 +1217,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>webstart-maven-plugin</artifactId>
-                    <version>1.0-beta-6</version>
+                    <version>${webstart-maven-plugin.version}</version>
                     <executions>
                         <execution>
                             <phase>package</phase>
@@ -1187,13 +1237,15 @@
                             <Permissions>all-permissions</Permissions>
                             <Codebase>*</Codebase>
                             <Application-Library-Allowable-Codebase>*</Application-Library-Allowable-Codebase>
+                            <Caller-Allowable-Codebase>*</Caller-Allowable-Codebase>
+                            <Trusted-Library>true</Trusted-Library>
                         </updateManifestEntries>
                         <sign>
                             <keystore>${signing.keystore}</keystore>
                             <alias>${signing.alias}</alias>
                             <storepass>${signing.storepass}</storepass>
                             <keypass>${signing.keypass}</keypass>
-                            <!-- tsaLocation>${signing.tsa}</tsaLocation -->
+                            <tsaLocation>${signing.tsa}</tsaLocation>
                             <verify>true</verify>
                             <keystoreConfig>
                                 <delete>false</delete>
@@ -1209,7 +1261,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-surefire-plugin</artifactId>
-                    <version>2.9</version>
+                    <version>${maven-surefire-plugin.version}</version>
                     <configuration>
                         <includes>
                             <include>**/Test*.java</include>
@@ -1225,7 +1277,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-dependency-plugin</artifactId>
-                    <version>2.8</version>
+                    <version>${maven-dependency-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>copy-dependencies</id>
@@ -1246,7 +1298,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
-                    <version>2.4</version>
+                    <version>${maven-jar-plugin.version}</version>
                     <configuration>
                         <archive>
                             <addMavenDescriptor>false</addMavenDescriptor>
@@ -1262,7 +1314,7 @@
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jarsigner-plugin</artifactId>
-                    <version>1.3.1</version>
+                    <version>${maven-jarsigner-plugin.version}</version>
                     <executions>
                         <execution>
                             <id>sign</id>
@@ -1271,13 +1323,21 @@
                                 <goal>sign</goal>
                             </goals>
                         </execution>
+                        <execution>
+                            <id>verify</id>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>verify</goal>
+                            </goals>
+                        </execution>
                     </executions>
                     <configuration>
+                        <skip>true</skip>
                         <keystore>${signing.keystore}</keystore>
                         <alias>${signing.alias}</alias>
                         <storepass>${signing.storepass}</storepass>
                         <keypass>${signing.keypass}</keypass>
-                        <!-- tsa>${signing.tsa}</tsa -->
+                        <tsa>${signing.tsa}</tsa>
                         <certs>true</certs>
                         <excludes>
                             <exclude>*-sources.jar</exclude>
@@ -1288,7 +1348,7 @@
                 <plugin>
                     <groupId>org.codehaus.mojo</groupId>
                     <artifactId>cobertura-maven-plugin</artifactId>
-                    <version>2.6</version>
+                    <version>${cobertura-maven-plugin.version}</version>
                 </plugin>
             </plugins>
         </pluginManagement>
@@ -1299,18 +1359,18 @@
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>findbugs-maven-plugin</artifactId>
-                <version>2.5.3</version>
+                <version>${findbugs-maven-plugin.version}</version>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>emma-maven-plugin</artifactId>
-                <version>1.0-alpha-3</version>
+                <version>${emma-maven-plugin.version}</version>
                 <inherited>true</inherited>
             </plugin>
             <plugin>
                 <groupId>org.codehaus.mojo</groupId>
                 <artifactId>cobertura-maven-plugin</artifactId>
-                <version>2.6</version>
+                <version>${cobertura-maven-plugin.version}</version>
                 <configuration>
                     <check/>
                     <formats>

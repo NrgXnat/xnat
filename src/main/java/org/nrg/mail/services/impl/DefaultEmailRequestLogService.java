@@ -25,14 +25,13 @@ import org.springframework.stereotype.Service;
 @Service
 public class DefaultEmailRequestLogService implements EmailRequestLogService {
 	
-	private final HashMap<String, LinkedList<Date>> log = new HashMap<String, LinkedList<Date>>();
-	private final int  MAX_REQUESTS = 5;
+	private final HashMap<String, LinkedList<Date>> log = new HashMap<>();
 	private final long BAN_DURATION = MILLISECONDS.convert(60, MINUTES); // 1 hour in milliseconds
 
 	/**
 	 * Function stores the email request. 
-	 * @param String e - The email.
-	 * @param Date t - The time the email was requested. 
+	 * @param e    The email sent
+	 * @param t    The time the email was requested
 	 */
 	@Override
 	public void logEmailRequest(String e, Date t) throws Exception{
@@ -48,7 +47,7 @@ public class DefaultEmailRequestLogService implements EmailRequestLogService {
 	/**
 	 * Function determines weather an email has been blocked from requesting
 	 * more emails. 
-	 * @param String e - the email we are interested in. 
+	 * @param e    the email we are interested in
 	 */
 	@Override
 	public boolean isEmailBlocked(String e) {
@@ -56,6 +55,7 @@ public class DefaultEmailRequestLogService implements EmailRequestLogService {
 		if(!log.containsKey(e)){ return false; }
 		
 		// The email is blocked if the maximum number of requests have been made.
+		final int MAX_REQUESTS = 5;
 		return (log.get(e).size() == MAX_REQUESTS);
 	}
 	
@@ -76,8 +76,8 @@ public class DefaultEmailRequestLogService implements EmailRequestLogService {
 	@Override
 	public void clearLogs() {
 		Date now = new Date();
-		LinkedList<Date> times = null;
-		Map.Entry<String, LinkedList<Date>> entry = null;
+		LinkedList<Date> times;
+		Map.Entry<String, LinkedList<Date>> entry;
 		Iterator<Map.Entry<String, LinkedList<Date>>> it = log.entrySet().iterator();
 		while(it.hasNext()){
 			entry = it.next();

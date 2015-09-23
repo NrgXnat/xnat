@@ -60,9 +60,9 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
         } catch (IOException exception) {
             throw new ChannelRendererProcessingException("An error occurred processing the notification parameters in format: " + notification.getParameterFormat(), exception);
         } catch (MessagingException exception) {
-            throw new ChannelRendererProcessingException("An error occurred sending the mail message", exception);
+            throw new ChannelRendererProcessingException("An error occurred sending the mail message.", exception);
         } catch (InvalidMailAttachmentException exception) {
-            throw new ChannelRendererProcessingException("An error occurred sending the mail message", exception);
+            throw new ChannelRendererProcessingException("The mail message was associated with an invalid attachment.", exception);
         }
     }
 
@@ -90,6 +90,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     /**
      * @return Returns the fromAddress property.
      */
+    @SuppressWarnings("unused")
     public String getFromAddress() {
         return _fromAddress;
     }
@@ -97,6 +98,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     /**
      * @param onBehalfOf Sets the onBehalfOf property.
      */
+    @SuppressWarnings("unused")
     public void setOnBehalfOf(String onBehalfOf) {
         _onBehalfOf = onBehalfOf;
     }
@@ -104,6 +106,7 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     /**
      * @return Returns the onBehalfOf property.
      */
+    @SuppressWarnings("unused")
     public String getOnBehalfOf() {
         return _onBehalfOf;
     }
@@ -118,13 +121,15 @@ public class NrgMailChannelRenderer implements ChannelRenderer {
     /**
      * @return Returns the subjectPrefix property.
      */
+    @SuppressWarnings("unused")
     public String getSubjectPrefix() {
         return _subjectPrefix;
     }
 
     /**
-     * @param parameters
-     * @return
+     * Formats the subject with the subject prefix if set, to default value otherwise.
+     * @param subject    The notification subject to be formatted.
+     * @return The formatted notification subject.
      */
     private String formatSubject(String subject) {
         if (StringUtils.isBlank(subject)) {

@@ -55,7 +55,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @param parameters Any parameters for this particular notification.
      * @return The newly created and dispatched notification.
      * @see NotificationService#createNotification(Definition, String)
-     * @see NotificationService#createNotification(Definition, Map))
+     * @see NotificationService#createNotification(Definition, Map)
      */
     @Override
     @Transactional
@@ -84,7 +84,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @throws IOException
      * @throws JsonMappingException
      * @throws JsonGenerationException
-     * @see NotificationService#createNotification(Definition, Map))
+     * @see NotificationService#createNotification(Definition, Map)
      * @see NotificationService#createNotification(Definition, String)
      */
     @Override
@@ -106,7 +106,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @return The newly created and dispatched notification.
      * @throws NoMatchingCategoryException Thrown when the category specified can't be found.
      * @throws NoMatchingDefinitionException Thrown when the definition specified can't be found.
-     * @see NotificationService#createNotification(String, Map))
+     * @see NotificationService#createNotification(String, Map)
      */
     @Override
     @Transactional
@@ -144,7 +144,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
      * @throws IOException Thrown when there's a problem converting the parameters to a string.
      * @throws NoMatchingCategoryException Thrown when the category specified can't be found.
      * @throws NoMatchingDefinitionException Thrown when the definition specified can't be found.
-     * @see NotificationService#createNotification(String, String))
+     * @see NotificationService#createNotification(String, String)
      */
     @Override
     @Transactional

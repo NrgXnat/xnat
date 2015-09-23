@@ -42,13 +42,13 @@ public class PropertyBasedChannelRendererService implements ChannelRendererServi
 
     /**
      * Sets the {@link ChannelRendererProvider provider} for the channel renderer registry.
-     * @param provider The provider for the channel renderer registry.
-     * @see ChannelRendererService#setRenderers(Map)
+     * @param provider    The provider for the channel renderer registry.
+     * @see ChannelRendererService#setRenderers(ChannelRendererProvider)
      */
     @Inject
     @Override
-    public void setRenderers(ChannelRendererProvider renderers) {
-        _renderers = renderers.get();
+    public void setRenderers(ChannelRendererProvider provider) {
+        _renderers = provider.get();
     }
 
     private Map<String, ChannelRenderer> _renderers;

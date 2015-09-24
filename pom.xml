@@ -106,10 +106,9 @@
         <httpcomponents-client.version>4.3.6</httpcomponents-client.version>
         <imagej.version>1.49t</imagej.version>
         <itext.version>1.1.4</itext.version>
-        <jackson.version>1.8.11</jackson.version>
         <jruby.version>1.7.19</jruby.version>
         <jython.version>2.7.0</jython.version>
-        <fasterxml-jackson.version>2.5.2</fasterxml-jackson.version>
+        <jackson.version>2.5.2</jackson.version>
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
         <javassist.version>3.16.1-GA</javassist.version>
@@ -829,24 +828,19 @@
                 <version>${axis.version}</version>
             </dependency>
             <dependency>
-                <groupId>org.codehaus.jackson</groupId>
-                <artifactId>jackson-mapper-asl</artifactId>
+                <groupId>com.fasterxml.jackson.core</groupId>
+                <artifactId>jackson-core</artifactId>
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
-                <artifactId>jackson-core</artifactId>
-                <version>${fasterxml-jackson.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-annotations</artifactId>
-                <version>${fasterxml-jackson.version}</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>com.fasterxml.jackson.core</groupId>
                 <artifactId>jackson-databind</artifactId>
-                <version>${fasterxml-jackson.version}</version>
+                <version>${jackson.version}</version>
             </dependency>
             <dependency>
                 <groupId>javax.xml</groupId>

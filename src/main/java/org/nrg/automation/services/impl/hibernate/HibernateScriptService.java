@@ -17,6 +17,7 @@ import javax.inject.Inject;
  *
  * @author Rick Herrick <rick.herrick@wustl.edu> on 9/25/2014.
  */
+@SuppressWarnings("JpaQlInspection")
 @Service
 public class HibernateScriptService extends AbstractHibernateEntityService<Script, ScriptRepository> implements ScriptService {
     /**

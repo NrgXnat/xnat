@@ -66,7 +66,7 @@ public enum ScriptProperty {
         return _defaults;
     }
 
-    private static final Map<String, ScriptProperty> _properties = new ConcurrentHashMap<String, ScriptProperty>();
+    private static final Map<String, ScriptProperty> _properties = new ConcurrentHashMap<>();
     private static final Properties _defaults = new Properties();
 
     private final String _key;

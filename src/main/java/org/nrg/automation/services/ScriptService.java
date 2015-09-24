@@ -17,7 +17,7 @@ public interface ScriptService extends BaseHibernateService<Script> {
      *
      * @return <b>true</b> if a script with the indicated ID exists, <b>false</b> otherwise.
      */
-    public abstract boolean hasScript(final String scriptId);
+    boolean hasScript(final String scriptId);
 
     /**
      * Retrieves the {@link Script} with the indicated script ID.
@@ -26,5 +26,5 @@ public interface ScriptService extends BaseHibernateService<Script> {
      *
      * @return The script with the indicated scriptId, if it exists, <b>null</b> otherwise.
      */
-    public abstract Script getByScriptId(final String scriptId);
+    Script getByScriptId(final String scriptId);
 }

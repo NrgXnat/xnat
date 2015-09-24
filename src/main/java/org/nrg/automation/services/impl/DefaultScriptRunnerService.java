@@ -1,10 +1,14 @@
 package org.nrg.automation.services.impl;
 
 import org.apache.commons.lang.StringUtils;
+import org.jetbrains.annotations.NotNull;
+import org.nrg.automation.annotations.Supports;
+import org.nrg.automation.entities.Event;
 import org.nrg.automation.entities.Script;
+import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
-import org.nrg.automation.runners.ScriptRunnerOutputAdapter;
+import org.nrg.automation.services.EventService;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.ScriptTriggerService;
@@ -12,18 +16,64 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.reflections.Reflections;
+import org.reflections.scanners.SubTypesScanner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
-import java.io.PrintWriter;
+import javax.script.ScriptEngine;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 
 @Service
-public class DefaultScriptRunnerService implements ScriptRunnerService {
+public class DefaultScriptRunnerService implements ScriptRunnerService, InitializingBean {
+
+    /**
+     * Invoked by a BeanFactory after it has set all bean properties supplied
+     * (and satisfied BeanFactoryAware and ApplicationContextAware).
+     * <p>This method allows the bean instance to perform initialization only
+     * possible when all bean properties have been set and to throw an
+     * exception in the event of misconfiguration.
+     *
+     * @throws Exception in the event of misconfiguration (such as failure to set an essential property) or if
+     * initialization fails.
+     */
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        if (_packages == null) {
+            _packages = new ArrayList<>();
+        } else if (!_packages.contains("org.nrg.automation.runners")) {
+            _packages.add("org.nrg.automation.runners");
+        }
+
+        final List<Class<? extends ScriptRunner>> runners = new ArrayList<>();
+        for (final String pkg : _packages) {
+            final Reflections reflections = new Reflections(pkg, new SubTypesScanner());
+            final Set<Class<? extends ScriptRunner>> runnerClasses = reflections.getSubTypesOf(ScriptRunner.class);
+            if (runnerClasses != null) {
+                for (final Class<? extends ScriptRunner> runner : runnerClasses) {
+                    if (runner.isAnnotationPresent(Supports.class)) {
+                        runners.add(runner);
+                    }
+                }
+            }
+        }
+        setRunners(runners);
+    }
+
+    /**
+     * Tells the service which packages to scan for script runners. By default, this service will always scan the
+     * package <b>org.nrg.automation.runners</b>.
+     * @param packages    The packages to be scanned for script runners.
+     */
+    public void setRunnerPackages(final List<String> packages) {
+        _packages = packages;
+    }
 
     /**
      * Gets the script for the specified script ID. If a script doesn't exist with that script ID, this method returns
@@ -102,9 +152,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     public List<Script> getScripts(final Scope scope, final String entityId) {
         final List<ScriptTrigger> triggers = _triggerService.getByScope(scope, entityId);
         if (triggers == null || triggers.size() == 0) {
-            return new ArrayList<Script>();
+            return new ArrayList<>();
         }
-        final List<Script> scripts = new ArrayList<Script>(triggers.size());
+        final List<Script> scripts = new ArrayList<>(triggers.size());
         for (final ScriptTrigger trigger : triggers) {
             scripts.add(_scriptService.getByScriptId(trigger.getScriptId()));
         }
@@ -153,7 +203,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
      * site-wide script that can be run on demand.
      *
@@ -162,11 +212,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content) {
-        setScript(scriptId, content, null, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScriptImpl(scriptId, content, null, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
      * site-wide script that can be run on demand.
      *
@@ -176,11 +226,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final String description) {
-        setScript(scriptId, content, description, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScriptImpl(scriptId, content, description, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the event, language, and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
@@ -190,11 +240,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final Scope scope, final String entityId) {
-        setScript(scriptId, content, null, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScriptImpl(scriptId, content, null, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the language and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
@@ -205,28 +255,27 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event) {
-        setScript(scriptId, content, null, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE, ScriptRunner.DEFAULT_VERSION);
+        setScriptImpl(scriptId, content, null, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the description to the default value.
      *
-     * @param scriptId        The ID of the script to set.
-     * @param content         The content to set for the script.
-     * @param scope           The scope for the script.
-     * @param entityId        The associated entity for the script.
-     * @param event           The event for the script.
-     * @param language        The script language for this script.
-     * @param languageVersion The compatible language version(s).
+     * @param scriptId The ID of the script to set.
+     * @param content  The content to set for the script.
+     * @param scope    The scope for the script.
+     * @param entityId The associated entity for the script.
+     * @param event    The event for the script.
+     * @param language The script language for this script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language, final String languageVersion) {
-        setScript(scriptId, content, null, scope, entityId, event, language, languageVersion);
+    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language) {
+        setScriptImpl(scriptId, content, null, scope, entityId, event, language);
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the event, language, and language version arguments to default values.
      *
      * @param scriptId    The ID of the script to set.
@@ -237,11 +286,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId) {
-
+        setScriptImpl(scriptId, content, description, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String, String)} that
+     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the language and language version arguments to default values.
      *
      * @param scriptId    The ID of the script to set.
@@ -253,53 +302,24 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event) {
-
+        setScriptImpl(scriptId, content, description, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
      * Creates a script and trigger with the indicated attributes and saves them to the script repository. If objects
      * with the same unique constraints already exist, they will be retrieved then updated.
      *
-     * @param scriptId        The ID of the script to set.
-     * @param content         The content to set for the script.
-     * @param description     The description of the script.
-     * @param scope           The scope for the script.
-     * @param entityId        The associated entity for the script.
-     * @param event           The event for the script.
-     * @param language        The script language for this script.
-     * @param languageVersion The compatible language version(s).
+     * @param scriptId    The ID of the script to set.
+     * @param content     The content to set for the script.
+     * @param description The description of the script.
+     * @param scope       The scope for the script.
+     * @param entityId    The associated entity for the script.
+     * @param event       The event for the script.
+     * @param language    The script language for this script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language, final String languageVersion) {
-        final Script script;
-        if (_scriptService.hasScript(scriptId)) {
-            script = _scriptService.getByScriptId(scriptId);
-        } else {
-            script = new Script();
-            script.setScriptId(scriptId);
-        }
-
-        script.setLanguage(language);
-        script.setLanguageVersion(languageVersion);
-        script.setContent(content);
-
-        script.setDescription(StringUtils.isEmpty(description) ? getDefaultScriptDescription(script) : description);
-
-        if (scope == null) {
-            saveScript(script);
-        } else {
-            ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
-            if (trigger == null) {
-                trigger = new ScriptTrigger();
-                trigger.setTriggerId(_triggerService.getDefaultTriggerName(scriptId, scope, entityId, event));
-            }
-            trigger.setDescription(getDefaultTriggerDescription(scriptId, scope, entityId, event));
-            trigger.setScriptId(scriptId);
-            trigger.setAssociation(Scope.encode(scope, entityId));
-            trigger.setEvent(event);
-
-            setScript(script, trigger);
-        }
+    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language) {
+        setScriptImpl(scriptId, content, description, scope, entityId, event, language);
     }
 
     /**
@@ -313,9 +333,10 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      */
     @Override
     public void setScript(final Script script, final Scope scope, final String entityId, final String event) {
-        String triggerName = _triggerService.getDefaultTriggerName(script.getScriptId(), scope, entityId, event);
-        String triggerDescription = getDefaultTriggerDescription(script.getScriptId(), scope, entityId, event);
-        final ScriptTrigger trigger = new ScriptTrigger(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), event);
+        final String resolved = StringUtils.isBlank(event) ? ScriptTrigger.DEFAULT_EVENT : event;
+        String triggerName = _triggerService.getDefaultTriggerName(script.getScriptId(), scope, entityId, resolved);
+        String triggerDescription = getDefaultTriggerDescription(script.getScriptId(), scope, entityId, resolved);
+        final ScriptTrigger trigger = _triggerService.create(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), resolved);
         setScript(script, trigger);
     }
 
@@ -350,8 +371,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
         final String entityId = properties.getProperty("entityId");
         final String event = properties.getProperty("event", ScriptTrigger.DEFAULT_EVENT);
         final String language = properties.getProperty("language", ScriptRunner.DEFAULT_LANGUAGE);
-        final String languageVersion = properties.getProperty("languageVersion", ScriptRunner.DEFAULT_VERSION);
-        setScript(scriptId, content, description, scope, entityId, event, language, languageVersion);
+        setScript(scriptId, content, description, scope, entityId, event, language);
     }
 
     /**
@@ -365,7 +385,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * @return The results of the script execution.
      */
     @Override
-    public Object runScript(final Script script) throws NrgServiceException {
+    public ScriptOutput runScript(final Script script) throws NrgServiceException {
         return runScript(script, null, new HashMap<String, Object>());
     }
 
@@ -381,7 +401,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * @return The results of the script execution.
      */
     @Override
-    public Object runScript(final Script script, final Map<String, Object> parameters) throws NrgServiceException {
+    public ScriptOutput runScript(final Script script, final Map<String, Object> parameters) throws NrgServiceException {
         return runScript(script, null, parameters);
     }
 
@@ -397,7 +417,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * @return The results of the script execution.
      */
     @Override
-    public Object runScript(final Script script, final ScriptTrigger trigger) throws NrgServiceException {
+    public ScriptOutput runScript(final Script script, final ScriptTrigger trigger) throws NrgServiceException {
         return runScript(script, trigger, null);
     }
 
@@ -414,13 +434,12 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * @return The results of the script execution.
      */
     @Override
-    public Object runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException {
-        // TODO: Need to have a way to do a fuzzy match of versions, so that version 2.3.5 and 2.3.6 can match, e.g. 2.3 or whatever.
-        if (!hasRunner(script.getLanguage(), script.getLanguageVersion())) {
-            throw new NrgServiceRuntimeException(NrgServiceError.UnknownScriptRunner, "There is no script runner that supports " + script.getLanguage() + " version " + script.getLanguageVersion() + ".");
+    public ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException {
+        if (!hasRunner(script.getLanguage())) {
+            throw new NrgServiceRuntimeException(NrgServiceError.UnknownScriptRunner, "There is no script runner that supports " + script.getLanguage() + ".");
         }
 
-        final ScriptRunner runner = getRunner(script.getLanguage(), script.getLanguageVersion());
+        final ScriptRunner runner = getRunner(script.getLanguage());
 
         final Properties properties = script.toProperties();
         for (final String key : properties.stringPropertyNames()) {
@@ -441,32 +460,23 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
                 parameters.put("event", trigger.getEvent());
             }
         }
-        final PrintWriter writer = _adapter != null ? _adapter.getWriter(script) : null;
-        if (writer != null) {
-            parameters.put("out", writer);
-        }
         try {
-            final Object results = runner.run(parameters);
+            final ScriptOutput results = runner.run(parameters);
             if (_log.isDebugEnabled()) {
                 _log.debug("Got the following results from running " + formatScriptAndParameters(script, parameters));
-                if (results == null) {
+                if (results.getResults() == null) {
                     _log.debug(" * Null results");
                 } else {
-                    _log.debug(" * Object type: " + results.getClass());
+                    _log.debug(" * Object type: " + results.getResults().getClass());
                     final String renderedResults = results.toString();
                     _log.debug(" * Results: " + (renderedResults.length() > 64 ? renderedResults.substring(0, 63) + "..." : renderedResults));
                 }
             }
             return results;
         } catch (Throwable e) {
-            String message = "Found an error while running a " + script.getLanguage() + " v" + script.getLanguageVersion() + " script";
+            String message = "Found an error while running a " + script.getLanguage() + " script";
             _log.error(message, e);
-            throw new RuntimeException(message, e);
-        } finally {
-            if (writer != null) {
-                writer.flush();
-                writer.close();
-            }
+            throw new NrgServiceException(message, e);
         }
     }
 
@@ -476,23 +486,39 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * @param runners The {@link ScriptRunner script runners} to be added to the system.
      */
     @Override
-    @Autowired
-    public void setRunners(final Collection<ScriptRunner> runners) {
+    public void setRunners(final Collection<Class<? extends ScriptRunner>> runners) {
         _runners.clear();
-        addRunners(runners);
-    }
-
-    @Override
-    public boolean hasRunner(final String language, final String version) {
-        return _runners.containsKey(language) && _runners.get(language).containsKey(version);
-    }
-
-    @Override
-    public ScriptRunner getRunner(final String language, final String version) {
-        if (_runners.containsKey(language)) {
-            return _runners.get(language).get(version);
+        for (final Class<? extends ScriptRunner> runner : runners) {
+            // Sometimes a runner can't find its engine (missing dependency, etc.), so we need to throw it out.
+            final ScriptRunner instance = createScriptRunnerInstance(runner);
+            if (instance.getEngine() != null) {
+                if (_log.isDebugEnabled()) {
+                    _log.debug("Adding runner for {} using engine {} version {}", instance.getLanguage(), instance.getEngine().get(ScriptEngine.ENGINE), instance.getEngine().get(ScriptEngine.ENGINE_VERSION));
+                }
+                addRunner(runner);
+            } else if (_log.isInfoEnabled()) {
+                _log.debug("Not adding the runner for {}, no engine found", instance.getLanguage());
+            }
         }
-        return null;
+    }
+
+    @Override
+    public boolean hasRunner(final String language) {
+        return _runners.containsKey(language.toLowerCase());
+    }
+
+    @Override
+    public List<String> getRunners() {
+        return new ArrayList<>(_runners.keySet());
+    }
+
+    @Override
+    public ScriptRunner getRunner(final String language) {
+        if (!_runners.containsKey(language.toLowerCase())) {
+            return null;
+        }
+        final Class<? extends ScriptRunner> clazz = _runners.get(language.toLowerCase());
+        return createScriptRunnerInstance(clazz);
     }
 
     /**
@@ -501,14 +527,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * @param runner The {@link ScriptRunner script runner} to be added to the system.
      */
     @Override
-    public void addRunner(final ScriptRunner runner) {
-        final String language = runner.getLanguage();
-        if (_runners.containsKey(language)) {
-            _runners.get(language).put(runner.getLanguageVersion(), runner);
-        } else {
-            _runners.put(language, new HashMap<String, ScriptRunner>());
-            _runners.get(language).put(runner.getLanguageVersion(), runner);
-        }
+    public void addRunner(final Class<? extends ScriptRunner> runner) {
+        final String language = getLanguage(runner);
+        _runners.put(language.toLowerCase(), runner);
     }
 
     /**
@@ -517,15 +538,67 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
      * @param runners The {@link ScriptRunner script runners} to be added to the system.
      */
     @Override
-    public void addRunners(final Collection<ScriptRunner> runners) {
-        for (final ScriptRunner runner : runners) {
+    public void addRunners(final Collection<Class<? extends ScriptRunner>> runners) {
+        for (final Class<? extends ScriptRunner> runner : runners) {
             addRunner(runner);
         }
     }
 
-    @Autowired (required=false)
-    public void setOutputAdapter(ScriptRunnerOutputAdapter adapter) {
-        _adapter = adapter;
+    @NotNull
+    private ScriptRunner createScriptRunnerInstance(final Class<? extends ScriptRunner> clazz) {
+        try {
+            final Constructor<? extends ScriptRunner> constructor = clazz.getConstructor();
+            return constructor.newInstance();
+        } catch (NoSuchMethodException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Instantiation, "The runner class for " + getLanguage(clazz) + " has no default constructor.");
+        } catch (InvocationTargetException | InstantiationException | IllegalAccessException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred instantiating the runner class for " + getLanguage(clazz) + " scripts.", e);
+        }
+    }
+
+    private String getLanguage(final Class<? extends ScriptRunner> runner) {
+        return runner.getAnnotation(Supports.class).value();
+    }
+
+    private void setScriptImpl(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language) {
+        if (StringUtils.isBlank(scriptId)) {
+            throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save a script with an empty script ID!");
+        }
+        if (StringUtils.isBlank(content)) {
+            throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save the script " + scriptId + " with an empty script ID!");
+        }
+        final Script script;
+        if (_scriptService.hasScript(scriptId)) {
+            script = _scriptService.getByScriptId(scriptId);
+        } else {
+            script = new Script();
+            script.setScriptId(scriptId);
+        }
+
+        script.setDescription(StringUtils.isNotBlank(description) ? description : getDefaultScriptDescription(script));
+        script.setLanguage(StringUtils.isNotBlank(language) ? language : ScriptRunner.DEFAULT_LANGUAGE);
+        script.setContent(content);
+
+        if (scope == null) {
+            saveScript(script);
+        } else {
+            final String resolvedEvent = StringUtils.isNotBlank(event) ? event : ScriptTrigger.DEFAULT_EVENT;
+            ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, resolvedEvent);
+            if (trigger == null) {
+                trigger = new ScriptTrigger();
+                trigger.setTriggerId(_triggerService.getDefaultTriggerName(scriptId, scope, entityId, resolvedEvent));
+            }
+            trigger.setDescription(getDefaultTriggerDescription(scriptId, scope, entityId, resolvedEvent));
+            trigger.setScriptId(scriptId);
+            trigger.setAssociation(Scope.encode(scope, entityId));
+            trigger.setEvent(getEvent(resolvedEvent));
+
+            setScript(script, trigger);
+        }
+    }
+
+    private Event getEvent(final String eventId) {
+        return _eventService.hasEvent(eventId) ? _eventService.getByEventId(eventId) : _eventService.create(eventId, eventId);
     }
 
     private void saveScript(final Script script) {
@@ -544,12 +617,6 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
             final String language = script.getLanguage();
             if (!StringUtils.equals(existingLanguage, language)) {
                 existingScript.setLanguage(language);
-                isDirty = true;
-            }
-            final String existingVersion = existingScript.getLanguageVersion();
-            final String version = script.getLanguageVersion();
-            if (!StringUtils.equals(existingVersion, version)) {
-                existingScript.setLanguageVersion(version);
                 isDirty = true;
             }
             final String existingDescription = existingScript.getDescription();
@@ -594,7 +661,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     }
 
     private String getDefaultScriptDescription(final Script script) {
-        return "Default description: script ID " + script.getScriptId() + " configured to run with " + script.getLanguage() + " v" + script.getLanguageVersion();
+        return "Default description: script ID " + script.getScriptId() + " configured to run with " + script.getLanguage();
     }
 
     private String getDefaultTriggerDescription(final String scriptId, final Scope scope, final String entityId, final String event) {
@@ -604,11 +671,14 @@ public class DefaultScriptRunnerService implements ScriptRunnerService {
     private static final Logger _log = LoggerFactory.getLogger(DefaultScriptRunnerService.class);
 
     @Inject
+    private EventService _eventService;
+
+    @Inject
     private ScriptService _scriptService;
 
     @Inject
     private ScriptTriggerService _triggerService;
 
-    private final Map<String, Map<String, ScriptRunner>> _runners = new HashMap<String, Map<String, ScriptRunner>>();
-    private ScriptRunnerOutputAdapter _adapter;
+    private final Map<String, Class<? extends ScriptRunner>> _runners = new HashMap<>();
+    private List<String> _packages;
 }

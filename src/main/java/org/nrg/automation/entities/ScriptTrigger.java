@@ -13,24 +13,18 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.Column;
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.UniqueConstraint;
+import javax.persistence.*;
 
 /**
  * ScriptTrigger class.
  *
  * @author Rick Herrick
  */
-@Auditable
 @Entity
-@Table(uniqueConstraints = {@UniqueConstraint(columnNames = {"triggerId", "disabled"}),
-        @UniqueConstraint(columnNames = {"association", "event", "disabled"})})
+@Table(uniqueConstraints = @UniqueConstraint(columnNames = {"association", "event"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
 public class ScriptTrigger extends AbstractHibernateEntity implements Comparable<ScriptTrigger> {
 
@@ -40,7 +34,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         _log.debug("Creating a default ScriptTrigger object.");
     }
 
-    public ScriptTrigger(final String triggerId, final String description, final String scriptId, final String association, final String event) {
+    public ScriptTrigger(final String triggerId, final String description, final String scriptId, final String association, final Event event) {
         setTriggerId(triggerId);
         setDescription(description);
         setScriptId(scriptId);
@@ -51,12 +45,12 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         }
     }
 
-    @Column(nullable = false)
+    @Column(nullable = false, unique = true)
     public String getTriggerId() {
         return _triggerId;
     }
 
-    public void setTriggerId(String triggerId) {
+    public void setTriggerId(final String triggerId) {
         _triggerId = triggerId;
     }
 
@@ -64,7 +58,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         return _description;
     }
 
-    public void setDescription(String description) {
+    public void setDescription(final String description) {
         _description = description;
     }
 
@@ -73,7 +67,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         return _scriptId;
     }
 
-    public void setScriptId(String scriptId) {
+    public void setScriptId(final String scriptId) {
         _scriptId = scriptId;
     }
 
@@ -88,16 +82,17 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
         return _association;
     }
 
-    public void setAssociation(String association) {
+    public void setAssociation(final String association) {
         _association = association;
     }
 
-    @Column(nullable = false)
-    public String getEvent() {
+    @ManyToOne(optional = false)
+    @JoinColumn(nullable = false, referencedColumnName = "eventId")
+    public Event getEvent() {
         return _event;
     }
 
-    public void setEvent(String event) {
+    public void setEvent(final Event event) {
         _event = event;
     }
 
@@ -113,7 +108,7 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
     }
 
     @Override
-    public boolean equals(Object object) {
+    public boolean equals(final Object object) {
         if (this == object) {
             return true;
         }
@@ -152,5 +147,5 @@ public class ScriptTrigger extends AbstractHibernateEntity implements Comparable
     private String _description;
     private String _scriptId;
     private String _association;
-    private String _event;
+    private Event _event;
 }

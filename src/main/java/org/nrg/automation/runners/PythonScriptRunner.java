@@ -2,6 +2,6 @@ package org.nrg.automation.runners;
 
 import org.nrg.automation.annotations.Supports;
 
-@Supports("groovy")
-public class GroovyScriptRunner extends AbstractScriptRunner {
+@Supports("python")
+public class PythonScriptRunner extends AbstractScriptRunner {
 }

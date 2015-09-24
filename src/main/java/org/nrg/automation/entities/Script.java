@@ -38,7 +38,6 @@ public class Script extends AbstractHibernateEntity {
         setScriptId(scriptId);
         setDescription(description);
         setLanguage(language);
-        setLanguageVersion(languageVersion);
         setContent(content);
     }
 
@@ -66,14 +65,6 @@ public class Script extends AbstractHibernateEntity {
         _language = language;
     }
 
-    public String getLanguageVersion() {
-        return _languageVersion;
-    }
-
-    public void setLanguageVersion(final String languageVersion) {
-        _languageVersion = languageVersion;
-    }
-
     @Column(columnDefinition = "TEXT")
     public String getContent() {
         return _content;
@@ -88,7 +79,6 @@ public class Script extends AbstractHibernateEntity {
         properties.setProperty(ScriptProperty.ScriptId.key(), _scriptId);
         properties.setProperty(ScriptProperty.Description.key(), _description);
         properties.setProperty(ScriptProperty.Language.key(), _language);
-        properties.setProperty(ScriptProperty.LanguageVersion.key(), _languageVersion);
         properties.setProperty(ScriptProperty.Script.key(), _content);
         return properties;
     }
@@ -98,6 +88,5 @@ public class Script extends AbstractHibernateEntity {
     private String _scriptId;
     private String _description;
     private String _language;
-    private String _languageVersion;
     private String _content;
 }

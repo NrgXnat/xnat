@@ -2,9 +2,9 @@
  * SiteConfigurationService
  * (C) 2012 Washington University School of Medicine
  * All Rights Reserved
- *
+ * <p/>
  * Released under the Simplified BSD License
- *
+ * <p/>
  * Created on 9/18/12 by rherri01
  */
 package org.nrg.config.services;
@@ -23,7 +23,7 @@ public interface SiteConfigurationService extends NrgService {
     /**
      * Initialized the site configuration from whatever persistent stores the service implementation uses.
      */
-    public abstract void initSiteConfiguration() throws SiteConfigurationException;
+    void initSiteConfiguration() throws SiteConfigurationException;
 
     /**
      * Sets the {@link #getConfigFilesLocationsRoot() configuration file root} to the submitted location,  {@link
@@ -32,7 +32,7 @@ public interface SiteConfigurationService extends NrgService {
      * @param configFilesLocationsRoot    The root location to search for configuration files.
      * @return The resulting site configuration properties.
      */
-    public abstract Properties updateSiteConfiguration(final String configFilesLocationsRoot) throws SiteConfigurationException;
+    Properties updateSiteConfiguration(final String configFilesLocationsRoot) throws SiteConfigurationException;
 
     /**
      * Sets the {@link #getConfigFilesLocations() list of configuration file locations} to the submitted list, {@link
@@ -41,7 +41,7 @@ public interface SiteConfigurationService extends NrgService {
      * @param configFilesLocations    The list of locations where configuration files can be found.
      * @return The resulting site configuration properties.
      */
-    public abstract Properties updateSiteConfiguration(final List<String> configFilesLocations) throws SiteConfigurationException;
+    Properties updateSiteConfiguration(final List<String> configFilesLocations) throws SiteConfigurationException;
 
     /**
      * Sets the {@link #getConfigFilesLocationsRoot() configuration file root} to the submitted location, sets the
@@ -52,20 +52,20 @@ public interface SiteConfigurationService extends NrgService {
      * @param configFilesLocations        The list of locations where configuration files can be found.
      * @return The resulting site configuration properties.
      */
-    public abstract Properties updateSiteConfiguration(final String configFilesLocationsRoot, final List<String> configFilesLocations) throws SiteConfigurationException;
+    Properties updateSiteConfiguration(final String configFilesLocationsRoot, final List<String> configFilesLocations) throws SiteConfigurationException;
 
     /**
      * Resets the site configuration. This returns the service to its uninitialized state, discarding any cached or
      * persistent data. The site can then be {@link #initSiteConfiguration() initialized} again.
      */
-    public abstract void resetSiteConfiguration();
+    void resetSiteConfiguration();
 
     /**
      * Gets the site configuration as a Java {@link java.util.Properties} object.
      * @return The initialized Java {@link java.util.Properties} object.
      * @throws SiteConfigurationException Thrown when an error occurs resolving or accessing the configuration service.
      */
-    public abstract Properties getSiteConfiguration() throws SiteConfigurationException;
+    Properties getSiteConfiguration() throws SiteConfigurationException;
 
     /**
      * Gets the value of the indicated property from the site configuration.
@@ -73,7 +73,7 @@ public interface SiteConfigurationService extends NrgService {
      * @return The value of the property.
      * @throws SiteConfigurationException
      */
-    public abstract String getSiteConfigurationProperty(String property) throws SiteConfigurationException;
+    String getSiteConfigurationProperty(String property) throws SiteConfigurationException;
 
     /**
      * Sets the value of the indicated property to the submitted value.
@@ -81,14 +81,14 @@ public interface SiteConfigurationService extends NrgService {
      * @param value       The value to set for the property.
      * @throws SiteConfigurationException
      */
-    public abstract void setSiteConfigurationProperty(String username, String property, String value) throws SiteConfigurationException;
+    void setSiteConfigurationProperty(String username, String property, String value) throws SiteConfigurationException;
 
     /**
      * Gets the list of locations (relative to the {@link #getConfigFilesLocationsRoot() file location root} where
      * config files can be found.
      * @return The list of paths (as strings) to be searched for config files.
      */
-    public abstract List<String> getConfigFilesLocations();
+    List<String> getConfigFilesLocations();
 
     /**
      * Sets the list of locations (relative to the {@link #getConfigFilesLocationsRoot() file location root} where
@@ -99,13 +99,13 @@ public interface SiteConfigurationService extends NrgService {
      * all of the steps necessary to re-process the site configuration from as close to scratch as possible.
      * @param configFilesLocations    The list of paths (as strings) to be searched for config files.
      */
-    public abstract void setConfigFilesLocations(final List<String> configFilesLocations);
+    void setConfigFilesLocations(final List<String> configFilesLocations);
 
     /**
      * The absolute path to prepend to any paths in the injected configFilesLocations that are relative.
      * @return The root location for configuration files.
      */
-    public abstract String getConfigFilesLocationsRoot();
+    String getConfigFilesLocationsRoot();
 
     /**
      * Sets the absolute path to prepend to any paths in the {@link #getConfigFilesLocations() list of file locations}.
@@ -116,23 +116,24 @@ public interface SiteConfigurationService extends NrgService {
      * configuration from as close to scratch as possible.
      * @param configFilesLocationRoot    The root location for configuration files.
      */
-    public abstract void setConfigFilesLocationsRoot(final String configFilesLocationRoot);
+    void setConfigFilesLocationsRoot(final String configFilesLocationRoot);
 
     /**
      * Gets the pattern for matching file names for custom properties files.
      */
-    public abstract String getCustomPropertiesNamePattern();
+    String getCustomPropertiesNamePattern();
 
     /**
      * Sets the pattern for matching file names for custom properties files. By default, this is set to {@link
      * #CUSTOM_PROPERTIES_NAME}.
      */
-    public abstract void setCustomPropertiesNamePattern(final String pattern);
+    void setCustomPropertiesNamePattern(final String pattern);
 
-    public static final Pattern CUSTOM_PROPERTIES_NAME = Pattern.compile("^.*-config\\.properties");
-    public static final FileFilter CUSTOM_PROPERTIES_FILTER = new FileFilter() {
+    Pattern CUSTOM_PROPERTIES_NAME = Pattern.compile("^.*-config\\.properties");
+    FileFilter CUSTOM_PROPERTIES_FILTER = new FileFilter() {
         public boolean accept(final File file) {
             return file.exists() && file.isFile() && CUSTOM_PROPERTIES_NAME.matcher(file.getName()).matches();
         }
     };
 }
+

@@ -48,6 +48,7 @@ public class DefaultSiteConfigurationService extends PropertiesBasedSiteConfigur
             }
         }
     }
+
     private Configuration getPersistedSiteConfiguration() {
         return _service.getConfig("site", "siteConfiguration");
     }

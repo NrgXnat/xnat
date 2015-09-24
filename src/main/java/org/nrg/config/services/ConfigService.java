@@ -20,83 +20,472 @@ import java.util.List;
 
 
 public interface ConfigService extends BaseHibernateService<Configuration> {
-	
-	public static final int MAX_FILE_LENGTH = ConfigurationData.MAX_FILE_LENGTH;
-	
+
+    int MAX_FILE_LENGTH = ConfigurationData.MAX_FILE_LENGTH;
+
 	/*
 	 *    HEY, YOU. All methods will return null if no configuration exists
 	 *    "disabled" configurations are always returned. it is up to the client
 	 *    to determine what to do with a configuration. 
 	 */
-	
-	//return the most recent version of active configurations.
-	public List<Configuration> getAll();
-	
-	//retrieve a Configuration by the ID set by the persistence mechanism
-	public Configuration getById(Long id);
-	public Configuration getById(Long id, boolean preload);
 
-	//retrieve a String list of all tools (and project) that have configurations. 
-	public List<String> getTools();
-	public List<String> getTools(Long projectID);
-	public List<String> getTools(Scope scope, String entityId);
+    //return the most recent version of active configurations.
+    List<Configuration> getAll();
 
-	//retrieve a list of all Configuration objects for a specified tool (and project)
-	public List<Configuration> getConfigsByTool(String toolName);
-	public List<Configuration> getConfigsByTool(String toolName, Long projectID);
-	public List<Configuration> getConfigsByTool(String toolName, Scope scope, String entityId);
+    /**
+     * Retrieves a particular configuration by the ID set by the persistence mechanism.
+     *
+     * @param id The ID of the persisted configuration.
+     *
+     * @return The requested configuration if it exists.
+     */
+    Configuration getById(long id);
 
-	//retrieve the most recent configuration by tool and path. You can store a configuration at a null tool and path (and project)
-	public Configuration getConfig(String toolName, String path);
-	public Configuration getConfig(String toolName, String path, Long projectID);
-	public Configuration getConfig(String toolName, String path, Scope scope, String entityId);
+    /**
+     * Gets all of the tools associated with the system.
+     *
+     * @return The tools associated with the system.
+     */
+    List<String> getTools();
 
-	//retrieve the most recent configuration by tool and path (and project). Do not include any meta data. only the configuration.
-	public String getConfigContents(String toolName, String path);
-	public String getConfigContents(String toolName, String path, Long projectID);
-	public String getConfigContents(String toolName, String path, Scope scope, String entityId);
+    /**
+     * Gets all of the tools associated with the indicated project.
+     *
+     * @param projectID The project data info attribute of the desired project.
+     *
+     * @return The tools associated with the indicated project.
+     *
+     * @deprecated Call {@link #getTools(Scope, String)} instead.
+     */
+    @Deprecated
+    List<String> getTools(Long projectID);
 
-	//retrieve the configuration by tool, path, and the ID set by the persistence mechanism (and project) 
-	//if the ID is valid, but the configuration does not match toolName and path, return null
-	public Configuration getConfigById(String toolName, String path, String id);
-	public Configuration getConfigById(String toolName, String path, String id, Long projectID);
-	public Configuration getConfigById(String toolName, String path, String id, Scope scope, String entityId);
+    /**
+     * Gets all of the tools associated with the indicated entity.
+     *
+     * @param entityId The ID of the entity with which the configuration is associated.
+     *
+     * @return The tools associated with the indicated entity.
+     */
+    List<String> getTools(Scope scope, String entityId);
 
-	//retrieve the configuration by tool, path, and version (and project) 
-	//if the ID is valid, but the configuration does not match toolName and path, return null
-	public Configuration getConfigByVersion(String toolName, String path, int version);
-	public Configuration getConfigByVersion(String toolName, String path, int version, Long projectID);
-	public Configuration getConfigByVersion(String toolName, String path, int version, Scope scope, String entityId);
+    //retrieve a list of all Configuration objects for a specified tool (and project)
+    List<Configuration> getConfigsByTool(String toolName);
 
-	//create or replace a configuration specified by the parameters. This will set the status to enabled.
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents) throws ConfigServiceException;
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Long projectID) throws ConfigServiceException;
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Scope scope, String entityId) throws ConfigServiceException;
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents) throws ConfigServiceException;
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Long projectID) throws ConfigServiceException;
-	public Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Scope scope, String entityId) throws ConfigServiceException;
+    /**
+     * Gets configurations associated with the tool and project.
+     *
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param projectID    The project ID of the associated project.
+     *
+     * @return A list of the configurations associated with the tool and project.
+     *
+     * @deprecated Call {@link #getConfigsByTool(String, Scope, String)} instead.
+     */
+    @Deprecated
+    List<Configuration> getConfigsByTool(String toolName, Long projectID);
 
-	//return the status property for the configuration specified by the parameters.
-	public String getStatus(String toolName, String path);
-	public String getStatus(String toolName, String path, Long projectID);
-	public String getStatus(String toolName, String path, Scope scope, String entityId);
+    List<Configuration> getConfigsByTool(String toolName, Scope scope, String entityId);
 
-	//set the configuration's status property to "enabled"
-	public void enable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
-	public void enable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
-	public void enable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
+    //retrieve the most recent configuration by tool and path. You can store a configuration at a null tool and path (and project)
+    Configuration getConfig(String toolName, String path);
 
-	//set the configuration's status property to "disabled"
-	public void disable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
-	public void disable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
-	public void disable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
+    /**
+     * Gets configurations associated with the tool, path, and project.
+     *
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param projectID    The project ID of the associated project.
+     *
+     * @return A list of the configurations associated with the tool, path, and project.
+     *
+     * @deprecated Call {@link #getConfig(String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration getConfig(String toolName, String path, Long projectID);
 
-	//return a list of all configurations specified by the path ordered by date uploaded.
-	public List<Configuration> getHistory(String toolName, String path);
-	public List<Configuration> getHistory(String toolName, String path, Long projectID);
-	public List<Configuration> getHistory(String toolName, String path, Scope scope, String entityId);
+    /**
+     * Gets configurations associated with the tool, path, and entity.
+     *
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param scope        The {@link Scope scope} of the specified entity ID.
+     * @param entityId     The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @return A list of the configurations associated with the tool, path, and project.
+     */
+    Configuration getConfig(String toolName, String path, Scope scope, String entityId);
 
-	//retrieve a String list of all projects that have a configuration.
-	public List<Long> getProjects();
-	public List<Long> getProjects(String toolName);
+    /**
+     * Retrieves the most recent configuration by tool and path (and project). Does not include any meta data, only the
+     * configuration.
+     *
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     *
+     * @return The contents of the configuration associated with the tool and path.
+     */
+    String getConfigContents(String toolName, String path);
+
+    /**
+     * Gets the contents of configurations associated with the tool, path, and project.
+     *
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param projectID    The project ID of the associated project.
+     *
+     * @return A list of the configurations associated with the tool, path, and project.
+     *
+     * @deprecated Call {@link #getConfig(String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    String getConfigContents(String toolName, String path, Long projectID);
+
+    /**
+     * Gets the contents of configurations associated with the tool, path, and project.
+     *
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param scope        The {@link Scope scope} of the specified entity ID.
+     * @param entityId     The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @return A list of the configurations associated with the tool, path, and entity.
+     */
+    String getConfigContents(String toolName, String path, Scope scope, String entityId);
+
+    /**
+     * Gets the contents of configurations associated with the tool, path, and project. If the ID is valid, but the
+     * configuration does not match the tool name and path, this returns null.
+     *
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param id           The ID of the target configuration.
+     * @param projectID    The project ID of the associated project.
+     *
+     * @return A list of the configurations associated with the tool, path, and entity.
+     *
+     * @deprecated Call {@link #getConfigById(String, String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration getConfigById(String toolName, String path, String id, Long projectID);
+
+    /**
+     * Gets the contents of configurations associated with the tool, path, and entity. If the ID is valid, but the
+     * configuration does not match the tool name and path, this returns null.
+     *
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param id           The ID of the target configuration.
+     * @param scope        The {@link Scope scope} of the specified entity ID.
+     * @param entityId     The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @return A list of the configurations associated with the tool, path, and entity.
+     */
+    Configuration getConfigById(String toolName, String path, String id, Scope scope, String entityId);
+
+    /**
+     * Retrieves the configuration by tool, path, and version.
+     *
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     * @param version     The version of the configuration you wish to retrieve.
+     * @return The specified version of the configuration.
+     */
+    Configuration getConfigByVersion(String toolName, String path, int version);
+
+    /**
+     * Retrieves the configuration by tool, path, project, and version.
+     *
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param version      The version of the configuration you wish to retrieve.
+     * @param projectID    The project ID of the associated project.
+     *
+     * @return The specified version of the configuration.
+     *
+     * @deprecated Call {@link #getConfigByVersion(String, String, int, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration getConfigByVersion(String toolName, String path, int version, Long projectID);
+
+    /**
+     * Retrieves the configuration by tool, path, entity, and version.
+     *
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param version      The version of the configuration you wish to retrieve.
+     * @param scope        The {@link Scope scope} of the specified entity ID.
+     * @param entityId     The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @return The specified version of the configuration.
+     */
+    Configuration getConfigByVersion(String toolName, String path, int version, Scope scope, String entityId);
+
+    //create or replace a configuration specified by the parameters. This will set the status to enabled.
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents) throws ConfigServiceException;
+
+    /**
+     * Replaces the configuration indicated by the various parameters. The username is used to record who was
+     * responsible for the change.
+     *
+     * @param xnatUser     The username of the user requesting the update.
+     * @param reason       The reason for the update.
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param contents     The contents of the configuration.
+     * @param projectID    The project ID of the associated project.
+     *
+     * @return The updated configuration object.
+     *
+     * @throws ConfigServiceException
+     * @deprecated Call {@link #replaceConfig(String, String, String, String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Long projectID) throws ConfigServiceException;
+
+    /**
+     * Replaces the configuration indicated by the various parameters. The username is used to record who was
+     * responsible for the change.
+     *
+     * @param xnatUser     The username of the user requesting the update.
+     * @param reason       The reason for the update.
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param contents     The contents of the configuration.
+     * @param scope        The {@link Scope scope} of the specified entity ID.
+     * @param entityId     The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @return The updated configuration object.
+     *
+     * @throws ConfigServiceException
+     */
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, String contents, Scope scope, String entityId) throws ConfigServiceException;
+
+    /**
+     * Replaces the configuration indicated by the various parameters. The username is used to record who was
+     * responsible for the change.
+     *
+     * @param xnatUser     The username of the user requesting the update.
+     * @param reason       The reason for the update.
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param unversioned  Indicates that the configuration is unversioned.
+     * @param contents     The contents of the configuration.
+     *
+     * @return The updated configuration object.
+     *
+     * @throws ConfigServiceException
+     */
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents) throws ConfigServiceException;
+
+    /**
+     * Replaces the configuration indicated by the various parameters. The username is used to record who was
+     * responsible for the change.
+     *
+     * @param xnatUser     The username of the user requesting the update.
+     * @param reason       The reason for the update.
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param unversioned  Indicates that the configuration is unversioned.
+     * @param contents     The contents of the configuration.
+     * @param projectID    The project ID of the associated project.
+     *
+     * @return The updated configuration object.
+     *
+     * @throws ConfigServiceException
+     * @deprecated Call {@link #replaceConfig(String, String, String, String, Boolean, String, Scope, String)} instead.
+     */
+    @Deprecated
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Long projectID) throws ConfigServiceException;
+
+    /**
+     * Replaces the configuration indicated by the various parameters. The username is used to record who was
+     * responsible for the change.
+     *
+     * @param xnatUser     The username of the user requesting the update.
+     * @param reason       The reason for the update.
+     * @param toolName     The name of the tool for which you wish to retrieve configurations.
+     * @param path         The path for which you wish to retrieve configurations.
+     * @param unversioned  Indicates that the configuration is unversioned.
+     * @param contents     The contents of the configuration.
+     * @param scope        The {@link Scope scope} of the specified entity ID.
+     * @param entityId     The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @return The updated configuration object.
+     *
+     * @throws ConfigServiceException
+     */
+    Configuration replaceConfig(String xnatUser, String reason, String toolName, String path, Boolean unversioned, String contents, Scope scope, String entityId) throws ConfigServiceException;
+
+    /**
+     * Returns the status for the configuration specified by the parameters.
+     *
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     *
+     * @return The current status of the indicated configuration.
+     */
+    String getStatus(String toolName, String path);
+
+    /**
+     * Returns the status for the configuration specified by the parameters.
+     *
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     * @param projectID   The project ID of the associated project.
+     *
+     * @return The current status of the indicated configuration.
+     *
+     * @deprecated Call {@link #getStatus(String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    String getStatus(String toolName, String path, Long projectID);
+
+    /**
+     * Returns the status for the configuration specified by the parameters.
+     *
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     * @param scope       The {@link Scope scope} of the specified entity ID.
+     * @param entityId    The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @return The current status of the indicated configuration.
+     */
+    String getStatus(String toolName, String path, Scope scope, String entityId);
+
+    /**
+     * Enables the indicated configuration.
+     *
+     * @param xnatUser    The username of the user requesting the update.
+     * @param reason      The reason for the update.
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     *
+     * @throws ConfigServiceException
+     */
+    void enable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
+
+    /**
+     * Enables the indicated configuration.
+     *
+     * @param xnatUser    The username of the user requesting the update.
+     * @param reason      The reason for the update.
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     * @param projectID   The project ID of the associated project.
+     *
+     * @throws ConfigServiceException
+     *
+     * @deprecated Call {@link #enable(String, String, String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    void enable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
+
+    /**
+     * Enables the indicated configuration.
+     *
+     * @param xnatUser    The username of the user requesting the update.
+     * @param reason      The reason for the update.
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     * @param scope       The {@link Scope scope} of the specified entity ID.
+     * @param entityId    The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @throws ConfigServiceException
+     */
+    void enable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
+
+    /**
+     * Disables the indicated configuration.
+     *
+     * @param xnatUser    The username of the user requesting the update.
+     * @param reason      The reason for the update.
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     *
+     * @throws ConfigServiceException
+     */
+    void disable(String xnatUser, String reason, String toolName, String path) throws ConfigServiceException;
+
+    /**
+     * Disables the indicated configuration.
+     *
+     * @param xnatUser    The username of the user requesting the update.
+     * @param reason      The reason for the update.
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     * @param projectID   The project ID of the associated project.
+     *
+     * @throws ConfigServiceException
+     *
+     * @deprecated Call {@link #disable(String, String, String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    void disable(String xnatUser, String reason, String toolName, String path, Long projectID) throws ConfigServiceException;
+
+    /**
+     * Disables the indicated configuration.
+     *
+     * @param xnatUser    The username of the user requesting the update.
+     * @param reason      The reason for the update.
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     * @param scope       The {@link Scope scope} of the specified entity ID.
+     * @param entityId    The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @throws ConfigServiceException
+     */
+    void disable(String xnatUser, String reason, String toolName, String path, Scope scope, String entityId) throws ConfigServiceException;
+
+    /**
+     * Return a list of all configurations specified by the path ordered by date uploaded.
+     *
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     *
+     * @return A list of all configurations specified by the path ordered by date uploaded.
+     */
+    List<Configuration> getHistory(String toolName, String path);
+
+    /**
+     * Return a list of all configurations specified by the path ordered by date uploaded.
+     *
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     * @param projectID   The project ID of the associated project.
+     *
+     * @return A list of all configurations specified by the path ordered by date uploaded.
+     *
+     * @deprecated Call {@link #getHistory(String, String, Scope, String)} instead.
+     */
+    @Deprecated
+    List<Configuration> getHistory(String toolName, String path, Long projectID);
+
+    /**
+     * Return a list of all configurations specified by the path ordered by date uploaded.
+     *
+     * @param toolName    The name of the tool for which you wish to retrieve configurations.
+     * @param path        The path for which you wish to retrieve configurations.
+     * @param scope       The {@link Scope scope} of the specified entity ID.
+     * @param entityId    The ID of the target entity. The ID is understood in relation to the scope.
+     *
+     * @return A list of all configurations specified by the path ordered by date uploaded.
+     */
+    List<Configuration> getHistory(String toolName, String path, Scope scope, String entityId);
+
+    /**
+     * Retrieves a list of the IDs of all projects that have a configuration.
+     *
+     * @return A list of the IDs of all projects that have a configuration.
+     */
+    List<String> getProjects();
+
+    /**
+     * Retrieves a list of the IDs of all projects that have a configuration for the indicated tool.
+     *
+     * @param toolName    The toolname to find.
+     *
+     * @return A list of the IDs of all projects that have a configuration for the indicated tool.
+     */
+    List<String> getProjects(String toolName);
 }

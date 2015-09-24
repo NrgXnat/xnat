@@ -2,9 +2,9 @@
  * AbstractMailServiceImpl
  * (C) 2011 Washington University School of Medicine
  * All Rights Reserved
- *
+ * <p/>
  * Released under the Simplified BSD License
- *
+ * <p/>
  * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.mail.services.impl;
@@ -19,9 +19,41 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.services.MailService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
 
 abstract public class AbstractMailServiceImpl implements MailService {
+
+    /**
+     * Gets the prefix to add to the subject of emails.
+     * @return The prefix to add to the subject of emails.
+     */
+    @Override
+    public String getSubjectPrefix() {
+        return _subjectPrefix;
+    }
+
+    /**
+     * Sets the prefix to add to the subject of emails.
+     * @param subjectPrefix    The prefix to add to the subject of emails.
+     */
+    @Override
+    @Value("${mailserver.prefix}")
+    public void setSubjectPrefix(final String subjectPrefix) {
+        _hasSubjectPrefix = StringUtils.isNotBlank(subjectPrefix);
+        _subjectPrefix = subjectPrefix;
+    }
+
+    /**
+     * Indicates whether a {@link #getSubjectPrefix() subject prefix} has been set.
+     * @return <b>true</b> if a non-blank subject prefix has been set.
+     */
+    @Override
+    public boolean hasSubjectPrefix() {
+        return _hasSubjectPrefix;
+    }
 
     /**
      * Sends a {@link MailMessage}. The XDAT mail message class abstracts the plain-text, HTML,
@@ -78,7 +110,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
 
         if (_log.isDebugEnabled()) {
             StringBuilder tos = new StringBuilder();
-            if (to != null && to.length > 0) {
+            if (to.length > 0) {
                 boolean started = false;
                 for (String address : to) {
                     if (started) {
@@ -101,7 +133,8 @@ abstract public class AbstractMailServiceImpl implements MailService {
             message.setBccs(bccs);
         }
         message.setFrom(from);
-        message.setSubject(subject);
+        message.setSubject(prefixSubject(subject));
+
         message.setText(body);
 
         sendMessage(message);
@@ -169,7 +202,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendMessage(String from, String to, String subject, String message) throws MessagingException {
-        sendMessage(from, new String[] { to }, null, null, subject, message);
+        sendMessage(from, new String[]{to}, null, null, subject, message);
     }
 
     /**
@@ -221,7 +254,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
 
         if (_log.isDebugEnabled()) {
             StringBuilder tos = new StringBuilder();
-            if (to != null && to.length > 0) {
+            if (to.length > 0) {
                 boolean started = false;
                 for (String address : to) {
                     if (started) {
@@ -244,7 +277,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
         if (bccs != null && bccs.length > 0) {
             message.setBccs(bccs);
         }
-        message.setSubject(subject);
+        message.setSubject(prefixSubject(subject));
         if (!StringUtils.isBlank(text)) {
             message.setText(text);
         }
@@ -456,9 +489,9 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendHtmlMessage(String from, String to, String cc, String bcc, String subject, String html) throws MessagingException {
-        String[] ccs = cc == null ? null : new String[] {cc};
-        String[] bccs = bcc == null ? null : new String[] {bcc};
-        sendHtmlMessage(from, new String[] { to }, ccs, bccs, subject, html, null, null);
+        String[] ccs = cc == null ? null : new String[]{cc};
+        String[] bccs = bcc == null ? null : new String[]{bcc};
+        sendHtmlMessage(from, new String[]{to}, ccs, bccs, subject, html, null, null);
     }
 
     /**
@@ -490,8 +523,8 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendHtmlMessage(String from, String to, String cc, String subject, String html) throws MessagingException {
-        String[] ccs = cc == null ? null : new String[] {cc};
-        sendHtmlMessage(from, new String[] { to }, ccs, null, subject, html, null, null);
+        String[] ccs = cc == null ? null : new String[]{cc};
+        sendHtmlMessage(from, new String[]{to}, ccs, null, subject, html, null, null);
     }
 
     /**
@@ -521,9 +554,20 @@ abstract public class AbstractMailServiceImpl implements MailService {
      */
     @Override
     public void sendHtmlMessage(String from, String to, String subject, String html) throws MessagingException {
-        sendHtmlMessage(from, new String[] { to }, null, null, subject, html, null, null);
+        sendHtmlMessage(from, new String[]{to}, null, null, subject, html, null, null);
     }
 
-   private static final Log _log = LogFactory.getLog(AbstractMailServiceImpl.class);
-}
+    /**
+     * Adds the system prefix if not already present.
+     * @param subject    The subject.
+     * @return The subject prefixed with the system prefix if not already present.
+     */
+    protected String prefixSubject(final String subject) {
+        return hasSubjectPrefix() && !subject.startsWith(getSubjectPrefix()) ? getSubjectPrefix() + ":" + subject : subject;
+    }
 
+    private static final Log _log = LogFactory.getLog(AbstractMailServiceImpl.class);
+
+    private boolean _hasSubjectPrefix;
+    private String _subjectPrefix;
+}

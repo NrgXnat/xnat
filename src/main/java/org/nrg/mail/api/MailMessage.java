@@ -48,6 +48,7 @@ public class MailMessage {
     public static final String PROP_ATTACHMENTS = "attachments";
 
     public MailMessage() {
+        _attachments = new HashMap<>();
     }
 
     /**
@@ -73,6 +74,7 @@ public class MailMessage {
         _html = html;
         _text = text;
 
+        _attachments = new HashMap<>();
         if (attachments != null) {
             _attachments = convertGenericAttachmentMap(attachments);
         }
@@ -102,6 +104,7 @@ public class MailMessage {
         if (properties.containsKey(PROP_TEXT)) {
             _text = (String) properties.get(PROP_TEXT);
         }
+        _attachments = new HashMap<>();
         if (properties.containsKey(PROP_ATTACHMENTS)) {
             _attachments = convertGenericAttachmentMap((Map<String, Object>) properties.get(PROP_ATTACHMENTS));
         }
@@ -195,12 +198,23 @@ public class MailMessage {
         _text = text;
     }
 
-    public Map<String, String> getHeaders() {
+    public Map<String, List<String>> getHeaders() {
         return _headers;
     }
 
-    public void setHeaders(Map<String, String> headers) {
+    public void setHeaders(Map<String, List<String>> headers) {
         _headers = headers;
+    }
+
+    public void addHeader(String header, String value) {
+        List<String> values;
+        if (_headers.containsKey(header)) {
+            values = _headers.get(header);
+        } else {
+            values = new ArrayList<>();
+            _headers.put(header, values);
+        }
+        values.add(value);
     }
 
     public Map<String, File> getAttachments() {
@@ -218,14 +232,14 @@ public class MailMessage {
     public void addAttachment(String id, String attachment) {
         _attachments.put(id, new File(attachment));
     }
-
+    
     public void addAttachment(String id, URI attachment) {
         _attachments.put(id, new File(attachment));
     }
-
+    
     public SimpleMailMessage asSimpleMailMessage() {
         SimpleMailMessage message = new SimpleMailMessage();
-        message.setFrom(_from);
+	message.setFrom(_from);
         message.setTo(_tos.toArray(new String[_tos.size()]));
         if (_ccs.size() > 0) {
             message.setCc(_ccs.toArray(new String[_ccs.size()]));
@@ -266,8 +280,12 @@ public class MailMessage {
             helper.setText(_text, _html);
         }
 
-        for (String header : _headers.keySet()) {
-            helper.getMimeMessage().addHeader(header, _headers.get(header));
+        for (Map.Entry<String, List<String>> header : _headers.entrySet()) {
+            String key = header.getKey();
+            List<String> values = header.getValue();
+            for (String value : values) {
+                helper.getMimeMessage().addHeader(key, value);
+            }
         }
 
         if (hasAttachments) {
@@ -282,36 +300,36 @@ public class MailMessage {
     /**
      * Converts the mail message into an <a href="http://commons.apache.org/email">Apache
      * Commons Mail package</a> {@link HtmlEmail} object. This can be used to work with legacy
-     * code as well as with direct access to SMTP servers (as in fail-over mail messages
-     * for internal use).
+	 * code as well as with direct access to SMTP servers (as in fail-over mail messages
+	 * for internal use). 
      * @return An Apache Commons Mail {@link HtmlEmail} object.
      * @throws EmailException Indicates an error when configuring the HtmlEmail object.
      */
     public HtmlEmail asHtmlEmail() throws EmailException {
-        HtmlEmail email = new HtmlEmail();
+    	HtmlEmail email = new HtmlEmail();
 
-        if (!StringUtils.isBlank(_from)) { email.setFrom(_from); }
-        if (_headers.size() > 0) { email.setHeaders(_headers); }
-        if (!StringUtils.isBlank(_onBehalfOf)) { email.addHeader("Sender", _onBehalfOf); }
+    	if (!StringUtils.isBlank(_from)) { email.setFrom(_from); }
+    	if (_headers.size() > 0) { email.setHeaders(_headers); }
+    	if (!StringUtils.isBlank(_onBehalfOf)) { email.addHeader("Sender", _onBehalfOf); }
         if (_tos.size() > 0) { email.setTo(convertToInternetAddresses(_tos)); }
         if (_ccs.size() > 0) { email.setCc(convertToInternetAddresses(_ccs)); }
         if (_bccs.size() > 0) { email.setBcc(convertToInternetAddresses(_bccs)); }
-        if (!StringUtils.isBlank(_subject)) { email.setSubject(_subject); }
-        if (!StringUtils.isBlank(_html)) { email.setHtmlMsg(_html); }
-        if (!StringUtils.isBlank(_text)) { email.setTextMsg(_text); }
-        if (_attachments.size() > 0) {
-            for (Map.Entry<String, File> entry : _attachments.entrySet()) {
-                String key = entry.getKey();
-                FileSystemResource resource = new FileSystemResource(entry.getValue());
-                try {
-                    email.attach(resource.getURL(), key, "");
-                } catch (IOException exception) {
-                    _log.error("Got an error retrieving the attachment: " + key, exception);
-                }
-            }
-        }
-
-        return email;
+    	if (!StringUtils.isBlank(_subject)) { email.setSubject(_subject); }
+    	if (!StringUtils.isBlank(_html)) { email.setHtmlMsg(_html); }
+    	if (!StringUtils.isBlank(_text)) { email.setTextMsg(_text); }
+    	if (_attachments.size() > 0) {
+    		for (Map.Entry<String, File> entry : _attachments.entrySet()) {
+    			String key = entry.getKey();
+    			FileSystemResource resource = new FileSystemResource(entry.getValue());
+    			try {
+					email.attach(resource.getURL(), key, "");
+				} catch (IOException exception) {
+					_log.error("Got an error retrieving the attachment: " + key, exception);
+				}
+    		}
+    	}
+    	
+    	return email;
     }
 
     private Collection<InternetAddress> convertToInternetAddresses(final List<String> strings) {
@@ -344,9 +362,9 @@ public class MailMessage {
         } else if (value instanceof String[]) {
             return Arrays.asList((String[]) value);
         } else if (value instanceof String) {
-            return Arrays.asList((String) value);
+            return Collections.singletonList((String) value);
         }
-        return Arrays.asList(value.toString());
+        return Collections.singletonList(value.toString());
     }
 
     /**
@@ -389,6 +407,6 @@ public class MailMessage {
     private String _subject;
     private String _html;
     private String _text;
-    private Map<String, String> _headers = new HashMap<>();
-    private Map<String, File> _attachments = new HashMap<>();
+    private Map<String, List<String>> _headers = new HashMap<>();
+    private Map<String, File> _attachments;
 }

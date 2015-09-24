@@ -41,9 +41,10 @@ import java.util.Map.Entry;
  * @author Rick Herrick <rick.herrick@wustl.edu>
 
  */
+@SuppressWarnings("unused")
 public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
 
-    public RestBasedMailServiceImpl(String address) throws NrgServiceException {
+    public RestBasedMailServiceImpl(final String address) throws NrgServiceException {
         super();
 
         try {
@@ -139,12 +140,15 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
                 parameters.add(id, new FileSystemResource(attachments.get(id)));
             }
         }
-        Map<String, String> headers = message.getHeaders();
+        final Map<String, List<String>> headers = message.getHeaders();
         if (headers != null) {
-            for (String header : headers.keySet()) {
-                parameters.add("header:" + header, headers.get(header));
+            for (final String header : headers.keySet()) {
+                List<String> values = headers.get(header);
+                for (final String value : values) {
+                    parameters.add("header:" + header, value);
                 }
             }
+        }
 
         AuthenticatedClientHttpRequestFactory factory = new AuthenticatedClientHttpRequestFactory(username, password);
         if (_proxy != null) {

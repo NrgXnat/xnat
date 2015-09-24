@@ -12,7 +12,7 @@ import java.util.Set;
 @Repository
 public class ToolRepository extends AbstractHibernateDAO<Tool> {
     public Set<String> getToolIds() {
-        @SuppressWarnings("all")
+        @SuppressWarnings({"unchecked", "SqlDialectInspection", "SqlNoDataSourceInspection"})
         final List<String> results = getSession().createSQLQuery("select tool_id from xhbm_tool")
                 .addScalar("tool_id", StandardBasicTypes.STRING)
                 .list();

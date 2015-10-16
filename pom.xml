@@ -1,39 +1,36 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
   <modelVersion>4.0.0</modelVersion>
-  <properties>
-    <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
-  </properties>
   <issueManagement>
     <url>http://issues.xnat.org</url>
   </issueManagement>
   <ciManagement>
   </ciManagement>
   <developers>
-    <developer>
-      <id>karchie</id>
-      <name>Kevin A. Archie</name>
-      <email>karchie@wustl.edu</email>
-      <timezone>-6</timezone>
-    </developer>
+  	<developer>
+  		<id>karchie</id>
+  		<name>Kevin A. Archie</name>
+  		<email>karchie@wustl.edu</email>
+  		<timezone>-6</timezone>
+  	</developer>
   </developers>
   <scm>
-    <url>http://hg.xnat.org/extattr</url>
+  	<url>http://hg.xnat.org/extattr</url>
   </scm>
   <organization>
-    <name>Washington University Neuroinformatics Research Group</name>
-    <url>http://nrg.wustl.edu</url>
+  	<name>Washington University Neuroinformatics Research Group</name>
+  	<url>http://nrg.wustl.edu</url>
   </organization>
   <build>
     <plugins>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-compiler-plugin</artifactId>
+	<artifactId>maven-compiler-plugin</artifactId>
         <version>2.3.2</version>
-        <configuration>
-          <source>1.5</source>
-          <target>1.5</target>
-        </configuration>
+	<configuration>
+	  <source>1.5</source>
+	  <target>1.5</target>
+	</configuration>
       </plugin>
       <plugin>
         <groupId>org.apache.maven.plugins</groupId>
@@ -62,8 +59,8 @@
       <scope>test</scope>
     </dependency>
     <dependency>
-      <groupId>com.google.guava</groupId>
-      <artifactId>guava</artifactId>
+    	<groupId>com.google.guava</groupId>
+    	<artifactId>guava</artifactId>
       <version>[12.0.1,)</version>
     </dependency>
   </dependencies>

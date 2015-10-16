@@ -1,82 +1,107 @@
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-  xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
-  <modelVersion>4.0.0</modelVersion>
-  <issueManagement>
-    <url>http://issues.xnat.org</url>
-  </issueManagement>
-  <ciManagement>
-  </ciManagement>
-  <developers>
-  	<developer>
-  		<id>karchie</id>
-  		<name>Kevin A. Archie</name>
-  		<email>karchie@wustl.edu</email>
-  		<timezone>-6</timezone>
-  	</developer>
-  </developers>
-  <scm>
-  	<url>http://hg.xnat.org/extattr</url>
-  </scm>
-  <organization>
-  	<name>Washington University Neuroinformatics Research Group</name>
-  	<url>http://nrg.wustl.edu</url>
-  </organization>
-  <build>
-    <plugins>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-	<artifactId>maven-compiler-plugin</artifactId>
-        <version>2.3.2</version>
-	<configuration>
-	  <source>1.5</source>
-	  <target>1.5</target>
-	</configuration>
-      </plugin>
-      <plugin>
-        <groupId>org.apache.maven.plugins</groupId>
-        <artifactId>maven-resources-plugin</artifactId>
-        <version>2.5</version>
-        <configuration>
-          <encoding>UTF-8</encoding>
-        </configuration>
-      </plugin>
-    </plugins>
-  </build>
-  <groupId>org.nrg</groupId>
-  <artifactId>ExtAttr</artifactId>
-  <packaging>jar</packaging>
-  <name>External Attribute library</name>
-  <version>4.1.0</version>
-  <description>
-    Library for converting native image metadata formats (e.g., DICOM, ECAT) into a unified external format (usually XNAT).
-  </description>
-  <url>http://nrg.wustl.edu</url>
-  <dependencies>
-    <dependency>
-      <groupId>junit</groupId>
-      <artifactId>junit</artifactId>
-      <version>4.8.2</version>
-      <scope>test</scope>
-    </dependency>
-    <dependency>
-    	<groupId>com.google.guava</groupId>
-    	<artifactId>guava</artifactId>
-      <version>[12.0.1,)</version>
-    </dependency>
-  </dependencies>
-  <distributionManagement>
-    <repository>
-      <id>XNAT Server</id>
-      <name>XNAT Maven Library Release</name>
-      <url>
-	http://maven.xnat.org/libs-release-local
-      </url>
-    </repository>
-    <snapshotRepository>
-      <id>XNAT Server</id>
-      <name>XNAT Maven Library Snapshots</name>
-      <url>
-	http://maven.xnat.org/libs-snapshot-local
-      </url>
-    </snapshotRepository>
-</distributionManagement></project>
+         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/maven-v4_0_0.xsd">
+    <modelVersion>4.0.0</modelVersion>
+
+    <parent>
+        <groupId>org.nrg</groupId>
+        <artifactId>nrg</artifactId>
+        <version>1.7.0-SNAPSHOT</version>
+    </parent>
+
+    <artifactId>ExtAttr</artifactId>
+    <version>4.1.0</version>
+
+    <name>External Attribute library</name>
+    <description>
+        Library for converting native image metadata formats (e.g., DICOM, ECAT)
+        into a unified external format (usually XNAT).
+    </description>
+
+    <url>http://nrg.wustl.edu</url>
+
+    <issueManagement>
+        <url>http://issues.xnat.org</url>
+    </issueManagement>
+
+    <developers>
+        <developer>
+            <id>karchie</id>
+            <name>Kevin A. Archie</name>
+            <email>karchie@wustl.edu</email>
+            <timezone>-6</timezone>
+        </developer>
+        <developer>
+            <id>rherrick</id>
+            <name>Rick Herrick</name>
+            <email>rick.herrick@wustl.edu</email>
+            <timezone>-6</timezone>
+        </developer>
+    </developers>
+
+    <scm>
+        <url>https://bitbucket.org/nrg/extattr</url>
+    </scm>
+
+    <organization>
+        <name>Washington University Neuroinformatics Research Group</name>
+        <url>http://nrg.wustl.edu</url>
+    </organization>
+
+    <build>
+        <plugins>
+            <plugin>
+                <artifactId>maven-compiler-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-source-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-javadoc-plugin</artifactId>
+            </plugin>
+            <plugin>
+                <artifactId>maven-resources-plugin</artifactId>
+            </plugin>
+        </plugins>
+    </build>
+
+    <dependencies>
+        <dependency>
+            <groupId>junit</groupId>
+            <artifactId>junit</artifactId>
+            <scope>test</scope>
+        </dependency>
+        <dependency>
+            <groupId>com.google.guava</groupId>
+            <artifactId>guava</artifactId>
+        </dependency>
+    </dependencies>
+
+    <repositories>
+        <repository>
+            <id>xnat-maven-release</id>
+            <name>XNAT Maven Library Release</name>
+            <url>http://maven.xnat.org/libs-release</url>
+            <releases/>
+        </repository>
+        <repository>
+            <id>xnat-maven-snapshot</id>
+            <name>XNAT Maven Library Snapshots</name>
+            <url>http://maven.xnat.org/libs-snapshot</url>
+            <snapshots/>
+        </repository>
+    </repositories>
+
+    <distributionManagement>
+        <repository>
+            <id>xnat-maven-release</id>
+            <name>XNAT Maven Library Release</name>
+            <url>http://maven.xnat.org/libs-release</url>
+        </repository>
+        <snapshotRepository>
+            <id>xnat-maven-snapshot</id>
+            <name>XNAT Maven Library Snapshots</name>
+            <url>http://maven.xnat.org/libs-snapshot</url>
+        </snapshotRepository>
+    </distributionManagement>
+
+</project>

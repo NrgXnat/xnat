@@ -21,14 +21,11 @@ import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import org.hibernate.cache.RegionFactory;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
 import org.nrg.framework.services.ContextService;
-import org.nrg.framework.services.MarshallerCacheService;
-import org.nrg.framework.services.PropertiesService;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
 import org.nrg.notify.api.CategoryScope;
@@ -56,14 +53,13 @@ import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.services.XftFieldExclusionService;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 
@@ -88,18 +84,14 @@ public class XDAT implements Initializable,Configurable{
     private static DataSource _dataSource;
 	private static MailService _mailService;
     private static NotificationService _notificationService;
-    private static PropertiesService _propertiesService;
-    private static XftFieldExclusionService _exclusionService;
-    private static MarshallerCacheService _marshallerCacheService;
 	private static XdatUserAuthService _xdatUserAuthService;
     private static ConfigService _configurationService;
     private static SiteConfigurationService _siteConfigurationService;
-    private static RegionFactory _cacheRegionFactory;
     public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
     private static String _configFilesLocation = null;
     private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
-    private static List<File> _screenTemplatesFolders=new ArrayList<File>();
+    private static List<File> _screenTemplatesFolders= new ArrayList<>();
 
     public static List<String> getWhitelistedIPs(UserI user) throws ConfigServiceException {
         return Arrays.asList(getWhitelistConfiguration(user).split("[\\s]+"));
@@ -259,10 +251,10 @@ public class XDAT implements Initializable,Configurable{
 		if (initLog4j)
 		{
 			PropertyConfigurator.configure(_configFilesLocation + "log4j.properties");
-			initLog4j= false;
 		}
 
-		XFT.init(_configFilesLocation, initLog4j);
+		// This used to use initLog4j, but initLog4j was always set to false, so...
+		XFT.init(_configFilesLocation, false);
 
 		Long user_count;
 		try {
@@ -318,7 +310,7 @@ public class XDAT implements Initializable,Configurable{
 		buffer.append("SELECT removeViews();\n--BR\n");
 
 		buffer.append("\n\n-- ADDED VIEWS FOR DISPLAY DOCS\n\n");
-	    for (Object item : DisplayManager.GetCreateViewsSQL(true))
+	    for (Object item : DisplayManager.GetCreateViewsSQL())
 	    {
 	        buffer.append(item).append("\n--BR\n");
 	    }
@@ -343,7 +335,7 @@ public class XDAT implements Initializable,Configurable{
 	        buffer.append(item).append("\n--BR\n");
 	    }
 		buffer.append("\n\n-- ADDED VIEWS FOR DISPLAY DOCS\n\n");
-	    for (Object item : DisplayManager.GetCreateViewsSQL(false))
+	    for (Object item : DisplayManager.GetCreateViewsSQL())
 	    {
 	        buffer.append(item).append("\n--BR\n");
 	    }
@@ -355,13 +347,14 @@ public class XDAT implements Initializable,Configurable{
 		logger.info("File Created: " + file);
 	}
 
+	@SuppressWarnings("unused")
 	public static List<String> GenerateCreateSQL() throws Exception
 	{
         List<String> sql=Lists.newArrayList();
 
         sql.addAll(SQLCreateGenerator.GetSQLCreate(true));
 
-        sql.addAll(DisplayManager.GetCreateViewsSQL(false));
+        sql.addAll(DisplayManager.GetCreateViewsSQL());
 
         return sql;
 	}
@@ -400,40 +393,6 @@ public class XDAT implements Initializable,Configurable{
 	    return _notificationService;
 	}
 
-	/**
-	 * Returns an instance of the currently supported {@link NotificationService notification service}.
-	 * @return An instance of the {@link NotificationService notification service}.
-	 */
-	public static PropertiesService getPropertiesService() {
-	    if (_propertiesService == null) {
-            _propertiesService = getContextService().getBean(PropertiesService.class);
-	    }
-	    return _propertiesService;
-	}
-
-	/**
-	 * Returns an instance of the currently supported {@link XftFieldExclusionService exclusion service}.
-	 * @return An instance of the {@link XftFieldExclusionService exclusion service}.
-	 */
-	public static XftFieldExclusionService getExclusionService() {
-	    if (_exclusionService == null) {
-	        _exclusionService = getContextService().getBean(org.nrg.xft.services.XftFieldExclusionService.class);
-	    }
-	    return _exclusionService;
-	}
-
-    /**
-     * Returns an instance of the currently supported {@link MarshallerCacheService XML marshaler cache service}.
-     * @return An instance of the {@link MarshallerCacheService XML marshaller cache service}.
-     */
-    public static MarshallerCacheService getMarshallerCacheService() {
-        if (_marshallerCacheService == null) {
-            _marshallerCacheService = getContextService().getBean(MarshallerCacheService.class);
-}
-        return _marshallerCacheService;
-    }
-
-
     public static void addScreenTemplatesFolder(String screenTemplatesFolder) {
         _screenTemplatesFolders.add(new File(screenTemplatesFolder));
     }
@@ -443,7 +402,7 @@ public class XDAT implements Initializable,Configurable{
     }
 
     /**
-     * Returns the folder containing screen templates. These are installed by custom datatypes, modules, and other
+     * Returns the folder containing screen templates. These are installed by custom data types, modules, and other
      * customizations that extend or override the default application behavior.
      * @return The full path to the screen templates folder.
      */
@@ -505,22 +464,14 @@ public class XDAT implements Initializable,Configurable{
     }
 
     public static void setSiteConfigurationProperty(String property, String value) throws ConfigServiceException {
-        getSiteConfigurationService().setSiteConfigurationProperty(getUserDetails().getUsername(), property, value);
-    }
+		final UserI userDetails = getUserDetails();
+		if (userDetails != null) {
+			getSiteConfigurationService().setSiteConfigurationProperty(userDetails.getUsername(), property, value);
+		}
+	}
 
     public static Properties getSiteConfiguration() throws ConfigServiceException {
     	return getSiteConfigurationService().getSiteConfiguration();
-    }
-
-    /**
-     * Returns an instance of the currently supported site configuration service.
-     * @return An instance of the {@link SiteConfigurationService} service.
-     */
-     public static RegionFactory getCacheRegionFactory() {
-        if (_cacheRegionFactory == null) {
-            _cacheRegionFactory = getContextService().getBean(RegionFactory.class);
-        }
-        return _cacheRegionFactory;
     }
 
     /**
@@ -616,8 +567,8 @@ public class XDAT implements Initializable,Configurable{
     }
     
     public static boolean loginUser(RunData data, UserI user, boolean forcePasswordChange) throws Exception{
-    	PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
-    	ItemI found = populater.getItem();
+    	PopulateItem populator = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
+    	ItemI found = populator.getItem();
     	String tempPass = data.getParameters().getString("xdat:user.primary_password");
     	
     	TurbineUtils.setUser(data, user);
@@ -635,10 +586,10 @@ public class XDAT implements Initializable,Configurable{
         item.setProperty("xdat:user_login.session_id", data.getSession().getId());
         SaveItemHelper.authorizedSave(item,null,true,false,(EventMetaI)null);
 
-		Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
-        grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
+		Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
+        grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
         if (Roles.isSiteAdmin(user)) {
-            grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_ADMIN"));
+            grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }
     	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getProperty("login"), tempPass, grantedAuthorities);
     	SecurityContext securityContext = SecurityContextHolder.getContext();
@@ -660,7 +611,7 @@ public class XDAT implements Initializable,Configurable{
 }
 
     public static List<String> getLocalhostIPs() {
-        List<String> localhostIPs = new ArrayList<String>();
+        List<String> localhostIPs = new ArrayList<>();
         try {
             InetAddress[] addresses = InetAddress.getAllByName(InetAddress.getLocalHost().getHostName());
             for (InetAddress address : addresses) {

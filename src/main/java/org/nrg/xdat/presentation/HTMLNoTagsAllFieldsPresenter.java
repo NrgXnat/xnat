@@ -11,6 +11,7 @@ package org.nrg.xdat.presentation;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 
 import org.nrg.xdat.display.DisplayFieldReferenceI;
 import org.nrg.xdat.display.DisplayManager;
@@ -24,273 +25,265 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.StringUtils;
 
-public class HTMLNoTagsAllFieldsPresenter extends CSVPresenter{
+public class HTMLNoTagsAllFieldsPresenter extends CSVPresenter {
 
-	public String getVersionExtension(){return "";}
-	
-	public XFTTableI formatTable(XFTTableI table,DisplaySearch search,boolean allowDiffs) throws XFTInitException,ElementNotFoundException
+    public String getVersionExtension() {
+        return "";
+    }
 
-	{
+    public XFTTableI formatTable(XFTTableI table, DisplaySearch search, boolean allowDiffs) throws XFTInitException, ElementNotFoundException
 
-		logger.debug("BEGIN NO TAGS ALL FIELDS FORMAT");
+    {
 
-		XFTTable csv = new XFTTable();
+        logger.debug("BEGIN NO TAGS ALL FIELDS FORMAT");
 
-		ElementDisplay ed = DisplayManager.GetElementDisplay(getRootElement().getFullXMLName());
+        XFTTable csv = new XFTTable();
 
-		ArrayList allFields = this.getAllFields(ed, search);
+        ElementDisplay ed = DisplayManager.GetElementDisplay(getRootElement().getFullXMLName());
 
-		ArrayList columnHeaders = new ArrayList();
+        List<DisplayFieldReferenceI> allFields = this.getAllFields(ed, search);
 
-		ArrayList diffs = new ArrayList();
+        List<String> columnHeaders = new ArrayList<>();
 
-		
+        ArrayList diffs = new ArrayList();
 
-		if (search.getInClauses().size()>0)
 
-		{
+        if (search.getInClauses().size() > 0)
 
-		    for(int i=0;i<search.getInClauses().size();i++)
+        {
 
-		    {
+            for (int i = 0; i < search.getInClauses().size(); i++)
 
-		        columnHeaders.add("");
+            {
 
-		    }
+                columnHeaders.add("");
 
-		}
+            }
 
-		
+        }
 
-		//POPULATE HEADERS
 
-		
+        //POPULATE HEADERS
 
-		Iterator fields = allFields.iterator();
 
-		int counter = search.getInClauses().size();
+        Iterator fields = allFields.iterator();
 
-		while (fields.hasNext())
+        int counter = search.getInClauses().size();
 
-		{
+        while (fields.hasNext())
 
-			DisplayFieldReferenceI df = (DisplayFieldReferenceI)fields.next();
+        {
 
-			if (allowDiffs)
+            DisplayFieldReferenceI df = (DisplayFieldReferenceI) fields.next();
 
-			{
+            if (allowDiffs)
 
-				if (!diffs.contains(df.getElementName()))
+            {
 
-				{
+                if (!diffs.contains(df.getElementName()))
 
-				    diffs.add(df.getElementName());
+                {
 
-				    SchemaElementI foreign = SchemaElement.GetElement(df.getElementName());
+                    diffs.add(df.getElementName());
 
-				    if (search.isMultipleRelationship(foreign))
+                    SchemaElementI foreign = SchemaElement.GetElement(df.getElementName());
 
-				    {
+                    if (search.isMultipleRelationship(foreign))
 
-					    String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
+                    {
 
-					    Integer index = ((XFTTable)table).getColumnIndex(temp);
+                        String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
 
-					    if (index!=null)
+                        Integer index = ((XFTTable) table).getColumnIndex(temp);
 
-					    {
+                        if (index != null)
 
-						    columnHeaders.add("Diff");
+                        {
 
-					    }
+                            columnHeaders.add("Diff");
 
-				    }
+                        }
 
-				}
+                    }
 
-			}
+                }
 
-			
+            }
 
-			if (!df.isHtmlContent())
 
-			{
+            if (!df.isHtmlContent())
 
-				columnHeaders.add(df.getHeader());
+            {
 
-			}
+                columnHeaders.add(df.getHeader());
 
-		}
+            }
 
-		csv.initTable(columnHeaders);
+        }
 
-		
+        //noinspection unchecked
+        csv.initTable(new ArrayList(columnHeaders));
 
-		//POPULATE DATA
 
-		table.resetRowCursor();
+        //POPULATE DATA
 
-		
+        table.resetRowCursor();
 
-		while (table.hasMoreRows())
 
-		{
+        while (table.hasMoreRows())
 
-			Hashtable row = table.nextRowHash();
+        {
 
-			Object[] newRow = new Object[columnHeaders.size()];
+            Hashtable row = table.nextRowHash();
 
-			fields = allFields.iterator();
+            Object[] newRow = new Object[columnHeaders.size()];
 
+            fields = allFields.iterator();
 
 
-			diffs = new ArrayList();
+            diffs = new ArrayList();
 
-			if (search.getInClauses().size()>0)
+            if (search.getInClauses().size() > 0)
 
-			{
+            {
 
-			    for(int i=0;i<search.getInClauses().size();i++)
+                for (int i = 0; i < search.getInClauses().size(); i++)
 
-			    {
+                {
 
-			        Object v = row.get("search_field"+i);
+                    Object v = row.get("search_field" + i);
 
-			        if (v!=null)
+                    if (v != null)
 
-			        {
+                    {
 
-				        newRow[i] = v;
+                        newRow[i] = v;
 
-			        }else{
+                    } else {
 
-				        newRow[i] = "";
+                        newRow[i] = "";
 
-			        }
+                    }
 
-			    }
+                }
 
-			}
+            }
 
-			
 
-			counter = search.getInClauses().size();
+            counter = search.getInClauses().size();
 
-			while (fields.hasNext())
+            while (fields.hasNext())
 
-			{
+            {
 
-			    DisplayFieldReferenceI dfr = (DisplayFieldReferenceI)fields.next();
+                DisplayFieldReferenceI dfr = (DisplayFieldReferenceI) fields.next();
 
-				if(!dfr.isHtmlContent())
+                if (!dfr.isHtmlContent())
 
-				{
+                {
 
 
+                    try {
 
-					try {
+                        if (allowDiffs)
 
-					    if (allowDiffs)
+                        {
 
-					    {
+                            if (!diffs.contains(dfr.getElementName()))
 
-		                    if (!diffs.contains(dfr.getElementName()))
+                            {
 
-		                    {
+                                diffs.add(dfr.getElementName());
 
-		                        diffs.add(dfr.getElementName());
+                                SchemaElementI foreign = SchemaElement.GetElement(dfr.getElementName());
 
-		                        SchemaElementI foreign = SchemaElement.GetElement(dfr.getElementName());
+                                if (search.isMultipleRelationship(foreign))
 
-		                        if (search.isMultipleRelationship(foreign))
+                                {
 
-		                        {
+                                    String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
 
-		                    	    String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
+                                    Integer index = ((XFTTable) table).getColumnIndex(temp);
 
-		                    	    Integer index = ((XFTTable)table).getColumnIndex(temp);
+                                    if (index != null)
 
-		                    	    if (index!=null)
+                                    {
 
-		                    	    {
+                                        String diff;
 
-		                    		    String diff = "";
+                                        Object d = row.get(temp.toLowerCase());
 
-		                    		    Object d = row.get(temp.toLowerCase());
+                                        if (d != null)
 
-		                    	        if (d!=null)
+                                        {
 
-		                    	        {
+                                            diff = d.toString();
 
-		                    		        diff=  (String)d.toString();
+                                        } else {
 
-		                    	        }else{
+                                            diff = "";
 
-		                    	            diff="";
+                                        }
 
-		                    	        }
+                                        newRow[counter++] = diff;
 
-		                    		    newRow[counter++]=diff;
+                                    }
 
-		                    	    }
+                                }
 
-		                        }
+                            }
 
-		                    }
+                        }
 
-					    }
 
-	                    
+                        Object v;
 
-	                    Object v = null;
+                        if (dfr.getElementName().equalsIgnoreCase(search.getRootElement().getFullXMLName()))
 
-	                    if (dfr.getElementName().equalsIgnoreCase(search.getRootElement().getFullXMLName()))
+                        {
 
-	                    {
+                            v = row.get(dfr.getRowID().toLowerCase());
 
-	                    	v = row.get(dfr.getRowID().toLowerCase());
+                        } else {
 
-	                    }else{
+                            v = row.get(dfr.getElementSQLName().toLowerCase() + "_" + dfr.getRowID().toLowerCase());
 
-	                    	v = row.get(dfr.getElementSQLName().toLowerCase() + "_" + dfr.getRowID().toLowerCase());
+                        }
 
-	                    }
+                        if (v != null)
 
-	                    if (v != null)
+                        {
 
-	                    {
+                            newRow[counter] = v;
 
-	                    	newRow[counter] = v;
+                        }
 
-	                    }
+                    } catch (XFTInitException e) {
 
-	                } catch (XFTInitException e) {
+                        logger.error("", e);
 
-	                    logger.error("",e);
+                    } catch (ElementNotFoundException e) {
 
-	                } catch (ElementNotFoundException e) {
+                        logger.error("", e);
 
-	                    logger.error("",e);
+                    }
 
-	                }
 
+                    counter++;
 
+                }
 
-					counter++;
+            }
 
-				}
+            csv.insertRow(newRow);
 
-			}
+        }
 
-			csv.insertRow(newRow);
+        logger.debug("END NO TAGS ALL FIELDS FORMAT");
 
-		}
+        return csv;
 
-		logger.debug("END NO TAGS ALL FIELDS FORMAT");
+    }
 
-		return csv;
 
-	}
-
-	
 }

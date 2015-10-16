@@ -20,12 +20,9 @@ import org.nrg.xdat.navigation.DefaultReportIdentifier;
 import org.nrg.xdat.navigation.DefaultReportIdentifierI;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.utils.StringUtils;
 
 /**
  * @author Tim
@@ -57,7 +54,7 @@ public class DisplayItemAction extends SecureAction {
 	public static String GetReportScreen(SchemaElementI se)
 	{
 		String templateName = "/screens/XDATScreen_report_" + se.getSQLName() + ".vm";
-		if (Velocity.templateExists(templateName))
+		if (Velocity.resourceExists(templateName))
 		{
 			templateName= "XDATScreen_report_" + se.getSQLName() + ".vm";
 		}else

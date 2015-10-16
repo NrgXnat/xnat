@@ -194,7 +194,7 @@ public class XdatStoredSearch extends org.nrg.xdat.om.XdatStoredSearch implement
         try {
             String templateName = "/screens/" + this.getId().toLowerCase() + "_search.vm";
 
-            if (Velocity.templateExists(templateName))
+            if (Velocity.resourceExists(templateName))
             {
                 return templateName;
             }else

@@ -12,16 +12,6 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.TimeZone;
-import java.util.UUID;
-
-import javax.servlet.http.HttpSession;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.ActionLoader;
@@ -49,9 +39,12 @@ import org.springframework.security.authentication.UsernamePasswordAuthenticatio
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
+
+import javax.servlet.http.HttpSession;
+import java.util.*;
 
 
 public class XDATRegisterUser extends VelocitySecureAction {
@@ -79,7 +72,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			UserI existing=null;
 			try {
 				existing = Users.getUser(found.getLogin());
-			} catch (Exception e1) {
+			} catch (Exception ignored) {
 			}
 			
             if (existing == null) {
@@ -165,8 +158,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
 			                    item.setProperty("xdat:user_login.session_id", data.getSession().getId());
                                 SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI) null);
 
-                                Set<GrantedAuthority> grantedAuthorities = new HashSet<GrantedAuthority>();
-			                    grantedAuthorities.add(new GrantedAuthorityImpl("ROLE_USER"));
+                                Set<GrantedAuthority> grantedAuthorities = new HashSet<>();
+			                    grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_USER"));
 			    		    	Authentication authentication = new UsernamePasswordAuthenticationToken(found.getLogin(), tempPass, grantedAuthorities);
 			    		    	SecurityContext securityContext = SecurityContextHolder.getContext();
 			    		    	securityContext.setAuthentication(authentication);

@@ -20,21 +20,21 @@ public class HTMLImage {
 	private Integer width = null;
 	private Integer height = null;
 	/**
-	 * @return
+	 * @return The image height.
 	 */
 	public Integer getHeight() {
 		return height;
 	}
 
 	/**
-	 * @return
+	 * @return The image width.
 	 */
 	public Integer getWidth() {
 		return width;
 	}
 
 	/**
-	 * @param integer
+	 * @param integer    The height to set for the image.
 	 */
 	public void setHeight(Integer integer) {
 		height = integer;
@@ -47,7 +47,7 @@ public class HTMLImage {
 	}
 
 	/**
-	 * @param integer
+	 * @param integer    The width to set for the image.
 	 */
 	public void setWidth(Integer integer) {
 		width = integer;

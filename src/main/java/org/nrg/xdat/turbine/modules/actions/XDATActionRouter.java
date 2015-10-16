@@ -38,7 +38,7 @@ public class XDATActionRouter extends SecureAction
 					SchemaElementI se = SchemaElement.GetElement(elementName);
 					String templateName = "/screens/XDATScreen_" + action  + "_" + se.getFormattedName() + ".vm";
 					logger.debug("looking for: " + templateName);
-					if (Velocity.templateExists(templateName))
+					if (Velocity.resourceExists(templateName))
 					{
 						data.setScreenTemplate("XDATScreen_" + action  + "_" + se.getFormattedName() + ".vm");
 					}else
@@ -46,7 +46,7 @@ public class XDATActionRouter extends SecureAction
 					    templateName = "/screens/XDATScreen_" + action + ".vm";
 
 					    logger.debug("looking for: " + templateName);
-					    if (Velocity.templateExists(templateName))
+					    if (Velocity.resourceExists(templateName))
 						{
 					        data.setScreenTemplate("XDATScreen_" + action + ".vm");
 						}else
@@ -54,7 +54,7 @@ public class XDATActionRouter extends SecureAction
 						    templateName = "/screens/" + action   + "_" + se.getFormattedName() + ".vm";
 
 						    logger.debug("looking for: " + templateName);
-						    if (Velocity.templateExists(templateName))
+						    if (Velocity.resourceExists(templateName))
 							{
 						        data.setScreenTemplate(action   + "_" + se.getFormattedName() + ".vm");
 							}else
@@ -62,7 +62,7 @@ public class XDATActionRouter extends SecureAction
 							    templateName = "/screens/" + action   + ".vm";
 
 							    logger.debug("looking for: " + templateName);
-							    if (Velocity.templateExists(templateName))
+							    if (Velocity.resourceExists(templateName))
 								{
 							        data.setScreenTemplate(action   + ".vm");
 								}else
@@ -72,16 +72,14 @@ public class XDATActionRouter extends SecureAction
 							}
 						}
 					}
-					} catch (XFTInitException e) {
+					} catch (XFTInitException | ElementNotFoundException e) {
 						data.setScreenTemplate("XDATScreen_" + action + ".vm");
-					} catch (ElementNotFoundException e) {
-					data.setScreenTemplate("XDATScreen_" + action + ".vm");
-				}
-   			}else{
+					}
+			}else{
    			    String templateName = "/screens/XDATScreen_" + action   + ".vm";
 
 			    logger.debug("looking for: " + templateName);
-			    if (Velocity.templateExists(templateName))
+			    if (Velocity.resourceExists(templateName))
 				{
 			        data.setScreenTemplate("XDATScreen_" + action   + ".vm");
 				}else

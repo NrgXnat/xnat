@@ -8,8 +8,6 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.display;
 
 import java.util.Comparator;
@@ -22,42 +20,42 @@ public class SQLView {
 	private String sql = "";
 	private int sortOrder = 0;
 	/**
-	 * @return
+	 * @return The SQl view name.
 	 */
 	public String getName() {
 		return name;
 	}
 
 	/**
-	 * @return
+	 * @return The SQl for the view.
 	 */
 	public String getSql() {
 		return sql;
 	}
 
 	/**
-	 * @param string
+	 * @param string    The name to set for the SQL view.
 	 */
 	public void setName(String string) {
 		name = string;
 	}
 
 	/**
-	 * @param string
+	 * @param string    The SQL to set for the view.
 	 */
 	public void setSql(String string) {
 		sql = string;
 	}
 
 	/**
-	 * @return
+	 * @return The sort order for the view.
 	 */
 	public int getSortOrder() {
 		return sortOrder;
 	}
 
 	/**
-	 * @param i
+	 * @param i    The sort order to set for the view.
 	 */
 	public void setSortOrder(int i) {
 		sortOrder = i;

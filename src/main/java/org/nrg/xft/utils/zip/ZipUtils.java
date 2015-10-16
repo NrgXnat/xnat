@@ -54,7 +54,7 @@ public class ZipUtils implements ZipI {
     ZipOutputStream out = null;
     int compression=ZipOutputStream.DEFLATED;
     boolean decompress = false;
-    private List<String> _duplicates = new ArrayList<String>();
+    private List<String> _duplicates = new ArrayList<>();
 
     @Override
     public void setOutputStream(OutputStream outStream) throws IOException
@@ -96,7 +96,7 @@ public class ZipUtils implements ZipI {
     
     /**
      * @param relativePath path name for zip file
-     * @param f
+     * @param f            The file to write out.
      * @throws FileNotFoundException
      * @throws IOException
      */
@@ -107,7 +107,7 @@ public class ZipUtils implements ZipI {
         {
             throw new IOException("Undefined OutputStream");
         }
-        java.io.InputStream in = new java.io.FileInputStream(f);
+        InputStream in = new FileInputStream(f);
         try {
             if (decompress && f.getName().toLowerCase().endsWith(".gz"))
             {
@@ -127,7 +127,6 @@ public class ZipUtils implements ZipI {
                     fos.write(buf, 0, len);
                 }
                 fos.close();
-                fos = null;
                 in.close();
                 
                 ZipEntry entry = new java.util.zip.ZipEntry(relativePath);
@@ -144,8 +143,7 @@ public class ZipUtils implements ZipI {
                     }
     
                     fileinputstream.close();
-                    fileinputstream = null;
-                    
+
                     entry.setSize(temp.length());
                     entry.setCrc(crc32.getValue());
                 }
@@ -154,7 +152,6 @@ public class ZipUtils implements ZipI {
                 out.putNextEntry(entry);
                 
                 // Transfer bytes from the file to the ZIP file
-                len=0;
                 in = new java.io.FileInputStream(temp);
                 while ((len = in.read(buf)) > 0) {
                     out.write(buf, 0, len);
@@ -198,7 +195,7 @@ public class ZipUtils implements ZipI {
         } finally{
             try {
                 in.close();
-            } catch (Throwable e) {
+            } catch (Throwable ignored) {
             }
         }
     }
@@ -215,7 +212,6 @@ public class ZipUtils implements ZipI {
                 fos.write(buf, 0, len);
             }
             fos.close();
-            fos = null;
             is.close();
             
             write(relativePath,temp);
@@ -251,7 +247,6 @@ public class ZipUtils implements ZipI {
                 fos.write(tempBUF, 0, len);
             }
             fos.close();
-            fos = null;
             is.close();
             
             write(relativePath,temp);
@@ -265,21 +260,17 @@ public class ZipUtils implements ZipI {
             out.putNextEntry(entry);
             
             if(DEBUG)System.out.print(srb.getName() + "," + srb.length() + "," + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
-            startTime = Calendar.getInstance().getTimeInMillis();
-            
+
             SRBFileInputStream is = new SRBFileInputStream(srb);
             // Transfer bytes from the file to the ZIP file
             int len;
             
             if(DEBUG)System.out.print("," + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
-            startTime = Calendar.getInstance().getTimeInMillis();
-            
+
             while ((len = is.read(tempBUF)) > 0) {
                 if(DEBUG)System.out.print(",R:" + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
-                startTime = Calendar.getInstance().getTimeInMillis();
                 out.write(tempBUF, 0, len);
                 if(DEBUG)System.out.print(",W:" + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
-                startTime = Calendar.getInstance().getTimeInMillis();
                 out.flush();
             }
             
@@ -287,7 +278,6 @@ public class ZipUtils implements ZipI {
             out.closeEntry();
             
             if(DEBUG)System.out.println("," + (Calendar.getInstance().getTimeInMillis()-startTime) + "ms");
-            startTime = Calendar.getInstance().getTimeInMillis();
         }
     }
 
@@ -297,21 +287,19 @@ public class ZipUtils implements ZipI {
         ArrayList subDirectories = dir.getSubdirectories();
         
         String path = dir.getPath();
-        for (int i = 0; i < files.size(); i++) {
-            long startTime = Calendar.getInstance().getTimeInMillis();
-            GeneralFile file = (GeneralFile)files.get(i);
+        for (Object file1 : files) {
+            GeneralFile file = (GeneralFile) file1;
             String relative = path + "/" + file.getName();
-            if (file instanceof XNATSrbFile){
-                if(relative.indexOf(((XNATSrbFile)file).getSession())!=-1)
-                {
-                    relative = relative.substring(relative.indexOf(((XNATSrbFile)file).getSession()));
+            if (file instanceof XNATSrbFile) {
+                if (relative.contains(((XNATSrbFile) file).getSession())) {
+                    relative = relative.substring(relative.indexOf(((XNATSrbFile) file).getSession()));
                 }
             }
-            write(relative, (SRBFile)file);
+            write(relative, (SRBFile) file);
         }
-        
-        for (int i=0;i<subDirectories.size();i++){
-            XNATDirectory sub = (XNATDirectory)subDirectories.get(i);
+
+        for (Object subDirectory : subDirectories) {
+            XNATDirectory sub = (XNATDirectory) subDirectory;
             write(sub);
         }
     }
@@ -329,15 +317,15 @@ public class ZipUtils implements ZipI {
     }
 
     @Override
-    public void extract(File f, String dir, boolean deleteZip) throws IOException{;
+    public void extract(File f, String dir, boolean deleteZip) throws IOException{
                 
         final class Expander extends Expand {
             public Expander() {
-     	    project = new Project();
-    	    project.init();
-    	    taskType = "unzip";
-    	    taskName = "unzip";
-    	    target = new Target();
+     	    setProject(new Project());
+    	    getProject().init();
+    	    setTaskType("unzip");
+    	    setTaskName("unzip");
+    	    setOwningTarget(new Target());
     	}	
         }
         Expander expander = new Expander();
@@ -356,7 +344,7 @@ public class ZipUtils implements ZipI {
 
     @Override
     public ArrayList extract(InputStream is, String destination, boolean overwrite, EventMetaI ci) throws IOException {
-        ArrayList<File> extractedFiles = new ArrayList<File>();
+        ArrayList<File> extractedFiles = new ArrayList<>();
         //  Create a ZipInputStream to read the zip file
         BufferedOutputStream dest;
         ZipInputStream zis = new ZipInputStream(new BufferedInputStream(is));
@@ -419,11 +407,11 @@ public class ZipUtils implements ZipI {
         
         final class Expander extends Expand {
             public Expander() {
-     	    project = new Project();
-    	    project.init();
-    	    taskType = "unzip";
-    	    taskName = "unzip";
-    	    target = new Target();
+     	    setProject(new Project());
+    	    getProject().init();
+    	    setTaskType("unzip");
+    	    setTaskName("unzip");
+    	    setOwningTarget(new Target());
     	}	
         }
         Expander expander = new Expander();
@@ -439,12 +427,12 @@ public class ZipUtils implements ZipI {
         writeDirectory("", dir);
     }
     
-    private void writeDirectory(String parentPath, File dir) throws FileNotFoundException, IOException
+    private void writeDirectory(String parentPath, File dir) throws IOException
     {
         String dirName = dir.getName() + "/";
-        for(int i=0;i<dir.listFiles().length;i++)
-        {
-            File child = dir.listFiles()[i];
+        final File[] files = dir.listFiles();
+        if (files != null) {
+        for(final File child : files)
             if (child.isDirectory())
             {
                 writeDirectory(parentPath + dirName,child);
@@ -452,7 +440,6 @@ public class ZipUtils implements ZipI {
                 write(parentPath + dirName + child.getName(),child);
             }
         }
-        
     }
 
     /**

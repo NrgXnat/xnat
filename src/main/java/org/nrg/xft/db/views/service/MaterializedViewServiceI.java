@@ -1,9 +1,9 @@
 package org.nrg.xft.db.views.service;
 
-import java.util.Hashtable;
-
 import org.nrg.xft.db.MaterializedViewI;
 import org.nrg.xft.security.UserI;
+
+import java.util.Hashtable;
 
 public interface MaterializedViewServiceI {
 
@@ -16,5 +16,10 @@ public interface MaterializedViewServiceI {
 	public MaterializedViewI getViewBySearchID(String search_id, UserI user) throws Exception;
 
 	public MaterializedViewI populateView(Hashtable t, UserI u);
+
+    public void save(MaterializedViewI i) throws Exception;
+
+    public void delete(MaterializedViewI i) throws Exception;
+
 
 }

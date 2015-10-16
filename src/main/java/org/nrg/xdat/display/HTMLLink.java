@@ -19,7 +19,7 @@ import java.util.Hashtable;
  */
 public class HTMLLink {
 	private String secureLinkTo = null;
-	private ArrayList<HTMLLinkProperty> properties = new ArrayList<HTMLLinkProperty>();
+	private ArrayList<HTMLLinkProperty> properties = new ArrayList<>();
 	
 	private Hashtable secureProps = new Hashtable();
 	/**
@@ -30,7 +30,7 @@ public class HTMLLink {
 	}
 
 	/**
-	 * @param list
+	 * @param list    The properties to set for the link.
 	 */
 	public void setProperties(ArrayList<HTMLLinkProperty> list) {
 		properties = list;
@@ -42,41 +42,37 @@ public class HTMLLink {
 	}
 
 	/**
-	 * @return
+	 * @return The secure link.
 	 */
 	public String getSecureLinkTo() {
 		return secureLinkTo;
 	}
 
 	/**
-	 * @return
+	 * @return The secure properties.
 	 */
 	public Hashtable getSecureProps() {
 		return secureProps;
 	}
 
 	/**
-	 * @param string
+	 * @param string    The secure link to set.
 	 */
 	public void setSecureLinkTo(String string) {
 		secureLinkTo = string;
 	}
 
 	/**
-	 * @param hashtable
+	 * @param hashtable    The secure properties to set.
 	 */
+	@SuppressWarnings("unused")
 	public void setSecureProps(Hashtable hashtable) {
 		secureProps = hashtable;
 	}
 	
 	public boolean isSecure()
 	{
-		if (this.getSecureLinkTo() == null || this.getSecureLinkTo().equalsIgnoreCase(""))
-		{
-			return false;
-		}else{
-			return true;
-		}
+		return !(this.getSecureLinkTo() == null || this.getSecureLinkTo().equalsIgnoreCase(""));
 	}
 
 }

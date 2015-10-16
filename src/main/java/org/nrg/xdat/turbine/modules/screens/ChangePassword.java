@@ -1,8 +1,6 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xdat.turbine.modules.screens;
 
-import java.sql.SQLException;
-
 import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.commons.lang.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
@@ -17,6 +15,8 @@ import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 
+import java.sql.SQLException;
+
 @SuppressWarnings("UnusedDeclaration")
 public class ChangePassword extends VelocitySecureScreen {
 
@@ -30,14 +30,16 @@ public class ChangePassword extends VelocitySecureScreen {
     @Override
     protected void doBuildTemplate(RunData data, Context context) {
         try {
-            if (data != null && TurbineUtils.getUser(data) != null &&
-                    !StringUtils.isBlank(TurbineUtils.getUser(data).getUsername()) &&
-                    !TurbineUtils.getUser(data).getUsername().equalsIgnoreCase("guest") &&
+            UserI user = TurbineUtils.getUser(data);
+            if (user != null && !user.getUsername().equalsIgnoreCase("guest")) {
+                user = TurbineUtils.getUser(data);
+                if (!StringUtils.isBlank(user.getUsername()) &&
                     !TurbineUtils.HasPassedParameter("a", data) && !TurbineUtils.HasPassedParameter("s", data)) {
-                context.put("login", TurbineUtils.getUser(data).getUsername());
+                    context.put("login", user.getUsername());
                 context.put("topMessage", "Your password has expired. Please choose a new one.");
+                }
             } else {
-                UserI user = (UserI) data.getSession().getAttribute("user");
+                user = (UserI) data.getSession().getAttribute("user");
 
                 // If the user isn't already logged in...
                 if(user == null || user.getUsername().equals("guest")) {

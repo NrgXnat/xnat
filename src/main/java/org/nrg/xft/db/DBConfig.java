@@ -11,156 +11,113 @@
 
 
 package org.nrg.xft.db;
+
 import java.sql.Connection;
 import java.sql.SQLException;
 
 import org.apache.commons.dbcp.BasicDataSource;
+
 public class DBConfig {
-	private String driver = "";
-	private String user = "";
-	private String pass = "";
-	private String url = "";
-	private String type = "";
-	private int maxConnections = 10;
-	private BasicDataSource dataSource = null;
+    private String driver = "";
+    private String user = "";
+    private String pass = "";
+    private String url = "";
+    private String type = "";
+    private int maxConnections = 10;
+    private BasicDataSource dataSource = null;
 
-	private String dbIdentifier = "";
+    private String dbIdentifier = "";
 
-	/**
-	 * If the BasicDataSource for this DBConfiguration has not been initialized, then it is
-	 * initialized.  Then, a pooled connection is returned from the BasicDataSource.
-	 * @return
-	 * @throws SQLException
-	 */
-	public Connection getConnection() throws SQLException
-	{
-		if (dataSource == null)
-		{
-			BasicDataSource ds = new BasicDataSource();
-			ds.setDriverClassName(driver);
-			ds.setUsername(user);
-			ds.setPassword(pass);
-			ds.setUrl(url);
-			ds.setMaxActive(maxConnections);
-			ds.setValidationQuery("SELECT 1;");
-			dataSource = ds;
-		}
-		return dataSource.getConnection();
-	}
+    /**
+     * If the BasicDataSource for this DBConfiguration has not been initialized, then it is
+     * initialized.  Then, a pooled connection is returned from the BasicDataSource.
+     *
+     * @return A database connection.
+     * @throws SQLException
+     */
+    public Connection getConnection() throws SQLException {
+        if (dataSource == null) {
+            BasicDataSource ds = new BasicDataSource();
+            ds.setDriverClassName(driver);
+            ds.setUsername(user);
+            ds.setPassword(pass);
+            ds.setUrl(url);
+            ds.setMaxActive(maxConnections);
+            ds.setValidationQuery("SELECT 1;");
+            dataSource = ds;
+        }
+        return dataSource.getConnection();
+    }
 
-	/**
-	 * @return
-	 */
-	public String getDriver() {
-		return driver;
-	}
+    public String getDriver() {
+        return driver;
+    }
 
-	/**
-	 * @return
-	 */
-	public int getMaxConnections() {
-		return maxConnections;
-	}
+    @SuppressWarnings("unused")
+    public int getMaxConnections() {
+        return maxConnections;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getPass() {
-		return pass;
-	}
+    public String getPass() {
+        return pass;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getUrl() {
-		return url;
-	}
+    public String getUrl() {
+        return url;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getUser() {
-		return user;
-	}
+    public String getUser() {
+        return user;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setDriver(String string) {
-		driver = string;
-	}
+    public void setDriver(String string) {
+        driver = string;
+    }
 
-	/**
-	 * @param i
-	 */
-	public void setMaxConnections(int i) {
-		maxConnections = i;
-	}
+    public void setMaxConnections(int i) {
+        maxConnections = i;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setPass(String string) {
-		pass = string;
-	}
+    public void setPass(String string) {
+        pass = string;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setUrl(String string) {
-		url = string;
-	}
+    public void setUrl(String string) {
+        url = string;
+    }
 
-	public String getName()
-	{
-		return getUrl().substring(getUrl().lastIndexOf("/")+1);
-	}
+    public String getName() {
+        return getUrl().substring(getUrl().lastIndexOf("/") + 1);
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setUser(String string) {
-		user = string;
-	}
+    public void setUser(String string) {
+        user = string;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getDbIdentifier() {
-		return dbIdentifier;
-	}
+    public String getDbIdentifier() {
+        return dbIdentifier;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setDbIdentifier(String string) {
-		dbIdentifier = string;
-	}
+    public void setDbIdentifier(String string) {
+        dbIdentifier = string;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getType() {
-		return type;
-	}
+    public String getType() {
+        return type;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setType(String string) {
-		type = string;
-	}
+    public void setType(String string) {
+        type = string;
+    }
 
-	public void closeConnections() throws SQLException
-	{
-	    if (dataSource != null)
-		{
-			dataSource.close();
-		}
-	}
+    public void closeConnections() throws SQLException {
+        if (dataSource != null) {
+            dataSource.close();
+        }
+    }
 
-	public void reset(){
-		dataSource=null;
-	}
+    public void reset() {
+        dataSource = null;
+    }
 }
 

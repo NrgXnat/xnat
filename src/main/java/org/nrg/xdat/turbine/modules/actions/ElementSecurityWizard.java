@@ -74,7 +74,7 @@ public class ElementSecurityWizard extends AdminAction {
         PopulateItem populater = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":element_security",true);
 		ItemI found = populater.getItem();
 
-		if (found.getBooleanProperty("secure").booleanValue())
+		if (found.getBooleanProperty("secure"))
 		{
 		    SchemaElement se = SchemaElement.GetElement(found.getStringProperty("element_name"));
 
@@ -124,16 +124,16 @@ public class ElementSecurityWizard extends AdminAction {
 		        String actionName = item.getStringProperty("element_action_name");
 		        String templateName = "XDATScreen_"+ actionName + "_" + SchemaElement.GetElement(found.getStringProperty("xdat:element_security.element_name")).getSQLName() + ".vm";
 		        boolean foundScreen = false;
-		        if (Velocity.templateExists("/screens/" + templateName))
+		        if (Velocity.resourceExists("/screens/" + templateName))
 	    		{
 		            foundScreen = true;
-	    		}else if(Velocity.templateExists("/screens/XDATScreen_"+ actionName + ".vm")){
+	    		}else if(Velocity.resourceExists("/screens/XDATScreen_" + actionName + ".vm")){
 	    		    foundScreen = true;
 	    		}
 
 	    		if (foundScreen)
 	    		{
-			        item.setDirectProperty("sequence",new Integer(counter++));
+			        item.setDirectProperty("sequence", counter++);
 	    		}else{
 	    		    String s = "xdat:element_security.element_actions.element_action__"+counter++;
 	    		    vr.addResult(null,"Unable to locate template '"+ templateName +"' or '"+ "XDATScreen_"+ actionName + ".vm'",s + ".element_action_name",(String)null);
@@ -149,11 +149,11 @@ public class ElementSecurityWizard extends AdminAction {
 		            String s = "xdat:element_security.element_actions.element_action__"+count;
 
 		            String templateName = "XDATScreen_edit_" + SchemaElement.GetElement(found.getStringProperty("xdat:element_security.element_name")).getFormattedName() + ".vm";
-		    		if (Velocity.templateExists("/screens/" + templateName))
+		    		if (Velocity.resourceExists("/screens/" + templateName))
 		    		{
 			            found.setProperty(s + ".element_action_name","edit");
 			            found.setProperty(s + ".display_name","Edit");
-			            found.setProperty(s + ".sequence",new Integer(count));
+			            found.setProperty(s + ".sequence", count);
 			            found.setProperty(s + ".image","e.gif");
 			            found.setProperty(s + ".secureAccess","edit");
 		    		}else{
@@ -184,7 +184,7 @@ public class ElementSecurityWizard extends AdminAction {
 		            found.setProperty(s + ".element_action_name","xml");
 			        found.setProperty(s + ".display_name","View XML");
 			        found.setProperty(s + ".grouping","View");
-		            found.setProperty(s + ".sequence",new Integer(count));
+		            found.setProperty(s + ".sequence", count);
 		            found.setProperty(s + ".image","r.gif");
 
 		            count++;
@@ -193,7 +193,7 @@ public class ElementSecurityWizard extends AdminAction {
 
 		            found.setProperty(s + ".element_action_name","xml_file");
 			        found.setProperty(s + ".display_name","Download XML");
-		            found.setProperty(s + ".sequence",new Integer(count));
+		            found.setProperty(s + ".sequence", count);
 		            found.setProperty(s + ".image","save.gif");
 		        }
 		    }
@@ -208,7 +208,7 @@ public class ElementSecurityWizard extends AdminAction {
 
 		            found.setProperty(s + ".element_action_name","activate");
 		            found.setProperty(s + ".display_name","Activate");
-		            found.setProperty(s + ".sequence",new Integer(count));
+		            found.setProperty(s + ".sequence", count);
 		        }
 		    }
 
@@ -222,7 +222,7 @@ public class ElementSecurityWizard extends AdminAction {
 
 		            found.setProperty(s + ".element_action_name","email_report");
 		            found.setProperty(s + ".display_name","Email");
-		            found.setProperty(s + ".sequence",new Integer(count));
+		            found.setProperty(s + ".sequence", count);
 		            found.setProperty(s + ".image","right2.gif");
 		            found.setProperty(s + ".popup","always");
 		        }
@@ -230,12 +230,12 @@ public class ElementSecurityWizard extends AdminAction {
 
 		    try{
 		        found.setProperty("element_security_set_element_se_xdat_security_id",TurbineUtils.GetSystemID());
-		    }catch (RuntimeException e)
+		    }catch (RuntimeException ignored)
 		    {
 
 		    }
 
-		    if(found.getBooleanProperty("secure").booleanValue())
+		    if(found.getBooleanProperty("secure"))
 		    {
 		        ArrayList al = found.getChildItems(org.nrg.xft.XFT.PREFIX + ":element_security.primary_security_fields.primary_security_field");
 		        if (al.size()==0)
@@ -248,7 +248,7 @@ public class ElementSecurityWizard extends AdminAction {
 		    
 		    boolean saved=false;
 		    try {
-		    	SaveItemHelper.authorizedSave(found,TurbineUtils.getUser(data),false,false,this.newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, "Registered new data-type"));
+		    	SaveItemHelper.authorizedSave(found,TurbineUtils.getUser(data),false,false, newEventInstance(data, EventUtils.CATEGORY.SIDE_ADMIN, "Registered new data-type"));
 		    	saved=true;
 			} catch (Exception e) {
 				logger.error("Error Storing " + found.getXSIType(),e);
@@ -290,12 +290,10 @@ public class ElementSecurityWizard extends AdminAction {
 		{
 		    int counter = 0;
 		    ArrayList coll = found.getChildItems("xdat:element_security.element_actions.element_action");
-		    Iterator iter = coll.iterator();
-		    while (iter.hasNext())
-		    {
-		        XFTItem item = (XFTItem)iter.next();
-		        item.setDirectProperty("sequence",new Integer(counter++));
-		    }
+			for (final Object aColl : coll) {
+				XFTItem item = (XFTItem) aColl;
+				item.setDirectProperty("sequence", counter++);
+			}
 
 		    TurbineUtils.SetEditItem(found,data);
 		    data.setScreenTemplate("XDATScreen_ES_Wizard4.vm");

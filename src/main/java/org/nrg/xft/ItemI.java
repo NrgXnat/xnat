@@ -8,13 +8,13 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xft;
 
+import java.io.ByteArrayOutputStream;
 import java.io.Externalizable;
 import java.io.OutputStream;
 import java.io.Writer;
+import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.ArrayList;
 import java.util.Date;
@@ -31,6 +31,8 @@ import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.w3c.dom.Document;
+import org.xml.sax.SAXException;
+
 /**
  * @author Tim
  *
@@ -38,277 +40,361 @@ import org.w3c.dom.Document;
 public interface ItemI extends Externalizable{
 	/**
 	 * Can take the sql name of a local field, or the XML dot syntax name for child fields.
-	 * @param name
-	 * @param default_value
-	 * @return
+	 * @param name             The name of the property.
+	 * @param default_value    The default value to return if no value is set for the property.
+	 * @return The value set for the property or the default value if no value is set.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public boolean getBooleanProperty(String name,boolean default_value) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	boolean getBooleanProperty(String name,boolean default_value) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 	
 	/**
 	 * Can take the sql name of a local field, or the XML dot syntax name for child fields.
-	 * @param name
-	 * @param default_value
-	 * @return
+	 * @param name             The name of the property.
+	 * @param default_value    The default value to return if no value is set for the property.
+	 * @return The value set for the property or the default value if no value is set.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public boolean getBooleanProperty(String name,String default_value) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	boolean getBooleanProperty(String name,String default_value) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 	/**
 	 * Can take the sql name of a local field, or the XML dot syntax name for child fields.
-	 * @param name
-	 * @return
+	 * @param name             The name of the property.
+	 * @return The value set for the property or null if no value is set.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public Boolean getBooleanProperty(String name) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	Boolean getBooleanProperty(String name) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 	/**
 	 * Can take the sql name of a local field, or the XML dot syntax name for child fields.
-	 * @param name
-	 * @return
+	 * @param name             The name of the property.
+	 * @return The value set for the property or null if no value is set.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public Object getProperty(String name) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
-	
-    public Date getDateProperty(String name)throws XFTInitException,ElementNotFoundException,FieldNotFoundException,ParseException;
-	public boolean hasProperty(String id, Object find) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	Object getProperty(String name) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+
 	/**
 	 * Can take the sql name of a local field, or the XML dot syntax name for child fields.
-	 * @param xmlPath
-	 * @param value
+	 * @param name             The name of the property.
+	 * @return The value set for the property or null if no value is set.
+	 * @throws XFTInitException
+	 * @throws ElementNotFoundException
+	 * @throws FieldNotFoundException
+	 */
+    Date getDateProperty(String name)throws XFTInitException,ElementNotFoundException,FieldNotFoundException,ParseException;
+
+	/**
+	 * Can take the sql name of a local field, or the XML dot syntax name for child fields.
+	 * @param id             The name of the property.
+	 * @param find           The object to test against.
+	 * @return True if the object has the indicated property matching the find object, false otherwise.
+	 * @throws XFTInitException
+	 * @throws ElementNotFoundException
+	 * @throws FieldNotFoundException
+	 */
+	boolean hasProperty(String id, Object find) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	/**
+	 * Can take the sql name of a local field, or the XML dot syntax name for child fields.
+	 * @param xmlPath    The XML path or SQL name for the property to set.
+	 * @param value      The value to set for the property.
 	 * @throws Exception
 	 */
-	public void setProperty(String xmlPath,Object value) throws Exception;
-	//public void setChildItem(String field_name, ItemI item) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	void setProperty(String xmlPath,Object value) throws Exception;
 	/**
-	 * Gets an ArrayList of the XFTItems which are specified by the supplied field reference.
-	 * @param field
-	 * @return
+	 * Gets an list of the child XFTItems which are specified by the supplied field reference.
+	 * @param field    The field to check.
+	 * @return A list of all of the child XFTItems.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public java.util.ArrayList getChildItems(XFTFieldWrapper field)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
-	public ArrayList getChildItems(XFTFieldWrapper field,boolean includeHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	ArrayList getChildItems(XFTFieldWrapper field)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 	/**
-	 * Gets an ItemCollection of the XFTItems which are specified by the supplied field reference.
-	 * @param field
-	 * @return
+	 * Gets an list of the child {@link XFTItem items} which are specified by the supplied field reference.
+	 * @param field             The field to check.
+	 * @param includeHistory    Indicates whether the item history should be included.
+	 * @return A list of all of the child {@link XFTItem items}.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public ItemCollection getChildItemCollection(XFTFieldWrapper field)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	ArrayList getChildItems(XFTFieldWrapper field,boolean includeHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 	/**
-	 * Gets all XFTItem child items.
-	 * @return
+	 * Gets an {@link ItemCollection collection} of the {@link XFTItem items} which are specified by the supplied field reference.
+	 * @param field    The field to check.
+	 * @return A collection of XFTItem objects.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public java.util.ArrayList getChildItems()throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	ItemCollection getChildItemCollection(XFTFieldWrapper field)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 	/**
-	 * returns parent Item (if there is one).
-	 * @return
+	 * Gets all {@link XFTItem child items}.
+	 * @return A list of all of the {@link XFTItem child items}.
+	 * @throws XFTInitException
+	 * @throws ElementNotFoundException
+	 * @throws FieldNotFoundException
 	 */
-	public ItemI getParent();
+	ArrayList getChildItems()throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 	/**
-	 * sets the parent item for this item.
-	 * @param item
+	 * Returns the {@link ItemI parent item} (if there is one).
+	 * @return The {@link ItemI parent item}.
 	 */
-	public void setParent(ItemI item);
+	ItemI getParent();
 	/**
-	 * extends the item (loads any additional children).
+	 * Sets the parent item for this item.
+	 * @param item    The {@link ItemI parent item} to set.
+	 */
+	void setParent(ItemI item);
+	/**
+	 * Extends the item (loads any additional children).
+	 * @param allowMultiples    Indicates whether multiple extensions are allowed.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws DBPoolException
-	 * @throws java.sql.SQLException
+	 * @throws SQLException
 	 * @throws Exception
 	 */
-	public void extend(boolean allowMultiples) throws XFTInitException,ElementNotFoundException,DBPoolException,java.sql.SQLException,Exception;
+	void extend(boolean allowMultiples) throws Exception;
 	/**
 	 * Translates this item to an HTML representation.
-	 * @return
+	 * @return The HTML representation of the object.
 	 * @throws Exception
 	 */
-	public String toHTML() throws Exception;
+	String toHTML() throws Exception;
 	/**
 	 * Translates this item to its XML representation using DOM.
-	 * @return
+	 * @return The XML representation of the object in the form of a Document object.
 	 * @throws Exception
 	 */
-	public Document toXML() throws Exception;
+	Document toXML() throws Exception;
     
     /**
-     * Translates this item to its XML representation.
-     * @return
-     * @throws Exception
+     * Translates this item to its XML representation and writes it out to the submitted output stream.
+	 * @param out              The output stream to which the XML representation should be written.
+	 * @param schemaDir        The directory in which any validating schema can be located.
+	 * @param allowDBAccess    Indicates whether the database can be accessed.
+     * @throws IllegalArgumentException
+	 * @throws SAXException
      */
-    public void toXML(OutputStream out, String schemaDir,boolean allowDBAccess) throws java.lang.IllegalArgumentException, org.xml.sax.SAXException;
+    void toXML(OutputStream out, String schemaDir,boolean allowDBAccess) throws IllegalArgumentException, SAXException;
     
     /**
-     * Translates this item to its XML representation.
-     * @return
-     * @throws Exception
+	 * Translates this item to its XML representation and writes it out to the submitted writer.
+	 * @param out              The writer to which the XML representation should be written.
+	 * @param schemaDir        The directory in which any validating schema can be located.
+	 * @param allowDBAccess    Indicates whether the database can be accessed.
+	 * @throws IllegalArgumentException
+	 * @throws SAXException
      */
-    public void toXML(Writer out, String schemaDir,boolean allowDBAccess) throws java.lang.IllegalArgumentException, org.xml.sax.SAXException;
+    void toXML(Writer out, String schemaDir,boolean allowDBAccess) throws IllegalArgumentException, SAXException;
     
     /**
-     * Translates this item to its XML representation.
-     * @return
-     * @throws Exception
+	 * Translates this item to its XML representation and writes it out to the submitted output stream.
+	 * @param out              The output stream to which the XML representation should be written.
+	 * @param allowDBAccess    Indicates whether the database can be accessed.
+	 * @throws IllegalArgumentException
+	 * @throws SAXException
      */
-    public void toXML(OutputStream out,boolean allowDBAccess) throws java.lang.IllegalArgumentException, org.xml.sax.SAXException;
-    
-    /**
-     * Translates this item to its XML representation.
-     * @return
-     * @throws Exception
-     */
-    public void toXML(Writer out,boolean allowDBAccess) throws java.lang.IllegalArgumentException, org.xml.sax.SAXException;
+    void toXML(OutputStream out,boolean allowDBAccess) throws java.lang.IllegalArgumentException, org.xml.sax.SAXException;
+
+	/**
+	 * Translates this item to its XML representation and writes it out to the submitted writer.
+	 * @param out              The writer to which the XML representation should be written.
+	 * @param allowDBAccess    Indicates whether the database can be accessed.
+	 * @throws IllegalArgumentException
+	 * @throws SAXException
+	 */
+    void toXML(Writer out,boolean allowDBAccess) throws java.lang.IllegalArgumentException, org.xml.sax.SAXException;
     
 	/**
-	 * Gets the data type name of this item.
-	 * @return
+	 * Gets the data-type name of this item.
+	 * @return The data-type name of the item.
 	 */
-	public String getXSIType() ;
+	String getXSIType() ;
 	/**
-	 * returns if this item is activated.
-	 * @return
+	 * Indicates whether this item is activated.
+	 * @return True if the item is activated, false otherwise.
 	 */
-	public boolean isActive()throws MetaDataException;
+	boolean isActive()throws MetaDataException;
 	/**
-	 * returns Hashtable of this item's properties.
-	 * @return
+	 * Returns a table of this item's properties.
+	 * @return A table of this item's properties.
 	 */
-	public Hashtable getProps() ;
+	Hashtable getProps() ;
 	/**
 	 * Stores this item's data in the database.
-	 * @param user
+	 * @param user                The user requesting the save.
+	 * @param overrideSecurity    Indicates whether security should be overwritten.
+	 * @param allowItemRemoval    Indicates whether existing items should be removed to allow this save operation.
+	 * @param c                   Event meta data for the save operation.
+	 * @return True if the save operation completed properly, false otherwise.
 	 * @throws Exception
 	 */
-	public boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception;
-	public void save(UserI user, boolean overrideSecurity,boolean quarantine,boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception;
+	boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception;
+	/**
+	 * Stores this item's data in the database.
+	 * @param user                The user requesting the save.
+	 * @param overrideSecurity    Indicates whether security should be overridden.
+	 * @param quarantine          Indicates whether object should be placed in quarantine upon completion of the save
+	 *                            operation.
+	 * @param overrideQuarantine  Indicates whether quarantine should be overridden.
+	 * @param allowItemRemoval    Indicates whether existing items should be removed to allow this save operation.
+	 * @param c                   Event meta data for the save operation.
+	 * @throws Exception
+	 */
+	void save(UserI user, boolean overrideSecurity,boolean quarantine,boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception;
 	/**
 	 * Save item data to DB.
-	 * @param location
-	 * @return
+	 * @param location    The location from which data should be loaded.
+	 * @return The byte stream from the loaded XML document.
 	 * @throws Exception
 	 */
-	public java.io.ByteArrayOutputStream toXML_BOS(String location) throws Exception;
+	ByteArrayOutputStream toXML_BOS(String location) throws Exception;
 	/**
 	 * Activates this item and all of its children.
-	 * @param user
+	 * @param user    The user requesting the activation.
 	 * @throws Exception
 	 */
-	public void activate(UserI user) throws Exception;
+	void activate(UserI user) throws Exception;
 	/**
 	 * Lock this item and all of its children.
-	 * @param user
+	 * @param user    The user requesting the lock.
 	 * @throws Exception
 	 */
-	public void lock(UserI user) throws Exception;
+	void lock(UserI user) throws Exception;
 	/**
 	 * Quarantine this item and all of its children.
-	 * @param user
+	 * @param user    The user requesting the lock.
 	 * @throws Exception
 	 */
-	public void quarantine(UserI user) throws Exception;
+	void quarantine(UserI user) throws Exception;
 	/**
 	 * Validates this item's content.
-	 * @return
+	 * @return The results of the validation.
 	 * @throws Exception
 	 */
-	public ValidationResults validate() throws Exception;
+	ValidationResults validate() throws Exception;
 	/**
 	 * Can take the sql name of a local field, or the XML dot syntax name for child fields.
-	 * @param name
-	 * @return
+	 * @param name    The name of the property.
+	 * @return The value of the requested property.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public String getStringProperty(String name) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	String getStringProperty(String name) throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 	/**
 	 * Returns a new XFTItem which contains the current version of this item's data from the database.
-	 * @return
+	 * @return The current version of the data.
 	 */
-	public XFTItem getCurrentDBVersion();
+	XFTItem getCurrentDBVersion();
 	/**
 	 * Returns a new XFTItem which contains the current version of this item's data from the database.
-	 * @return
+	 * @return The current version of the data.
 	 */
-	public XFTItem getCurrentDBVersion(boolean withChildren);
+	XFTItem getCurrentDBVersion(boolean withChildren);
 	/**
 	 * Whether or not this user needs Activation
-	 * @param user
-	 * @return
+	 * @return True if the user needs to be activated, false otherwise.
 	 * @throws Exception
 	 */
-	public boolean needsActivation() throws Exception;
+	boolean needsActivation() throws Exception;
 	/**
 	 * Whether or not this user can read this Item.
-	 * @param user
-	 * @return
+	 * @param user    The user to test.
+	 * @return True if the user can read this item, false otherwise.
 	 * @throws Exception
 	 */
-	public boolean canRead(UserI user) throws Exception;
-	public boolean canCreate(UserI user) throws Exception;
-	public boolean canDelete(UserI user) throws Exception;
+	boolean canRead(UserI user) throws Exception;
+	/**
+	 * Whether or not this user can create this Item.
+	 * @param user    The user to test.
+	 * @return True if the user can create this item, false otherwise.
+	 * @throws Exception
+	 */
+	boolean canCreate(UserI user) throws Exception;
+	/**
+	 * Whether or not this user can delete this Item.
+	 * @param user    The user to test.
+	 * @return True if the user can delete this item, false otherwise.
+	 * @throws Exception
+	 */
+	boolean canDelete(UserI user) throws Exception;
 	/**
 	 * Whether or not this user can edit this Item.
-	 * @param user
-	 * @return
+     * @param user    The user to test.
+     * @return True if the user can edit this item, false otherwise.
 	 * @throws Exception
 	 */
-	public boolean canEdit(UserI user) throws Exception;
+	boolean canEdit(UserI user) throws Exception;
 	/**
 	 * Whether or not this user can activate this Item.
-	 * @param user
-	 * @return
+     * @param user    The user to test.
+     * @return True if the user can activate this item, false otherwise.
 	 * @throws Exception
 	 */
-	public boolean canActivate(UserI user) throws Exception;
+	boolean canActivate(UserI user) throws Exception;
 	/**
 	 * Returns the possible value for this XML field (based on enumerations in the XML Schema).
-	 * @param xmlPath
-	 * @return
+	 * @param xmlPath    The XML path to test.
+	 * @return The list of possible values for the field.
 	 * @throws Exception
 	 */
-	public ArrayList getPossibleValues(String xmlPath) throws Exception;
+	ArrayList getPossibleValues(String xmlPath) throws Exception;
 	/**
 	 * Returns a collection of this XFTItems which are identified by the XML reference field (dot-syntax).
-	 * @param xmlPath
-	 * @return
+	 * @param xmlPath    The XML path to follow.
+	 * @return The list of {@link XFTItem child items}.
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 * @throws FieldNotFoundException
 	 */
-	public ArrayList<XFTItem> getChildItems(String xmlPath)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
+	ArrayList<XFTItem> getChildItems(String xmlPath)throws XFTInitException,ElementNotFoundException,FieldNotFoundException;
 
-	public UserI getUser();
-	
-	public XFTItem getItem();
-	
-	public String getDBName();
-	
-	public Document toJoinedXML() throws Exception;
+    /**
+     * Gets the {@link UserI user} that owns this object.
+     * @return The owning {@link UserI user}.
+     */
+	UserI getUser();
+
+    /**
+     * Gets this object as an {@link XFTItem}.
+     * @return The {@link XFTItem} representing this object.
+     */
+	XFTItem getItem();
+
+    /**
+     * Gets the name of the database that contains this object.
+     * @return The name of the database that contains this object.
+     * @deprecated The abstraction of the data source means that there is only a single data connection.
+     */
+    @Deprecated
+	String getDBName();
+
+    /**
+     * Gets a fully joined XML representation of this object.
+     * @return The XML representation of this object as a Document object.
+     * @throws Exception
+     */
+	Document toJoinedXML() throws Exception;
 	
 	/**
-	 * @return outputs Data based on a velocity template
+     * Renders the object based on its implicit Velocity template representation.
+	 * @return Outputs text based on the implicit {@link #getXSIType() data type}-based Velocity template
 	 */
-	public String output();
-	
-	/**
-	 * @param velocityTemplateName
-	 * @return
-	 */
-	public String output(String velocityTemplateName);
+	String output();
+
+    /**
+     * Renders the object based on the indicated Velocity template.
+     * @param velocityTemplateName    The name of the Velocity template to use for rendering.
+     * @return Outputs text based on the indicated Velocity template.
+     */
+	String output(String velocityTemplateName);
 }
 

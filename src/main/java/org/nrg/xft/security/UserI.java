@@ -24,49 +24,47 @@ import org.springframework.security.core.userdetails.UserDetails;
  *
  */
 public interface UserI extends UserDetails,Serializable{
-	public Integer getID();
-	public String getUsername();
-	public String getLogin();
-    public boolean isGuest();
+	Integer getID();
+	String getUsername();
+    String getLogin();
+    boolean isGuest();
 	
 	/**
 	 * @return
 	 */
-	public String getFirstname();
+    String getFirstname();
 
 	/**
 	 * @return
 	 */
-	public String getLastname();
+    String getLastname();
 
 	/**
 	 * @return
 	 */
-	public String getEmail();
+    String getEmail();
 
-	public String getDBName();
-	public String getPassword();
-	public boolean isEnabled();
-	public Boolean isVerified();
-	public String getSalt();
-	public boolean isActive()throws MetaDataException;
+    String getDBName();
+    String getPassword();
+    boolean isEnabled();
+    Boolean isVerified();
+    String getSalt();
+    boolean isActive()throws MetaDataException;
 	
-	public Date getLastModified();
+    Date getLastModified();
 	
-	public void setLogin(String login);
-	public void setEmail(String e);
-	public void setFirstname(String firstname);
-	public void setLastname(String lastname);
-	public void setPassword(String encodePassword);
-	public void setSalt(String salt);
-	public void setPrimaryPassword_encrypt(Object b);
-	public void setEnabled(Object enabled);
-	public void setVerified(Object verified);
+    void setLogin(String login);
+    void setEmail(String e);
+    void setFirstname(String firstname);
+    void setLastname(String lastname);
+    void setPassword(String encodePassword);
+    void setSalt(String salt);
+    void setPrimaryPassword_encrypt(Object b);
+    void setEnabled(Object enabled);
+    void setVerified(Object verified);
 	
-	public Object getCustomField(String key);
-	public void setCustomField(String key, Object value) throws Exception;
-	
-	public UserAuthI setAuthorization(UserAuthI newUserAuth);
-	public UserAuthI getAuthorization();
+    UserAuthI setAuthorization(UserAuthI newUserAuth);
+    UserAuthI getAuthorization();
 }
+
 

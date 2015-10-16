@@ -58,7 +58,7 @@ public class ItemSearch implements SearchI {
 	/**
 	 * Instanciate object with a user and the search element.
 	 * @param u
-	 * @param e
+	 * @param elementName
 	 */
 	public ItemSearch(UserI u, String elementName) throws ElementNotFoundException
 	{
@@ -80,7 +80,7 @@ public class ItemSearch implements SearchI {
 	/**
 	 * Instanciate object with a user, the search element, and a collection of search criteria.
 	 * @param u
-	 * @param e
+	 * @param elementName
 	 * @param cc
 	 */
 	public ItemSearch(UserI u, String elementName, CriteriaCollection cc) throws ElementNotFoundException
@@ -560,7 +560,11 @@ public class ItemSearch implements SearchI {
 
 	/**
 	 * translates a XFTTable into a list of items with all available sub-items populated.
-	 * @param name of schema element
+	 * @param element
+	 * @param table
+	 * @param qo
+	 * @param extend
+	 * @param allowMultiples
 	 * @return ItemCollection of XFTItems
 	 */
 	public ItemCollection populateItems(GenericWrapperElement element, XFTTable table,QueryOrganizer qo, boolean extend, boolean allowMultiples) throws ElementNotFoundException,XFTInitException,FieldNotFoundException,IllegalAccessException,org.nrg.xft.exception.MetaDataException,Exception
@@ -710,7 +714,7 @@ public class ItemSearch implements SearchI {
 		this.element = element;
 	}
 	/**
-	 * @param element The element to set.
+	 * @param elementName The element to set.
 	 */
 	public void setElement(String elementName) throws ElementNotFoundException {
 		try {
@@ -824,7 +828,12 @@ public class ItemSearch implements SearchI {
 			return new ItemCollection();
 		}
         SQLClause clause = (SQLClause)cc.toArrayList().get(0);
+		try {
 	    return GetItems(clause.getElementName(),cc,user,preLoad);
+		} catch (IllegalAccessException e) {
+			logger.warn("Got an illegal access exception: \"" + e.getMessage() + "\". Returning empty item collection.");
+			return new ItemCollection();
+		}
 	}
 
 	/**

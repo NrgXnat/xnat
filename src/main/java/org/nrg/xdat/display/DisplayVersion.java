@@ -8,226 +8,252 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.display;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
 
-import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldRefCollection;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * @author Tim
- *
  */
-public class DisplayVersion extends DisplayFieldRefCollection{
-	static org.apache.log4j.Logger logger = Logger.getLogger(DisplayVersion.class);
-	private String versionName = "";
-	private String defaultOrderBy = "";
-	private String defaultSortOrder = "";
-	private String briefDescription = "";
-	private String darkColor = "";
-	private String lightColor = "";
-	private boolean allowDiffs = true;
-	private ElementDisplay parentElementDisplay = null;
-	
-	private HTMLCell headerCell = new HTMLCell();
-	
+public class DisplayVersion extends DisplayFieldRefCollection {
+    private static final Logger logger = LoggerFactory.getLogger(DisplayVersion.class);
+    private String versionName = "";
+    private String defaultOrderBy = "";
+    private String defaultSortOrder = "";
+    private String briefDescription = "";
+    private String darkColor = "";
+    private String lightColor = "";
+    private boolean allowDiffs = true;
+    private ElementDisplay parentElementDisplay = null;
 
-	/**
-	 * @return
-	 */
-	public String getVersionName() {
-		return versionName;
-	}
+    private HTMLCell headerCell = new HTMLCell();
 
 
-	/**
-	 * @param string
-	 */
-	public void setVersionName(String string) {
-		versionName = string;
-	}
+    /**
+     * Gets the version name.
+     *
+     * @return The version name.
+     */
+    public String getVersionName() {
+        return versionName;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getDefaultOrderBy() {
-		return defaultOrderBy;
-	}
 
-	/**
-	 * @param string
-	 */
-	public void setDefaultOrderBy(String string) {
-		defaultOrderBy = string;
-	}
+    /**
+     * Sets the version name.
+     *
+     * @param versionName The version name to set.
+     */
+    public void setVersionName(final String versionName) {
+        this.versionName = versionName;
+    }
+
+    /**
+     * Gets the default order-by column.
+     *
+     * @return The default order-by column.
+     */
+    public String getDefaultOrderBy() {
+        return defaultOrderBy;
+    }
+
+    /**
+     * Sets the default order-by column.
+     *
+     * @param defaultOrderBy The default order-by column to set.
+     */
+    public void setDefaultOrderBy(final String defaultOrderBy) {
+        this.defaultOrderBy = defaultOrderBy;
+    }
 
     /**
      * @return Returns the defaultSortOrder.
      */
     public String getDefaultSortOrder() {
-        if (defaultSortOrder==null || defaultSortOrder.equals(""))
-        {
+        if (defaultSortOrder == null || defaultSortOrder.equals("")) {
             return "ASC";
-        }else{
+        } else {
             return defaultSortOrder;
         }
     }
+
     /**
      * @param defaultSortOrder The defaultSortOrder to set.
      */
     public void setDefaultSortOrder(String defaultSortOrder) {
         this.defaultSortOrder = defaultSortOrder;
     }
-    
-	/**
-	 * @return
-	 */
-	public String getBriefDescription() {
-	    if (briefDescription == null || briefDescription.equals(""))
-	    {
-	        return this.getParentElementDisplay().getBriefDescription();
-	    }else{
-			return briefDescription;
-	    }
-	}
 
-	/**
-	 * @return
-	 */
-	public String getDarkColor() {
-		return darkColor;
-	}
+    /**
+     * Gets the brief description of the display version.
+     *
+     * @return The brief description.
+     */
+    public String getBriefDescription() {
+        if (briefDescription == null || briefDescription.equals("")) {
+            return this.getParentElementDisplay().getBriefDescription();
+        } else {
+            return briefDescription;
+        }
+    }
 
-	/**
-	 * @return
-	 */
-	public String getLightColor() {
-		return lightColor;
-	}
+    /**
+     * Gets the dark color setting.
+     *
+     * @return The dark color setting.
+     */
+    public String getDarkColor() {
+        return darkColor;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setBriefDescription(String string) {
-		briefDescription = string;
-	}
+    /**
+     * Gets the light color setting.
+     *
+     * @return The light color setting.
+     */
+    public String getLightColor() {
+        return lightColor;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setDarkColor(String string) {
-		darkColor = string;
-	}
+    /**
+     * Sets the brief description of the display version.
+     *
+     * @param briefDescription The brief description to set.
+     */
+    public void setBriefDescription(final String briefDescription) {
+        this.briefDescription = briefDescription;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setLightColor(String string) {
-		lightColor = string;
-	}
-	
-	/**
-	 * Returns the visible DisplayFields
-	 * @return ArrayList of DisplayFields
-	 */
-	public ArrayList<DisplayFieldReferenceI> getVisibleFields()
-	{
-		ArrayList<DisplayFieldReferenceI> al = new ArrayList<DisplayFieldReferenceI>();
-		Iterator iter = this.getDisplayFieldRefIterator();
-		while (iter.hasNext())
-		{
-			DisplayFieldRef df = (DisplayFieldRef)iter.next();
-			try {
-                if (df.getDisplayField().isVisible())
-                {
-                	al.add(df);
+    /**
+     * Sets the dark color setting for the display version.
+     *
+     * @param darkColor The dark color setting to set.
+     */
+    public void setDarkColor(final String darkColor) {
+        this.darkColor = darkColor;
+    }
+
+    /**
+     * Sets the light color setting for the display version.
+     *
+     * @param lightColor The light color setting to set.
+     */
+    public void setLightColor(final String lightColor) {
+        this.lightColor = lightColor;
+    }
+
+    /**
+     * Returns the visible DisplayFields
+     *
+     * @return ArrayList of DisplayFields
+     */
+    public ArrayList<DisplayFieldReferenceI> getVisibleFields() {
+        ArrayList<DisplayFieldReferenceI> al = new ArrayList<>();
+        Iterator iter = this.getDisplayFieldRefIterator();
+        while (iter.hasNext()) {
+            DisplayFieldRef df = (DisplayFieldRef) iter.next();
+            try {
+                if (df.getDisplayField().isVisible()) {
+                    al.add(df);
                 }
             } catch (DisplayFieldNotFoundException e) {
-                if (df.getType() != null)
-	            {
-                    if (df.getType().equalsIgnoreCase("COUNT"))
-                    {
-    	                al.add(df);
+                if (df.getType() != null) {
+                    if (df.getType().equalsIgnoreCase("COUNT")) {
+                        al.add(df);
                     }
-	            }else{
-		            logger.error("",e);
-	            }
+                } else {
+                    logger.error("", e);
+                }
             }
-		}
-		al.trimToSize();
-		return al;
-	}
-	
-	/**
-	 * Returns the all defined DisplayFields
-	 * @return ArrayList of DisplayFields
-	 */
-	public ArrayList<DisplayFieldReferenceI> getAllFields() {
-		ArrayList al = new ArrayList();
-		Iterator iter = this.getDisplayFieldRefIterator();
-		while (iter.hasNext()) {
-			DisplayFieldRef df = (DisplayFieldRef)iter.next();
-                	al.add(df);
-		}
-		al.trimToSize();
-		return al;
-	}
-	/**
-	 * @return
-	 */
-	public ElementDisplay getParentElementDisplay() {
-		return parentElementDisplay;
-	}
+        }
+        al.trimToSize();
+        return al;
+    }
 
-	/**
-	 * @param display
-	 */
-	public void setParentElementDisplay(ElementDisplay display) {
-		parentElementDisplay = display;
-	}
+    /**
+     * Returns the all defined DisplayFields
+     *
+     * @return ArrayList of DisplayFields
+     */
+    public ArrayList<DisplayFieldReferenceI> getAllFields() {
+        ArrayList al = new ArrayList();
+        Iterator iter = this.getDisplayFieldRefIterator();
+        while (iter.hasNext()) {
+            DisplayFieldRef df = (DisplayFieldRef) iter.next();
+            al.add(df);
+        }
+        al.trimToSize();
+        return al;
+    }
 
-	/**
-	 * @return
-	 */
-	public HTMLCell getHeaderCell() {
-		return headerCell;
-	}
+    /**
+     * Gets the parent {@link ElementDisplay element display}.
+     *
+     * @return The parent {@link ElementDisplay element display}.
+     */
+    public ElementDisplay getParentElementDisplay() {
+        return parentElementDisplay;
+    }
 
-	/**
-	 * @param cell
-	 */
-	public void setHeaderCell(HTMLCell cell) {
-		headerCell = cell;
-	}
+    /**
+     * Sets the parent {@link ElementDisplay element display}.
+     *
+     * @param display The display to set as the parent {@link ElementDisplay element display}.
+     */
+    public void setParentElementDisplay(ElementDisplay display) {
+        parentElementDisplay = display;
+    }
 
-	public Collection getDisplayFields()
-	{
-	    ArrayList al = new ArrayList();
-	    
-	    Iterator iter = this.getDisplayFieldRefIterator();
-	    while (iter.hasNext())
-	    {
-	        DisplayFieldRef ref = (DisplayFieldRef)iter.next();
-	        try {
+    /**
+     * Gets the {@link HTMLCell header cell}.
+     *
+     * @return The {@link HTMLCell header cell}.
+     */
+    public HTMLCell getHeaderCell() {
+        return headerCell;
+    }
+
+    /**
+     * Sets the {@link HTMLCell HTML cell}.
+     *
+     * @param cell The cell to set.
+     */
+    @SuppressWarnings("unused")
+    public void setHeaderCell(HTMLCell cell) {
+        headerCell = cell;
+    }
+
+    @SuppressWarnings("unused")
+    public Collection getDisplayFields() {
+        ArrayList al = new ArrayList();
+
+        Iterator iter = this.getDisplayFieldRefIterator();
+        while (iter.hasNext()) {
+            DisplayFieldRef ref = (DisplayFieldRef) iter.next();
+            try {
                 al.add(ref.getDisplayField());
             } catch (DisplayFieldNotFoundException e) {
-                logger.error("",e);
+                logger.error("", e);
             }
-	    }
-	    
-	    return al;
-	}
+        }
+
+        return al;
+    }
+
     /**
      * @return Returns the allowDiffs.
      */
     public boolean isAllowDiffs() {
         return allowDiffs;
     }
+
     /**
      * @param allowDiffs The allowDiffs to set.
      */

@@ -12,98 +12,127 @@
 
 package org.nrg.xdat.display;
 
+import org.apache.commons.lang.StringUtils;
+
 /**
  * @author Tim
- *
  */
 public class HTMLCell {
-	private Integer width = null;
-	private Integer height = null;
-	
-	private String valign = null;
-	private String align = null;
-	private String serverLink = null;
-	/**
-	 * @return
-	 */
-	public Integer getHeight() {
-		return height;
-	}
+    private Integer width = null;
+    private Integer height = null;
 
-	/**
-	 * @return
-	 */
-	public Integer getWidth() {
-		return width;
-	}
+    private String valign = null;
+    private String align = null;
+    private String serverLink = null;
 
-	/**
-	 * @param integer
-	 */
-	public void setHeight(Integer integer) {
-		height = integer;
-	}
-	
-	public void setHeight(String s)
-	{
-		if (! s.equalsIgnoreCase(""))
-			height = Integer.valueOf(s);
-	}
+    /**
+     * @return The cell height.
+     */
+    public Integer getHeight() {
+        return height;
+    }
 
-	/**
-	 * @param integer
-	 */
-	public void setWidth(Integer integer) {
-		width = integer;
-	}
-	
-	public void setWidth(String s)
-	{
-		if (! s.equalsIgnoreCase(""))
-			width = Integer.valueOf(s);
-	}
+    /**
+     * @return The cell width.
+     */
+    public Integer getWidth() {
+        return width;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getAlign() {
-		return align;
-	}
+    /**
+     * Sets the cell's height.
+     *
+     * @param height The height to set.
+     */
+    public void setHeight(final Integer height) {
+        this.height = height;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getServerLink() {
-		return serverLink;
-	}
+    /**
+     * Sets the cell's height.
+     *
+     * @param height The height to set.
+     */
+    public void setHeight(final String height) {
+        if (StringUtils.isNotBlank(height)) {
+            setHeight(Integer.valueOf(height));
+        }
+    }
 
-	/**
-	 * @return
-	 */
-	public String getValign() {
-		return valign;
-	}
+    /**
+     * Sets the cell's width.
+     *
+     * @param width The width to set.
+     */
+    public void setWidth(final Integer width) {
+        this.width = width;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setAlign(String string) {
-		align = string;
-	}
+    /**
+     * Sets the cell's width.
+     *
+     * @param width The width to set.
+     */
+    public void setWidth(final String width) {
+        if (StringUtils.isNotBlank(width)) {
+            setWidth(Integer.valueOf(width));
+        }
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setServerLink(String string) {
-		serverLink = string;
-	}
+    /**
+     * Gets the alignment setting for the cell.
+     *
+     * @return The alignment setting for the cell.
+     */
+    public String getAlign() {
+        return align;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setValign(String string) {
-		valign = string;
-	}
+    /**
+     * Gets the server link for the cell.
+     *
+     * @return The server link for the cell.
+     */
+    @SuppressWarnings("unused")
+    public String getServerLink() {
+        return serverLink;
+    }
+
+    /**
+     * Gets the vertical alignment setting for the cell.
+     *
+     * @return The vertical alignment setting for the cell.
+     */
+    public String getValign() {
+        return valign;
+    }
+
+    /**
+     * Sets the alignment setting for the cell.
+     *
+     * @param align    The alignment setting for the cell.
+     */
+    public void setAlign(final String align) {
+        this.align = align;
+    }
+
+    /**
+     * Sets the server link for the cell.
+     *
+     * @param serverLink    The server link for the cell.
+     */
+    public void setServerLink(final String serverLink) {
+        this.serverLink = serverLink;
+    }
+
+    /**
+     * Sets the vertical alignment setting for the cell.
+     *
+     * @param valign    The vertical alignment setting for the cell.
+     */
+    public void setValign(final String valign) {
+        this.valign = valign;
+    }
 
 }
 

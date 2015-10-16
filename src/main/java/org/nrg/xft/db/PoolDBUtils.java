@@ -11,21 +11,6 @@
 
 
 package org.nrg.xft.db;
-import java.io.File;
-import java.sql.CallableStatement;
-import java.sql.Connection;
-import java.sql.PreparedStatement;
-import java.sql.ResultSet;
-import java.sql.SQLException;
-import java.sql.Statement;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Scanner;
-
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
@@ -34,16 +19,19 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
-import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
-import com.google.common.collect.Lists;
+import java.sql.*;
+import java.util.*;
+import java.util.Date;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
 public class PoolDBUtils {
 	static org.apache.log4j.Logger logger = Logger.getLogger(PoolDBUtils.class);
 	//private ResultSet rs = null;
 	private Connection con = null;
 	private Statement st = null;
-	int queryLogSize = 90;
 
 	/**
 	 * Processes the specified query on the specified db with a pooled connection.
@@ -252,7 +240,6 @@ public class PoolDBUtils {
 
             	st = con.createStatement(resultSetType, resultSetConcurrency);
             	st.clearBatch();
-            	int c=0;
             	for (String stmt:statements)
             	{
             	    st.addBatch(stmt);
@@ -291,7 +278,7 @@ public class PoolDBUtils {
 
 
 
-	
+
 	/**
 	 * Check if the database type exists
 	 * @param _class
@@ -302,7 +289,7 @@ public class PoolDBUtils {
 		Long count=(Long)PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) AS count FROM pg_catalog.pg_type WHERE  typname=LOWER('" + _class + "')", "count", null, null);
 		return (count>0);
 	}
-	
+
 	/**
 	 * Check if the database class exists
 	 * @param _class
@@ -321,7 +308,7 @@ public class PoolDBUtils {
 	 * @throws SQLException
 	 * @throws Exception
 	 */
-	public void insertItem(String query,String db, String userName,DBItemCache cache) throws SQLException, Exception
+	public void insertItem(String query, String db, String userName, DBItemCache cache) throws SQLException, Exception
 	{
 		cache.addStatement(query);
 	}
@@ -385,18 +372,6 @@ public class PoolDBUtils {
 		con.sendBatch(queries,db,userName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
 	}
 
-	public static void ExecuteBatch(File sql,String db, String userName) throws SQLException,Exception
-	{
-		PoolDBUtils con = new PoolDBUtils();
-		
-		List<String> queries=Lists.newArrayList();
-		Scanner scanner=new Scanner(sql).useDelimiter(";");
-		while(scanner.hasNext()){
-			queries.add(scanner.next());
-		}
-
-		con.sendBatch(queries,db,userName, ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
-	}
 	public Object returnStatisticQuery(String query,String column,String db, String userName) throws SQLException,Exception
 	{
 		Object o = null;
@@ -808,8 +783,8 @@ public class PoolDBUtils {
 
     /**
      * @param login
-     * @param search_xml
      * @param dbname
+     * @param search_id
      * @return
      */
     public static String RetrieveLoggedCustomSearch(String login,String dbname,Object search_id)throws SQLException,DBPoolException,Exception{
@@ -848,24 +823,31 @@ public class PoolDBUtils {
         }
     }
 
-    public static boolean HackCheck(String value)
-    {
-    	if(value.matches("[a-zA-z0-9 _\\.]*")){
+    public static boolean HackCheck(final Iterable<String> values) {
+		for (final String value : values) {
+			if(HackCheck(value)) {
+				return true;
+			}
+		}
     		return false;
     	}
-    	
-    	value=value.toUpperCase();
-    	
-    	if(value.matches("<*SCRIPT"))return true;
-    	if(StringContains(value,"SELECT")) return true;
-    	if(StringContains(value,"INSERT")) return true;
-    	if(StringContains(value,"UPDATE")) return true;
-    	if(StringContains(value,"DELETE")) return true;
-    	if(StringContains(value,"DROP")) return true;
-    	if(StringContains(value,"ALTER")) return true;
-    	if(StringContains(value,"CREATE")) return true;
 
+    public static boolean HackCheck(String value) {
+		if (value.matches("^[a-zA-z0-9 _\\.]*[^\\\\]$")) {
     	return false;
+    }
+
+		final String normalized = value.toUpperCase();
+
+		return  normalized.matches("^.*[\\\\]$") ||
+				normalized.matches("<*SCRIPT") ||
+				StringContains(value, "SELECT") ||
+				StringContains(value, "INSERT") ||
+				StringContains(value, "UPDATE") ||
+				StringContains(value, "DELETE") ||
+				StringContains(value, "DROP") ||
+				StringContains(value, "ALTER") ||
+				StringContains(value, "CREATE");
     }
 
     public static boolean StringContains(String value, String s){
@@ -909,12 +891,17 @@ public class PoolDBUtils {
 		try {
 			rs = st.executeQuery(query);
 		} catch (SQLException e) {
-			if(e.getMessage().contains("Connection reset")){
+			final String message = e.getMessage();
+			if(message.contains("Connection reset")){
 				closeConnection();
 				resetConnections();
 				st = getStatement(db);
 				rs = st.executeQuery(query);
-			}else{
+			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
+				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
+				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
+				return null;
+			} else {
 				throw e;
 			}
 		}
@@ -933,11 +920,19 @@ public class PoolDBUtils {
 		try {
 			st.execute(query);
 		} catch (SQLException e) {
-			if(e.getMessage().contains("Connection reset")){
+			final String message = e.getMessage();
+			if (message.contains("relation \"xdat_meta_element_meta_data\" does not exist")) {
+				// Honestly, we don't care much about this. It goes away once the metadata table is initialized,
+				// has no real effect beforehand, and is a pretty scary message with an enormous stacktrace.
+				logger.info("Metadata error occurred: " + message);
+			} else if(message.contains("Connection reset")){
 				closeConnection();
 				resetConnections();
 				st = getStatement(db);
 				st.execute(query);
+			}else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
+				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
+				logger.error("Got an exception indicating that the column \"" + matcher.group(1) + "\" does not exist. The attempted query is:\n\n" + query);
 			}else{
 				throw e;
 			}
@@ -1012,5 +1007,8 @@ public class PoolDBUtils {
 	    	pooledConnection.closeConnection(null);//use the pool manager to close the connection
 		}
 	}
+	
+	private static final String EXPR_COLUMN_NOT_FOUND = "column \"([A-z0-9_-]+)\" does not exist";
+	private static final Pattern PATTERN_COLUMN_NOT_FOUND = Pattern.compile(EXPR_COLUMN_NOT_FOUND);
 }
 

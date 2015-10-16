@@ -8,31 +8,28 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.display;
 
 import java.util.Hashtable;
 import java.util.Map;
 /**
  * @author Tim
- *
  */
 public class HTMLLinkProperty {
 	private String name = "";
 	private String value = "";
 	
-	private Map<String,String> insertedValues= new Hashtable<String,String>();
+	private Map<String,String> insertedValues= new Hashtable<>();
 
 	/**
-	 * @return
+	 * @return The property's name.
 	 */
 	public String getName() {
 		return name;
 	}
 
 	/**
-	 * @return
+	 * @return The property's value.
 	 */
 	public String getValue() {
 		return value;
@@ -40,33 +37,26 @@ public class HTMLLinkProperty {
 
 
 	/**
-	 * @param string
+	 * @param string    The name to set for the property.
 	 */
 	public void setName(String string) {
 		name = string;
 	}
 
 	/**
-	 * @param string
+	 * @param string    The value to set for the property.
 	 */
 	public void setValue(String string) {
 		value = string;
 	}
 
 	/**
-	 * @return
+	 * @return A map of the inserted name/value pairs.
 	 */
 	public Map<String,String> getInsertedValues() {
 		return insertedValues;
 	}
 
-	/**
-	 * @param hashtable
-	 */
-	public void setInsertedValues(Map<String,String> hashtable) {
-		insertedValues = hashtable;
-	}
-	
 	public void addInsertedValue(String id,String field)
 	{
 		insertedValues.put(id,field);

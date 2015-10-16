@@ -8,49 +8,49 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.display;
+
 import java.util.ArrayList;
+
 /**
  * @author Tim
- *
  */
 public class Mapping {
-	private String tableName = "";
-	private ArrayList columns = new ArrayList();
-	/**
-	 * @return
-	 */
-	public ArrayList getColumns() {
-		return columns;
-	}
+    private String tableName = "";
+    private ArrayList columns = new ArrayList();
 
-	/**
-	 * @return
-	 */
-	public String getTableName() {
-		return tableName;
-	}
+    /**
+     * @return The columns in the mapping.
+     */
+    public ArrayList getColumns() {
+        return columns;
+    }
 
-	/**
-	 * @param list
-	 */
-	public void setColumns(ArrayList list) {
-		columns = list;
-	}
+    /**
+     * @return The table name.
+     */
+    public String getTableName() {
+        return tableName;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setTableName(String string) {
-		tableName = string;
-	}
-	
-	public void addColumn(MappingColumn c)
-	{
-		columns.add(c);
-	}
+    /**
+     * @param list A list of the columns in the mapping.
+     */
+    public void setColumns(ArrayList list) {
+        columns = list;
+    }
+
+    /**
+     * @param string The table name for the mapping.
+     */
+    public void setTableName(String string) {
+        tableName = string;
+    }
+
+    @SuppressWarnings("unchecked")
+    public void addColumn(MappingColumn c) {
+        columns.add(c);
+    }
 
 }
 

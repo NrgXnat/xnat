@@ -8,54 +8,70 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.display;
-
-import java.util.ArrayList;
 
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 
+import java.util.List;
+
 /**
  * @author Tim
- *
  */
 public interface DisplayFieldReferenceI {
-    public ArrayList getSecondaryFields();
-    
-    public DisplayField getDisplayField()  throws DisplayFieldNotFoundException;
-    public String getId();
-    /**
-     * @return
-     */
-    public String getHeader();
+    List<String> getSecondaryFields();
+
+    DisplayField getDisplayField() throws DisplayFieldNotFoundException;
+
+    String getId();
 
     /**
-     * @return
+     * Gets the reference header.
+     *
+     * @return The reference header.
      */
-    public String getLightColor();
-    public String getDarkColor();
-    public Integer getHeaderCellWidth();
-    public Integer getHeaderCellHeight();
-    public String getHeaderCellAlign();
-    public String getHeaderCellVAlign();
-    public Integer getHTMLCellWidth();
-    public Integer getHTMLCellHeight();
-    public String getHTMLCellAlign();
-    public String getHTMLCellVAlign();
-    public String getElementName();
-    public String getRowID();
-    public String getSortBy();
-    public String getType();
-    public HTMLLink getHTMLLink();
-    public boolean isImage();
-    public boolean isHtmlContent();
-    public Object getValue();
-    
-    public boolean isVisible() throws DisplayFieldNotFoundException;
-    public void setValue(Object o);
-    public String getElementSQLName() throws XFTInitException,ElementNotFoundException;
-    
+    String getHeader();
+
+    String getLightColor();
+
+    String getDarkColor();
+
+    Integer getHeaderCellWidth();
+
+    Integer getHeaderCellHeight();
+
+    String getHeaderCellAlign();
+
+    String getHeaderCellVAlign();
+
+    Integer getHTMLCellWidth();
+
+    Integer getHTMLCellHeight();
+
+    String getHTMLCellAlign();
+
+    String getHTMLCellVAlign();
+
+    String getElementName();
+
+    String getRowID();
+
+    String getSortBy();
+
+    String getType();
+
+    HTMLLink getHTMLLink();
+
+    boolean isImage();
+
+    boolean isHtmlContent();
+
+    Object getValue();
+
+    boolean isVisible() throws DisplayFieldNotFoundException;
+
+    void setValue(Object o);
+
+    String getElementSQLName() throws XFTInitException, ElementNotFoundException;
 }

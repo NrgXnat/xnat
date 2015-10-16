@@ -8,8 +8,6 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.collections;
 
 import java.util.ArrayList;
@@ -27,129 +25,120 @@ import org.nrg.xft.sequence.SequenceComparator;
 
 /**
  * @author Tim
- *
  */
+@SuppressWarnings("unchecked")
 public class DisplayFieldWrapperCollection extends XFTCollection {
 
-	public DisplayFieldWrapperCollection()
-	{
-		super();
-		setAllowReplacement(true);
-	}
-
-	public DisplayFieldWrapper getDisplayField(String id)
-	{
-			return (DisplayFieldWrapper)this.getStoredItem(id);
-	}
-
-	public void addDisplayField(DisplayFieldWrapper df)
-	{
-	    	df.setSequence(this.getItemHash().size());
-			this.addStoredItem(df);
-	}
-
-    public void addDisplayField(DisplayField df, String header, Object value)
-    {
-            DisplayFieldWrapper dfw = new DisplayFieldWrapper(df);
-            if(header!=null)
-            	dfw.setHeader(header);
-            dfw.setValue(value);
-            addDisplayField(dfw);
+    public DisplayFieldWrapperCollection() {
+        super();
+        setAllowReplacement(true);
     }
 
-    public void addDisplayField(DisplayField df, String header, Object value,Boolean visible)
-    {
-            DisplayFieldWrapper dfw = new DisplayFieldWrapper(df);
-            if(header!=null)
-            	dfw.setHeader(header);
-            dfw.setValue(value);
-            dfw.setVisible(visible);
-            addDisplayField(dfw);
+    public DisplayFieldWrapper getDisplayField(String id) {
+        return (DisplayFieldWrapper) this.getStoredItem(id);
     }
 
-	public void addDisplayField(DisplayField df)
-	{
-	    	DisplayFieldWrapper dfw = new DisplayFieldWrapper(df);
-            dfw.setHeader(df.getHeader());
-	    	addDisplayField(dfw);
-	}
-
-    public void addDisplayField(DisplayField df,Object value)
-    {
-            DisplayFieldWrapper dfw = new DisplayFieldWrapper(df);
-            dfw.setHeader(df.getHeader());
-            dfw.setValue(value);
-            addDisplayField(dfw);
+    public void addDisplayField(DisplayFieldWrapper df) {
+        df.setSequence(this.getItemHash().size());
+        this.addStoredItem(df);
     }
 
-	public void addDisplayFields(Collection coll)
-	{
-	    Iterator iter = coll.iterator();
-	    while (iter.hasNext())
-	    {
-	    	Object o = iter.next();
-	    	if (o instanceof DisplayFieldWrapper)
-	    	{
-	    	    addDisplayField((DisplayFieldWrapper)o);
-	    	}else if (o instanceof DisplayField)
-	    	{
-	    	    addDisplayField((DisplayField)o);
-	    	}
-	    }
-	}
-	/**
-	 * @param id
-	 * @return
-	 */
-	public DisplayFieldWrapper getDisplayFieldWException(String id)
-	{
-	    try{
-	        return (DisplayFieldWrapper)this.getStoredItemWException(id);
-	    } catch (ItemNotFoundException e1) {
+    public void addDisplayField(DisplayField df, String header, Object value) {
+        DisplayFieldWrapper dfw = new DisplayFieldWrapper(df);
+        if (header != null)
+            dfw.setHeader(header);
+        dfw.setValue(value);
+        addDisplayField(dfw);
+    }
+
+    public void addDisplayField(DisplayField df, String header, Object value, Boolean visible) {
+        DisplayFieldWrapper dfw = new DisplayFieldWrapper(df);
+        if (header != null)
+            dfw.setHeader(header);
+        dfw.setValue(value);
+        dfw.setVisible(visible);
+        addDisplayField(dfw);
+    }
+
+    public void addDisplayField(DisplayField df) {
+        DisplayFieldWrapper dfw = new DisplayFieldWrapper(df);
+        dfw.setHeader(df.getHeader());
+        addDisplayField(dfw);
+    }
+
+    public void addDisplayField(DisplayField df, Object value) {
+        DisplayFieldWrapper dfw = new DisplayFieldWrapper(df);
+        dfw.setHeader(df.getHeader());
+        dfw.setValue(value);
+        addDisplayField(dfw);
+    }
+
+    public void addDisplayFields(Collection coll) {
+        for (final Object o : coll) {
+            if (o instanceof DisplayFieldWrapper) {
+                addDisplayField((DisplayFieldWrapper) o);
+            } else if (o instanceof DisplayField) {
+                addDisplayField((DisplayField) o);
+            }
+        }
+    }
+
+    /**
+     * Gets the requested {@link DisplayFieldWrapper display field}.
+     *
+     * @param id The ID of the display field to retrieve.
+     * @return The {@link DisplayFieldWrapper display field} requested if it exists, null otherwise.
+     */
+    @SuppressWarnings("unused")
+    public DisplayFieldWrapper getDisplayFieldWException(String id) {
+        try {
+            return (DisplayFieldWrapper) this.getStoredItemWException(id);
+        } catch (ItemNotFoundException e1) {
             return null;
         }
-	}
+    }
 
-	public void addDisplayFieldWException(DisplayFieldWrapper df)
-	{
-		try {
-            df.setSequence(this.getItemHash().size());
-            this.addStoredItemWException(df);
-        } catch (DuplicateKeyException e) {
+    /**
+     * Adds the submitted {@link DisplayFieldWrapper display field}. Any exceptions that occur will be thrown up.
+     *
+     * @param displayField The {@link DisplayFieldWrapper display field} to be added.
+     */
+    @SuppressWarnings("unused")
+    public void addDisplayFieldWException(DisplayFieldWrapper displayField) {
+        try {
+            displayField.setSequence(this.getItemHash().size());
+            this.addStoredItemWException(displayField);
+        } catch (DuplicateKeyException ignored) {
         }
-	}
+    }
 
-	public ArrayList getSortedFields()
-	{
-	    ArrayList al = new ArrayList();
-	    al.addAll(this.getItemHash().values());
-	    Collections.sort(al,SequenceComparator.SequenceComparator);
-	    return al;
-	}
+    /**
+     * Gets the available fields, sorted by sequence.
+     *
+     * @return The available fields in a list.
+     */
+    public ArrayList getSortedFields() {
+        ArrayList al = new ArrayList();
+        al.addAll(this.getItemHash().values());
+        Collections.sort(al, SequenceComparator.SequenceComparator);
+        return al;
+    }
 
-	public ArrayList<DisplayFieldReferenceI> getSortedVisibleFields()
-	{
-	    ArrayList<DisplayFieldReferenceI> al = new ArrayList<DisplayFieldReferenceI>();
-	    Iterator iter = this.getDisplayFieldIterator();
-	    while (iter.hasNext())
-	    {
-	        DisplayFieldWrapper dfw = (DisplayFieldWrapper)iter.next();
-	        if(dfw.getDf().isVisible()){
-	            al.add(dfw);
-	        }
-	    }
-	    Collections.sort(al,SequenceComparator.SequenceComparator);
-	    return al;
-	}
-
-	public Iterator getDisplayFieldIterator()
-	{
-		return this.getItemIterator();
-	}
-
-	public java.util.Hashtable getDisplayFieldHash()
-	{
-		return this.getItemHash();
-	}
-
+    /**
+     * Gets the available visible fields, sorted by sequence.
+     *
+     * @return The available visible fields in a list.
+     */
+    public ArrayList<DisplayFieldReferenceI> getSortedVisibleFields() {
+        ArrayList<DisplayFieldReferenceI> al = new ArrayList<>();
+        Iterator iterator = getItemIterator();
+        while (iterator.hasNext()) {
+            DisplayFieldWrapper dfw = (DisplayFieldWrapper) iterator.next();
+            if (dfw.getDf().isVisible()) {
+                al.add(dfw);
+            }
+        }
+        Collections.sort(al, SequenceComparator.SequenceComparator);
+        return al;
+    }
 }

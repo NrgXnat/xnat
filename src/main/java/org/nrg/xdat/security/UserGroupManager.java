@@ -12,28 +12,18 @@
 
 package org.nrg.xdat.security;
 
-import java.io.StringWriter;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
-import org.nrg.xdat.om.XdatElementAccess;
-import org.nrg.xdat.om.XdatFieldMapping;
-import org.nrg.xdat.om.XdatFieldMappingSet;
-import org.nrg.xdat.om.XdatUserGroupid;
-import org.nrg.xdat.om.XdatUsergroup;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.search.CriteriaCollection;
 import org.nrg.xdat.security.group.exceptions.GroupFieldMappingException;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
@@ -41,22 +31,22 @@ import org.nrg.xft.cache.CacheManager;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.Event;
-import org.nrg.xft.event.EventDetails;
 import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
-import org.restlet.data.Status;
 
-import com.google.common.collect.Lists;
+import java.io.StringWriter;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.List;
+import java.util.Map;
 
 public class UserGroupManager implements UserGroupServiceI{
 
@@ -72,10 +62,10 @@ public class UserGroupManager implements UserGroupServiceI{
     	UserGroup g =(UserGroup) CacheManager.GetInstance().retrieve(XdatUsergroup.SCHEMA_ELEMENT_NAME, id);
     	if(g==null){
     		try {
-                XdatUsergroup temp =(XdatUsergroup) XdatUsergroup.getXdatUsergroupsById(id, null, true);
+                XdatUsergroup temp = XdatUsergroup.getXdatUsergroupsById(id, null, true);
                 if(temp!=null){
                     g = new UserGroup(temp);
-                    if(g!=null)CacheManager.GetInstance().put(XdatUsergroup.SCHEMA_ELEMENT_NAME, id, g);
+                    CacheManager.GetInstance().put(XdatUsergroup.SCHEMA_ELEMENT_NAME, id, g);
                 }
                 return g;
             } catch (Throwable e) {
@@ -117,7 +107,7 @@ public class UserGroupManager implements UserGroupServiceI{
 	}
 
 	@Override
-	public void removeUserFromGroup(UserI user, String groupId, EventMetaI ci) throws SQLException, Exception {
+	public void removeUserFromGroup(UserI user, String groupId, EventMetaI ci) throws Exception {
 		for (XdatUserGroupid map : ((XDATUser)user).getGroups_groupid()) {
 			if (map.getGroupid().equals(groupId)) {
 				SaveItemHelper.authorizedDelete(map.getItem(), user,ci);
@@ -126,14 +116,11 @@ public class UserGroupManager implements UserGroupServiceI{
 	    ((XDATUser)user).resetCriteria();
 	}
 
-
-
 	@Override
 	public void reloadGroupForUser(UserI user, String groupId) {
 		((XDATUser)user).refreshGroup(groupId);
 		
 	}
-
 
 	@Override
 	public void reloadGroupsForUser(UserI user) {
@@ -146,14 +133,14 @@ public class UserGroupManager implements UserGroupServiceI{
 	        boolean velocityInit = false;
 
 	        try {
-                Velocity.templateExists(templateName);
+                Velocity.resourceExists(templateName);
                 velocityInit=true;
-            } catch (Exception e1) {
+            } catch (Exception ignored) {
             }
 
             if (velocityInit)
             {
-                boolean exists= Velocity.templateExists("/screens/" + templateName);
+                boolean exists= Velocity.resourceExists("/screens/" + templateName);
                 if (exists)
                 {
                     VelocityContext context = new VelocityContext();
@@ -174,17 +161,16 @@ public class UserGroupManager implements UserGroupServiceI{
                     PoolDBUtils.ExecuteBatch(stmts, null, authenticatedUser.getUsername());
                 }
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
 	}
 	
 
     public UserGroupI createGroup(final String id, final String displayName, Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate,boolean activateChanges,List<ElementSecurity> ess, String value, UserI authenticatedUser){
-    	XdatUsergroup group=null;
+    	XdatUsergroup group;
     	PersistentWorkflowI wrk=null;
     	
     	try {
-        	long start=Calendar.getInstance().getTimeInMillis();
             group = new XdatUsergroup(authenticatedUser);
             group.setId(id);
             group.setDisplayname(displayName);
@@ -195,8 +181,9 @@ public class UserGroupManager implements UserGroupServiceI{
             if(existing==null){
             	//optimized version for expediency
             	wrk=PersistentWorkflowUtils.buildOpenWorkflow(authenticatedUser, group.getXSIType(), "ADMIN", value, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.TYPE.PROCESS, "Initialized permissions"));
-                 
-        		SaveItemHelper.authorizedSave(group, authenticatedUser,false,false,wrk.buildEvent());
+
+                assert wrk != null;
+                SaveItemHelper.authorizedSave(group, authenticatedUser,false,false,wrk.buildEvent());
         		
         		existing=Groups.getGroup(id);
         		
@@ -236,7 +223,7 @@ public class UserGroupManager implements UserGroupServiceI{
             logger.error("",e);
             try {
 				if(wrk!=null) PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
-			} catch (Exception e1) {
+			} catch (Exception ignored) {
 			}
             return null;
         }
@@ -251,8 +238,8 @@ public class UserGroupManager implements UserGroupServiceI{
     		return createGroup(id,displayName,create,read,delete,edit,activate,activateChanges,ess,value,authenticatedUser);
     	}
     	
-    	PersistentWorkflowI wrk=null;
-    	XdatUsergroup group=null;
+    	PersistentWorkflowI wrk;
+    	XdatUsergroup group;
     	
     	//this means the group previously existed, and this is an update rather than an init.
     	//the logic here will be way more intrusive (and expensive)
@@ -263,30 +250,27 @@ public class UserGroupManager implements UserGroupServiceI{
         if (groups.size()==0){
         	throw new Exception("Count didn't match query results");
         }else{
-            group = (XdatUsergroup)groups.get(0);
+            group = groups.get(0);
             wrk=PersistentWorkflowUtils.buildOpenWorkflow(authenticatedUser, group.getXSIType(), group.getXdatUsergroupId().toString(), value, EventUtils.newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.TYPE.PROCESS, "Modified permissions"));
         }
 
     	long start=Calendar.getInstance().getTimeInMillis();
         try {
         	if(group.getDisplayname().equals("Owners")){
-        		setPermissions(group,"xnat:projectData", "xnat:projectData/ID", value, create,read,delete,edit,activate,activateChanges, authenticatedUser,false,wrk.buildEvent());
+                assert wrk != null;
+                setPermissions(group,"xnat:projectData", "xnat:projectData/ID", value, create,read,delete,edit,activate,activateChanges, authenticatedUser,false,wrk.buildEvent());
         	}else{
-        		setPermissions(group,"xnat:projectData", "xnat:projectData/ID", value, Boolean.FALSE,read,Boolean.FALSE,Boolean.FALSE,Boolean.FALSE,activateChanges,authenticatedUser,false,wrk.buildEvent());
+                assert wrk != null;
+                setPermissions(group,"xnat:projectData", "xnat:projectData/ID", value, Boolean.FALSE,read,Boolean.FALSE,Boolean.FALSE,Boolean.FALSE,activateChanges,authenticatedUser,false,wrk.buildEvent());
         	}
 
-            Iterator iter = ess.iterator();
-            while (iter.hasNext())
-            {
-                ElementSecurity es = (ElementSecurity)iter.next();
-
-
-                if(setPermissions(group,es.getElementName(),es.getElementName() + "/project", value, create,read,delete,edit,activate,activateChanges, authenticatedUser,false,wrk.buildEvent())){
-                	modified=true;
+            for (final ElementSecurity es : ess) {
+                if (setPermissions(group, es.getElementName(), es.getElementName() + "/project", value, create, read, delete, edit, activate, activateChanges, authenticatedUser, false, wrk.buildEvent())) {
+                    modified = true;
                 }
 
-                if(setPermissions(group,es.getElementName(),es.getElementName() + "/sharing/share/project", value, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, authenticatedUser,false,wrk.buildEvent())){
-                	modified=true;
+                if (setPermissions(group, es.getElementName(), es.getElementName() + "/sharing/share/project", value, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE, Boolean.TRUE, authenticatedUser, false, wrk.buildEvent())) {
+                    modified = true;
                 }
             }
         } catch (Exception e) {
@@ -313,7 +297,7 @@ public class UserGroupManager implements UserGroupServiceI{
 
 			}
 		} catch (Exception e1) {
-            if(wrk!=null) PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
+            PersistentWorkflowUtils.fail(wrk, wrk.buildEvent());
             logger.error("",e1);
 		}
 
@@ -338,7 +322,6 @@ public class UserGroupManager implements UserGroupServiceI{
 
 	@Override
 	public UserGroupI addUserToGroup(String group_id, UserI newUser,UserI currentUser, EventMetaI ci) throws Exception{
-    	boolean isOwner=false;
     	UserGroupI gp=Groups.getGroup(group_id);
     	
     	if(gp.getTag()!=null){
@@ -359,154 +342,111 @@ public class UserGroupManager implements UserGroupServiceI{
 
     	final String confirmquery = "SELECT * FROM xdat_user_groupid WHERE groupid='" + group_id + "' AND groups_groupid_xdat_user_xdat_user_id=" + newUser.getID() + ";";
 
-    	if(!isOwner){
-			XFTTable t=XFTTable.Execute(confirmquery,newUser.getDBName(), newUser.getUsername());
-	    	if(t.size()==0){
-	            final XdatUserGroupid map = new XdatUserGroupid((UserI)currentUser);
-	            map.setProperty(map.getXSIType() +".groups_groupid_xdat_user_xdat_user_id", newUser.getID());
-	            map.setGroupid(group_id);
-	            SaveItemHelper.authorizedSave(map,currentUser, false, false,ci);
-	    	}
-    	}
-    	    	
+        XFTTable t = XFTTable.Execute(confirmquery, newUser.getDBName(), newUser.getUsername());
+        if (t.size() == 0) {
+            final XdatUserGroupid map = new XdatUserGroupid(currentUser);
+            map.setProperty(map.getXSIType() + ".groups_groupid_xdat_user_xdat_user_id", newUser.getID());
+            map.setGroupid(group_id);
+            SaveItemHelper.authorizedSave(map, currentUser, false, false, ci);
+        }
+
         return gp;
 	}
-	
 
-	private boolean setPermissions(XdatUsergroup impl, String elementName,	String psf, String value, Boolean create, Boolean read,	Boolean delete, Boolean edit, Boolean activate,	boolean activateChanges, UserI user, boolean includesModification, EventMetaI c) throws Exception {
-		try {
-            final ElementSecurity es = ElementSecurity.GetElementSecurity(elementName);
-            
-                XdatElementAccess ea = null;
-                for (XdatElementAccess temp:impl.getElementAccess())
-                {
-                    if(temp.getElementName().equals(elementName))
-                    {
-                        ea= temp;
-                        break;
-                    }
+
+    private boolean setPermissions(XdatUsergroup impl, String elementName, String psf, String value, Boolean create, Boolean read, Boolean delete, Boolean edit, Boolean activate, boolean activateChanges, UserI user, boolean includesModification, EventMetaI c) throws Exception {
+        try {
+
+            XdatElementAccess ea = null;
+            for (XdatElementAccess temp : impl.getElementAccess()) {
+                if (temp.getElementName().equals(elementName)) {
+                    ea = temp;
+                    break;
                 }
+            }
 
-                if (ea==null)
-                {
-                    ea = new XdatElementAccess((UserI)user);
-                    ea.setElementName(elementName);
-                    ea.setProperty("xdat_usergroup_xdat_usergroup_id", impl.getXdatUsergroupId());
+            if (ea == null) {
+                ea = new XdatElementAccess(user);
+                ea.setElementName(elementName);
+                ea.setProperty("xdat_usergroup_xdat_usergroup_id", impl.getXdatUsergroupId());
+            }
+
+            final XdatFieldMappingSet fms;
+            ArrayList al = ea.getPermissions_allowSet();
+            if (al.size() > 0) {
+                fms = ea.getPermissions_allowSet().get(0);
+            } else {
+                fms = new XdatFieldMappingSet(user);
+                fms.setMethod("OR");
+                ea.setPermissions_allowSet(fms);
+            }
+
+            XdatFieldMapping fm = null;
+
+            for (final XdatFieldMapping mapping : fms.getAllow()) {
+                if (mapping.getFieldValue().equals(value) && mapping.getField().equals(psf)) {
+                    fm = mapping;
+                    break;
                 }
+            }
 
-                XdatFieldMappingSet fms = null;
-                ArrayList al =  ea.getPermissions_allowSet();
-                if (al.size()>0){
-                    fms = (XdatFieldMappingSet)ea.getPermissions_allowSet().get(0);
-                }else{
-                    fms = new XdatFieldMappingSet((UserI)user);
-                    fms.setMethod("OR");
-                    ea.setPermissions_allowSet(fms);
-                }
-
-                XdatFieldMapping fm = null;
-
-                Iterator iter = fms.getAllow().iterator();
-                while (iter.hasNext())
-                {
-                    Object o = iter.next();
-                    if (o instanceof XdatFieldMapping)
-                    {
-                        if (((XdatFieldMapping)o).getFieldValue().equals(value) && ((XdatFieldMapping)o).getField().equals(psf)){
-                            fm = (XdatFieldMapping)o;
-                        }
-                    }
-                }
-
-                if (fm ==null){
-                	if(create || read || edit || delete || activate)
-                		fm = new XdatFieldMapping((UserI)user);
-                	else
-                		return false;
-                }else if(!includesModification){
-                	if(!(create || read || edit || delete || activate)){
-                		if(fms.getAllow().size()==1){
-                			SaveItemHelper.authorizedDelete(fms.getItem(), user,c);
-                			return true;
-                		}else{
-                			SaveItemHelper.authorizedDelete(fm.getItem(), user,c);
-                			return true;
-                		}
-                	}
+            if (fm == null) {
+                if (create || read || edit || delete || activate)
+                    fm = new XdatFieldMapping(user);
+                else
                     return false;
+            } else if (!includesModification) {
+                if (!(create || read || edit || delete || activate)) {
+                    if (fms.getAllow().size() == 1) {
+                        SaveItemHelper.authorizedDelete(fms.getItem(), user, c);
+                        return true;
+                    } else {
+                        SaveItemHelper.authorizedDelete(fm.getItem(), user, c);
+                        return true;
+                    }
                 }
+                return false;
+            }
 
-                fm.init(psf, value, create, read, delete, edit, activate);
-                
-                fms.setAllow(fm);
+            fm.init(psf, value, create, read, delete, edit, activate);
 
-                if (fms.getXdatFieldMappingSetId()!=null)
-                {
-                    fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
+            fms.setAllow(fm);
 
-                    if (activateChanges){
-                    	SaveItemHelper.authorizedSave(fm,user, true, false, true, false,c);
-                        fm.activate(user);
-                    }else{
-                    	SaveItemHelper.authorizedSave(fm,user, true, false, false, false,c);
-                    }
-                }else if(ea.getXdatElementAccessId()!=null){
-                    fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
-                    if (activateChanges){
-                    	SaveItemHelper.authorizedSave(fms,user, true, false, true, false,c);
-                        fms.activate(user);
-                    }else{
-                    	SaveItemHelper.authorizedSave(fms,user, true, false, false, false,c);
-                    }
-                }else{
-                    if (activateChanges){
-                    	SaveItemHelper.authorizedSave(ea,user, true, false, true, false,c);
-                        ea.activate(user);
-                    }else{
-                    	SaveItemHelper.authorizedSave(ea,user, true, false, false, false,c);
-                    }
-                    impl.setElementAccess(ea);
+            if (fms.getXdatFieldMappingSetId() != null) {
+                fm.setProperty("xdat_field_mapping_set_xdat_field_mapping_set_id", fms.getXdatFieldMappingSetId());
+
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(fm, user, true, false, true, false, c);
+                    fm.activate(user);
+                } else {
+                    SaveItemHelper.authorizedSave(fm, user, true, false, false, false, c);
                 }
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
-            logger.error("",e);
-        } catch (InvalidValueException e) {
-            logger.error("",e);
+            } else if (ea.getXdatElementAccessId() != null) {
+                fms.setProperty("permissions_allow_set_xdat_elem_xdat_element_access_id", ea.getXdatElementAccessId());
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(fms, user, true, false, true, false, c);
+                    fms.activate(user);
+                } else {
+                    SaveItemHelper.authorizedSave(fms, user, true, false, false, false, c);
+                }
+            } else {
+                if (activateChanges) {
+                    SaveItemHelper.authorizedSave(ea, user, true, false, true, false, c);
+                    ea.activate(user);
+                } else {
+                    SaveItemHelper.authorizedSave(ea, user, true, false, false, false, c);
+                }
+                impl.setElementAccess(ea);
+            }
         } catch (Exception e) {
-            logger.error("",e);
+            logger.error("", e);
         }
 
         return true;
-	}
-	
-
-    
-    private void init(XdatUsergroup group, String elementName, String value,Boolean create,Boolean read,Boolean delete,Boolean edit,Boolean activate, UserI authenticatedUser) throws Exception{
-    	XdatElementAccess ea=new XdatElementAccess(authenticatedUser);
-        ea.setElementName(elementName);
-        group.setElementAccess(ea);
-        
-        //container for field mapping settings
-        XdatFieldMappingSet fms = new XdatFieldMappingSet(authenticatedUser);
-        fms.setMethod("OR");
-        ea.setPermissions_allowSet(fms);
-                            
-        //access permissions for owned data
-        XdatFieldMapping fm= new XdatFieldMapping(authenticatedUser);
-        fm.init( elementName + "/project", value, create,read,delete,edit,activate);
-        fms.setAllow(fm);
-
-        //access permissions for shared data
-        fm= new XdatFieldMapping(authenticatedUser);
-        fm.init( elementName + "/sharing/share/project", value, Boolean.FALSE, Boolean.TRUE, Boolean.FALSE, Boolean.FALSE, Boolean.TRUE);
-        fms.setAllow(fm);
     }
 
 
-	@Override
+    @Override
 	public List<UserGroupI> getAllGroups() {
 		List<UserGroupI> groups=Lists.newArrayList();
 		
@@ -522,12 +462,10 @@ public class UserGroupManager implements UserGroupServiceI{
 				g.setTag((String)row[3]);
 				groups.add(g);
 			}
-		} catch (SQLException e) {
-			logger.error("",e);
-		} catch (DBPoolException e) {
+		} catch (SQLException | DBPoolException e) {
 			logger.error("",e);
 		}
-		return groups;
+        return groups;
 	}
 
 
@@ -546,7 +484,7 @@ public class UserGroupManager implements UserGroupServiceI{
 
 
 	@Override
-	public UserGroupI createGroup(Map<String, ? extends Object> params) throws GroupFieldMappingException {
+	public UserGroupI createGroup(Map<String, ?> params) throws GroupFieldMappingException {
 		try {
 			PopulateItem populater = new PopulateItem(params,null,XdatUsergroup.SCHEMA_ELEMENT_NAME,true);
 			ItemI found = populater.getItem();
@@ -562,21 +500,20 @@ public class UserGroupManager implements UserGroupServiceI{
       //DELETE user.groupId
         CriteriaCollection col = new CriteriaCollection("AND");
         col.addClause(XdatUserGroupid.SCHEMA_ELEMENT_NAME +".groupid"," = ", g.getId());
-        Iterator groupIds = XdatUserGroupid.getXdatUserGroupidsByField(col, user, false).iterator();
 
-        while(groupIds.hasNext()){
-            XdatUserGroupid gId = (XdatUserGroupid)groupIds.next();
+        for (final XdatUserGroupid gId : XdatUserGroupid.getXdatUserGroupidsByField(col, user, false)) {
             try {
-            	SaveItemHelper.authorizedDelete(gId.getItem(), user,ci);
+                SaveItemHelper.authorizedDelete(gId.getItem(), user, ci);
             } catch (Throwable e) {
-                logger.error("",e);
+                logger.error("", e);
             }
         }
         
         try {
         	XdatUsergroup tmp=XdatUsergroup.getXdatUsergroupsByXdatUsergroupId(g.getPK(), user, false);
-    		
-    		SaveItemHelper.authorizedDelete(tmp.getItem(), user,ci);
+
+            assert tmp != null;
+            SaveItemHelper.authorizedDelete(tmp.getItem(), user,ci);
         } catch (Throwable e) {
             logger.error("",e);
         }
@@ -604,8 +541,6 @@ public class UserGroupManager implements UserGroupServiceI{
 			if(id!=null){
 				return getGroup(id);
 			}
-		} catch (SQLException e) {
-			logger.error("",e);
 		} catch (Exception e) {
 			logger.error("",e);
 		}
@@ -635,7 +570,7 @@ public class UserGroupManager implements UserGroupServiceI{
 		
 		for(final XdatFieldMapping map: set.getAllow()){
 			if(!values.contains(map.getFieldValue())){
-				values.add((String)map.getFieldValue());
+				values.add(map.getFieldValue());
 			}
 		}
 		
@@ -654,8 +589,6 @@ public class UserGroupManager implements UserGroupServiceI{
 			if(id!=null){
 				return getGroup(id);
 			}
-		} catch (SQLException e) {
-			logger.error("",e);
 		} catch (Exception e) {
 			logger.error("",e);
 		}
@@ -664,7 +597,7 @@ public class UserGroupManager implements UserGroupServiceI{
 
 
 	@Override
-	public void save(UserGroupI group, UserI user, EventMetaI meta) throws InvalidValueException, Exception{
+	public void save(UserGroupI group, UserI user, EventMetaI meta) throws Exception{
 		if(((UserGroup)group).xdatGroup==null){
 			return;
 		}
@@ -674,19 +607,17 @@ public class UserGroupManager implements UserGroupServiceI{
 		if(!Roles.isSiteAdmin(user)){
 			String firstValue=null;
 			for(XdatElementAccess ea:xdatGroup.getElementAccess()){
-				for(XdatFieldMappingSet set: ea.getPermissions_allowSet()){
-					List<String> values=getPermissionValues(set);
-					firstValue=values.get(0);
-					break;
-				}
+                List<String> values=getPermissionValues(ea.getPermissions_allowSet().get(0));
+                firstValue=values.get(0);
 				if(firstValue!=null){
 					break;
 				}
 			}
 			
 			validateGroupByTag(xdatGroup, firstValue);
-			
-			if(!UserHelper.getUserHelperService(user).isOwner(firstValue)){
+
+            final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);
+            if(userHelperService != null && !userHelperService.isOwner(firstValue)){
 				throw new InvalidValueException();
 			}
 		}

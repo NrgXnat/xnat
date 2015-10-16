@@ -147,9 +147,8 @@ public class Users {
 
 	/**
 	 * Gets a File representing a sub-file within the user cache directory based on the passed dir hierarchy
-	 * @param user
-	 * @param directory
-	 * @param file
+	 * @param user         The user.
+	 * @param dirs         The directories.
 	 * @return
 	 */
 	public static <T extends String> File getUserCacheFile(final UserI user, T... dirs){
@@ -312,7 +311,7 @@ public class Users {
     /**
      * Retrieve the user PK (Integer) for this username
      * 
-     * @param xdat_user_id
+     * @param username    The username.
      * @return
      */
     public static Integer getUserid(String username){
@@ -340,12 +339,12 @@ public class Users {
     	return u;
     }
     
-    private static Object usercache=new Object();
+    private static final Object usercache=new Object();
     private static Map<Integer,String> users=null;
     private static Map<Integer,String> getCachedUserIds(){
     	if(users==null){
     		synchronized (usercache){
-				users=new Hashtable<Integer,String>();
+				users= new Hashtable<>();
 	    		//initialize database users, only done once per server restart
 	    		try {
 					users.putAll(XFTTable.Execute("select xdat_user_id,login FROM xdat_user ORDER BY xdat_user_id;", null, null).toHashtable("xdat_user_id", "login"));
@@ -402,10 +401,10 @@ public class Users {
      */
     public static void validateUserLogin(UserI u) {
         if (!u.isEnabled()) {
-            throw new DisabledException("Attempted login to disabled account: " + u.getUsername(), u);
+            throw new DisabledException("Attempted login to disabled account: " + u.getUsername());
         }
         if ( (XDAT.verificationOn() && !u.isVerified()) || !u.isAccountNonLocked()) {
-            throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + u.getUsername(), u);
+            throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + u.getUsername());
         }
     }
 }

@@ -104,11 +104,11 @@ public class UserHelper {
     	}
     	return userHelperImpl;
     }
-    
+
     public static UserHelperServiceI getUserHelperService(UserI user){
     	try {
 			Class<UserHelperServiceI> clazz =getUserHelperImpl();
-			UserHelperServiceI serv= (UserHelperServiceI)clazz.newInstance();
+			UserHelperServiceI serv= clazz.newInstance();
 			serv.setUser(user);
 			return serv;
 		} catch (InstantiationException e) {

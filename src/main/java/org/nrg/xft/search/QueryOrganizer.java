@@ -55,7 +55,7 @@ public class QueryOrganizer implements QueryOrganizerI{
     protected UserI user = null;
 
     protected String level = ViewManager.DEFAULT_LEVEL;
-    protected ArrayList<String> fields = new ArrayList<String>();
+    protected ArrayList<String> fields = new ArrayList<>();
 	protected Hashtable tables = new Hashtable();
 
     protected StringBuffer joins = new StringBuffer();
@@ -91,7 +91,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         setPKField();
     }
 
-    private List<String> keys=new ArrayList<String>();
+    private List<String> keys= new ArrayList<>();
     
     public List<String> getKeys(){
     	return keys;
@@ -99,10 +99,7 @@ public class QueryOrganizer implements QueryOrganizerI{
     
     private void setPKField()
     {
-        Iterator keys = rootElement.getGenericXFTElement().getAllPrimaryKeys().iterator();
-        while (keys.hasNext())
-        {
-            GenericWrapperField sf = (GenericWrapperField)keys.next();
+        for (final GenericWrapperField sf : rootElement.getGenericXFTElement().getAllPrimaryKeys()) {
             try {
             	String key=sf.getXMLPathString(rootElement.getFullXMLName());
                 addField(key);

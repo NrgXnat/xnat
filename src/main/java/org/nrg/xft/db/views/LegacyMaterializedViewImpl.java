@@ -1,27 +1,21 @@
 package org.nrg.xft.db.views;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
+import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.db.MaterializedViewI;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.views.service.MaterializedViewManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.StringUtils;
 
-import com.google.common.collect.Lists;
+import java.sql.SQLException;
+import java.util.*;
 
 public class LegacyMaterializedViewImpl implements MaterializedViewI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(LegacyMaterializedViewImpl.class);
@@ -59,7 +53,12 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 		this.setUser(u);
 		this.setUser_name(u.getUsername());
 	}
-	
+
+    @Override
+    public String getCode() {
+        return MaterializedView.DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE;
+    }
+
 	/* (non-Javadoc)
 	 * @see org.nrg.xft.db.MaterializedViewI#getUser()
 	 */

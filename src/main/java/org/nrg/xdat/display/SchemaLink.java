@@ -8,13 +8,10 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.display;
 
 /**
  * @author Tim
- *
  */
 public class SchemaLink extends ViewLink{
 	private String rootElement = "";

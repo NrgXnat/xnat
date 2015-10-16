@@ -8,20 +8,11 @@
  *
  * Last modified 1/13/14 11:48 AM
  */
-
-
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.io.StringWriter;
 import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Date;
-import java.util.Enumeration;
-import java.util.GregorianCalendar;
-import java.util.Iterator;
+import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
@@ -32,6 +23,7 @@ import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundExcep
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
+import org.nrg.xdat.exceptions.InvalidSearchException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.search.DisplaySearch;
@@ -70,13 +62,15 @@ public abstract class SearchA extends SecureAction {
     public void doFinalProcessing(RunData data, Context context) throws Exception{
     }
 
+    @SuppressWarnings("unused")
     public boolean executeSearch()
     {
         return true;
     }
 
+    @SuppressWarnings("unused")
     public Integer getDefaultPageSize(){
-        return new Integer(40);
+        return 40;
     }
 
 	public void doPerform(RunData data, Context context)
@@ -85,7 +79,8 @@ public abstract class SearchA extends SecureAction {
 		    doPreliminaryProcessing(data,context);
 
 			UserI user = TurbineUtils.getUser(data);
-			String display = data.getParameters().getString("display","listing");
+			String display = data.getParameters().getString("display", "listing");
+            String queryMode = data.getParameters().getString("queryMode");
 			String elementName = ((String)TurbineUtils.GetPassedParameter("element",data));
 			Integer page = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger("page",data));
 			String sortBy = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("sortBy",data));
@@ -98,8 +93,12 @@ public abstract class SearchA extends SecureAction {
 			if (elementName == null || elementName.equalsIgnoreCase(""))
 			{
 				DisplaySearch search = TurbineUtils.getSearch(data);
-				if (hasSuperSearchVariables(data))
-				{
+
+                if (search==null) {
+                    throw new SearchTimeoutException("Session Expired: The previously performed search has timed out.");
+                }
+
+				if (hasSuperSearchVariables(data)) {
 					search.setAdditionalViews(getSuperSearchVariables(data));
 
 					if (search.getRootElement().getDisplay().getVersion("root")!=null)
@@ -108,32 +107,20 @@ public abstract class SearchA extends SecureAction {
 					}
 				}
 
-
-                if (search==null)
-                {
-                    throw new SearchTimeoutException("Session Expired: The previously performed search has timed out.");
-                }
-
-				if (search == null)
-				{
-					throw new Exception("Unknown element'" + elementName + "'");
-				}else
-				{
-					XdatStoredSearch xss= search.convertToStoredSearch("");
+                XdatStoredSearch xss= search.convertToStoredSearch("", queryMode);
 					StringWriter sw = new StringWriter();
 					xss.toXML(sw, false);
-					
+
 					context.put("xss", StringEscapeUtils.escapeXml(sw.toString()));
-				}
 			}else{
 				DisplaySearch search = TurbineUtils.getSearch(data);
-				if (hasSuperSearchVariables(data))
+				if (search != null && hasSuperSearchVariables(data))
 				{
 					search.setAdditionalViews(getSuperSearchVariables(data));
 				}
 				if (search == null || hasSuperSearchVariables(data) || queryType.equalsIgnoreCase("new"))
 				{
-					search = UserHelper.getSearchHelperService().getSearchForUser(user,elementName,display);
+					search = UserHelper.getSearchHelperService().getSearchForUser(user, elementName, display);
 
 					if (hasSuperSearchVariables(data))
 					{
@@ -141,12 +128,13 @@ public abstract class SearchA extends SecureAction {
 					}
 				}
 
-				XdatStoredSearch xss= search.convertToStoredSearch("");
+				XdatStoredSearch xss= search.convertToStoredSearch("", queryMode);
 				StringWriter sw = new StringWriter();
 				xss.toXML(sw, false);
 				
 				context.put("xss", StringEscapeUtils.escapeXml(sw.toString()));
 			}
+
 			data.setScreenTemplate(getScreenTemplate(data));
 
 			doFinalProcessing(data,context);
@@ -164,8 +152,9 @@ public abstract class SearchA extends SecureAction {
             data.setMessage("The user does not have access to this data.");
             data.setScreenTemplate("Error.vm");
             data.getParameters().setString("exception", e.toString());
-		}catch (SQLException e) {
-            this.error(e, data);
+		}catch (InvalidSearchException e){
+            data.setMessage("You specified an invalid search condition: " + e.getMessage());
+            data.setScreenTemplate("Error.vm");
 		} catch (Exception e) {
             this.error(e, data);
 		}
@@ -215,7 +204,7 @@ public abstract class SearchA extends SecureAction {
 		while (enumer.hasMoreElements())
 		{
 			String key = (String)enumer.nextElement();
-			if (((String)TurbineUtils.GetPassedParameter("super_" + key.toLowerCase(), data)) != null)
+			if (TurbineUtils.GetPassedParameter("super_" + key.toLowerCase(), data) != null)
 			{
 			    String s = ((String)TurbineUtils.GetPassedParameter("super_" + key.toLowerCase(), data));
 			    if (! s.equalsIgnoreCase(""))

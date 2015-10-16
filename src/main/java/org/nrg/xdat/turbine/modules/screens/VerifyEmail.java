@@ -55,7 +55,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 	    		for(UserI curUser : users){
 	    			if((curUser.isVerified()!=null && !(curUser.isVerified())) || (!curUser.isEnabled() && disabledDueToInactivity(curUser))){
 	    				curUser.setVerified(Boolean.TRUE);
-	    				
+	    			
 	    				// If auto-approval is true, the user is enabled
 	    				if(XFT.GetUserRegistration()){
 	    					curUser.setEnabled(true);
@@ -91,8 +91,10 @@ public class VerifyEmail extends VelocitySecureScreen {
 								msgBuilder.append(uv.getUsername()).append(", ");
 							}
                             // If this user has never logged in, they're new, send the appropriate notification.
-                            if (Users.getLastLogin(uv) == null || disabledDueToInactivity(uv)) {
+                            if (Users.getLastLogin(uv) == null) {
                                 AdminUtils.sendNewUserNotification(uv, context);
+                            } else if (disabledDueToInactivity(uv)) {
+                                AdminUtils.sendDisabledUserVerificationNotification(uv, context);
                             }
 						}
 						// Set the user message.

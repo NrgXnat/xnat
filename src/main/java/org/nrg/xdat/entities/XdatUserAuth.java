@@ -10,26 +10,16 @@
  */
 package org.nrg.xdat.entities;
 
-import java.util.Collection;
-import java.util.Date;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-
-import javax.persistence.Entity;
-import javax.persistence.Table;
-import javax.persistence.Temporal;
-import javax.persistence.TemporalType;
-import javax.persistence.Transient;
-import javax.persistence.UniqueConstraint;
-
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+
+import javax.persistence.*;
+import java.util.*;
 
 @Auditable
 @Entity
@@ -71,7 +61,8 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		passwordUpdated = new Date();
 		this.failedLoginAttempts=failedLoginAttempts;
 	}
-	
+
+    @SuppressWarnings("unused")
 	public XdatUserAuth(String user, String method, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts) {
 		this.authUser = user;
 		this.authMethod = method;
@@ -96,7 +87,8 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 		passwordUpdated = new Date();
 		this.failedLoginAttempts=failedLoginAttempts;
 	}
-	
+
+    @SuppressWarnings("unused")
 	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts, Date lastSuccessfulLogin) {
 		this.authUser = user;
 		this.authMethod = method;
@@ -262,8 +254,8 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	@Override
 	@Transient
 	public Collection<GrantedAuthority> getAuthorities() {
-		Set<GrantedAuthority> list = new HashSet<GrantedAuthority>();
-        list.add(new GrantedAuthorityImpl("ROLE_USER"));
+		Set<GrantedAuthority> list = new HashSet<>();
+        list.add(new SimpleGrantedAuthority("ROLE_USER"));
         return list;
 	}
 

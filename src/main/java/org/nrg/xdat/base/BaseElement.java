@@ -344,14 +344,14 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
 	        boolean velocityInit = false;
 
 	        try {
-                Velocity.templateExists(templateName);
+                Velocity.resourceExists(templateName);
                 velocityInit=true;
             } catch (Exception e1) {
             }
 
             if (velocityInit)
             {
-                boolean exists= Velocity.templateExists("/screens/" + templateName);
+                boolean exists= Velocity.resourceExists("/screens/" + templateName);
                 if (exists)
                 {
                     VelocityContext context = new VelocityContext();
@@ -367,7 +367,7 @@ public abstract class BaseElement extends ItemWrapper implements ItemI {
             }else
             {
                 VelocityUtils.init();
-                boolean exists= Velocity.templateExists(getItem().getGenericSchemaElement().getFormattedName() +"_text.vm");
+                boolean exists= Velocity.resourceExists(getItem().getGenericSchemaElement().getFormattedName() +"_text.vm");
                 String path = XFTManager.GetInstance().getSourceDir() + "src/templates/text/"+ templateName;
                 File f = new File(path);
                 if (f.exists())

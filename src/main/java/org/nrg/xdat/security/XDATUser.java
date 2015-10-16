@@ -8,23 +8,11 @@
  *
  * Last modified 2/11/14 3:42 PM
  */
-
-
 package org.nrg.xdat.security;
 
-import java.io.Serializable;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Date;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
@@ -34,40 +22,22 @@ import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.om.XdatUser;
-import org.nrg.xdat.om.XdatUserGroupid;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.search.QueryOrganizer;
-import org.nrg.xdat.security.helpers.Features;
-import org.nrg.xdat.security.helpers.Groups;
-import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.security.user.exceptions.ActivationException;
-import org.nrg.xdat.security.user.exceptions.EnabledException;
-import org.nrg.xdat.security.user.exceptions.FailedLoginException;
-import org.nrg.xdat.security.user.exceptions.PasswordAuthenticationException;
-import org.nrg.xdat.security.user.exceptions.UserInitException;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.security.helpers.*;
+import org.nrg.xdat.security.user.exceptions.*;
 import org.nrg.xdat.services.UserRoleService;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.MetaDataException;
-import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
@@ -75,11 +45,11 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
-import org.springframework.security.core.authority.GrantedAuthorityImpl;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
 
-import com.google.common.base.Joiner;
-import com.google.common.collect.Lists;
-import com.google.common.collect.Maps;
+import java.io.Serializable;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * @author Tim
@@ -108,7 +78,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public XDATUser() {
     }
 
-    public XDATUser(String login) throws UserNotFoundException,UserInitException {
+    public XDATUser(String login) throws UserNotFoundException, UserInitException {
         super((UserI) null);
         try {
 			SchemaElementI e = SchemaElement.GetElement(USER_ELEMENT);
@@ -129,14 +99,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 			    if (!this.getItem().isPreLoaded()) extend(true);
 			    setExtended(true);
 			}
-		} catch (XFTInitException e) {
-			throw new UserInitException(e.getMessage());
-		} catch (ElementNotFoundException e) {
-			throw new UserInitException(e.getMessage());
-		} catch (DBPoolException e) {
-			throw new UserInitException(e.getMessage());
-		} catch (SQLException e) {
-			throw new UserInitException(e.getMessage());
 		} catch (Exception e) {
 			throw new UserInitException(e.getMessage());
 		}
@@ -163,7 +125,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
     }
 
-    public XDATUser(String login, String password) throws XFTInitException, ElementNotFoundException, DBPoolException, java.sql.SQLException, FieldNotFoundException, FailedLoginException, PasswordAuthenticationException, Exception {
+    public XDATUser(String login, String password) throws Exception {
         this(login);
 
         if (Authenticator.Authenticate(this, new Authenticator.Credentials(login, password))) {
@@ -177,9 +139,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     public boolean login(String password) throws PasswordAuthenticationException, Exception {
-        boolean loggedIn = false;
-
-        if (!this.isEnabled()) {
+        if (!isEnabled()) {
             throw new EnabledException(this.getUsername());
         }
 
@@ -187,22 +147,18 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             throw new ActivationException(this.getUsername());
         }
 
-        String pass = (String) this.getStringProperty("primary_password");
-        String salt = (String) this.getStringProperty("salt");
+        String pass = getStringProperty("primary_password");
+        String salt = getStringProperty("salt");
 
         if (StringUtils.IsEmpty(pass)) throw new PasswordAuthenticationException(getUsername());
 
         // encryption
         if (new ShaPasswordEncoder(256).isPasswordValid(pass, password, salt)) {
-            loggedIn = true;
+            return true;
         } else if (new ObfuscatedPasswordEncoder(256).isPasswordValid(pass, password, salt)) {
-            loggedIn = true;
+            return true;
         }
-
-        if (!loggedIn) {
-            throw new PasswordAuthenticationException(getUsername());
-        }
-        return loggedIn;
+        throw new PasswordAuthenticationException(getUsername());
     }
 
     private ElementAccessManager getAccessManager(String s) throws Exception {
@@ -211,15 +167,11 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     public synchronized void init() throws Exception {
         final long startTime = Calendar.getInstance().getTimeInMillis();
-        accessManagers = new Hashtable<String, ElementAccessManager>();
-        final Iterator items = this.getChildItems(USER_ELEMENT + ".element_access").iterator();
+        accessManagers = new Hashtable<>();
 
-        while (items.hasNext()) {
-            final ItemI sub = (ItemI) items.next();
+        for (final Object o : this.getChildItems(USER_ELEMENT + ".element_access")) {
+            final ItemI sub = (ItemI) o;
             final ElementAccessManager eam = new ElementAccessManager(sub);
-//            if (guestManagers.containsKey(eam.getElement())){
-//                eam.setGuestManager(guestManagers.get(eam.getElement()));
-//            }
             accessManagers.put(eam.getElement(), eam);
         }
 
@@ -238,7 +190,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             return false;
         }
     }
-    
+
     public Boolean isVerified() {
         try {
             return this.getItem().getBooleanProperty("verified", true);
@@ -248,7 +200,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     /**
-     * @return
+     * Gets the user's username. This is the same as the login name.
+     * @return The username.
      */
     public String getUsername() {
         try {
@@ -263,7 +216,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     /**
-     * @return
+     * Gets the user's first name.
+     * @return User's first name.
      */
     public String getFirstname() {
         try {
@@ -275,7 +229,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     /**
-     * @return
+     * Gets the user's last name.
+     * @return User's last name.
      */
     public String getLastname() {
         try {
@@ -287,7 +242,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     /**
-     * @return
+     * Gets the user's email.
+     * @return The user's email.
      */
     public String getEmail() {
         try {
@@ -298,168 +254,92 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
     }
 
+    /**
+     * Gets the user's system-unique ID. This is usually something like the primary key in the database or something
+     * similar.
+     * @return User's system-unique ID.
+     */
     public Integer getID() {
         try {
             return super.getIntegerProperty("xdat_user_id");
-        } catch (FieldNotFoundException e) {
-            logger.error("", e);
-        } catch (ElementNotFoundException e) {
+        } catch (FieldNotFoundException | ElementNotFoundException e) {
             logger.error("", e);
         }
         return null;
     }
 
-
+    /**
+     * Indicates whether the user object represents a guest account.
+     * @return <b>true</b> if the user is a guest, <b>false</b> otherwise.
+     */
     public boolean isGuest() {
         final String login = getLogin();
         return StringUtils.IsEmpty(login) || login.equalsIgnoreCase("guest");
     }
-    
+
+    /**
+     * Gets the user's password. For existing users, this will be the encrypted or hashed value stored in the database
+     * and won't represent the password as actually submitted by the user.
+     * @return User's password.
+     */
     public String getPassword(){
     	return getPrimaryPassword();
     }
 
+    /**
+     * Gets the date that the user's information was last modified.
+     * @return The date on which the user's information was last modified.
+     */
 	@Override
 	public Date getLastModified() {
 		return this.getItem().getLastModified();
 	}
 
-	@Override
-	public Object getCustomField(String key) {
-		if(org.apache.commons.lang.StringUtils.equalsIgnoreCase(key,"DN")){
-			//this is to support an old hack that used a dead field (quarantine path) to store DN data
-			return getQuarantinePath();
-		}
-		return null;
-	}
-
-	@Override
-	public void setCustomField(String key, Object value) throws Exception{
-		if(value!=null){
-			if(org.apache.commons.lang.StringUtils.equalsIgnoreCase(key,"DN")){
-				//this is to support an old hack that used a dead field (quarantine path) to store DN data
-				this.setQuarantinePath(value.toString());
-			}else{
-				throw new Exception("Not Currently Supported.");
-			}
-		}
-	}
-
+    /**
+     * Sets the user's password to the indicated value. You should only set securely encrypted or hashed values for the
+     * user's password.
+     * @param encodePassword    The encoded password.
+     */
 	@Override
 	public void setPassword(String encodePassword) {
 		this.setPrimaryPassword(encodePassword);
 	}
     /**
-     * ArrayList of ElementDisplays which this user could edit
+     * List of {@link ElementDisplay element displays} that this user can create.
      *
-     * @return
-     * @throws ElementNotFoundException
-     * @throws XFTInitException
+     * @return A list of all {@link ElementDisplay element displays} that this user can create.
+     * @throws Exception
      */
-	protected List<ElementDisplay> getCreateableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
+	protected List<ElementDisplay> getCreateableElementDisplays() throws Exception {
         return getActionElementDisplays(SecurityManager.CREATE);
     }
 
-    private final static Comparator NameComparator = new Comparator() {
-        public int compare(Object mr1, Object mr2) throws ClassCastException {
-            try {
-                String value1 = ((ElementDisplay) mr1).getElementName();
-                String value2 = ((ElementDisplay) mr2).getElementName();
-
-                return value1.compareToIgnoreCase(value2);
-            } catch (Exception ex) {
-                throw new ClassCastException("Error Comparing Sequence");
-            }
-        }
-    };
-
-    private final static Comparator DescriptionComparator = new Comparator() {
-        public int compare(Object mr1, Object mr2) throws ClassCastException {
-            try {
-                String value1 = ((ElementDisplay) mr1).getSchemaElement().getSingularDescription();
-                String value2 = ((ElementDisplay) mr2).getSchemaElement().getSingularDescription();
-
-                return value1.compareToIgnoreCase(value2);
-            } catch (Exception ex) {
-                throw new ClassCastException("Error Comparing Sequence");
-            }
-        }
-    };
-
-    private final static Comparator PluralDescriptionComparator = new Comparator() {
-        public int compare(Object mr1, Object mr2) throws ClassCastException {
-            try {
-                String value1 = ((ElementDisplay) mr1).getSchemaElement().getPluralDescription();
-                String value2 = ((ElementDisplay) mr2).getSchemaElement().getPluralDescription();
-
-                return value1.compareToIgnoreCase(value2);
-            } catch (Exception ex) {
-                throw new ClassCastException("Error Comparing Sequence");
-            }
-        }
-    };
-
     /**
-     * ArrayList of ElementDisplays which this user could edit
+     * List of {@link ElementDisplay element displays} that this user can edit.
      *
-     * @return
-     * @throws ElementNotFoundException
-     * @throws XFTInitException
-     */
-    private List<ElementDisplay> getActionElementDisplays(final String action) throws ElementNotFoundException, XFTInitException, Exception {
-        final Map<String, ElementDisplay> hash = new Hashtable<String, ElementDisplay>();
-                
-        for(ElementSecurity es: ElementSecurity.GetSecureElements()){
-            if (es.getSchemaElement().hasDisplay()){
-	        	if(Permissions.canAny(this, es.getElementName(), action)){
-	        		ElementDisplay ed = es.getSchemaElement().getDisplay();
-	                if (ed != null) {
-	                    hash.put(ed.getElementName(), ed);
-	                }
-	        	}
-            }
-        }
-    	
-        for (ElementSecurity es : ElementSecurity.GetInSecureElements()) {
-            if (es.getSchemaElement().hasDisplay()) {
-                hash.put(es.getElementName(), es.getSchemaElement().getDisplay());
-            }
-        }
-        
-        final ArrayList<ElementDisplay> al = new ArrayList<ElementDisplay>();
-        al.addAll(hash.values());
-        al.trimToSize();
-
-        Collections.sort(al, ElementDisplay.SequenceComparator);
-        return al;
-    }
-
-    /**
-     * ArrayList of ElementDisplays which this user could edit
-     *
-     * @return
-     * @throws ElementNotFoundException
-     * @throws XFTInitException
+     * @return A list of all {@link ElementDisplay element displays} that this user can edit.
+     * @throws Exception
      */
     protected List<ElementDisplay> getEditableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
         return getActionElementDisplays(SecurityManager.EDIT);
     }
 
     /**
-     * ArrayList of ElementDisplays Which this user can read
+     * List of {@link ElementDisplay element displays} that this user can read.
      *
-     * @return
-     * @throws ElementNotFoundException
-     * @throws XFTInitException
+     * @return A list of all {@link ElementDisplay element displays} that this user can read.
+     * @throws Exception
      */
     protected List<ElementDisplay> getReadableElementDisplays() throws ElementNotFoundException, XFTInitException, Exception {
         return getActionElementDisplays(SecurityManager.READ);
     }
 
     /**
-     * @return
+     * List of available {@link ElementAccessManager access managers} for this system.
+     *
+     * @return List of available {@link ElementAccessManager access managers} for this system.
+     * @throws Exception
      */
-
     protected Hashtable<String, ElementAccessManager> getAccessManagers() throws Exception {
         if (this.accessManagers == null) {
             this.init();
@@ -467,7 +347,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return this.accessManagers;
     }
 
-
+    /**
+     * Gets the indicated {@link DisplaySearch display search}.
+     * @param elementName    The element name to be searched on.
+     * @param display        The display.
+     * @return The indicated {@link DisplaySearch display search} if it exists.
+     * @throws Exception
+     */
     protected DisplaySearch getSearch(String elementName, String display) throws Exception {
         DisplaySearch search = new DisplaySearch();
         search.setUser(this);
@@ -477,13 +363,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     /**
-     * ArrayList of ElementDisplays
+     * Gets a list of unsecured {@link ElementDisplay display elements} for this system.
      *
-     * @return
+     * @return A list of unsecured {@link ElementDisplay display elements} for this system.
      * @throws Exception
      */
     protected List<ElementDisplay> getUnSecuredElements() throws XFTInitException, ElementNotFoundException, Exception {
-        final List<ElementDisplay> al = new ArrayList<ElementDisplay>();
+        final List<ElementDisplay> al = new ArrayList<>();
 
         for (ElementSecurity es : ElementSecurity.GetInSecureElements()) {
             if (es.getSchemaElement().hasDisplay()) {
@@ -494,30 +380,33 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     /**
-     * @return
+     * Indicates whether the user has extended attributes.
+     * @return <b>true</b> if the user has extended attributes, <b>false</b> otherwise.
      */
     public boolean isExtended() {
         return extended;
     }
 
     /**
-     * @param b
+     * Sets whether the user has extended attributes.
+     * @param extended    Sets whether the user has extended attributes.
      */
-    public void setExtended(boolean b) {
-        extended = b;
+    public void setExtended(boolean extended) {
+        this.extended = extended;
     }
-    
+
     /**
-     * Removes the user from the specified role.  The authenticatedUser must be a site admin.  The operation will remove the role from the old XFT structure and the new Hibernate structure.
-     * @param authenticatedUser
-     * @param dRole
+     * Removes the user from the specified role.  The authenticated user must be a site admin.  This operation removes
+     * the role from the old XFT structure and the new Hibernate structure.
+     * @param authenticatedUser    The user requesting the role deletion.
+     * @param dRole                The role to be deleted.
      * @throws Exception
      */
     public void deleteRole(UserI authenticatedUser, String dRole) throws Exception{
 		if(!((XDATUser)authenticatedUser).isSiteAdmin()){
 			throw new Exception("Invalid permissions for user modification.");
 		}
-		
+
     	for (ItemI role: (List<ItemI>)this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
     		if(org.apache.commons.lang.StringUtils.equals(role.getStringProperty("role_name"),dRole)){
     			PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user",this.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Removed " + dRole + " role"));
@@ -526,7 +415,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     			PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
     		}
         }
-    	
+
     	List<UserRole> roles =XDAT.getContextService().getBean(UserRoleService.class).findRolesForUser(this.getLogin());
         if(roles!=null){
         	for(final UserRole ur: roles){
@@ -538,11 +427,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         	}
         }
     }
-    
+
     /**
-     * Method used to add a user to a role. The authenticatedUser must be a site admin.  It stores the role in the Hibernate UserRole impl.
-     * @param authenticatedUser
-     * @param dRole
+     * Add the specified role to the user.  The authenticated user must be a site admin.  This operation add the role
+     * to the old XFT structure and the new Hibernate structure.
+     * @param authenticatedUser    The user requesting the role addition.
+     * @param dRole                The role to be added.
      * @throws Exception
      */
     public void addRole(UserI authenticatedUser, String dRole) throws Exception{
@@ -551,23 +441,23 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 	    		if(!((XDATUser)authenticatedUser).isSiteAdmin()){
 	    			throw new Exception("Invalid permissions for user modification.");
 	    		}
-	    		
+
 	    		XDAT.getContextService().getBean(UserRoleService.class).addRoleToUser(this.getLogin(), dRole);
-	    		
+
 	    		PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user",this.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Added " + dRole + " role"));
 	    		PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
 	    	}
     	}
     }
-    
+
     private List<String> loadRoleNames() throws Exception {
     	final List<String> r=Lists.newArrayList();
-    	
+
     	//load from the old role store
         for (ItemI sub: (List<ItemI>)this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
             r.add(sub.getStringProperty("role_name"));
         }
-        
+
         try {
 			//load from the new role store
         	//TODO: Fix it so that this is required in tomcat mode, but optional in command line mode.
@@ -585,12 +475,13 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		} catch (Throwable e) {
 			logger.error("",e);
 		}
-        
+
         return r;
     }
-    
+
     /**
-     * @return ArrayList of XFTItems
+     * Get the names of the available system roles.
+     * @return A list of the available system roles.
      */
     public List<String> getRoleNames() {
         if (roleNames == null) {
@@ -603,30 +494,28 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return roleNames;
     }
 
-    public boolean checkRole(String s) throws Exception {
-        boolean check = false;
-
-        Iterator roles = getRoleNames().iterator();
-        while (roles.hasNext()) {
-            String role = (String) roles.next();
-            if (s.equalsIgnoreCase(role)) {
-                check = true;
-                break;
-            }
-        }
-
-        return check;
+    /**
+     * Checks whether the user has the indicated role.
+     * @param role    The role to check.
+     * @return <b>true</b> if the user has the indicated role, <b>false</b> otherwise.
+     * @throws Exception
+     */
+    public boolean checkRole(String role) throws Exception {
+        return getRoleNames().contains(role);
     }
-    
+
+    public void clearBrowseableElementDisplays() {
+        browseable = null;
+        readable_counts = null;
+    }
+
     protected ArrayList<ElementDisplay> getBrowseableElementDisplays() {
         if (browseable == null) {
-            browseable = new ArrayList<ElementDisplay>();
+            browseable = new ArrayList<>();
 
             Map counts = this.getReadableCounts();
             try {
-                Iterator iter = getReadableElementDisplays().iterator();
-                while (iter.hasNext()) {
-                    ElementDisplay ed = (ElementDisplay) iter.next();
+                for (final ElementDisplay ed : getReadableElementDisplays()) {
                     if (ElementSecurity.IsBrowseableElement(ed.getElementName())) {
                         if (counts.containsKey(ed.getElementName()) && ((Long) counts.get(ed.getElementName()) > 0))
                             browseable.add(ed);
@@ -656,11 +545,9 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected ArrayList<ElementDisplay> getBrowseableCreateableElementDisplays() {
-        ArrayList<ElementDisplay> elementDisplays = new ArrayList<ElementDisplay>();
+        ArrayList<ElementDisplay> elementDisplays = new ArrayList<>();
         try {
-            Iterator iter = getCreateableElementDisplays().iterator();
-            while (iter.hasNext()) {
-                ElementDisplay ed = (ElementDisplay) iter.next();
+            for (final ElementDisplay ed : getCreateableElementDisplays()) {
                 if (ElementSecurity.IsBrowseableElement(ed.getElementName())) {
                     elementDisplays.add(ed);
                 }
@@ -712,12 +599,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     protected ArrayList<ElementDisplay> getSearchableElementDisplays(Comparator comp) {
         if (searchable == null) {
-            searchable = new ArrayList<ElementDisplay>();
+            searchable = new ArrayList<>();
             Map counts = this.getReadableCounts();
             try {
-                Iterator iter = getReadableElementDisplays().iterator();
-                while (iter.hasNext()) {
-                    ElementDisplay ed = (ElementDisplay) iter.next();
+                for (final ElementDisplay ed : getReadableElementDisplays()) {
                     if (ElementSecurity.IsSearchable(ed.getElementName())) {
                         if (counts.containsKey(ed.getElementName()) && ((Long) counts.get(ed.getElementName()) > 0))
                             searchable.add(ed);
@@ -739,7 +624,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     /**
-     * @return
+     * Gets a list of available stored searches.
+     * @return A list of the available stored searches.
      */
     protected List<XdatStoredSearch> getStoredSearches() {
         if (this.stored_searches == null) {
@@ -755,7 +641,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     protected void replacePreLoadedSearch(XdatStoredSearch i) {
         try {
-            ItemI old = getStoredSearchItem(i.getStringProperty("ID"));
+            ItemI old = getStoredSearch(i.getStringProperty("ID"));
             if (old != null) {
                 stored_searches.remove(old);
             }
@@ -767,52 +653,19 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         stored_searches.add(i);
     }
 
-    private String getServer() {
-        if (TurbineUtils.GetFullServerPath().endsWith("/")) {
-            return TurbineUtils.GetFullServerPath();
-        } else {
-            return TurbineUtils.GetFullServerPath() + "/";
-        }
-    }
-
     /**
-     * @param id
-     * @return
-     */
-    private XdatStoredSearch getStoredSearchItem(String id) {
-        List<XdatStoredSearch> temp = getStoredSearches();
-        XdatStoredSearch xss = null;
-        try {
-            for (XdatStoredSearch search : temp) {
-                if (id.equalsIgnoreCase(search.getStringProperty("xdat:stored_search.ID"))) {
-                    xss = search;
-                }
-            }
-        } catch (ElementNotFoundException e) {
-            logger.error("", e);
-        } catch (FieldNotFoundException e) {
-            logger.error("", e);
-        } catch (Exception e) {
-            logger.error("", e);
-        }
-        return xss;
-    }
-
-    /**
-     * @param id
-     * @return
+     * Gets a particular stored search item by ID.
+     * @param id    The ID of the stored search to retrieve.
+     * @return The {@link XdatStoredSearch requested stored search} if it exists, null otherwise.
      */
     protected XdatStoredSearch getStoredSearch(String id) {
         List<XdatStoredSearch> temp = getStoredSearches();
-        XdatStoredSearch xss = null;
         try {
             for (XdatStoredSearch search : temp) {
                 if (id.equalsIgnoreCase(search.getStringProperty("xdat:stored_search.ID"))) {
-                    xss = search;
+                    return search;
                 }
             }
-
-            return xss;
         } catch (ElementNotFoundException e) {
             logger.error("", e);
         } catch (FieldNotFoundException e) {
@@ -823,15 +676,6 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return null;
     }
 
-    private boolean canReadStoredSearch(String ss_id) {
-        Object o = getStoredSearch(ss_id);
-        if (o == null) {
-            return false;
-        } else {
-            return true;
-        }
-    }
-
 
     protected void initGroups() {
         synchronized (groups) {
@@ -839,22 +683,21 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             getGroups();
         }
     }
- 
+
     public Map<String, UserGroupI> getGroups() {
         synchronized (groups) {
             if (groups.size() == 0) {
                 try {
                     XFTTable t = XFTTable.Execute("SELECT * FROM xdat_user_groupid WHERE groups_groupid_xdat_user_xdat_user_id=" + this.getXdatUserId(), this.getDBName(), this.getLogin());
- 
+
                     List<String> groupids = t.convertColumnToArrayList("groupid");
- 
-                    for (int i = 0; i < groupids.size(); i++) {
-                        String groupID = (String) groupids.get(i);
-                        UserGroupI group = Groups.getGroup(groupID);
+
+                    for (final String groupId : groupids) {
+                        UserGroupI group = Groups.getGroup(groupId);
                         if (group != null) {
-                            groups.put(groupID, group);
-                            if(group.getTag()!=null){
-                            	groupsByTag.put(group.getTag(), group.getId());
+                            groups.put(groupId, group);
+                            if (group.getTag() != null) {
+                                groupsByTag.put(group.getTag(), group.getId());
                             }
                         }
                     }
@@ -865,15 +708,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 }
             }
         }
- 
-        return groups;
-    }
 
-    protected void addGroup(String id) {
-        UserGroupI g = Groups.getGroup(id);
-        if (g != null) {
-            getGroups().put(id, g);
-        }
+        return groups;
     }
 
     protected Date getPreviousLogin() throws SQLException, Exception {
@@ -891,7 +727,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             }
         }
     }
-    
+
     public boolean isSiteAdmin(){
     	try {
 			return this.checkRole("Administrator");
@@ -911,67 +747,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     	return Groups.getGroup(groupsByTag.get(tag));
     }
 
-    protected ArrayList getRecentItems(String elementName, int limit) {
-        ArrayList al = new ArrayList();
-        try {
-            QueryOrganizer qo = new QueryOrganizer(elementName, this, ViewManager.ALL);
-            GenericWrapperElement gwe = GenericWrapperElement.GetElement(elementName);
-
-            Iterator iter = gwe.getAllPrimaryKeys().iterator();
-            ArrayList pks = new ArrayList();
-            while (iter.hasNext()) {
-                GenericWrapperField f = (GenericWrapperField) iter.next();
-                String pk = f.getXMLPathString(elementName);
-                qo.addField(pk);
-                pks.add(pk);
-            }
-
-            qo.addField(elementName + "/meta/insert_date");
-            String query = qo.buildQuery();
-
-            XFTTable t = XFTTable.Execute(query + " ORDER BY " + qo.translateXMLPath(elementName + "/meta/insert_date") + " DESC LIMIT " + limit, gwe.getDbName(), this.getLogin());
-            t.resetRowCursor();
-
-
-            while (t.hasMoreRows()) {
-                Hashtable row = t.nextRowHash();
-                ItemSearch is = ItemSearch.GetItemSearch(elementName, this);
-                Iterator pkIter = pks.iterator();
-                while (pkIter.hasNext()) {
-                    String pk = (String) pkIter.next();
-                    is.addCriteria(pk, row.get(qo.translateXMLPath(pk).toLowerCase()));
-                }
-
-                ItemCollection items = is.exec(false);
-                if (items.size() > 0) {
-                    al.add(BaseElement.GetGeneratedItem(items.first()));
-                }
-            }
-        } catch (ElementNotFoundException e) {
-            logger.error("", e);
-        } catch (XFTInitException e) {
-            logger.error("", e);
-        } catch (SQLException e) {
-            logger.error("", e);
-        } catch (DBPoolException e) {
-            logger.error("", e);
-        } catch (FieldNotFoundException e) {
-            logger.error("", e);
-        } catch (Exception e) {
-            logger.error("", e);
-        }
-
-        return al;
-    }
-
 
     /**
-     * returns an ArrayList of ArrayLists
+     * Returns an ArrayList of ArrayLists
      * xmlPaths: comma-delimited list of xmlPaths to return
      *
-     * @param xmlPaths
-     * @param rootElement
-     * @return
+     * @param xmlPaths       The XML paths to be returned in the results.
+     * @param rootElement    The root element from which to start.
+     * @return A list of query results (each set of results is itself a list).
      */
     protected List<List> getQueryResults(String xmlPaths, String rootElement) {
         ArrayList results = new ArrayList();
@@ -980,17 +763,17 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
             QueryOrganizer qo = new QueryOrganizer(rootElement, this, ViewManager.ALL);
 
             ArrayList fields = StringUtils.CommaDelimitedStringToArrayList(xmlPaths);
-            for (int i = 0; i < fields.size(); i++) {
-                qo.addField((String) fields.get(i));
+            for (Object field : fields) {
+                qo.addField((String) field);
             }
 
             String query = qo.buildQuery();
 
             XFTTable t = getQueryResults(query);
 
-            ArrayList<Integer> colHeaders = new ArrayList<Integer>();
-            for (int i = 0; i < fields.size(); i++) {
-                String header = qo.translateXMLPath((String) fields.get(i));
+            ArrayList<Integer> colHeaders = new ArrayList<>();
+            for (Object field : fields) {
+                String header = qo.translateXMLPath((String) field);
                 Integer index = t.getColumnIndex(header.toLowerCase());
                 colHeaders.add(index);
             }
@@ -1003,7 +786,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                 ArrayList newRow = new ArrayList();
 
                 for (Integer index : colHeaders) {
-                    newRow.add(row[index.intValue()]);
+                    newRow.add(row[index]);
                 }
 
                 results.add(newRow);
@@ -1030,16 +813,12 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return t.toArrayListOfLists();
     }
 
-    protected boolean canCreateElement(String elementName, String xmlPath) throws Exception {
-        return Permissions.canAny(this, elementName, xmlPath, SecurityManager.CREATE);
-    }
-
-    private Hashtable<String, ArrayList<ItemI>> userSessionCache = new Hashtable<String, ArrayList<ItemI>>();
+    private Hashtable<String, ArrayList<ItemI>> userSessionCache = new Hashtable<>();
 
     protected ArrayList<ItemI> getCachedItems(String elementName, String security_permission, boolean preLoad) {
         if (!userSessionCache.containsKey(elementName + security_permission + preLoad)) {
             ItemSearch search = new ItemSearch();
-            ArrayList<ItemI> items = new ArrayList<ItemI>();
+            ArrayList<ItemI> items = new ArrayList<>();
             try {
                 search.setElement(elementName);
                 if (security_permission != null && security_permission.equals(SecurityManager.READ)) search.setUser(this);
@@ -1076,7 +855,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected void clearLocalCache() {
-        userSessionCache = new Hashtable<String, ArrayList<ItemI>>();
+        userSessionCache = new Hashtable<>();
         total_counts = null;
         readable_counts = null;
         criteria=null;
@@ -1088,7 +867,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     protected Map getReadableCounts() {
         if (readable_counts == null) {
             try {
-                readable_counts = new Hashtable<String, Long>();
+                readable_counts = new Hashtable<>();
 
                 try {
                     //projects
@@ -1158,7 +937,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     protected Map<String,Long> getTotalCounts() {
         if (total_counts == null) {
             try {
-                total_counts = new Hashtable<String, Long>();
+                total_counts = new Hashtable<>();
 
                 Long proj_count = (Long) PoolDBUtils.ReturnStatisticQuery("SELECT COUNT(*) FROM xnat_projectData", "count", this.getDBName(), this.getUsername());
                 total_counts.put("xnat:projectData", proj_count);
@@ -1183,7 +962,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     protected ArrayList<ItemI> getCachedItemsByFieldValue(String elementName, String security_permission, boolean preLoad, String field, Object value) {
         ArrayList<ItemI> items = getCachedItems(elementName, security_permission, preLoad);
-        ArrayList<ItemI> results = new ArrayList<ItemI>();
+        ArrayList<ItemI> results = new ArrayList<>();
         if (items.size() > 0) {
             for (ItemI i : items) {
                 try {
@@ -1207,7 +986,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     }
 
     protected Hashtable<Object, Object> getCachedItemValuesHash(String elementName, String security_permission, boolean preLoad, String idField, String valueField) {
-        Hashtable<Object, Object> hash = new Hashtable<Object, Object>();
+        Hashtable<Object, Object> hash = new Hashtable<>();
 
         ArrayList<ItemI> items = getCachedItems(elementName, security_permission, preLoad);
         if (items.size() > 0) {
@@ -1233,49 +1012,36 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return hash;
     }
 
-    protected boolean containsGroup(String groupID) {
-        for (XdatUserGroupid g : this.getGroups_groupid()) {
-            if (g.getGroupid().equals(groupID)) {
-                return true;
-            }
-        }
-        return false;
-    }
-
 
     protected boolean isOwner(String tag) {
         final UserGroupI ug = this.getGroup(tag + "_owner");
-        if (ug != null) {
-            return true;
-        } else {
-            return false;
-        }
+        return ug != null;
     }
-    
+
     private Map<String,List<PermissionCriteriaI>> criteria;
-    
+
     protected List<PermissionCriteriaI> getPermissionsByDataType( String type){
     	if(criteria==null){
     		criteria=Maps.newHashMap();
     	}
-    	
+
     	if(criteria.get(type)==null){
 	    	criteria.put(type, new ArrayList<PermissionCriteriaI>());
-	    	
+
 	    	ElementAccessManager eam3;
 			try {
 				eam3 = this.getAccessManager(type);
-				
+
 				if (eam3 != null) {
 			        criteria.get(type).addAll(eam3.getCriteria());
 		        }
-	
+
 			try{
 				PoolDBUtils.CheckSpecialSQLChars(type);
 			}catch (Exception e){
 				return null;
 			}
-			
+
 			} catch (Exception e) {
 				logger.error("",e);
 			}
@@ -1283,20 +1049,20 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 	        for (UserGroupI group : Groups.getGroupsForUser(this).values()) {
 	            criteria.get(type).addAll(((UserGroup)group).getPermissionsByDataType(type));
 	        }
-	        	        
+
 	        if(!this.isGuest()){
 		        try {
 					UserI guest=Users.getGuest();
 					criteria.get(type).addAll(((XDATUser)guest).getPermissionsByDataType(type));
 				} catch (Exception e) {
 					logger.error("",e);
-				}	
+				}
 	        }
-	        
+
     	}
         return criteria.get(type);
-    }   
-    
+    }
+
 
     /******************************************
     /* Copied from XDATUserDetails
@@ -1311,15 +1077,15 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     public Collection<GrantedAuthority> getAuthorities() {
         if (_authorities == null) {
-            _authorities = new ArrayList<GrantedAuthority>();
-            _authorities.add(new GrantedAuthorityImpl("ROLE_USER"));
+            _authorities = new ArrayList<>();
+            _authorities.add(new SimpleGrantedAuthority("ROLE_USER"));
             if (isSiteAdmin()) {
-                _authorities.add(new GrantedAuthorityImpl("ROLE_ADMIN"));
+                _authorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
             }
             List<String> groups = Groups.getGroupIdsForUser(this);
             if (groups != null && groups.size() > 0) {
                 for (String group : groups) {
-                    _authorities.add(new GrantedAuthorityImpl(group));
+                    _authorities.add(new SimpleGrantedAuthority(group));
                 }
             }
             if (logger.isDebugEnabled()) {
@@ -1340,7 +1106,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     public boolean isCredentialsNonExpired() {
         return true;
     }
-    
+
     //necessary for spring security session management
 	public int hashCode() {
         return new HashCodeBuilder(691, 431).append(getUsername()).toHashCode();
@@ -1369,28 +1135,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		return Features.getFeaturesForGroup(getGroupByTag(tag));
 	}
 
-	public Collection<String> getFeaturesForUserByTags(Collection<String> tags) {
-		List<String> combined=Lists.newArrayList();
-		for(String tag: tags){
-			for(String feature: getFeaturesForUserByTag(tag)){
-				if(!combined.contains(feature)){
-					combined.add(feature);
-				}
-			}
-		}
-		return combined;
-	}
-
-	public boolean checkSiteRole(String role) {
-		try {
-			return this.checkRole(role);
-		} catch (Exception e) {
-			logger.error("",e);
-			return false;
-		}
-	}
-	
-	private boolean checkFeatureBySiteRoles(String feature){
+    private boolean checkFeatureBySiteRoles(String feature){
         try {
 			for(String role: getRoleNames()){
 				if(Features.isOnByDefaultBySiteRole(feature, role)){
@@ -1400,49 +1145,42 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		} catch (Exception e) {
 			logger.error("",e);
 		}
-        
+
         return false;
 	}
 
 	/**
-	 * Returns true if the user is a part of a group with the matching tag and feature
-	 * @param tag
-	 * @param feature
-	 * @return
+	 * Returns true if the user is a part of a group with the matching tag and feature.
+	 * @param tag        The tag for the feature to match.
+	 * @param feature    The feature name.
+	 * @return <b>true</b> if the user is a member of a group with the matching tag and feature, <b>false</b> otherwise.
 	 */
 	public boolean checkFeature(String tag, String feature) {
-        if (Features.isBanned(feature)) {
-            return false;
-        }
-        
-        if(checkFeatureBySiteRoles(feature)){
-        	return true;
-        }
-        
-		return Features.checkFeature(getGroupByTag(tag), feature);
-	}
+        return !Features.isBanned(feature) && (checkFeatureBySiteRoles(feature) || Features.checkFeature(getGroupByTag(tag), feature));
+
+    }
 
 	/**
-	 * Returns true if the user is part of any groups with the matching tag and feature
-	 * @param tags
-	 * @param feature
-	 * @return
+	 * Returns true if the user is part of any groups with the matching tags and feature.
+     * @param tags       The tags for the feature to match.
+     * @param feature    The feature name.
+     * @return <b>true</b> if the user is a member of a group with the matching tag and feature, <b>false</b> otherwise.
 	 */
 	public boolean checkFeature(Collection<String> tags, String feature) {
         if (Features.isBanned(feature)) {
             return false;
         }
-        
+
         if(checkFeatureBySiteRoles(feature)){
         	return true;
         }
 
-		for(String tag: tags){			
-			if(tag instanceof String && checkFeature(tag,feature)){
+		for(final String tag: tags){
+			if(tag != null && checkFeature(tag,feature)){
 				return true;
 			}
 		}
-		
+
 		return false;
 	}
 
@@ -1450,23 +1188,21 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 	 * Returns true if the user is part of any groups with the matching tag and feature
 	 * @param item       The item to check.
 	 * @param feature    The feature to check.
-	 * @return
+     * @return <b>true</b> if the user is a member of a group with the matching tag and feature, <b>false</b> otherwise.
 	 */
 	public boolean checkFeature(BaseElement item, String feature) {
 		return checkFeature(item.getSecurityTags().getHash().values(),feature);
 	}
-	
-	public boolean checkFeatureForAnyTag(String feature){
-        if (Features.isBanned(feature)) {
-            return false;
-        }
-        
-        if(checkFeatureBySiteRoles(feature)){
-        	return true;
-        }
 
-		return Features.checkFeatureForAnyTag(this, feature);
-	}
+    /**
+     * Checks whether the indicated feature has any associated tags.
+     * @param feature    The feature to check.
+     * @return <b>true</b> if the feature has any tags, <b>false</b> otherwise.
+     */
+	public boolean checkFeatureForAnyTag(String feature) {
+        return !Features.isBanned(feature) && (checkFeatureBySiteRoles(feature) || Features.checkFeatureForAnyTag(this, feature));
+
+    }
 
     private List<String> _editableProjects;
 
@@ -1481,7 +1217,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      */
     protected List<String> getAccessibleProjects() throws Exception {
         if (_editableProjects == null) {
-            _editableProjects = new ArrayList<String>();
+            _editableProjects = new ArrayList<>();
             for (final List<String> row : getQueryResults("xnat:projectData/ID", "xnat:projectData")) {
                 final String id = row.get(0);
                 if (_editableProjects.contains(id))
@@ -1502,6 +1238,40 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         return _editableProjects;
     }
 
+    /**
+     * List of {@link ElementDisplay element displays} that this user can invoke.
+     *
+     * @return A list of all {@link ElementDisplay element displays} that this user can invoke.
+     * @throws Exception
+     */
+    private List<ElementDisplay> getActionElementDisplays(final String action) throws ElementNotFoundException, XFTInitException, Exception {
+        final Map<String, ElementDisplay> hash = new Hashtable<>();
+
+        for(ElementSecurity es: ElementSecurity.GetSecureElements()){
+            if (es.getSchemaElement().hasDisplay()){
+                if(Permissions.canAny(this, es.getElementName(), action)){
+                    ElementDisplay ed = es.getSchemaElement().getDisplay();
+                    if (ed != null) {
+                        hash.put(ed.getElementName(), ed);
+                    }
+                }
+            }
+        }
+
+        for (ElementSecurity es : ElementSecurity.GetInSecureElements()) {
+            if (es.getSchemaElement().hasDisplay()) {
+                hash.put(es.getElementName(), es.getSchemaElement().getDisplay());
+            }
+        }
+
+        final ArrayList<ElementDisplay> al = new ArrayList<>();
+        al.addAll(hash.values());
+        al.trimToSize();
+
+        Collections.sort(al, ElementDisplay.SequenceComparator);
+        return al;
+    }
+
     private boolean canModify(final String projectId) throws Exception{
         if (Roles.isSiteAdmin(this)) {
             return true;
@@ -1519,5 +1289,45 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         }
         return false;
     }
+
+    private final static Comparator DescriptionComparator = new Comparator() {
+        public int compare(Object mr1, Object mr2) throws ClassCastException {
+            try {
+                String value1 = ((ElementDisplay) mr1).getSchemaElement().getSingularDescription();
+                String value2 = ((ElementDisplay) mr2).getSchemaElement().getSingularDescription();
+
+                return value1.compareToIgnoreCase(value2);
+            } catch (Exception ex) {
+                throw new ClassCastException("Error Comparing Sequence");
+            }
+        }
+    };
+
+    private final static Comparator PluralDescriptionComparator = new Comparator() {
+        public int compare(Object mr1, Object mr2) throws ClassCastException {
+            try {
+                String value1 = ((ElementDisplay) mr1).getSchemaElement().getPluralDescription();
+                String value2 = ((ElementDisplay) mr2).getSchemaElement().getPluralDescription();
+
+                return value1.compareToIgnoreCase(value2);
+            } catch (Exception ex) {
+                throw new ClassCastException("Error Comparing Sequence");
+            }
+        }
+    };
+
+    private final static Comparator NameComparator = new Comparator() {
+        public int compare(Object mr1, Object mr2) throws ClassCastException {
+            try {
+                String value1 = ((ElementDisplay) mr1).getElementName();
+                String value2 = ((ElementDisplay) mr2).getElementName();
+
+                return value1.compareToIgnoreCase(value2);
+            } catch (Exception ex) {
+                throw new ClassCastException("Error Comparing Sequence");
+            }
+        }
+    };
 }
+
 

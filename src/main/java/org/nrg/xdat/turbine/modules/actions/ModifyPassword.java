@@ -8,8 +8,6 @@
  *
  * Last modified 1/3/14 9:54 AM
  */
-
-
 package org.nrg.xdat.turbine.modules.actions;
 
 import org.apache.commons.lang.StringUtils;

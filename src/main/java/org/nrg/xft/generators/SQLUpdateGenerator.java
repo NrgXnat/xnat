@@ -12,7 +12,6 @@
 
 package org.nrg.xft.generators;
 
-import org.apache.log4j.Logger;
 import org.nrg.xft.TypeConverter.PGSQLMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
 import org.nrg.xft.XFT;
@@ -28,12 +27,14 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.sql.SQLException;
 import java.util.*;
 
 public class SQLUpdateGenerator {
-    static org.apache.log4j.Logger logger = Logger.getLogger(SQLUpdateGenerator.class);
+    private static final Logger logger = LoggerFactory.getLogger(SQLUpdateGenerator.class);
 
     /**
      * outputs all of the SQL needed to create the database, including CREATE,
@@ -58,27 +59,27 @@ public class SQLUpdateGenerator {
     	    }
             FileUtils.OutputToFile(sb.toString(), location);
             System.out.println("File Created: " + location);
-        } catch (org.nrg.xft.exception.XFTInitException e) {
-            logger.error("", e);
+        } catch (XFTInitException e) {
+            logger.error("There was an error initializing XFT", e);
         } catch (ElementNotFoundException e) {
-            logger.error("", e);
+            logger.error("Couldn't find the requested element " + e.ELEMENT, e);
         }
     }
 
     /**
      * 2 lists of statements: 0=required, 1=optional (to be commented out).
-     * @return
+     * @return A list of two lists, the first a list of required statements, the second a list of optional statements.
      * @throws Exception
      */
-    public static List<String>[] GetSQLCreate() throws Exception {
-        List<String> creates = new ArrayList<String>();
-        List<String> optional = new ArrayList<String>();
-        List<String> alters = new ArrayList<String>();
+    public static List[] GetSQLCreate() throws Exception {
+        List<String> creates = new ArrayList<>();
+        List<String> optional = new ArrayList<>();
+        List<String> alters = new ArrayList<>();
 
-        Map<String, List<String>> databases = new Hashtable<String, List<String>>();
+        Map<String, List<String>> databases = new Hashtable<>();
         for (DBConfig config : DBPool.GetPool().getDBConfigs()) {
             //LOAD CURRENT TABLES FROM DB
-            List<String> lowerCaseLoadedTables = new ArrayList<String>();
+            List<String> lowerCaseLoadedTables = new ArrayList<>();
             PoolDBUtils con;
             try {
                 con = new PoolDBUtils();
@@ -87,10 +88,10 @@ public class SQLUpdateGenerator {
                     t.nextRow();
                     lowerCaseLoadedTables.add(t.getCellValue("relname").toString().toLowerCase());
                 }
-            } catch (SQLException e) {
-                e.printStackTrace();
-            } catch (Exception e) {
-                e.printStackTrace();
+            } catch (SQLException ex) {
+                logger.error("An SQL error occurred [" + ex.getErrorCode() + "] " + ex.getSQLState(), ex);
+            } catch (Exception ex) {
+                logger.error("An unknown error occurred.", ex);
             }
             databases.put(config.getDbIdentifier().toLowerCase(), lowerCaseLoadedTables);
         }
@@ -148,21 +149,20 @@ public class SQLUpdateGenerator {
             }
         }
 
-        List<String> all = new ArrayList<String>();
+        List<String> all = new ArrayList<>();
         all.addAll(creates);
         all.addAll(alters);
-        
-        List[] _return={all,optional};
-        return _return;
+
+        return new List[]{all,optional};
     }
 
     public static List<String>[] GetUpdateStatements(GenericWrapperElement e) {
-        List<String> statements = new ArrayList<String>();
-        List<String> optional = new ArrayList<String>();
+        List<String> statements = new ArrayList<>();
+        List<String> optional = new ArrayList<>();
 
-        List<String> lowerCaseColumns = new ArrayList<String>();
-        List<String> columnTypes = new ArrayList<String>();
-        List<String> columnRequireds = new ArrayList<String>();
+        List<String> lowerCaseColumns = new ArrayList<>();
+        List<String> columnTypes = new ArrayList<>();
+        List<String> columnRequireds = new ArrayList<>();
         PoolDBUtils con;
         try {
             con = new PoolDBUtils();
@@ -174,28 +174,31 @@ public class SQLUpdateGenerator {
 
                 String type = t.getCellValue("typname").toString().toLowerCase();
 
-                if (type.equals("int4")) {
-                    columnTypes.add("integer");
-                } else if (type.equals("int8")) {
-                	columnTypes.add("bigint");
-                } else if (type.equals("float8")) {
-                    columnTypes.add("float");
-                } else if (type.equals("int8")) {
-                    columnTypes.add("bigint");
-                } else {
-                    columnTypes.add(type);
+                switch (type) {
+                    case "int4":
+                        columnTypes.add("integer");
+                        break;
+                    case "int8":
+                        columnTypes.add("bigint");
+                        break;
+                    case "float8":
+                        columnTypes.add("float");
+                        break;
+                    default:
+                        columnTypes.add(type);
+                        break;
                 }
 
                 String notnull = t.getCellValue("attnotnull").toString().toLowerCase();
                 columnRequireds.add(notnull);
             }
         } catch (SQLException ex) {
-            ex.printStackTrace();
+            logger.error("An SQL error occurred [" + ex.getErrorCode() + "] " + ex.getSQLState(), e);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            logger.error("An unknown error occurred.", e);
         }
 
-        List<String> matched = new ArrayList<String>();
+        List<String> matched = new ArrayList<>();
         try {
             String s = "ALTER TABLE " + e.getSQLName() + " ";
             Iterator iter = e.getAllFieldsWAddIns(false, true).iterator();
@@ -293,7 +296,7 @@ public class SQLUpdateGenerator {
                                             if (req.equals("false")) {
 //                                                if (XFT.VERBOSE)System.out.println("WARNING: Database column " + e.getSQLName() +"." + fieldSQLName+" is now required. Uncomment line in update sql to fix.");
 //                                                String temp ="\n--Database column " + e.getSQLName() +"." + fieldSQLName+" is now required.\n";
-//                                                temp += "--" + s + " ALTER COLUMN " +  fieldSQLName  + " SET NOT NULL";                                    
+//                                                temp += "--" + s + " ALTER COLUMN " +  fieldSQLName  + " SET NOT NULL";
 //                                                stmts.add(temp +";");
                                             }
                                         } else {
@@ -483,14 +486,13 @@ public class SQLUpdateGenerator {
                     }
                 }
             }
-        } catch (ElementNotFoundException e1) {
-            e1.printStackTrace();
-        } catch (XFTInitException e1) {
-            e1.printStackTrace();
+        } catch (XFTInitException ex) {
+            logger.error("There was an error initializing XFT", ex);
+        } catch (ElementNotFoundException ex) {
+            logger.error("Couldn't find the requested element " + ex.ELEMENT, ex);
         }
 
-        List[] _return={statements,optional};
-        return _return;
+        return new List[]{statements,optional};
     }
 
 

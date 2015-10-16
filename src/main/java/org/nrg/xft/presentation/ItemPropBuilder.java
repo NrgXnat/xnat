@@ -46,7 +46,7 @@ public class ItemPropBuilder {
 				}
 			}
 		}else{
-			if (i.hasHistory())
+			if (i.hasHistory() && (includeHistory==null || includeHistory.getIncludeHistory()))
 			{
 				items.addAll(i.getHistoryItems());
 			}

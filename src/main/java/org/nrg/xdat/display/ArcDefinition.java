@@ -17,162 +17,197 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
+
 /**
  * @author Tim
- *
  */
 public class ArcDefinition {
-	private String name = null;
-	private String bridgeElement = "";
-	private String bridgeField = "";
-	private List<String[]> filters = new ArrayList<String[]>();//String[]filterField,filterType
-	private Map<String,String> commonFields = new Hashtable<String,String>();//fieldID,fieldType
-	private List<String> members = new ArrayList<String>();
-	/**
-	 * @return
-	 */
-	public Map<String,String> getCommonFields() {
-		return commonFields;
-	}
+    private String name = null;
+    private String bridgeElement = "";
+    private String bridgeField = "";
+    private final List<String[]> filters = new ArrayList<>();
+    private final Map<String, String> commonFields = new Hashtable<>();
+    private final List<String> members = new ArrayList<>();
 
-	/**
-	 * @return ArrayList of String[]fieldID,filterType
-	 */
-	public List<String[]> getFilters() {
-		return filters;
-	}
+    /**
+     * Gets the common fields.
+     *
+     * @return A table containing the common fields.
+     */
+    public Map<String, String> getCommonFields() {
+        return commonFields;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getBridgeElement() {
-		return bridgeElement;
-	}
+    /**
+     * Gets the archive filters.
+     *
+     * @return A list containing the archive filters.
+     */
+    public List<String[]> getFilters() {
+        return filters;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getName() {
-		return name;
-	}
+    /**
+     * @return The bridge element.
+     */
+    public String getBridgeElement() {
+        return bridgeElement;
+    }
 
-	/**
-	 * @param hashtable
-	 */
-	public void setCommonFields(Map<String,String> hashtable) {
-		commonFields = hashtable;
-	}
-	
-	public void addCommonField(String id,String type)
-	{
-		commonFields.put(id,type);
-	}
+    /**
+     * @return The archive name.
+     */
+    public String getName() {
+        return name;
+    }
 
-	/**
-	 * @param list
-	 */
-	public void setFilters(List<String[]> list) {
-		filters = list;
-	}
-	
-	public void addFilter(String fieldID,String filterType)
-	{
-		filters.add(new String[]{fieldID,filterType});
-	}
+    /**
+     * Sets the common fields.
+     *
+     * @param commonFields The common fields to be set.
+     */
+    @SuppressWarnings({"unused"})
+    public void setCommonFields(final Map<String, String> commonFields) {
+        this.commonFields.clear();
+        this.commonFields.putAll(commonFields);
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setBridgeElement(String string) {
-		bridgeElement = string;
-	}
+    /**
+     * Add a common field.
+     *
+     * @param id   The ID of the field to add.
+     * @param type The field type to add.
+     */
+    public void addCommonField(String id, String type) {
+        commonFields.put(id, type);
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setName(String string) {
-		name = string;
-	}
+    /**
+     * Sets the list of filters for the archive definition.
+     *
+     * @param filters The list of filters to set.
+     */
+    public void setFilters(final List<String[]> filters) {
+        this.filters.clear();
+        this.filters.addAll(filters);
+    }
 
-	/**
-	 * Iterator of ArrayList of ElementNames (String)
-	 * @return
-	 */
-	public Iterator<String> getMembers() {
-		return members.iterator();
-	}
-	
-	public void addMember(String elementName)
-	{
-		members.add(elementName);
-	}
-	
-	public boolean isMember(String elementName)
-	{
-		return members.contains(elementName);
-	}
+    /**
+     * Adds a filter.
+     *
+     * @param fieldID    The ID of the field to which the filter applies.
+     * @param filterType The type of filter.
+     */
+    public void addFilter(String fieldID, String filterType) {
+        filters.add(new String[]{fieldID, filterType});
+    }
 
-	/**
-	 * @return
-	 */
-	public String getBridgeField() {
-		return bridgeField;
-	}
+    /**
+     * Sets the bridge element.
+     *
+     * @param bridgeElement The bridge element to set.
+     */
+    public void setBridgeElement(String bridgeElement) {
+        this.bridgeElement = bridgeElement;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setBridgeField(String string) {
-		bridgeField = string;
-	}
-	
-	public String getDistinctField()
-	{
-		String field = null;
-		Iterator<String[]> iter = this.filters.iterator();
-		while (iter.hasNext())
-		{
-			String[] filter = iter.next();
-			if (filter[1].equalsIgnoreCase("distinct"))
-			{
-				field= filter[0];
-				break;
-			}
-		}
-		return field;
-	}
-	
-	public String getEqualsField()
-	{
-		String field = null;
-		Iterator<String[]> iter = this.filters.iterator();
-		while (iter.hasNext())
-		{
-			String[] filter = iter.next();
-			if (filter[1].equalsIgnoreCase("equals"))
-			{
-				field= filter[0];
-				break;
-			}
-		}
-		return field;
-	}
-	
-	public String getClosestField()
-	{
-		String field = null;
-		Iterator<String[]> iter = this.filters.iterator();
-		while (iter.hasNext())
-		{
-			String[] filter = iter.next();
-			if (filter[1].equalsIgnoreCase("closest"))
-			{
-				field= filter[0];
-				break;
-			}
-		}
-		return field;
-	}
+    /**
+     * Sets the archive definition name.
+     *
+     * @param name The name to set for the archive definition.
+     */
+    public void setName(final String name) {
+        this.name = name;
+    }
+
+    /**
+     * Iterator of ArrayList of ElementNames (String)
+     *
+     * @return A list of the members of the archive definition.
+     */
+    public Iterator<String> getMembers() {
+        return members.iterator();
+    }
+
+    /**
+     * Adds the indicated member.
+     *
+     * @param elementName The element name to add.
+     */
+    public void addMember(String elementName) {
+        members.add(elementName);
+    }
+
+    /**
+     * Evaluates whether the indicated element is a member of the archive definition.
+     *
+     * @param elementName The element name to test.
+     * @return True if the element is a member, false otherwise.
+     */
+    public boolean isMember(String elementName) {
+        return members.contains(elementName);
+    }
+
+    /**
+     * Gets the bridge field.
+     *
+     * @return The bridge field.
+     */
+    public String getBridgeField() {
+        return bridgeField;
+    }
+
+    /**
+     * Sets the bridge field to the indicated value.
+     *
+     * @param bridgeField The bridge field to set.
+     */
+    public void setBridgeField(final String bridgeField) {
+        this.bridgeField = bridgeField;
+    }
+
+    public String getDistinctField() {
+        String field = null;
+        for (final String[] filter : this.filters) {
+            if (filter[1].equalsIgnoreCase("distinct")) {
+                field = filter[0];
+                break;
+            }
+        }
+        return field;
+    }
+
+    /**
+     * Gets the field with an equals filter.
+     *
+     * @return The field with an equals filter if one exists, null otherwise.
+     */
+    public String getEqualsField() {
+        String field = null;
+        for (final String[] filter : this.filters) {
+            if (filter[1].equalsIgnoreCase("equals")) {
+                field = filter[0];
+                break;
+            }
+        }
+        return field;
+    }
+
+    /**
+     * Gets the field with a closest filter.
+     *
+     * @return The field with a closest filter if one exists, null otherwise.
+     */
+    public String getClosestField() {
+        String field = null;
+        for (final String[] filter : this.filters) {
+            if (filter[1].equalsIgnoreCase("closest")) {
+                field = filter[0];
+                break;
+            }
+        }
+        return field;
+    }
 
 }
 

@@ -12,10 +12,11 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.URLEncoder;
 import java.util.Enumeration;
+import java.util.Iterator;
+import java.io.UnsupportedEncodingException;
 import java.util.UUID;
+import java.net.URLEncoder;
 
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -187,7 +188,7 @@ public abstract class SecureAction extends VelocitySecureAction
     		if(csrfEmailEnabled){
     			AdminUtils.sendAdminEmail("Possible CSRF Attempt", "XNAT_CSRF token was not properly set in the session.\n" + errorMessage);
     		}
-    		throw new Exception("Invalid submit value (" + errorMessage + ")");
+    		throw new Exception("INVALID CSRF (" + errorMessage + ")");
     	}
     	
     	String method = request.getMethod();
@@ -201,7 +202,7 @@ public abstract class SecureAction extends VelocitySecureAction
     			if(csrfEmailEnabled){
     				AdminUtils.sendAdminEmail("Possible CSRF Attempt", errorMessage);
     			}
-	    		throw new Exception("Invalid submit value (" + errorMessage + ")");
+	    		throw new Exception("INVALID CSRF (" + errorMessage + ")");
     		}
     			
     	} else {
@@ -250,7 +251,7 @@ public abstract class SecureAction extends VelocitySecureAction
                 
                 UserI guest=Users.getGuest();
                 if (guest!=null)
-                {
+                        {
                     TurbineUtils.setUser(data,guest);
                     session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 

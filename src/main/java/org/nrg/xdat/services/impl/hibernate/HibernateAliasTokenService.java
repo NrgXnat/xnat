@@ -40,7 +40,7 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
     }
     /**
      * Finds and deactivates all active tokens for a particular user.
-     * @param xdatUserId    The user ID from the XdatUser table.
+     * @param username    The username of the user to deactivate.
      */
     @Override
     @Transactional

@@ -1,6 +1,6 @@
 package org.nrg.automation.services.impl;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.automation.annotations.Supports;
 import org.nrg.automation.entities.Event;

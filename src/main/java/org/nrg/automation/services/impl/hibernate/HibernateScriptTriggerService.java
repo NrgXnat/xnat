@@ -9,7 +9,7 @@
  */
 package org.nrg.automation.services.impl.hibernate;
 
-import org.apache.commons.lang.text.StrSubstitutor;
+import org.apache.commons.lang3.text.StrSubstitutor;
 import org.nrg.automation.entities.Event;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.repositories.ScriptTriggerRepository;

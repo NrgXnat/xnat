@@ -15,7 +15,7 @@ import static org.junit.Assert.fail;
 
 import java.util.ArrayList;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.nrg.transaction.RollbackException;
 import org.nrg.transaction.Run;

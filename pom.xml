@@ -8,7 +8,6 @@
         <artifactId>nrg</artifactId>
         <groupId>org.nrg</groupId>
         <version>1.7.0-SNAPSHOT</version>
-        <relativePath>../nrg/pom.xml</relativePath>
     </parent>
 
     <artifactId>automation</artifactId>
@@ -18,6 +17,28 @@
         Provides an automation framework for running interpreted scripts. This uses the NRG configuration service to
         store scripts. Scripts can be scoped to be associated with any level of entity within a particular system.
     </description>
+
+    <scm>
+        <connection>scm:hg:https://bitbucket.org/nrg/nrg_automation</connection>
+        <url>scm:hg:https://bitbucket.org/nrg/nrg_automation</url>
+    </scm>
+
+    <issueManagement>
+        <system>JIRA</system>
+        <url>https://issues.xnat.org</url>
+    </issueManagement>
+
+    <licenses>
+        <license>
+            <name>Simplified BSD License</name>
+            <url>http://www.opensource.org/licenses/BSD-2-Clause</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Neuroinformatics Research Group</name>
+        <url>http://nrg.wustl.edu</url>
+    </organization>
 
     <dependencies>
         <dependency>

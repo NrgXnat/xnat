@@ -12,9 +12,7 @@ package org.nrg.config.services.impl;
 
 import com.google.common.base.Joiner;
 import org.apache.commons.beanutils.BeanComparator;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Hibernate;
 import org.nrg.config.daos.ConfigurationDAO;
 import org.nrg.config.daos.ConfigurationDataDAO;
@@ -26,6 +24,8 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.utilities.Reflection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.dao.DataAccessException;
 import org.springframework.dao.EmptyResultDataAccessException;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -615,7 +615,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
         }
     }
 
-    private static final Log _log = LogFactory.getLog(DefaultConfigService.class);
+    private static final Logger _log = LoggerFactory.getLogger(DefaultConfigService.class);
 
     @Inject
     private ConfigurationDAO _dao;

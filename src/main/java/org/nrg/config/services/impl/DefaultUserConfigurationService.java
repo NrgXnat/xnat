@@ -11,12 +11,12 @@
 
 package org.nrg.config.services.impl;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.UserConfigurationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -68,7 +68,7 @@ public class DefaultUserConfigurationService implements UserConfigurationService
     }
 
     private static final String USER_CONFIG_TOOL = "userConfigs";
-    private static final Log _log = LogFactory.getLog(DefaultUserConfigurationService.class);
+    private static final Logger _log = LoggerFactory.getLogger(DefaultUserConfigurationService.class);
 
     @Inject
     private ConfigService _service;

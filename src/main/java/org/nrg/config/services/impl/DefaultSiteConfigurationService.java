@@ -9,13 +9,13 @@
  */
 package org.nrg.config.services.impl;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.config.services.ConfigService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -90,7 +90,7 @@ public class DefaultSiteConfigurationService extends PropertiesBasedSiteConfigur
     }
 
     private static final String SYSTEM_STARTUP_CONFIG_REFRESH_USER = "admin";
-    private static final Log _log = LogFactory.getLog(DefaultSiteConfigurationService.class);
+    private static final Logger _log = LoggerFactory.getLogger(DefaultSiteConfigurationService.class);
 
     @Inject
     private ConfigService _service;

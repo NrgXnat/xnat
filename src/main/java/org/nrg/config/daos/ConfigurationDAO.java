@@ -10,7 +10,7 @@
  */
 package org.nrg.config.daos;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.Criteria;
 import org.hibernate.Query;
 import org.hibernate.criterion.Restrictions;
@@ -52,7 +52,7 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
         return (list == null || list.size() == 0) ? null : list;
 	}
 
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "unused"})
 	public List<Configuration> findByToolPathProjectStatus(String tool, String path, Scope scope, String entityId, String status){
 		Criteria criteria = getCriteriaForType();
 		addNullableCriteria(criteria, "tool", tool);
@@ -71,6 +71,7 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
      * @param path The configuration path.
      * @return A matching configuration, if it exists.
      */
+	@SuppressWarnings("unused")
 	public Configuration getConfigurationByPath(String path){
         Criteria criteria = getCriteriaForType();
         criteria.add(Restrictions.eq("path", path));
@@ -84,7 +85,7 @@ public class ConfigurationDAO  extends AbstractHibernateDAO<Configuration> {
      * Gets all of the tool names associated with the site scope.
      * @return The tool names associated with the site scope.
      */
-	@SuppressWarnings("unchecked")
+	@SuppressWarnings({"unchecked", "unused"})
 	public List<String> getTools(){
 		return getTools(null, null);
 	}

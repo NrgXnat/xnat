@@ -1,7 +1,7 @@
 package org.nrg.config.services.impl;
 
 import com.google.common.base.Joiner;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.DuplicateConfigurationDetectedException;
 import org.nrg.config.exceptions.InvalidSiteConfigurationPropertyChangedListenerException;
 import org.nrg.config.exceptions.SiteConfigurationException;

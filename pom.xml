@@ -16,18 +16,29 @@
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
         <version>1.7.0-SNAPSHOT</version>
-		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 
 	<artifactId>mail</artifactId>
 
 	<name>NRG Mail Services</name>
-    <url>http://nrg.wustl.edu</url>
 	<description>Implements mail services for the NRG code framework.</description>
 
 	<scm>
-		<url>http://bitbucket.org/nrg/nrg_mail</url>
+		<connection>scm:hg:https://bitbucket.org/nrg/nrg_mail</connection>
+		<url>scm:hg:https://bitbucket.org/nrg/nrg_mail</url>
 	</scm>
+
+	<issueManagement>
+		<system>JIRA</system>
+		<url>https://issues.xnat.org</url>
+	</issueManagement>
+
+	<licenses>
+		<license>
+			<name>Simplified BSD License</name>
+			<url>http://www.opensource.org/licenses/BSD-2-Clause</url>
+		</license>
+	</licenses>
 
 	<organization>
 		<name>Neuroinformatics Research Group</name>

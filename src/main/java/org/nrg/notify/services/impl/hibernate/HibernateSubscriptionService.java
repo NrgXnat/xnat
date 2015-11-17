@@ -13,14 +13,14 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.notify.daos.SubscriptionDAO;
 import org.nrg.notify.entities.Definition;
 import org.nrg.notify.entities.Subscriber;
 import org.nrg.notify.entities.Subscription;
 import org.nrg.notify.services.SubscriptionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -52,7 +52,7 @@ public class HibernateSubscriptionService extends AbstractHibernateEntityService
     @Transactional
     public Map<Subscriber, Subscription> getSubscriberMapOfSubscriptionsForDefinition(Definition definition) {
         List<Subscription> subscriptions = getDao().getSubscriptionsForDefinition(definition);
-        Map<Subscriber, Subscription> map = new Hashtable<Subscriber, Subscription>();
+        Map<Subscriber, Subscription> map = new Hashtable<>();
         for (Subscription subscription : subscriptions) {
             map.put(subscription.getSubscriber(), subscription);
         }
@@ -62,5 +62,5 @@ public class HibernateSubscriptionService extends AbstractHibernateEntityService
         return map;
     }
 
-    private static final Log _log = LogFactory.getLog(HibernateSubscriptionService.class);
+    private static final Logger _log = LoggerFactory.getLogger(HibernateSubscriptionService.class);
 }

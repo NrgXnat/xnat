@@ -44,7 +44,7 @@
           p:hibernateProperties-ref="hibernateProperties" p:packagesToScan-ref="nrgNotificationEntityPackages"
           p:namingStrategy-ref="namingStrategy" />
 
-	<bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager" p:sessionFactory-ref="sessionFactory" />
+    <bean id="transactionManager" class="org.springframework.orm.hibernate4.HibernateTransactionManager" p:sessionFactory-ref="sessionFactory" />
 
 	<tx:annotation-driven />
 

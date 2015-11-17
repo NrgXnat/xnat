@@ -15,8 +15,6 @@ import java.util.List;
 import java.util.Map;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
@@ -39,6 +37,8 @@ import org.nrg.notify.services.NotificationDispatcherService;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.notify.services.SubscriberService;
 import org.nrg.notify.services.SubscriptionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -356,7 +356,7 @@ public class HibernateNotificationService extends AbstractHibernateEntityService
         return _subscriptionService;
     }
 
-    private static final Log _log = LogFactory.getLog(HibernateNotificationService.class);
+    private static final Logger _log = LoggerFactory.getLogger(HibernateNotificationService.class);
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     @Autowired

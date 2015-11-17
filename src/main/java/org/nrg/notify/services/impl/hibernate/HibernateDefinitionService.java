@@ -9,8 +9,6 @@
  */
 package org.nrg.notify.services.impl.hibernate;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.hibernate.Hibernate;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.notify.daos.DefinitionDAO;
@@ -18,6 +16,8 @@ import org.nrg.notify.entities.Category;
 import org.nrg.notify.entities.Definition;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
 import org.nrg.notify.services.DefinitionService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -60,5 +60,5 @@ public class HibernateDefinitionService extends AbstractHibernateEntityService<D
         return getDao().getDefinitionForCategoryAndEntity(category, entity);
     }
 
-    private static final Log _log = LogFactory.getLog(HibernateDefinitionService.class);
+    private static final Logger _log = LoggerFactory.getLogger(HibernateDefinitionService.class);
 }

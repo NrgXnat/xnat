@@ -9,13 +9,13 @@
  */
 package org.nrg.notify.services.impl.hibernate;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.notify.daos.ChannelDAO;
 import org.nrg.notify.entities.Channel;
 import org.nrg.notify.services.ChannelService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -57,5 +57,5 @@ public class HibernateChannelService extends AbstractHibernateEntityService<Chan
         return getDao().getChannelByName(name);
     }
 
-    private static final Log _log = LogFactory.getLog(HibernateChannelService.class);
+    private static final Logger _log = LoggerFactory.getLogger(HibernateChannelService.class);
 }

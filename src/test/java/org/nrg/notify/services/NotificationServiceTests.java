@@ -9,8 +9,6 @@
  */
 package org.nrg.notify.services;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.hibernate.Hibernate;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.After;
@@ -24,6 +22,8 @@ import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.api.SubscriberType;
 import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateDefinitionException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.transaction.annotation.Transactional;
@@ -283,7 +283,7 @@ public class NotificationServiceTests {
         assertNotNull(definitionSubscriptions4);
         assertEquals(3, definitionSubscriptions4.size());
         
-        Map<String, Object> parameters = new HashMap<String, Object>();
+        Map<String, Object> parameters = new HashMap<>();
         parameters.put(MailMessage.PROP_SUBJECT, "Test notification");
         parameters.put(MailMessage.PROP_HTML, "<html><body>This is a test notification, which includes an <b>HTML</b> message payload.</body></html>");
         parameters.put(MailMessage.PROP_TEXT, "This is a test notification, which includes a text message payload.");
@@ -323,7 +323,7 @@ public class NotificationServiceTests {
         assertEquals(mimeType, channel.getFormat());
     }
 
-    private static final Log _log = LogFactory.getLog(NotificationServiceTests.class);
+    private static final Logger _log = LoggerFactory.getLogger(NotificationServiceTests.class);
 
     @Inject
     private NotificationService _service;

@@ -17,7 +17,7 @@ import javax.mail.MessagingException;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.exceptions.InvalidMailAttachmentException;
 import org.nrg.mail.services.MailService;

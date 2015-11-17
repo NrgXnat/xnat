@@ -9,13 +9,13 @@
  */
 package org.nrg.notify.services.impl.hibernate;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.notify.api.CategoryScope;
 import org.nrg.notify.daos.CategoryDAO;
 import org.nrg.notify.entities.Category;
 import org.nrg.notify.services.CategoryService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,5 +39,5 @@ public class HibernateCategoryService extends AbstractHibernateEntityService<Cat
         return getDao().getCategoryByScopeAndEvent(scope, event);
     }
 
-    private static final Log _log = LogFactory.getLog(HibernateCategoryService.class);
+    private static final Logger _log = LoggerFactory.getLogger(HibernateCategoryService.class);
 }

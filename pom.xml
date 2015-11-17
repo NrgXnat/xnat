@@ -17,18 +17,34 @@
         <groupId>org.nrg</groupId>
         <artifactId>nrg</artifactId>
         <version>1.7.0-SNAPSHOT</version>
-        <relativePath>../nrg/pom.xml</relativePath>
     </parent>
 
     <artifactId>transaction</artifactId>
 
     <name>NRG Transaction Library</name>
-    <url>http://nrg.wustl.edu</url>
     <description>Provide chainable transactions that can be run and rolled back.</description>
 
     <scm>
-        <url>http://bitbucket.org/nrg/nrg_transaction</url>
+        <connection>scm:hg:https://bitbucket.org/nrg/nrg_transaction</connection>
+        <url>scm:hg:https://bitbucket.org/nrg/nrg_transaction</url>
     </scm>
+
+    <issueManagement>
+        <system>JIRA</system>
+        <url>https://issues.xnat.org</url>
+    </issueManagement>
+
+    <licenses>
+        <license>
+            <name>Simplified BSD License</name>
+            <url>http://www.opensource.org/licenses/BSD-2-Clause</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Neuroinformatics Research Group</name>
+        <url>http://nrg.wustl.edu</url>
+    </organization>
 
     <dependencies>
         <dependency>

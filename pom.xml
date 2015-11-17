@@ -16,18 +16,34 @@
 		<groupId>org.nrg</groupId>
 		<artifactId>nrg</artifactId>
         <version>1.7.0-SNAPSHOT</version>
-		<relativePath>../nrg/pom.xml</relativePath>
 	</parent>
 
     <artifactId>notify</artifactId>
 
     <name>NRG Notification Service</name>
-    <url>http://nrg.wustl.edu</url>
     <description>Defines the NRG notification service.</description>
 
-	<scm>
-		<url>http://bitbucket.org/nrg/nrg_notify</url>
-	</scm>
+    <scm>
+        <connection>scm:hg:https://bitbucket.org/nrg/nrg_notify</connection>
+        <url>scm:hg:https://bitbucket.org/nrg/nrg_notify</url>
+    </scm>
+
+    <issueManagement>
+        <system>JIRA</system>
+        <url>https://issues.xnat.org</url>
+    </issueManagement>
+
+    <licenses>
+        <license>
+            <name>Simplified BSD License</name>
+            <url>http://www.opensource.org/licenses/BSD-2-Clause</url>
+        </license>
+    </licenses>
+
+    <organization>
+        <name>Neuroinformatics Research Group</name>
+        <url>http://nrg.wustl.edu</url>
+    </organization>
 
     <dependencies>
         <dependency>

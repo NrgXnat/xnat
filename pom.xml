@@ -6,19 +6,30 @@
         <artifactId>nrg</artifactId>
         <groupId>org.nrg</groupId>
         <version>1.7.0-SNAPSHOT</version>
-        <relativePath>../nrg/pom.xml</relativePath>
     </parent>
     <modelVersion>4.0.0</modelVersion>
 
     <artifactId>dicomtools</artifactId>
 
     <name>NRG DICOM Tools</name>
-    <url>http://nrg.wustl.edu</url>
     <description>Provides a high-level set of tools for managing and manipulating DICOM data.</description>
 
     <scm>
-        <url>http://bitbucket.org/nrg/nrg_dicomtools</url>
+        <connection>scm:hg:https://bitbucket.org/nrg/nrg_dicomtools</connection>
+        <url>scm:hg:https://bitbucket.org/nrg/nrg_dicomtools</url>
     </scm>
+
+    <issueManagement>
+        <system>JIRA</system>
+        <url>https://issues.xnat.org</url>
+    </issueManagement>
+
+    <licenses>
+        <license>
+            <name>Simplified BSD License</name>
+            <url>http://www.opensource.org/licenses/BSD-2-Clause</url>
+        </license>
+    </licenses>
 
     <organization>
         <name>Neuroinformatics Research Group</name>
@@ -70,8 +81,8 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>net.sf.ehcache</groupId>
-            <artifactId>ehcache-core</artifactId>
+            <groupId>org.hibernate</groupId>
+            <artifactId>hibernate-ehcache</artifactId>
             <scope>test</scope>
         </dependency>
         <dependency>

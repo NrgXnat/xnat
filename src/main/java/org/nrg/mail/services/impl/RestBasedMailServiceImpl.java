@@ -9,13 +9,13 @@
  */
 package org.nrg.mail.services.impl;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.net.AuthenticatedClientHttpRequestFactory;
 import org.nrg.mail.api.MailMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.core.io.FileSystemResource;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -173,7 +173,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
         }
     }
 
-    private static final Log _log = LogFactory.getLog(RestBasedMailServiceImpl.class);
+    private static final Logger _log = LoggerFactory.getLogger(RestBasedMailServiceImpl.class);
 
     private final HttpMessageConverter<?>[] messageConverters = new HttpMessageConverter<?>[] { new FormHttpMessageConverter(), new StringHttpMessageConverter(), new ResourceHttpMessageConverter(), new ByteArrayHttpMessageConverter() };
     private URI _address;

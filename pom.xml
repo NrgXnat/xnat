@@ -67,16 +67,16 @@
             <artifactId>commons-codec</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>commons-lang</groupId>
-			<artifactId>commons-lang</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
 		</dependency>
 		<dependency>
-			<groupId>log4j</groupId>
-			<artifactId>log4j</artifactId>
+            <groupId>org.apache.logging.log4j</groupId>
+            <artifactId>log4j-slf4j-impl</artifactId>
 		</dependency>
 		<dependency>
-            <groupId>javax.mail</groupId>
-            <artifactId>mail</artifactId>
+			<groupId>javax.mail</groupId>
+			<artifactId>javax.mail-api</artifactId>
 		</dependency>
 		<dependency>
 			<groupId>org.apache.commons</groupId>

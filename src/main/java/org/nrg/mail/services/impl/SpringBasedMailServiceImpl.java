@@ -13,10 +13,10 @@ import javax.inject.Inject;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.mail.api.MailMessage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.stereotype.Service;
 
@@ -77,7 +77,7 @@ public class SpringBasedMailServiceImpl extends AbstractMailServiceImpl {
 		_sender.send(message);
 	}
 
-	private static final Log _log = LogFactory.getLog(SpringBasedMailServiceImpl.class);
+	private static final Logger _log = LoggerFactory.getLogger(SpringBasedMailServiceImpl.class);
 
 	@Inject
 	private JavaMailSender _sender;

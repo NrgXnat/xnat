@@ -9,7 +9,7 @@
  */
 package org.nrg.mail.api;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
 import org.nrg.mail.exceptions.InvalidMailAttachmentException;

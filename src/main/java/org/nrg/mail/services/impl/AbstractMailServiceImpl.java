@@ -9,20 +9,17 @@
  */
 package org.nrg.mail.services.impl;
 
-import java.io.File;
-import java.util.Map;
-
-import javax.mail.MessagingException;
-
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.services.MailService;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.beans.factory.annotation.Qualifier;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
+
+import javax.mail.MessagingException;
+import java.io.File;
+import java.util.Map;
 
 abstract public class AbstractMailServiceImpl implements MailService {
 
@@ -109,19 +106,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
         Assert.notNull(from, "From address must not be null");
 
         if (_log.isDebugEnabled()) {
-            StringBuilder tos = new StringBuilder();
-            if (to.length > 0) {
-                boolean started = false;
-                for (String address : to) {
-                    if (started) {
-                        tos.append(", ");
-                    } else {
-                        started = true;
-                    }
-                    tos.append(address);
-                }
-            }
-            _log.debug(String.format("Sending mail message: FROM[%s] TO [%S], SUBJECT[%S]", from, tos.toString(), subject));
+            logMailData(from, to, subject);
         }
 
         MailMessage message = new MailMessage();
@@ -253,19 +238,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
         Assert.notNull(from, "From address must not be null");
 
         if (_log.isDebugEnabled()) {
-            StringBuilder tos = new StringBuilder();
-            if (to.length > 0) {
-                boolean started = false;
-                for (String address : to) {
-                    if (started) {
-                        tos.append(", ");
-                    } else {
-                        started = true;
-                    }
-                    tos.append(address);
-                }
-            }
-            _log.debug(String.format("Sending mail message: FROM[%s] TO [%S], SUBJECT[%S]", from, tos.toString(), subject));
+            logMailData(from, to, subject);
         }
 
         MailMessage message = new MailMessage();
@@ -566,7 +539,23 @@ abstract public class AbstractMailServiceImpl implements MailService {
         return hasSubjectPrefix() && !subject.startsWith(getSubjectPrefix()) ? getSubjectPrefix() + ":" + subject : subject;
     }
 
-    private static final Log _log = LogFactory.getLog(AbstractMailServiceImpl.class);
+    private void logMailData(final String from, final String[] to, final String subject) {
+        StringBuilder tos = new StringBuilder();
+        if (to.length > 0) {
+            boolean started = false;
+            for (String address : to) {
+                if (started) {
+                    tos.append(", ");
+                } else {
+                    started = true;
+                }
+                tos.append(address);
+            }
+        }
+        _log.debug(String.format("Sending mail message: FROM[%s] TO [%S], SUBJECT[%S]", from, tos.toString(), subject));
+    }
+
+    private static final Logger _log = LoggerFactory.getLogger(AbstractMailServiceImpl.class);
 
     private boolean _hasSubjectPrefix;
     private String _subjectPrefix;

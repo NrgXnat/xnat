@@ -18,13 +18,13 @@ import java.util.Map;
 import javax.mail.MessagingException;
 import javax.mail.internet.MimeMessage;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.mockito.Mockito;
 import org.nrg.mail.services.MailService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -45,7 +45,7 @@ public class TestSpringBasedMailServiceImpl {
         MimeMessage message = Mockito.mock(MimeMessage.class);
         _sender.setMockMimeMessage(message);
 
-        Map<String, File> attachments = new HashMap<String, File>();
+        Map<String, File> attachments = new HashMap<>();
         try {
             _service.sendHtmlMessage("test@yahoo.com",                      // From address
                                      new String[] { "test@gmail.com" },     // To address(es)
@@ -60,7 +60,7 @@ public class TestSpringBasedMailServiceImpl {
         }
     }
 
-    private static final Log _log = LogFactory.getLog(TestSpringBasedMailServiceImpl.class);
+    private static final Logger _log = LoggerFactory.getLogger(TestSpringBasedMailServiceImpl.class);
 
     @Autowired
     private MockJavaMailSender _sender;

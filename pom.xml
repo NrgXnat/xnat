@@ -15,7 +15,7 @@
 
     <parent>
         <groupId>org.nrg</groupId>
-        <artifactId>nrg</artifactId>
+        <artifactId>parent</artifactId>
         <version>1.7.0-SNAPSHOT</version>
     </parent>
 

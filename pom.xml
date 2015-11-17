@@ -14,19 +14,28 @@
 
     <name>NRG Preferences</name>
     <description>Defines the preferences library for NRG tools.</description>
-    <url>http://nrg.wustl.edu</url>
+
+    <scm>
+        <connection>scm:hg:https://bitbucket.org/nrg/nrg_prefs</connection>
+        <url>scm:hg:https://bitbucket.org/nrg/nrg_prefs</url>
+    </scm>
+
+    <issueManagement>
+        <system>JIRA</system>
+        <url>https://issues.xnat.org</url>
+    </issueManagement>
 
     <licenses>
         <license>
-            <name>BSD</name>
-            <url>http://www.opensource.org/licenses/bsd-license.php</url>
+            <name>Simplified BSD License</name>
+            <url>http://www.opensource.org/licenses/BSD-2-Clause</url>
         </license>
     </licenses>
 
-    <scm>
-        <connection>https://bitbucket.org/nrg/nrg_prefs</connection>
-        <url>https://bitbucket.org/nrg/nrg_prefs</url>
-    </scm>
+    <organization>
+        <name>Neuroinformatics Research Group</name>
+        <url>http://nrg.wustl.edu</url>
+    </organization>
 
     <dependencies>
         <dependency>

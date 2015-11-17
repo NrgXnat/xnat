@@ -82,25 +82,27 @@
         <signing.tsa>http://timestamp.digicert.com</signing.tsa>
 
         <activemq.version>5.7.0</activemq.version>
-        <ant.version>1.8.2</ant.version>
+        <ant.version>1.9.3</ant.version>
         <antlr.version>3.5.2</antlr.version>
         <aopalliance.version>1.0</aopalliance.version>
         <avalon.version>4.1.4</avalon.version>
         <axis.version>1.4</axis.version>
         <cglib.version>2.2.2</cglib.version>
         <com-noelios-restlet.version>1.1.10</com-noelios-restlet.version>
-        <commons-beanutils.version>1.8.3</commons-beanutils.version>
+        <commons-beanutils.version>1.9.2</commons-beanutils.version>
         <commons-codec.version>1.5</commons-codec.version>
         <commons-collections.version>3.2.1</commons-collections.version>
+        <commons-collections4.version>4.0</commons-collections4.version>
         <commons-configuration.version>1.5</commons-configuration.version>
         <commons-dbcp.version>1.4</commons-dbcp.version>
+        <commons-dbcp2.version>2.1.1</commons-dbcp2.version>
         <commons-discovery.version>0.5</commons-discovery.version>
-        <commons-email.version>1.3.2</commons-email.version>
-        <commons-fileupload.version>1.2.1</commons-fileupload.version>
+        <commons-email.version>1.4</commons-email.version>
+        <commons-fileupload.version>1.3.1</commons-fileupload.version>
         <commons-httpclient.version>3.1</commons-httpclient.version>
         <commons-io.version>2.4</commons-io.version>
         <commons-lang.version>2.6</commons-lang.version>
-        <commons-lang3.version>3.3.2</commons-lang3.version>
+        <commons-lang3.version>3.4</commons-lang3.version>
         <commons-logging.version>1.1.1</commons-logging.version>
         <commons-net.version>3.3</commons-net.version>
         <dcm4che.version>2.0.25</dcm4che.version>
@@ -108,72 +110,71 @@
         <ecs.version>1.4.2</ecs.version>
         <ehcache.version>2.6.6</ehcache.version>
         <fastmd5.version>2.7.1</fastmd5.version>
+        <fest-swing.version>1.2.1</fest-swing.version>
         <fop.version>0.20.5-rc3-alpha</fop.version>
         <groovy.version>2.3.7</groovy.version>
         <guava.version>18.0</guava.version>
         <h2.version>1.3.173</h2.version>
-        <!-- Eventually upgrade to these versions. Now staying with the version in xnat_builder_1_7dev -->
-        <!-- hibernate.version>4.3.8.Final</hibernate.version>
-        <hibernate-jpa.version>1.0.1.Final</hibernate-jpa.version>
-        <hibernate-jpa-2.1.version>1.0.0.Final</hibernate-jpa-2.1.version>
-        <hibernate-validator.version>5.1.3.Final</hibernate-validator.version -->
-        <hibernate.version>4.3.1.Final</hibernate.version>
+
+        <!-- Eventually upgrade to these versions. Staying with more moderate version in xnat_builder_1_7dev -->
+        <!-- hibernate.version>5.0.3.Final</hibernate.version>
+        <hibernate-commons.version>5.0.0.Final</hibernate-commons.version>
+        <hibernate-validator.version>5.2.2.Final</hibernate-validator.version -->
         <hibernate-commons.version>4.0.4.Final</hibernate-commons.version>
-        <hibernate-jpa.version>1.0.1.Final</hibernate-jpa.version>
         <hibernate-jpa-2.1.version>1.0.0.Final</hibernate-jpa-2.1.version>
+        <hibernate-jpa.version>1.0.1.Final</hibernate-jpa.version>
         <hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
-        <httpcomponents-client.version>4.3.6</httpcomponents-client.version>
+        <hibernate.version>4.3.1.Final</hibernate.version>
+        <httpcomponents-client.version>4.5.1</httpcomponents-client.version>
         <imagej.version>1.49t</imagej.version>
         <itext.version>1.1.4</itext.version>
-        <jruby.version>1.7.19</jruby.version>
-        <jython.version>2.7.0</jython.version>
-        <jackson.version>2.5.2</jackson.version>
+        <jackson.version>2.6.3</jackson.version>
         <jargon.version>1.4.25</jargon.version>
         <java-getopt.version>1.0.13</java-getopt.version>
         <javassist.version>3.16.1-GA</javassist.version>
         <javax-activation.version>1.1.1</javax-activation.version>
         <javax-inject.version>1</javax-inject.version>
-        <javax-mail>1.4.5</javax-mail>
-        <javax-jms-api.version>2.0</javax-jms-api.version>
         <javax-j2ee-api.version>1.1.1</javax-j2ee-api.version>
+        <javax-jms-api.version>2.0</javax-jms-api.version>
+        <javax-mail.version>1.5.4</javax-mail.version>
+        <jcalendar.version>1.4</jcalendar.version>
         <jcs.version>1.3</jcs.version>
-        <jena.version>2.11.1</jena.version>
         <jena-tdb.version>1.0.1</jena-tdb.version>
+        <jena.version>2.11.1</jena.version>
+        <jetty.version>6.1.25</jetty.version>
+        <joda-time.version>2.7</joda-time.version>
+        <jruby.version>1.7.19</jruby.version>
         <json.version>20140107</json.version>
         <jstl.version>1.2</jstl.version>
         <junit.version>4.11</junit.version>
+        <jython.version>2.7.0</jython.version>
         <jzlib.version>1.1.3</jzlib.version>
         <log4j.version>1.2.17</log4j.version>
-        <joda-time.version>2.7</joda-time.version>
-        <jcalendar.version>1.4</jcalendar.version>
-        <wizard.version>1.1</wizard.version>
+        <log4j2.version>2.4.1</log4j2.version>
         <mockito.version>1.8.5</mockito.version>
-        <jetty.version>6.1.25</jetty.version>
-        <fest-swing.version>1.2.1</fest-swing.version>
-        <springockito.version>1.0.5</springockito.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
-        <org.postgresql.version>9.3-1101-jdbc41</org.postgresql.version>
-
+        <org.postgresql.version>9.4-1205-jdbc42</org.postgresql.version>
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.10</reflections.version>
         <restlet.version>1.1.10</restlet.version>
         <saxon.version>8.7</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
         <slf4j.version>1.7.7</slf4j.version>
-        <spring-framework.version>4.1.2.RELEASE</spring-framework.version>
-        <spring-ldap.version>2.0.2</spring-ldap.version>
-        <spring-security.version>3.2.5.RELEASE</spring-security.version>
+        <spring-framework.version>4.2.3.RELEASE</spring-framework.version>
+        <spring-ldap.version>2.0.4</spring-ldap.version>
+        <spring-security.version>4.0.3.RELEASE</spring-security.version>
+        <springockito.version>1.0.5</springockito.version>
         <stratum.version>1.0</stratum.version>
         <torque.version>3.1.1</torque.version>
         <turbine.version>2.3.3</turbine.version>
         <user-agent-utils.version>1.2.4</user-agent-utils.version>
-        <velocity.version>1.7</velocity.version>
         <velocity-tools.version>2.0</velocity-tools.version>
-
+        <velocity.version>1.7</velocity.version>
+        <wizard.version>1.1</wizard.version>
         <xbean.version>3.17</xbean.version>
-        <xmlbeans.version>2.6.0</xmlbeans.version>
         <xml-apis.version>1.4.01</xml-apis.version>
+        <xmlbeans.version>2.6.0</xmlbeans.version>
 
         <!-- Plugin versions -->
         <findbugs-maven-plugin.version>3.0.2</findbugs-maven-plugin.version>
@@ -608,9 +609,19 @@
                 <version>${commons-collections.version}</version>
             </dependency>
             <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-collections4</artifactId>
+                <version>${commons-collections4.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>commons-dbcp</groupId>
                 <artifactId>commons-dbcp</artifactId>
                 <version>${commons-dbcp.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.commons</groupId>
+                <artifactId>commons-dbcp2</artifactId>
+                <version>${commons-dbcp2.version}</version>
             </dependency>
             <dependency>
                 <groupId>commons-discovery</groupId>
@@ -731,7 +742,7 @@
             <dependency>
                 <groupId>org.apache.activemq</groupId>
                 <artifactId>activemq-core</artifactId>
-                <version>5.7.0</version>
+                <version>${activemq.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.xbean</groupId>
@@ -805,6 +816,13 @@
                         <artifactId>jmxri</artifactId>
                     </exclusion>
                 </exclusions>
+            </dependency>
+            <dependency>
+                <groupId>org.apache.logging.log4j</groupId>
+                <artifactId>log4j-bom</artifactId>
+                <version>${log4j2.version}</version>
+                <scope>import</scope>
+                <type>pom</type>
             </dependency>
             <dependency>
                 <groupId>org.restlet</groupId>
@@ -918,8 +936,8 @@
             </dependency>
             <dependency>
                 <groupId>javax.mail</groupId>
-                <artifactId>mail</artifactId>
-                <version>${javax-mail}</version>
+                <artifactId>javax.mail-api</artifactId>
+                <version>${javax-mail.version}</version>
             </dependency>
             <dependency>
                 <groupId>org.apache.ant</groupId>
@@ -961,8 +979,8 @@
                 <version>${velocity.version}</version>
                 <exclusions>
                     <exclusion>
-                <groupId>velocity</groupId>
-                <artifactId>velocity</artifactId>
+                        <groupId>velocity</groupId>
+                        <artifactId>velocity</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

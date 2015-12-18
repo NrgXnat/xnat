@@ -1,6 +1,7 @@
 package org.nrg.config.services.impl;
 
 import com.google.common.base.Joiner;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.DuplicateConfigurationDetectedException;
 import org.nrg.config.exceptions.InvalidSiteConfigurationPropertyChangedListenerException;
@@ -154,6 +155,19 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
             notifyListeners(property, value);
         }
     }
+
+    @Override
+    public boolean getBoolSiteConfigurationProperty(final String property, final boolean _default) {
+        final String value;
+        try {
+            value = getSiteConfigurationProperty(property);
+        } catch (SiteConfigurationException e) {
+            _log.warn("An error occurred retrieving the site configuration property " + property + ", returning the submitted default value: " + _default, e);
+            return _default;
+        }
+        return StringUtils.isBlank(value) ? _default : BooleanUtils.toBoolean(value);
+    }
+
 
     @Override
     public void setServletContext(final ServletContext context) {

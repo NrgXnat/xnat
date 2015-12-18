@@ -84,6 +84,15 @@ public interface SiteConfigurationService extends NrgService {
     void setSiteConfigurationProperty(String username, String property, String value) throws SiteConfigurationException;
 
     /**
+     * Gets the boolean value of the indicated property. If the property isn't found, the indicated default value is
+     * returned instead.
+     * @param property    The name of the property to be set.
+     * @param _default    The default value to be returned if the property isn't found.
+     * @return The boolean value requested.
+     */
+    boolean getBoolSiteConfigurationProperty(final String property, final boolean _default);
+
+    /**
      * Gets the list of locations (relative to the {@link #getConfigFilesLocationsRoot() file location root} where
      * config files can be found.
      * @return The list of paths (as strings) to be searched for config files.

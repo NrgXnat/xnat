@@ -21,26 +21,25 @@ import java.util.Hashtable;
 
 public class HistoricPasswordValidator implements PasswordValidator {
 
-	private String message="Password has been used previously.";
-	private int durationInDays = 365;
+    public static final int DEFAULT_DURATION_IN_DAYS = 365;
 
     public HistoricPasswordValidator() {
-
+        this(DEFAULT_DURATION_IN_DAYS);
     }
 
     public HistoricPasswordValidator(final int durationInDays) {
         setDurationInDays(durationInDays);
     }
 
-	@Override
-	public boolean isValid(String password, UserI user) {
-		//if there's no user, they're probably new so there's nothing to do here.
-		if(user != null){
+    @Override
+    public boolean isValid(String password, UserI user) {
+        //if there's no user, they're probably new so there's nothing to do here.
+        if (user != null) {
             try {
                 String userId = user.getUsername();
                 String dbName = user.getDBName();
                 Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-                Timestamp lastYearsTimestamp = new java.sql.Timestamp(today.getTime() -  durationInDays * 86400000L);// 24 * 60 * 60 * 1000);    //31557600000L);
+                Timestamp lastYearsTimestamp = new java.sql.Timestamp(today.getTime() - durationInDays * 86400000L);// 24 * 60 * 60 * 1000);    //31557600000L);
                 String query = "SELECT primary_password AS hashed_password, salt AS salt FROM xdat_user_history WHERE login='" + userId + "' AND change_date > '" + lastYearsTimestamp + "' UNION SELECT primary_password AS password, salt AS salt FROM xdat_user WHERE login='" + userId + "';";
                 XFTTable table = TableSearch.Execute(query, dbName, userId);
                 table.resetRowCursor();
@@ -60,15 +59,20 @@ public class HistoricPasswordValidator implements PasswordValidator {
             }
         }
         return true;
-	}
-	public String getMessage() {
-		return message;
-	}
-	public int getDurationInDays() {
-		return durationInDays;
-	}
-	public void setDurationInDays(int durationInDays) {
-		this.durationInDays = durationInDays;
-	}
+    }
 
+    public String getMessage() {
+        return message;
+    }
+
+    public int getDurationInDays() {
+        return durationInDays;
+    }
+
+    public void setDurationInDays(int durationInDays) {
+        this.durationInDays = durationInDays;
+    }
+
+    private String message = "Password has been used previously.";
+    private int durationInDays = 365;
 }

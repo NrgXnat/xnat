@@ -47,6 +47,10 @@
             </plugin>
             <plugin>
                 <artifactId>maven-javadoc-plugin</artifactId>
+                <configuration>
+                    <quiet>true</quiet>
+                    <additionalparam>-Xdoclint:none</additionalparam>
+                </configuration>
             </plugin>
             <plugin>
                 <artifactId>maven-surefire-plugin</artifactId>
@@ -201,6 +205,12 @@
         <dependency>
             <groupId>stratum</groupId>
             <artifactId>stratum</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>quartz</groupId>
+                    <artifactId>quartz</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.lowagie</groupId>

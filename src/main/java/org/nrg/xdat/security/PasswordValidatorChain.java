@@ -1,7 +1,7 @@
 /*
  * org.nrg.xdat.security.PasswordValidatorChain
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2015, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
@@ -15,36 +15,35 @@ import java.util.List;
 import org.nrg.xft.security.UserI;
 
 public class PasswordValidatorChain implements PasswordValidator {
-	List<PasswordValidator> validators;
-	String message;
-	
-	//if there are no validators, just return true;
-	@Override
-	public boolean isValid(String password, UserI user){
-		boolean ret = true;
-		StringBuffer sb = new StringBuffer();
-		if(validators != null){
-			for(PasswordValidator validator : validators) {
-				if(!validator.isValid(password, user)){
-					sb.append(validator.getMessage()).append(" \n");
-					ret=false;
-				}
-			}
-		}
-		message = sb.toString();
-		return ret;
-		
-	}
-	public String getMessage(){
-		return message;
-	}
+    public PasswordValidatorChain(final List<PasswordValidator> validators) {
+        _validators = validators;
+    }
 
-	public List<PasswordValidator> getValidators() {
-		return validators;
-	}
+    @Override
+    public boolean isValid(String password, UserI user) {
+        boolean ret = true;
+        final StringBuilder buffer = new StringBuilder();
+        if (_validators != null) {
+            for (final PasswordValidator validator : _validators) {
+                if (!validator.isValid(password, user)) {
+                    buffer.append(validator.getMessage()).append(" \n");
+                    ret = false;
+                }
+            }
+        }
+        message = buffer.toString();
+        return ret;
 
-	public void setValidators(List<PasswordValidator> validators) {
-		this.validators = validators;
-	}
+    }
 
+    public String getMessage() {
+        return message;
+    }
+
+    public List<PasswordValidator> getValidators() {
+        return _validators;
+    }
+
+    private final List<PasswordValidator> _validators;
+    private String message;
 }

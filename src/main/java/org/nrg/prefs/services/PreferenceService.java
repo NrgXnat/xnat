@@ -17,7 +17,7 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * @param entityId          The specified scope for the preference.
      * @return The resulting preference object if it exists in the default scope.
      */
-    public abstract Preference getPreference(String toolId, String preferenceName, final Scope scope, final String entityId);
+    Preference getPreference(String toolId, String preferenceName, final Scope scope, final String entityId);
 
     /**
      * Gets the preference object for the specified tool, name, scope, and entity ID.
@@ -27,7 +27,7 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * @param entityId          The specified scope for the preference.
      * @return The resulting preference object if it exists in the default scope.
      */
-    public abstract Preference getPreference(final Tool tool, String preferenceName, final Scope scope, final String entityId);
+    Preference getPreference(final Tool tool, String preferenceName, final Scope scope, final String entityId);
 
     /**
      * Sets the value of the preference object for the specified tool, name, scope, and entity ID.
@@ -37,7 +37,7 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * @param entityId          The specified scope for the preference.
      * @param value             The value to set for the preference.
      */
-    public abstract void setPreference(final String toolId, final String preferenceName, final Scope scope, final String entityId, String value);
+    void setPreference(final String toolId, final String preferenceName, final Scope scope, final String entityId, String value);
 
     /**
      * Sets the value of the preference object for the specified tool, name, scope, and entity ID.
@@ -47,7 +47,7 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * @param entityId          The specified scope for the preference.
      * @param value             The value to set for the preference.
      */
-    public abstract void setPreference(final Tool tool, final String preferenceName, final Scope scope, final String entityId, String value);
+    void setPreference(final Tool tool, final String preferenceName, final Scope scope, final String entityId, String value);
 
     /**
      * Returns all of the properties for the selected tool at the indicated scope.
@@ -57,5 +57,5 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * @param entityId  The entity for which properties should be retrieved.
      * @return All of the properties for the selected tool at the indicated scope, returned as a Java properties object.
      */
-    public abstract Properties getToolProperties(final String toolId, final Scope scope, final String entityId);
+    Properties getToolProperties(final String toolId, final Scope scope, final String entityId);
 }

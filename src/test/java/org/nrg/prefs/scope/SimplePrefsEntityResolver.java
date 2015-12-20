@@ -15,9 +15,9 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class SimpleEntityResolver implements EntityResolver<Preference> {
+public class SimplePrefsEntityResolver implements EntityResolver<Preference> {
 
-    public SimpleEntityResolver() throws IOException {
+    public SimplePrefsEntityResolver() throws IOException {
         final Site site = new ObjectMapper().readValue(SITE_MAP, Site.class);
         _registry.put(site.getEntityId(), site);
         for (final Project project : site.getProjects()) {

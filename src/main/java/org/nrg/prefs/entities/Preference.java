@@ -20,7 +20,6 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.framework.scope.EntityResolver;
-import org.nrg.prefs.services.NrgPrefsService;
 
 import javax.persistence.*;
 
@@ -29,8 +28,7 @@ import javax.persistence.*;
  * specific scope and entity applied or an entity-specific override value. The entity to which the override value
  * applies depends on the value set for the {@link #getScope() scope} and {@link #getEntityId() entity ID} properties
  * for the preference. These can be resolved to a particular object in the system through the {@link EntityResolver}
- * implementation associated with the preference's {@link Tool} instance, which can be accessed via the {@link
- * NrgPrefsService#setEntityResolver(String, EntityResolver)} method.
+ * implementation associated with the preference's {@link Tool} instance.
  */
 @Entity
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
@@ -76,7 +74,7 @@ public class Preference extends AbstractHibernateEntity {
      * Returns the {@link Tool tool} with which this preference is associated.
      * @return The tool instance with which this preference is associated.
      */
-    @ManyToOne(cascade = CascadeType.ALL)
+    @ManyToOne
     @LazyCollection(LazyCollectionOption.FALSE)
     public Tool getTool() {
         return _tool;

@@ -138,7 +138,7 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
 
     @Override
     public void deletePreference(final String toolId, final String preference, final Scope scope, final String entityId) throws InvalidPreferenceName {
-        _preferenceService.delete(toolId, preference);
+        _preferenceService.delete(toolId, preference, scope, entityId);
     }
 
     @Override

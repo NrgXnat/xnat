@@ -134,6 +134,7 @@ public class Tool extends AbstractHibernateEntity {
 
     /**
      * Returns the preferences class for this tool.
+     *
      * @return The preferences class for this tool.
      */
     public String getPreferencesClass() {

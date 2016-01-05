@@ -49,7 +49,7 @@
                 <artifactId>maven-javadoc-plugin</artifactId>
                 <configuration>
                     <quiet>true</quiet>
-                    <additionalparam>-Xdoclint:none</additionalparam>
+                    <!-- additionalparam>-Xdoclint:none</additionalparam -->
                 </configuration>
             </plugin>
             <plugin>

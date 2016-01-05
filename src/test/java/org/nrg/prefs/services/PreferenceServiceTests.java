@@ -22,16 +22,16 @@ import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import java.util.List;
 import java.util.Properties;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.*;
 
 /**
  * Tests the NRG Hibernate preference service. This is a sanity test of the plumbing for the preference entity
@@ -39,6 +39,8 @@ import static org.junit.Assert.assertTrue;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
+@Rollback
+@Transactional
 public class PreferenceServiceTests {
     public PreferenceServiceTests() {
         _log.info("Creating test class");
@@ -84,6 +86,9 @@ public class PreferenceServiceTests {
         final Properties properties = _prefService.getToolProperties("tool1", EntityId.Default.getScope(), EntityId.Default.getEntityId());
         assertNotNull(properties);
         assertEquals(1, properties.size());
+        for (final String key : properties.stringPropertyNames()) {
+            System.out.println(key);
+        }
         assertTrue(properties.containsKey("Preference 1"));
         assertEquals("Value 1", properties.getProperty("Preference 1"));
     }

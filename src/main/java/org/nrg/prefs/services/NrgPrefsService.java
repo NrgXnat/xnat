@@ -13,15 +13,12 @@
 package org.nrg.prefs.services;
 
 import org.nrg.framework.constants.Scope;
-import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.scope.EntityResolver;
 import org.nrg.framework.services.NrgService;
-import org.nrg.prefs.annotations.NrgPrefsTool;
-import org.nrg.prefs.beans.NrgPreferences;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
+import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.exceptions.UnknownToolId;
 
-import java.lang.reflect.InvocationTargetException;
 import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
@@ -32,54 +29,102 @@ import java.util.Set;
  */
 public interface NrgPrefsService extends NrgService {
     /**
-     * Creates a {@link Tool tool} with no default properties or values set.
-     * @param toolId         The unique tool ID.
-     * @param toolName       The readable tool name.
-     * @param description    The readable description of the tool.
-     * @return The object representing the persisted tool definition.
-     */
-    Tool createTool(final String toolId, final String toolName, final String description);
-    /**
      * Creates a {@link Tool tool} with the indicated default properties and optional values.
-     * @param toolId         The unique tool ID.
-     * @param toolName       The readable tool name.
-     * @param description    The readable description of the tool.
-     * @param defaults       The default properties and values for the tool.
+     *
+     * @param toolId              The unique tool ID.
+     * @param toolName            The readable tool name.
+     * @param description         The readable description of the tool.
+     * @param defaults            The default properties and values for the tool.
+     *
+     * @param strict              Whether the tool is set to "strict", i.e. only pre-defined preferences can be set.
+     * @param preferencesClass    The preferences class to set for the tool.
      * @return The object representing the persisted tool definition.
      */
-    Tool createTool(final String toolId, final String toolName, final String description, final Map<String, String> defaults);
-    /**
-     * Creates a {@link Tool tool} with the indicated default properties and optional values.
-     * @param toolId         The unique tool ID.
-     * @param toolName       The readable tool name.
-     * @param description    The readable description of the tool.
-     * @param defaults       The default properties and values for the tool.
-     * @return The object representing the persisted tool definition.
-     */
-    Tool createTool(final String toolId, final String toolName, final String description, final Properties defaults);
+    // TODO: Here the defaults are in a String, String map. The valueType attribute can indicate another type, but currently we only handle strings. This needs to be handled later with ValueDuple.
+    Tool createTool(final String toolId, final String toolName, final String description, final Map<String, String> defaults, final boolean strict, final String preferencesClass, final String resolverId) throws InvalidPreferenceName;
 
     /**
-     * Gets the preference for the indicated tool. This retrieves for the {@link Scope#Site site scope}. If you need to
-     * specify the preference for a particular entity, use the {@link #getPreference(String, String, Scope, String)}
-     * form of this method instead.
-     * @param toolId            The tool name.
-     * @param preferenceName    The preference name.
-     * @return The {@link Preference preference} for the corres
+     * Gets the preference for the indicated tool. This retrieves the preference for the {@link Scope#Site site scope}.
+     * If you need to specify the preference for a particular entity, use the {@link #getPreference(String, String,
+     * Scope, String)} form of this method instead.
+     *
+     * @param toolId        The unique tool ID.
+     * @param preference    The preference name.
+     *
+     * @return The {@link Preference preference} for the indicated tool and preference name.
      */
-    Preference getPreference(final String toolId, final String preferenceName);
+    Preference getPreference(final String toolId, final String preference) throws UnknownToolId;
 
     /**
      * Gets the preference for the indicated tool and entity.
-     * @param toolId            The tool ID.
-     * @param preferenceName    The preference name.
+     * @param toolId        The unique tool ID.
+     * @param preference    The preference name.
      * @return The {@link Preference preference} for the corresponding tool and entity.
      */
-    Preference getPreference(final String toolId, final String preferenceName, final Scope scope, final String entityId);
+    Preference getPreference(final String toolId, final String preference, final Scope scope, final String entityId) throws UnknownToolId;
 
-    String getPreferenceValue(final String toolId, final String preferenceName);
-    String getPreferenceValue(final String toolId, final String preferenceName, final Scope scope, final String entityId);
-    void setPreferenceValue(final String toolId, final String preferenceName, final String value);
-    void setPreferenceValue(final String toolId, final String preferenceName, final Scope scope, final String entityId, final String value);
+    /**
+     * Get the preference value for the indicated tool and preference. If the preference value is a string, then this
+     * just returns that. If the value is a non-string, the string representation of the value is returned. This
+     * retrieves the preference value for the {@link Scope#Site site scope}. If you need to specify the preference for a
+     * particular entity, use the {@link #getPreferenceValue(String, String, Scope, String)} form of this method
+     * instead.
+     * @param toolId        The unique tool ID.
+     * @param preference    The preference name.
+     * @return The string value for the indicated preference.
+     */
+    String getPreferenceValue(final String toolId, final String preference) throws UnknownToolId;
+
+    /**
+     * Get the preference value for the indicated tool, preference, and entity. If the preference value is a string,
+     * then this just returns that. If the value is a non-string, the string representation of the value is returned.
+     * @param toolId        The unique tool ID.
+     * @param preference    The preference name.
+     * @param scope         The scope of the object identified by the entityId parameter.
+     * @param entityId      The ID of the particular object associated with the preference.
+     * @return The string value for the indicated preference.
+     */
+    String getPreferenceValue(final String toolId, final String preference, final Scope scope, final String entityId) throws UnknownToolId;
+
+    /**
+     * Sets the preference value for the indicated tool and preference. The preference value must be coerced to a
+     * string. This sets the preference value for the {@link Scope#Site site scope}. If you need to set the preference
+     * value for a particular entity, use the {@link #setPreferenceValue(String, String, Scope, String, String)} form of
+     * this method instead.
+     * @param toolId        The unique tool ID.
+     * @param preference    The preference name.
+     * @param value         The value to set for the preference.
+     */
+    void setPreferenceValue(final String toolId, final String preference, final String value) throws UnknownToolId, InvalidPreferenceName;
+
+    /**
+     * Sets the preference value for the indicated tool, preference, and entity. The preference value must be coerced to
+     * a string.
+     * @param toolId        The unique tool ID.
+     * @param preference    The preference name.
+     * @param scope         The scope of the object identified by the entityId parameter.
+     * @param entityId      The ID of the particular object associated with the preference.
+     * @param value         The value to set for the preference.
+     */
+    void setPreferenceValue(final String toolId, final String preference, final Scope scope, final String entityId, final String value) throws UnknownToolId, InvalidPreferenceName;
+
+    /**
+     * Deletes the indicated preference for the tool and specified entity. This deletes the preference value for the
+     * {@link Scope#Site site scope}. If you need to delete the preference value for a particular entity, use the {@link
+     * #deletePreference(String, String, Scope, String)} form of this method instead.
+     * @param toolId        The unique tool ID.
+     * @param preference    The preference name.
+     */
+    void deletePreference(final String toolId, final String preference) throws InvalidPreferenceName;
+
+    /**
+     * Deletes the indicated preference for the tool and specified entity.
+     * @param toolId        The unique tool ID.
+     * @param preference    The preference name.
+     * @param scope         The scope of the object identified by the entityId parameter.
+     * @param entityId      The ID of the particular object associated with the preference.
+     */
+    void deletePreference(final String toolId, final String preference, final Scope scope, final String entityId) throws InvalidPreferenceName;
 
     /**
      * Gets a set of all of the tool names with preferences stored in the service.
@@ -95,7 +140,7 @@ public interface NrgPrefsService extends NrgService {
 
     /**
      * Gets a list of all of the property names associated with the indicated {@link Tool tool}.
-     * @param toolId    The ID of the tool.
+     * @param toolId    The unique tool ID.
      * @return A list of all of the property names for the indicated tool.
      */
     Set<String> getToolPropertyNames(final String toolId);
@@ -103,23 +148,8 @@ public interface NrgPrefsService extends NrgService {
     /**
      * Gets all of the properties associated with the indicated {@link Tool tool} in the form of a standard Java
      * properties object.
-     * @param toolId    The ID of the tool.
+     * @param toolId    The unique tool ID.
      * @return All of the properties for the indicated tool.
      */
     Properties getToolProperties(final String toolId);
-
-    /**
-     * Sets the entity resolver implementation for the specified tool ID.
-     * @param toolId    The ID of the tool.
-     * @param resolver  The entity resolver that should be used to resolve entity IDs for a particular tool.
-     */
-    void setEntityResolver(final String toolId, final EntityResolver resolver);
-
-    /**
-     * Gets the appropriate preferences bean for the indicated object type. The object must be annotated using the
-     * {@link NrgPrefsTool} annotation. This also performs checks to create the {@link Tool} entry for the object type.
-     * @param object    The class for which you want to retrieve the preferences bean.
-     * @return The initialized preferences bean for the indicated object.
-     */
-    NrgPreferences getPreferenceBean(final Object object) throws NrgServiceRuntimeException;
 }

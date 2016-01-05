@@ -1,10 +1,12 @@
-package org.nrg.prefs.scope;
+package org.nrg.prefs.preferences;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.nrg.framework.constants.Scope;
 import org.nrg.framework.scope.EntityId;
-import org.nrg.framework.scope.EntityResolver;
 import org.nrg.prefs.entities.Preference;
+import org.nrg.prefs.resolvers.AbstractPreferenceEntityResolver;
 import org.nrg.prefs.services.PreferenceService;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.stereotype.Component;
 
 import javax.inject.Inject;
@@ -15,7 +17,7 @@ import java.util.List;
 import java.util.Map;
 
 @Component
-public class SimplePrefsEntityResolver implements EntityResolver<Preference> {
+public class SimplePrefsEntityResolver extends AbstractPreferenceEntityResolver implements InitializingBean {
 
     public SimplePrefsEntityResolver() throws IOException {
         final Site site = new ObjectMapper().readValue(SITE_MAP, Site.class);
@@ -77,6 +79,11 @@ public class SimplePrefsEntityResolver implements EntityResolver<Preference> {
             }
         }
         return null;
+    }
+
+    @Override
+    public void afterPropertiesSet() throws Exception {
+        setService(_service);
     }
 
     private static final String SITE_MAP = "{\n" +
@@ -194,4 +201,108 @@ public class SimplePrefsEntityResolver implements EntityResolver<Preference> {
     private PreferenceService _service;
 
     private final Map<EntityId, Entity> _registry = new HashMap<>();
+
+    public abstract static class Entity {
+        public String getId() {
+            return _id;
+        }
+
+        public void setId(final String id) {
+            _id = id;
+            _entityId = new EntityId(getScope(), _id);
+        }
+
+        public EntityId getEntityId() {
+            return _entityId;
+        }
+
+        public EntityId getParentEntityId() {
+            return _parentEntityId;
+        }
+
+        public void setParentEntityId(final EntityId parentEntityId) {
+            _parentEntityId = parentEntityId;
+        }
+
+        abstract public Scope getScope();
+
+        private String _id;
+        private EntityId _entityId;
+        private EntityId _parentEntityId;
+    }
+
+    private static class Experiment extends Entity {
+        @Override
+        public Scope getScope() {
+            return Scope.Experiment;
+        }
+    }
+
+    private static class Project extends Entity {
+        public List<Subject> getSubjects() {
+            return _subjects;
+        }
+
+        @SuppressWarnings("unused")
+        public void setSubjects(final List<Subject> subjects) {
+            _subjects = subjects;
+        }
+
+        @Override
+        public Scope getScope() {
+            return Scope.Project;
+        }
+
+        private List<Subject> _subjects;
+    }
+
+    private static class Site extends Entity {
+        public Site() {
+            setId(null);
+        }
+
+        public List<Project> getProjects() {
+            return _projects;
+        }
+
+        @SuppressWarnings("unused")
+        public void setProjects(final List<Project> projects) {
+            _projects = projects;
+        }
+
+        @SuppressWarnings("unused")
+        public Project getProject(final String projectId) {
+            for (Project project : _projects) {
+                if (project.getId().equals(projectId)) {
+                    return project;
+                }
+            }
+            return null;
+        }
+
+        @Override
+        public Scope getScope() {
+            return Scope.Site;
+        }
+
+        private List<Project> _projects;
+    }
+
+    private static class Subject extends Entity {
+        public List<Experiment> getExperiments() {
+            return _experiments;
+        }
+
+        @SuppressWarnings("unused")
+        public void setExperiments(final List<Experiment> experiments) {
+            _experiments = experiments;
+        }
+
+        @Override
+        public Scope getScope() {
+            return Scope.Subject;
+        }
+
+        private List<Experiment> _experiments;
+    }
 }

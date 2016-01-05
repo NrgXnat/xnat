@@ -16,6 +16,6 @@
 	<import resource="classpath:/org/nrg/prefs/TestDataSource-context.xml" />
 	<import resource="classpath:/META-INF/configuration/nrg-prefs-context.xml" />
 
-    <bean id="defaultResolver" class="org.nrg.prefs.scope.SimplePrefsEntityResolver" />
+    <bean id="defaultResolver" class="org.nrg.prefs.preferences.SimplePrefsEntityResolver" />
 
 </beans>

@@ -3,19 +3,22 @@ package org.nrg.prefs.resolvers;
 import com.google.common.base.Joiner;
 import org.apache.commons.lang3.ArrayUtils;
 import org.nrg.framework.scope.EntityId;
-import org.nrg.framework.scope.EntityResolver;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.services.PreferenceService;
 
-import javax.inject.Inject;
 import java.util.List;
 
-abstract public class AbstractPreferenceEntityResolver implements EntityResolver<Preference> {
+abstract public class AbstractPreferenceEntityResolver implements PreferenceEntityResolver {
+
+    protected AbstractPreferenceEntityResolver() {
+
+    }
 
     protected AbstractPreferenceEntityResolver(final PreferenceService service) {
         _service = service;
     }
 
+    @Override
     public Preference resolve(final EntityId entityId, Object... parameters) {
         final List<EntityId> hierarchy = getHierarchy(entityId);
         final String toolId = (String) parameters[0];
@@ -31,6 +34,10 @@ abstract public class AbstractPreferenceEntityResolver implements EntityResolver
 
     protected PreferenceService getService() {
         return _service;
+    }
+
+    protected void setService(final PreferenceService service) {
+        _service = service;
     }
 
     private PreferenceService _service;

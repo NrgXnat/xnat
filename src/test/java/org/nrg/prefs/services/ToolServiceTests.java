@@ -20,8 +20,10 @@ import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.prefs.entities.Tool;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
+import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
 import java.util.HashMap;
@@ -37,6 +39,8 @@ import static org.junit.Assert.assertNotNull;
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
+@Rollback
+@Transactional
 public class ToolServiceTests {
     public ToolServiceTests() {
         _log.info("Creating test class");
@@ -68,10 +72,9 @@ public class ToolServiceTests {
         assertEquals(1, tools.size());
         assertEquals("tool1", tools.get(0).getToolId());
         assertEquals("Tool 1", tools.get(0).getToolName());
-        assertEquals("This is the first tool of them all!", tool.getToolDescription());
-        assertNotNull(tool.getToolPreferences());
-        assertEquals(1, tool.getToolPreferences().size());
-
+        assertEquals("This is the first tool of them all!", tools.get(0).getToolDescription());
+        assertNotNull(tools.get(0).getToolPreferences());
+        assertEquals(1, tools.get(0).getToolPreferences().size());
     }
 
     private static final Logger _log = LoggerFactory.getLogger(ToolServiceTests.class);

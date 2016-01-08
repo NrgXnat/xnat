@@ -102,8 +102,6 @@ public class RoleRepositoryServiceImpl implements RoleRepositoryServiceI {
 		public void setKey(String key) {
 			this.key = key;
 		}
-		
-		
 	}
 
 }

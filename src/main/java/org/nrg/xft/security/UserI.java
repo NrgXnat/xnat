@@ -12,12 +12,13 @@
 
 package org.nrg.xft.security;
 
-import java.io.Serializable;
-import java.util.Date;
-
+import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xft.exception.MetaDataException;
 import org.springframework.security.core.userdetails.UserDetails;
+
+import java.io.Serializable;
+import java.util.Date;
 
 /**
  * @author Tim
@@ -65,6 +66,8 @@ public interface UserI extends UserDetails,Serializable{
 	
     UserAuthI setAuthorization(UserAuthI newUserAuth);
     UserAuthI getAuthorization();
+
+    DisplayManager getDisplayManager();
 }
 
 

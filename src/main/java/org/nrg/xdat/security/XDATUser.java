@@ -18,6 +18,7 @@ import org.apache.commons.lang.builder.HashCodeBuilder;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
+import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.UserRole;
@@ -1105,6 +1106,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
     public boolean isCredentialsNonExpired() {
         return true;
+    }
+
+    public DisplayManager getDisplayManager() {
+        return DisplayManager.GetInstance();
     }
 
     //necessary for spring security session management

@@ -357,10 +357,10 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         return usernameToTest;
     }
 
-    private static final String[] EXCLUSION_PROPERTIES                      = AbstractHibernateEntity.getExcludedProperties("xdatUsername", "verified", "failedLoginAttempts");
-    private static final String[] EXCLUSION_PROPERTIES_XDAT_USER_DETAILS    = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "failedLoginAttempts");
-    private static final String[] EXCLUSION_PROPERTIES_USERNAME             = AbstractHibernateEntity.getExcludedProperties("xdatUsername", "verified", "authMethodId", "failedLoginAttempts");
-    private static final String[] EXCLUSION_PROPERTIES_XDATUSER             = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "authMethodId", "failedLoginAttempts");
+    private static final String[] EXCLUSION_PROPERTIES                      = AbstractHibernateEntity.getExcludedProperties("xdatUsername", "verified", "failedLoginAttempts", "lastSuccessfulLogin", "passwordUpdated");
+    private static final String[] EXCLUSION_PROPERTIES_XDAT_USER_DETAILS    = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "failedLoginAttempts", "lastSuccessfulLogin", "passwordUpdated");
+    private static final String[] EXCLUSION_PROPERTIES_USERNAME             = AbstractHibernateEntity.getExcludedProperties("xdatUsername", "verified", "authMethodId", "failedLoginAttempts", "authMethod", "lastSuccessfulLogin", "passwordUpdated");
+    private static final String[] EXCLUSION_PROPERTIES_XDATUSER             = AbstractHibernateEntity.getExcludedProperties("authUser", "verified", "authMethodId", "failedLoginAttempts", "authMethod", "lastSuccessfulLogin", "passwordUpdated");
 
     private static final Log _log = LogFactory.getLog(HibernateXdatUserAuthService.class);
 

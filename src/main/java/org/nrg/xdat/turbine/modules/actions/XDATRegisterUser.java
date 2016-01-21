@@ -113,8 +113,11 @@ public class XDATRegisterUser extends VelocitySecureAction {
                         }
                         
                         UserI currUser=TurbineUtils.getUser(data);
-		                
-                        Users.save(found, (currUser!=null)?currUser:found, true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
+                        UserI userToSave = found;
+                        if(currUser!=null && !currUser.isGuest()){
+                            userToSave = currUser;
+                        }
+                        Users.save(found, userToSave, true, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Registered User"));
 
                         final String comments = TurbineUtils.HasPassedParameter("comments", data) ? (String) TurbineUtils.GetPassedParameter("comments", data) : "";
                         final String phone = TurbineUtils.HasPassedParameter("phone", data) ? (String) TurbineUtils.GetPassedParameter("phone", data) : "";

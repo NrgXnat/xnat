@@ -1088,11 +1088,19 @@
                 <artifactId>com.springsource.org.apache.regexp</artifactId>
                 <version>${org.apache.regexp.version}</version>
             </dependency>
+
+            <!-- Optional dependencies. These are usually for IDE tools or annotation processors -->
             <dependency>
                 <groupId>org.jetbrains</groupId>
                 <artifactId>annotations</artifactId>
                 <version>1.0</version>
-                <scope>provided</scope>
+                <optional>true</optional>
+            </dependency>
+            <dependency>
+                <groupId>org.kohsuke.metainf-services</groupId>
+                <artifactId>metainf-services</artifactId>
+                <version>1.6</version>
+                <optional>true</optional>
             </dependency>
 
             <!-- Scripting engine dependencies -->

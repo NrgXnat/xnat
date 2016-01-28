@@ -254,6 +254,11 @@
             </dependency>
             <dependency>
                 <groupId>org.nrg</groupId>
+                <artifactId>nrg-all</artifactId>
+                <version>${project.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.nrg</groupId>
                 <artifactId>DicomEdit</artifactId>
                 <version>${nrg.dicomedit.version}</version>
             </dependency>

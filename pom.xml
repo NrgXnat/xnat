@@ -122,7 +122,6 @@
         <hibernate-validator.version>5.2.2.Final</hibernate-validator.version -->
         <hibernate-commons.version>4.0.4.Final</hibernate-commons.version>
         <hibernate-jpa-2.1.version>1.0.0.Final</hibernate-jpa-2.1.version>
-        <hibernate-jpa.version>1.0.1.Final</hibernate-jpa.version>
         <hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
         <hibernate.version>4.3.1.Final</hibernate.version>
         <httpcomponents-client.version>4.5.1</httpcomponents-client.version>
@@ -135,8 +134,8 @@
         <javax-activation.version>1.1.1</javax-activation.version>
         <javax-inject.version>1</javax-inject.version>
         <javax-j2ee-api.version>1.1.1</javax-j2ee-api.version>
-        <javax-jms-api.version>2.0</javax-jms-api.version>
-        <javax-mail.version>1.5.4</javax-mail.version>
+        <javax-jms-api.version>2.0.1</javax-jms-api.version>
+        <javax-mail.version>1.5.5</javax-mail.version>
         <jcalendar.version>1.4</jcalendar.version>
         <jcs.version>1.3</jcs.version>
         <jena-tdb.version>1.0.1</jena-tdb.version>
@@ -158,7 +157,7 @@
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.10</reflections.version>
         <restlet.version>1.1.10</restlet.version>
-        <saxon.version>8.7</saxon.version>
+        <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
         <slf4j.version>1.7.7</slf4j.version>
         <spring-framework.version>4.2.3.RELEASE</spring-framework.version>
@@ -535,11 +534,6 @@
             </dependency>
             <dependency>
                 <groupId>org.hibernate.javax.persistence</groupId>
-                <artifactId>hibernate-jpa-2.0-api</artifactId>
-                <version>${hibernate-jpa.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.hibernate.javax.persistence</groupId>
                 <artifactId>hibernate-jpa-2.1-api</artifactId>
                 <version>${hibernate-jpa-2.1.version}</version>
             </dependency>
@@ -763,16 +757,6 @@
                 <groupId>org.apache.xmlbeans</groupId>
                 <artifactId>xmlbeans-xpath</artifactId>
                 <version>${xmlbeans.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>org.apache.xmlbeans</groupId>
-                <artifactId>xmlbeans-xmlpublic</artifactId>
-                <version>${xmlbeans.version}</version>
-            </dependency>
-            <dependency>
-                <groupId>xml-apis</groupId>
-                <artifactId>xml-apis</artifactId>
-                <version>${xml-apis.version}</version>
             </dependency>
             <dependency>
                 <groupId>net.sourceforge.saxon</groupId>

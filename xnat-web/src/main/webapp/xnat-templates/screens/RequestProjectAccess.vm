@@ -1,0 +1,49 @@
+<form name="form1" method="post" action="$link.setAction("RequestAccess")"> 
+<input type="hidden" name="project" value="$project.getId()"/><TABLE>
+ <TR>
+  <TD><h3>$project.getName() Access Request</h3>
+  </TD>
+ </TR>
+ <TR>
+  <TD>&nbsp;
+  </TD>
+ </TR>
+ <TR>
+  <TD>Upon submission of this form an email will be sent to the $displayManager.getSingularDisplayNameForProject().toLowerCase() manager.  The manager will be asked to give you access to this $displayManager.getSingularDisplayNameForProject().toLowerCase().  Once the manager approves or denies your access, an email will be sent to you.
+  </TD>
+ </TR>
+ <TR>
+  <TD>&nbsp;
+  </TD>
+ </TR>
+ <TR>
+  <TD>What level of access would you like to request for the $project.getName() study?
+  </TD>
+ </TR>
+ <TR>
+  <TD>&nbsp;
+  </TD>
+ <TR>
+  <TD align="center"><select name="access_level"><option value="collaborator">Collaborator</option><option value="member">Member</option><option value="owner">Owner</option></select>
+  </TD>
+ <TR>
+  <TD>&nbsp;
+  </TD>
+ </TR>
+ <TR>
+  <TD align="center">Comments: <textarea name="comments" rows="4" cols="30"></textarea>
+  </TD>
+ <TR>
+  <TD>&nbsp;
+  </TD>
+ </TR>
+ <TR>
+  <TD align="center"><input type="button" ONCLICK="javascript:history.go(-1)" name="reset" value="Cancel" />&nbsp;&nbsp;&nbsp;<input type="submit" name="eventSubmit_doPerform" value="Submit Request" />
+  </TD>
+ </TR>
+ <TR>
+  <TD>&nbsp;
+  </TD>
+ </TR>
+</TABLE>
+</form>

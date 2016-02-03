@@ -1,0 +1,42 @@
+<table>
+ <tr>
+  <td>
+   <div id="project_placeholder">$!om.getProjectDisplayID()</div><input type="hidden" id="$om.getXSIType()/project" name="$om.getXSIType()/project" value="$!om.getProject()"/>
+  </td>
+  <td>
+	#if($data.getSession().getAttribute("userHelper").canDelete($om.getItem()))
+   <a onclick="modifyProject();">
+    		<img border="0" src="$content.getURI("images/e.gif")"/>
+   </a>
+   #end
+  </td>
+ </tr>
+</table>
+<script type="text/javascript">
+    var imageAssessors = [];
+    #if($!om.getItem().instanceOf("xnat:imageSessionData"))
+        #foreach($assessor in $om.getAssessors_assessor())
+            #if ($assessor.getProject() == $om.getProject())
+    imageAssessors.push({id:"$assessor.getId()",label:"$assessor.getLabel()",move:true});
+            #end
+        #end
+    #end
+  function modifyProject(){
+    if(window.projectEditor==undefined){
+      var config =new Object();
+      if(window.currentID!=""){
+        config.uri=serverRoot +"/REST/projects/" + window.currentProject +"/subjects/" + window.currentSubject + "/experiments/" + window.currentID;
+      }
+      config.imageAssessors = imageAssessors;
+      window.projectEditor=new ProjectEditor(config);
+      window.projectEditor.onModification.subscribe(function (obj){
+         document.getElementById("project_placeholder").innerHTML=this.new_project_name;
+         document.getElementById("$om.getXSIType()/project").value=this.new_project;
+         config.uri=serverRoot +"/REST/projects/" + window.currentProject +"/subjects/" + window.currentSubject + "/experiments/" + window.currentID;
+         confirmValues();
+      });
+      window.projectEditor.render();
+    }
+    window.projectEditor.panel.show();
+  }
+	</script>

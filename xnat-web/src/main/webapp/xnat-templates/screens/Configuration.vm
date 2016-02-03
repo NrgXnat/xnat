@@ -1,0 +1,155 @@
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="tabs" type="java.util.List<java.util.Properties>" *#
+#* @vtlvariable name="initialize" type="java.lang.Boolean" *#
+<!-- Start Configuration page, source file is plugin-resources/webapp/xnat-templates/screens/Configuration.vm -->
+<style type="text/css">
+    #configuration_tabs_module {  }
+    #configurationTabs { width: 732px !important; }
+    #configurationTabs.yui-navset.wrangled ul.yui-nav { height: 28px !important ; }
+    #configurationTabs .flipper_box .flippers a.flipper { height: 26px ; }
+</style>
+<script type="text/javascript">
+    jq(function(){
+        jq('body').addClass('administer configuration no_left_bar');
+    });
+</script>
+##<script type="text/javascript" src="$content.getURI("scripts/tabWrangler/tabWrangler.js")"></script>
+<div class="yui-skin-sam">
+<div id="tp_fm" style="display:none"></div>
+<table style="width:98%">
+    <tr>
+        <td valign="top" style="width:680px;">
+            <div class="edit_header1">Configuration</div><br/>
+
+#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+            <script type="text/javascript" src="$content.getURI("scripts/yui/build/resize/resize-beta-min.js")"></script>
+            <script type="text/javascript" src="$content.getURI("scripts/yui/build/layout/layout-beta-min.js")"></script>
+            <script type="text/javascript" src="$content.getURI("scripts/search/tabManager.js")"></script>
+            <script type="text/javascript" src="$content.getURI("scripts/search/saveSearch.js")"></script>
+            <script type="text/javascript" src="$content.getURI("scripts/search/dataTableSearch.js")"></script>
+            <script type="text/javascript" src="$content.getURI("scripts/search/dataTableStoredSearch.js")"></script>
+            <script type="text/javascript" src="$content.getURI("scripts/yui/xnat_loader.js")"></script>
+            <script type="text/javascript" src="$content.getURI("scripts/project/settingsTabMgmt.js")"></script>
+
+            <!-- BEGIN TABS AND CONTENT DISPLAY: Taken from xnat_projectData_summary_tabs.vm -->
+##            <style>span.spacer {height:12px;width:1px;}</style>
+            <div id="configuration_tabs_module" style="display:none">
+                <div id="configurationTabs" class="yui-navset">
+					
+                    <ul class="yui-nav">
+                        <li class="selected"><a href="#siteInfo"><em>Site Information<span class="spacer"></span></em></a></li>
+                        <li><a href="#security"><em>Security<span class="spacer"></span></em></a> </li>
+                        <li><a href="#fileSystem"><em>File System<span class="spacer"></span></em></a></li>
+                        <li><a href="#features"><em>Features<span class="spacer"></span></em></a></li>
+                        <li><a href="#registration"><em>Registration<span class="spacer"></span></em></a></li>
+                        <li><a href="#notifications"><em>Notifications<span class="spacer"></span></em></a></li>
+                        <li><a href="#anonymization"><em>Anonymization<span class="spacer"></span></em></a></li>
+                        <li><a href="#applets"><em>Applets<span class="spacer"></span></em></a></li>
+                        <li><a href="#seriesImportFilter"><em>Series Import Filter<span class="spacer"></span></em></a></li>
+                        <li><a href="#petTracers"><em>PET Tracers<span class="spacer"></span></em></a></li>
+                        <li><a href="#dicomReceiver"><em>DICOM<span class="spacer"></span></em></a></li>
+                        <li><a href="#scanTypeMapping"><em>Scan Type Mapping<span class="spacer"></span></em></a></li>
+                        #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.show-mock-rest-config", "false")))
+                            <li><a href="#mockRestConfig"><em>Mock REST Calls<span class="spacer"></span></em></a></li>
+                        #end
+                        #if(!$initialize)
+                            #foreach($tab in $tabs)
+                                <li><a href="#$tab.getProperty("divName")"><em>$tab.getProperty("title")<span class="spacer"></span></em></a></li>
+                            #end
+                        #end
+                    </ul>
+                    <div class="yui-content">   
+                        <div id="siteInfo">
+                            #parse('screens/configuration/siteInfo.vm')
+                        </div>
+                        <div id="security">
+                            #parse('screens/configuration/security.vm')
+                        </div>
+                        <div id="fileSystem">
+                            #parse('screens/configuration/fileSystem.vm')
+                        </div>
+                        <div id="features">
+                            #parse('screens/configuration/features.vm')
+                        </div>
+                        <div id="registration">
+                            #parse('screens/configuration/registration.vm')
+                        </div>
+                        <div id="notifications">
+                            <p>#parse('screens/configuration/notifications.vm')
+                        </div>
+                        <div id="anonymization">
+                            #parse('screens/configuration/anonymization.vm')
+                        </div>
+                        <div id="applets">
+                            #parse('screens/configuration/applets.vm')
+                        </div>
+                        <div id="seriesImportFilter">
+                            #parse('screens/configuration/seriesImportFilter.vm')
+                        </div>
+                        <div id="petTracers">
+                            #parse('screens/configuration/petTracers.vm')
+                        </div>
+                        <div id="dicomReceiver">
+                            #parse('screens/configuration/dicomReceiver.vm')
+                        </div>
+                        <div id="scanTypeMappingDefault">
+                            #parse('screens/configuration/scanTypeMapping.vm')
+                        </div>
+                        #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.show-mock-rest-config", "false")))
+                            <div id="mockRestConfig">
+                                #parse('screens/configuration/mockRestConfig.vm')
+                            </div>
+                        #end
+                        #if(!$initialize)
+                            #foreach($tab in $tabs)
+                                <div id="$tab.getProperty("divName")">
+                                    #set($path = "screens/configuration/${tab.getProperty('fileName')}")
+                                    #parse($path)
+                                </div>
+                            #end
+                        #end
+                    </div>
+                </div>
+            </div>
+            <script type="text/javascript">
+                window.initializing = #if(!$initialize) false #else true #end;
+                configurationTabManagerInit();
+
+                jq(function(){
+                    var mgmt_container = '.mgmt_container';
+                    jq('body').on('input propertychange',mgmt_container+' input[type="text"], '+mgmt_container+' textarea', function() {
+                        var __this_container = jq(this).closest(mgmt_container);
+                        __this_container.find('input.reset').prop('disabled',false);
+                    });
+                });
+
+            </script>
+            <!-- END TABS AND CONTENT DISPLAY: Taken from xnat_projectData_summary_tabs.vm -->
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+#else
+        </td>
+    </tr>
+    <tr>
+        <td colspan="3">
+            <div id="congratsContainer" class="container" style="width:98%;margin:5px;background-color:#ff99cc;">
+                <div id="congratsBody" class="containerBody">
+                    <div class="containerItem edit_header2" style="white-space:normal;line-height:18px;">Security Warning</div>
+                    <div class="containerItem" style="white-space:normal;">You do not have administrator access and can't access this page.</div>
+                </div>
+            </div>
+#end
+        </td>
+    </tr>
+</table>
+    <script type="text/javascript">
+        jq(window).load(function(){
+            wrangleTabs('#configurationTabs');
+        });
+    </script>
+<!-- End Configuration page, source file is plugin-resources/webapp/xnat-templates/screens/Configuration.vm -->

@@ -1,0 +1,118 @@
+/*
+    CSS for xmodal-v1 script
+*/
+
+/*html.noscroll { position: relative ; overflow-y: scroll ; width: 100% ; }*/
+
+body.xmodal-v1 { display: block !important ; overflow-y: scroll ; } /* the body will not disappear! */
+/*body.xmodal-v1.open { position: fixed !important ; overflow: hidden ; } *//* hold the page still while the xModal is open */
+
+div.xmodal-mask.v1 { display: none ; margin: auto ; position: fixed ; left: 0 ; top: 0 ; width: 100% ; height: 100% ; background: rgba(0,0,0,0.3) ; }
+div.xmodal-mask.v1 { background: transparent url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAECAYAAACp8Z5+AAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAABhJREFUeNpiZGBg8GVAAkwMaICwAECAAQAUlABVw7mtDgAAAABJRU5ErkJggg==); }
+/*div.xmodal-mask.v1.open { display: block ; z-index: 100 ; }*/
+
+div.xmodal.v1 {
+    display: none ; min-width: 200px ; min-height: 128px ; max-width: 98% ; max-height: 98% ;
+    position: fixed ; top: 0 ; right: 0 ; bottom: 0 ; left: 0 ; margin: auto ; overflow: hidden ;
+    background: #fff ; border: 1px solid #a0a0a0 ; box-shadow: 0 10px 30px rgba(0,0,0,0.5) ;
+    font-family: Arial, Helvetica, sans-serif ; }
+
+div.xmodal.v1.open { display: block; }
+
+div.xmodal.v1:focus { outline: 1px solid #808080; }
+
+div.xmodal.v1.dialog { width: 600px ; height: 400px ; }
+
+div.xmodal.v1.loading { min-height: 80px; }
+
+div.xmodal.v1.maxxed {
+    width: 98% !important; height: 98% !important;
+    max-width: 98% !important; max-height: 98% !important;
+    top: 0 !important; right: 0 !important;
+    bottom: 0 !important; left: 0 !important; }
+
+div.xmodal.v1 .button:hover,
+div.xmodal.v1 .close:hover { cursor: pointer ; }
+
+div.xmodal.v1 .buttons :focus { box-shadow: 0 0 5px rgba(0, 100, 200, 0.8); }
+
+div.xmodal.v1 .title {
+    height: 25px ; padding: 0 ; overflow: hidden ; line-height: inherit ;
+    color: #303030 ; background: #f0f0f0 center center repeat-x ; border-bottom: 1px solid #c0c0c0 ; }
+div.xmodal.v1 .title { background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAkCAIAAAAhPwwfAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAADBJREFUeNpi/PPnDwMMMDEgAYo5LP///yeZ8+/fP2JkyFFGDodiF5ARBhQHPECAAQDfTksARZ3oFgAAAABJRU5ErkJggg==); }
+div.xmodal.v1 .title .inner {
+    display: inline-block; padding-left: 10px ; overflow: hidden; white-space: nowrap;
+    font-size: 12px ; font-weight: bold ; line-height: 28px ; vertical-align: middle ; }
+div.xmodal.v1 .title .inner > i { color: #505050; font-weight: normal; font-style: normal; }
+div.xmodal.v1 .title .close,
+div.xmodal.v1 .title .maximize {
+    width: 24px; height: 16px; margin: 0; padding: 0;
+    position: absolute ; top: 4px ; right: 4px ;
+    font-size: 16px ; font-weight: bold ; text-align: center; line-height: 17px;
+    color: #606060 ; background: #f8f8f8 ;
+    border: 1px solid #b0b0b0 ; border-radius: 2px; }
+div.xmodal.v1 .title .maximize { right: 34px; line-height: 10px; }
+div.xmodal.v1 .title .maximize:hover { cursor: pointer; }
+
+/* base64 close-yui.gif */
+/*div.xmodal .title .close {*/
+    /*background: transparent center center no-repeat ;*/
+    /*background-image: url(data:image/gif;base64,R0lGODlhGQAPALMJALGxsZ2dnezs7HNzc21tbYWFhfX19cHBwf///////wAAAAAAAAAAAAAAAAAAAAAAACH5BAEAAAkALAAAAAAZAA8AAAROMJ1Jq71Tos27/9sEjqMIAgZnAOVxEkVqFAT7md4MC3QM4jnaAJb6uUaC4UBAAnZ0Q58RpCvwiNNPAKsLZHOBIsIQ/pLOCCf6J8G4MYkIADs=);*/
+/*}*/
+
+div.xmodal.v1 .body { width: 100% ; height: 100% ; position: absolute ; overflow: hidden ; }
+div.xmodal.v1 .body.scroll { overflow-y: auto ; }
+div.xmodal.v1 .body .inner { display: none ; padding: 20px ; font-size: 13px ; line-height: 17px ; }
+div.xmodal.v1.nopad .body .inner { padding: 0 ; }
+div.xmodal.v1.open .body .inner { display: block ; }
+div.xmodal.v1 .body h1,
+div.xmodal.v1 .body h2,
+div.xmodal.v1 .body h3,
+div.xmodal.v1 .body h4 { margin-bottom: 1em !important; }
+div.xmodal.v1 .body p { margin: 0 0 1em ; }
+
+div.xmodal.v1 .footer {
+    display: block ; width: 100% ; /*height: 52px ;*/ margin-top: -1px ; padding: 0 ;
+    position: absolute ; bottom: 0 ;
+    background: #f0f0f0; border-top: 1px solid #e0e0e0 ; overflow: hidden ; }
+div.xmodal.v1 .footer.white { background: #fff ; border-top-color: #fff ; }
+div.xmodal.v1 .footer .inner { display: table ; width: 100% ; height: 100% ; position: relative ; }
+div.xmodal.v1 .footer .content { display: table-cell ; padding-left: 15px ; vertical-align: middle ; text-align: left ; }
+div.xmodal.v1 .footer .buttons { display: table-cell ; padding-right: 15px ; vertical-align: middle ; text-align: right ; }
+div.xmodal.v1 .footer .buttons .link { display: inline-block; padding: 10px; font-size: 13px; text-decoration: underline; }
+div.xmodal.v1 .footer .button {
+    display: inline-block ; margin-left: 10px ; padding: 1px 15px !important ; float: right ;
+    line-height: 23px ; vertical-align: middle ; font-size: 13px ; font-weight: bold ; text-decoration: none !important ; }
+div.xmodal.v1 .footer a.button { height: 24px ; line-height: 24px; } /* set height only for <a> buttons */
+div.xmodal.v1 .footer .button,
+div.xmodal.v1 .footer .button.cancel.default {
+    color: #303030 ; background: #e0e0e0 center center repeat-x ; border: 1px solid #a0a0a0 ; border-radius: 3px ;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAeCAIAAACE3ijUAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAADlJREFUeNpi/P//PwMMMDEgAYo5LP/+/SOG8+fPHxwyf//+xcFB0YNbGW49uO3B7VAUZVQNN4AAAwDARzjNaWlUCgAAAABJRU5ErkJggg==); }
+div.xmodal.v1 .footer .button:active,
+div.xmodal.v1 .footer .button.cancel.default:active { color: inherit ; background: #d0d0d0 }
+div.xmodal.v1 .footer .button.default { font-weight: bold ; color: #fff ; background: #07428d center top repeat-x ; border-color: #293d66 ;
+    background-image: url(data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAQAAAAeCAIAAACE3ijUAAAAGXRFWHRTb2Z0d2FyZQBBZG9iZSBJbWFnZVJlYWR5ccllPAAAAFJJREFUeNqMzsENwDAIA0BH6nrdKbt1rGLTfiqcRyr4nWwB45wXvjmUKND0QoWgJeG14Lb2kxjuXm3ZtvxG7r6WaPAFqXCwA2QTdgdITwqPAAMAHoRQTInXYu8AAAAASUVORK5CYII=); }
+div.xmodal.v1 .footer .button.default:active { background: #084FAB ; border-color: #243356 ; }
+div.xmodal.v1 .footer .button.hidden,
+div.xmodal.v1 .footer .button.disabled { /*display: inline-block ;*/ color: #f0f0f0 ; background: #d0d0d0 ; border-color: #c0c0c0 ; }
+div.xmodal.v1 .footer .button.hidden:hover,
+div.xmodal.v1 .footer .button.disabled:hover { cursor: not-allowed !important ; background: #d0d0d0 ; }
+
+div.xmodal.v1.loading .title .close { display: none ; }
+div.xmodal.v1.loading .body .inner { text-align: center ; }
+
+.ie8 body div.xmodal.v1 .footer .button { /* margin: 10px ; */ padding: 3px 6px ; }
+.ie9 body div.xmodal.v1 .footer .button { /* margin: 12px ; */ padding: 4px 6px 3px ; }
+
+.modal_content, .modal_template { display: none ; }
+
+/*
+custom form styles
+by Will Horton
+for db.humanconnectome.org
+*/
+
+/* custom form styles from HCP didn't work for core XNAT */
+
+
+div.xmodal.v1.embedded { top: 0; left: 0; border: none; box-shadow: none; display: block; z-index: auto;  }

@@ -1,0 +1,585 @@
+
+<!-- ImageUpload.vm -->
+
+<script type="text/javascript">
+    jq(document).ready(function() {
+        // add "applet" class to body to support special handling for applets
+        jq('body').addClass('applet');
+    });
+</script>
+
+<script type="text/javascript">
+
+    function disableForm(theform) {
+        if (document.getElementById)
+        {
+            document.getElementById('progressBar').style.display = 'block';
+        }
+        else if (document.all)
+        {
+            document.all['progressBar'].style.display = 'block';
+        }
+
+        if (document.all || document.getElementById) {
+            for (i = 0; i < theform.length; i++) {
+                var tempobj = theform.elements[i];
+                if (tempobj.type.toLowerCase() == "submit" || tempobj.type.toLowerCase() == "reset" || tempobj.type.toLowerCase() == "button")
+                    tempobj.disabled = true;
+            }
+            return true;
+        }
+        else {
+            return true;
+        }
+    }
+
+    function enableForm() {
+        var theform;
+        if (document.getElementById)
+        {
+            theform= document.getElementById('uploadFORM');
+        }
+        else if (document.all)
+        {
+            theform= document.all['uploadFORM'];
+        }
+
+        if (document.all || document.getElementById) {
+            for (i = 0; i < theform.length; i++) {
+                var tempobj = theform.elements[i];
+                if (tempobj.type.toLowerCase() == "submit" || tempobj.type.toLowerCase() == "reset" || tempobj.type.toLowerCase() == "button")
+                    tempobj.disabled = false;
+            }
+            return true;
+        }else {
+            return true;
+        }
+    }
+</script>
+
+<script type="text/javascript">
+var i;
+var req;
+
+var uploadCount = 0;
+var extractCount = 0;
+var progressBar;
+var progressPercent;
+var uploadID = "$uploadID";
+var started=0;
+var extractTimeOut=300;
+
+function setUploadProgress(i)
+{
+    if(i==0)
+    {
+        document.getElementById("uploadPercent").innerHTML="";
+        document.getElementById("uploadBar").style.width=0 +"px";
+    }else{
+        if (i>100)
+        {
+
+        }else{
+            var pixels = i * 3;
+            if (i>10){document.getElementById("uploadPercent").innerHTML=parseInt(i)+"%";}
+            else{document.getElementById('preparing').innerHTML="";}
+            document.getElementById("uploadBar").style.width=pixels+"px";
+            document.getElementById('preparing').innerHTML="Loading File...&nbsp";
+        }
+    }
+}
+
+function setExtractSummary(jsonobj){
+    var messages = "";
+    try {
+       var respPos=jsonobj.msgs[0].length-1;
+       for (i=0; i<=respPos; i++) {
+           var level = jsonobj.msgs[0][i].status;
+           var message = jsonobj.msgs[0][i].msg;
+           if (level=="COMPLETED") {
+              message = "<tr bgcolor='#CCFFCC'><td>" + message;
+           }else if (level=="PROCESSING") {
+              message = "<tr bgcolor='#CCFFFF'><td>" + message;
+           }else if (level=="WARNING") {
+              message = "<tr bgcolor='#FFCCC'><td>" + message;
+           }else if (level=="FAILED") {
+              message = "<tr bgcolor='#FF99CC'><td>" + message;
+   	   }else{
+              message = "<tr bgcolor='#CCCCCC'><td>" + message;
+           }
+           messages = messages +  message + "</td></tr>";
+        }
+      } catch (e) {
+      }
+      document.getElementById("extractSummary").innerHTML=
+         "<table width='100%' cellpadding='2' cellspacing='0'><tr><th>Extraction / Review summary:</th></tr>" +
+            messages +
+         "</table>"; 
+}
+
+function toggleExtractSummary(){
+    if(document.getElementById("extractSummary").style.display=="none")
+    {
+      document.getElementById("extractSummaryTable").border="1";
+      document.getElementById("extractSummary").style.display="block";
+    }else{
+      document.getElementById("extractSummaryTable").border="0";
+      document.getElementById("extractSummary").style.display="none";
+    }
+}
+
+function setExtractProgress(i)
+{
+  if(i==0)
+  {
+    document.getElementById("extractPercent").innerHTML="";	
+    document.getElementById("extractBar").style.width=0 +"px";
+  }else{
+    if (i>100)
+    {
+      
+    }else{
+      var pixels = i * 3;
+      if (i>10){document.getElementById("extractPercent").innerHTML=parseInt(i)+"%";}
+      document.getElementById("extractBar").style.width=pixels+"px";
+    }
+  }
+}
+
+function evaluateDestination(ele)
+{
+   if (ele.value=='2') {
+	document.getElementById("auto-archive").value='true';
+	document.getElementById("quarantine").value='true';
+   } else if (ele.value=='1') {
+	document.getElementById("auto-archive").value='true';
+	document.getElementById("quarantine").value='false';
+   } else if (ele.value=='0') {
+	document.getElementById("auto-archive").value='false';
+	document.getElementById("quarantine").value='false';
+   }
+}
+
+var checkProgressFinal = 0;
+
+function prog(theform)
+{
+	  if(document.getElementById("project").selectedIndex==0){
+        xModalMessage('Image Upload Validation', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
+	    return false;
+	  }
+  disableForm(theform);
+  document.getElementById("iframe").src="";
+  started=0;
+  checkProgressFinal = 0;
+  progressBar=document.getElementById("uploadBar");
+  progressPercent=document.getElementById("uploadPercent");
+  
+  document.getElementById('preparing').style.display = 'block';
+  document.getElementById('preparing').innerHTML="Loading File...&nbsp";
+  setUploadProgress(0);
+  setExtractProgress(0);
+  setExtractSummary("");
+  resetProgress();
+  checkProgress();
+  
+  return true;
+}
+
+function callback() {
+    if (req.readyState == 4) {
+        if (req.status == 200) {
+      			         started=1;
+            // handle response 
+            var respDat = YAHOO.lang.JSON.parse(req.responseText);
+            var respPos=respDat.msgs[0].length-1;
+            var uploadI=0;
+            var extractI=0;
+            var statusCount = 0;
+            if (respDat.msgs[0].length>0)
+            {
+                if (respDat.msgs[0].length>0) {
+                   var level = respDat.msgs[0][respPos].status;
+                   var message = respDat.msgs[0][respPos].msg;
+                }
+            }
+ 
+            if (req.responseText.indexOf("file uploaded")>=0) {
+               uploadI=100;
+            }
+            if (req.responseText.indexOf("Successfully uploaded")>=0) {
+               extractI=100;
+            }
+            if (req.responseText.indexOf("archiving operation complete")>=0) {
+               extractI=100;
+            }
+            setExtractSummary(respDat);
+            setCurrentStep(message);
+            
+            //alert("Upload(" + uploadI + "); Extract(" + extractI + ");\r\n" + statusText + "\r\n" + req.responseText);  
+
+	            if (uploadI==-1)
+	            {
+	               document.getElementById('preparing').innerHTML="&nbsp;&nbsp;&nbsp;<font color=red><B>Error: Upload Failed.  Please retry at a later time or contact technical support.</B></font>";
+            	   document.getElementById('preparing').style.display = 'block';
+	            }else if(extractI==-1){
+	               document.getElementById('preparing').innerHTML="&nbsp;&nbsp;&nbsp;<font color=red><B>Error: Extraction/Review Failed.  Please verify the integrity of the zipped file and the contained image files.</B></font>";
+            	   document.getElementById('preparing').style.display = 'block';
+	            }else if(uploadI!=100){
+	               //upload complete
+	               
+	               if (uploadCount != 98)
+	               {
+	                  uploadCount = uploadCount + 1;
+	               }
+	               
+	               if (uploadCount>40){extractTimeOut=600;}
+      			         if (uploadCount>50){extractTimeOut=800;}
+      			         if (uploadCount>60){extractTimeOut=1000;}
+      			         if (uploadCount>70){extractTimeOut=2000;}
+      			         if (uploadCount>80){extractTimeOut=3000;}
+      			         if (uploadCount>85){extractTimeOut=6000;}
+      			         if (uploadCount>88){extractTimeOut=9000;}
+      			         
+      			            setUploadProgress(uploadCount);
+      			            setExtractProgress(0);
+      			            
+      			      	      setTimeout("checkProgress();", extractTimeOut); 
+	            }else if(extractI==100){
+	               //extract complete
+	               setUploadProgress(100);
+      			         setExtractProgress(100);
+      			         
+      			         setExtractSummary(respDat);
+      			           setCurrentStep(message);
+      			         if (checkProgressFinal == 0)
+      			         {
+      			            checkProgressFinal = 1;
+      			            //check progress one final time to capture final step summary
+      			      	      setTimeout("checkProgress();", 200); 
+      			         }
+	            }else{
+	               //extract in progress
+	               setUploadProgress(100);
+	               
+	               if (extractCount != 98)
+	               {
+	                  extractCount = extractCount + 1;
+	               }
+	               if (extractCount<10){extractTimeOut=500;}
+	               if (extractCount>10){extractTimeOut=100;}
+	               if (extractCount>20){extractTimeOut=1500;}
+	               if (extractCount>30){extractTimeOut=2000;}
+      			         if (extractCount>50){extractTimeOut=2800;}
+      			         if (extractCount>60){extractTimeOut=3300;}
+      			         if (extractCount>70){extractTimeOut=4000;}
+      			         if (extractCount>80){extractTimeOut=5000;}
+      			         if (extractCount>85){extractTimeOut=6000;}
+      			         if (extractCount>88){extractTimeOut=9000;}
+      			         
+      			         setExtractProgress(extractCount);
+      			         
+      			         if (statusCount> 0)
+      			         {
+      			           setExtractSummary(respDat);
+      			           setCurrentStep(message);
+      			         }
+      			      	   setTimeout("checkProgress();", extractTimeOut); 
+	            }
+        }
+    }
+}
+
+
+function setCurrentStep(message)
+{
+   if (message!=null && message!=undefined) {
+      document.getElementById("current_step").innerHTML="<a href='' onclick='toggleExtractSummary();return false;'>" + message + "...</a>";
+   }
+}
+
+function resetProgress(){
+   var url = "$content.getURI("servlet/AjaxServlet")?remote-class=org.nrg.xnat.ajax.UploadProgress";
+   url = url + "&remote-method=start";
+   url = url + "&ID=" + uploadID;
+   if (window.XMLHttpRequest) {
+       req = new XMLHttpRequest();
+   } else if (window.ActiveXObject) {
+       req = new ActiveXObject("Microsoft.XMLHTTP");
+   }
+   req.open("GET", url, true);
+   req.send(null);
+}
+
+function checkProgress(){
+   //var url = "$content.getURI("/REST/status/$uploadID")?format=json";
+   var url = "$content.getURI("/REST/status/$uploadID")?format=json&stamp="+ (new Date()).getTime();
+   if (window.XMLHttpRequest) {
+       req = new XMLHttpRequest();
+   } else if (window.ActiveXObject) {
+       req = new ActiveXObject("Microsoft.XMLHTTP");
+   }
+   req.open("GET", url, true);
+   req.onreadystatechange = callback;
+   req.send(null);
+}
+</script>
+
+<table border="0" cellpadding="5" cellspacing="0">
+ <tr>
+  <td><h2 style="margin-top:0;">
+  #if($arc && (($arc.getDcm_dcmPort() && $arc.getDcm_dcmAe() )))
+  Option 1:
+  #end
+  Compressed upload</h2></td>
+ </tr>
+ <tr>
+  <td valign="top" align="left">
+	    <div style="width:600px;line-height:15px;">Raw image files can be zipped (.zip or .tar.gz) and uploaded using the form.  This tool currently supports DICOM and ECAT files. Selecting 'Prearchive' will place your images into a temporary holding space.  You will then have the ability to review the details and match the data to the proper $displayManager.getSingularDisplayNameForSubject().toLowerCase() & $displayManager.getSingularDisplayNameForImageSession().toLowerCase() ID.  If you are confident the data will be mapped properly, you can directly 'Archive' the files and specify whether the resulting $displayManager.getSingularDisplayNameForImageSession().toLowerCase() should go into a quarantine state.</div>
+  </td>
+ </tr>
+<tr id="option1">
+    <td>
+        <form id="uploadFORM" class="noHide" target="iframe" enctype="multipart/form-data" method="POST" action="$content.getURI("/REST/services/import?http-session-listener=$uploadID&format=html&XNAT_CSRF=$!XNAT_CSRF")" onSubmit="return prog(this);">
+            <input type="hidden" name="popup" value="true"/>
+            <input type="hidden" name="threshhold" value="51516279"/>
+
+        #if($session)
+            <input type="hidden" name="EXPT_LABEL" value="$!session.getLabel()"/>
+            <input type="hidden" name="SUBJECT_ID" value="$!session.getSubjectData().getLabel()"/>
+        #end
+
+            <table border=0 cellspacing="0" cellpadding="5">
+                <tr>
+                    <th align="left">$displayManager.getSingularDisplayNameForProject()</th>
+                    <td>
+                    #if(!$session)
+                        <select id="project" name="project" disabled=true></select>
+                    #else
+                        <input type="hidden" name="project" id="project" value="$session.getProject()"/>$session.getProject()
+                    #end
+                    </td>
+                </tr>
+
+                #if($session)
+                    <tr>
+                        <th align="left">$displayManager.getSingularDisplayNameForImageSession()</th>
+                        <td>$!session.getLabel()</td>
+                    </tr>
+                #end
+                    <tr>
+                        <th align="left">Destination</th>
+                        <td>
+                            <label><input id="pc_0" type='radio' name='prearchive_code' value='0' #if(!$session)CHECKED#end onchange="evaluateDestination(this)"/> Prearchive</label>&nbsp;&nbsp;&nbsp;
+                            <label><input id="pc_1" type='radio' name='prearchive_code' value='2' onchange="evaluateDestination(this)"/> Archive in quarantine</label>&nbsp;&nbsp;&nbsp;
+                            <label><input id="pc_2" type='radio' name='prearchive_code' value='1' #if($session)CHECKED#end onchange="evaluateDestination(this)"/> Archive no quarantine</label>
+                        #if($session)
+                            <input type="hidden" name="overwrite" value="append"/>
+                            <input type="hidden" id="auto-archive" name='auto-archive' value='TRUE'/>
+                        #else
+                            <input type="hidden" id="auto-archive" name='auto-archive' value='FALSE'/>
+                        #end
+                            <input type="hidden" id="quarantine" name='quarantine' value='FALSE'/>
+                        </td>
+                    </tr>
+                    <tr>
+                        <th align="left">File</th><td><input type="file" name="image_archive" size="60"/></td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" align="right">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td colspan="3" align="right"><input id="directButton" type="submit" name="eventSubmit_doPerform" value="Upload"/></td>
+                    </tr>
+            </table>
+        </form>
+
+        <span id="progressBar" style="position:relative; display:none;">
+
+            <div id="ex" style="position:relative;width:468px;background:#eeeeee;border:3px double #000000;">
+                <table width="100%">
+                    <tr>
+                        <td colspan=2 align="left"><div id="preparing">Loading File...&nbsp;</div></td>
+                    </tr>
+                    <tr>
+                        <td><div id="uploadLabel">Upload:&nbsp;</div></td>
+                        <td align="center">
+                            <div id="emptyUpload" style="background-color:#cccccc;border:1px solid black;height:22px;width:300px;padding:0;" align="left">
+                                <div id="uploadBar" style="position:relative;top:0;left:0;background-color:#333333;height:22px;width:0;padding-top:5px;padding:0;">
+                                    <div id="uploadPercent" style="position:relative;top:0;left:0;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0;padding-top:5px;"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan="2">&nbsp;</td>
+                    </tr>
+                    <tr>
+                        <td><div id="extractLabel">Extract/Review:&nbsp;</div></td>
+                        <td align="center">
+                            <div id="emptyExtract" style="background-color:#cccccc;border:1px solid black;height:22px;width:300px;padding:0;" align="left">
+                                <div id="extractBar" style="position:relative;top:0;left:0;background-color:#333333;height:22px;width:0;padding-top:5px;padding:0;">
+                                    <div id="extractPercent" style="position:relative;top:0;left:0;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0;padding-top:5px;"></div>
+                                </div>
+                            </div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td colspan=2 align="center">
+                            <div id="current_step"></div>
+                        </td>
+                    </tr>
+                </table>
+            </div>
+            <br>
+            <table id="extractSummaryTable" border=0 style="border-collapse: collapse;">
+                <tr>
+                    <td>
+                        <span id="extractSummary" style="position:relative;width:468px;height:100px;display:none;overflow:auto;	"></span>
+                    </td>
+                </tr>
+            </table>
+            <br>
+            <iframe id="iframe" name="iframe" src="" width="468" height="80" frameborder="0">
+                PROGRESS BAR DISABLED. <br>Try using a more recent web browser.
+            </iframe>
+        </span><!-- /#progressBar -->
+        <script type="text/javascript">
+            progressBar=document.getElementById("uploadBar");
+            progressPercent=document.getElementById("uploadPercent");
+        </script>
+    </td>
+</tr>
+ 
+#if($arc)
+  <tr>
+  <td>&nbsp;</h2></td>
+ </tr>
+  <tr>
+  <td><h3>Option 2: Uploader Applet</h3></td>
+ </tr>
+ <tr>
+  <td valign="top" align="left">
+	    <div style="width:500px">DICOM and ECAT files can be uploaded via an online upload tool.</div>
+  </td>
+ </tr>
+ <tr id="option2">
+  <td>
+  <input type="button" style="line-height:11px;font-size:11px;" value="Launch Uploader" onclick="popupWSize('$link.setPage("UploadApplet.vm")/popup/true',580,840)"/>
+  </td>
+ </tr>
+#end
+
+#if($arc && ($arc.getDcm_dcmPort() && $arc.getDcm_dcmAe() ))
+ <tr>
+  <td>&nbsp;</td>
+ </tr>
+ <tr>
+  <td><h3>Option 3: DICOM C-STORE Service Class User</h3></td>
+ </tr>
+ <tr>
+  <td valign="top" align="left">
+  <div style="width:500px">Any DICOM C-STORE SCU, including scanner consoles
+or DICOM applications like
+<a href="http://www.osirix-viewer.com">OsiriX</a> or
+<a href="http://nrg.wustl.edu/software/dicom-browser">DicomBrowser</a>,
+can send files directly to this server.</div>
+ </tr>
+ <tr id="option3">
+  <td>
+   <br><b>DICOM C-STORE receiver (SCP) Specifications</b>
+   <ul>
+    <li>Host Name: $!hostname</li>
+    <li>Port: $!arc.getDcm_dcmPort()</li>
+    <li>AE Title: $!arc.getDcm_dcmAe()</li>
+   </ul>
+   <br><a id="launchDICOM" href="javascript:launchDicomBrowser()">Start DICOM Browser</a>
+  </td>
+ </tr>
+#end
+
+<script type="text/javascript">
+// Adapted from Sun Java Web Start Auto-Install Demo
+// http://java.sun.com/developer/technicalArticles/JavaLP/javawebstart/AutoInstallDemo.html
+var detect = navigator.userAgent.toLowerCase();
+var windowsIE = (checkPlatform("msie") && checkPlatform("win"));
+
+function checkPlatform(string) {
+    place = detect.indexOf(string) + 1;
+    thestring = string;
+    return place;
+}
+
+  window.newsubject=new YAHOO.widget.Button("launchDICOM",
+    {onclick:
+       {fn:function ()
+          {
+             if (windowsIE) {
+	                 document.write("<OBJECT CODEBASE=http://java.sun.com/update/1.5.0/jinstall-1_5_0_05-windows-i586.cab CLASSID=clsid:5852F5ED-8BF4-11D4-A245-0080C6F74284 HEIGHT=0 WIDTH=0>");
+	                 document.write("<PARAM NAME=app value=http://nrg.wustl.edu/projects/DICOM/DicomBrowser-1.4/DicomBrowser.jnlp>");
+	                 document.write("<PARAM NAME=back value=false>");
+	                 document.write("</OBJECT>");
+             } else {
+	                 window.location = "http://nrg.wustl.edu/projects/DICOM/DicomBrowser-1.4/DicomBrowser.jnlp";
+             } 
+          	}
+   	    }
+   	 }
+	  );
+  var directButton=new YAHOO.widget.Button("directButton",{type:"submit"});
+</script>
+</table>
+
+#if(!$session)
+<script type="text/javascript" src="$content.getURI('scripts/subjectAssessorData/proj_tools.js')"></script>
+
+<script type="text/javascript">
+
+    //load projects
+    window.defaultProject="$!project";
+
+    window.projectLoader=new ProjectLoader();
+
+    window.projectLoader.onLoadComplete.subscribe(function(){
+        renderProjects(document.getElementById("project"),window.projectLoader.list,window.defaultProject);
+    });
+
+  document.getElementById("project").onchange=function(o){
+      if(this.selectedIndex>0){
+          var s=this.options[this.selectedIndex];
+          var pc=document.getElementById("pc_0");
+          if(pc!=undefined && pc!=null){
+              if(s.pc=="4"){
+                  if(s.qc=="0"){
+                      document.getElementById("pc_2").click();
+                  }else{
+                      document.getElementById("pc_1").click();
+                  }
+              }else{
+                  document.getElementById("pc_0").click();
+              }
+          }
+      }
+  };
+
+  window.projectLoader.init();
+     
+  function prepApplet(_form){    
+    return true;
+  }
+  
+  //build breadcrumb
+  var breadcrumbs=document.getElementById('breadcrumbs');
+
+  if (breadcrumbs!=null){
+    var bread = "";
+#if($project)
+	    bread = bread + "<a href='$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$project")'>$displayManager.getSingularDisplayNameForProject().toUpperCase(): $!project</a>";
+    bread = bread + "&nbsp;>&nbsp;Upload Images";
+#end
+    breadcrumbs.innerHTML=bread;
+  }
+
+</script>
+#end
+<!-- /ImageUpload.vm -->

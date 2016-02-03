@@ -1,0 +1,244 @@
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatSubjectdata" *#
+#* @vtlvariable name="part_id" type="java.lang.String" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="arc" type="org.nrg.xdat.om.ArcArchivespecification" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+
+## YUI calendar files are now in HeaderIncludes.vm
+
+<style type="text/css">
+    #launchUploadAppletForm .select_label { display: inline-block ; width: 100px ; text-align: left ; }
+    #launchUploadAppletForm th { padding: 0 ; }
+    #launchUploadAppletForm tr { height: 25px ; line-height: 25px ; vertical-align: middle ; }
+    #cal_session_date { margin-left: 4px ; padding: 2px 4px ; }
+    #upload-datepicker a.disabled { opacity: 0.5; }
+    #upload-datepicker a.disabled:hover { cursor: default; }
+</style>
+## if requireDate's not set, we'll default to optional: you can specify it but don't have to.
+#if ("$!requireDate" == "")
+    #set ($requireDate = "optional")
+#end
+
+<script type="text/javascript" src="$content.getURI('scripts/popupCentered.js')"></script>
+<form id="launchUploadAppletForm" class="noHide" action='$link.setPage("UploadApplet.vm")' method="post" target='_self' >
+            <h3>Upload Image $displayManager.getPluralDisplayNameForImageSession()</h3>
+                <p style="width:500px;margin-top:10px;margin-bottom:20px;">
+                    DICOM and ECAT files can be uploaded using this online upload tool. Begin by selecting the $displayManager.getSingularDisplayNameForProject().toLowerCase(),
+                    $displayManager.getSingularDisplayNameForSubject().toLowerCase(), and date for the $displayManager.getSingularDisplayNameForImageSession().toLowerCase() you wish to upload and then click the <b>Launch Uploader</b>
+                    button. You will need Java installed in order and operational to use the uploader.
+                    <a href="http://www.java.com/en/download/testjava.jsp" target="_blank">Check here</a> to verify that
+                    your Java is working.
+                </p>
+        <table>
+        <tr>
+            <th align="left"><label for="project" class="select_label">$displayManager.getSingularDisplayNameForProject(): </label></th>
+            <td><select id="project" name="project" style="min-width:200px;" disabled></select></td>
+        </tr>
+        <tr>
+            <th align="left"><label for="part_id" class="select_label">$displayManager.getSingularDisplayNameForSubject(): </label></th>
+            <td><select id="part_id" name="part_id" style="min-width:200px;" disabled>
+                ##<option>(Select a $displayManager.getSingularDisplayNameForProject().toLowerCase())</option>
+            </select></td>
+            <td><a onclick="createSubjectForm();">Add New $displayManager.getSingularDisplayNameForSubject()</a></td>
+        </tr>
+
+            #addGlobalCustomScreens("projectSubjectForm")
+
+        </table>
+ <div id="hideIfProtocol" >
+        #if ("$!requireDate" == "true" || "$!requireDate" == "optional")
+            #if ("$requireDate" == "true")
+                <input type="hidden" id="no_session_date" name="no_session_date" value="false">
+            #end
+      <table border="0">       
+        <tr>
+            <th align="left"><label for="session_date" class="select_label">$displayManager.getSingularDisplayNameForImageSession() Date</label></th>
+            <td>
+                ##<input type="text" id="session_date" name="session_date">
+                ##<script type="text/javascript">insertCalendar(document.getElementById("session_date"), "$displayManager.getSingularDisplayNameForImageSession() Date");</script>
+                ## using the new date picker
+                <span id="upload-datepicker" class="single us today" data-value="" data-validate="onblur" data-input-id="session_date" data-input-name="session_date"></span>
+                <script type="text/javascript">
+                    jQuery('#upload-datepicker').data('value',XNAT.data.todaysDate.us);
+                    XNAT.app.datePicker.init(jQuery('#upload-datepicker'))
+                </script>
+            </td>
+		</tr>
+                #if ("$!requireTime" == "true")
+		<tr>
+			<th align="left"><label for="session_time" class="select_label">$displayManager.getSingularDisplayNameForImageSession() Time</label></th>
+			<td>
+#set ($hours=[["08","8AM",8],["09","9AM",9],["10","10AM",10],["11","11AM",11],["12","12PM",12],["13","1PM",13],["14","2PM",14],["15","3PM",15],["16","4PM",16],["17","5PM",17],["18","6PM",18],["19","7PM",19],["20","8PM",20],["21","9PM",21],["22","10PM",22],["23","11PM",23],["00","12AM",0],["01","1AM",1],["02","2AM",2],["03","3AM",3],["04","4AM",4],["05","5AM",5],["06","6AM",6],["07","7AM",7]]	)
+<select id="session_time_h" name="session_time_h">
+        <option value="">HH</option>
+        #foreach ($hour in $hours)
+              <option value="$hour.get(0)" >$hour.get(1)</option>
+        #end
+      </select>:
+
+      <select id="session_time_m" name="session_time_m">
+        <option value="">MM</option>
+        #foreach ($minute in [ 0..59 ])
+           #if($minute<10)
+           		#set($minuteD="0$minute")
+           #else
+           		#set($minuteD="$minute")
+           #end
+              <option value="$minuteD" >$minuteD</option>
+        #end
+      </select>
+         
+            </td>
+        </tr>
+#end
+                #if ("$requireDate" == "optional")
+        <tr>
+            <td>&nbsp;</td>
+            <td>
+                <input type="checkbox" id="no_session_date" name="no_session_date" value="false"> <label for="no_session_date">I don't know the date or my $displayManager.getSingularDisplayNameForImageSession().toLowerCase() doesn't have a date</label>
+            </td>
+        </tr>
+                #end
+          </table>
+        #else
+            <input type="hidden" id="no_session_date" name="no_session_date" value="true">
+            <input type="hidden" id="session_date" name="session_date">
+#end        
+        <script type="text/javascript" src="$content.getURI('scripts/subjectAssessorData/proj_subj_visit_selector.js')"></SCRIPT>
+        <script type="text/javascript">
+            #set($project = $om.getProject())
+            #set($part_id = $!subject)
+            window.projectSubjectVisitManager = new ProjectSubjectVisitSelector("$!project", "$!part_id");
+            window.projectSubjectVisitManager.init();
+            jq('body').on('change', '#project, #part_id, #session_date', function(){
+                window.projectSubjectVisitManager.manageLaunchUploaderButton();
+            });
+        </script>
+
+     <br>
+
+     <input type="hidden" id="session_id" name="session_id" value="">
+
+     <input type="submit" id="gojuice" name="gojuice" value="Launch Uploader" disabled style="min-width:135px;font-size:13px;" >
+
+ </div> <!-- end of hideIfProtocol -->
+<div id="forProtocolContent" style="display:none"></div>
+
+    <p style="width:500px;margin:20px 0;">Looking for other ways to upload images? <a href="$link.setPage("AlternateImageUpload.vm")">Click here.</a></p>
+
+</form>
+
+<script type="text/javascript">
+
+    /*
+
+    // rewrote the date / no-date / launch upload interractions
+    // but ended up scrapping it and modifying existing functions
+
+    function getById(_id){
+        return document.getElementById(_id);
+    }
+
+    jq(function(){
+
+        var _project         = getById('project');
+        var _part_id         = getById('part_id');
+        var _session_date    = getById('session_date');
+        var _no_session_date = getById('no_session_date');
+        var _gojuice         = getById('gojuice');
+
+        // datepicker elements
+        var __datepicker  = jq('#upload-datepicker');
+        var __insert_date = __datepicker.find('.insert-date').prop('disabled',true);
+        var __use_today   = __datepicker.find('.use-todays-date').addClass('disabled');
+
+        function toggleDateInputs(disenable){
+            var bool = false;
+            if (disenable === 'disable'){
+                bool = true;
+                __use_today.addClass('disabled');
+            }
+            else {
+                __use_today.removeClass('disabled');
+            }
+            _session_date.disabled = bool;
+            __insert_date.prop('disabled',bool);
+        }
+
+        // disable date stuff on load if there's no project or subject selected
+        if (!_project.selectedIndex.value || !_part_id.selectedIndex.value){
+            toggleDateInputs('disable');
+            _no_session_date.disabled = true;
+        }
+        // turn on the juice
+        jq('body').on('change', '#project, #part_id, #session_date, #no_session_date', function(){
+
+            if ( _project.value && _part_id.value ){
+                if ( _no_session_date.checked ){
+                    toggleDateInputs('disable');
+                    _gojuice.disabled = false;
+                }
+                else if ( _session_date.value ){
+                    toggleDateInputs('enable');
+                    _gojuice.disabled = false;
+                }
+                else {
+                    toggleDateInputs('enable');
+                    _no_session_date.disabled = false;
+                    _gojuice.disabled = true;
+                }
+            }
+            else {
+                toggleDateInputs('disable');
+                _no_session_date.disabled = true;
+                _gojuice.disabled = true;
+            }
+
+        });
+
+    });
+
+    */
+
+    window.loadSubjectsCallback = function(){
+        jq('#part_id').trigger('change');
+    }
+
+    function createSubjectForm(){
+        if (this.subjectForm!=undefined){
+            this.subjectForm.close();
+            this.subjectForm=null;
+        }
+        window.create_subject_link ="$link.setPage('XDATScreen_edit_xnat_subjectData.vm').addPathInfo('popup','true')";
+        var project = document.getElementById("project").value;
+        if (project == ""){
+            xModalMessage('Upload Validation', 'Please select a $displayManager.getSingularDisplayNameForProject() first.');
+            return;
+        }
+        window.create_subject_link+="/project/" + project + "/destination/JS_Parent_Return.vm";
+        this.subjectForm = popupCentered(window.create_subject_link,'Subject',610,800,10,'status=yes,resizable=yes,scrollbars=yes,toolbar=no');
+        this.subjectForm.loadSubjectsCallback = window.loadSubjectsCallback;
+        if (this.subjectForm.opener == null) this.subjectForm.opener = self;
+        return this.subjectForm;
+
+    }
+
+    window.success=function(subject_id){
+        //window.psm("The $displayManager.getSingularDisplayNameForSubject().toLowerCase() you entered was stored.");
+        if(this.subjectForm!=undefined){
+            this.subjectForm.close();
+            this.subjectForm=null;
+        }
+        window.projectSubjectVisitManager.defaultSubject=subject_id;
+        window.projectSubjectVisitManager.loadSubjects();
+    }
+    window.failure=function(msg){
+        //window.psm.message(msg);
+        if(this.subjectForm!=undefined){
+            this.subjectForm.close();
+            this.subjectForm=null;
+        }
+    }
+
+</script>

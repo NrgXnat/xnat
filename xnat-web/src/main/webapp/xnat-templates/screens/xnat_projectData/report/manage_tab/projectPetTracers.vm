@@ -1,0 +1,130 @@
+<h3>PET Tracers</h3>
+<div>
+    <table id="project_pet_tracers_table">
+    <tr>
+        <td colspan="2" class="highlighted" id="pet_tracer_container">
+##            <div style="font-weight:700;">PET Tracers</div>
+            <table>
+                <tr>
+                    <td ><label for="enable_project_pet_tracers">Enable Project Level PET Tracer List</label>&nbsp;<input type="checkbox" name="enable_project_pet_tracers" id="enable_project_pet_tracers" /></td>
+                </tr>
+                <tr>
+                    <td>List entries should be separated by whitespace:</td>
+                </tr>
+                <tr>
+                    <td><textarea id="pet_tracers_text_area" rows="20" cols="80" disabled="disabled"></textarea></td>
+                </tr>
+                <tr>
+                    <td><input type="button" id="project_pet_tracers_save" value="Save" disabled="disabled"/></td>
+                </tr>
+            </table>
+        </td>
+    </tr>
+</table>
+<script>
+    function projectPETTracersGet(settings) {
+        this.project = settings.project;
+        this.enable = document.getElementById(settings.enable_checkbox);
+        this.tracers = document.getElementById(settings.tracers_text_area);
+        this.save = document.getElementById(settings.save_button);
+        this.initial = {status: false, tracers: null};
+        this.onFailure = function (o) {
+            if (o.status == 401) {
+                xModalMessage('Session Expired', 'WARNING: Your session has expired.<br/><br/>You will need to re-login and navigate to the content.');
+                window.location = serverRoot + "/app/template/Login.vm";
+            } else if (o.status == 404) {
+                // just means the list doesn't yet exist. This is likely ok.
+            } else {
+                // this.disableDOM(false);
+                xModalMessage('Error' + o.status, 'ERROR (' + o.statusText + ')');
+            }
+        };
+        this.isDirty = function () {
+            if (this.initial.status != this.enable.checked) {
+                return true;
+            }
+            // If the current enabled state isn't different and the enabled state is disabled,
+            // then nothing has effectively changed.
+            if (!this.initial.status) {
+                return false;
+            }
+            return this.initial.tracers != this.tracers.value;
+        };
+        this.determineDifference = function () {
+            this.save.disabled = !this.isDirty();
+        };
+        this.addListeners = function() {
+            var that = this;
+            this.enable.onclick = function () {
+                that.tracers.disabled = !this.checked;
+                that.determineDifference();
+            };
+            this.tracers.onchange = this.tracers.onkeyup = function() {
+                that.determineDifference();
+            };
+            this.save.onclick = function() {
+                var callbacks = {
+                    success: function() {
+                        that.save.disabled = true;
+                        that.initial = {  // reset these values so the enabled state of the save button reflects the current saved state.
+                            status: that.enable.checked,
+                            tracers: that.tracers.value
+                        };
+                        xModalMessage('Saved', 'Your changes to the PET tracer list for the project ' + that.project + ' have been saved');
+                    },
+                    failure: that.onFailure,
+                    cache: false,
+                    scope: this };
+                if (!that.enable.checked) {
+                    YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/projects/' + that.project + '/config/tracers/tracers?status=disabled&XNAT_CSRF=' + window.csrfToken, callbacks);
+                } else {
+                    var tracers = that.tracers.value;
+                    // If the tracers haven't changed, then we just need to enable the tracer list.
+                    if (that.initial.tracers == tracers) {
+                        YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/projects/' + that.project + '/config/tracers/tracers?status=enabled&XNAT_CSRF=' + window.csrfToken, callbacks);
+                    } else {
+                        var status = !that.initial.status ? '&status=enabled' : '';
+                        YAHOO.util.Connect.asyncRequest('PUT', serverRoot + '/data/projects/' + that.project + '/config/tracers/tracers?inbody=true&XNAT_CSRF=' + window.csrfToken + status, callbacks, tracers);
+                    }
+                }
+            };
+        };
+        this.get = function() {
+            this.populateAttributes = function (config) {
+                this.tracers.disabled = false;
+                if (config.contents) {
+                    this.tracers.value = this.initial.tracers = config.contents;
+                }
+            };
+
+            this.populate = function(response) {
+                var results = YAHOO.lang.JSON.parse(response.responseText);
+                var config = results.ResultSet.Result[0]; // TODO: This is way too trusting. There should be validation here.
+                var enabled = config.status && (config.status == 'enabled' || config.status == 'true');
+                this.initial.status = enabled;
+
+                // Only enable the controls if enabled is true, since they'll already be disabled by default.
+                this.populateAttributes.call(this, config);
+                if (enabled) {
+                    this.enable.checked = true;
+                } else {
+                    this.tracers.disabled = true;
+                }
+            };
+            var callbacks = { success: this.populate, failure: this.onFailure, cache: false, scope: this };
+            YAHOO.util.Connect.asyncRequest('GET', serverRoot + '/data/projects/' + this.project + '/config/tracers/tracers?XNAT_CSRF=' + window.csrfToken + '&format=json', callbacks);
+        };
+        this.addListeners();
+    }
+
+    var projectPETTracersGet = new projectPETTracersGet(
+            {
+                'container': document.getElementById('pet_tracer_container'),
+                'project': '$project.getId()',
+                'enable_checkbox': 'enable_project_pet_tracers',
+                'tracers_text_area': 'pet_tracers_text_area',
+                'save_button': 'project_pet_tracers_save'
+            });
+    projectPETTracersGet.get();
+</script>
+</div>

@@ -1,0 +1,70 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<p>
+<form name="form1" method="post" action="$link.setAction("ModifyItem")">
+#if($vr)
+    <div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+<table border="0" width="350">
+	<tr>
+		<TH align=center colspan=2>Investigator Details</TH>
+	</tr>
+
+	<TR>
+		<TD align=left>Title</TD>
+		<TD align=left>
+			#xdatTextBox("xnat:investigatorData.title" $item "" $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>First Name</TD>
+		<TD align=left>
+			#xdatTextBox("xnat:investigatorData.firstname" $item "" $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Last Name</TD>
+		<TD align=left>
+			#xdatTextBox("xnat:investigatorData.lastname" $item "" $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Institution</TD>
+		<TD align=left>
+			#xdatTextBox("xnat:investigatorData.institution" $item "" $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Department</TD>
+		<TD align=left>
+			#xdatTextBox("xnat:investigatorData.department" $item "" $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Email</TD>
+		<TD align=left>
+			#xdatTextBox("xnat:investigatorData.email" $item "" $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Phone</TD>
+		<TD align=left>
+			#xdatTextBox("xnat:investigatorData.phone" $item "" $vr)
+		</TD>
+	</TR>
+	#xdatEditProps($item $edit_screen)
+	<input type="hidden" name="destination" value="$!destination"/>
+	<TR><TD COLSPAN=2 ALIGN=center><input type="submit" name="eventSubmit_doSetup" value="Submit"/></TD></TR>
+</table>
+
+			#auditBoxes("2" "" "Standard creation." "Created Investigator")
+			#hideFormJustification()
+
+</form>
+</p>

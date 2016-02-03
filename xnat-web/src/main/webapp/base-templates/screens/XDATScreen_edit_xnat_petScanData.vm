@@ -1,0 +1,279 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">PETScan Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>image_session_ID</TD><TD>#xdatStringBox("xnat:petScanData/image_session_ID" $item "" $vr)</TD></TR>
+							<TR><TD>note</TD><TD>#xdatStringBox("xnat:petScanData/note" $item "" $vr)</TD></TR>
+							<TR><TD>quality</TD><TD>#xdatStringBox("xnat:petScanData/quality" $item "" $vr)</TD></TR>
+							<TR><TD>condition</TD><TD>#xdatStringBox("xnat:petScanData/condition" $item "" $vr)</TD></TR>
+							<TR><TD>series_description</TD><TD>#xdatStringBox("xnat:petScanData/series_description" $item "" $vr)</TD></TR>
+							<TR><TD>documentation</TD><TD>#xdatStringBox("xnat:petScanData/documentation" $item "" $vr)</TD></TR>
+							<TR><TD>scanner</TD><TD>#xdatStringBox("xnat:petScanData/scanner" $item "" $vr)</TD></TR>
+							<TR><TD>scanner/manufacturer</TD><TD>#xdatStringBox("xnat:petScanData/scanner/manufacturer" $item "" $vr)</TD></TR>
+							<TR><TD>scanner/model</TD><TD>#xdatStringBox("xnat:petScanData/scanner/model" $item "" $vr)</TD></TR>
+							<TR><TD>modality</TD><TD>#xdatStringBox("xnat:petScanData/modality" $item "" $vr)</TD></TR>
+							<TR><TD>frames</TD><TD>#xdatTextBox("xnat:petScanData/frames" $item "" $vr)</TD></TR>
+							<TR><TD>operator</TD><TD>#xdatStringBox("xnat:petScanData/operator" $item "" $vr)</TD></TR>
+							<TR><TD>startTime</TD><TD>#xdatTextBox("xnat:petScanData/startTime" $item "" $vr)</TD></TR>
+							<TR><TD>ID</TD><TD>#xdatStringBox("xnat:petScanData/ID" $item "" $vr)</TD></TR>
+							<TR><TD>type</TD><TD>#xdatStringBox("xnat:petScanData/type" $item "" $vr)</TD></TR>
+							<TR><TD>UID</TD><TD>#xdatStringBox("xnat:petScanData/UID" $item "" $vr)</TD></TR>
+							<TR><TD>project</TD><TD>#xdatStringBox("xnat:petScanData/project" $item "" $vr)</TD></TR>
+													#xdatHiddenBox("xnat:petScanData/xnat_imageScanData_id" $item "")
+							<TR><TD>parameters/orientation</TD><TD>#xdatTextBox("xnat:petScanData/parameters/orientation" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/originalFileName</TD><TD>#xdatStringBox("xnat:petScanData/parameters/originalFileName" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/systemType</TD><TD>#xdatTextBox("xnat:petScanData/parameters/systemType" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/fileType</TD><TD>#xdatTextBox("xnat:petScanData/parameters/fileType" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/transaxialFOV</TD><TD>#xdatTextBox("xnat:petScanData/parameters/transaxialFOV" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/acqType</TD><TD>#xdatTextBox("xnat:petScanData/parameters/acqType" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/facility</TD><TD>#xdatStringBox("xnat:petScanData/parameters/facility" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/numPlanes</TD><TD>#xdatTextBox("xnat:petScanData/parameters/numPlanes" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/frames/numFrames</TD><TD>#xdatTextBox("xnat:petScanData/parameters/frames/numFrames" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/numGates</TD><TD>#xdatTextBox("xnat:petScanData/parameters/numGates" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/planeSeparation</TD><TD>#xdatTextBox("xnat:petScanData/parameters/planeSeparation" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/binSize</TD><TD>#xdatTextBox("xnat:petScanData/parameters/binSize" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/dataType</TD><TD>#xdatTextBox("xnat:petScanData/parameters/dataType" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/dimensions/x</TD><TD>#xdatTextBox("xnat:petScanData/parameters/dimensions/x" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/dimensions/y</TD><TD>#xdatTextBox("xnat:petScanData/parameters/dimensions/y" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/dimensions/z</TD><TD>#xdatTextBox("xnat:petScanData/parameters/dimensions/z" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/dimensions/num</TD><TD>#xdatTextBox("xnat:petScanData/parameters/dimensions/num" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/offset/x</TD><TD>#xdatTextBox("xnat:petScanData/parameters/offset/x" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/offset/y</TD><TD>#xdatTextBox("xnat:petScanData/parameters/offset/y" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/offset/z</TD><TD>#xdatTextBox("xnat:petScanData/parameters/offset/z" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/reconZoom</TD><TD>#xdatTextBox("xnat:petScanData/parameters/reconZoom" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/pixelSize/x</TD><TD>#xdatTextBox("xnat:petScanData/parameters/pixelSize/x" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/pixelSize/y</TD><TD>#xdatTextBox("xnat:petScanData/parameters/pixelSize/y" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/pixelSize/z</TD><TD>#xdatTextBox("xnat:petScanData/parameters/pixelSize/z" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/filterCode</TD><TD>#xdatTextBox("xnat:petScanData/parameters/filterCode" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/resolution/x</TD><TD>#xdatTextBox("xnat:petScanData/parameters/resolution/x" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/resolution/y</TD><TD>#xdatTextBox("xnat:petScanData/parameters/resolution/y" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/resolution/z</TD><TD>#xdatTextBox("xnat:petScanData/parameters/resolution/z" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/numRElements</TD><TD>#xdatTextBox("xnat:petScanData/parameters/numRElements" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/numAngles</TD><TD>#xdatTextBox("xnat:petScanData/parameters/numAngles" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/ZRotationAngle</TD><TD>#xdatTextBox("xnat:petScanData/parameters/ZRotationAngle" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/processingCode</TD><TD>#xdatTextBox("xnat:petScanData/parameters/processingCode" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/gateDuration</TD><TD>#xdatTextBox("xnat:petScanData/parameters/gateDuration" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/rWaveOffset</TD><TD>#xdatTextBox("xnat:petScanData/parameters/rWaveOffset" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/numAcceptedBeats</TD><TD>#xdatTextBox("xnat:petScanData/parameters/numAcceptedBeats" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/filter/cutoff</TD><TD>#xdatTextBox("xnat:petScanData/parameters/filter/cutoff" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/annotation</TD><TD>#xdatStringBox("xnat:petScanData/parameters/annotation" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_1_1</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_1_1" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_1_2</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_1_2" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_1_3</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_1_3" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_1_4</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_1_4" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_2_1</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_2_1" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_2_2</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_2_2" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_2_3</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_2_3" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_2_4</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_2_4" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_3_1</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_3_1" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_3_2</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_3_2" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_3_3</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_3_3" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/MT_3_4</TD><TD>#xdatTextBox("xnat:petScanData/parameters/MT_3_4" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/RFilter/cutoff</TD><TD>#xdatTextBox("xnat:petScanData/parameters/RFilter/cutoff" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/RFilter/resolution</TD><TD>#xdatTextBox("xnat:petScanData/parameters/RFilter/resolution" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/RFilter/code</TD><TD>#xdatTextBox("xnat:petScanData/parameters/RFilter/code" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/RFilter/order</TD><TD>#xdatTextBox("xnat:petScanData/parameters/RFilter/order" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/ZFilter/cutoff</TD><TD>#xdatTextBox("xnat:petScanData/parameters/ZFilter/cutoff" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/ZFilter/resolution</TD><TD>#xdatTextBox("xnat:petScanData/parameters/ZFilter/resolution" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/ZFilter/code</TD><TD>#xdatTextBox("xnat:petScanData/parameters/ZFilter/code" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/ZFilter/order</TD><TD>#xdatTextBox("xnat:petScanData/parameters/ZFilter/order" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/scatterType</TD><TD>#xdatTextBox("xnat:petScanData/parameters/scatterType" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/reconType</TD><TD>#xdatTextBox("xnat:petScanData/parameters/reconType" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/reconViews</TD><TD>#xdatTextBox("xnat:petScanData/parameters/reconViews" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/bedPosition</TD><TD>#xdatTextBox("xnat:petScanData/parameters/bedPosition" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/ecatCalibrationFactor</TD><TD>#xdatTextBox("xnat:petScanData/parameters/ecatCalibrationFactor" $item "" $vr)</TD></TR>
+							<TR><TD>ecatValidation</TD><TD>#xdatStringBox("xnat:petScanData/ecatValidation" $item "" $vr)</TD></TR>
+							<TR><TD>ecatValidation/status</TD><TD>#xdatBooleanRadio("xnat:petScanData/ecatValidation/status" $item false $vr)</TD></TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:petScanData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+<!-- BEGIN xnat:petScanData/sharing/share -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/sharing/share</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>share</TD>
+								<TD>label</TD>
+								<TD>project</TD>
+							</TR>
+							#foreach($xnat_imageScanData_share_1_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/share" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/label" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/project" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:petScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/xnat_imageScanData_share_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:petScanData/sharing/share -->
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_abstractResource_1_COUNTER in [0..5])
+<!-- BEGIN xnat:petScanData/file[$xnat_abstractResource_1_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>label</TD><TD>#xdatStringBox("xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/label" $item "" $vr)</TD></TR>
+												<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/file_count" $item "" $vr)</TD></TR>
+												<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/xnat_abstractResource_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_abstractResource_tag_2_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/tag" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/xnat_abstractResource_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:petScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag -->
+								</TABLE>
+<!-- END xnat:petScanData/file[$xnat_abstractResource_1_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:petScanData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>#xdatStringBox("xnat:petScanData/validation/method" $item "" $vr)</TD></TR>
+										<TR><TD>date</TD><TD>#xdatDateBox("xnat:petScanData/validation/date" $item $vr $years)</TD></TR>
+										<TR><TD>notes</TD><TD>#xdatStringBox("xnat:petScanData/validation/notes" $item "" $vr)</TD></TR>
+										<TR><TD>validated_by</TD><TD>#xdatStringBox("xnat:petScanData/validation/validated_by" $item "" $vr)</TD></TR>
+										<TR><TD>status</TD><TD>#xdatStringBox("xnat:petScanData/validation/status" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat:petScanData/validation/xnat_validationData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:petScanData/validation -->
+					</TD>
+				</TR>
+<!-- BEGIN xnat:petScanData/parameters/addParam -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/parameters/addParam</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>addField</TD>
+								<TD>name</TD>
+							</TR>
+							#foreach($xnat_addField_3_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:petScanData/parameters/addParam[$xnat_addField_3_COUNTER]/addField" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:petScanData/parameters/addParam[$xnat_addField_3_COUNTER]/name" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:petScanData/parameters/addParam[$xnat_addField_3_COUNTER]/xnat_addField_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:petScanData/parameters/addParam -->
+<!-- BEGIN xnat:petScanData/parameters/frames/frame -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:petScanData/parameters/frames/frame</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>number</TD>
+								<TD>starttime</TD>
+								<TD>length</TD>
+								<TD>units</TD>
+							</TR>
+							#foreach($xnat_petScanData_frame_3_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_3_COUNTER]/number" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_3_COUNTER]/starttime" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_3_COUNTER]/length" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_3_COUNTER]/units" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:petScanData/parameters/frames/frame[$xnat_petScanData_frame_3_COUNTER]/xnat_petScanData_frame_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:petScanData/parameters/frames/frame -->
+			</TABLE>
+<!-- END xnat:petScanData -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

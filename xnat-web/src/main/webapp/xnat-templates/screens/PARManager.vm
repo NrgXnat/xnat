@@ -1,0 +1,12 @@
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+<div width="100%" style="clear:left;width:100%">
+<h3 id="heading">You've been invited to join the following $displayManager.getPluralDisplayNameForProject().toLowerCase():</h3>
+
+<script type="text/javascript" src="$content.getURI("scripts/project/parManager.js")"></script>
+<div id="pil"></div>
+</div>
+<script type="text/javascript">
+var parList=new PARManager("pil",{URI:serverRoot+"/REST/pars",projectBased:false});
+parList.init();
+</script>

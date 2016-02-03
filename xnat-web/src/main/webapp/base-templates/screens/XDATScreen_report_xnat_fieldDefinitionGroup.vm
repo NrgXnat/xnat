@@ -1,0 +1,109 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("FieldDefinitionSet Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>FieldDefinitionSet Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/ID")</TD></TR>
+							<TR><TD>data-type</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/data-type")</TD></TR>
+							<TR><TD>description</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/description")</TD></TR>
+							<TR><TD>shareable</TD><TD>$!item.getBooleanProperty("xnat:fieldDefinitionGroup/shareable")</TD></TR>
+							<TR><TD>project-specific</TD><TD>$!item.getBooleanProperty("xnat:fieldDefinitionGroup/project-specific")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:fieldDefinitionGroup -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_fieldDefinitionGroup_field_1_NUM_ROWS=$item.getChildItems("xnat:fieldDefinitionGroup/fields/field").size() - 1)
+							#if($xnat_fieldDefinitionGroup_field_1_NUM_ROWS>=0)
+								#foreach($xnat_fieldDefinitionGroup_field_1_COUNTER in [0..$xnat_fieldDefinitionGroup_field_1_NUM_ROWS])
+<!-- BEGIN xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/name")</TD></TR>
+													<TR><TD>type</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/type")</TD></TR>
+													<TR><TD>datatype</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/datatype")</TD></TR>
+													<TR><TD>required</TD><TD>$!item.getBooleanProperty("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/required")</TD></TR>
+													<TR><TD>sequence</TD><TD>$!item.getIntegerProperty("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/sequence")</TD></TR>
+													<TR><TD>xmlPath</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/xmlPath")</TD></TR>
+													<TR><TD>group</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/group")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_fieldDefinitionGroup_field_possibleValue_2_NUM_ROWS=$item.getChildItems("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue").size() - 1)
+													#if($xnat_fieldDefinitionGroup_field_possibleValue_2_NUM_ROWS>=0)
+														#foreach($xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER in [0..$xnat_fieldDefinitionGroup_field_possibleValue_2_NUM_ROWS])
+<!-- BEGIN xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue[$xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue[$xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>possibleValue</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue[$xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER]/possibleValue")</TD></TR>
+																			<TR><TD>display</TD><TD>$!item.getStringProperty("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue[$xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER]/display")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue[$xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:fieldDefinitionGroup -->
+		</TD>
+	</TR>
+</TABLE>

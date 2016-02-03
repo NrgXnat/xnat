@@ -1,0 +1,99 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("NoMenuTop.vm")
+
+<div>
+<form action="$link.setAction("XDATRegisterUser")" method="post" name="form1" id="form1" ONSUBMIT="return checkConfirm();">
+  <table border="0" align="center" cellpadding="8">
+#if ( $data.getMessage() )
+  <tr><td colspan="2">
+      <div class="error">$data.getMessage()</div><br>
+  </td>
+   </tr>
+#end
+    <tr>
+      <td colspan="2" class="HeaderColor">        <h2>Registering for an account </h2><br />
+Registering for an account allows you to upload, download, and analyze your  data and public data in the database.  It also helps us to contact when your analyses are complete and new features come online. We will never share your personal information without express permission from you.  See our <a href="privacy.html">privacy policy</a> for details.
+</td>
+    </tr>
+    <tr style="vertical-align: top">
+      <td style="text-align: right" class="label" nowrap="nowrap" width="50%">User Name</td>
+      <td>
+        <input type="hidden" id="xdat:user.login" name="xdat:user.login" value="$!newUser.getLogin()"/>$!newUser.getLogin()
+        </td>
+    </tr>
+    
+    <input type="hidden" id="xdat:user.primary_password" name="xdat:user.primary_password"  value="$!newUser.getPrimaryPassword()"/>
+     
+    <tr style="vertical-align: top">
+     <td style="text-align: right" class="label" nowrap="nowrap">First Name</td>
+      <td>
+        <input type="hidden" id="xdat:user.firstname" name="xdat:user.firstname"  value="$!newUser.getFirstname()"/>$!newUser.getFirstname()
+        </td>
+    </tr>
+     <tr style="vertical-align: top">
+      <td style="text-align: right" class="label" >Last Name</td>
+      <td >
+        <input type="hidden" id="xdat:user.lastname" name="xdat:user.lastname"  value="$!newUser.getLastname()"/>$!newUser.getLastname()
+        </td>
+    </tr>
+ 
+    <tr style="vertical-align: top">
+      <td style="text-align: right" class="label">Email</td>
+      <td><input type="hidden" id="xdat:user.email" name="xdat:user.email"   value="$!newUser.getEmail()"/> $!newUser.getEmail()     
+      </td>
+    </tr>
+    
+    <tr style="vertical-align: top">
+      <td colspan="2">
+        <h2>Database use agreement: </h2>
+        <p style="font-size:10"><ol start=1 type=1>
+ <li>The quality and completeness of the data cannot
+     be guaranteed. Users employ these data at their own risk.</span></font></li>
+ <li>Users shall respect restrictions of access to
+     sensitive data. Users will make no attempt to identify the individuals
+     whose images are included in Central data sets.</li>
+ <li>Users must acknowledge the use of Central,
+     Central data, and data derived from Central data when publicly
+     presenting any findings or algorithms that benefited from their use. Such
+     presentations include but are not limited to papers, books, book chapters,
+     conference posters, and talks.&nbsp; Acknowledgement should include the
+     accession number and original contributor of the data.</li>
+ <li>Data can not be revoked once publicly shared.</li>
+ <li>Redistribution of original Central data is
+     permitted so long as the data are redistributed under the same terms and
+     conditions are described in this DUA.</li>
+ <li>Data derived from original Central data may be
+     distributed under terms and conditions established by the creators of the
+     data. Users must comply with the terms and conditions of use set by the
+     creators of the data.</li>
+</ol> 
+        </p>
+        <p align="center">
+          <label for="yes1"></label>
+          <input type="checkbox" name="checkbox" value="checkbox" id="checkbox" />
+          <label for="checkbox">I agree</label>
+        </td>
+    </tr>
+    <tr style="vertical-align: top" class="FooterColor">
+      <td colspan="2" align="center">
+        <input type="submit" name="SubmitName" value="Register" />      </td>
+    </tr>
+  </table>
+        #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
+        	#if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception")
+        		<input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">	
+        	#end
+        #end
+</form>
+</div>
+<script>
+function checkConfirm(){
+  if (document.getElementById("checkbox").checked){
+    return true;
+  }else{
+    xModalMessage('Data Usage Agreement', 'Please review the Data Usage Agreement and check the box to continue.');
+    document.getElementById("checkbox").focus();
+    return false;
+  }
+}
+</script>

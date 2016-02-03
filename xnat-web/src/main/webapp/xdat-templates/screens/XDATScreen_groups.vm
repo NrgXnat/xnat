@@ -1,0 +1,60 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+#parse("/screens/admin_bar.vm")
+
+#set ( $url = $link.setPage("XDATScreen_edit_xdat_userGroup.vm").addPathInfo("popup","true")  )
+
+<div id="group-list" class="admin-content">
+
+    <div class="header">
+        <b>User Groups</b>
+##        <i>|</i>
+##        <button type="button"
+##                ##onclick="return popupCentered('$url','Edit',800,800,3);"
+##                onclick="XNAT.app.adminPopupDialog('$url')"
+##                class="btn1 btn-sm">Setup User Group</button>
+    </div>
+
+    <div id="group-table" class="data-table">
+        $!dataTable
+    </div>
+
+    <script type="text/javascript">
+        (function(){
+
+            var table = jq('#group-table').find('> table');
+
+            table.addClass('xnat-table sortable');
+            table.find('tr').addClass('highlight');
+
+            //sortables_init();
+            ts_makeSortable(table[0]);
+
+            // xdat:userGroup.ID
+
+            // hack to replace inline 'onclick'
+            // with a different function
+            table.find('td.results > a[href*="/xdat:userGroup.ID"]').each(function(){
+                var __a = jq(this);
+                // hack to 'fix' the link
+                //this.href = (this.href).replace(/\/xdat:user\//,'/xdat:userGroup/')
+                __a.removeAttr('onclick').off('click');
+                __a.on('click', function(e){
+                    e.preventDefault();
+                    XNAT.app.adminPopupDialog(this.href + '/popup/true');
+                })
+            });
+
+        })();
+    </script>
+
+</div>

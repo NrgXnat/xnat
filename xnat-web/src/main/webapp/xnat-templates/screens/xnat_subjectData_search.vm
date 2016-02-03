@@ -1,0 +1,90 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- start: screens/xnat_subjectData_search.vm -->
+
+<div id="mr-advanced-search" class="advanced-search-fields">
+
+    <a href="#!" style="position:absolute;right:0;top:0;font-size:12px;" class="link" onclick="XNAT.ui.popup('$link.setPage("SearchHelp.vm").addPathInfo("popup","true")','Help',500,600)">Help</a>
+
+    <div class="search-group by-criteria">
+
+        <h3>
+            <label>
+                Search by Criteria
+                <input type="checkbox" class="search-method by-criteria" value="by-criteria" checked>
+            </label>
+        </h3>
+
+        <!-- subject fields -->
+        <h4>$displayManager.getSingularDisplayNameForSubject() Fields</h4>
+
+        <table cellspacing="0">
+            <tr>
+                <td>
+                    <h5>$displayManager.getSingularDisplayNameForSubject() ID:</h5>
+                    <input type="hidden" name="xnat:subjectData.COMBO0_FIELDS" value="xnat:subjectData/ID_equals,xnat:subjectData/label_equals,xnat:subjectData/sharing/share/label_equals"/>
+                    <input size="20" type="text" name="xnat:subjectData.COMBO0" value="$!search.getWebFormValue("xnat:subjectData.COMBO0")" maxlength="100">
+                </td>
+                <td>
+                    <h5>Gender:</h5>
+                    <select name="xnat:subjectData.GENDER_TEXT_equals">
+                        #set($GENDER_TEXT_value=$!search.getWebFormValue("xnat:subjectData.GENDER_TEXT_equals"))
+                        <option value="" #if($GENDER_TEXT_value=="") SELECTED #end>(SELECT)</option>
+                        <option value="F" #if($GENDER_TEXT_value=="F") SELECTED #end>female</option>
+                        <option value="M" #if($GENDER_TEXT_value=="M") SELECTED #end>male</option>
+                        <option value="O" #if($GENDER_TEXT_value=="O") SELECTED #end>other</option>
+                        <option value="U" #if($GENDER_TEXT_value=="U") SELECTED #end>unknown</option>
+                    </select>
+                </td>
+                <td>
+                    <h5>Hand:</h5>
+                    <select name="xnat:subjectData.HANDEDNESS_TEXT_equals">
+                        #set($HANDEDNESS_TEXT_value=$!search.getWebFormValue("xnat:subjectData.HANDEDNESS_TEXT_equals"))
+                        <option value="" #if($HANDEDNESS_TEXT_value=="") SELECTED #end>(SELECT)</option>
+                        <option value="A" #if($HANDEDNESS_TEXT_value=="A") SELECTED #end>ambidextrous</option>
+                        <option value="R" #if($HANDEDNESS_TEXT_value=="R") SELECTED #end>right</option>
+                        <option value="U" #if($HANDEDNESS_TEXT_value=="U") SELECTED #end>unknown</option>
+                        <option value="L" #if($HANDEDNESS_TEXT_value=="L") SELECTED #end>left</option>
+                    </select>
+                </td>
+            </tr>
+            <tr>
+                <td>
+                    <h5>YOB:</h5>
+                    <input size="10" type="text" name="xnat:subjectData.DOB_equals" value="$!search.getWebFormValue("xnat:subjectData.DOB_equals")"/>
+                </td>
+                <td>
+                    <h5>Education:</h5>
+                    <input size="4" type="text" name="xnat:subjectData.EDUC_equals" value="$!search.getWebFormValue("xnat:subjectData.EDUC_equals")"/>
+                </td>
+                <td>
+                    <h5>SES:</h5>
+                    <input size="4" type="text" name="xnat:subjectData.SES_equals" value="$!search.getWebFormValue("xnat:subjectData.SES_equals")"/>
+                </td>
+            </tr>
+        </table>
+
+        <br>
+
+        <h5>$displayManager.getSingularDisplayNameForProject():</h5>
+        #advancedSearchCreateProjectList($data $displayManager $search $schemaElement)
+
+    </div>
+
+    <div style="padding-left:40px;" class="search-group by-id">
+
+        <h3><label>Search by Exact IDs
+            <input type="checkbox" class="search-method by-id" value="by-id"></label>
+        </h3>
+
+        <select name="xnat:subjectData.COMBO1_FIELDS">
+            <option value="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in" #if($!search.getWebFormValue("xnat:subjectData.COMBO1_FIELDS")=="xnat:subjectData/ID_in,xnat:subjectData/label_in,xnat:subjectData/sharing/share/label_in")SELECTED#end>$displayManager.getSingularDisplayNameForSubject().toUpperCase()</option>
+        </select>
+
+        <textarea class="exact-ids" name="xnat:subjectData.COMBO1" cols="30" rows="6">$!search.getWebFormValue("xnat:subjectData.COMBO1")</textarea>
+
+    </div>
+
+    <div class="clear"></div>
+
+</div>
+<!-- end: screens/xnat_subjectData_search.vm -->

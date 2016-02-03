@@ -1,0 +1,190 @@
+<script type="text/javascript" LANGUAGE="javascript" src="$content.getURI('scripts/subjectAssessorData/proj_tools.js')"></SCRIPT>
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#set ($imageSessionType = $om.getImageSessionData().getXSIType())
+
+#macro (qcYesNoSelect $name $qcItem $vr)
+	#if ($vr)
+		#if($vr.getField($name))
+			<font color="red">&#8658</font>
+		#end
+	#end
+	<input type="radio" name="$name" value="0" #if($qcItem.getStringProperty($name) == "0")) checked #end />No
+	<input type="radio" name="$name" value="1" #if($qcItem.getStringProperty($name) == "1")) checked #end />Yes
+#end
+
+#macro (qcYesNoNASelect $name $qcItem $vr)
+    #qcYesNoSelect($name $qcItem $vr)
+    <input type="radio" name="$name" value="null" />Not Applicable
+#end
+
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+
+#if ($data.message)
+	<div class="alert">$data.message</div>
+#end
+
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyManualQC")">
+<input type="hidden" name="project" value="$!{project}" >
+<input type="hidden" name="$item.getXSIType()/ID" id="$item.getXSIType()/ID" value=""/> 
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+    <HR>
+#end
+
+<table width="100%">
+	<tr>
+		<td>
+			<table width="100%">
+				<tr>
+					<td align="left" valign="middle">
+						<DIV class="edit_title">Edit Manual QC Assessment</DIV>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td>
+			<table width="100%">
+				<tr>
+					<td valign="top">
+						<table>
+							<!--
+								<tr><td colspan="2">
+								##parse("/screens/xnat_edit_experimentData.vm")
+								</td>
+								</tr>
+							-->
+                            <tr>
+                                <td>$displayManager.getSingularDisplayNameForProject()</td>
+                                <td>
+                                    <div id="project_placeholder">$!om.getProjectDisplayID()</div>
+                                </td>
+                                #if($!om.getPass() && $data.getSession().getAttribute("user").canDelete($om.getItem()))
+                                    <td>
+                                        <a onclick="modifyProject();"><img border="0" src="$content.getURI("images/e.gif")"/></a>
+                                        <input type="hidden" id="$om.getXSIType()/project" name="$om.getXSIType()/project" value="$!om.getProject()"/>
+                                        <script type="text/javascript">
+                                            function modifyProject(){
+                                                if(window.projectEditor==undefined){
+                                                    var config =new Object();
+                                                    if(window.currentID!=""){
+                                                        config.uri=XNAT.app.current_uri;
+                                                    }
+                                                    window.projectEditor=new ProjectEditor(config);
+                                                    window.projectEditor.onModification.subscribe(function (obj){
+                                                        document.getElementById("project_placeholder").innerHTML=this.new_project_name;
+                                                        document.getElementById("$om.getXSIType()/project").value=this.new_project;
+                                                        XNAT.app.current_uri=serverRoot+"/REST/projects/" + this.new_project + "/subjects/$om.getImageSessionData().getSubjectId()/experiments/$om.getImageSessionData().getId()/assessors/$om.getId()";
+                                                        config.uri=XNAT.app.current_uri;
+                                                        confirmValues();
+                                                    });
+                                                    window.projectEditor.render();
+                                                }
+                                                window.projectEditor.panel.show();
+                                            }
+                                        </script>
+                                    </td>
+                                #end
+                            </tr>
+							<tr>
+								<td>$displayManager.getSingularDisplayNameForImageSession() ID</td>
+								<td>
+									#set($imageSession_ID = $item.getStringProperty("xnat:qcManualAssessorData/imageSession_ID"))
+									#if ($imageSession_ID)
+										#set ($click = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$imageSessionType).addPathInfo('search_field','xnat:imageSessionData.ID').addPathInfo('search_value',$imageSession_ID).addPathInfo('popup',$!popup).addPathInfo('project',$project)" )
+										<a href="$click">
+											$imageSession_ID
+										</a>
+										#xdatHiddenBox("xnat:qcManualAssessorData/imageSession_ID" $item $imageSession_ID)
+									#end
+									
+									#xdatHiddenBox("xnat:qcManualAssessorData/project" $item $item.getStringProperty("xnat:qcManualAssessorData/project"))
+									
+									#xdatHiddenBox("xnat:qcManualAssessorData.ID" $item $item.getStringProperty("xnat:qcManualAssessorData.ID"))
+								</td>
+							</tr>
+							<tr><td>Label</td><td>#xdatStringBoxWClass("xnat:qcManualAssessorData/label" $item "" $vr "required")</td></tr>
+							<tr><td>QC Date</td><td>#xdatDateBox("xnat:qcManualAssessorData/date" $item $vr $years)</td></tr>
+							<tr><td>Rater</td><td>#xdatStringBox("xnat:qcManualAssessorData/rater" $item "" $vr)</td></tr>
+							#if ("xnat:petSessionData" != $imageSessionType)
+							     <tr><td>Stereotactic Marker</td><td>#xdatStringBox("xnat:qcManualAssessorData/stereotacticMarker" $item "" $vr)</td></tr>
+							#end
+							<tr><td valign="top">Incidental Findings</td><td>#xdatTextArea("xnat:qcManualAssessorData/incidentalFindings" $item "" $vr 3 30)</td></tr>
+							<tr><td valign="top">Comments</td><td>#xdatTextArea("xnat:qcManualAssessorData/comments" $item "" $vr 3 30)</td></tr>
+							<tr>
+								<td>Pass</td>
+								<td>#qcYesNoSelect("xnat:qcManualAssessorData/pass" $item $vr)</td>
+							</tr>
+							<tr>
+								<td>Payable</td>
+								<td>#qcYesNoNASelect("xnat:qcManualAssessorData/payable" $item $vr)</td>
+							</tr>
+							<tr>
+								<td>Rescan</td>
+								<td>#qcYesNoNASelect("xnat:qcManualAssessorData/rescan" $item $vr)</td>
+							</tr>
+						</table>
+					</td>
+				</tr>
+			</table>
+		</td>
+	</tr>
+	<tr>
+		<td>
+<!-- BEGIN xnat:qcManualAssessorData -->
+			<table>
+				<tr><th align="left"><font face="$ui.sansSerifFonts" size="3">Scans</font></TH></tr>
+<!-- BEGIN xnat:qcManualAssessorData/scans/scan -->
+				
+				#set($scans = $item.getChildItems("xnat:qcManualAssessorData/scans/scan"))
+			    #if ($scans && $scans.size() > 0)
+			    	#set($scan_counter = 0)
+			        #foreach($scan in $scans)
+						<tr>
+							<td>
+								<hr />
+								<table>
+									#parse($turbineUtils.getTemplateName("edit",$scan.getXSIType(),$project))
+								</table>
+							</td>
+						</tr>
+						#set($scan_counter = $scan_counter + 1)
+					#end
+				#end
+<!-- END xnat:qcManualAssessorData/scans/scan -->
+			</table>
+<!-- END xnat:qcManualAssessorData -->
+		</td>
+	</tr>
+	#if($item.getStringProperty("xnat:qcManualAssessorData.ID"))
+		#auditBoxes("3" "" "" "Modified Manual QC")
+	#else
+		#auditBoxes("3" "" "Standard QC" "Created Manual QC")
+		#hideFormJustification()
+
+	#end
+	<tr>
+		<td>
+		#xdatEditProps($item $edit_screen)
+		<input type="submit" name="eventSubmit_doInsert" value="Submit"/>
+		</td>
+	</tr>
+</table>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateExperimentForm();
+   return false;
+}
+</script>

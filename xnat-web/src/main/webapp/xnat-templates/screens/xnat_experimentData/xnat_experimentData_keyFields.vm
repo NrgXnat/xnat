@@ -1,0 +1,36 @@
+																			<tr>
+			  #formLabel("Accession #:")
+						  <TD>$!om.getId()</TD>
+							</tr>
+													<tr>
+			  #formLabel("Date Added:")
+									  <TD>
+										#if($om.getInsertDate())
+										$turbineUtils.formatDateTime($!om.InsertDate) ($!om.InsertUser.Login)
+										#end
+									  </TD>
+							</tr>
+						#if($!item.getProperty("date"))
+							<tr>
+								<th align="left">Date: </th>
+								<td>$turbineUtils.formatDate($!item.getProperty("date"))</td>
+							</tr>
+							#end
+												#if($!item.getProperty("time"))
+							<tr>
+								<th align="left">Time: </th>
+								<td>$!item.getProperty("time")</td>
+							</tr>
+							#end
+						#if($!item.getProperty("investigator.firstname"))
+							<tr>
+								<th align="left">Investigator: </th>
+								<td>$!item.getProperty("investigator.firstname") $!item.getProperty("investigator.lastname")</td>
+							</tr>
+							#end
+						#if($!item.getProperty("visit_id"))
+							<tr>
+								<th align="left">Visit: </th>
+								<td>$!item.getProperty("visit_id")</td>
+							</tr>
+							#end

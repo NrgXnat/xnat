@@ -1,0 +1,205 @@
+<table>
+                      <tr>
+                          <td> </td>
+                                  <td>Image </td>
+                                          <td align="left">
+                                            <A target="_blank" HREF="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0")" > <IMG SRC="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=THUMBNAIL&index=0")" height=250 width=250></A>
+                                          </td>
+                  </tr>
+            #if($scan.getProperty("quality"))
+                                      <tr>
+                                              <td></td>
+                                              <td>Quality</td>
+                                              <td align="left">$!scan.getProperty("quality")</td>
+                                      </tr>
+                #end
+                            #if($scan.getProperty("condition"))
+                                      <tr>
+                                              <td></td>
+                                              <td>Condition</td>
+                                              <td align="left">$!scan.getProperty("condition")</td>
+                                      </tr>
+                #end
+            #if($scan.getProperty("series_description"))
+                                      <tr>
+                                              <td></td>
+                                              <td>Series Desc</td>
+                                              <td align="left">$!scan.getProperty("series_description")</td>
+                                      </tr>
+                #end
+            #if($scan.getProperty("modality"))
+                                      <tr>
+                                              <td></td>
+                                              <td>Modality</td>
+                                              <td align="left">$!scan.getProperty("modality")</td>
+                                      </tr>
+                #end
+            #if($scan.getProperty("frames"))
+                                      <tr>
+                                              <td></td>
+                                              <td>Frames</td>
+                                              <td align="left">$!scan.getProperty("frames")</td>
+                                      </tr>
+                #end
+            #if($scan.getProperty("parameters.imageType"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Image Type</td>
+                                              <td align="left">$!scan.getProperty("parameters.imageType")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("coil"))
+                                      <tr>
+                                              <td></td>
+                                              <td>Coil</td>
+                                              <td align="left">$!scan.getProperty("coil")</td>
+                                      </tr>
+                #end
+            #if($scan.getProperty("fieldStrength"))
+                                      <tr>
+                                              <td></td>
+                                              <td>Field Strength</td>
+                                              <td align="left">$!scan.getProperty("fieldStrength")</td>
+                                      </tr>
+                #end
+            #if($!scan.getProperty("parameters.voxelRes.x") || $!scan.getProperty("parameters.voxelRes.y") || $!scan.getProperty("parameters.voxelRes.z"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Vox. Res.</td>
+                                              <td align="left">$!scan.getProperty("parameters.voxelRes.x"), $!scan.getProperty("parameters.voxelRes.y"), $!scan.getProperty("parameters.voxelRes.z")</td>
+                                  </tr>
+                #end
+            #if($!scan.getProperty("parameters.fov.x") || $!scan.getProperty("parameters.fov.y"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>FOV</td>
+                                              <td align="left">$!scan.getProperty("parameters.fov.x") x $!scan.getProperty("parameters.fov.y")</td>
+                                  </tr>
+                #end
+            #if($!scan.getProperty("parameters.matrix.x") || $!scan.getProperty("parameters.matrix.y"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Matrix</td>
+                                              <td align="left">$!scan.getProperty("parameters.matrix.x") x $!scan.getProperty("parameters.matrix.y")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("parameters.partitions"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Part.</td>
+                                              <td align="left">$!scan.getProperty("parameters.partitions")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("parameters.tr"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>TR</td>
+                                              <td align="left">$!scan.getProperty("parameters.tr")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("parameters.te"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>TE</td>
+                                              <td align="left">$!scan.getProperty("parameters.te")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("parameters.ti"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>TI</td>
+                                              <td align="left">$!scan.getProperty("parameters.ti")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("parameters.flip"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Flip</td>
+                                              <td align="left">$!scan.getProperty("parameters.flip")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("parameters.sequence"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Sequence</td>
+                                              <td align="left">$!scan.getProperty("parameters.sequence")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("parameters.origin"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Origin</td>
+                                              <td align="left">$!scan.getProperty("parameters.origin")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("note"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Note</td>
+                                              <td align="left">$!scan.getProperty("note")</td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("validation.status"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Validity</td>
+                                              <td align="left">$!scan.getStringProperty("validation.status")                    </td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("validation.method"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Validation Method</td>
+                                              <td align="left">$!scan.getStringProperty("validation.method")                    </td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("validation.date"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Validation Date</td>
+                                              <td align="left">$!scan.getStringProperty("validation.date")                  </td>
+                                  </tr>
+                #end
+            #if($scan.getProperty("validation.notes"))
+                                  <tr>
+                                              <td>    </td>
+                                              <td>Validation Notes</td>
+                                              <td align="left">$!scan.getStringProperty("validation.notes")</td>
+                                  </tr>
+			#end
+			
+			#if($scan.getUid())
+				<tr>
+					<td> </td>
+					<td colspan="2"><a target="_blank" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">View DICOM Headers</a></td>
+				</tr>
+			#end
+			
+            #foreach($addP in $scan.getParameters_addparam())
+                 <tr>
+                              <td>    </td>
+                              <td>$!addP.getName()</td>
+                              <td align="left">$!addP.getAddfield()</td>
+                  </tr>
+            #end
+
+            #foreach($scanAssessor in $scanAssessors)
+                    #if($scanAssessor.canRead($user))
+                        #set($scanById=$!scanAssessor.getScanById($scanID))
+                        #set($scanId=$!scanAssessor.getId())
+                        #set($scanType=$!scanAssessor.getXSIType())
+                        #set($scanField="${scanAssessor.getXSIType()}.ID")
+                        #set($url=$link.setAction('DisplayItemAction').addPathInfo('search_element',$scanType).addPathInfo('search_field',$scanField).addPathInfo('search_value',$scanId).addPathInfo('popup',$popup).addPathInfo('project',$project))
+                        #if($scanById)
+                            <tr>
+                                <td></td>
+                                <td><a href="$url" title="$scanAssessor.getIdentifier($project)">$!scanAssessor.getHeader():</a></td>
+                                <td border=0 style="font-weight:bold; text-align:left;"  NOWRAP>
+                                    $!scanAssessor.getScanById($scanID).getSummary()
+                                </td>
+                            </tr>
+                        #end
+                    #end
+            #end
+        #parse("screens/defacing_qc.vm")
+     </table>

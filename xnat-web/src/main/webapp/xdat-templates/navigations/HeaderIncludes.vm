@@ -1,0 +1,2 @@
+#includeJSFile()
+<link type="text/css" rel="stylesheet" href="$content.getURI("style/xdat.css")">

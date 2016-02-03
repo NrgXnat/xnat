@@ -1,0 +1,148 @@
+
+    <table id="admin-nav"#* class="dark" *#>
+        <tr>
+
+        ##        <th style="border-style:none;"><font face="$ui.sansSerifFonts">View</font></th>
+
+            #if($data.getScreenTemplate().equals("XDATScreen_admin.vm"))
+                <td class="active">
+                    <b>Users</b>
+                </td>
+            #else
+                <td>
+                    <a href="$link.setPage("XDATScreen_admin.vm")">Users</a>
+                </td>
+            #end
+
+
+            #if($data.getScreenTemplate().equals("XDATScreen_groups.vm"))
+                <td class="active">
+                    <b>Groups</b>
+                </td>
+            #else
+            <td>
+                <a href="$link.setPage("XDATScreen_groups.vm")">Groups</a>
+            #end
+
+
+            #if($data.getScreenTemplate().equals("XDATScreen_dataTypes.vm"))
+                <td class="active">
+                    <b>Data Types</b>
+                </td>
+            #else
+                <td>
+                    <a href="$link.setPage("XDATScreen_dataTypes.vm")">Data Types</a>
+                </td>
+            #end
+
+##            <!--
+##				#if($data.getScreenTemplate().equals("XDATScreen_roles.vm"))
+##                    <td class="active">
+##                            <b>Roles</b>
+##                    </td>
+##                #else
+##				    <td>
+##					    <a class=b href="$link.setPage("XDATScreen_roles.vm")" onmouseover="return true;">Roles</a>
+##                    </td>
+##                #end
+##            -->
+
+            #if($data.getScreenTemplate().equals("XDATScreen_email.vm"))
+                <td class="active">
+                    <b>Email</b>
+                </td>
+            #else
+                <td>
+                    <a href="$link.setPage("XDATScreen_email.vm")">Email</a>
+                </td>
+            #end
+
+
+            #if($data.getScreenTemplate().equals("XDATScreen_bundles.vm"))
+                <td class="active">
+                    <b>Bundles</b>
+                </td>
+            #else
+                <td>
+                    <a href="$link.setPage("XDATScreen_bundles.vm")">Bundles</a>
+                </td>
+            #end
+
+
+##            #if($data.getScreenTemplate().equals("XDATScreen_manage_news.vm"))
+##                <td class="active">
+##                    <b>News</b>
+##                </td>
+##            #else
+##                <td>
+##                    <a href="$link.setPage("XDATScreen_manage_news.vm")">News</a>
+##                </td>
+##            #end
+##
+##
+##            #if($data.getScreenTemplate().equals("XDATScreen_manage_info.vm"))
+##                <td class="active">
+##                    <b>Info</b>
+##                </td>
+##            #else
+##                <td>
+##                    <a href="$link.setPage("XDATScreen_manage_info.vm")">Info</a>
+##                </td>
+##            #end
+
+
+            #if($data.getScreenTemplate().equals("XDATScreen_manage_pipeline.vm"))
+                <td class="active">
+                    <b>Pipelines</b>
+                </td>
+            #else
+                <td>
+                    <a href="$link.setPage("XDATScreen_manage_pipeline.vm")">Pipelines</a>
+                </td>
+            #end
+
+
+            #if($data.getScreenTemplate().equals("XDATScreen_admin_options.vm"))
+                <td class="active">
+                    <b>More...</b>
+                </td>
+            #else
+                <td>
+                    <a href="$link.setPage("XDATScreen_admin_options.vm")">More...</a>
+                </td>
+            #end
+
+        </tr>
+
+    </table>
+
+    <script type="text/javascript">
+
+        var server = "$content.getURI("images")/";
+
+        XNAT.app.adminPopupDialog = function(url){
+            if (url.indexOf('/popup/true') === -1){
+                url.replace(/\/popup\/false/,''); // get rid of '/popup/false'
+                url = url + '/popup/true';
+            }
+            url = url.replace(/\/\/popup/,'/popup/'); // watch out for '//popup'
+            xmodal.iframe({
+                src: url,
+                width: '60%',
+                height: '80%',
+                minHeight: 540,
+                minWidth: 720,
+                maxWidth: 960,
+                title: url,
+                titleStyle: 'visibility:hidden;opacity:0;',
+                footer: false,
+                onClose: function(){
+                    xmodal.loading.open('Please wait...');
+                    window.top.location.reload(true);
+                }
+            });
+        }
+
+    </script>
+    <script type="text/javascript" src="$content.getURI("scripts/sortable_us.js")"></script>
+    <script type="text/javascript" src="$content.getURI("scripts/popupCentered.js")"></script>

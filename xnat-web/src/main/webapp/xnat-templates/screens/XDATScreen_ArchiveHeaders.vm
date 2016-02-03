@@ -1,0 +1,18 @@
+##Copyright 2007,2008 Washington University
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageCSS = "style/prearchives.css")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<DIV id="error-message" class="error">$data.message</DIV><br>
+#end
+<BR>
+<div id="serverRoot" title="$content.getURI('')"></div>
+<div id="numdays" num=$!numdays></div>
+<div id="archiveheader"></div>
+</br>
+<script type="text/javascript" src="$content.getURI('scripts/qooxdoo/dicomheaderview/build/script/dicomheaderview.js')"></script>
+

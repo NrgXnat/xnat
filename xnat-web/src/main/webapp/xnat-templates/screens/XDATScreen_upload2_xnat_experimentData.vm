@@ -1,0 +1,138 @@
+<script type="text/javascript">
+	   
+	function proceed() {
+	   	window.location="$link.setPage("UserCacheFileAssignment.vm").addPathInfo("search_field","$search_field").addPathInfo("search_element","$search_element").addPathInfo("search_value","$search_value").addPathInfo("project","$!project")";
+	}
+
+function disableForm(theform) {
+  if (document.all || document.getElementById) {
+    for (i = 0; i < theform.length; i++) {
+      var tempobj = theform.elements[i];
+      if (tempobj.type.toLowerCase() == "submit" || tempobj.type.toLowerCase() == "reset" || tempobj.type.toLowerCase() == "button")
+        tempobj.disabled = true;
+    }
+    return true;
+  }
+  else {
+    return true;
+  }
+}
+   
+function enableForm() {
+	if (document.getElementById)
+	{
+		var theform= document.getElementById('uploadFORM');
+	}
+	else if (document.all)
+	{
+		var theform= document.all['uploadFORM'];
+	}
+  if (document.all || document.getElementById) {
+    for (i = 0; i < theform.length; i++) {
+      var tempobj = theform.elements[i];
+      if (tempobj.type.toLowerCase() == "submit" || tempobj.type.toLowerCase() == "reset" || tempobj.type.toLowerCase() == "button")
+         tempobj.disabled = false;
+    }
+    return true;
+  }else {
+		    return true;
+  }
+}
+		</script>
+	<script type="text/javascript">
+var i;
+var req;
+var started=0;
+
+
+function prog(theform)
+{
+  if(document.getElementById("image_archive").value!="")
+  {
+   disableForm(theform);
+   document.getElementById("iframe").src="";
+   started=0; 
+   openModalPanel("file_upload","Uploading file...");
+   return true;
+  }else{
+    return false;
+  }
+}
+
+XNAT.app.upload={
+	start:function(){
+		if(document.getElementById("image_archive").value==""){
+            showMessage("page_body", "Notification", "This link does not work in your browser.");
+    		return;
+		}
+		
+		var formObject = document.getElementById('uploadFORM');
+		YAHOO.util.Connect.setForm(formObject,true);
+   
+   		openModalPanel("file_upload","Uploading file...");
+   
+		var callback={
+			upload:function(obj1){
+				closeModalPanel("file_upload");
+				if(obj1.responseText.indexOf("upload_success")>-1){
+					proceed();
+				}else{
+					showMessage("page_body", "Error", "Unable to store uploaded file.");
+				}
+			},
+            cache:false, // Turn off caching for IE
+			scope:this
+		}
+		
+		YAHOO.util.Connect.asyncRequest('POST',"$content.getURI("/REST/user/cache/resources/$om.getId()/files?XNAT_CSRF=$!XNAT_CSRF")",callback);
+	}
+}
+
+</script>
+<form ID="uploadFORM" target="iframe" enctype="multipart/form-data" method="POST" action="" onSubmit="return prog(this);">
+<INPUT TYPE="hidden" name="extract" value="true"/>
+<INPUT TYPE="hidden" name="_onSuccessReturnHTML" value="upload_success"/>
+<INPUT TYPE="hidden" name="_onFailureReturnHTML" value="upload_failed"/>
+#xdatPassItemFormFields($search_element $search_field $search_value $project)
+<TABLE>
+	<TR>
+		<TD colspan="3" align="left"><font face="$ui.sansSerifFonts" size="4" style="line-height:18px;"><b>Upload Additional Files</b></font></TD>
+	</TR>
+	<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+		<TR>
+		<TD colspan="3" align="right">	
+		<TABLE WIDTH="300" BORDER=1 STYLE="	border-collapse: collapse;">
+			<TR>
+<TD valign="top" align="left">
+<B>Instructions:</B><BR>
+Image files should be zipped (.zip or .tar.gz) and uploaded using the form below.  
+</td>
+</tr>
+</table>
+</TD>
+	</TR>
+		<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+	<TR>
+		<TH align="left">File</TH><TD colspan="2"><input id="image_archive" type="file" name="image_archive" size="75"/></TD>
+	</TR>
+	<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+		#auditBoxes("3" "" "" "Uploaded additional files")
+	<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+	<TR>
+		<TD colspan="3" align="right"><input type="button" name="eventSubmit_doPerform" value="Upload" onclick="XNAT.app.upload.start()"/></TD>
+	</TR>
+</TABLE>
+</form>
+<br>
+
+<IFRAME id="iframe" name="iframe" src="" width="468" height="80" frameborder="0">
+PROGRESS BAR DISABLED. <BR>Try using a more recent web browser.
+</IFRAME>

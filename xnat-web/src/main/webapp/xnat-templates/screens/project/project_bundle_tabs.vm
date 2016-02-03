@@ -1,0 +1,26 @@
+<DIV ID="paginator"></DIV>
+<BR>
+<div ID="tab_module">
+  <DIV id="search_tabs"></DIV>
+</div>
+	 #set($bundles = $project.getBundles())
+<script language="javascript">
+var stored_searches=new Array();
+		#foreach($bundle in $bundles)
+stored_searches.push({ID:"$!bundle.getId()",DESC:"$!bundle.getBriefDescription()"});
+	#end
+
+										var url = "$content.getURI("servlet/AjaxServlet")";
+url = url + "";
+   
+										var currentTime = new Date();
+var pageID = currentTime.getTime() + '_';
+	 
+function TabManagerInit(){
+	    window.tab_manager.init(stored_searches);
+	    window.tab_manager.load({DESC:"$displayManager.getPluralDisplayNameForSubject()"});
+	}
+	
+	YAHOO.util.Event.onDOMReady(TabManagerInit);
+	</script>
+<script type="text/javascript" src="$content.getURI("scripts/search/tabManager.js")"></script>

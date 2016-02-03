@@ -1,0 +1,52 @@
+#set($scanCounter=7899)
+#if ($om.getWorkflows().size()>0)
+    <h3 name="LINK${scanCounter}" onclick=" return blocking($scanCounter);">
+        <img id="IMG$scanCounter" src="$content.getURI("images/plus.jpg")" border="0">
+        History
+    </h3>
+
+    <div id="span$!scanCounter" style="position:relative; display:none;">
+        <table class="xnat-table alt1">
+            <tr>
+                <th>Action</th>
+                <th>Launch Time</th>
+                <th>Status</th>
+                <th>Note</th>
+            </tr>
+            #foreach( $workflow in $om.getWorkflows() )
+                <tr>
+                    #set($scanCounter=$scanCounter + 1)
+                    <td>
+                        <a class="report-link" title="alt-click to view info on a separate page" data-args="$workflow.getWrkWorkflowdataId()|wrk:workflowData|wrk:workflowData.wrk_workflowData_id">$workflow.getOnlyPipelineName()</a>
+                    </td>
+                    <td> $workflow.getLaunchTime() </td>
+                    <td>$!workflow.getStatus()</td>
+                    <td>$!workflow.getPercentagecomplete()</td>
+                </tr>
+            #end
+            <tr>
+                <td> Created</td>
+                <td>$!om.getInsertDate()</td>
+                <td>Complete</td>
+                <td>By: $!om.getInsertUser().getLogin()</td>
+            </tr>
+        </table>
+    </div>
+
+    <script>
+        $('a.report-link').click(function(e){
+            var args = $(this).data('args').split('|');
+            if (e.altKey) {
+                return rpt.apply(this, args);
+            }
+            return rptModal.apply(this, args)
+        });
+    </script>
+
+    #if($hasActiveProcess || $hasErrorProcess)
+    <script type="text/javascript">
+        blocking(7899);
+    </script>
+    #end
+
+#end

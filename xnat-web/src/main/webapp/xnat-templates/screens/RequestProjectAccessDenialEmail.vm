@@ -1,0 +1,21 @@
+<div id="logo" align="center">#parse("/screens/Logo_Email.vm")</div>
+<hr>
+<TABLE>
+ <TR>
+  <TD><h3>$projectOM.getName() access denied.</h3></TD>
+ </TR>
+ <TR><TD>
+We regret to inform you that your request to access the $projectOM.getName() project has been denied.  Please consult the project manager for additional details at <A href="mailto:$data.getSession().getAttribute("user").getEmail()">$data.getSession().getAttribute("user").getEmail()</A>.
+</TD></TR>
+ <TR>
+  <TD><a href="$server/app/template/XDATScreen_report_xnat_projectData.vm/search_element/xnat:projectData/search_field/xnat:projectData.ID/search_value/$projectOM.getId()">Proceed to the site to get started reviewing/using the data.</A></TD>
+ </TR>
+<TR><TD>
+<br><br>
+The $system Team<BR>
+
+<a href="$server">$server</a><BR>
+
+<a href="mailto:$admin_email">$admin_email</a>
+
+</TD></TR></TABLE>

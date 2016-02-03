@@ -1,0 +1,352 @@
+$page.setTitle("Batch Upload")
+<script type="text/javascript">
+<!-- Begin
+var inProgress=0;
+var callCount=0;
+function verifyForm(theform) {
+	  
+}
+
+function disableForm(theform) {
+	  if (document.getElementById)
+	  {
+			    document.getElementById('progressBar').style.display = 'block';
+	  }
+	  else if (document.all)
+	  {
+			    document.all['progressBar'].style.display = 'block';
+			  }
+			  
+  if (document.all || document.getElementById) {
+    for (i = 0; i < theform.length; i++) {
+      var tempobj = theform.elements[i];
+      if (tempobj.type.toLowerCase() == "submit" || tempobj.type.toLowerCase() == "reset" || tempobj.type.toLowerCase() == "button")
+        tempobj.disabled = true;
+    }
+    return true;
+  }
+  else {
+    return true;
+  }
+}
+   
+function showIFrame()
+{
+	  if (document.getElementById)
+	  {
+			    document.getElementById('iframeSpan').style.display = 'block';
+	  }
+	  else if (document.all)
+	  {
+			    document.all['iframeSpan'].style.display = 'block';
+			  }
+}
+   
+function resetPage() {
+ inProgress=0;
+ 
+  checkProgress();
+			  allowProgressCall="false";
+			  //enableForm();
+			  drawFiles();
+  document.getElementById('reloadDIV').style.display = 'block';
+  
+}
+   
+function proceed() {
+   window.location="$link.setPage("AddStep3.vm").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_element","xnat:projectData").addPathInfo("search_value","$!{project.getId()}")";
+}
+   
+function reloadPage() {
+   window.location="$link.setPage("UploadImages.vm").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_element","xnat:projectData").addPathInfo("search_value","$!{project.getId()}")";
+}
+
+function enableForm() {
+  var theform;
+	  if (document.getElementById)
+	  {
+			    theform= document.getElementById('uploadFORM');
+	  }
+	  else if (document.all)
+	  {
+			    theform= document.all['uploadFORM'];
+			  }
+
+	  if (document.all || document.getElementById) {
+    for (i = 0; i < theform.length; i++) {
+      var tempobj = theform.elements[i];
+      if (tempobj.type.toLowerCase() == "submit" || tempobj.type.toLowerCase() == "reset" || tempobj.type.toLowerCase() == "button")
+         tempobj.disabled = false;
+    }
+    return true;
+  }else {
+		    return true;
+  }
+}
+//  End -->
+		</script>
+	<script type="text/javascript">
+var i;
+var req;
+
+var progressBar;
+var progressPercent;
+var uploadID = "$uploadID";
+var step = "Upload";
+var uploadIDStep = uploadID + step;
+var started=0;
+var uploadCount = 0;
+var extractTimeOut=300;
+
+function prog(theform)
+{
+  if (document.getElementById('image_archive').value!="")
+  {
+    disableForm(theform);
+//document.getElementById('iframe').location.href='';
+    step = "Upload";
+    started=0;
+    uploadCount=0;
+    uploadIDStep = uploadID + step;
+    progressBar=document.getElementById("uploadBar");
+    progressPercent=document.getElementById("uploadPercent");
+			  allowProgressCall="true";
+    resetProgressBar();
+    resetProgress();
+    checkProgress();
+    return true;
+  }else{
+    xModalMessage('Upload Action', 'Please select a file.');
+    return false;
+  }
+}
+
+function resetProgressBar(){
+  i=0;
+  document.getElementById("uploadPercent").innerHTML="";	
+  document.getElementById("uploadBar").style.width=0;  
+}
+
+
+var count100 = 0;
+function callback() {
+    if (req.readyState == 4) {
+        if (req.status == 200) {
+            // handle response 
+            var temp = req.responseText;
+            //alert(temp);
+            var i = parseInt(temp);
+            if (i==-1){
+                inProgress=0;
+            }else{
+            if (i==0){         
+      			                   uploadCount = uploadCount + 1;
+      			                    if (uploadCount==98){
+      			                      uploadCount=1;
+                            progressPercent.innerHTML="";
+      			                    }
+      			                    i = uploadCount;
+      			                if (i>40){extractTimeOut=300;}
+      			                if (i>50){extractTimeOut=500;}
+      			                if (i>60){extractTimeOut=800;}
+      			                if (i>70){extractTimeOut=1000;}
+      			                if (i>80){extractTimeOut=5000;}
+      			                if (i>85){extractTimeOut=8000;}
+      			                if (i>88){extractTimeOut=11000;}
+      			                var pixels = i * 3;
+                      if (i>10){progressPercent.innerHTML=parseInt(i)+"%";}
+      			                progressBar.style.width=pixels+"px";
+      			                started=1;
+      			      	          setTimeout("checkProgress();", extractTimeOut); 
+            }else{
+                //alert(i);
+      			          if (i<99){
+      			                 if (i>uploadCount)
+      			                 {
+                        var pixels = i * 3;
+                        if (i>10){progressPercent.innerHTML=parseInt(i)+"%";}
+      			                  progressBar.style.width=pixels+"px";
+      			                  started=1;
+      			                 }
+      			      	           setTimeout("checkProgress();", 100); 
+      			          }else{
+      			             if (started == 0){
+      			                 setTimeout("checkProgress();", 300);
+      			                 count100++;
+      			             }else{
+      			                 started=0;
+      			                 progressPercent.innerHTML="100%";
+      			                 progressBar.style.width="300px";
+      			             }
+      			          }
+            }
+            }
+        }
+    }
+}
+
+function resetProgress(){
+   var url = "$content.getURI("servlet/AjaxServlet")?remote-class=org.nrg.xnat.ajax.UploadProgress";
+   url = url + "&remote-method=start";
+   url = url + "&ID=" + uploadID;
+   if (window.XMLHttpRequest) {
+       req = new XMLHttpRequest();
+   } else if (window.ActiveXObject) {
+       req = new ActiveXObject("Microsoft.XMLHTTP");
+   }
+   req.open("GET", url, true);
+   req.send(null);
+   inProgress=1;
+    updateCallCount();
+}
+
+var allowProgressCall= "true";
+function checkProgress(){
+   if (allowProgressCall=="true")
+   {
+    var url = "$content.getURI("servlet/AjaxServlet")?remote-class=org.nrg.xnat.ajax.UploadProgress";
+    url = url + "&remote-method=monitor";
+    url = url + "&ID=" + uploadIDStep;
+    if (window.XMLHttpRequest) {
+        req = new XMLHttpRequest();
+    } else if (window.ActiveXObject) {
+        req = new ActiveXObject("Microsoft.XMLHTTP");
+    }
+    req.open("GET", url, true);
+    req.onreadystatechange = callback;
+    req.send(null);
+    inProgress=1;
+    updateCallCount();
+   }else{
+       inProgress=0;
+       allowProgressCal="false";
+   }
+}
+
+
+function updateCallCount(){
+    callCount++;
+    //document.getElementById('callSummary').innerHTML="Calls: " + callCount + " ";
+}
+ 
+ 
+var uploadedFilenames=new Array();
+var uploadedFileDates=new Array();
+var uploadedFileSizes=new Array();
+
+function clearFiles(){
+  uploadedFilenames=new Array();
+  uploadedFileDates=new Array();
+  uploadedFileSizes=new Array();
+}
+
+function addFile(filename,filedate,filesize){
+  uploadedFilenames.push(filename);
+  uploadedFileDates.push(filedate);
+  uploadedFileSizes.push(filesize);
+  //alert(filename + " " + filedate + " " + filesize + ": " + uploadedFilenames.length);
+}
+
+#foreach($file in $uploadedFiles)
+  addFile("$file.get(0)","$file.get(1)","$file.get(2)");
+#end
+
+function drawFiles(){
+   if (uploadedFilenames.length>0){
+       var filesDIV = document.getElementById('uploadedFiles');
+       var text = "";
+       text += "<table cellspacing=\"5\" cellpadding=\"5\">";
+       text +="<tr><td colspan=\"3\" align=\"left\"><font face=\"$ui.sansSerifFonts\" size=\"4\" style=\"line-height:18px;\">Uploaded Files</font></td></tr>";
+       text += "\n<tr><th align=\"left\">File</th><th align=\"left\">Uploaded</th><th align=\"left\">Size</th></tr>";
+       for (x in uploadedFilenames)
+       {
+         text+="\n<tr><td>" + uploadedFilenames[x] + "</td><td>" + uploadedFileDates[x] + "</td><td>" + uploadedFileSizes[x] + "</td></tr>";
+       }
+       text+="</table>";
+       filesDIV.innerHTML=text;
+       document.getElementById('complete_submit').disabled=false;
+   }else{
+     // No uploaded files.
+     document.getElementById('complete_submit').disabled=true;
+   }
+}
+</script>
+#set($currentStep="step3")
+    <table align="center" cellspacing="0" border="0">
+      <tr>
+        <td valign="top"><p class="style9">There are a few guidelines to follow for preparing your image data for upload.  The image files should be stored in separate $displayManager.getSingularDisplayNameForImageSession().toLowerCase() directories (i.e. one $displayManager.getSingularDisplayNameForImageSession().toLowerCase() per sub-folder, many scans per $displayManager.getSingularDisplayNameForImageSession().toLowerCase()).  Once you have the data organized, it should be placed into Zip or tar gzipped archive files.  These files should not exceed 500 MB, so you may need to break your study data into multiple archive files. Use the form below to upload each file.
+ </p><p class="style9">
+Once the image data have been uploaded, it may take several hours for the database to prepare it for completion.  An email will be sent to you with instructions for continuing.
+</p><hr /></td>
+      </tr>
+    </table>
+    <table cellspacing="5" cellpadding="5" border="0" align="center">
+      <tr>
+        <td valign="top">
+<form class="noHide" ID="uploadFORM" target="iframe" enctype="multipart/form-data" method="POST" action="$link.setAction("UploadBatch")" onSubmit="return prog(this);">
+<INPUT TYPE="hidden" name="popup" value="true"/>
+<INPUT TYPE="hidden" name="ID" value="$uploadID"/>
+<INPUT TYPE="hidden" name="image_type" value="$image_type"/>
+<INPUT TYPE="hidden" name="threshhold" value="151516279"/>
+<INPUT ID="file_size" TYPE="hidden" name="file_size" value=""/>
+<TABLE  cellspacing="5" cellpadding="5" border="0">
+	<TR>
+		<TD colspan="3" align="left"><font face="$ui.sansSerifFonts" size="4" style="line-height:18px;"><b>Enter file to upload:</b></font></TD>
+	</TR>
+	<TR>
+<TD colspan="3"><input type="file" id="image_archive" name="image_archive" size="60"/></TD>
+	</TR>
+	#auditBoxes("3" "" "" "Upload Images")
+		#hideFormJustification()
+
+	<TR>
+		<TD colspan="3" align="right"><input type="submit" name="eventSubmit_doPerform" value="Upload"/></TD>
+	</TR>
+</TABLE>
+</form>
+        </td>
+        </tr><tr>
+        <td>
+        <span id="iframeSpan" align="center" style="position:relative; display:none;">
+<IFRAME name="iframe" src="" width="468" height="80" frameborder="0">
+PROGRESS BAR DISABLED. <BR>Try using a more recent web browser.
+</IFRAME></span>
+        </td>
+        </tr><tr>
+        <td align="center">
+			<span ID="progressBar" style="position:relative; display:none;">
+<div id="ex" style="position:relative;width:468px;background:#eeeeee;border:3px double #000000;">
+<TABLE width="100%" border="0">
+<TR><TD>
+   <div id="uploadLabel">Upload:&nbsp;</div></TD>
+   <TD align="center">
+   <div id="emptyUpload" style="background-color:#cccccc;border:1px solid black;height:22px;width:300px;padding:0px;" align="left">
+	      <div id="uploadBar" style="position:relative;top:0px;left:0px;background-color:#333333;height:22px;width:0px;padding-top:5px;padding:0px;">
+          <div id="uploadPercent" style="position:relative;top:0px;left:0px;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0px;padding-top:5px;">
+          </div>
+      </div>
+   </div></TD></TR>   
+   </TABLE>
+</div>
+</span>
+        </td>
+      </tr>
+    </table>
+    <div id="callSummary" ALIGN="center"></div> <div id="uploadedFiles" ALIGN="center"></div>
+    <br><br>
+ <table border="0" align="center" valign="top">
+  <tr valign="top">
+    <td valign="top"><span valign="top" ID="reloadDIV" style="position:relative; display:none;"><input type="button" value="Upload another file." onclick="reloadPage();"/></span></td>
+    <td valign="top">
+      <span valign="top"><form valign="top" ID="completeUploads" target="_parent" enctype="multipart/form-data" method="POST" action="$link.setAction("CompleteUpload")" onclick="return window.confirm('CONFIRM: Are you done uploading data?');">
+<input id="complete_submit" type="submit" value="I'm done uploading data."/>
+<INPUT TYPE="hidden" name="popup" value="true"/>
+<INPUT TYPE="hidden" name="image_type" value="$image_type"/>
+</form></span></td>
+  </tr>
+</table>
+	<script type="text/javascript">
+progressBar=document.getElementById("uploadBar");
+progressPercent=document.getElementById("uploadPercent");
+drawFiles();
+	</script>

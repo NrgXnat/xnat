@@ -1,0 +1,112 @@
+#parse($turbineUtils.getTemplateName("_bundle_header","xnat:projectData",$project.getId()))
+#set($bundles = $project.getBundles())
+#if($bundles.size()>0)
+##         <script type="text/javascript" src="$content.getURI("scripts/tabWrangler/tabWrangler.js")"></script>
+##		 <button id="flip_it">Enable Flippers</button>
+<div id="paginator"></div>
+<BR>
+<div id="tab_module">
+    <div class="bd">
+        <div id="search_tabs"></div>
+    </div>
+</div>
+
+<script type="text/javascript">
+    var stored_searches=new Array();
+        #set($default_search="")
+        #foreach($bundle in $bundles)
+        stored_searches.push({ID:"$!bundle.getId()",label:"$!bundle.getBriefDescription()",URL:serverRoot +"/REST/projects/${project.getId()}/searches/$!bundle.getId()"});
+            #if($bundle.getId().equals("@xnat:subjectData"))
+                #set($default_search="$!bundle.getId()")
+            #elseif(($bundle.getId().contains("xnat:subjectData") || $bundle.getId().contains("xnat_subjectData")) && $default_search.equals(""))
+                #set($default_search="$!bundle.getId()")
+            #end
+        #end
+
+    var url = "$content.getURI("servlet/AjaxServlet")";
+    url = url + "";
+
+    var currentTime = new Date();
+    var pageID = currentTime.getTime() + '_';
+
+
+    function openTabsChange(obj){
+        YAHOO.util.Cookie.remove("${project.getId()}.open_bundle.tabs");
+        var bundles=this.loaded.toString();
+        YAHOO.util.Cookie.set("${project.getId()}.open_bundle.tabs",bundles, { expires: new Date("January 12, 2025") });
+        //alert(bundles + ":" +YAHOO.util.Cookie.get("${project.getId()}.open_bundle.tabs"));
+        //wrangleTabs({
+        //    wrapper: '#search_tabs', // selector for element where tabs will be rendered by YUI - use 'body' to hit all tab sets
+        //    force: true // do we show it even if the tabs aren't too wide?
+        //});
+        //wrangleTabs('#search_tabs');
+        //console.debug('openTabsChange('+obj+')');
+    }
+
+    function TabManagerInit(){
+
+        var tab_module=new YAHOO.widget.Module("tab_module",{visible:true});
+
+        window.tab_manager=new TabManager();
+
+        window.tab_manager.setCsrfToken("$!XNAT_CSRF");
+
+        window.tab_manager.init(stored_searches);
+
+        #parse($turbineUtils.getTemplateName("_bundle_default","xnat:projectData",$project.getId()))
+
+        var bundles=YAHOO.util.Cookie.get("${project.getId()}.open_bundle.tabs");
+        if(bundles!== null && bundles.length > 0){
+            var open_tab_array=bundles.split(',');
+            for(var open_tab_counter=0;open_tab_counter<open_tab_array.length;open_tab_counter++){
+                var open_tab = open_tab_array[open_tab_counter];
+                window.tab_manager.load({ID:open_tab});
+            }
+        } else if ('$default_search') {
+            window.tab_manager.load({ID: '$default_search'});
+        }
+
+        var bundleTabIndex=YAHOO.util.Cookie.get("${project.getId()}.open_bundle.index");
+        if(bundleTabIndex!=null){
+            window.tab_manager.setActiveTab(parseInt(bundleTabIndex));
+            //window.tab_manager.tabView.set('activeIndex',parseInt(bundleTabIndex));
+        }
+
+        window.tab_manager.onOpenTabsChange.subscribe(bundleTabChange,this);
+        window.tab_manager.onOpenTabsChange.subscribe(openTabsChange,window.tab_manager);
+
+        //console.debug('TabManagerInit()');
+
+    }
+
+    function debug_out(msg){
+        var div=document.getElementById("mylogger");
+        if(div!=undefined && div!=null){
+            div.innerHTML+=msg + "<br/>";
+        }
+    }
+
+    YAHOO.util.Event.onDOMReady(TabManagerInit);
+
+    function bundleTabChange(obj){
+        var activeIndex=this.get("activeIndex");
+        YAHOO.util.Cookie.set("${project.getId()}.open_bundle.index",activeIndex);
+    }
+
+    function addBundleMonitor(){
+        window.tab_manager.tabView.subscribe("activeTabChange",bundleTabChange);
+    }
+
+    YAHOO.util.Event.onDOMReady(addBundleMonitor);
+
+    jq(window).load(function(){
+        // if the 'phantom'/'disabled' tab is there, wrangle the tabs
+        if (!jq('#search_tabs').find('li').not('.disabled').length){
+            wrangleTabs('#search_tabs',true);
+        }
+    });
+
+</script>
+#else
+<!-- no stored data -->
+#end

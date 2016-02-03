@@ -1,0 +1,79 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+#parse("/screens/admin_bar.vm")
+
+#set ( $url = $link.setPage("XDATScreen_edit_xdat_stored_search.vm").addPathInfo("popup","true")  )
+
+<div id="bundle-list" class="admin-content">
+
+    <div class="header">
+        <b>Bundles</b>
+        <i>|</i>
+        <button id="setup-bundle" type="button"
+            ##data-url="$url"
+            ##onclick="return popupCentered('$url','Edit',960,720,3);"
+            onclick="XNAT.app.adminPopupDialog('$url')"
+            class="btn1 btn-sm">Setup Additional Bundle</button>
+    </div>
+
+    <div id="bundle-table" class="data-table">
+        $!dataTable
+    </div>
+
+    <script type="text/javascript">
+        (function(){
+
+            var __table = jq('#bundle-table').find('> table');
+            __table.addClass('xnat-table sortable');
+            __table.find('tr').addClass('highlight');
+            __table.find('th').each(function(){
+                this.innerText = titleCase(this.innerText);
+            });
+
+            //sortables_init();
+            ts_makeSortable(__table[0]);
+
+            // hack to replace inline 'onclick'
+            // with a different function
+            __table.find('td.results').first().each(function(){
+                var __a = jq(this).find('> a');
+                __a.removeAttr('onclick').off('click');
+                __a.on('click', function(e){
+                    e.preventDefault();
+                    XNAT.app.adminPopupDialog(this.href + '/popup/true');
+                })
+            });
+
+        })();
+    </script>
+
+</div>
+
+##<p>
+##<table border="0" width="95%">
+##	<tr>
+##		<td align=left colspan=2>
+##			<font face="$ui.sansSerifFonts" size="2">
+##				<font face="$ui.sansSerifFonts"><b>Bundles</b></font>
+##			</font>
+##			&nbsp;&nbsp;&nbsp;&nbsp;
+##			<font face="$ui.sansSerifFonts" size="2">
+##				<a href="#" ONCLICK="return popupWSize('$url','800','800');">
+##				Setup Additional Bundle
+##				</a>
+##			</font>
+##		</td>
+##	</tr>
+##<tr><td colspan=2>
+##
+##$!dataTable
+##</td></tr></table>

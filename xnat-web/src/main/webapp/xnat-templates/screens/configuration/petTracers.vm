@@ -1,0 +1,51 @@
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+<!-- Title: PET Tracers -->
+<div class="mgmt_container">
+    <div id="tracers_mgmt_div" class="row">
+        <p>
+            This is the site-wide list of PET tracers. List entries should be separated by whitespace. This list can also be replaced
+            at the $displayManager.getSingularDisplayNameForProject().toLowerCase() level.
+        </p>
+        <p><label for="tracerList">Tracers:</label></p>
+        <textarea id="tracerList" name="tracerList" rows="20" cols="80"></textarea>
+    </div>
+    <div class="buttons">
+        <input type="button" class="submit" value="Save" name="eventSubmit_doPerform" id="tracers_save_button" onclick="window.petTracerManager.saveTabSettings();"/>&nbsp;
+        <input type="button" class="reset" value="Reset" name="eventSubmit_doReset" id="tracers_reset_button" onclick="window.petTracerManager.resetForm();" disabled/>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+
+    var tracerList = jq('#tracerList');
+
+    function dirty() {
+        if (window.petTracerManager && !window.petTracerManager.wasDirty()) {
+            window.petTracerManager.dirtyForm();
+        }
+    }
+
+    tracerList.bind('input propertychange', dirty);
+
+    function configurationTracerTabChange(obj) {
+        if(obj.newValue.get("href")=="#petTracers") {
+            if(window.petTracerManager==undefined) {
+                window.petTracerManager = new SettingsTabManager('tracers_mgmt_div', 'tracers');
+            }
+        }
+    }
+
+    function addTracerMgmtMonitor(){
+        if(window.configurationTabView.get("activeTab").get("href")=="#petTracers") {
+            if(window.petTracerManager==undefined) {
+                window.petTracerManager = new SettingsTabManager('tracers_mgmt_div', 'tracers');
+            }
+        } else {
+            window.configurationTabView.subscribe("activeTabChange", configurationTracerTabChange);
+        }
+    }
+
+    YAHOO.util.Event.onDOMReady(addTracerMgmtMonitor);
+    putConfigurationControls('tracers', ['tracerList']);
+</script>

@@ -1,0 +1,45 @@
+#parse($turbineUtils.getTemplateName("_reconstructions","xnat:imageSessionData",$project))
+#if($om.getReconstructions_reconstructedimage().size()>0)
+<TR>
+	<TD align=left colspan=2 valign=top>
+	<A name="LINK${scanCounter}" HREF="#LINK${scanCounter}" onClick=" return blocking($scanCounter);"><img ID="IMG$scanCounter" src="$content.getURI("images/plus.jpg")" border=0> Quality Control Images</a>
+	<span ID="span$!scanCounter" style="position:relative; display:none;">
+		<table>
+			#set ($MPR_SCANS = $om.getScansByType("MPRAGE"))
+			#if ($MPR_SCANS.size() > 0)
+			<tr><td colspan=3>MPRAGE Quality Control Images</td></tr>
+			<tr>
+				<td><IMG src="$content.getURI("/app/template/QualityControl.vm/file_name/$!{item.getProperty('xnat:imageSessionData.ID')}_mpr_n${MPR_SCANS.size()}_111_t88_cor_99.gif")" border=0></td>
+				<td><IMG src="$content.getURI("/app/template/QualityControl.vm/file_name/$!{item.getProperty('xnat:imageSessionData.ID')}_mpr_n${MPR_SCANS.size()}_111_t88_sag_80.gif")" border=0></td>
+				<td><IMG src="$content.getURI("/app/template/QualityControl.vm/file_name/$!{item.getProperty('xnat:imageSessionData.ID')}_mpr_n${MPR_SCANS.size()}_111_t88_tra_79.gif")" border=0></td>
+			</tr>
+			<tr><td colspan=3>&nbsp;</td></tr>
+			#end
+			#set ($TSE_SCANS = $om.getScansByType("TSE"))
+			#if ($TSE_SCANS.size() > 0)
+			<tr><td colspan=3>TSE Quality Control Images</td></tr>
+			<tr>
+				<td><IMG src="$content.getURI("/app/template/QualityControl.vm/file_name/$!{item.getProperty('xnat:imageSessionData.ID')}_tse7_t88_111_fill_cor_99.gif")" border=0></td>
+				<td><IMG src="$content.getURI("/app/template/QualityControl.vm/file_name/$!{item.getProperty('xnat:imageSessionData.ID')}_tse7_t88_111_fill_sag_80.gif")" border=0></td>
+				<td><IMG src="$content.getURI("/app/template/QualityControl.vm/file_name/$!{item.getProperty('xnat:imageSessionData.ID')}_tse7_t88_111_fill_tra_79.gif")" border=0></td>
+			</tr>
+			<tr><td colspan=3>&nbsp;</td></tr>
+			#end
+			#set ($FLAIR_SCANS = $om.getScansByType("FLAIR"))
+			#if ($FLAIR_SCANS.size() > 0)
+			<tr><td colspan=3>FLAIR Quality Control Images</td></tr>
+			<tr>
+				<td><IMG src="$content.getURI("/app/template/QualityControl.vm/file_name/$!{item.getProperty('xnat:imageSessionData.ID')}_flair_t88_111_cor_99.gif")" border=0></td>
+				<td><IMG src="$content.getURI("/app/template/QualityControl.vm/file_name/$!{item.getProperty('xnat:imageSessionData.ID')}_flair_t88_111_sag_80.gif")" border=0></td>
+				<td><IMG src="$content.getURI("/app/template/QualityControl.vm/file_name/$!{item.getProperty('xnat:imageSessionData.ID')}_flair_t88_111_tra_79.gif")" border=0></td>
+			</tr>
+			<tr><td colspan=3>&nbsp;</td></tr>
+			#end
+ 		</table>
+ 	</span>	
+	</TD>
+</TR>
+<tr>
+	<td align=left colspan=2 valign=top><BR/><BR/></td>
+</tr>
+#end

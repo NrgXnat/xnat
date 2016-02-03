@@ -1,0 +1,30 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<font face="$ui.sansSerifFonts" size="2">
+<form name="form1" method="post" action="$link.setAction("ElementSecurityWizard")">
+	<INPUT TYPE="hidden" NAME="popup" VALUE="$popup">
+    <table width="450">
+	<tr>
+		<td colspan="2">
+		<br>Select the data type which you would like to add.
+		<br><br></td>
+	</tr>
+      <tr>  
+        	<TD>Data Type:</TD><TD>
+			<SELECT name="xdat:element_security.element_name">
+				<OPTION VALUE="">(SELECT)</OPTION>
+				#foreach($e in $elements)
+					<OPTION VALUE="$e">$e</OPTION>
+				#end
+			</SELECT>
+      </tr>
+	<tr>
+		<td></td>
+		<td>
+		
+    			<input type="submit" name="eventSubmit_doStep1" value="Submit"/>
+		</td>
+	</tr>
+    </table>
+  
+</form>
+</font>

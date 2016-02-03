@@ -1,0 +1,9 @@
+<!-- Sequence: 10 -->
+<li><a href="$link.setPage("XDATScreen_admin.vm")">Users</a></li>
+<li><a href="$link.setPage("XDATScreen_groups.vm")">Groups</a></li>
+<li><a href="$link.setPage("XDATScreen_dataTypes.vm")">Data Types</a></li>
+<li><a href="$link.setPage("XDATScreen_email.vm")">Email</a></li>
+<li><a href="$link.setPage("XDATScreen_manage_pipeline.vm")">Pipelines</a></li>
+<li><a href="$link.setPage("Configuration.vm")">Configuration</a></li>
+<li><a href="$link.setPage("Scripts.vm")">Automation</a></li>
+<li><a href="$link.setPage("XDATScreen_admin_options.vm")">More...</a></li>

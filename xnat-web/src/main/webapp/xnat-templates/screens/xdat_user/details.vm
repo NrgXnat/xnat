@@ -1,0 +1,36 @@
+<table border="0" align="left">
+				<tr>
+					<TH align=left colspan=2>User Details
+					#if ($item.canEdit($user))
+					&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)" >Edit</a>
+					#end
+					</TH>
+				</tr>
+				<tr>
+					<td> 
+						<table>
+							<tr>
+								<TD width="90" align=left>Username:</TD><TD>$!item.getProperty("login")</TD>
+							</tr>
+							<tr>
+								<TD align=left>First Name:</TD><TD>$!item.getProperty("firstname")</TD>
+							</tr>
+							<tr>
+								<TD align=left>Last Name:</TD><TD>$!item.getProperty("lastname")</TD>
+							</tr>
+							<tr>
+								<TD align=left>Email:</TD><TD>$!item.getProperty("email")</TD>
+							</tr>
+							<tr>
+								<TD align=left>Verified:</TD><TD>#if($item.getBooleanProperty("verified"))YES #else NO #end</TD>
+							</tr>
+							<tr>
+								<TD align=left>Enabled:</TD><TD>#if($item.getBooleanProperty("enabled"))YES #else NO #end</TD>
+							</tr>
+							<!--<tr>
+								<TD align=left>Authenticated:</TD><TD>#if($item.isActive())YES #else NO #end</TD>
+							</tr>-->
+						</table>
+					</td>
+				</tr>
+			</table>

@@ -1,0 +1,109 @@
+#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+
+<style type="text/css">
+    #admin-email-configuration td { padding-top: 15px; padding-bottom: 15px; }
+    div.submission { margin-top: 15px; position: relative; }
+    div.submission > input { float: right; }
+</style>
+
+
+<form id="admin-email-configuration" name="form1" method="post" action="$link.setAction("SetEmailSpecs").addPathInfo("template","XDATScreen_emailSpecifications.vm")">
+
+    <h2 style="margin-top:0;">Admin Email Configuration</h2>
+
+    <div class="message maybe">This edit page is also available through the Administer > More... section of the website.</div>
+
+    <br>
+
+    <input TYPE="hidden" NAME="arc:ArchiveSpecification/arc_archivespecification_id" VALUE="$!arc.getProperty("arc_archivespecification_id")">
+
+    <table class="xnat-table alt1 rows-only" width="100%">
+
+        <tr>
+            <th>New User Registration</th>
+        </tr>
+        <tr>
+            <td>
+                <p>Would you like the Site Admin to receive a copy of emails sent to users when they register for a user
+                account, or are authorized for an account.</p>
+                <br>
+                <div class="radios">
+                    #xdatBooleanRadioYesNo("arc:ArchiveSpecification/emailSpecifications/new_user_registration" $arc.getItem() true $vr)
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Page/Search Emails</th>
+        </tr>
+        <tr>
+            <td>
+                <p>Would you like the Site Admin to receive a copy of reports and searches emailed by users?</p>
+                <br>
+                <div class="radios">
+                    #xdatBooleanRadioYesNo("arc:ArchiveSpecification/emailSpecifications/page_email" $arc.getItem() true $vr)
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Project Access Requests</th>
+        </tr>
+        <tr>
+            <td>
+                <p>Would you like the Site Admin to receive a copy of $displayManager.getSingularDisplayNameForProject()
+                Access Requests/Approvals.</p>
+                <br>
+                <div class="radios">
+                    #xdatBooleanRadioYesNo("arc:ArchiveSpecification/emailSpecifications/project_access" $arc.getItem() true $vr)
+                </div>
+            </td>
+        </tr>
+
+        <tr>
+            <th>Transfers</th>
+        </tr>
+        <tr>
+            <td>
+                <p>Would you like the Site Admin to receive a copy of Transfer success message sent to users (Admin
+                    always receives transfer failure messages).</p>
+                <br>
+                <div class="radios">
+                    #xdatBooleanRadioYesNo("arc:ArchiveSpecification/emailSpecifications/transfer" $arc.getItem() true $vr)
+                </div>
+            </td>
+        </tr>
+    </table>
+
+    <div class="submission">
+        <input type="submit" class="btn1" value="Save" name="eventSubmit_doPerform">
+        <div class="clear"></div>
+    </div>
+
+</form>
+
+<script type="text/javascript">
+
+    (function(){
+
+        var _form = document.getElementById('admin-email-configuration');
+
+        // hide "message" if opening from the Administer section
+        if (XNAT.url.getQueryStringValue('message') === 'false'){
+            jq('div.message.maybe').hide();
+            _form.action = XNAT.url.addQueryString(_form.action, ['message=false']);
+        }
+
+        // setup form to stay in 'popup' mode after submit
+        XNAT.ui.popup.setForm(_form);
+
+    })();
+
+</script>
+
+
+#else
+
+<DIV class="warning">WARNING:  The email settings of this server have not been set.  Please log in using an 'Administrator' account, like admin, and adjust the default settings.</DIV>
+
+#end

@@ -1,0 +1,294 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("Project Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>Project Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:projectData/name")</TD></TR>
+							<TR><TD>description</TD><TD>$!item.getStringProperty("xnat:projectData/description")</TD></TR>
+							<TR><TD>keywords</TD><TD>$!item.getStringProperty("xnat:projectData/keywords")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:projectData/ID")</TD></TR>
+							<TR><TD>secondary_ID</TD><TD>$!item.getStringProperty("xnat:projectData/secondary_ID")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:projectData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_projectData_alias_1_NUM_ROWS=$item.getChildItems("xnat:projectData/aliases/alias").size() - 1)
+							#if($xnat_projectData_alias_1_NUM_ROWS>=0)
+								#foreach($xnat_projectData_alias_1_COUNTER in [0..$xnat_projectData_alias_1_NUM_ROWS])
+<!-- BEGIN xnat:projectData/aliases/alias[$xnat_projectData_alias_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/aliases/alias[$xnat_projectData_alias_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>alias</TD><TD>$!item.getStringProperty("xnat:projectData/aliases/alias[$xnat_projectData_alias_1_COUNTER]/alias")</TD></TR>
+													<TR><TD>source</TD><TD>$!item.getStringProperty("xnat:projectData/aliases/alias[$xnat_projectData_alias_1_COUNTER]/source")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:projectData/aliases/alias[$xnat_projectData_alias_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_publicationResource_2_NUM_ROWS=$item.getChildItems("xnat:projectData/publications/publication").size() - 1)
+							#if($xnat_publicationResource_2_NUM_ROWS>=0)
+								#foreach($xnat_publicationResource_2_COUNTER in [0..$xnat_publicationResource_2_NUM_ROWS])
+<!-- BEGIN xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/file_size")</TD></TR>
+													<TR><TD>title</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/title")</TD></TR>
+													<TR><TD>citation</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/citation")</TD></TR>
+													<TR><TD>abstract</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/abstract")</TD></TR>
+													<TR><TD>commentary</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/commentary")</TD></TR>
+													<TR><TD>isPrimary</TD><TD>$!item.getBooleanProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/isPrimary")</TD></TR>
+													<TR><TD>doi</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/doi")</TD></TR>
+													<TR><TD>pubmed</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/pubmed")</TD></TR>
+													<TR><TD>medline</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/medline")</TD></TR>
+													<TR><TD>uri</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/uri")</TD></TR>
+													<TR><TD>other</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/other")</TD></TR>
+													<TR><TD>type</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/type")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_3_NUM_ROWS=$item.getChildItems("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_3_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_3_COUNTER in [0..$xnat_abstractResource_tag_3_NUM_ROWS])
+<!-- BEGIN xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER]/tags/tag[$xnat_abstractResource_tag_3_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:projectData/publications/publication[$xnat_publicationResource_2_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_4_NUM_ROWS=$item.getChildItems("xnat:projectData/resources/resource").size() - 1)
+							#if($xnat_abstractResource_4_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_4_COUNTER in [0..$xnat_abstractResource_4_NUM_ROWS])
+<!-- BEGIN xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_5_NUM_ROWS=$item.getChildItems("xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_5_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_5_COUNTER in [0..$xnat_abstractResource_tag_5_NUM_ROWS])
+<!-- BEGIN xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:projectData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractProtocol_6_NUM_ROWS=$item.getChildItems("xnat:projectData/studyProtocol").size() - 1)
+							#if($xnat_abstractProtocol_6_NUM_ROWS>=0)
+								#foreach($xnat_abstractProtocol_6_COUNTER in [0..$xnat_abstractProtocol_6_NUM_ROWS])
+<!-- BEGIN xnat:projectData/studyProtocol[$xnat_abstractProtocol_6_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/studyProtocol[$xnat_abstractProtocol_6_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:projectData/studyProtocol[$xnat_abstractProtocol_6_COUNTER]/ID")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:projectData/studyProtocol[$xnat_abstractProtocol_6_COUNTER]/name")</TD></TR>
+													<TR><TD>description</TD><TD>$!item.getStringProperty("xnat:projectData/studyProtocol[$xnat_abstractProtocol_6_COUNTER]/description")</TD></TR>
+													<TR><TD>data-type</TD><TD>$!item.getStringProperty("xnat:projectData/studyProtocol[$xnat_abstractProtocol_6_COUNTER]/data-type")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:projectData/studyProtocol[$xnat_abstractProtocol_6_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:projectData/PI -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/PI</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>$!item.getStringProperty("xnat:projectData/PI/title")</TD></TR>
+										<TR><TD>firstname</TD><TD>$!item.getStringProperty("xnat:projectData/PI/firstname")</TD></TR>
+										<TR><TD>lastname</TD><TD>$!item.getStringProperty("xnat:projectData/PI/lastname")</TD></TR>
+										<TR><TD>institution</TD><TD>$!item.getStringProperty("xnat:projectData/PI/institution")</TD></TR>
+										<TR><TD>department</TD><TD>$!item.getStringProperty("xnat:projectData/PI/department")</TD></TR>
+										<TR><TD>email</TD><TD>$!item.getStringProperty("xnat:projectData/PI/email")</TD></TR>
+										<TR><TD>phone</TD><TD>$!item.getStringProperty("xnat:projectData/PI/phone")</TD></TR>
+										<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:projectData/PI/ID")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:projectData/PI -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_investigatorData_8_NUM_ROWS=$item.getChildItems("xnat:projectData/investigators/investigator").size() - 1)
+							#if($xnat_investigatorData_8_NUM_ROWS>=0)
+								#foreach($xnat_investigatorData_8_COUNTER in [0..$xnat_investigatorData_8_NUM_ROWS])
+<!-- BEGIN xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>title</TD><TD>$!item.getStringProperty("xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER]/title")</TD></TR>
+													<TR><TD>firstname</TD><TD>$!item.getStringProperty("xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER]/firstname")</TD></TR>
+													<TR><TD>lastname</TD><TD>$!item.getStringProperty("xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER]/lastname")</TD></TR>
+													<TR><TD>institution</TD><TD>$!item.getStringProperty("xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER]/institution")</TD></TR>
+													<TR><TD>department</TD><TD>$!item.getStringProperty("xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER]/department")</TD></TR>
+													<TR><TD>email</TD><TD>$!item.getStringProperty("xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER]/email")</TD></TR>
+													<TR><TD>phone</TD><TD>$!item.getStringProperty("xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER]/phone")</TD></TR>
+													<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER]/ID")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:projectData/investigators/investigator[$xnat_investigatorData_8_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_projectData_field_9_NUM_ROWS=$item.getChildItems("xnat:projectData/fields/field").size() - 1)
+							#if($xnat_projectData_field_9_NUM_ROWS>=0)
+								#foreach($xnat_projectData_field_9_COUNTER in [0..$xnat_projectData_field_9_NUM_ROWS])
+<!-- BEGIN xnat:projectData/fields/field[$xnat_projectData_field_9_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:projectData/fields/field[$xnat_projectData_field_9_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>field</TD><TD>$!item.getStringProperty("xnat:projectData/fields/field[$xnat_projectData_field_9_COUNTER]/field")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat:projectData/fields/field[$xnat_projectData_field_9_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat:projectData/fields/field[$xnat_projectData_field_9_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:projectData -->
+		</TD>
+	</TR>
+</TABLE>

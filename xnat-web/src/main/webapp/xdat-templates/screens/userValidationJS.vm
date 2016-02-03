@@ -1,0 +1,119 @@
+<!-- BEGIN xdat-templates/screens/userValidationJS.vm -->
+##modified to prevent values greater than 255 characters.
+<script type="text/javascript" src="$content.getURI("scripts/user/validateUsername.js")"></script>
+<script type="text/javascript">
+    XNAT.app.register = {
+        validateForm: function(e){
+            // create a few shortcuts
+            if(!validateUsername(document.getElementById('xdat:user.login'))){
+                return false;
+            }
+
+            var validateInput = XNAT.app.register.validateInput;
+            var validators = XNAT.app.register.validators;
+
+            // execute the validators on the fields, creating a list of boolean results for each field.
+            var validations = [validateInput('xdat:user.login', [validators.nonEmpty,validators.max255]),
+                validateInput('xdat:user.primary_password', [validators.nonEmpty,validators.max255]),
+                validateInput('xdat:user.firstname', [validators.nonEmpty,validators.max255]),
+                validateInput('xdat:user.lastname', [validators.nonEmpty,validators.max255]),
+                validateInput('xdat:user.email', [validators.nonEmpty,validators.max255,
+                    validators.isEmail()])];
+            if(YUIDOM.get('xdat:user.password_check')!=null){
+                validations.push(validateInput('xdat:user.password_check', [validators.nonEmpty, validators.valuesMatch('xdat:user.primary_password')]));
+            }
+            // if any of the validations failed, stop form submission
+            for (var i=0; i < validations.length; i++){
+                if (!validations[i]){
+                    return false;
+                }
+            }
+            return true;
+        },
+        validateInput: function(inputId, validators){
+            var input = document.getElementById(inputId);
+            for (var i=0; i < validators.length; i++){
+                var validator = validators[i];
+                if (!validator(input)){
+                    XNAT.app.register.validationError(input);
+                    return false;
+                }
+            }
+
+            XNAT.app.register.validationSuccessful(input);
+            return true;
+        },
+        validationError: function(input){
+            appendImage(input, "/images/checkmarkRed.gif");
+        },
+        validationSuccessful: function(input){
+            appendImage(input, "/images/checkmarkGreen.gif");
+        },
+        /* Collection of validation functions */
+        validators: {
+            nonEmpty: function(input){
+                return input.value.trim().length > 0;
+            },
+            max255: function(input){
+                return input.value.length < 256;
+            },
+            valuesMatch: function(inputIdToCompare){
+                var inputToCompare = document.getElementById(inputIdToCompare);
+                return function(input) {
+                    return inputToCompare.value == input.value;
+                }
+            },
+            isEmail: function(){
+                var emailReg = /^([A-Za-z0-9_\-\.])+\@([A-Za-z0-9_\-\.])+\.([A-Za-z]{2,})$/;
+                return function(input) {
+                    return emailReg.test(input.value);
+                }
+            },
+            regex: function(regex){
+                return function(input){
+                    return input.value.match(regex)
+                }
+            }
+        }
+    };
+
+    function validateName(obj, which, button_id){
+        var valid = false;
+        if (obj.value!=""){
+            if(obj.value.match(/^[a-zA-Z0-9-' ]+$/)) {
+                valid = true;
+            }else{
+                xModalMessage('User Validation', which+' name cannot contain special characters.  Please modify.');
+                obj.focus();
+            }
+        }
+        check(obj, valid, button_id);
+        return valid;
+    };
+
+    function validateEmail(obj, button_id){
+        var valid = false;
+        if (obj.value!=""){
+            if(XNAT.app.register.validators.isEmail()(obj)){
+                valid = true;
+            }else{
+                xModalMessage('User Validation', 'Invalid email address.  Please modify.');
+                obj.focus();
+            }
+        }
+        check(obj, valid, button_id);
+        return valid;
+    };
+
+    function check(obj, valid, button_id){
+        if(valid){
+            if(obj.appendedImage!=undefined)appendImage(obj,"/images/checkmarkGreen.gif");
+            if(button_id!=undefined)document.getElementById(button_id).disabled=false;
+        }else{
+            appendImage(obj,"/images/checkmarkRed.gif");
+            if(button_id!=undefined)document.getElementById(button_id).disabled=true;
+        }
+    };
+
+</script>
+<!-- END xdat-templates/screens/userValidationJS.vm -->

@@ -1,0 +1,65 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+#parse("/screens/admin_bar.vm")
+
+#set ( $url = $link.setPage("XDATScreen_edit_xdat_user.vm").addPathInfo("popup","true")  )
+
+<div id="user-list" class="admin-content">
+
+    <div class="header">
+        <b>User Accounts</b>
+        <i>|</i>
+        <button
+            class="btn1 btn-sm"
+            onclick="XNAT.app.adminPopupDialog('$url')"
+##            data-popup="$url;Edit User;500;500;3;location=no,scrollbars=no"
+##            onclick="return popup('$url','b')"
+##            onclick="return popupCentered('$url','Edit',500,500,3)"
+            type="button">Add User</button>
+    </div>
+
+    <div id="user-table" class="data-table">
+        $!userTable
+    </div>
+
+    <script type="text/javascript">
+        (function(){
+
+            var table = jq('#user-table').find('> table'),
+                _table = table[0];
+
+            _table.id = 'user_TABLE';
+            table.addClass('xnat-table sortable');
+            table.find('tr').addClass('highlight');
+            table.find('img').closest('td').addClass('center');
+            // add sortable content for green/red 'lights'
+            table.find('img[src*="cr"]').closest('td').append('<i class="hidden">9</i>'); // off/red
+            table.find('img[src*="cg"]').closest('td').append('<i class="hidden">1</i>'); // on/green
+
+            ts_makeSortable(_table);
+            //sortables_init();
+
+            // hack to replace inline 'onclick'
+            // with a different function
+            table.find('td.results > a[href*="/xdat:user/"]').each(function(){
+                var __a = jq(this);
+                __a.removeAttr('onclick').off('click');
+                __a.on('click', function(e){
+                    e.preventDefault();
+                    XNAT.app.adminPopupDialog(this.href + '/popup/true');
+                })
+            });
+
+        })();
+    </script>
+
+</div>

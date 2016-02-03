@@ -1,0 +1,42 @@
+#* @vtlvariable name="login_methods" type="java.util.List" *#
+<form name="form1" method="post" action="$content.getURI('')/j_spring_security_check">
+    #set($showLoginMethodRow = true)
+    #if(!($login_methods) || $login_methods.size() == 1)
+        <input type="hidden" id="login_method" name="login_method" value="$login_methods.get(0)"/>
+        #set($showLoginMethodRow = false)
+    #end
+<table>
+    #if ($showLoginMethodRow)
+    <tr>
+        #formLabel("Login via")
+	    <td>
+            ##$login_methods is customizable and is added to the context in Login.java in xdat.
+            #if($login_methods && $login_methods.size() == 0)
+                #xdatTextBox("login_method" $item "" $vr)
+            #elseif($login_methods && $login_methods.size() > 1)
+                #xdatSelectBoxWDefault("login_method" $item $login_methods $vr)
+            #end
+		</td>
+    </tr>
+    #end
+    <tr>
+      #formLabel("User")
+  	  <td><input type="text" id="username" name="j_username"></td>
+    </tr>
+    <tr>
+    	#formLabel("Password")
+  	  <td><input type="password" name="j_password" autocomplete="off"></td>
+    </tr>
+    <tr>
+      <td></td>
+      <td align="right">
+        #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
+          	#if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception" &&$key!="username" &&$key!="exception")
+                <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+          	#end
+        #end
+          <input type="submit" name="login" value="Login">
+      </td>
+    </tr>
+   </table>
+</form>

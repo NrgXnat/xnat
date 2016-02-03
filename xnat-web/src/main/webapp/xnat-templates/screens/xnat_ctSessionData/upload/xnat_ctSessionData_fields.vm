@@ -1,0 +1,104 @@
+<!-- BEGIN /xnat-templates/screens/xnat_ctSessionData/upload/fields.vm -->
+
+<tr>
+	<th align="left">Scanner</th>
+
+	#set($currentScanner=$item.getProperty("scanner"))
+	#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_imageSessionData isd LEFT JOIN xnat_experimentData expt ON isd.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id LEFT JOIN xnat_imageScanData scan ON isd.id=scan.image_session_id WHERE xme.element_name='${datatype}' AND scan.scanner='$currentScanner'"))
+
+	#if($scanners.size()==0)
+		#if($project)
+			#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_ctSessionData mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id LEFT JOIN xnat_experimentData expt ON isd.id=expt.id WHERE expt.project='$project'"))
+			#if($scanners.size()==0)
+				#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_ctSessionData mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id"))
+			#end
+		#else
+			#set($scanners = $data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT isd.scanner  FROM xnat_ctSessionData mr LEFT JOIN xnat_imageSessionData isd ON mr.id=isd.id"))
+		#end
+	#end
+
+	#if($scanners.size()==0)
+		<td> #xdatTextBox("${datatype}.scanner" $item "" $vr)</td>
+	#else
+		<td>
+			<script type="text/javascript">
+				window.ss=new Object();
+				
+				#if($project)
+					window.ss.uri=serverRoot +"/REST/scanners?format=json&modality=xnat_ctSessionData";
+				#end
+
+				window.ss.local_values=new Array();
+				window.ss.custom = new Array();
+				window.ss.valueField="scanner";
+				
+				## Push the current scanner name into the array.
+				## Use the custom array to insure that the value is displayed weather we 
+				## are using local_values or all_values (see customizableSelectBox.js lines 54-93)
+				window.ss.custom.push('$!item.getStringProperty("${datatype}/scanner")');
+			
+				## Push other scanner names into the array.
+				#foreach ($pValue in $scanners)
+					#if($pValue.get(0))
+						## Don't add the current scanner name since we added it above.
+						#if($pValue.get(0) != $item.getStringProperty("${datatype}/scanner"))
+							window.ss.local_values.push({"scanner":"$pValue.get(0)"});
+						#end
+					#end
+				#end
+			</script>
+				
+			#xdatComboBox("${datatype}.scanner" $item "window.ss" $vr)
+			<a onclick="xModalMessage('Session Data Fields', 'If the required value is not in the list, select MORE to show additional options or CUSTOM to add your own value.');"><img border="0" src="$content.getURI("images/qm.gif")"/></a>
+			#if($item.getStringProperty("${datatype}/scanner/manufacturer") || $item.getStringProperty("${datatype}/scanner/model") || $!item.getStringProperty("${datatype}/scanner"))
+				&nbsp;($!item.getStringProperty("${datatype}/scanner/manufacturer") $!item.getStringProperty("${datatype}/scanner/model") $!item.getStringProperty("${datatype}/scanner"))
+			#end
+		</td>
+	#end
+</tr>
+
+<tr>
+	<th>Acquisition Site</th>
+	<td>
+	 #xdatTextBox("xnat:ctSessionData.acquisition_site" $item "" $vr)
+	</td>
+	<td></td>
+</tr>
+
+		<script type="text/javascript">
+		  window.tr_visibility="none";
+		function toggleAdditionalFields(){
+		  if(window.tr_visibility==""){
+		    window.tr_visibility="none";
+		  }else{
+		    window.tr_visibility="";
+		  }
+		  document.getElementById("operator.tr").style.display=window.tr_visibility;
+		}
+		</script>	
+<tr>
+			 <td colspan="2"><div style="line-height:8px">&nbsp;</div></td>
+		</tr>	
+		<tr id="operator.tr" name="additional_fields" style="display:none">
+			 <td>Operator</td>
+			 <td>
+		  	#if ($vr)
+	    		#if($vr.getField("${datatype}.operator"))
+		      	<font color="red">&#8658</font>
+	    		#end
+  			#end
+	  		#if ($item.getProperty("${datatype}.operator"))
+	  			<input type="text" name="${datatype}.operator"
+	    	  #if ($item.getProperty("${datatype}.operator")=="null")
+		      	value=""
+		      #else
+		      	value="$item.getProperty("${datatype}.operator")"
+		      #end
+		      />
+	  		#else
+	    		<input type="text" name="${datatype}.operator" value=""/>
+	  		#end
+		  </td>
+		  <td></td> <!-- no hints available -->
+		</tr>
+<!-- END /xnat-templates/screens/xnat_ctSessionData/upload/fields.vm -->

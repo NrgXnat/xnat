@@ -1,0 +1,22 @@
+<script type="text/javascript">
+    function setSessionValue(el){
+        el.value = fixSessionID(el.value);
+        verifyExptId(el);
+        if (el.validated == false) { confirmValues(false) }
+        setSessionSelection(event, el);
+    }
+</script>
+<tr>
+    <th align="left">$displayManager.getSingularDisplayNameForImageSession():</th>
+    <td>
+        <input type="text"
+            id="$!item.getXSIType()/label"
+            name="$!item.getXSIType()/label"
+            value="$!item.getProperty("label")"
+            onkeydown="getSessionSelection(event,this)"
+            onkeyup="setSessionValue(this)"
+            onblur="confirmValues(false)">
+    </td>
+    <td id="label_opts"></td>
+    <td id="label_msg" style="color:red;"></td>
+</tr>

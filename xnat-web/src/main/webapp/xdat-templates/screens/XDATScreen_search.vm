@@ -1,0 +1,73 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- start: screens/XDATScreen_search.vm -->
+<script language="javascript">
+var spans = new Array();
+function showSpan(spanName)
+{
+  for(var spanCount=0;spanCount<spans.length;spanCount++)
+  {
+    var spanPanel = document.getElementById(spans[spanCount]);
+    if(spanPanel.id==spanName)
+    {
+      spanPanel.style.display='block';
+    }else{
+      spanPanel.style.display='none';
+    }
+  }
+  return false;
+}
+function selectDefault(elementName){
+  var selectBOX =document.getElementById('exptType');
+  var text = "panel" + elementName;
+  for(var selectCount=0;selectCount<selectBOX.options.length;selectCount++)
+  {
+     if(selectBOX.options[selectCount].value==text){
+        selectBOX.selectedIndex=selectCount;
+     }
+  }
+  showSpan(text);
+}
+</script>
+<div id="container1" VALIGN="top">
+  <TABLE VALIGN="top">
+  	<TR>
+  		<TD colspan=2>
+  		 <TABLE width="100%">
+  		  <TR>
+  		   <TD>&nbsp;</TD>
+  		  </TR>
+  		  <TR>
+  		   <TD><H3>Standard Search</H3></TD>
+  		   <TD valign="top" align="center"><a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","super_search")" onmouseover="return true;">Dynamic Super Search</A></TD>
+  		  </TR>
+  		  <TR>
+  		   <TD>&nbsp;</TD>
+  		  </TR>
+  		 </TABLE>
+  		</TD>
+  		</TR>
+  	<TR>
+  		<TD colspan=2>
+  		#set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplaysByDesc())
+  			<select id="exptType" name="exptType" ONCHANGE="showSpan(this.options[this.selectedIndex].value);">
+			  	#foreach ($typeObject in $typeObjects)
+				  	<option value="panel$typeObject.getElementName()" #if($typeObject.getProperName()=="MrSession") SELECTED #end>$typeObject.getDescription()</option>
+				  #end
+			  </select>
+		</TD>
+	</TR>
+  	<TR VALIGN="top">
+		<TD colspan=2>
+#foreach ($typeObject in $typeObjects)
+					           <SCRIPT language="javascript">spans.push("panel$typeObject.getElementName()");</SCRIPT>
+			  <span id="panel$typeObject.getElementName()" VALIGN="top" style="display:none;">
+			  <FORM name="search$velocityCount" method="post" action="$link.setAction("DisplaySearchAction")">
+				  #xdatSearchForm($typeObject.getSchemaElement() 3)
+			  </FORM>
+		      </span>
+			#end  
+  		</TD>
+  	</TR>
+  </TABLE>
+</div>
+<!-- end: screens/XDATScreen_search.vm -->

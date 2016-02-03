@@ -1,0 +1,399 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xnat_a:updrs3Data" full-description="UPDRS3" brief-description="UPDRS3">
+	<Arc name="PARTICIPANT_EXPERIMENT">
+		<CommonField id="PART_ID" local-field="SUBJECT_ID"/>
+		<CommonField id="DATE" local-field="DATE"/>
+		<CommonField id="EXPT_ID" local-field="EXPT_ID"/>
+	</Arc>
+	<DisplayField id="SUBJECT_ID" header="Subject" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data.subject_ID"/>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat:subjectData','xnat:subjectData.ID');">
+				<InsertValue id="Field1" field="SUBJECT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="EXPT_ID" header="ID" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data.ID"/>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat_a:updrs3Data','xnat_a:updrs3Data.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="RPT" header="ID" visible="true" image="true">
+		<Content type="sql">'/@WEBAPP/images/r.gif'::text</Content>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat_a:updrs3Data','xnat_a:updrs3Data.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="DATE" header="Date" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data.date"/>
+	</DisplayField>
+	<DisplayField id="AGE" header="Age" visible="true" searchable="true" data-type="integer">
+	<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data.date"/>
+	<DisplayFieldElement name="Field2" schema-element="xnat:demographicData.dob"/>
+	<DisplayFieldElement name="Field3" schema-element="xnat:demographicData.yob"/>
+	<Content type="sql">CAST(COALESCE(FLOOR(CAST((CAST(((@Field1) - (@Field2))AS FLOAT4)/365) AS numeric)),FLOOR((EXTRACT(YEAR FROM @Field1)) - (@Field3))) AS numeric)</Content>
+	</DisplayField>
+	<DisplayField header="Projects" id="PROJECTS" data-type="string">
+		<DisplayFieldElement name="Field1" viewName="XNAT_A_UPDRS3DATA_PROJECTS" viewColumn="PROJECTS"/>
+	</DisplayField>
+	<DisplayField header="Label" id="LABEL" data-type="string">
+	<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data.ID"/>
+	<DisplayFieldElement name="Field2" schema-element="xnat_a:updrs3Data.label"/>
+	<Content type="sql">COALESCE(@Field2, @Field1)</Content>
+		<HTML-Link>
+			<SecureLink elementName="xnat_a:updrs3Data">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="xnat_a:updrs3Data/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="xnat_a:updrs3Data/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat_a:updrs3Data/search_field/xnat_a:updrs3Data.ID">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat_a:updrs3Data','xnat_a:updrs3Data.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+			<Property name="TITLE" value="Inserted: @Field1 (@Field2)">
+				<InsertValue id="Field1" field="INSERT_DATE"/>
+				<InsertValue id="Field2" field="INSERT_USER"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="PROJECT" header="Project" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data.project"/>
+	</DisplayField>
+	<DisplayField id="XNAT_A_UPDRS3DATA_PROJECT_IDENTIFIER" header="XNAT_A_UPDRS3DATA ID" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">xnat_a_updrs3data_project_id</Content>
+		<HTML-Link>
+			<SecureLink elementName="xnat_a:updrs3Data">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="xnat_a:updrs3Data/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="xnat_a:updrs3Data/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat_a:updrs3Data/search_field/xnat_a:updrs3Data.ID/project/@Field2">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+				<InsertValue id="Field2" field="@WHERE"/>
+			</Property>
+		</HTML-Link>
+		<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS xnat_a_updrs3data_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="xnat_a:updrs3Data.ID" queryField="sharing_share_xnat_experimentda_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField id="INSERT_DATE" header="Inserted" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data.meta.insert_date"/>
+	</DisplayField>
+	<DisplayField id="INSERT_USER" header="Creator" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data.meta.insert_user.login"/>
+	</DisplayField>
+	<DisplayField id="XNAT_A_UPDRS3DATA_FIELD_MAP" header="Field" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">field</Content>
+		<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='xnat_a:updrs3Data') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="xnat_a:updrs3Data.ID" queryField="expt_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField id="INSCANNER" header="inScanner" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/inScanner"/>
+	</DisplayField>
+	<DisplayField id="CLICKER_RIGHT" header="right" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/clicker/right"/>
+	</DisplayField>
+	<DisplayField id="CLICKER_LEFT" header="left" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/clicker/left"/>
+	</DisplayField>
+	<DisplayField id="CLICKER_INTERVAL" header="interval" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/clicker/interval"/>
+	</DisplayField>
+	<DisplayField id="TREMORREST_FACE" header="face" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/tremorRest/face"/>
+	</DisplayField>
+	<DisplayField id="TREMORREST_RUE" header="rue" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/tremorRest/rue"/>
+	</DisplayField>
+	<DisplayField id="TREMORREST_LUE" header="lue" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/tremorRest/lue"/>
+	</DisplayField>
+	<DisplayField id="TREMORREST_RLE" header="rle" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/tremorRest/rle"/>
+	</DisplayField>
+	<DisplayField id="TREMORREST_LLE" header="lle" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/tremorRest/lle"/>
+	</DisplayField>
+	<DisplayField id="RIGIDITY_NECK" header="neck" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/rigidity/neck"/>
+	</DisplayField>
+	<DisplayField id="RIGIDITY_RUE" header="rue" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/rigidity/rue"/>
+	</DisplayField>
+	<DisplayField id="RIGIDITY_LUE" header="lue" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/rigidity/lue"/>
+	</DisplayField>
+	<DisplayField id="RIGIDITY_RLE" header="rle" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/rigidity/rle"/>
+	</DisplayField>
+	<DisplayField id="RIGIDITY_LLE" header="lle" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/rigidity/lle"/>
+	</DisplayField>
+	<DisplayField id="HANDMOVEMENTSGRIP_RIGHT" header="right" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/handMovementsGrip/right"/>
+	</DisplayField>
+	<DisplayField id="HANDMOVEMENTSGRIP_LEFT" header="left" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/handMovementsGrip/left"/>
+	</DisplayField>
+	<DisplayField id="FACIALEXPRESSION" header="facialExpression" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/facialExpression"/>
+	</DisplayField>
+	<DisplayField id="GAIT" header="gait" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/gait"/>
+	</DisplayField>
+	<DisplayField id="SPEECH" header="speech" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/speech"/>
+	</DisplayField>
+	<DisplayField id="WRITING" header="writing" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/writing"/>
+	</DisplayField>
+	<DisplayField id="ARISEFROMCHAIR" header="ariseFromChair" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/ariseFromChair"/>
+	</DisplayField>
+	<DisplayField id="ACTIONPOSTURALTREMOR_RIGHT" header="right" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/actionPosturalTremor/right"/>
+	</DisplayField>
+	<DisplayField id="ACTIONPOSTURALTREMOR_LEFT" header="left" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/actionPosturalTremor/left"/>
+	</DisplayField>
+	<DisplayField id="HANDSRAM_RIGHT" header="right" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/handsRAM/right"/>
+	</DisplayField>
+	<DisplayField id="HANDSRAM_LEFT" header="left" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/handsRAM/left"/>
+	</DisplayField>
+	<DisplayField id="FINGERTAPS_RIGHT" header="right" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/fingerTaps/right"/>
+	</DisplayField>
+	<DisplayField id="FINGERTAPS_LEFT" header="left" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/fingerTaps/left"/>
+	</DisplayField>
+	<DisplayField id="POSTURE" header="posture" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/posture"/>
+	</DisplayField>
+	<DisplayField id="POSTURALSTABILITY" header="posturalStability" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/posturalStability"/>
+	</DisplayField>
+	<DisplayField id="FOOTTAPS_RIGHT" header="right" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/footTaps/right"/>
+	</DisplayField>
+	<DisplayField id="FOOTTAPS_LEFT" header="left" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/footTaps/left"/>
+	</DisplayField>
+	<DisplayField id="BODYBRADYKINESIAHYPOKINESIA" header="bodyBradykinesiaHypokinesia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/bodyBradykinesiaHypokinesia"/>
+	</DisplayField>
+	<DisplayField id="PROBLEM" header="problem" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:updrs3Data/problem"/>
+	</DisplayField>
+	<DisplayVersion versionName="listing" default-order-by="DATE" default-sort-order="DESC" brief-description="UPDRS3" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="RPT"/>
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="GENDER" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="INSCANNER"/>
+		<DisplayFieldRef id="CLICKER_RIGHT"/>
+		<DisplayFieldRef id="CLICKER_LEFT"/>
+		<DisplayFieldRef id="CLICKER_INTERVAL"/>
+		<DisplayFieldRef id="TREMORREST_FACE"/>
+		<DisplayFieldRef id="TREMORREST_RUE"/>
+		<DisplayFieldRef id="TREMORREST_LUE"/>
+		<DisplayFieldRef id="TREMORREST_RLE"/>
+		<DisplayFieldRef id="TREMORREST_LLE"/>
+		<DisplayFieldRef id="RIGIDITY_NECK"/>
+		<DisplayFieldRef id="RIGIDITY_RUE"/>
+		<DisplayFieldRef id="RIGIDITY_LUE"/>
+		<DisplayFieldRef id="RIGIDITY_RLE"/>
+		<DisplayFieldRef id="RIGIDITY_LLE"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_RIGHT"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_LEFT"/>
+		<DisplayFieldRef id="FACIALEXPRESSION"/>
+		<DisplayFieldRef id="GAIT"/>
+		<DisplayFieldRef id="SPEECH"/>
+		<DisplayFieldRef id="WRITING"/>
+		<DisplayFieldRef id="ARISEFROMCHAIR"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_RIGHT"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_LEFT"/>
+		<DisplayFieldRef id="HANDSRAM_RIGHT"/>
+		<DisplayFieldRef id="HANDSRAM_LEFT"/>
+		<DisplayFieldRef id="FINGERTAPS_RIGHT"/>
+		<DisplayFieldRef id="FINGERTAPS_LEFT"/>
+		<DisplayFieldRef id="POSTURE"/>
+		<DisplayFieldRef id="POSTURALSTABILITY"/>
+		<DisplayFieldRef id="FOOTTAPS_RIGHT"/>
+		<DisplayFieldRef id="FOOTTAPS_LEFT"/>
+		<DisplayFieldRef id="BODYBRADYKINESIAHYPOKINESIA"/>
+		<DisplayFieldRef id="PROBLEM"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="listing_csv" default-order-by="DATE" default-sort-order="DESC" brief-description="UPDRS3" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="INSCANNER"/>
+		<DisplayFieldRef id="CLICKER_RIGHT"/>
+		<DisplayFieldRef id="CLICKER_LEFT"/>
+		<DisplayFieldRef id="CLICKER_INTERVAL"/>
+		<DisplayFieldRef id="TREMORREST_FACE"/>
+		<DisplayFieldRef id="TREMORREST_RUE"/>
+		<DisplayFieldRef id="TREMORREST_LUE"/>
+		<DisplayFieldRef id="TREMORREST_RLE"/>
+		<DisplayFieldRef id="TREMORREST_LLE"/>
+		<DisplayFieldRef id="RIGIDITY_NECK"/>
+		<DisplayFieldRef id="RIGIDITY_RUE"/>
+		<DisplayFieldRef id="RIGIDITY_LUE"/>
+		<DisplayFieldRef id="RIGIDITY_RLE"/>
+		<DisplayFieldRef id="RIGIDITY_LLE"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_RIGHT"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_LEFT"/>
+		<DisplayFieldRef id="FACIALEXPRESSION"/>
+		<DisplayFieldRef id="GAIT"/>
+		<DisplayFieldRef id="SPEECH"/>
+		<DisplayFieldRef id="WRITING"/>
+		<DisplayFieldRef id="ARISEFROMCHAIR"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_RIGHT"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_LEFT"/>
+		<DisplayFieldRef id="HANDSRAM_RIGHT"/>
+		<DisplayFieldRef id="HANDSRAM_LEFT"/>
+		<DisplayFieldRef id="FINGERTAPS_RIGHT"/>
+		<DisplayFieldRef id="FINGERTAPS_LEFT"/>
+		<DisplayFieldRef id="POSTURE"/>
+		<DisplayFieldRef id="POSTURALSTABILITY"/>
+		<DisplayFieldRef id="FOOTTAPS_RIGHT"/>
+		<DisplayFieldRef id="FOOTTAPS_LEFT"/>
+		<DisplayFieldRef id="BODYBRADYKINESIAHYPOKINESIA"/>
+		<DisplayFieldRef id="PROBLEM"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="full" default-order-by="DATE" default-sort-order="DESC" brief-description="UPDRS3" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="EXPT_ID"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="INSCANNER"/>
+		<DisplayFieldRef id="CLICKER_RIGHT"/>
+		<DisplayFieldRef id="CLICKER_LEFT"/>
+		<DisplayFieldRef id="CLICKER_INTERVAL"/>
+		<DisplayFieldRef id="TREMORREST_FACE"/>
+		<DisplayFieldRef id="TREMORREST_RUE"/>
+		<DisplayFieldRef id="TREMORREST_LUE"/>
+		<DisplayFieldRef id="TREMORREST_RLE"/>
+		<DisplayFieldRef id="TREMORREST_LLE"/>
+		<DisplayFieldRef id="RIGIDITY_NECK"/>
+		<DisplayFieldRef id="RIGIDITY_RUE"/>
+		<DisplayFieldRef id="RIGIDITY_LUE"/>
+		<DisplayFieldRef id="RIGIDITY_RLE"/>
+		<DisplayFieldRef id="RIGIDITY_LLE"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_RIGHT"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_LEFT"/>
+		<DisplayFieldRef id="FACIALEXPRESSION"/>
+		<DisplayFieldRef id="GAIT"/>
+		<DisplayFieldRef id="SPEECH"/>
+		<DisplayFieldRef id="WRITING"/>
+		<DisplayFieldRef id="ARISEFROMCHAIR"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_RIGHT"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_LEFT"/>
+		<DisplayFieldRef id="HANDSRAM_RIGHT"/>
+		<DisplayFieldRef id="HANDSRAM_LEFT"/>
+		<DisplayFieldRef id="FINGERTAPS_RIGHT"/>
+		<DisplayFieldRef id="FINGERTAPS_LEFT"/>
+		<DisplayFieldRef id="POSTURE"/>
+		<DisplayFieldRef id="POSTURALSTABILITY"/>
+		<DisplayFieldRef id="FOOTTAPS_RIGHT"/>
+		<DisplayFieldRef id="FOOTTAPS_LEFT"/>
+		<DisplayFieldRef id="BODYBRADYKINESIAHYPOKINESIA"/>
+		<DisplayFieldRef id="PROBLEM"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="detailed" default-order-by="DATE" default-sort-order="DESC" brief-description="UPDRS3" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="INSCANNER"/>
+		<DisplayFieldRef id="CLICKER_RIGHT"/>
+		<DisplayFieldRef id="CLICKER_LEFT"/>
+		<DisplayFieldRef id="CLICKER_INTERVAL"/>
+		<DisplayFieldRef id="TREMORREST_FACE"/>
+		<DisplayFieldRef id="TREMORREST_RUE"/>
+		<DisplayFieldRef id="TREMORREST_LUE"/>
+		<DisplayFieldRef id="TREMORREST_RLE"/>
+		<DisplayFieldRef id="TREMORREST_LLE"/>
+		<DisplayFieldRef id="RIGIDITY_NECK"/>
+		<DisplayFieldRef id="RIGIDITY_RUE"/>
+		<DisplayFieldRef id="RIGIDITY_LUE"/>
+		<DisplayFieldRef id="RIGIDITY_RLE"/>
+		<DisplayFieldRef id="RIGIDITY_LLE"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_RIGHT"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_LEFT"/>
+		<DisplayFieldRef id="FACIALEXPRESSION"/>
+		<DisplayFieldRef id="GAIT"/>
+		<DisplayFieldRef id="SPEECH"/>
+		<DisplayFieldRef id="WRITING"/>
+		<DisplayFieldRef id="ARISEFROMCHAIR"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_RIGHT"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_LEFT"/>
+		<DisplayFieldRef id="HANDSRAM_RIGHT"/>
+		<DisplayFieldRef id="HANDSRAM_LEFT"/>
+		<DisplayFieldRef id="FINGERTAPS_RIGHT"/>
+		<DisplayFieldRef id="FINGERTAPS_LEFT"/>
+		<DisplayFieldRef id="POSTURE"/>
+		<DisplayFieldRef id="POSTURALSTABILITY"/>
+		<DisplayFieldRef id="FOOTTAPS_RIGHT"/>
+		<DisplayFieldRef id="FOOTTAPS_LEFT"/>
+		<DisplayFieldRef id="BODYBRADYKINESIAHYPOKINESIA"/>
+		<DisplayFieldRef id="PROBLEM"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="project_bundle" default-order-by="DATE" default-sort-order="DESC" brief-description="UPDRS3" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="XNAT_A_UPDRS3DATA_PROJECT_IDENTIFIER"/>
+		<DisplayFieldRef id="SUB_PROJECT_IDENTIFIER" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="INSCANNER"/>
+		<DisplayFieldRef id="CLICKER_RIGHT"/>
+		<DisplayFieldRef id="CLICKER_LEFT"/>
+		<DisplayFieldRef id="CLICKER_INTERVAL"/>
+		<DisplayFieldRef id="TREMORREST_FACE"/>
+		<DisplayFieldRef id="TREMORREST_RUE"/>
+		<DisplayFieldRef id="TREMORREST_LUE"/>
+		<DisplayFieldRef id="TREMORREST_RLE"/>
+		<DisplayFieldRef id="TREMORREST_LLE"/>
+		<DisplayFieldRef id="RIGIDITY_NECK"/>
+		<DisplayFieldRef id="RIGIDITY_RUE"/>
+		<DisplayFieldRef id="RIGIDITY_LUE"/>
+		<DisplayFieldRef id="RIGIDITY_RLE"/>
+		<DisplayFieldRef id="RIGIDITY_LLE"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_RIGHT"/>
+		<DisplayFieldRef id="HANDMOVEMENTSGRIP_LEFT"/>
+		<DisplayFieldRef id="FACIALEXPRESSION"/>
+		<DisplayFieldRef id="GAIT"/>
+		<DisplayFieldRef id="SPEECH"/>
+		<DisplayFieldRef id="WRITING"/>
+		<DisplayFieldRef id="ARISEFROMCHAIR"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_RIGHT"/>
+		<DisplayFieldRef id="ACTIONPOSTURALTREMOR_LEFT"/>
+		<DisplayFieldRef id="HANDSRAM_RIGHT"/>
+		<DisplayFieldRef id="HANDSRAM_LEFT"/>
+		<DisplayFieldRef id="FINGERTAPS_RIGHT"/>
+		<DisplayFieldRef id="FINGERTAPS_LEFT"/>
+		<DisplayFieldRef id="POSTURE"/>
+		<DisplayFieldRef id="POSTURALSTABILITY"/>
+		<DisplayFieldRef id="FOOTTAPS_RIGHT"/>
+		<DisplayFieldRef id="FOOTTAPS_LEFT"/>
+		<DisplayFieldRef id="BODYBRADYKINESIAHYPOKINESIA"/>
+		<DisplayFieldRef id="PROBLEM"/>
+	</DisplayVersion>
+	<ViewLink alias="XNAT_A_UPDRS3DATA_PROJECTS">
+		<Mapping TableName="XNAT_A_UPDRS3DATA_PROJECTS">
+			<MappingColumn rootElement="xnat_a:updrs3Data" fieldElement="xnat_a:updrs3Data.ID" mapsTo="id"/>
+		</Mapping>
+	</ViewLink>
+	<SQLView name="XNAT_A_UPDRS3DATA_PROJECTS" sql="SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='xnat_a:updrs3Data' GROUP BY expt.id,expt.project"/>
+</Displays>

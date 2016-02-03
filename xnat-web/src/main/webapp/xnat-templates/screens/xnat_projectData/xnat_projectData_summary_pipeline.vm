@@ -1,0 +1,134 @@
+	<!-- Source file --> 
+	<script type="text/javascript" src="$content.getURI("scripts/yui/build/logger/logger-min.js")"></script> 
+
+		<link type="text/css" rel="stylesheet" href="$content.getURI("scripts/yui/build/fonts/fonts.css")">
+		<!--<link type="text/css" rel="stylesheet" href="$content.getURI("scripts/yui/build/reset/reset.css")">-->
+
+		<script type="text/javascript" src="$content.getURI("scripts/yui/build/animation/animation.js")" ></script>
+
+<script type="text/javascript" src="$content.getURI("scripts/project/pipelineMgmt.js")"></script>
+
+<div id="waitPanel"></div>
+
+
+
+<table class="mgmt_container">
+ <tr>
+  <td valign="top" >
+   <div id="pipeline_mgmt_div"></div>
+  </td>
+ </tr>
+ <tr>
+  <td valign="top">
+  <div id="buttons"> 
+  	    <span id="add" class="yui-button yui-push-button"> 
+  	        <span class="first-child"> 
+  	            <button type="button">Add More Pipelines</button> 
+  	        </span> 
+	    </span> 
+   </div>	    
+  
+   </td>
+ </tr>
+<tr>
+  <td ><div id="myLogger"></div> </td>
+</tr>
+
+<div id="content"></div>
+
+</table>
+
+
+
+
+
+<script language="javascript">
+
+
+
+
+ var handleOK = function() { 
+       this.hide(); 
+ }; 
+	 
+
+var dlg = new YAHOO.widget.SimpleDialog('widget_alert', { 
+	            visible:false, 
+	            width: '20em', 
+	            zIndex: 9999, 
+	            close: false, 
+	            fixedcenter: true, 
+	            modal: false, 
+	            draggable: true, 
+	            constraintoviewport: true,  
+	            icon: YAHOO.widget.SimpleDialog.ICON_WARN, 
+	            buttons: [ 
+	                { text: 'OK', handler: handleOK, isDefault: true } 
+	                ] 
+	        }); 
+
+function summaryTabChange(obj){
+   if(obj.newValue.get("href")=="#tab4"){
+        if(window.pipelineManager==undefined)window.pipelineManager  = new PipelineManager("pipeline_mgmt_div","$project.getId()");
+	window.pipelineManager.getPipelines();
+   }
+};
+
+var xnatalert = function(str) { 
+	        dlg.setBody(str); 
+	        dlg.cfg.queueProperty('icon', YAHOO.widget.SimpleDialog.ICON_WARN); 
+	        dlg.cfg.queueProperty('zIndex', 9999); 
+	        dlg.render(document.body); 
+	        if (dlg.bringToTop) { 
+	            dlg.bringToTop(); 
+	        } 
+	        dlg.show(); 
+	    }; 
+
+function initComponents() {
+   dlg.setHeader("Alert!"); 
+   dlg.setBody('Alert body passed to window.alert'); // Bug in panel, must have a body when rendered 
+   dlg.render(document.body); 
+
+
+    var addButton = new YAHOO.widget.Button("add");
+    
+    function addClick(e) { 
+	var label = this.get("label");
+	var addMoreText = "Add More Pipelines";
+	var showMineText = "Show $displayManager.getSingularDisplayNameForProject() Pipelines";
+
+	if (label == addMoreText) {
+	  window.pipelineManager.getAdditionalPipelines();
+	  addButton.set('label',showMineText);
+	}else {
+	  window.pipelineManager.getPipelines();
+	  addButton.set('label',addMoreText);
+	}
+    }; 
+    
+    addButton.on("click", addClick); 
+
+}
+
+
+function addMonitor(){
+    initComponents();
+
+    if(window.summaryTabView.get("activeTab").get("href")=="#tab4"){
+        if(window.pipelineManager==undefined) {
+		window.pipelineManager  = new PipelineManager("pipeline_mgmt_div","$project.getId()");
+		window.pipelineManager.getPipelines();
+	}
+    }else{
+        window.summaryTabView.subscribe("activeTabChange",summaryTabChange);
+    }
+};
+	
+YAHOO.util.Event.onDOMReady(addMonitor);
+
+	
+</script>
+
+
+

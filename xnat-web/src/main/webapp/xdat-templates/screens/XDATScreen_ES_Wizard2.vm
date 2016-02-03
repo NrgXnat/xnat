@@ -1,0 +1,102 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<p>
+<form name="form1" method="post" action="$link.setAction("ElementSecurityWizard")">
+<INPUT TYPE="hidden" NAME="popup" VALUE="$popup">
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+    <HR>
+#end
+<table border="0" width="600">
+	<tr>
+		<TH align=center colspan=2>$!item.getProperty("xdat:element_security.element_name") Actions<BR><BR></TH>
+		#xdatHiddenBox("xdat:element_security.element_name" $item "")
+	</tr>
+	<TR>
+		<TH colspan=2 align="left">Default Actions</TH>
+	</TR>
+	<TR>
+		<TD align=left>Should this data type be available in XML format?</TD>
+		<TD align=left>
+			<input type="radio" name="xml" value="1" CHECKED/>&nbsp;YES
+			<input type="radio" name="xml" value="0"/>&nbsp;NO
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Should this data type be editable (this requires the creation of a specific edit screen)?</TD>
+		<TD align=left>
+			<input type="radio" name="edit" value="1" CHECKED/>&nbsp;YES
+			<input type="radio" name="edit" value="0"/>&nbsp;NO
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Allow emailing of report?</TD>
+		<TD align=left>
+			<input type="radio" name="email_report" value="1" CHECKED/>&nbsp;YES
+			<input type="radio" name="email_report" value="0"/>&nbsp;NO
+		</TD>
+	</TR>
+	#if ($item.getBooleanProperty("quarantine").booleanValue())
+		<input type="hidden" name="activate" value="1"/>
+	#else
+		<input type="hidden" name="activate" value="0"/>
+	#end
+	<!--<TR>
+		<TD align=left>Can this data type be activated?</TD>
+		<TD align=left>
+			<input type="radio" name="activate" value="1" CHECKED/>&nbsp;true
+			<input type="radio" name="activate" value="0"/>&nbsp;false
+		</TD>
+	</TR>-->
+	<TR>
+	<TD align=left colspan=2>
+		<BR>
+		<TABLE>
+			<TR>
+				<TH colspan=2 align="left">Additional Actions</TH>
+			</TR>
+			<TR>
+				<TD colspan=2 align="left">Are there any additional actions which can be performed on this data type?  If so, list them below.<BR><BR></TD>
+			</TR>
+			<TR>
+				<TD>Name</TD><TD>Display Name</TD><TD>Image</TD><TD>Popup</TD><TD>Secure?</TD>
+			</TR>
+			
+#set($popup_values = ["always","sometimes","never"])
+#set($secure_values = ["read","edit","create","delete","activate"])
+			#foreach($c in [0..10] )
+			<TR>
+				<TD>#xdatTextBox("xdat:element_security.element_actions.element_action__${c}.element_action_name" $item "" $vr)</TD>
+				<TD>#xdatTextBox("xdat:element_security.element_actions.element_action__${c}.display_name" $item "" $vr)
+				#xdatHiddenBox("xdat:element_security.element_actions.element_action__${c}.xdat_element_action_type_id" $item "")</TD>
+				<TD>#xdatTextBox("xdat:element_security.element_actions.element_action__${c}.image" $item "" $vr)</TD>
+				<TD>#xdatSelectBoxWSingleValue("xdat:element_security.element_actions.element_action__${c}.popup" $item $popup_values $vr)</TD>
+				<TD>#xdatSelectBoxWSingleValue("xdat:element_security.element_actions.element_action__${c}.secureAccess" $item $secure_values $vr)</TD>
+			</TR>
+			#end
+			</TABLE>
+		</TD>	
+	</TR>
+	<tr>
+		<td colspan=2 align="left"><BR>
+		#set($count = 0)
+		#foreach($ea in $item.getChildItems("xdat:element_security.primary_security_fields.primary_security_field"))
+			<input type="hidden" name="xdat:element_security.primary_security_fields.primary_security_field__${count}.primary_security_field" VALUE="$!item.getProperty("xdat:element_security.primary_security_fields.primary_security_field__${count}.primary_security_field")"/>
+			#set($count = $count + 1)
+		#end
+		#xdatHiddenBox("xdat:element_security.secondary_password" $item "")
+		#xdatHiddenBox("xdat:element_security.secure_ip" $item "")
+		#xdatHiddenBox("xdat:element_security.secure" $item "")
+		#xdatHiddenBox("xdat:element_security.browse" $item "")
+		#xdatHiddenBox("xdat:element_security.searchable" $item "")
+		#xdatHiddenBox("xdat:element_security.quarantine" $item "")
+		#xdatHiddenBox("xdat:element_security.pre_load" $item "")
+		#xdatHiddenBox("xdat:element_security.accessible" $item "")
+		#xdatHiddenBox("xdat:element_security.usage" $item "")
+		#xdatHiddenBox("xdat:element_security.singular" $item "")
+		#xdatHiddenBox("xdat:element_security.plural" $item "")
+		#xdatHiddenBox("xdat:element_security.category" $item "")
+    		<input type="submit" name="eventSubmit_doStep3" value="Next"/>
+		</td>
+	</tr>
+</TABLE>
+</form>

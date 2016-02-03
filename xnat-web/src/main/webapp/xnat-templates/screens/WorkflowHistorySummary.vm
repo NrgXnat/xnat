@@ -1,0 +1,186 @@
+#if($hideTopBar)
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/ScreenOnly.vm")
+#else
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/Default.vm")
+#end
+
+<!-- include only if not defined elsewhere -->
+<script type="text/javascript">
+        function toggle(id) {
+            if (YAHOO.util.Dom.hasClass(id, 'hidden')) {
+                // removes .hidden class to show element
+                YAHOO.util.Dom.removeClass(id,'hidden');
+            } else {
+                // adds class .hidden to element with given id
+                YAHOO.util.Dom.addClass(id, 'hidden');
+            }
+        }
+</script>
+
+
+<style type="text/css">
+	#auditTrail .auditTrailItem, #auditTrail .header {
+	  border-bottom:1px solid #888;
+	  font:11px Arial, Helvetica, sans-serif;
+	  margin-top:0;
+	  margin-bottom:0;
+	  padding: 4px;
+	  overflow:auto;
+	}
+	dl.auditTrailItem, item.auditTrailItem {
+		display:block;
+	}
+	#auditTrail dl dl 	{ margin:1px 0;	}
+	#auditTrail .header {
+		background-color: #ccc;
+		font-weight: bold;
+	}
+	#auditTrail dl dt, #auditTrail dl dd {
+		display:block;
+		float:left;
+		padding:4px 0;
+	}
+	.auditTrailItem:hover {
+		background-color:#fe9;
+	}
+	#auditTrail dd 	{ 	margin-left:20px; }
+	dt.auditIcon 	{	width:32px; height:16px;	}
+	dd.auditItem 	{	width:160px; font-weight:bold; position:relative;	}
+	dd.auditAgent 	{	width:100px;	}
+	dd.auditTime 	{	width:170px;	}
+	dd.justification { 	clear:left; margin-left:52px !important;	}
+	dt.DATA 	{	background:url($content.getURI("images/icon-file-16.png")) left center no-repeat;	}
+	dt.PROJECT_ADMIN {	background:url($content.getURI("images/icon-folder-16.png")) left center no-repeat;	}
+	dt.SITE_ADMIN 	{	background:url($content.getURI("images/icon-site-16.png")) left center no-repeat;	}
+	dt.PROJECT_ACCESS 	{	background:url($content.getURI("images/icon-user-16.png")) left center no-repeat;	}
+	
+	a.auditButton {
+		background:url($content.getURI("images/hide-expand.png")) left top no-repeat; 
+		display:inline-block;
+		height:11px; width:11px; 
+		overflow:hidden; 
+		position:absolute; left:-16px;
+	}
+	.workflow_history {
+		background-color:#fff;
+		border-bottom:none !important;
+		border-top:1px dotted #888;
+		clear:both;
+		overflow:auto;
+		padding-top:6px;
+	}
+	ul.workflow_history_details {
+		list-style-type:none;
+		padding:0 0 0 36px;
+	}
+	ul.workflow_history_details li {
+		position:relative;
+		width:290px
+	}
+	span.auditDatetime {
+		color:#888;
+		position:absolute;
+		left:318px;
+		white-space:nowrap;
+	}
+	#auditTrailLoading {
+		border-radius:10px; 
+		background-color:#888; 
+		color:white; 
+		margin-left:-100px; 
+		padding:25px; 
+		position:fixed; 
+			left:50%; 
+			top:50%; 
+		opacity:0.6;
+		width:200px; 
+	}
+	.hidden {
+		display:none !important;
+	}
+  
+    </style>
+
+	<div id="auditTrail">
+            <dl class="header">
+              <dl>
+                  <dt class="auditIcon"></dt>
+                  <dd class="auditItem">Change</dd>
+                  <dd class="auditAgent">Agent</dd>
+                  <dd class="auditTime">Timestamp</dd>
+              </dl>
+            </dl>
+
+#set($level1=0)
+	#foreach($wv in $change_sets)
+
+            <dl class="auditTrailItem $!wv.getWorkflow().getCategory()" id="$wv.getDate()">
+                <dl onClick="toggle_ul('$wv.getDate()')">
+                    <dt class="auditIcon $!wv.getWorkflow().getCategory()"></dt>
+                    <dd class="auditItem">#if($!wv.getMessage())$!wv.getMessage() #else [Unknown Event] #end #if($!wv.getWorkflow().getId())on <a href="/REST/services/audit/$!wv.getWorkflow().getDataType()/$!wv.getWorkflow().getId()">$!wv.getWorkflow().getId()</a> #end <a title="expand" id="a_$wv.getDate()" href="#" class="auditButton"></a></dd>
+                    <dd class="auditAgent">#if($!wv.getUsername()) by $!wv.getUsername() #else by [Unknown] #end</dd>
+                    <dd class="auditTime">#if($wv.getDate())$!turbineUtils.formatDateTimeSeconds($wv.getDate())#else [Unknown] #end</dd>
+                    #if($!wv.getWorkflow().getJustification())
+						<dd class="justification">$!wv.getWorkflow().getJustification()</dd>
+					#end
+                </dl>
+
+		<!-- changeset details -->
+                <div class="workflow_history hidden" id="ul_$wv.getDate()"> 
+                <!-- hide this by default, show on click of parent -->
+                    <ul class="workflow_history_details"> 
+               		#foreach($sum in $wv.getChangeSummaries())
+                      <li><span class="auditDatetime">$!turbineUtils.formatDateTimeSeconds($sum.getDate())</span> $!sum.toString()</li>
+
+            		<ul class="workflow_history_details"> 
+				
+                		#set($modified=0)
+                		#set($added=0)
+                		#set($removed=0)
+					#foreach($ent in $sum.getEvents())
+						<li>$ent.Action $!ent.ObjectHeader $!ent.ObjectLabel 
+                			#if($ent.Action.equals("Modified"))
+                				$!ent.Field.FieldLabel from '$!ent.Field.OldValue' to '$!ent.Field.NewValue'
+                				#if($ent.Parent && $ent.getParents().size()>0)
+                					 of $!ent.Parent.ObjectHeader $!ent.Parent.ObjectLabel
+                				#end
+                				#set($modified=$modified+1)
+                			#elseif($ent.Action.equals("Removed"))
+                				#set($removed=$removed+1)
+                				#if($ent.Parent && $ent.getParents().size()>0)
+                					 from $!ent.Parent.ObjectHeader $!ent.Parent.ObjectLabel
+                				#end
+                			#else
+                				#set($added=$added+1)
+                				#if($ent.Parent && $ent.getParents().size()>0)
+                					 to $!ent.Parent.ObjectHeader $!ent.Parent.ObjectLabel
+                				#end
+                			#end
+                			#if($ent.getParents().size()>1)
+                				#set($grandparents=$ent.getParents().size() - 1)
+                				##intentially leave off the last one.
+                				#foreach($grandparent in [$grandparents..1])
+                					 of $ent.getParents().get($grandparent).ObjectHeader $ent.getParents().get($grandparent).ObjectLabel
+                				#end				
+							#end
+						</li>
+					#end
+                			#if($modified>0)
+                			<script>
+                				//document.getElementById("ul_$!sum.getDate().getTime()").style.backgroundColor="#ff99cc";
+                			</script>
+                			#elseif($removed>0)
+                			<script>
+                					//document.getElementById("ul_$!sum.getDate().getTime()").style.backgroundColor="#ffCCCC";
+                			</script>
+                			#end
+          		</ul>
+			#end    ## end foreach changeset item
+	       </ul>
+  	  </dl>
+	#end ## end foreach audit trail entry
+	</div> <!-- end AuditTrail -->
+
+

@@ -1,0 +1,183 @@
+##Copyright 2014 Washington University
+##Developer: Tim Olsen tim@deck5consulting.com
+##Section of Manage tab that starts the Project Resource Configuration dialog
+<!-- Sequence: 100 -->
+#if($data.getSession().getAttribute("user").canCreate($project))
+<h3>Project Resource Settings</h3>
+<div>
+<table id="project_resource_table">
+  <tr>
+    <td colspan="2" class="highlighted" id="project_resource_container">
+##      <DIV style="font-weight:700;">Project Resource Settings</DIV>
+      <DIV style="padding:10px;">
+          Allows project owners to determine the kinds of files which can/should be uploaded to the various 
+          structures associated with this project.
+          <br><br>
+          <input type="button" value="Start" onclick="XNAT.app.pResources.begin();" />
+      </DIV>
+	</td>
+  </tr>
+</table>
+	<!-- begin upload dialog -->
+		<div id="pResource_settings_dialog" style="visibility:hidden"> 
+    	    <div class="hd">Project Resource Settings</div> 
+    	    <div class="bd" style="">
+				<div class="pResource_a">
+					<div class="info">With this interface, you can define resources that will be expected to be uploaded to a specified location in your project. Users can be prompted to upload specific files on a given page, rather than rely on the 'Manage Files' interface.</div>
+					<div style="margin-top:3px;font-weight:700;" id="pResource_types">
+						<span style="margin-bottom:2px">Define Resource for:</span><br/>
+						<input type='button' id="pResource_proj" onclick="XNAT.app.pResources.menu('proj');" value="Project"/>
+						<input type='button' id="pResource_subj" onclick="XNAT.app.pResources.menu('subj');" value="Subject"/>
+						<input type='button' id="pResource_sa" onclick="XNAT.app.pResources.menu('sa');" value="Subject Assessor"/>
+						<input type='button' id="pResource_is" onclick="XNAT.app.pResources.menu('is');" value="Image Sessions"/>
+						<input type='button' id="pResource_scan" onclick="XNAT.app.pResources.menu('scan');" value="Scan"/>
+						<input type='button' id="pResource_ia" onclick="XNAT.app.pResources.menu('ia');" value="Image Assessor"/>
+					</div>
+					<div style="margin-top:3px;border: 1px solid grey;padding: 5px;display:none;" id="pResource_form">
+					</div>
+					<div style="margin-top:20px;" id="pResource_exist_title">Defined Resource Configurations</div>
+					<div style="margin-top:3px;overflow: auto;height: 430px;" id="pResource_exist">
+					</div>
+				</div>
+			</div> 
+    	</div> 
+		<script type="text/javascript" src="$content.getURI("scripts/project/projResourceMgmt.js")"></script>
+        <script>
+            XNAT.app.pResources.id='$om.getId()';
+        </script>
+        <style>
+            #pResource_settings_dialog_mask {
+                z-index: 100 !important;
+            }
+
+            #pResource_settings_dialog_c {
+                z-index: 101 !important;
+            }
+
+            #pResource_exist .item, #pResource_exist .header {
+                border-bottom: 1px solid #888;
+                font: 11px Arial, Helvetica, sans-serif;
+                margin-top: 0;
+                margin-bottom: 0;
+                padding: 4px;
+                overflow: auto;
+            }
+
+            dl.item, item.item {
+                display: block;
+            }
+
+            #pResource_exist dl dl {
+                margin: 1px 0;
+            }
+
+            #pResource_exist .header {
+                background-color: #ccc;
+                font-weight: bold;
+            }
+
+            #pResource_exist dl dt, #pResource_exist dl dd {
+                display: block;
+                float: left;
+                padding: 4px 0;
+            }
+
+            .item:hover {
+                background-color: #fe9;
+            }
+
+            #pResource_exist dd {
+                margin-left: 20px;
+            }
+
+            #pResource_exist dd.col1 {
+                width: 60px;
+                padding: 0px;
+                margin-left: 10px
+            }
+
+            #pResource_exist dd.col2 {
+                width: 120px;
+            }
+
+            #pResource_exist dd.col3 {
+                width: 70px;
+            }
+
+            #pResource_exist dd.col4 {
+                width: 70px;
+            }
+
+            #pResource_exist dd.col5 {
+                width: 90px;
+            }
+
+            #pResource_exist dd.col6 {
+                width: 50px;
+            }
+
+            #pResource_exist dd.col7 {
+                width: 130px;
+            }
+
+            #pResource_exist dd.colX {
+                width: 660px;
+                padding-left: 70px;
+            }
+
+            #pResource_exist dd.colEx {
+                position: relative;
+            }
+
+            #pResource_exist_title {
+                font-weight: 700;
+            }
+
+            div.row3 {
+                float: right;
+                margin-top: 8px;
+            }
+
+            div.row4 {
+                clear: both;
+                margin-top: 8px;
+            }
+
+            #pResource_form div.colA {
+                float: left;
+                width: 380px;
+            }
+
+            #pResource_form div.colB {
+                float: right;
+                width: 380px;
+            }
+
+            #pResource_form div.simple {
+                background: none;
+                border: none;
+                padding-left: 2px;
+                padding-bottom: 0px;
+                margin-bottom: 0px;
+            }
+
+            #pResource_form div.row {
+                margin-top: 5px;
+            }
+
+            #pResource_form div.rowTitle {
+                width: 124px;
+                display: inline-block;
+                font-weight: 700;
+            }
+
+            #pResource_form .pResourceField {
+                width: 200px;
+                margin-left: 2px;
+            }
+            ##pResource_form button.default 	{display: inline-block ; height: 24px ; margin: 12px 0 0 6px ; padding: 1px 15px !important ; line-height: 24px ; vertical-align: middle ; font-size: 13px ; font-weight: normal ; text-decoration: none !important ; color: #333 ; background: #e0e0e0 url('images/btn2_30px.png') center center repeat-x ; border: 1px solid #808080 ; border-radius: 3px ; outline:none !important;font-weight: bold ; color: #fff ; background: /* #084FAB */ /* #206bc4 */ #07428d url('images/btn1_30px.png') center top repeat-x ; border-color: /* #206bc4 */ /* #243356 */ #293d66 ; 	}
+            ##pResource_form button.default:active { background: /* #206bc4 */ /* #4482cd */ #084FAB ; border-color: /* #084FAB */ #243356 ; }
+
+        </style>
+</div>
+#end

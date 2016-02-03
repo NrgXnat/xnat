@@ -1,0 +1,45 @@
+<form name="form1" method="post" action="$link.setAction("AddProject")"> 
+          <table border="0" class="withColor">
+            <tr>
+              <td width="200">ID</td>
+              <td width="345" valign="top" >
+#if ($vr)
+	#if($vr.getField("xnat:projectData.ID"))
+		<span style="color:red;">&#8658</span>
+	#end
+#end
+              <input name="xnat:projectData.ID" type="text" size="40"  ONCHANGE="this.value=stringCamelCaps(this.value);"/></td>
+            </tr>
+            <tr>
+              <td width="200">Name</td>
+              <td width="345" valign="top" >
+#if ($vr)
+	#if($vr.getField("xnat:projectData.name"))
+		<span style="color:red;">&#8658</span>
+	#end
+#end
+              <input name="xnat:projectData.name" type="text" size="40"/></td>
+            </tr>
+            <tr>
+              <td valign="top">Study descripton</td>
+              <td width="345" valign="top"><textarea name="xnat:projectData.description" cols="30" rows="3" >$!{desc}</textarea></td>
+            </tr>
+            <tr>
+              <td width="200">Manager</td>
+              <td width="345" valign="top" >
+              <input name="manager" type="text" size="40" value="$data.getSession().getAttribute("user").getEmail()"/></td>
+            </tr>
+            <tr>
+              <td valign="top">Primary Investigator</td>
+              <td width="345" valign="top"><TABLE><TR><TD>Firstname:</TD><TD><input type="text" name="xnat:projectData/PI/firstname" size="20" value="$!iFirstname"/></TD></TR><TR><TD>Lastname:</TD><TD><input type="text" name="xnat:projectData/PI/lastname" size="20" value="$!iLastname"/></TD></TR></TABLE></td>
+            </tr>
+            <tr>
+              <td valign="top" colspan="2">
+              	  <div align="center">
+	                  <input type="submit" name="eventSubmit_doPerform" value="Submit" />
+	                  <input type="reset" name="reset" value="Cancel" />
+	                </div>
+              </td>
+            </tr>
+          </table>
+          </form>

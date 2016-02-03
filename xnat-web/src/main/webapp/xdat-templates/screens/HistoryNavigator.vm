@@ -1,0 +1,110 @@
+<style>
+th{
+	color:black;
+}
+th.meta,td.meta{
+	background-color:#DEDEDE;
+	color:black;
+}
+tr._new{
+	background-color:#33CC00;
+	color:black;
+}
+tr._old{
+	background-color:#660000;
+	color:white;
+}
+td._new{
+	background-color:#FFFF00;
+	color:black;
+}
+td._old{
+	background-color:#FFFF00;
+	color:black;
+}
+</style>
+<table>
+	<tr>
+		<td style="white-space:nowrap;vertical-align:top">
+<ul>
+	<li><a class="versionLink" onclick="viewAllVersions();">View All</a></li>
+	#foreach($chKey in $change_sets.keySet())
+		<li><a class="versionLink" onclick="viewVersion('$turbineUtils.formatDate($chKey,"yyyy-MM-dd HH:mm:ss.SSS")',this);">$turbineUtils.formatDateTimeSeconds($chKey)</a></li>
+	#end
+</ul>
+		</td>
+		<td>
+			<div id="all_view">
+				<ul>
+                #foreach($sum in $change_sets.entrySet())
+                	<li>$sum.getKey()<br>
+                		<ul>
+                    	#foreach($ent in $sum.getValue().getEvents())
+                			#if($ent.Action.equals("Modified"))
+                				<li>$ent.Action $!ent.ObjectHeader $!ent.ObjectLabel $!ent.Field.FieldLabel from '$!ent.Field.OldValue' to '$!ent.Field.NewValue'</li>
+                			#else
+                				<li>$ent.Action $!ent.ObjectHeader $!ent.ObjectLabel</li>
+                			#end
+                    	#end
+                    	</ul>
+                	</li>
+                #end
+                </ul>
+			</div>
+			<div id="version_view"></div>
+		</td>
+	</tr>
+</table>
+#if($item.instanceOf("xnat:subjectData"))
+	#set($rest_url="/REST/subjects/$om.getId()")
+#else
+	#set($rest_url="/REST/experiments/$om.getId()")
+#end
+<script>
+	function viewAllVersions(){       	    
+		document.getElementById("version_view").style.display='none';
+		document.getElementById("all_view").style.display='block';
+	}
+	
+	function viewVersion(xft_version,_obj){
+        var callback = {
+            cache: false, // Turn off caching for IE
+            success: function (oResponse) {
+                var version_view = document.getElementById("version_view");
+                version_view.innerHTML = oResponse.responseText;
+
+                document.getElementById("version_view").style.display = 'block';
+                document.getElementById("all_view").style.display = 'none';
+
+                closeModalPanel("load_history");
+            },
+            failure: function (oResponse) {
+                if (!window.leaving) {
+                    closeModalPanel("load_history");
+                    xModalMessage('Error', oResponse);
+                }
+            }
+        };
+
+        openModalPanel("load_history","Compiling historical data...");
+		YAHOO.util.Connect.asyncRequest('GET',serverRoot +'$rest_url?format=html&requested_screen=HistoryView&as_of_date=' + xft_version,callback,null);
+		
+		var elements = YAHOO.util.Dom.getElementsByClassName("versionLink");
+    	for(var trI=0;trI<elements.length;trI++){
+    		elements[trI].style.fontWeight="700";
+    	}
+		
+    	_obj.style.fontWeight="500";
+	}
+	
+    function toggleRows(_classname){
+    	var elements = YAHOO.util.Dom.getElementsByClassName(_classname);
+    	for(var trI=0;trI<elements.length;trI++){
+    		if(elements[trI].style.display==""){
+    			elements[trI].style.display="none";
+    		}else{
+    			elements[trI].style.display="";
+    		}
+    	}
+    }
+</script>

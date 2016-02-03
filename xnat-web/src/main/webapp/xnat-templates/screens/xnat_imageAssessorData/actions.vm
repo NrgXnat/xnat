@@ -1,0 +1,22 @@
+				#elementActionsBoxNoEnd($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+
+		#addCustomScreens("$element" "actionsBox") 
+     </DIV>
+    </DIV>
+ <script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+<style type="text/css">   
+  .icon-of { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/of.gif")) no-repeat;}   
+  .icon-f { display:block; font-size:11px; height: 17px; padding-left: 4px;}
+  .icon-cf { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/cf.gif")) no-repeat;} 
+  .ygtvcheck0 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check0.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+  .ygtvcheck1 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check1.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+  .ygtvcheck2 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check2.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+</style>
+				<script type="text/javascript">
+				var _a = new Array();
+   _a.push({"label": window.available_elements.getByName("$om.getXSIType()").singular +" $!om.getLabel() ($!om.getId())","ru":"/REST/projects/$project/subjects/$om.getImageSessionData().getSubjectId()/experiments/$om.getImageSessionData().getId()/assessors/$om.getId()","redirect":serverRoot+"/REST/projects/$project/subjects/$om.getImageSessionData().getSubjectId()/experiments/$om.getImageSessionData().getId()",canRead:true,checked:true,xsiType:window.available_elements.getByName("$om.getXSIType()").singular,date:"$!om.getDate()",primary_label:"$!om.getIdentifier($project)"});
+   _a.push({"label": window.available_elements.getByName("$om.getImageSessionData().getXSIType()").singular +" $!om.getImageSessionData().getIdentifier($project) ($!om.getImageSessionData().getId())","ru":"/REST/projects/$project/subjects/$om.getImageSessionData().getSubjectId()/experiments/$om.getImageSessionData().getId()","redirect":serverRoot+"/REST/projects/$project/subjects/$om.getImageSessionData().getSubjectId()",canRead:true,checked:true,xsiType:window.available_elements.getByName("$om.getImageSessionData().getXSIType()").singular,date:"$!om.getImageSessionData().getDate()",primary_label:"$!om.getImageSessionData().getIdentifier($project)",allowDelete:false});
+   _a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getImageSessionData().getSubjectData.getIdentifier($project) ($!om.getImageSessionData().getSubjectData().getId())","ru":"/REST/projects/$project/subjects/$om.getImageSessionData().getSubjectData().getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:"Subject",date:"",primary_label:"$!om.getImageSessionData().getSubjectData().getIdentifier($project)",allowDelete:false});
+
+				</script>
+				

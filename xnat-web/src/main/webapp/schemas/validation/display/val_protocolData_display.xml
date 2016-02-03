@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="val:protocolData" full-description="ProtocolVal" brief-description="ProtocolVal">
+	<DisplayField id="EXPT_ID" header="ID" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="val:protocolData.ID"/>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','val:protocolData','val:protocolData.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="RPT" header="ID" visible="true" image="true">
+		<Content type="sql">'/@WEBAPP/images/r.gif'::text</Content>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','val:protocolData','val:protocolData.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="DATE" header="Date" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="val:protocolData.date"/>
+	</DisplayField>
+	<DisplayField header="Projects" id="PROJECTS" data-type="string">
+		<DisplayFieldElement name="Field1" viewName="VAL_PROTOCOLDATA_PROJECTS" viewColumn="PROJECTS"/>
+	</DisplayField>
+	<DisplayField header="Label" id="LABEL" data-type="string">
+	<DisplayFieldElement name="Field1" schema-element="val:protocolData.ID"/>
+	<DisplayFieldElement name="Field2" schema-element="val:protocolData.label"/>
+	<Content type="sql">COALESCE(@Field2, @Field1)</Content>
+		<HTML-Link>
+			<SecureLink elementName="val:protocolData">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="val:protocolData/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="val:protocolData/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/val:protocolData/search_field/val:protocolData.ID">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+			<Property name="ONCLICK" value="return rpt('@Field1','val:protocolData','val:protocolData.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+			<Property name="TITLE" value="Inserted: @Field1 (@Field2)">
+				<InsertValue id="Field1" field="INSERT_DATE"/>
+				<InsertValue id="Field2" field="INSERT_USER"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="PROJECT" header="Project" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="val:protocolData.project"/>
+	</DisplayField>
+	<DisplayField id="VAL_PROTOCOLDATA_PROJECT_IDENTIFIER" header="VAL_PROTOCOLDATA ID" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">val_protocoldata_project_id</Content>
+		<HTML-Link>
+			<SecureLink elementName="val:protocolData">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="val:protocolData/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="val:protocolData/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/val:protocolData/search_field/val:protocolData.ID/project/@Field2">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+				<InsertValue id="Field2" field="@WHERE"/>
+			</Property>
+		</HTML-Link>
+		<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS val_protocoldata_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="val:protocolData.ID" queryField="sharing_share_xnat_experimentda_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField id="INSERT_DATE" header="Inserted" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="val:protocolData.meta.insert_date"/>
+	</DisplayField>
+	<DisplayField id="INSERT_USER" header="Creator" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="val:protocolData.meta.insert_user.login"/>
+	</DisplayField>
+	<DisplayField id="VAL_PROTOCOLDATA_FIELD_MAP" header="Field" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">field</Content>
+		<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='val:protocolData') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="val:protocolData.ID" queryField="expt_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField id="CHECK_STATUS" header="status" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="val:protocolData/check/status"/>
+	</DisplayField>
+	<DisplayVersion versionName="listing" default-order-by="DATE" default-sort-order="DESC" brief-description="ProtocolVal" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="RPT"/>
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="CHECK_STATUS"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="listing_csv" default-order-by="DATE" default-sort-order="DESC" brief-description="ProtocolVal" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="CHECK_STATUS"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="full" default-order-by="DATE" default-sort-order="DESC" brief-description="ProtocolVal" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="EXPT_ID"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="CHECK_STATUS"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="detailed" default-order-by="DATE" default-sort-order="DESC" brief-description="ProtocolVal" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="EXPT_ID"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="CHECK_STATUS"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="project_bundle" default-order-by="DATE" default-sort-order="DESC" brief-description="ProtocolVal" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="VAL_PROTOCOLDATA_PROJECT_IDENTIFIER"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="CHECK_STATUS"/>
+	</DisplayVersion>
+	<ViewLink alias="VAL_PROTOCOLDATA_PROJECTS">
+		<Mapping TableName="VAL_PROTOCOLDATA_PROJECTS">
+			<MappingColumn rootElement="val:protocolData" fieldElement="val:protocolData.ID" mapsTo="id"/>
+		</Mapping>
+	</ViewLink>
+	<SQLView name="VAL_PROTOCOLDATA_PROJECTS" sql="SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='val:protocolData' GROUP BY expt.id,expt.project"/>
+</Displays>

@@ -1,0 +1,67 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("${om.getSchemaElement().getSingularDescription()} Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			 <TABLE class="withColor">
+							       <tr>
+								        <th align="left">ID: </th>
+																        <td>$!om.getIdentifier($!project)</td>
+								        <th align="left">Accession: </th>
+																        <td>$!item.getProperty("ID")</td>
+																        <th align="left">Date: </th>
+																        <td>$!om.getFormatedDate()</td>
+															        </tr>
+															        <tr>
+																        <th align="left">Scanner: </tH>
+																        <td>$!item.getProperty("scanner")</td>
+																        <th align="left">Operator: </th>
+																        <td>$!item.getProperty("operator")</td>
+																        <th align="left">Investigator: </th>
+																        <td>$!item.getProperty("investigator.firstname") $!item.getProperty("investigator.lastname")</td>
+															        </tr>
+ </TABLE>
+		</TD>
+	</TR>
+				<TR>
+					<TD align="left" valign="middle">&nbsp;
+					</TD>
+				</TR>
+	<TR>
+		<TD>
+		#if($catalogCount==0)
+		<DIV class="error">No Catalogs found.  Please upload an archive which includes catalog xmls in the root directory.</DIV>
+		<br><br>
+		<DIV class="edit_header3">Upload Contents: </div>
+		#else
+		<DIV class="edit_header3">Upload Contents: ($catalogCount catalog(s) found)</div>
+		#end
+									#if($directory)
+#displayFileSystem($directory)
+									#end
+						</TD></TR>
+</TABLE>
+<form enctype="multipart/form-data" method="POST" action="$link.setAction("ExptFileUpload")">
+<INPUT TYPE="hidden" name="popup" value="$!popup"/>
+<INPUT TYPE="hidden" name="project" value="$!project"/>
+<INPUT TYPE="hidden" name="uploadID" value="$uploadID"/>
+#xdatPassItemFormFields($search_element $search_field $search_value $project)
+<table WIDTH="50%" align="center"><tr><td ALIGN="center">
+Please review the details above and confirm that the proper files has been uploaded.
+</td></tr>
+
+    #auditBoxes("1" "" "Standard Upload." "Uploaded additional resources")
+#hideFormJustification()
+
+<tr><td ALIGN="center">
+<input type="button" name="cancel" ONCLICK="window.location='$link.setPage("XDATScreen_upload_xnat_imageSessionData.vm").addPathInfo("search_field","$search_field").addPathInfo("search_element","$search_element").addPathInfo("search_value","$search_value").addPathInfo("popup","$!popup")';" value="Cancel"/>
+
+<input type="submit" name="eventSubmit_doFinalize" value="Confirm"/>
+</td></tr></table>
+</form>

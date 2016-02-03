@@ -1,0 +1,13 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("NoMenu.vm")
+<table width="600">
+<tr><td>&nbsp;</td></tr>
+<tr><th>Thank you for your interest in our site.</th></tr>
+<tr><td>&nbsp;</td></tr>
+<tr><td>Your user account will be reviewed and enabled by the site administrator. When this is complete, you will receive an email inviting you to login to the site.</td></tr></table>
+#if ( $data.getMessage() )
+ <br><br><DIV class="error">$data.message</DIV>
+#end
+#if($msg)
+ <br><br> <DIV class="message">$msg</DIV>
+#end

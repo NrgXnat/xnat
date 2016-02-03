@@ -1,0 +1,367 @@
+<DIV class="edit_header2">$displayManager.getSingularDisplayNameForProject() Publications Management</DIV>
+<form name="form1" method="post" action="$link.setAction("ModifyItem")">
+		<input id="xnat:projectData/ID" type="hidden" name="xnat:projectData/ID" value="$item.getStringProperty("xnat:projectData/ID")"/>
+<TABLE border=0>
+<!-- BEGIN xnat:projectData/publications/publication -->
+				<TR><TD align="left"><DIV class="edit_header3">Publications</DIV></TD></TR>
+					 <tr>
+	  <td valign="top">
+							<span ID="spanPUBS" style="position:relative;"><br>
+					<TABLE  class="withColor">
+					 <TR><TH>Title:</TH><TD><INPUT type="text" ID="publicationTITLE" SIZE="30"/></TD></TR>
+					 <TR><TH>Type:</TH><TD><SELECT ID="publicationTYPE">
+					 <option value="">(SELECT)</option>
+					 <option value="PRIMARY">PRIMARY</option>
+					 <option value="REFERENCE">REFERENCE</option>
+					 <option value="FACT SHEET">FACT SHEET</option>
+					 </select></TD></TR>
+					 <TR><TH colspan="2">&nbsp;</TH></TR>
+					 <TR><TH colspan="2">Reference Details</TH></TR>
+					 <INPUT type="hidden" ID="publicationID"/>
+					 <TR><TH>DOI:</TH><TD><INPUT type="text" ID="publicationDOI" SIZE="10"/></TD></TR>
+					 <TR><TH>PUBMED:</TH><TD><INPUT type="text" ID="publicationPUBMED" SIZE="10"/></TD></TR>
+					 <TR><TH>MEDLINE:</TH><TD><INPUT type="text" ID="publicationMEDLINE" SIZE="10"/></TD></TR>
+					 <TR><TH>URI:</TH><TD><INPUT type="text" ID="publicationURI" SIZE="30"/></TD></TR>
+					 <TR><TH>OTHER:</TH><TD><INPUT type="text" ID="publicationOTHER" SIZE="30"/></TD></TR>
+					 <TR><TH colspan="2">&nbsp;</TH></TR>
+					 <TR><TH colspan="2">Publication summary</TH></TR>
+					 <TR><TH valign="top">Citation:</TH><TD><TEXTAREA ID="publicationCITATION" rows="2" cols="40"></TEXTAREA></TD></TR>
+					 <TR><TH valign="top">Abstract:</TH><TD><TEXTAREA ID="publicationABSTRACT" rows="4" cols="40"></TEXTAREA></TD></TR>
+					 <TR><TH valign="top">Commentary:</TH><TD><TEXTAREA ID="publicationCOMMENTARY" rows="4" cols="40"></TEXTAREA></TD></TR>
+					 <TR><TH valign="top"></TH><TD align="right"><input type="button" ONCLICK="addPublication()" name="Submit3" value="Add Publication" /></TD></TR>
+					</TABLE>
+					</span>
+					  </td>
+	  <td>&nbsp;&nbsp;</td>
+					  <td valign="top">
+	<DIV ID="PUBLICATIONS"></DIV>
+	  </td>
+					 </tr>
+	<script type="text/javascript">
+var publicationIDs=new Array();
+var publicationDOIs=new Array();
+var publicationPUBMEDs=new Array();
+var publicationMEDLINEs=new Array();
+var publicationURIs=new Array();
+var publicationOTHERs=new Array();
+var publicationTYPEs=new Array();
+var publicationTITLEs=new Array();
+var publicationCITATIONs=new Array();
+var publicationABSTRACTs=new Array();
+var publicationCOMMENTARYs=new Array();
+
+var publicationREMOVE_ID=new Array();
+var publicationREMOVE_TITLE=new Array();
+var publicationREMOVE_TYPE=new Array();
+
+var spanPUBS = document.getElementById("spanPUBS");
+
+function addPublication()
+{
+  var publicationID=document.getElementById("publicationID").value;
+  var publicationDOI=document.getElementById("publicationDOI").value;
+  var publicationPUBMED=document.getElementById("publicationPUBMED").value;
+  var publicationMEDLINE=document.getElementById("publicationMEDLINE").value;
+  var publicationURI=document.getElementById("publicationURI").value;
+  var publicationOTHER=document.getElementById("publicationOTHER").value;
+  var publicationTITLE=document.getElementById("publicationTITLE").value;
+  var publicationCITATION=document.getElementById("publicationCITATION").value;
+  var publicationABSTRACT=document.getElementById("publicationABSTRACT").value;;
+  var publicationCOMMENTARY=document.getElementById("publicationCOMMENTARY").value;
+  
+  var typeIndex=document.getElementById("publicationTYPE").selectedIndex;
+  var publicationTYPE = document.getElementById("publicationTYPE").options[typeIndex].value;
+  
+  if (typeIndex==0){
+     xModalMessage('Add Publication', 'Please select a type.');
+     document.getElementById("publicationTYPE").focus();
+     return false;
+  }
+  
+  if (publicationTITLE=="" && publicationDOI=="" && publicationPUBMED=="" && publicationMEDLINE=="" && publicationURI=="" && publicationOTHER==""){
+     xModalMessage('Add Publication', 'Please specify a TITLE, DOI, PUBMED, MEDLINE, URI, or OTHER.');
+     return false;
+  }
+  
+  if (publicationTITLE=="")
+  {
+     xModalMessage('Add Publication', 'Please specify a Title.");
+     document.getElementById("publicationTITLE").focus();
+     return false;
+  }
+  
+  if(publicationDOI.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationDOI").focus();
+     return false;     
+  }
+  
+  if(publicationPUBMED.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationPUBMED").focus();
+     return false;     
+  }
+  
+  if(publicationMEDLINE.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationMEDLINE").focus();
+     return false;     
+  }
+  
+  if(publicationURI.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationURI").focus();
+     return false;     
+  }
+  
+  if(publicationOTHER.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationOTHER").focus();
+     return false;     
+  }
+  
+  if(publicationTYPE.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationTYPE").focus();
+     return false;     
+  }
+  
+  if(publicationTITLE.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationTITLE").focus();
+     return false;     
+  }
+  
+  if(publicationCITATION.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationCITATION").focus();
+     return false;     
+  }
+  
+  if(publicationABSTRACT.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationABSTRACT").focus();
+     return false;     
+  }
+  
+  if(publicationCOMMENTARY.indexOf("\"")!=-1)
+  {
+     xModalMessage('Add Publication', 'Illegal character (\").  Please remove all occurrences of \".');
+     document.getElementById("publicationCOMMENTARY").focus();
+     return false;     
+  }
+  
+  var index = -1;
+  for (var pubCount=0;pubCount<publicationTITLEs.length;pubCount++)
+  {
+     if (publicationTITLE==publicationTITLEs[pubCount])
+     {
+       index=pubCount;
+     }
+  }
+  if (index==-1)
+  {
+    publicationIDs.push(publicationDOI);
+    publicationDOIs.push(publicationDOI);
+    publicationPUBMEDs.push(publicationPUBMED);
+    publicationMEDLINEs.push(publicationMEDLINE);
+    publicationURIs.push(publicationURI);
+    publicationOTHERs.push(publicationOTHER);
+    publicationTYPEs.push(publicationTYPE);
+    publicationTITLEs.push(publicationTITLE);
+    publicationCITATIONs.push(publicationCITATION);
+    publicationABSTRACTs.push(publicationABSTRACT);
+    publicationCOMMENTARYs.push(publicationCOMMENTARY);
+  }else{
+    publicationIDs[index]=publicationDOI;
+    publicationDOIs[index]=publicationDOI;
+    publicationPUBMEDs[index]=publicationPUBMED;
+    publicationMEDLINEs[index]=publicationMEDLINE;
+    publicationURIs[index]=publicationURI;
+    publicationOTHERs[index]=publicationOTHER;
+    publicationTYPEs[index]=publicationTYPE;
+    publicationTITLEs[index]=publicationTITLE;
+    publicationCITATIONs[index]=publicationCITATION;
+    publicationABSTRACTs[index]=publicationABSTRACT;
+    publicationCOMMENTARYs[index]=publicationCOMMENTARY;
+  }
+  
+  document.getElementById("publicationID").value="";
+  document.getElementById("publicationDOI").value="";
+  document.getElementById("publicationPUBMED").value="";
+  document.getElementById("publicationMEDLINE").value="";
+  document.getElementById("publicationURI").value="";
+  document.getElementById("publicationOTHER").value="";
+  document.getElementById("publicationTYPE").value="";
+  document.getElementById("publicationTITLE").value="";
+  document.getElementById("publicationCITATION").value="";
+  document.getElementById("publicationABSTRACT").value="";
+  document.getElementById("publicationCOMMENTARY").value="";
+  
+  drawPublications();
+}
+
+function drawPublications(){
+  var html = "";
+  html=html+"\n<TABLE>";
+  
+  
+  if (publicationREMOVE_ID.length > 0)
+    html=html+"\n<TR><TH COLSPAN=2 align=center>PUBLICATIONS</TH></TR>";
+  
+  html=html+"\n<TR><TH>Title</TH><TH>Type</TH>";
+  html=html+"</TR>";
+  
+  for (var pubID=0;pubID<publicationIDs.length;pubID++)
+  {
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/xnat_abstractResource_id\" VALUE=\"" + publicationIDs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/title\" VALUE=\"" + publicationTITLEs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/doi\" VALUE=\"" + publicationDOIs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/pubmed\" VALUE=\"" + publicationPUBMEDs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/medline\" VALUE=\"" + publicationMEDLINEs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/uri\" VALUE=\"" + publicationURIs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/other\" VALUE=\"" + publicationOTHERs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/type\" VALUE=\"" + publicationTYPEs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/citation\" VALUE=\"" + publicationCITATIONs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/abstract\" VALUE=\"" + publicationABSTRACTs[pubID] + "\"/>";
+    html=html+"\n<INPUT TYPE=\"hidden\" NAME=\"xnat:projectData/publications/publication[" + pubID + "]/commentary\" VALUE=\"" + publicationCOMMENTARYs[pubID] + "\"/>";
+    
+    var briefTitle = publicationTITLEs[pubID];
+    if(briefTitle.length >30)
+    {
+       briefTitle = briefTitle.substr(0,30) + "...";
+    }
+    
+    html=html+"\n<TR><TD>" + briefTitle + "</TD><TD>" + publicationTYPEs[pubID] + "</TD></tr><tr><TD colspan=2 align=right><INPUT TYPE=\"BUTTON\" VALUE=\"EDIT\" ONCLICK=\"spanPUBS.style.display='block';editPublication(" + pubID +")\"/>&nbsp;<INPUT TYPE='BUTTON' VALUE='REMOVE' ONCLICK='removePublication(" + pubID +")'/></TD></TR><TR><TD>&nbsp;</TD></TR>";
+    
+    
+  }
+  
+  if (publicationREMOVE_ID.length > 0)
+  {
+      html=html+"\n<TR><TD>&nbsp;</TD></TR>";
+      html=html+"\n<TR><TD>&nbsp;</TD></TR>";
+      html=html+"\n<TR><TH colspan=2>Removals</TH></TR>";
+      for (var removeCount=0;removeCount<publicationREMOVE_ID.length;removeCount++)
+      {
+        var briefTitle = publicationREMOVE_TITLE[removeCount];
+        if(briefTitle.length >30)
+        {
+           briefTitle = briefTitle.substr(0,30) + "...";
+        } 
+    
+        html= html + "<TD>" + briefTitle +"</TD><TD>" + publicationREMOVE_TYPE[removeCount] +"</TD></TR>";
+        html= html + "\n				<INPUT TYPE=\"hidden\" NAME=\"REMOVE__" + removeCount + "=xnat:publicationResource/xnat_abstractResource_id\" VALUE=\"" + publicationREMOVE_ID[removeCount] + "\"/>";
+      }
+   }
+    
+  html=html+"\n</TABLE>";
+  document.getElementById("PUBLICATIONS").innerHTML=html;
+}
+
+function editPublication(editIndex){
+  document.getElementById("publicationID").value=publicationIDs[editIndex];
+  document.getElementById("publicationDOI").value=publicationDOIs[editIndex];
+  document.getElementById("publicationPUBMED").value=publicationPUBMEDs[editIndex];
+  document.getElementById("publicationMEDLINE").value=publicationMEDLINEs[editIndex];
+  document.getElementById("publicationURI").value=publicationURIs[editIndex];
+  document.getElementById("publicationOTHER").value=publicationOTHERs[editIndex];
+  document.getElementById("publicationTYPE").value=publicationTYPEs[editIndex];
+  document.getElementById("publicationTITLE").value=publicationTITLEs[editIndex];
+  document.getElementById("publicationCITATION").value=publicationCITATIONs[editIndex];
+  document.getElementById("publicationABSTRACT").value=publicationABSTRACTs[editIndex];
+  document.getElementById("publicationCOMMENTARY").value=publicationCOMMENTARYs[editIndex];
+
+  
+  drawPublications();
+}
+
+function removePublication(removeIndex){
+  if(publicationIDs[removeIndex]!="")
+  {
+    publicationREMOVE_ID.push(publicationIDs[removeIndex]);
+    publicationREMOVE_TITLE.push(publicationTITLEs[removeIndex]);
+    publicationREMOVE_TYPE.push(publicationTYPEs[removeIndex]);
+  }
+
+  publicationIDs.splice(removeIndex,1);
+  publicationDOIs.splice(removeIndex,1);
+  publicationPUBMEDs.splice(removeIndex,1);
+  publicationMEDLINEs.splice(removeIndex,1);
+  publicationURIs.splice(removeIndex,1);
+  publicationOTHERs.splice(removeIndex,1);
+  publicationTYPEs.splice(removeIndex,1);
+  publicationTITLEs.splice(removeIndex,1);
+  publicationCITATIONs.splice(removeIndex,1);
+  publicationABSTRACTs.splice(removeIndex,1);
+  publicationCOMMENTARYs.splice(removeIndex,1);
+  
+  drawPublications();
+}
+
+
+  #foreach($resource in $om.getPublications_publication())
+    publicationIDs.push("$!resource.getXnatAbstractresourceId()");
+    publicationDOIs.push("$!resource.getDoi()");
+    publicationPUBMEDs.push("$!resource.getPubmed()");
+    publicationMEDLINEs.push("$!resource.getMedline()");
+    publicationURIs.push("$!resource.getUri()");
+    publicationOTHERs.push("$!resource.getOther()");
+    publicationTYPEs.push("$!resource.getType()");
+    publicationTITLEs.push("$!resource.getTitle()");
+    publicationCITATIONs.push("$!resource.getCitation()");
+    publicationABSTRACTs.push("$!resource.getAbstract()");
+    publicationCOMMENTARYs.push("$!resource.getCommentary()");
+  #end
+
+drawPublications();
+	</script>
+	
+	<!--RESOURCES-->
+				<TR><TH COLSPAN=2 align="left"><DIV class="edit_header3">Resources</div></TH></TR>
+			<TR><TD COLSPAN=2>
+			#set($removeCount =300)
+#set($resourceCount = $project.getResources_resource().size())
+			<TABLE>
+			<TR>
+			#if(!$resourceCount)
+			  #set($resourceCount = 0)
+		#else
+			<TH>Remove</TH>
+			#end
+			<TH>Label</TH><TH>Link</TH><TH>Description</TH></TR>
+#set($resourceCount = $resourceCount + 5)
+#foreach($n in [0..$resourceCount])
+#set($resource_id=$item.getProperty("xnat:projectData/resources/resource[$n]/xnat_abstractResource_id"))
+<INPUT type="hidden" name="xnat:projectData/resources/resource[@xsi:type='xnat:resource'][$n]/xnat_abstractResource_id" value="$!resource_id"/>
+<TR>
+#if($resourceCount > 5)
+  <TD>
+    #if($resource_id)
+    <INPUT TYPE="checkbox" NAME="REMOVE__${removeCount}=xnat:resource.xnat_abstractResource_id" VALUE="$!resource_id"/>
+    #end
+  </TD>
+#end
+<TD><INPUT type="text" name="xnat:projectData/resources/resource[@xsi:type='xnat:resource'][$n]/label" value="$!item.getProperty("xnat:projectData/resources/resource[$n]/label")"/></TD>
+<TD><INPUT type="text" name="xnat:projectData/resources/resource[@xsi:type='xnat:resource'][$n]/uri" value="$!item.getProperty("xnat:projectData/resources/resource[$n]/uri")"/></TD>
+<TD><INPUT type="text" name="xnat:projectData/resources/resource[@xsi:type='xnat:resource'][$n]/description" value="$!item.getProperty("xnat:projectData/resources/resource[$n]/description")"/></TD>
+</TR>
+			#set($removeCount =$removeCount + 1)
+#end
+</TABLE>
+			</TD></TR>
+		<TR><TD COLSPAN=2 ALIGN=right>&nbsp;</TD></TR>
+		<TR><TD ALIGN="left"><input type="button" name="eventSubmit_doPerform" onclick="history.go(-1)" value="Cancel"/></TD><TD ALIGN=right><input type="submit" name="eventSubmit_doPerform" value="Submit"/></TD></TR>
+
+</TABLE>
+		#xdatEditProps($item $edit_screen)
+</form>

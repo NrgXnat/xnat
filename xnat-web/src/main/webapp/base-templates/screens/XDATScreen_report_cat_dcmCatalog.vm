@@ -1,0 +1,349 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("DCMCatalog Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>DCMCatalog Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("cat:dcmCatalog/ID")</TD></TR>
+							<TR><TD>name</TD><TD>$!item.getStringProperty("cat:dcmCatalog/name")</TD></TR>
+							<TR><TD>description</TD><TD>$!item.getStringProperty("cat:dcmCatalog/description")</TD></TR>
+							<TR><TD>dimensions/x</TD><TD>$!item.getIntegerProperty("cat:dcmCatalog/dimensions/x")</TD></TR>
+							<TR><TD>dimensions/y</TD><TD>$!item.getIntegerProperty("cat:dcmCatalog/dimensions/y")</TD></TR>
+							<TR><TD>dimensions/z</TD><TD>$!item.getIntegerProperty("cat:dcmCatalog/dimensions/z")</TD></TR>
+							<TR><TD>dimensions/volumes</TD><TD>$!item.getIntegerProperty("cat:dcmCatalog/dimensions/volumes")</TD></TR>
+							<TR><TD>voxelRes/x</TD><TD>$!item.getDoubleProperty("cat:dcmCatalog/voxelRes/x")</TD></TR>
+							<TR><TD>voxelRes/y</TD><TD>$!item.getDoubleProperty("cat:dcmCatalog/voxelRes/y")</TD></TR>
+							<TR><TD>voxelRes/z</TD><TD>$!item.getDoubleProperty("cat:dcmCatalog/voxelRes/z")</TD></TR>
+							<TR><TD>voxelRes/units</TD><TD>$!item.getStringProperty("cat:dcmCatalog/voxelRes/units")</TD></TR>
+							<TR><TD>orientation</TD><TD>$!item.getStringProperty("cat:dcmCatalog/orientation")</TD></TR>
+							<TR><TD>UID</TD><TD>$!item.getStringProperty("cat:dcmCatalog/UID")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN cat:dcmCatalog -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($cat_catalog_metaField_1_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/metaFields/metaField").size() - 1)
+							#if($cat_catalog_metaField_1_NUM_ROWS>=0)
+								#foreach($cat_catalog_metaField_1_COUNTER in [0..$cat_catalog_metaField_1_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>metaField</TD><TD>$!item.getStringProperty("cat:dcmCatalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER]/metaField")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("cat:dcmCatalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END cat:dcmCatalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($cat_catalog_tag_2_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/tags/tag").size() - 1)
+							#if($cat_catalog_tag_2_NUM_ROWS>=0)
+								#foreach($cat_catalog_tag_2_COUNTER in [0..$cat_catalog_tag_2_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/tags/tag[$cat_catalog_tag_2_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/tags/tag[$cat_catalog_tag_2_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>tag</TD><TD>$!item.getStringProperty("cat:dcmCatalog/tags/tag[$cat_catalog_tag_2_COUNTER]/tag")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END cat:dcmCatalog/tags/tag[$cat_catalog_tag_2_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($cat_catalog_3_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/sets/entrySet").size() - 1)
+							#if($cat_catalog_3_NUM_ROWS>=0)
+								#foreach($cat_catalog_3_COUNTER in [0..$cat_catalog_3_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>ID</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/ID")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/name")</TD></TR>
+													<TR><TD>description</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/description")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($cat_catalog_metaField_4_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/metaFields/metaField").size() - 1)
+													#if($cat_catalog_metaField_4_NUM_ROWS>=0)
+														#foreach($cat_catalog_metaField_4_COUNTER in [0..$cat_catalog_metaField_4_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/metaFields/metaField[$cat_catalog_metaField_4_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/metaFields/metaField[$cat_catalog_metaField_4_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>metaField</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/metaFields/metaField[$cat_catalog_metaField_4_COUNTER]/metaField")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/metaFields/metaField[$cat_catalog_metaField_4_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/metaFields/metaField[$cat_catalog_metaField_4_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($cat_catalog_tag_5_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/tags/tag").size() - 1)
+													#if($cat_catalog_tag_5_NUM_ROWS>=0)
+														#foreach($cat_catalog_tag_5_COUNTER in [0..$cat_catalog_tag_5_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/tags/tag[$cat_catalog_tag_5_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/tags/tag[$cat_catalog_tag_5_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/tags/tag[$cat_catalog_tag_5_COUNTER]/tag")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/tags/tag[$cat_catalog_tag_5_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($cat_entry_6_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry").size() - 1)
+													#if($cat_entry_6_NUM_ROWS>=0)
+														#foreach($cat_entry_6_COUNTER in [0..$cat_entry_6_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>URI</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/URI")</TD></TR>
+																			<TR><TD>ID</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/ID")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/name")</TD></TR>
+																			<TR><TD>description</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/description")</TD></TR>
+																			<TR><TD>format</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/format")</TD></TR>
+																			<TR><TD>content</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/content")</TD></TR>
+																			<TR><TD>cachePath</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/cachePath")</TD></TR>
+																			<TR><TD>createdTime</TD><TD>$!item.getProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/createdTime")</TD></TR>
+																			<TR><TD>createdBy</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/createdBy")</TD></TR>
+																			<TR><TD>createdEventId</TD><TD>$!item.getIntegerProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/createdEventId")</TD></TR>
+																			<TR><TD>modifiedTime</TD><TD>$!item.getProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/modifiedTime")</TD></TR>
+																			<TR><TD>modifiedBy</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/modifiedBy")</TD></TR>
+																			<TR><TD>modifiedEventId</TD><TD>$!item.getIntegerProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/modifiedEventId")</TD></TR>
+																			<TR><TD>digest</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/digest")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE><TR><TD>
+																			#set($cat_entry_metaField_7_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/metaFields/metaField").size() - 1)
+																			#if($cat_entry_metaField_7_NUM_ROWS>=0)
+																				#foreach($cat_entry_metaField_7_COUNTER in [0..$cat_entry_metaField_7_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/metaFields/metaField[$cat_entry_metaField_7_COUNTER] -->
+																					<TABLE>
+																						<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/metaFields/metaField[$cat_entry_metaField_7_COUNTER]</font></TH></TR>
+																						<TR>
+																							<TD align="left" valign="top">
+																								<TABLE>
+																									<TR><TD>metaField</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/metaFields/metaField[$cat_entry_metaField_7_COUNTER]/metaField")</TD></TR>
+																									<TR><TD>name</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/metaFields/metaField[$cat_entry_metaField_7_COUNTER]/name")</TD></TR>
+																								</TABLE>
+																							</TD>
+																						</TR>
+																					</TABLE>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/metaFields/metaField[$cat_entry_metaField_7_COUNTER] -->
+																				#end
+																			#end
+																		</TD></TR></TABLE>
+																	</TD>
+																</TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE><TR><TD>
+																			#set($cat_entry_tag_8_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/tags/tag").size() - 1)
+																			#if($cat_entry_tag_8_NUM_ROWS>=0)
+																				#foreach($cat_entry_tag_8_COUNTER in [0..$cat_entry_tag_8_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/tags/tag[$cat_entry_tag_8_COUNTER] -->
+																					<TABLE>
+																						<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/tags/tag[$cat_entry_tag_8_COUNTER]</font></TH></TR>
+																						<TR>
+																							<TD align="left" valign="top">
+																								<TABLE>
+																									<TR><TD>tag</TD><TD>$!item.getStringProperty("cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/tags/tag[$cat_entry_tag_8_COUNTER]/tag")</TD></TR>
+																								</TABLE>
+																							</TD>
+																						</TR>
+																					</TABLE>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER]/tags/tag[$cat_entry_tag_8_COUNTER] -->
+																				#end
+																			#end
+																		</TD></TR></TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER]/entries/entry[$cat_entry_6_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_3_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($cat_entry_9_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/entries/entry").size() - 1)
+							#if($cat_entry_9_NUM_ROWS>=0)
+								#foreach($cat_entry_9_COUNTER in [0..$cat_entry_9_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>URI</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/URI")</TD></TR>
+													<TR><TD>ID</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/ID")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/name")</TD></TR>
+													<TR><TD>description</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/description")</TD></TR>
+													<TR><TD>format</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/format")</TD></TR>
+													<TR><TD>content</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/content")</TD></TR>
+													<TR><TD>cachePath</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/cachePath")</TD></TR>
+													<TR><TD>createdTime</TD><TD>$!item.getProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/createdTime")</TD></TR>
+													<TR><TD>createdBy</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/createdBy")</TD></TR>
+													<TR><TD>createdEventId</TD><TD>$!item.getIntegerProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/createdEventId")</TD></TR>
+													<TR><TD>modifiedTime</TD><TD>$!item.getProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/modifiedTime")</TD></TR>
+													<TR><TD>modifiedBy</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/modifiedBy")</TD></TR>
+													<TR><TD>modifiedEventId</TD><TD>$!item.getIntegerProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/modifiedEventId")</TD></TR>
+													<TR><TD>digest</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/digest")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($cat_entry_metaField_10_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/metaFields/metaField").size() - 1)
+													#if($cat_entry_metaField_10_NUM_ROWS>=0)
+														#foreach($cat_entry_metaField_10_COUNTER in [0..$cat_entry_metaField_10_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/metaFields/metaField[$cat_entry_metaField_10_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/metaFields/metaField[$cat_entry_metaField_10_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>metaField</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/metaFields/metaField[$cat_entry_metaField_10_COUNTER]/metaField")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/metaFields/metaField[$cat_entry_metaField_10_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/metaFields/metaField[$cat_entry_metaField_10_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($cat_entry_tag_11_NUM_ROWS=$item.getChildItems("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/tags/tag").size() - 1)
+													#if($cat_entry_tag_11_NUM_ROWS>=0)
+														#foreach($cat_entry_tag_11_COUNTER in [0..$cat_entry_tag_11_NUM_ROWS])
+<!-- BEGIN cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/tags/tag[$cat_entry_tag_11_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/tags/tag[$cat_entry_tag_11_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/tags/tag[$cat_entry_tag_11_COUNTER]/tag")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER]/tags/tag[$cat_entry_tag_11_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END cat:dcmCatalog/entries/entry[$cat_entry_9_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END cat:dcmCatalog -->
+		</TD>
+	</TR>
+</TABLE>

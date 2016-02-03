@@ -1,0 +1,66 @@
+<ul>
+#foreach($f in $files)
+<li>$!f.toString()</li>
+#end
+</ul>
+ 
+<script src="$content.getURI("scripts/yui/build/animation/animation-min.js")" type="text/javascript"></script>
+<script src="$content.getURI("scripts/yui/build/calendar/calendar-min.js")" type="text/javascript"></script>
+<style type="text/css">   
+  .icon-of { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/of.gif")) no-repeat;}   
+  .icon-f { display:block; font-size:11px; height: 17px; padding-left: 4px;}
+  .icon-cf { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/cf.gif")) no-repeat;}
+  .opaque {
+	-ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+	filter: alpha(opacity=50);
+   }
+   
+  DIV.treeInnerContainer{background-color: white;border: 1px solid #AAAAAA;padding:5px;} 
+  DIV.treeOuterContainer{background-color: CCCC99;border: 1px solid #AAAAAA;margin:10px;padding:2px;}  
+   #total_container{background-color: rgb(223, 223, 223);border: 1px solid #AAAAAA;}
+   #leftTreeOuterContainer{float:left;}
+   #rightTreeOuterContainer{float:right;}
+   #actionBar{clear:both;text-align:right;padding:3px;}
+</style>
+
+##setup html
+<div id="total_container">
+	<div id="both_trees">
+		<div id="leftTreeOuterContainer" class="treeOuterContainer">
+			<div class="treeTitle">Uploaded Files</div>
+			<div id="leftTreeInnerContainer" class="treeInnerContainer">
+				<div id="srcTree"></div>
+			</div>
+		</div>
+		<div id="rightTreeOuterContainer" class="treeOuterContainer">
+			<div class="treeTitle">Destination Directories</div>
+			<div id="rightTreeInnerContainer" class="treeInnerContainer">
+				<div id="destTree"></div>
+			</div>
+		</div>
+	</div>
+
+	<div id="actionBar">
+		<input id="move_files_button" type="button" value="Move Files" ONCLICK="XNAT.app.uca.moveSelected();"/>
+		<input id="reset_button" type="button" value="Reset" ONCLICK="window.location.reload()"/>
+	</div>
+</div>
+
+
+##load data into javascript
+<script type="text/javascript">
+if(XNAT.app==undefined){
+	XNAT.app=new Object();
+}
+if(XNAT.app.uca==undefined){
+	XNAT.app.uca=new Object();
+}
+
+XNAT.app.uca.userURI="$user_path"
+
+XNAT.app.uca.src=$srcFiles.toString();
+
+XNAT.app.uca.dest=$destFiles.toString();
+</script>
+
+<script src="$content.getURI("scripts/userCacheFileAssignment/ucfa.js")" type="text/javascript"></script>

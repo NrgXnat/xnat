@@ -1,0 +1,16 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("My XNAT")
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+
+#if($data.getSession().getAttribute("user").getUsername()!="guest")
+#parse("screens/XDATScreen_change_email.vm")
+<br /><br />
+#parse("screens/XDATScreen_password.vm")
+#end
+#*<A href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","password")">Change Password</a><br>*#
+#*<A href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","change_email")">Change Email</a>*#
+
+
+

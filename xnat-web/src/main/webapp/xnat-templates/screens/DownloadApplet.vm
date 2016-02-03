@@ -1,0 +1,36 @@
+<!-- BEGIN: plugin-resources/webapp/xnat-templates/screens/DownloadApplet.vm -->
+<h2>Download Images</h2>
+<table border="0" >
+    <tr  bgcolor="white">
+        <td style="border-style:none;"  valign="top" align="left" colspan="2">
+		    <applet code="org.nrg.xnat.fileManager.DownloaderApplet" codebase="$appletPath" archive="file-downloader-1.6.5.jar, xdat-beans-1.6.5.jar, nrgutil-2.0.0.jar, commons-lang-2.6.jar, log4j-1.2.17.jar" width="500" height="500">
+			    <param name="session0" value="$catalogXML">
+			    <param name="jsessionid" value="$jsessionid">
+            </applet>
+       </td>
+    </tr>
+    <tr style="border-style:none;">
+        <td style="border-style:none;" colspan="2" >
+        </td>
+    </tr>
+</table>
+<script type="text/javascript">
+	var stopTime=(new Date());
+	//persist the JSESSION for up to 1 day.
+	stopTime.setDate(stopTime.getDate() + 1); 
+	
+    jq(document).ready(function() {
+        // add "applet" class to body to support special handling for applets
+        jq('body').addClass('applet');
+		
+		
+
+        // / refresh timeout interval so applet doesn't lose its session.
+        setInterval(function(){
+			if(stopTime.getTime()>(new Date()).getTime()){
+    			XNAT.app.timeout.handleOk();
+			}
+		},60000);
+    });
+</script>
+<!-- END: plugin-resources/webapp/xnat-templates/screens/DownloadApplet.vm -->

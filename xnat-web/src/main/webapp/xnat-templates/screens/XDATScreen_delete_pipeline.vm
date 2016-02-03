@@ -1,0 +1,32 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$data.setLayoutTemplate("Popup.vm")
+$page.setTitle("Remove Pipeline")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ManagePipeline")">
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+
+
+<TABLE width="100%">
+	<TR>
+		<TD>Are you sure you want to remove the pipeline $turbineUtils.GetPassedParameter("path",$data) from the repository? </TD>
+	</TR>
+
+	<TR>
+		<TD  align="center"><input type="button" ONCLICK="javascript:window.close();" value="Close"/>&nbsp;&nbsp;&nbsp;<input type="submit"  name="eventSubmit_doDelete" value="Delete"/></TD>
+	</TR>
+</TABLE>
+<input type="hidden" name="task" value="DELETE"/>
+<input type="hidden" name="search_element" value="pipe:pipelinedetails"/>
+<input type="hidden" name="search_field" value="pipe:pipelinedetails.path"/>
+<input type="hidden" name="search_value" value="$turbineUtils.GetPassedParameter('path',$data)"/>
+
+</form>
+

@@ -1,0 +1,208 @@
+#* @vtlvariable name="initialize" type="java.lang.Boolean" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+<!-- title: Site Information -->
+<!-- divName: siteInfo -->
+<div class="mgmt_container">
+
+    <div id="site_info_mgmt_div">
+        <script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
+        <script>
+            /* XNAT uses the Epic Editor markdown editor.
+             * Documentation: http://epiceditor.com/
+             * Source: https://github.com/OscarGodson/EpicEditor
+             */
+
+            // configure markdown editor for site description
+            jq(document).ready(function(){
+                var editor = new EpicEditor({ basePath: "$content.getURI("scripts/lib/epicEditor")", textarea: "siteDescriptionText", autogrow: true }).load();
+            });
+
+            function changeSiteDescriptionType(radioEl){
+                var text = $('#epiceditor_container');
+                var page = $('#siteDescriptionPage');
+                if (window.siteInfoManager) {
+                    window.siteInfoManager.dirtyForm();
+                }
+                if($(radioEl).val() == 'Text'){
+                    text.show();
+                    page.hide();
+                } else {
+                    page.show();
+                    text.hide();
+                }
+            };
+        </script>
+
+        <div class="row">
+            <label for="siteId">Site ID</label>
+            <input size="30" type="text" id="siteId" onchange="this.value=stringCamelCaps(this.value); window.siteInfoManager.dirtyForm();" />
+            <small>The id used to refer to this site (also used to generate database ids). No spaces or non-alphanumeric characters. It should be a short,
+                one-word name or acronym which describes your site.</small>
+        </div>
+        <div class="row">
+            <table>
+                <tr valign="top">
+                    <td><label for="siteDescription" style="vertical-align: top;">Site Description <br />(Displayed on Login Page)</label></td>
+                    <td><input type="radio" name="siteDescriptionType" id="siteDescriptionTypePage" value="Page" onchange="changeSiteDescriptionType(this);">
+                        <label for="siteDescriptionTypePage" style="width:50px;">&nbsp;Page</label>
+                        <input size="30" type="text" name="siteDescriptionPage" id="siteDescriptionPage" onchange="window.siteInfoManager.dirtyForm();" style="display: none;" />
+                        <br />
+                        <input type="radio" name="siteDescriptionType" id="siteDescriptionTypeText" value="Text" onchange="changeSiteDescriptionType(this);" checked="checked">
+                        <label for="siteDescriptionTypeText" style="width:50px;">&nbsp;Text</label>
+                    </td>
+                </tr>
+            </table>
+
+            <div id="epiceditor_container">
+                <small>XNAT allows you to use <a href="https://help.github.com/articles/github-flavored-markdown/" target="_blank">GitHub-flavored Markdown</a> to create and format your own site description. A tutorial for basic usage can be found here: <a href="https://help.github.com/articles/markdown-basics" target="_blank">https://help.github.com/articles/markdown-basics</a>. </small>
+                <textarea name="siteDescriptionText" id="siteDescriptionText" class="hidden" onchange="window.siteInfoManager.dirtyForm();"></textarea>
+                <div id="epiceditor" style="margin: 1em 0;"></div>
+            </div>
+        </div>
+
+        <div class="row">
+            <label for="siteUrl">Site URL</label>
+            <input size="30" type="text" id="siteUrl" onchange="window.siteInfoManager.dirtyForm();" />
+            <small>The address you want visible to users in emails, and other external links.  This should be a functional address (i.e. if the user pasted
+                this address in their web browser, they should come to the site).  localhost only works if the web browser is located on the same machine.
+                You are required to guarantee that this address is functional for reaching the site.</small>
+        </div>
+
+        <div class="row">
+            <label for="siteAdminEmail">Site Admin Email Address</label>
+            <input size="30" type="text" id="siteAdminEmail" onchange="window.siteInfoManager.dirtyForm();" />
+            <small>The administrative email account to receive system emails. This address will receive frequent emails on system events, such as errors,
+                processing completion, new user registration and so on.  The number of emails can be configured on the
+                <a class="iframe-dialog" href="$link.setPage("XDATScreen_emailSpecifications.vm").addPathInfo("popup","true")">Administer &gt; More Options... &gt; Set email settings</a> dialog.</small>
+        </div>
+
+        <div class="row">
+            <label for="siteLoginLanding">Site Login Landing Page</label>
+            <input size="30" type="text" name="siteLoginLanding" id="siteLoginLanding" onchange="window.siteInfoManager.dirtyForm();" />
+            <label for="siteLandingLayout" style="padding-left: 20px; width: 50px;">Layout</label>
+            <select name="siteLandingLayout" id="siteLandingLayout" value="menu" onchange="window.siteInfoManager.dirtyForm();">
+                <option value="/Index.vm">Menu</option>
+                <option value="/NoMenu.vm">No Menu</option>
+                <option value="/Noninteractive.vm">Non-Interactive</option>
+            </select>
+            <small>The page and default layout users will land on immediately after logging in.</small>
+            <br/>
+            <label for="siteHome">Site Home Page</label>
+            <input size="30" type="text" name="siteHome" id="siteHome" onchange="window.siteInfoManager.dirtyForm();" />
+            <label for="siteHomeLayout" style="padding-left: 20px; width: 50px;">Layout</label>
+            <select name="siteHomeLayout" id="siteHomeLayout" value="menu" onchange="window.siteInfoManager.dirtyForm();">
+                <option value="/Index.vm">Menu</option>
+                <option value="/NoMenu.vm">No Menu</option>
+                <option value="/Noninteractive.vm">Non-Interactive</option>
+            </select>
+            <small>The page and default layout users will land on by clicking the "Home" link in the menu bar.</small>
+        </div>
+
+        <div class="row">
+            <label for="showapplet">Applet Link</label>
+            <input type="checkbox" id="showapplet" onchange="window.siteInfoManager.dirtyForm();" />
+            <small>Should a prominent link to the applet show up on the left bar of the index page?</small>
+        </div>
+
+        <div class="row">
+            <label for="UI.debug-extension-points" style="width: 290px;">Show points in UI where new VM content can be added dynamically. (development only)</label>
+            <input type="checkbox" id="UI.debug-extension-points" onchange="window.siteInfoManager.dirtyForm();" />
+            <small>
+                Should this site display highlighted divs at every point where new VM content can be dynamically added?  If turned on, the divs will show up
+                listing the directory where new VMs can be added and will be dynamically added into the UI.  FYI, new dynamically-added VMs often require a
+                server restart to be included. This setting should never be enabled on a production server.
+            </small>
+        </div>
+
+    </div>
+
+    <div class="buttons">
+        <input type="button" class="submit" value="Save" name="eventSubmit_doPerform" id="siteInfo_save_button" onclick="window.siteInfoManager.saveTabSettings();"/>&nbsp;
+        <input type="button" class="reset" value="Reset" name="eventSubmit_doReset" id="siteInfo_reset_button" onclick="window.siteInfoManager.resetForm();" disabled/>
+    </div>
+
+</div>
+
+<script type="text/javascript">
+
+    jq('a.iframe-dialog').click(function(e){
+        e.preventDefault();
+        var link = this.href;
+        XNAT.ui.dialog.iframe({
+            src: link,
+            width: '80%',
+            height: '80%',
+            minHeight: 540,
+            minWidth: 720,
+            maxWidth: 960,
+            title: link,
+            titleStyle: 'visibility:hidden;opacity:0;',
+            onClose: function(){
+                xmodal.loading.open('Please wait...');
+                window.top.location.reload(true);
+            },
+            okLabel: 'Done'
+            //footer: false
+        });
+    });
+
+
+    function configurationSiteInfoTabChange(obj) {
+        if(obj.newValue.get("href")=="#siteInfo") {
+            initializeSiteInfoMgmtTab();
+        }
+    }
+
+    function addSiteInfoMgmtMonitor(){
+        if(window.configurationTabView.get("activeTab").get("href")=="#siteInfo") {
+            initializeSiteInfoMgmtTab();
+        } else {
+            window.configurationTabView.subscribe("activeTabChange", configurationSiteInfoTabChange);
+        }
+    }
+
+    function initializeSiteInfoMgmtTab() {
+        if(window.siteInfoManager==undefined) {
+            if (window.initializing) {
+                var postLoad = function() {
+                    if(window.anonymizationManager==undefined) {
+                        window.anonymizationManager = new SettingsTabManager('anonymization_mgmt_div', 'anonymization');
+                    }
+                    if(window.appletManager==undefined) {
+                        window.appletManager = new SettingsTabManager('applet_mgmt_div', 'applet');
+                    }
+                    if(window.dicomReceiverManager==undefined) {
+                        window.dicomReceiverManager = new SettingsTabManager('dicom_receiver_mgmt_div', 'dicomReceiver');
+                    }
+                    if(window.fileSystemManager==undefined) {
+                        window.fileSystemManager = new SettingsTabManager('file_system_mgmt_div', 'fileSystem');
+                    }
+                    if(window.securityManager==undefined) {
+                        window.securityManager = new SettingsTabManager('security_mgmt_div', 'security');
+                    }
+                    if(window.notificationsManager==undefined) {
+                        window.notificationsManager = new SettingsTabManager('notifications_mgmt_div', 'notifications');
+                    }
+                    if(window.registrationManager==undefined) {
+                        window.registrationManager = new SettingsTabManager('registration_mgmt_div', 'registration');
+                    }
+                    if(window.seriesImportFilterManager==undefined) {
+                        window.seriesImportFilterManager = new SettingsTabManager('seriesImportFilter_mgmt_div', 'seriesImportFilter');
+                    }
+                    if(window.petTracerManager==undefined) {
+                        window.petTracerManager = new SettingsTabManager('tracers_mgmt_div', 'tracers');
+                    }
+                    if(window.scanTypeMappingManager==undefined) {
+                        window.scanTypeMappingManager = new SettingsTabManager('scanTypeMapping_mgmt_div', 'scanTypeMapping');
+                    }
+                };
+            }
+            window.siteInfoManager = new SettingsTabManager('site_info_mgmt_div', 'siteInfo', postLoad);
+        } else {
+            window.siteInfoManager = new SettingsTabManager('site_info_mgmt_div', 'siteInfo');
+        }
+    }
+
+    YAHOO.util.Event.onDOMReady(addSiteInfoMgmtMonitor);
+    putConfigurationControls('siteInfo', ['siteId','UI.debug-extension-points', 'siteDescriptionType', 'siteDescriptionText', 'siteDescriptionPage', 'siteUrl', 'siteAdminEmail', 'siteLoginLanding', 'siteLandingLayout', 'siteHome', 'siteHomeLayout', 'showapplet']);
+</script>

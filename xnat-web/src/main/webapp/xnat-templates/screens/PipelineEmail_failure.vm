@@ -1,0 +1,57 @@
+<p>The pipeline $pipelineName encountered an error.
+</p>
+
+<ul>
+    <li/>User: <a href="mailto:$user.getEmail()">$user.getUsername()</a>
+    <li/>Project: $expt.getProject()
+    <li/>Experiment: $expt.getLabel()
+    <li/>Pipeline Step: $workflow.getCurrentStepId()
+</ul>
+<p>
+The $system technical team is aware of the issue and will notify you when it has been resolved.
+<br/>
+We appreciate your patience. Please contact <a href="$admin_email">$admin_email</a> with questions or concerns.
+</p>
+
+#if (!$attachments.isEmpty())
+    #if (${stdout} && ${stderr})
+        <p>The stdout and stderr log files are attached.</p>
+    #elseif(${stdout})
+        <p>The stdout log file is attached.</p>
+    #elseif(${stderr})
+        <p>The stderr log file is attached.</p>
+    #end
+#end
+
+#if (!$pipelineParamsMap.isEmpty())
+    <p>
+        <h3>PIPELINE PARAMETERS</h3>
+        <table size="2">
+        #foreach($paramEntry in $pipelineParamsMap.entrySet())
+            #if ("$!{paramEntry.key}"!="")
+            <tr>
+                <td>$paramEntry.key</td><td>$paramEntry.value</td>
+            </tr>
+            #end
+        #end
+        </table>
+    </p>
+#end
+
+#if ($stdout)
+    <p>
+        <h3>TAIL stdout</h3>
+        #foreach($line in $stdout)
+            <br/>$line
+        #end
+    </p>
+#end
+
+#if ($stderr)
+    <p>
+        <h3>TAIL stderr</h3>
+        #foreach($line in $stderr)
+            <br/>$line
+        #end
+    </p>
+#end

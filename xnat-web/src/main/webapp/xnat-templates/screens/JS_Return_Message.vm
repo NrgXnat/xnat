@@ -1,0 +1,3 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("ScreenOnly.vm")
+<div class="alert">$data.getMessage()</div>

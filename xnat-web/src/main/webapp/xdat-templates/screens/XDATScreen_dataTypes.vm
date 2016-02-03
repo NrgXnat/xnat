@@ -1,0 +1,161 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+#parse("/screens/admin_bar.vm")
+
+#set ( $url = $link.setPage("XDATScreen_add_xdat_element_security.vm").addPathInfo("popup","true")  )
+
+<div id="data-type-list" class="admin-content">
+
+    <div class="header">
+        <b>Data Types</b>
+        <i>|</i>
+        <button id="setup-data-type" type="button"
+            ##data-url="$url"
+            ##onclick="return popupCentered('$url','Edit',960,720,3);"
+            onclick="XNAT.app.adminPopupDialog('$url')"
+            class="btn1 btn-sm">Setup Additional Data Type</button>
+    </div>
+
+    <form name="form1" method="post" action="$link.setAction("ManageDataTypes")">
+
+        <div class="data-table" style="margin-bottom:15px;">
+            <table id="data-type-table" class="xnat-table clean sortable">
+            <tr>
+                <th class="sort"><b>Element</b></th>
+                <th class="sort">
+                    <span title="Term used to describe one instance of this data.">Singular</span>
+                </th>
+                <th class="sort">
+                    <span title="Term used to describe more than one occurrence of this data.">Plural</span>
+                </th>
+                <th class="sort">
+                    <span title="Short code used in the creation of IDs">Code</span>
+                </th>
+                <th class="sort">
+                    <span title="Whether or not unspecified users can use this data-type in its $displayManager.getPluralDisplayNameForProject().toLowerCase().">Accessible</span>
+                </th>
+                <th class="sort">
+                    <span title="Whether or not access to data of this type should be restricted.">Secured</span>
+                </th>
+                <th class="sort">
+                    <span title="Whether or not data of this type should be searchable.">Searchable</span>
+                </th>
+                <th class="sort">
+                    <span title="Whether or not data of this type should be browseable.">Browseable</span>
+                </th>
+                <th class="sort">
+                    <span title="The order in which data types will show up in listings.">Sequence</span>
+                </th>
+            </tr>
+            #set($dt_count=0)
+            #set($row=0)
+            #foreach($data_type in $data_types)
+                #if($row==0)
+                <tr class="highlight">
+                    #set($row=1)
+                #else
+                <tr class="highlight">
+                    #set($row=0)
+                #end
+
+                #set ( $url = $link.setAction("DisplayItemAction").addPathInfo("search_element","xdat:element_security").addPathInfo("search_field","xdat:element_security.element_name").addPathInfo("search_value","$!data_type.getProperty('element_name')").addPathInfo("popup","true")  )
+
+                <td>
+                    <a class="data-type-link" target="_blank" href="$url">$!data_type.getProperty("element_name")</a>
+                </td>
+                <td>
+                    <i class="hidden">$!data_type.getProperty("singular")</i>
+                    <input type="text" value="$!data_type.getProperty("singular")"
+                            id="xdat:security/element_security_set/element_security[$dt_count]/singular"
+                            name="xdat:security/element_security_set/element_security[$dt_count]/singular"
+                            size="25">
+                </td>
+                <td>
+                    <i class="hidden">$!data_type.getProperty("plural")</i>
+                    <input type="text" value="$!data_type.getProperty("plural")"
+                            id="xdat:security/element_security_set/element_security[$dt_count]/plural"
+                            name="xdat:security/element_security_set/element_security[$dt_count]/plural"
+                            size="25">
+                </td>
+                <td class="center">
+                    <i class="hidden">$!data_type.getProperty("code")</i>
+                    <input type="text" value="$!data_type.getProperty("code")"
+                            id="xdat:security/element_security_set/element_security[$dt_count]/code"
+                            name="xdat:security/element_security_set/element_security[$dt_count]/code"
+                            size="5" maxlength="5">
+                </td>
+                <td class="center">
+                    <i class="hidden">#if($!data_type.getBooleanProperty("accessible")) 1 #else 2 #end</i>
+                    <input type="checkbox" #if($!data_type.getBooleanProperty("accessible"))checked#end
+                            id="xdat:security/element_security_set/element_security[$dt_count]/accessible"
+                            name="xdat:security/element_security_set/element_security[$dt_count]/accessible"
+                            value="true">
+                </td>
+                <td class="center">
+                    <i class="hidden">#if($!data_type.getBooleanProperty("secure")) 1 #else 2 #end</i>
+                    <input type="checkbox" #if($!data_type.getBooleanProperty("secure"))checked#end
+                            id="xdat:security/element_security_set/element_security[$dt_count]/secure"
+                            name="xdat:security/element_security_set/element_security[$dt_count]/secure"
+                            value="true">
+                </td>
+                <td class="center">
+                    <i class="hidden">#if($!data_type.getBooleanProperty("searchable")) 1 #else 2 #end</i>
+                    <input type="checkbox" #if($!data_type.getBooleanProperty("searchable"))checked#end
+                            id="xdat:security/element_security_set/element_security[$dt_count]/searchable"
+                            name="xdat:security/element_security_set/element_security[$dt_count]/searchable"
+                            value="true">
+                </td>
+                <td class="center">
+                    <i class="hidden">#if($!data_type.getBooleanProperty("browse")) 1 #else 2 #end</i>
+                    <input type="checkbox" #if($!data_type.getBooleanProperty("browse"))checked#end
+                            id="xdat:security/element_security_set/element_security[$dt_count]/browse"
+                            name="xdat:security/element_security_set/element_security[$dt_count]/browse"
+                            value="true">
+                </td>
+                <td class="center">
+                    <i class="hidden">$!data_type.getProperty("sequence")</i>
+                    <input type="text" value="$!data_type.getProperty("sequence")"
+                            id="xdat:security/element_security_set/element_security[$dt_count]/sequence"
+                            name="xdat:security/element_security_set/element_security[$dt_count]/sequence"
+                            size="2" maxlength="2">
+                    <input type="hidden" value="$!data_type.getProperty("element_name")"
+                            id="xdat:security/element_security_set/element_security[$dt_count]/element_name"
+                            name="xdat:security/element_security_set/element_security[$dt_count]/element_name">
+                    #set($dt_count=$dt_count + 1)
+                </td>
+            </tr>
+            #end
+        </table>
+
+        </div>
+
+        <input type="submit" class="btn1" style="float:right;" value="Save">
+
+        <div class="clear"></div>
+
+    </form>
+
+</div>
+
+<script type="text/javascript">
+
+    jq('a.data-type-link').click(function(e){
+        e.preventDefault();
+        XNAT.app.adminPopupDialog(this.href);
+        //popupCentered(this.href,' ',960,720,3)
+    });
+
+    ts_makeSortable(document.getElementById('data-type-table'));
+
+    //jq('#data-type-table').tableSort();
+
+</script>

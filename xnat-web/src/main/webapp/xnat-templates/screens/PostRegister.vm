@@ -1,0 +1,16 @@
+#set ($template = $data.getTemplateInfo())
+$page.setTitle("Thank You For Registering")
+$!template.setLayoutTemplate("Login.vm")
+<div id="login_area">
+ #if($data.getMessage())
+     <div class="message" style="border-bottom: 0">
+         <p><strong>Note: </strong><br />$data.getMessage()</p>
+     </div>
+ #end
+
+    <div>
+        <h1>Registration Received</h1>
+        <p>Thank you for your interest in our site. Your user account will be reviewed and enabled by the site administrator. When this is complete, you will receive an email inviting you to login to the site.</p>
+        <p style="margin-top: 1em;"><a href="$link.setPage("Login.vm")"><button class="btn btn2">Go to the Login Screen</button></a></p>
+    </div>
+</div>

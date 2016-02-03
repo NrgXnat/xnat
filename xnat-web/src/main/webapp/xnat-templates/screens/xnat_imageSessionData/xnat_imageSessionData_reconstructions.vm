@@ -1,0 +1,142 @@
+<!-- BEGIN imageSessionData/xnat_imageSessionData_reconstructions.vm -->
+<script type="text/javascript" src="$content.getURI('scripts/restLister.js')"></SCRIPT>
+<script type="text/javascript">
+	var info = {};
+	info.uri=serverRoot + "/REST/experiments/$!om.getId()";
+   	info.category="reconstructions";
+   	var temp=new restLister(info);
+	temp.init();
+
+    function collectFiles(id){
+		clearFiles(id);
+		var list = [];
+		var tbod = document.getElementById("FILES_scan" + id);
+		var scan = null;
+		var allscans=temp.info.scans;
+		for(var rScanC=0;rScanC<allscans.length;rScanC++){
+			if (allscans[rScanC].cat_id==id) {
+				scan=allscans[rScanC];
+				if (scan.files != undefined) {
+					if (scan.files.length > 1) {
+						for (var i =0; i<scan.files.length; i++) {
+							var tmp = scan.files[i].Name;
+							if (tmp.substring(tmp.lastIndexOf('.')) == ".img" ) {
+								list.push(scan.files[i]);
+							}
+						}
+					} else {
+						list.push(scan.files[0]);
+					}
+				}
+			}
+		}
+		
+		if (list.length == 0){
+			tbod.appendChild(document.createTextNode("None"));
+		} else {
+			list.sort(customSort);
+    		for(var j=0;j<list.length;j++){
+    			var file = list[j];
+        		var cur = serverRoot + file.URI; 
+    			var name = file.Name;
+    			var tr = document.createElement("TR");
+    			var td = document.createElement("TD");
+    			var filelnk = document.createElement("A");
+				if (name.substring(name.lastIndexOf('.')) == ".img" ) {
+    				filelnk.setAttribute("target", "none");
+    				filelnk.setAttribute("onclick", "showFiles();");
+				} else {
+					filelnk.setAttribute("href", cur);
+				}
+    			filelnk.appendChild(document.createTextNode(name));
+    			td.appendChild(filelnk);
+    			tr.appendChild(td);
+    			tbod.appendChild(tr);
+			}
+		}
+	}
+	function clearFiles(id) {
+		var targ = document.getElementById("FILES_scan" + id);
+		if ( targ.hasChildNodes() ){
+    		while ( targ.childNodes.length != 0 ){
+        		targ.removeChild( targ.firstChild );       
+    		}
+		}
+	}
+	function customSort(a,b){
+		var numExp = /^[0-9]+$/;
+		var x = a.Name;
+		var y = b.Name;
+		for (var k = 1; k < x.length; k++) {
+			var xc = x.substring(k-1,k);
+			var yc = y.substring(k-1,k);
+			if (xc != yc) {			
+    			if (xc.match(numExp) && yc.match(numExp)) {
+					var m = k;
+					while ( x.substring(k-1,m).match(numExp) ) {
+						m++;
+					}
+					m--;
+					xc = x.substring(k-1,m);
+					
+					m = k;
+					while ( y.substring(k-1,m).match(numExp) ) {
+						m++;
+					}
+					m--;
+					yc = y.substring(k-1,m);
+					
+    				return (xc - yc);
+    			} else if (xc.match(numExp) && !yc.match(numExp) ) {
+        			return -1;
+        		} else if (!xc.match(numExp) && yc.match(numExp) ) {
+        			return 1;
+        		} else {
+        			return ((xc < yc)? -1 : ((xc > yc) ? 1 : 0) )
+        		}
+			}
+		}
+	}
+</script>
+#if($om.getReconstructions_reconstructedimage().size()>0)
+
+<h3>Reconstructions</h3>
+<TABLE bgColor=white cellPadding=0 cellSpacing=0 width=80% >
+	<TR style="border-style:none;">
+		<TH class="underscore" style="border-top-style:none; border-right-style:none; border-bottom-style:solid; border-left-style:none;" align=left>ID</TH>
+		<TH class="underscore" style="border-top-style:none; border-right-style:none; border-bottom-style:solid; border-left-style:none;" align=left>Type</TH>
+		<TH class="underscore" style="border-top-style:none; border-right-style:none; border-bottom-style:solid; border-left-style:none;" align=left>Base Type</TH>
+	</TR>
+	#set ($scanCounter = 300)
+	#foreach($scan in $om.getReconstructions_reconstructedimage())
+		#set ($scanID =$!scan.getProperty("ID"))
+		<TR valign=top border=0>
+			<TD border=0 align=left NOWRAP>
+				<A name="LINK${scanCounter}" HREF="#LINK${scanCounter}" onclick="collectFiles('$scanID'); return blocking($scanCounter);">
+				  <img ID="IMG$scanCounter" src="$content.getURI("images/plus.jpg")" border=0>
+				  $!scan.getProperty("ID")</a>
+			</TD>
+			<TD border=0 align=left NOWRAP>$!scan.getProperty("type")</TD>
+			<TD border=0 align=left NOWRAP>$!scan.getProperty("baseScanType")</TD>
+		</TR>
+		<tr>
+			<td colspan="5" NOWRAP>
+				<div ID="span$!scanCounter" style="position:relative; display:none;">
+					#parse($turbineUtils.getTemplateName("_details",$scan.getXSIType(),$project))
+					<table>
+						<tr>
+							<td></td>
+							<th valign="top">Files</th>
+							<td align="left"><table id="FILES_scan$scanID"></table></td>
+						</tr>
+					</table>
+				</div>
+			</td>
+		</tr>
+		#set ($scanCounter= $scanCounter + 1)
+	#end
+
+</TABLE>
+
+#end
+<!-- END imageSessionData/xnat_imageSessionData_reconstructions.vm -->

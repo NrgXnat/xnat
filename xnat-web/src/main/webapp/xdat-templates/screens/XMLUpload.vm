@@ -1,0 +1,38 @@
+<script type="text/javascript">
+	function validateUpload() {
+		var submit = jq('#xml_to_store');
+		if (!submit.val()) {
+            xmodal.message('Upload Error', 'You must select a file before clicking the Upload button.');
+		} else {
+			jq('#uploadForm').submit();
+		}
+	}
+</script>
+<form id="uploadForm" enctype="multipart/form-data" method="POST" action="$link.setAction("XMLUpload")">
+<TABLE>
+	<TR>
+		<TD colspan="3" align="left"><font face="$ui.sansSerifFonts" size="4" style="line-height:18px;"><b>Online StoreXML</b></font></TD>
+	</TR>
+	<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+	<TR>
+		<TD>Allow Data Deletion</TD>
+		<TD>YES <input type="radio" name="allowdeletion" value="true" CHECKED/></TD>
+		<TD>NO <input type="radio" name="allowdeletion" value="false"/></TD>
+	</TR>
+	<TR>
+		<TD>File</TD><TD colspan="2"><input type="file" id="xml_to_store" name="xml_to_store"/></TD>
+	</TR>
+	<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+	#auditBoxes("3" "" "" "Uploaded XML")
+	<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+	<TR>
+		<TD colspan="3" align="right"><input type="button" name="eventSubmit_doSetup" value="Upload" onclick="validateUpload();"/></TD>
+	</TR>
+</TABLE>
+</form>

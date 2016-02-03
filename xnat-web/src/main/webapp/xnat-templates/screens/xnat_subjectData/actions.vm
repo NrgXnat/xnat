@@ -1,0 +1,44 @@
+#elementActionsBoxNoEnd($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+
+		#addCustomScreens("$element" "actionsBox")  
+		  #parse($turbineUtils.getTemplateName("actionsBoxAddons","xnat:subjectData",$!project))
+	     </ul>
+     </DIV>
+    </DIV>
+<script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+<style type="text/css">   
+  .icon-of { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/of.gif")) no-repeat;}
+  .icon-f { display:block; font-size:11px; height: 17px; padding-left: 4px;}
+  .icon-cf { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/cf.gif")) no-repeat;} 
+  .ygtvcheck0 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check0.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+  .ygtvcheck1 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check1.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+  .ygtvcheck2 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check2.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+</style>
+				<script type="text/javascript">
+								var _a = new Array();
+				var expt=null;
+				  #if($project)
+				    #set($pScope=$project)
+				  #else
+				    #set($project=$om.getProject())
+				  #end
+
+                #foreach ($assessor in $subject.getMinimalLoadAssessors())
+                   var _t=window.available_elements.getByName("$assessor.getXSIType()");
+                   if(_t==null){
+                   	   _t={singular:"$!assessor.getItem().getProperName()",plural:"$!assessor.getItem().getProperName()",			element_name:"$assessor.getXSIType()",actions:{},"lbg":"","dbg":""}
+                   }
+                	#if($assessor.getItem().instanceOf("xnat:imageAssessorData"))
+						   _a.push({"label": _t.singular +" $!assessor.getIdentifier($project) ($!assessor.getId())","ru":"/REST/projects/$project/subjects/$om.getId()/experiments/$assessor.getImagesessionId()/assessors/$assessor.getId()" #if($assessor.canRead($user)),canRead:true#else,canRead:false#end,checked:true,xsiType:_t.singular,date:"$!assessor.getDate()",primary_label:"$!assessor.getIdentifier($project)",#if($pScope)"hasProject":"$!assessor.hasProject($pScope)"#else"hasProject":"true"#end});
+					#else
+						   if(expt!=null)_a.push(expt);
+						   expt=null;
+						   expt={"label": _t.singular +" $!assessor.getIdentifier($project) ($!assessor.getId())",xsiType:_t.singular,date:"$!assessor.getDate()",primary_label:"$!assessor.getIdentifier($project)","ru":"/REST/projects/$project/subjects/$om.getId()/experiments/$assessor.getId()" #if($assessor.canRead($user)),canRead:true#else,canRead:false#end,checked:true,#if($pScope)"hasProject":"$!assessor.hasProject($pScope)"#else"hasProject":"true"#end};
+					#end
+				#end
+
+                   if(expt!=null)_a.push(expt);
+                   expt=null;
+					 _a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getIdentifier($project) ($!om.getId())","ru":"/REST/projects/$project/subjects/$om.getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:window.available_elements.getByName("$om.getXSIType()").singular,date:"",primary_label:"$!om.getIdentifier($project)","hasProject":"true"});
+	
+				</script>

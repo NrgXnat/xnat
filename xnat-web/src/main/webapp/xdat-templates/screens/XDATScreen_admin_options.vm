@@ -1,0 +1,32 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+#parse("/screens/admin_bar.vm")
+		<BR><BR>
+<p>
+<table border="0" width="95%">
+	<tr>
+	<td colspan=2>
+<a href="$link.setPage("Configuration.vm")">Configuration</a><BR><BR>
+<a href="$link.setPage("EditEmailSpecs.vm")">Set Email Settings</a><BR><BR>
+<a href="$link.setAction("ManagementAction").addPathInfo("refresh","ArcSpecManager")">Reset Archive Specification</a><BR><BR>
+<a href="$link.setAction("RefreshAction").addPathInfo("refresh","ElementSecurity")">Reload Security Settings</a><BR><BR>
+<a href="$link.setAction("RefreshAction").addPathInfo("refresh","DisplayManager")">Reload Display Documents</a><BR><BR>
+<a href="$link.setAction("RefreshAction").addPathInfo("refresh","ClearDBCache")">Clear DB Cache</a><BR><BR>
+<a href="$link.setAction("RefreshAction").addPathInfo("refresh","PGVacuum")">Vacuum/Analyze Database</a><BR><BR>
+<a href="$link.setAction("SearchAction").addPathInfo("element","wrk:workflowData").addPathInfo("querytype","new")">View All Workflows</a><BR><BR>
+
+		<A name="LINK100" HREF="#LINK100" onClick=" return blocking(100);">
+			<img ID="IMG100" src="$content.getURI("images/plus.jpg")" border=0> Sudo</A>
+		<span ID="span100" style="position:relative; display:none;"><BR><BR>
+		#foreach($hash in $users)
+		   <a href="$link.setAction("XDATSudoLogin").addPathInfo("sudo_login","$hash.get('login')")">$!hash.get("firstname") $!hash.get("lastname") ($!hash.get("login"))</a><BR><BR>
+		#end
+		</span><br><br>
+</td></tr></table>

@@ -1,0 +1,7 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+
+<div id="mylogger"></div>
+
+$navigation.setTemplate("/powered_by.vm")
+
+#addGlobalCustomScreens("footer")

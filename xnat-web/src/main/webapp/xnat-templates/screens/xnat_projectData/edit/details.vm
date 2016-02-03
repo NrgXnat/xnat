@@ -1,0 +1,380 @@
+<TABLE id="project_data_form">
+    <TR>
+        <TH align="left">$displayManager.getSingularDisplayNameForProject() Title</TH>
+        <TD>
+            #if( $parentTemplate != 'add' )
+                <input class="project_title" id="xnat:projectData/name" type="text" name="xnat:projectData/name" value="$!item.getStringProperty("xnat:projectData/name")" size="95" maxlength="199"/>
+            #else
+                <input class="requiredField project_title title" id="xnat:projectData/name" type="text" name="xnat:projectData/name" value="$!item.getStringProperty("xnat:projectData/name")" size="95" maxlength="199"/>
+            #end
+        </TD>
+    </TR>
+    #if( $parentTemplate == 'add' )
+        <TR class="requirementStatement">
+            <TD></TD>
+            <TD id="projectTitle_requirementStatement" class="requirementStatement">
+                <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Enter the full name of your project here. This will show up on project listings.</span>
+            </TD>
+        </TR>
+        <TR>
+            <TD colspan="2" class="newProjectSpacer"></TD>
+        </TR>
+    #end
+
+    <TR>
+        <TH align="left">Running Title</TH>
+    <TD>
+        #if( $parentTemplate != 'add' )
+            <input class="abbreviation" id="xnat:projectData/secondary_ID" type="text" name="xnat:projectData/secondary_ID" value="$!item.getStringProperty("xnat:projectData/secondary_ID")" size="24" maxlength="24"/>
+        #else
+            <input class="requiredField abbreviation" id="xnat:projectData/secondary_ID" type="text" name="xnat:projectData/secondary_ID" value="$!item.getStringProperty("xnat:projectData/secondary_ID")" size="24" maxlength="24"/>
+        #end
+    </TD>
+
+    </TR>
+    #if( $parentTemplate == 'add' )
+        <TR class="requirementStatement">
+            <TD></TD>
+            <TD id="runningTitle_requirementStatement" class="requirementStatement">
+                <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Create a simple abbreviation of your project name, using 24 characters or less. Spaces are allowed.<br/>This will be commonly used in menus and UI elements.</span>
+            </TD>
+        </TR>
+        <TR>
+            <TD colspan="2" class="newProjectSpacer"></TD>
+        </TR>
+    #end
+
+    <TR>
+        <TH align="left" NOWRAP>$displayManager.getSingularDisplayNameForProject() ID</TH>
+        <TD>
+            #if( $parentTemplate != 'add' )
+                <input class="abbreviation" id="xnat:projectData/ID" type="hidden" name="xnat:projectData/ID" value="$item.getStringProperty("xnat:projectData/ID")"/>
+                $item.getProperty("xnat:projectData/ID")
+            #else
+                <input class="requiredField abbreviation" id="xnat:projectData/ID" type="text" name="xnat:projectData/ID" value="$!item.getStringProperty("xnat:projectData/ID")" size="20" maxlength="14" ONCHANGE="this.value=stringCamelCaps(this.value);"/>
+            #end
+        </TD>
+    </TR>
+    #if( $parentTemplate == 'add' )
+        <TR class="requirementStatement">
+            <TD></TD>
+            <TD id="projectId_requirementStatement" class="requirementStatement">
+                <span class="noteRequired">REQUIRED: </span><span class="formLabelRequiredStatement">Create a one word project identifier. This is used in the database and <b>cannot be changed.</b></span>
+            </TD>
+        </TR>
+        <TR>
+            <TD colspan="2" class="newProjectSpacer"></TD>
+        </TR>
+    #end
+
+    <TR>
+        <TH align="left" style="vertical-align: top;">
+            <span class="nobr">$displayManager.getSingularDisplayNameForProject() Description</span>
+        </TH>
+        <TD>
+            <textarea id="xnat:projectData/description" name="xnat:projectData/description" rows="4" cols="70">$!item.getStringProperty("xnat:projectData/description")</textarea>
+        </TD>
+    </TR>
+    #if( $parentTemplate == 'add' )
+        <TR class="requirementStatement">
+            <TD></TD>
+            <TD id="projectDescription_requirementStatement" class="requirementStatement">
+                <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">Provide a description of your project. This is for reference only and is not searchable.</span>
+            </TD>
+        </TR>
+        <TR>
+            <TD colspan="2" class="newProjectSpacer"></TD>
+        </TR>
+    #end
+
+    <TR>
+        <TH align="left">Keywords</TH>
+        <TD>
+            <input id="xnat:projectData/keywords" type="text" name="xnat:projectData/keywords" value="$!item.getStringProperty("xnat:projectData/keywords")" size="95" maxlength="255"/>
+        </TD>
+    </TR>
+    #if( $parentTemplate == 'add' )
+        <TR class="requirementStatement">
+            <TD></TD>
+            <TD id="keywords_requirementStatement" class="requirementStatement">
+                <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">Enter searchable keywords. Each word, separated by a space, can be used independently as a search string.</span>
+            </TD>
+        </TR>
+        <TR>
+            <TD colspan="2" class="newProjectSpacer"></TD>
+        </TR>
+    #end
+
+    #addCustomScreens($om.getXSIType() "edit/details")
+    #set($pathInfo = $arcP.getPaths())
+    <INPUT TYPE="hidden" NAME="arc:project/current_arc" VALUE="arc001"/>
+
+    <TR>
+        <TH align="left">Alias(es)</TH>
+        <TD>
+            #set($numAliases = $om.getAliases_alias().size())
+            #if(!$numAliases || $numAliases < 3)
+                #set($numAliases = 3)
+            #end
+            #foreach($aliasCounter in [0..$numAliases])
+                <input type="text" size="17" maxlength="99" class="project_alias" id="xnat:projectData/aliases/alias[$aliasCounter]/alias" name="xnat:projectData/aliases/alias[$aliasCounter]/alias" value="$!item.getStringProperty("xnat:projectData/aliases/alias[$aliasCounter]/alias")"/>
+                &nbsp;
+            #end
+        </TD>
+    </TR>
+    #if( $parentTemplate == 'add' )
+        <TR class="requirementStatement">
+            <TD></TD>
+            <TD id="aliases_requirementStatement" class="requirementStatement">
+                <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">Enter alternate aliases (for example: charge codes) that this project can be identified by.</span>
+            </TD>
+        </TR>
+        <TR>
+            <TD colspan="2" class="newProjectSpacer"></TD>
+        </TR>
+    #end
+
+    <TR>
+        <TH align="left" valign="top">Investigator(s)</TH>
+        <TD>
+            <div id="investigatorBox">Loading...</div>
+        </TD>
+    </TR>
+    #if( $parentTemplate == 'add' )
+        <TR class="requirementStatement">
+            <TD></TD>
+            <TD id="investigators_requirementStatement" class="requirementStatement">
+                <span class="noteOptional">Optional: </span><span class="formLabelRequiredStatement">List investigators associated with this project. This is for reference only and <b>does not provide access</b> to this project for the listed investigators.</span>
+            </TD>
+        </TR>
+        <TR>
+            <TD colspan="2" class="newProjectSpacer"></TD>
+        </TR>
+    #end
+
+</TABLE>
+<script type="text/javascript" src="$content.getURI("scripts/generated/xnat_investigatorData.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/xnat_investigatorData/investigatorManager.js")"></script>
+<script>
+
+    window.invest_manager = new InvestigatorManager();
+
+        #if($om.getProperty('pi_xnat_investigatordata_id'))
+        window.primary_investigator = "$!om.getProperty('pi_xnat_investigatordata_id')";
+        #end
+
+    window.other_investigators = new Array();
+
+        #set ($investigators = $om.getInvestigators_investigator())
+        #foreach($inv in $investigators)
+            #if (!$inv.getXnatInvestigatordataId.equals($primaryInv))
+            window.other_investigators.push("$inv.getXnatInvestigatordataId()");
+            #end
+        #end
+
+    var removeInvestigatorIcon = 'url($content.getURI("scripts/yui/build/assets/skins/xnat/xnat-sprite.png"))';
+
+    window.refreshInvestigators = function () {
+        var div = document.getElementById("investigatorBox");
+        div.innerHTML = "";
+
+        var table = document.createElement("table");
+        var tbody = document.createElement("tbody");
+        var tr = document.createElement("tr");
+
+        tbody.appendChild(tr);
+        table.appendChild(tbody);
+        div.appendChild(table);
+        var th = document.createElement("th");
+        th.innerHTML = "PI";
+        tr.appendChild(th);
+
+        var td = document.createElement("td");
+        var piSelect = document.createElement("select");
+        piSelect.id='primaryInvestigator_0';
+        piSelect.name = "xnat:projectData/pi_xnat_investigatordata_id";
+        piSelect.onchange=changeOtherInvestigator;
+        window.invest_manager.populateSelect(piSelect, window.primary_investigator, true);
+        td.appendChild(piSelect);
+        tr.appendChild(td);
+        td = document.createElement("td");
+        var remInvestButton = document.createElement("div");
+        remInvestButton.className = "icon-remove";
+        remInvestButton.style.backgroundImage = removeInvestigatorIcon;
+        remInvestButton.id = "remInvestBut_" + (tbody.rows.length);
+        remInvestButton.title = "Remove Investigator";
+        remInvestButton.onclick = function () {
+            $(piSelect).val("NULL");
+        };
+        td.appendChild(remInvestButton);
+        tr.appendChild(td);
+
+        //MORE INVESTIGATORS
+        var td = document.createElement("td");
+        td.valign = "bottom";
+        var button = document.createElement("input");
+        button.type = "button";
+        button.value = "More Investigators";
+        button.tbody = tbody;
+        button.onclick = function () {
+            tr = document.createElement("tr");
+            tr.id = "Investigator_" + (tbody.rows.length);
+            var th = document.createElement("th");
+//          th.innerHTML="Investigator "+(tbody.rows.length);
+            tr.appendChild(th);
+            var td = document.createElement("td");
+            var pSelect = document.createElement("select");
+            pSelect.id = "otherInvestigator_"+(tbody.rows.length);
+            pSelect.name = "xnat:projectData/investigators/investigator[" + (tbody.rows.length) + "]/xnat_investigatordata_id";
+            pSelect.onchange=changeOtherInvestigator;
+            window.invest_manager.populateSelect(pSelect, window.other_investigators[otherCounter], false);
+            td.appendChild(pSelect);
+            tr.appendChild(td);
+            td = document.createElement("td");
+            var remInvestButton = document.createElement("div");
+            remInvestButton.className = "icon-remove";
+            remInvestButton.style.backgroundImage = removeInvestigatorIcon;
+            remInvestButton.id = "remInvestBut_" + (tbody.rows.length);
+            remInvestButton.title = "Remove Investigator";
+            remInvestButton.onclick = function () {
+                var idx = this.id.substr(this.id.indexOf('_') + 1);
+                removeInvestigator(idx);
+            };
+            td.appendChild(remInvestButton);
+            tr.appendChild(td);
+            tbody.appendChild(tr);
+            return false;
+        }
+        td.appendChild(button);
+        tr.appendChild(td);
+
+        //CREATE INVESTIGATOR
+        var td = document.createElement("td");
+        td.valign = "bottom";
+        var button = document.createElement("input");
+        button.type = "button";
+        button.value = "Create Investigator";
+        button.tbody = tbody;
+        button.onclick = function () {
+            if (window.investigatorForm != undefined) {
+                window.investigatorForm.close();
+                window.investigatorForm = null;
+            }
+
+            window.create_investigator_link = "$link.setPage('XDATScreen_edit_xnat_investigatorData.vm').addPathInfo('popup','true')";
+            window.create_investigator_link += "/project/$project/destination/JS_Parent_Return.vm";
+
+            window.investigatorForm = window.open(window.create_investigator_link, '', 'width=500,height=550,status=yes,resizable=yes,scrollbars=yes,toolbar=no');
+            if (window.investigatorForm.opener == null) window.investigatorForm.opener = self;
+        }
+        td.appendChild(button);
+        tr.appendChild(td);
+
+        for (var otherCounter = 0; otherCounter < window.other_investigators.length; otherCounter++) {
+          createOtherInvestigator(otherCounter, tbody, tr);
+        }
+        if(window.unsavedInvestigators){
+          for(var unsavedCounter=0;unsavedCounter<window.unsavedInvestigators.length;unsavedCounter++){
+            if(typeof window.unsavedInvestigators[unsavedCounter] === 'string'){
+              $(window.unsavedInvestigators[unsavedCounter]).remove();
+            } else if(unsavedCounter == 0 && window.unsavedInvestigators[unsavedCounter]){
+              $('#primaryInvestigator_0').val(window.unsavedInvestigators[unsavedCounter]);
+            } else if(window.unsavedInvestigators[unsavedCounter]){
+              if(unsavedCounter > otherCounter){
+                createOtherInvestigator(unsavedCounter-1, tbody, tr);
+              }
+              $('#otherInvestigator_'+unsavedCounter).val(window.unsavedInvestigators[unsavedCounter]);
+            }
+          }
+        }
+    };
+
+    function createOtherInvestigator(index, tbody, tr){
+      tr=document.createElement("tr");
+      tr.id="Investigator_" + (index+1);
+      var th= document.createElement("th");
+      tr.appendChild(th);
+      var td= document.createElement("td");
+      var pSelect=document.createElement("select");
+      pSelect.id = "otherInvestigator_"+(index+1);
+      pSelect.name="xnat:projectData/investigators/investigator["+ (index+1) + "]/xnat_investigatordata_id";
+      pSelect.onchange=changeOtherInvestigator;
+      window.invest_manager.populateSelect(pSelect,window.other_investigators[index],false);
+      td.appendChild(pSelect);
+      tr.appendChild(td);
+      td= document.createElement("td");
+      var remInvestButton = document.createElement("div");
+      remInvestButton.className="icon-remove";
+      remInvestButton.style.backgroundImage=removeInvestigatorIcon;
+      remInvestButton.id="remInvestBut_"+(tbody.rows.length);
+      remInvestButton.title="Remove Investigator";
+      remInvestButton.onclick=function(){
+        var idx = this.id.substr(this.id.indexOf('_')+1);
+        removeInvestigator(idx);
+      };
+      td.appendChild(remInvestButton);
+      tr.appendChild(td);
+      tbody.appendChild(tr);
+    };
+
+    var changeOtherInvestigator = function(event){
+      if(!window.unsavedInvestigators){
+        window.unsavedInvestigators = [];
+      }
+      var invNum = parseInt($(event.target).val())
+      var selId= $(event.target)[0].id;
+      var idx = selId.substring((selId.indexOf('_')+1));
+      window.unsavedInvestigators[idx] = invNum;
+    };
+
+    window.success = function (subject_id) {
+        if (window.investigatorForm != undefined) {
+            window.investigatorForm.close();
+            window.investigatorForm = null;
+        }
+        xModalMessage('Saved Investigator', 'The investigator you entered was stored.');
+        document.getElementById("investigatorBox").innerHTML = "Loading...";
+        window.invest_manager.init();
+    }
+    window.failure = function (msg) {
+        xModalMessage('Save Failed', msg);
+        if (window.investigatorForm != undefined) {
+            window.investigatorForm.close();
+            window.investigatorForm = null;
+        }
+    }
+
+    window.invest_manager.investigatorsLoaded.subscribe(window.refreshInvestigators, this);
+    window.invest_manager.init();
+
+    function removeInvestigator(index) {
+      var id = '#Investigator_'+index;
+      $(id).remove();
+      if(!window.unsavedInvestigators){
+        window.unsavedInvestigators = [];
+      }
+      window.unsavedInvestigators[index] = id;
+    }
+
+    function stringCamelCaps(val) {
+        if (val == "")return "";
+        var temp = val;
+        var regex = /^[0-9A-Za-z_-]+$/g;
+        if (!(regex.test(temp))) {
+            xModalMessage('Validation Error', 'No special characters allowed in $displayManager.getSingularDisplayNameForProject().toLowerCase() abbreviation.');
+            return "";
+        }
+        var newVal = '';
+        temp = temp.split(' ');
+        for (var c = 0; c < temp.length; c++) {
+            if (c == 0)
+                newVal += temp[c].substring(0, 1) +
+                    temp[c].substring(1, temp[c].length);
+            else
+                newVal += temp[c].substring(0, 1).toUpperCase() +
+                    temp[c].substring(1, temp[c].length);
+        }
+        return newVal;
+    }
+
+</script>

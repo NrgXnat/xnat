@@ -1,0 +1,108 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("process Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>process Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN prov:process -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($prov_processStep_1_NUM_ROWS=$item.getChildItems("prov:process/processStep").size() - 1)
+							#if($prov_processStep_1_NUM_ROWS>=0)
+								#foreach($prov_processStep_1_COUNTER in [0..$prov_processStep_1_NUM_ROWS])
+<!-- BEGIN prov:process/processStep[$prov_processStep_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">prov:process/processStep[$prov_processStep_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>program</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/program")</TD></TR>
+													<TR><TD>program/version</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/program/version")</TD></TR>
+													<TR><TD>program/arguments</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/program/arguments")</TD></TR>
+													<TR><TD>timestamp</TD><TD>$!item.getProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/timestamp")</TD></TR>
+													<TR><TD>cvs</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/cvs")</TD></TR>
+													<TR><TD>user</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/user")</TD></TR>
+													<TR><TD>machine</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/machine")</TD></TR>
+													<TR><TD>platform</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/platform")</TD></TR>
+													<TR><TD>platform/version</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/platform/version")</TD></TR>
+													<TR><TD>compiler</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/compiler")</TD></TR>
+													<TR><TD>compiler/version</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/compiler/version")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($prov_processStep_library_2_NUM_ROWS=$item.getChildItems("prov:process/processStep[$prov_processStep_1_COUNTER]/library").size() - 1)
+													#if($prov_processStep_library_2_NUM_ROWS>=0)
+														#foreach($prov_processStep_library_2_COUNTER in [0..$prov_processStep_library_2_NUM_ROWS])
+<!-- BEGIN prov:process/processStep[$prov_processStep_1_COUNTER]/library[$prov_processStep_library_2_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">prov:process/processStep[$prov_processStep_1_COUNTER]/library[$prov_processStep_library_2_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>library</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/library[$prov_processStep_library_2_COUNTER]/library")</TD></TR>
+																			<TR><TD>version</TD><TD>$!item.getStringProperty("prov:process/processStep[$prov_processStep_1_COUNTER]/library[$prov_processStep_library_2_COUNTER]/version")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END prov:process/processStep[$prov_processStep_1_COUNTER]/library[$prov_processStep_library_2_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END prov:process/processStep[$prov_processStep_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END prov:process -->
+		</TD>
+	</TR>
+</TABLE>

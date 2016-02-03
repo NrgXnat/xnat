@@ -1,0 +1,23 @@
+<div id="logo" align="center">#parse("/screens/Logo_Email.vm")</div>
+<hr>
+<div id="content">The upload process you initiated at $date has completed.<br>
+<br>Please <a href="$server/app/action/XDATActionRouter/xdataction/data_management">return to the site</a> and continue inserting your $displayManager.getSingularDisplayNameForProject().toLowerCase().
+
+<br><br><b>Summary</b>
+  <br>$successfuls.size() file(s) were uploaded successfully.
+#if($errors.size()>0)
+  <br><font color="red">$errors.size() file(s) encountered errors while processing.</font>
+  <br><br>Successful uploads:
+#end
+
+#foreach($successful in $successfuls)
+ <br>$successful
+#end
+
+#if($errors.size()>0)
+<br><br>Errors were encoutered while extracting/reviewing the following files:
+#foreach($error in $errors)
+ <br><font color="red">$error.get(0):</font> $error.get(1)
+#end
+#end
+</div>

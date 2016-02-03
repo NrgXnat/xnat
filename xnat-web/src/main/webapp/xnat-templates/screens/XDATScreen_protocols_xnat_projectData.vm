@@ -1,0 +1,127 @@
+<DIV><a href='$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$om.getId()")'>$displayManager.getSingularDisplayNameForProject().toUpperCase(): $!om.getDisplayName()</a>&nbsp;&nbsp;>&nbsp;&nbsp;Protocols</DIV><BR>
+<TABLE>
+ <TR>
+  <TD valign="top" width="300">
+  <DIV class="edit_header2" style="line-height:18px;">$displayManager.getSingularDisplayNameForProject() Protocol Management</DIV>
+The $displayManager.getSingularDisplayNameForProject().toLowerCase() protocol management page allows you to specify what variables are used by a given $displayManager.getSingularDisplayNameForProject().toLowerCase() 
+protocol.  In addition to the default
+variables, users can specify an unlimited number of additional variables.  
+These 'custom' variables are grouped together in sets, and can be re-used by other $displayManager.getPluralDisplayNameForProject().toLowerCase(), 
+allowing for inter-$displayManager.getSingularDisplayNameForProject().toLowerCase() standardization independent of the specified schema-model.  
+(The default setting of 'project-specific' prevents the variables from being shared with other $displayManager.getPluralDisplayNameForProject().toLowerCase().)
+<br><br>
+<b>Instructions:</b> Select the protocol you would like to modify. First, check the existing variable groups to see if the variable you desire already exists.  If so, add the relevant groups by checking their boxes and clicking <b>Save</b>. 
+If the desired variables are not already there, create a new variable set using the link below to include the new variable.<br><br>
+  </TD>
+  <TD valign="top">
+<script type="text/javascript" src="$content.getURI("scripts/DynamicJSLoad.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/debugWindow.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/ajaxProtocolManager.js")"></script>
+
+<TABLE>
+ <TR>
+  <TD NOWRAP><B>Add variable(s) to:</B></TD>
+  <TD>
+   <SELECT ID="protocols_sel" ONCHANGE="selectProtocol(this);">
+    <OPTION VALUE="">(SELECT)</OPTION>
+   </SELECT>
+  </TD>
+ </TR>
+ <TR>
+  <TD colspan="2">
+<DIV class="mainContainer" style="border:0;">
+ <DIV ID="div_bodys" class="mainContainerBody"></DIV>
+</DIV>
+  </TD>
+ </TR>
+</TABLE>
+
+
+<SCRIPT type="text/javascript">
+
+var protocols = new Array();
+
+var div_bodys = document.getElementById("div_bodys");
+var protocols_sel = document.getElementById("protocols_sel");
+
+var createdProtocols=new Array();
+#foreach($protocol in $om.getStudyprotocol())
+protocols_sel.options[$velocityCount]=new Option("$protocol.getName()","$protocol.getId()");
+createdProtocols.push("$protocol.getDataType()");
+
+var bDIV = document.createElement("DIV");
+bDIV.style.display="none"; 
+bDIV.className="mainContainerSubBody";
+div_bodys.appendChild(bDIV);
+
+protocols.push( new ProtocolManager("$protocol.getId()",null,bDIV,{project:"$om.getId()",dataType:"$protocol.getDataType()"}));
+
+#end
+for(var aeC=0;aeC<window.available_elements.length;aeC++){
+ if(!createdProtocols.contains(window.available_elements[aeC].element_name)){
+    if(window.available_elements[aeC].element_name=="xnat:projectData" || window.available_elements[aeC].element_name=="xnat:subjectData" || window.available_elements[aeC].isExperiment){
+      protocols_sel.options[protocols_sel.options.length]=new Option(window.available_elements[aeC].plural,"${om.getId()}_" + window.available_elements[aeC].element_name);
+      var bDIV = document.createElement("DIV");
+      bDIV.style.display="none"; 
+      bDIV.className="mainContainerSubBody";
+      div_bodys.appendChild(bDIV);
+      protocols.push( new ProtocolManager("${om.getId()}_" + window.available_elements[aeC].element_name,null,bDIV,{dataType:window.available_elements[aeC].element_name,project:"${om.getId()}"}));
+  	}
+ }
+			  
+		}
+//protocols[0].show();
+
+function completePage(){
+	  if(DEBUG2)writeConsole("completePage()<br>");
+  var stopped =false;
+  var groupManagers=window.groupManagers;
+  for (var groupManagersCounter=0;groupManagersCounter<groupManagers.length;groupManagersCounter++){
+				     var gm=groupManagers[groupManagersCounter];
+				     gm.onSave.subscribe(function(o){
+			        completePage();
+		     },this,this);
+     stopped = gm.save();
+	     if(DEBUG2)writeConsole("completePage(): fg needs save<br>");
+	     if(stopped)
+     		   break;
+  }
+  
+  if (!stopped){
+   for (var protCounter=0;protCounter<protocols.length;protCounter++){
+     var pm=protocols[protCounter];
+     if (pm.protocol!=undefined && pm.protocol!=null && pm.canSave()){
+		       
+		       pm.onSave.subscribe(function(o){
+			          completePage();
+		       },this,this);
+		       
+	        if(DEBUG2)writeConsole("completePage(): pm needs save<br>");
+        pm.save();
+        stopped=true;
+        break;
+     }
+   }
+  }
+  
+	  if(DEBUG2)writeConsole("completePage(): stopped:" + stopped + "<br>");
+  if(!stopped)
+  	    location.href='$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$om.getId()")';
+}
+
+	function selectProtocol(SELECTbox){
+	  if(SELECTbox.selectedIndex!=0)
+	  {
+     protocols[(SELECTbox.selectedIndex-1)].show();
+	  }
+	}
+
+</SCRIPT>
+<TABLE width="100%">
+ <TR>
+  <TD align="center"><INPUT type="button" value="Done" ONCLICK="completePage();"/></TD>
+ </TR>
+</TABLE>
+  </TD>
+ </TR>
+</TABLE>

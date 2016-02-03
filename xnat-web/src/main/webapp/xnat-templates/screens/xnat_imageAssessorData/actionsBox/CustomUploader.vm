@@ -1,0 +1,9 @@
+#if($om.canEdit($user))
+ <li id="cru_adl_files_li" class="yuimenuitem">
+    <a id="cru_adl_files_a" class="yuimenuitemlabel uploadLink" style="display:none" href="" onclick="return false;" data-type="$om.getXSIType()" data-uri="$content.getURI("/data/experiments/$om.getImagesessionId()/assessors/$om.getId()")">Upload Additional Files</A>
+   </li>
+    <script type="text/javascript" src="$content.getURI("scripts/uploaders/ConfiguredResourceUploader.js")"></script>
+    <script>
+		XNAT.app.crConfigs.project='$!om.getProject()';
+    </script>
+#end

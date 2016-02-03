@@ -1,0 +1,71 @@
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+<!-- Title: Anonymization -->
+<div class="mgmt_container">
+    <div id="anonymization_mgmt_div" class="row">
+        <p>
+            This is the site-wide anonymization script applied to all incoming and archiving DICOM resources. This script
+            can also be supplemented by anonymization operations specified at the $displayManager.getSingularDisplayNameForProject().toLowerCase() level.
+        </p>
+        <p>
+            Note that if the site-wide anonymization is enabled, even with an empty script, it will add a deidentification
+            method status entry to DICOM headers. To allow DICOM files to be imported without any changes, disable site-wide
+            anonymization.
+        </p>
+        <p>
+            <label for="anonEnabled" style="width: 290px;">Site-wide Anonymization Enabled</label>
+            <input type="checkbox" id="anonEnabled"/>
+        </p>
+        <p><label for="anonScript">Script:</label></p>
+        <textarea id="anonScript" name="anonScript" rows="20" cols="80"></textarea>
+    </div>
+    <div class="buttons">
+        <input type="button" class="submit" value="Save" name="eventSubmit_doPerform" id="anonymization_save_button" onclick="window.anonymizationManager.saveTabSettings();"/>&nbsp;
+        <input type="button" class="reset" value="Reset" name="eventSubmit_doReset" id="anonymization_reset_button" onclick="window.anonymizationManager.resetForm();" disabled/>
+    </div>
+</div>
+
+
+<script type="text/javascript">
+
+    var anonScript = jq('#anonScript');
+    var anonEnabled = jq('#anonEnabled');
+
+    function toggleControlsOnAnonEnabled() {
+        var enabled = anonEnabled.is(':checked');
+        anonScript.prop('disabled', !enabled);
+    }
+
+    function dirty() {
+        // Add check for class manager, since setting the initial value of the radio button
+        // will cause the dirty() function to be called, at which point the manager is null.
+        if (window.anonymizationManager && !window.anonymizationManager.wasDirty()) {
+            window.anonymizationManager.dirtyForm();
+        }
+        toggleControlsOnAnonEnabled();
+    }
+
+    anonScript.bind('input propertychange', dirty);
+    anonEnabled.change(dirty);
+
+    function configurationAnonymizationTabChange(obj) {
+        if(obj.newValue.get("href")=="#anonymization") {
+            if(window.anonymizationManager==undefined) {
+                window.anonymizationManager = new SettingsTabManager('anonymization_mgmt_div', 'anonymization');
+            }
+            toggleControlsOnAnonEnabled();
+        }
+    }
+
+    function addAnonymizationMgmtMonitor(){
+        if(window.configurationTabView.get("activeTab").get("href")=="#anonymization") {
+            if(window.anonymizationManager==undefined) {
+                window.anonymizationManager = new SettingsTabManager('anonymization_mgmt_div', 'anonymization');
+            }
+        } else {
+            window.configurationTabView.subscribe("activeTabChange", configurationAnonymizationTabChange);
+        }
+    }
+
+    YAHOO.util.Event.onDOMReady(addAnonymizationMgmtMonitor);
+    putConfigurationControls('anonymization', ['anonScript', 'anonEnabled']);
+</script>

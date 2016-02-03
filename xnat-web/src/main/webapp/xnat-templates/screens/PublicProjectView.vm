@@ -1,0 +1,142 @@
+<SCRIPT language="javascript">
+var server= "$content.getURI("images")/";
+</SCRIPT>
+<style>
+IMG{
+ border:0;
+}
+</style>
+
+
+<script type="text/javascript" src="$content.getURI("scripts/sortable_us.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/xdat_stored_search.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/ajaxListingEngine.js")"></script>
+<SCRIPT language="javascript">
+										var url = "$content.getURI("servlet/AjaxServlet")";
+   url = url + "";
+function Project(_id){
+this.ID=_id;
+this.bundles = new Array();
+
+  function addBundle(id,name){
+   this.bundles.push(new Bundle(id,name));
+  }
+  this.addBundle=addBundle;
+}
+
+function Bundle(id,name){
+ this.ID=id;
+ this.Name=name;
+}
+
+
+
+var projects = new Array();
+#foreach($project in $projects)
+var project = new Project("$project.getDisplayName()");
+#foreach($bundle in $project.getBundles())
+  project.addBundle("$bundle.getId()","$bundle.getBriefDescription()");
+#end
+
+projects.push(project);
+#end
+
+
+function getProject(_id){
+  for (x=0;x<projects.length;x++)
+  {
+     if (projects[x].ID==_id){
+        return projects[x];
+     }
+  }
+}
+
+function selectProject(sel){
+  if (sel.selectedIndex>0){
+    selectedProject = sel.options[sel.selectedIndex].value;
+    window.selectedProject=getProject(selectedProject);
+    
+    var protSEL = document.getElementById("protocols");
+     protSEL.options.length=0;
+   
+     protSEL.options[0]=new Option('(SELECT)','');
+   
+     for (x=0;x<window.selectedProject.bundles.length;x++)
+     {
+       var nextIndex = parseInt(x)+1;
+       var entry = window.selectedProject.bundles[x];       
+       protSEL.options[nextIndex]=new Option(entry.Name,entry.ID);
+     }
+  }
+}
+
+function removeContent(contentDIV){
+  if ( contentDIV.hasChildNodes() )
+				  {
+					    while ( contentDIV.childNodes.length >= 1 )
+					    {
+					        contentDIV.removeChild( contentDIV.firstChild );       
+					    } 
+				  }
+}
+
+function selectProtocol(sel){
+  if (sel.selectedIndex>0){
+    var selectedProtocolID = sel.options[sel.selectedIndex].value;
+    var selectedProtocolName = sel.options[sel.selectedIndex].text;   
+    
+    var titleBar = document.getElementById("titleBar");
+    removeContent(titleBar);
+    var bodyBar = document.getElementById("bundleBody");
+    removeContent(bodyBar);
+    
+    var newTitle= document.createElement("DIV");
+    newTitle.id=selectedProtocolID+ "_LINK";
+    newTitle.className="titleBarText"
+    newTitle.innerHTML=selectedProtocolName;
+    titleBar.appendChild(newTitle);
+    
+    var newBody= document.createElement("DIV");
+    newBody.id=selectedProtocolID+ "_CONTENT";
+    newBody.className="mainContainerSubBody";
+    bodyBar.appendChild(newBody);
+    
+    
+												    var currentTime = new Date();
+										    var pageID = currentTime.getTime() + '_';
+    window.collectionInstance = new SearchCollection(pageID);
+    
+	    window.collectionInstance.addSearch(selectedProtocolID,selectedProtocolName,selectedProtocolID+"_LINK",selectedProtocolID+"_CONTENT");
+    window.collectionInstance.loadFirstPages(null);
+    window.collectionInstance.selectAndDisplaySearch(window.collectionInstance.searches[0]);
+    document.getElementById("rowsDIV").style.display="inline";
+  }
+}
+</SCRIPT>
+
+<DIV>
+$displayManager.getPluralDisplayNameForProject():
+ <SELECT ID="projects" ONCHANGE="selectProject(this);">
+  <OPTION value="">(SELECT)</OPTION>
+  #foreach($project in $projects)
+    <OPTION value="$project.getDisplayName()">$project.getDisplayName()</OPTION>
+  #end
+ </SELECT>&nbsp;&nbsp;&nbsp;
+ Data-Types:
+ <SELECT ID="protocols" ONCHANGE="selectProtocol(this);">
+  <OPTION value="">(SELECT)</OPTION>
+ </SELECT>
+ &nbsp;&nbsp;&nbsp;
+ <DIV ID="rowsDIV" style="display:none"><input type="text" size="4" id="rowsPerPage"/><input type="button" VALUE="CHANGE" ONCLICK="window.collectionInstance.setRowsToDisplay(parseInt(document.getElementById('rowsPerPage').value));"/></DIV>
+</DIV>
+<DIV id="toggleMain" style="clear:both;margin:5px;">
+	 
+						      <DIV id="bundleContainer" style="" class="mainContainer">
+
+						        <DIV id="titleBar" class="withColor containerTitle" style="display:none">
+        </DIV>
+       
+        <DIV id="bundleBody" class="mainContainerBody" style="">
+        </DIV>
+      <DIV>
+</DIV>

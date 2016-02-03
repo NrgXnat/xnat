@@ -1,0 +1,137 @@
+$page.setTitle("Workflow Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<h3>Workflow Details</h3>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("wrk:workflowData/ID")</TD></TR>
+							<TR><TD>ExternalID</TD><TD>$!item.getStringProperty("wrk:workflowData/ExternalID")</TD></TR>
+							<TR><TD>Datatype</TD><TD>$!item.getStringProperty("wrk:workflowData/data_type")</TD></TR>
+							<TR><TD>Pipeline</TD><TD>$!item.getStringProperty("wrk:workflowData/pipeline_name")</TD></TR>
+							<TR><TD>Status</TD><TD>$!item.getStringProperty("wrk:workflowData/status")</TD></TR>
+
+							<TR><TD>Launch time</TD><TD>$!item.getProperty("wrk:workflowData/launch_time")</TD></TR>
+							<TR><TD>Percentage complete</TD><TD>$!item.getStringProperty("wrk:workflowData/percentageComplete")</TD></TR>
+							<TR><TD>Job Id</TD><TD>$!item.getStringProperty("wrk:workflowData/jobID")</TD></TR>
+							<TR><TD>Created by user</TD><TD>$!item.getStringProperty("wrk:workflowData/create_user")</TD></TR>
+
+							<TR><TD>Current step launch time</TD><TD>$!item.getProperty("wrk:workflowData/current_step_launch_time")</TD></TR>
+							<TR><TD>Current step id</TD><TD>$!item.getStringProperty("wrk:workflowData/current_step_id")</TD></TR>
+							<TR><TD>Next step id</TD><TD>$!item.getStringProperty("wrk:workflowData/next_step_id")</TD></TR>
+							<TR><TD>Step Description</TD><TD>$!item.getStringProperty("wrk:workflowData/step_description")</TD></TR>
+
+							<TR><TD>Comments</TD><TD>$!item.getStringProperty("wrk:workflowData/comments")</TD></TR>
+							<TR><TD>Details</TD><TD>$!item.getStringProperty("wrk:workflowData/details")</TD></TR>
+							<TR><TD>Justification</TD><TD>$!item.getStringProperty("wrk:workflowData/justification")</TD></TR>
+							<TR><TD>Description</TD><TD>$!item.getStringProperty("wrk:workflowData/description")</TD></TR>
+							<TR><TD>Src</TD><TD>$!item.getStringProperty("wrk:workflowData/src")</TD></TR>
+							<TR><TD>Type</TD><TD>$!item.getStringProperty("wrk:workflowData/type")</TD></TR>
+							<TR><TD>Category</TD><TD>$!item.getStringProperty("wrk:workflowData/category")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						<!-- actions box -->
+						#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+						<script type="text/javascript">
+							// hack to get rid of the "Edit" link on the "Workflow Details" page
+                            jq('#actionsMenu').find('a[href*="/xdataction/edit/"]').closest('li').remove();
+						</script>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN wrk:workflowData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN wrk:workflowData/executionEnvironment -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">Execution parameters</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+
+									<TABLE>
+									#set( $paramList = $om.getExecutionenvironment().getParameters_parameter() )
+									#if($paramList.size() >0)
+									<TR>
+										<TH>Parameter Name</TH><TH>Parameter Value</TH>
+									</TR>
+									#foreach ($param in $paramList)
+									<TR>
+										<TD>$!param.getName()</TD><TD>$!param.getParameter()</TD>
+									</TR>
+
+									#end
+									#end
+#if ($om.Executionenvironment.Parameterfile_path)
+									<tr>
+										<td>Parameter file path</td><td>$om.Executionenvironment.Parameterfile_path</td>
+									</tr>
+#end
+#set ($paramXML = $om.Executionenvironment.Parameterfile_xml)
+#if (!$paramXML.equals(""))
+#set ($paramXMLOneline = $paramXML.replaceAll("\n","").replaceAll(" ",""))
+<!-- <tr><td>xml one line</td><td>$paramXMLOneline</td></tr> -->
+#set ($paramBlobList = $paramXMLOneline.split("</?pip:parameter>"))
+#foreach ($paramBlob in $paramBlobList)
+	#set ($name="")
+	#set ($value="")
+	#if (!$paramBlob.equals("") && !$paramBlob.startsWith("<pip:Parameters") && !$paramBlob.startsWith("</pip:Parameters"))
+	#set ($nameValBlobs = $paramBlob.split("<pip:values>"))
+	#foreach ($nameValBlob in $nameValBlobs)
+		#if ($nameValBlob.startsWith("<pip:name>"))
+		#set ($name = $nameValBlob.replaceAll("<.*?>",""))
+		#elseif ($nameValBlob.startsWith("<pip:unique>"))
+		#set ($value = $nameValBlob.replaceAll("<.*?>",""))
+		#elseif ($nameValBlob.startsWith("<pip:list>"))
+		#set ($value = $nameValBlob.replaceAll("</pip:list><pip:list>",",").replaceAll("<.*?>",""))
+		#end
+	#end
+									<tr>
+										<td>$name</td>
+										<td>$value</td>
+									</tr>
+	#end
+#end
+#end
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END wrk:workflowData/executionEnvironment -->
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END wrk:workflowData -->
+		</TD>
+	</TR>
+</TABLE>

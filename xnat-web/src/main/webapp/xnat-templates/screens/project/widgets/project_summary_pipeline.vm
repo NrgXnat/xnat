@@ -1,0 +1,35 @@
+<script src="$content.getURI("scripts/yui/build/json/json-min.js")"></script> 
+<script type="text/javascript" src="$content.getURI("scripts/yui/build/datasource/datasource-beta-min.js")"></script>  
+<script type="text/javascript" src="$content.getURI("scripts/yui/build/datatable/datatable-beta-min.js")"></script>  
+	 
+
+<script type="text/javascript" src="$content.getURI("scripts/project/pipelineMgmt.js")"></script>
+
+						<table class="mgmt_container">
+ <tr>
+  <td valign="top">
+   <div id="pipeline_mgmt_div"></div>
+  </td>
+ </tr>
+ <tr>
+  <td valign="top">
+   <div id="more_pipelines">
+      <input type="button" id="add" name="add" value="Add Pipelines" onclick="window.pipelineManager.loadAdditionalPipelines()">
+   </div>
+  </td>
+ </tr>
+
+</table>
+
+
+
+<script language="javascript">
+function pipelineManagerInit(){
+   window.pipelineManager = new PipelineManager("pipeline_mgmt_div","$project.getId()");
+}
+YAHOO.util.Event.onDOMReady(pipelineManagerInit);
+	
+</script>
+
+
+

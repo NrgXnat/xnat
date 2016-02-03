@@ -1,0 +1,19 @@
+<table>
+<!-- BUILD HEADER ROW -->
+<tr>
+#foreach($header in $table.getColumns())
+ <th>$!header</th>
+#end
+</tr>
+
+<!-- OUTPUT DATA ROWS -->
+#foreach($row in $table.rows())
+<tr>
+ #foreach($object in $row)
+ <td>$object</td>
+ #set($object="")
+ #end
+ #set($row="")
+</tr>
+#end
+</table>

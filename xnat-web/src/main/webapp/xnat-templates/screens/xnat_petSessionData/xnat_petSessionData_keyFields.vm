@@ -1,0 +1,55 @@
+			<!--BEGIN xnat_petSessionData_keyFields.vm -->
+#parse($turbineUtils.getTemplateName("_keyFields","xnat:imageSessionData",$project))
+						#if($!item.getProperty("xnat:petSessionData/tracer/name"))
+<TR><TH align="left" colspan="2">
+<A name="LINKtracer" HREF="#LINKtracer" onClick=" return blocking('tracer');">
+				  	  	  <img ID="IMGtracer" src="$content.getURI("images/plus.jpg")" border=0>
+				  	  	  Tracer: $!item.getProperty("xnat:petSessionData/tracer/name")</a>
+</TH></TR>
+#end
+<TR>
+  <TD colspan="2">
+   <span ID="spantracer" style="position:relative; display:none;">
+    <table>
+						#if($!item.getProperty("xnat:petSessionData/tracer/startTime"))
+<TR><TH align="left">Start Time</TH><TD>$!item.getProperty("xnat:petSessionData/tracer/startTime")</TD></TR>
+#end
+						#if($!item.getProperty("xnat:petSessionData/tracer/transmissions"))
+							<TR><TH align="left">Transmissions</TH><TD>$!item.getIntegerProperty("xnat:petSessionData/tracer/transmissions")</TD></TR>
+#end
+						#if($!item.getProperty("xnat:petSessionData/tracer/dose"))
+<TR><TH align="left">Dosage</TH><TD>$!item.getProperty("xnat:petSessionData/tracer/dose") $!item.getStringProperty("xnat:petSessionData/tracer/dose/units")</TD></TR>
+#end
+						#if($!item.getProperty("xnat:petSessionData/tracer/specificActivity"))
+							<TR><TH align="left">Specific Activity</TH><TD>$!item.getProperty("xnat:petSessionData/tracer/specificActivity")</TD></TR>
+#end
+						#if($!item.getProperty("xnat:petSessionData/tracer/totalMass"))
+							<TR><TH align="left">Total Mass</TH><TD>$!item.getProperty("xnat:petSessionData/tracer/totalMass") $!item.getStringProperty("xnat:petSessionData/tracer/totalMass/units")</TD></TR>
+#end
+						#if($!item.getProperty("xnat:petSessionData/tracer/intermediate"))
+							<TR><TH align="left">Intermediate</TH><TD>$!item.getProperty("xnat:petSessionData/tracer/intermediate")</TD></TR>
+							#end
+						#if($!item.getProperty("xnat:petSessionData/start_time_injection"))
+							<TR><TH align="left">Injection Time</TH><TD>$!item.getProperty("xnat:petSessionData/start_time_injection")</TD></TR>
+							#end
+						#if($!item.getProperty("xnat:petSessionData/start_time_scan"))
+							<TR><TH align="left">Emission Scan Time</TH><TD>$!item.getProperty("xnat:petSessionData/start_time_scan")</TD></TR>
+							#end
+						
+						#if($!item.getProperty("xnat:petSessionData/blood_glucose"))
+							<TR><TH align="left">Blood Glucose Level</TH>
+								<TD>
+									$!item.getProperty("xnat:petSessionData/blood_glucose")&nbsp;
+									$!item.getProperty("xnat:petSessionData/blood_glucose_units")
+								</TD>
+							</TR>
+							#end
+						#if($!item.getProperty("xnat:petSessionData/blood_glucose_time"))
+							<TR><TH align="left">Blood Glucose Collection Time</TH><TD>$!item.getProperty("xnat:petSessionData/blood_glucose_time")</TD></TR>
+							#end
+    </table>
+   </span>
+  </TD>
+</TR>
+
+										<!--END xnat_petSessionData_keyFields.vm -->

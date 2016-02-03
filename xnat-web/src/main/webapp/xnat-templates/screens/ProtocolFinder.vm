@@ -1,0 +1,79 @@
+			<b>$displayManager.getSingularDisplayNameForProject():</b> <SELECT ID="project" name="project" ONCHANGE="updateProtocolSelect();"></select>&nbsp; <b>Protocol:		</b><SELECT ID="protocol" name="protocol"></select>
+			
+	<script type="text/javascript">
+	var protocolPKs = new Array();
+	var protocolIDs = new Array();
+	var projectIDs = new Array();
+	var projects = new Array();
+	
+	function addProtocol(protocolPK, projectID,protocolID){
+	   addProject(projectID);
+	   
+	   protocolPKs.push(protocolPK);
+	   protocolIDs.push(protocolID);
+	   projectIDs.push(projectID);
+	}
+	
+	function addProject(projectID){
+	   var index = -1;
+	   for (x in projects)
+	   {
+	       if(projectID==projects[x]){
+	           index=x;
+	       }
+	   }
+	   
+	   if (index==-1)
+	   {
+	      projects.push(projectID);
+	   }
+	}
+	
+	function updateProjectSelect(){
+	  var currentProject = "$!project";
+	  var projectSEL = document.getElementById("project");
+	  var optionsHTML = "";
+	  optionsHTML = optionsHTML + "<option value=''>(SELECT)</option>";
+	  
+	   for (x in projects)
+	   {
+	     if (projects[x]==currentProject)
+	     {
+	        optionsHTML = optionsHTML + "<option value='" + projects[x] + "' SELECTED>" + projects[x] + "</option>";
+	     }else{
+	        optionsHTML = optionsHTML + "<option value='" + projects[x] + "'>" + projects[x] + "</option>";
+	     }
+	   }
+	   
+	   projectSEL.innerHTML=optionsHTML;
+	}
+	
+	function updateProtocolSelect(){
+	  var projectSEL = document.getElementById("project");
+	  var protocolSEL = document.getElementById("protocol");
+  var projectIndex=projectSEL.selectedIndex;
+  var newproject = projectSEL.options[projectIndex].value;
+	  
+	  var optionsHTML = "";
+	  optionsHTML = optionsHTML + "<option value=''>(SELECT)</option>";
+	  
+	  if(projectSEL.selectedIndex!=0)
+	  {
+	     for (x in projectIDs)
+	     {
+	       if (projectIDs[x]==newproject){
+	         
+	          optionsHTML = optionsHTML + "<option value='" + protocolPKs[x] + "'>" + protocolIDs[x] + "</option>";
+	       }
+	     }
+	  }
+	  
+	  protocolSEL.innerHTML=optionsHTML;
+	}
+
+#foreach($protocol in $protocols)
+   addProtocol("$protocol.getXnatAbstractprotocolId()","$protocol.getProject()","$protocol.getId()");
+#end
+	
+	   updateProjectSelect();
+	</script>

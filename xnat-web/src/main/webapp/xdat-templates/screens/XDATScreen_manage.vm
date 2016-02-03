@@ -1,0 +1,33 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<form name="form1" method="post" action="$link.setAction("ActivateAction").setPage("ClosePage.vm")">
+<TABLE width=100%>
+	<TR>
+		<TD>
+			<font face="$ui.sansSerifFonts" size="3"><b>Quarantine Summary</b></font>
+		</TD>
+	</TR>
+	
+	#if($user.canActivate($item))
+	<TR>
+		<TD>
+			<input type="hidden" name="search_element" value="$search_element"/>
+			<input type="hidden" name="search_field" value="$search_field"/>
+			<input type="hidden" name="search_value" value="$search_value"/>
+			<input type="hidden" name="popup" value="true"/>
+			<input type="submit" name="eventSubmit" value="Activate"/>
+		</TD>
+	</TR>
+	#auditBoxes("1" "" "" "Removed from quarantine")
+	#end
+	
+	<TR>
+		<TD>
+			$!item.toHTML()
+		</TD>
+	</TR>
+	
+</TABLE>
+</form>

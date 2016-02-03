@@ -1,0 +1,80 @@
+
+<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/omUtils.js')"></SCRIPT>
+<script type="text/javascript">
+
+function appendImage(obj,img_name){
+if(obj!=null){
+	  if(obj.appendedImage==undefined){
+	    obj.appendedImage = document.createElement("img");
+	    obj.appendedImage.style.marginLeft="5pt";
+	    if(obj.nextSibling==null)
+	    {
+	    	obj.parentNode.insertBefore(obj.appendedImage,obj.nextSibling);
+	    }else{
+	    	obj.parentNode.appendChild(obj.appendedImage);
+	    }
+	  }
+	  obj.appendedImage.src=serverRoot + img_name;
+	}
+}
+
+function confirmValues(){
+  var form_submit=document.getElementById("form_submit");
+  form_submit.disabled=true;
+  
+  var valid =true;
+  
+  var projBox=document.getElementById("${datatype}/project");
+  if(projBox.selectedIndex>0){
+     appendImage(projBox,"/images/checkmarkGreen.gif");
+  }else{
+	   	  appendImage(projBox,"/images/checkmarkRed.gif");
+	   	  valid=false;
+  		}
+  
+  var subBox=document.getElementById("${datatype}/subject_id");
+  if(subBox.selectedIndex>0){
+     appendImage(subBox,"/images/checkmarkGreen.gif");
+  }else{
+	   	  appendImage(subBox,"/images/checkmarkRed.gif");
+	   	  valid=false;
+  		}
+  
+  var labelBox=document.getElementById("${datatype}/label");
+  if(labelBox.validated==undefined)labelBox.value=fixSessionID(labelBox.value);
+  if(labelBox.value!=""){
+     labelBox.validated=true;
+     appendImage(labelBox,"/images/checkmarkGreen.gif");
+  }else{
+     labelBox.validated=false;
+	   	  appendImage(labelBox,"/images/checkmarkRed.gif");
+	   	  valid=false;
+  		}
+  		
+  		
+   					 #foreach($scan in [0..$TOP_SCAN])
+
+   var field = "${datatype}/scans/scan[$scan]/type";
+   if(document.getElementById(field).value=="")
+   {
+     var selBox=document.getElementById("SEL_" +field);
+     if (selBox==null){
+        selBox=document.getElementById(field);
+     }
+     if(valid)selBox.focus();
+	   	  appendImage(selBox,"/images/checkmarkRed.gif");
+	   	  valid=false;
+   }else{
+     var selBox=document.getElementById("SEL_"+field);
+     if (selBox==null){
+        selBox=document.getElementById(field);
+     }
+     appendImage(selBox,"/images/checkmarkGreen.gif");
+   }
+   					 #end
+  		
+  		if(valid)form_submit.disabled=false;
+}
+
+confirmValues();
+</script>

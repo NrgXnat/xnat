@@ -1,0 +1,202 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#macro( propValueRow $name $prop )
+  #if ( $!item.getProperty("$prop") )
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getProperty("$prop")</td></tr>
+	#end
+#end
+
+#macro( propValueRow $name $prop $addText)
+  #if ( $!item.getProperty("$prop") )
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getProperty("$prop") $addText</td></tr>
+	#end
+#end
+
+<!-- TODO: better presentation -->
+#macro( propBoolValueRow $name $prop )
+	#if ($!item.getBooleanProperty("$prop"))
+		<tr><td class="attr_name">$name:</td><td class="attr_value">$item.getBooleanProperty("$prop")</td></tr>
+	#end
+#end
+
+#macro(tableHeaderNCols $header $subheads)
+<tr>
+	<th>$header</th>
+	#foreach($subhead in $subheads)
+	<th>$subhead</th>
+	#end
+</tr>
+#end
+
+#macro(propNValueRow $name $fields)
+<tr>
+	<td class="table_attr_name">$name</td>
+	#foreach($field in $fields)
+		<td class="attr_value">$!item.getProperty($field)</td>
+	#end
+#end
+
+
+<style type="text/css">
+td.attr_name { <!-- in imitation of xdat.css (th) -->
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	border-top-style: none;
+	font-size: 11px;
+	font-weight: 700;
+	line-height: 13px;
+	margin: 0px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.table_attr_name { <!-- much like attr_name, but not bold -->
+	border-collapse: collapse;
+	border-left-style: none;
+	border-right-style: none;
+	border-top-style: none;
+	font-size: 11px;
+	line-height: 13px;
+	margin: 0px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.attr_value { <!-- in imitation of xdat.css (td) -->
+	font-family: verdana,geneva,helvetica;
+	font-size: 10px;
+	line-height: 14px;
+	padding-left: 4px;
+	padding-right: 4px;
+}
+
+td.subtable {
+	valign: top;
+}
+</style>
+
+$page.setTitle("Y-BOCS : $!item.getProperty('xnat_a:ybocsData.ID')")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+<br>
+
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+
+#if (!$project)
+#set($project=$item.getProperty("project"))
+#end
+
+#set($subject = $om.getSubjectData())
+#set($part_id = $subject.getStringProperty("ID"))
+
+#parse("/screens/workflow_alert.vm")
+
+<div class="edit_title">
+Yale-Brown Obsessive Compulsive Severity Scale :
+#if ($project)
+	$om.getIdentifier($project)
+#else
+	$!item.getProperty("xnat_a:ybocsData.ID")
+#end
+</div>
+
+<table width="100%">
+	<tr>
+		<td valign="top"><table>
+		<!-- left table -->
+		#propValueRow("Date" "xnat_a:ybocsData/date")
+		#propValueRow("Time" "xnat_a:ybocsData/time")
+		#propValueRow("Visit ID" "xnat_a:ybocsData/visit_id")
+		</table></td>
+		<td valign="top"><table>
+		<!-- middle table -->
+			<tr>
+				<td class="attr_name">$displayManager.getSingularDisplayNameForSubject():</td>
+				<td>
+					<A CLASS=b HREF="$link.setAction('DisplayItemAction').addPathInfo('search_element','xnat:subjectData').addPathInfo('search_field','xnat:subjectData.ID').addPathInfo('search_value',$part_id).addPathInfo('popup','$!popup').addPathInfo('project','$!project')">
+					#if($project)
+						$!subject.getIdentifier($project)
+					#else
+						$!subject.getId()
+					#end
+					</A>
+				</td>
+			</tr>
+			#if($!subject.getGenderText())
+			<tr>
+				<td class="attr_name">Gender:</td>
+				<td class="attr_value">$subject.getGenderText()</td>
+			</tr>
+			#end
+			#propValueRow("Age" "xnat_a:ybocsData/age")
+		</table></td>
+		<td valign="top">
+		#parse("/screens/xnat_experimentData_shareDisplay.vm")
+		</td>
+		<td valign="top">
+			#parse($turbineUtils.getTemplateName("actions", $om.getXSIType(), $project))
+		</td>
+	</tr>
+</table>
+
+#if ($!item.getStringProperty("note"))
+<table>
+  <tr>
+		<td valign="top" class="attr_name">Notes:</td>
+		<td valign="top" class="attr_value">$!item.getStringProperty("note")</td>
+	</tr>
+</table>
+#end
+
+<br>
+
+<table>
+#propValueRow("Current or Worst Ever?" "xnat_a:ybocsData/currentOrWorstEver")
+</table>
+
+#propValueRow("1. Time Spent on Obsessions" "xnat_a:ybocsData/timeOccupiedWithThoughts")
+#propValueRow("2. Interference from Obsessions" "xnat_a:ybocsData/thoughtsInterfereFunctioning")
+#propValueRow("3. Distress from Obsessions" "xnat_a:ybocsData/distressCaused")
+#propValueRow("4. Resistance to Obsessions" "xnat_a:ybocsData/effortToResistThoughts")
+#propValueRow("5. Control over Obsessions" "xnat_a:ybocsData/controlOverThoughts")
+#propValueRow("6. Time Spent on Compulsions" "xnat_a:ybocsData/timePerforming")
+#propValueRow("7. Interference from Compulsions" "xnat_a:ybocsData/behaviorsInterfereFunctioning")
+#propValueRow("8. Distress from Compulsions" "xnat_a:ybocsData/feelingIfPrevented")
+#propValueRow("9. Resistance to Compulsions" "xnat_a:ybocsData/effortToResistBehaviors")
+#propValueRow("10. Control over Compulsions" "xnat_a:ybocsData/behaviorDriveStrength")
+#propValueRow('Until "just right"?' "xnat_a:ybocsData/untilJustRight")
+#propValueRow('Awareness of "just right"' "xnat_a:ybocsData/untilJustRightAwareness")
+#propValueRow('Perception of "just right"' "xnat_a:ybocsData/untilJustRightPerceptions")
+#propValueRow('When "until just right" starts' "xnat_a:ybocsData/whenStartUntilJustRight")
+#propValueRow('How often "until just right"' "xnat_a:ybocsData/frequencyUntilJustRight")
+#propValueRow('Age at first "until just right"' "xnat_a:ybocsData/firstUntilJustRightAge")
+</table>
+
+#set($xnat_experimentData_field_4_NUM_ROWS=$item.getChildItems("xnat_a:ybocsData/fields/field").size() - 1)
+#if($xnat_experimentData_field_4_NUM_ROWS>=0)
+	#foreach($xnat_experimentData_field_4_COUNTER in [0..$xnat_experimentData_field_4_NUM_ROWS])
+<!-- BEGIN xnat_a:ybocsData/fields/field[$xnat_experimentData_field_4_COUNTER] -->
+		<TABLE>
+			<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:ybocsData/fields/field[$xnat_experimentData_field_4_COUNTER]</font></TH></TR>
+			<TR>
+				<TD align="left" valign="top">
+					<TABLE>
+						<TR><TD>field</TD><TD>$!item.getStringProperty("xnat_a:ybocsData/fields/field[$xnat_experimentData_field_4_COUNTER]/field")</TD></TR>
+						<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:ybocsData/fields/field[$xnat_experimentData_field_4_COUNTER]/name")</TD></TR>
+					</TABLE>
+				</TD>
+			</TR>
+		</TABLE>
+<!-- END xnat_a:ybocsData/fields/field[$xnat_experimentData_field_4_COUNTER] -->
+	#end
+#end
+
+<BR>#parse("/screens/ReportProjectSpecificFields.vm")

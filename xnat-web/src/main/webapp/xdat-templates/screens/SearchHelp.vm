@@ -1,0 +1,27 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<h3>Search Help </h3>
+<BR>The search engine allows for multiple criteria formats.  The possible formats are dictated by the data type of the corresponding search field.
+<BR><BR>
+	<B>Numeric search:</B>
+	<UL>
+		<LI>Search criteria must be separated by a comma, which acts as an OR.  <BR>
+		Thus, <i>8,10,15</i> would return results where the field is equal to 8, 10 OR 15.
+		</LI>
+		<LI>Negative numbers whould be enclosed in parenthesis <i>(-5)</i>.</LI>
+		<LI>Possible criteria types are <i><=</i>,<i>>=</i>,<i><</i>,<i>></i> or using a range <i>10-19</i>. If no comparison type is specified
+		the default is <i>=</i>. <BR>  Thus, <i>5-10,15,>=20</i> would return results that are between 5 and 10, equal to 15, or greater (or equal to) 20.
+		</LI>
+	</UL>
+	<BR><BR>
+	<B>String search:</B>
+	<UL>
+		<LI>If the value is in single quotes <i>'brown'</i>, then the search will return the results which match exactly.
+		<BR>Otherwise, the search will return results which contain the text (case independent).  Thus, <i>brown</i> returns <i>brownster</i>, <i>brown</i> or <i>BROWN</i> records.
+		</LI>
+		<LI>Search criteria may be separated by a comma or an empty space, which acts as an OR.  <BR>
+		Thus, <i>brown,'richard' pete</i> would return results where the field is like <i>brown</i>, equal to <i>richard</i> OR like <i>pete</i>.
+		</LI>
+		<LI><i>%</i> or <i>*</i> can be used as a wildcard value.</LI>
+	</UL>
+	
+	

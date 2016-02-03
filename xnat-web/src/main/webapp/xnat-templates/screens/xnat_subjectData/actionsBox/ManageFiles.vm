@@ -1,0 +1,6 @@
+<!-- Sequence: 5 -->
+#if($user.checkFeature($om,"manage_files") && $turbineUtils.toBoolean($siteConfig.getProperty("UI.show-manage-files","true")))
+     <li class="yuimenuitem">
+			<A href="" ONCLICK="showFiles();return false;"><div class="ic">#if($actionObject.hasImage())<img border="0" src="$content.getURI("scripts/yui/build/treeview/assets/img/folders/cf.gif")"/>#else&nbsp;#end</div><div class="ic_spacer">&nbsp;</div>Manage Files</A>
+	 </li>
+#end

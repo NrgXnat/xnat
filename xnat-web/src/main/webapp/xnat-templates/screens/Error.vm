@@ -1,0 +1,81 @@
+#* @vtlvariable name="links" type="java.util.Map" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="status" type="java.lang.Integer" *#
+#* @vtlvariable name="uri" type="java.lang.String" *#
+#* @vtlvariable name="message" type="java.lang.String" *#
+## Copyright 2015 Washington University School of Medicine. All Rights Reserved.
+## This code is released under the Simplified BSD software license.
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("NoMenu.vm")
+<style type="text/css">
+    p {
+        width: 600px;
+        margin: 0 auto;
+        text-align: left;
+        padding-top: 5px;
+        padding-bottom: 5px;
+    }
+
+    .errorDisplay {
+        width: 600px;
+        margin: 0 auto;
+        text-align: left;
+    }
+
+    .errorDisplay .label {
+        font-weight: bold;
+        display: inline-block;
+        width: 40px;
+        padding-left: 5px;
+    }
+
+    .errorDisplay .field {
+        display: inline-block;
+        padding-left: 50px;
+        vertical-align: top;
+    }
+</style>
+<div class="errorDisplay">
+
+    <p>XNAT has encountered an error with your request:</p>
+
+    #if("$!status" != "")
+        <p><span class="label">Status:</span> <span class="field">$status</span></p>
+    #end
+    #if("$!uri" != "")
+        <p><span class="label">URI:</span> <span class="field">$uri</span></p>
+    #end
+    #if("$!message" != "")
+        <p><span class="label">Message:</span> <span class="field">$message</span></p>
+    #end
+    #if("$!data" != "")
+        #if("$!data.message" != "")
+            <p><span class="label">Message:</span> <span class="field">$!data.message</span></p>
+        #end
+        #set($exception = $!data.parameters.getString("exception"))
+        #if("$!exception" != "")
+            <p><span class="label">Exception:</span> <span class="field">$exception</span></p>
+        #end
+    #end
+
+    #if ($links)
+        #if($links.size() > 1)
+            #if ($links.containsKey("message"))
+                <p>$links.get("message")</p>
+            #else
+                <p>Click one of the links to below to proceed:</p>
+            #end
+            <ul>
+                #foreach($url in $links.keySet())
+                    <li><a href="$url">$links.get($url)</a></li>
+                #end
+            </ul>
+        #else
+            #set ($url = $links.keySet().toArray()[0])
+            <p><a href="$url">$links.get($url)</a></p>
+        #end
+    #end
+
+    <p>If this error continues to occur, please contact your system administrator with information about how to recreate the problem.</p>
+
+</div>

@@ -1,0 +1,209 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Mohana Ramaratnam (Washington University) -->
+<xs:schema targetNamespace="http://nrg.wustl.edu/workflow" xmlns:xdat="http://nrg.wustl.edu/xdat" xmlns:wrk="http://nrg.wustl.edu/workflow" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:complexType name="workflowData">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element storeHistory="false"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="executionEnvironment" type="wrk:abstractExecutionEnvironment" minOccurs="0"/>
+			<xs:element name="comments" minOccurs="0">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field size="10000"/>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="details" minOccurs="0">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field size="10000"/>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="justification" minOccurs="0">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field size="10000"/>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="10000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="src" type="xs:string" use="optional"/>
+		<xs:attribute name="type" type="xs:string" use="optional"/>
+		<xs:attribute name="category" type="xs:string" use="optional"/>
+		<xs:attribute name="data_type" type="xs:string" use="required"/>
+		<xs:attribute name="ID" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field uniqueComposite="true"/>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="ExternalID" type="xs:string" use="optional"/>
+		<xs:attribute name="current_step_launch_time" type="xs:dateTime" use="optional"/>
+		<xs:attribute name="current_step_id" type="xs:string" use="optional"/>
+		<xs:attribute name="status" type="xs:string" use="required"/>
+		<xs:attribute name="create_user" type="xs:string" use="optional"/>
+		<xs:attribute name="pipeline_name" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field uniqueComposite="true"/>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="next_step_id" type="xs:string" use="optional"/>
+		<xs:attribute name="step_description" type="xs:string" use="optional"/>
+		<xs:attribute name="launch_time" type="xs:dateTime" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field uniqueComposite="true"/>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="percentageComplete" type="xs:string" use="optional"/>
+		<xs:attribute name="jobID" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:element name="Workflow" type="wrk:workflowData"/>
+	<xs:complexType name="abstractExecutionEnvironment"/>
+	<xs:complexType name="xnatExecutionEnvironment">
+		<xs:complexContent>
+			<xs:extension base="wrk:abstractExecutionEnvironment">
+				<xs:sequence>
+					<xs:element name="pipeline" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>Path to the pipeline which is to be launched</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="xnatuser" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>Xnat User who launched the pipeline</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="host" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>Xnat host on which the pipeline was launched</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="startAt" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Step id at which the pipeline was started</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="parameters" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>Parameters which were passed to the pipeline</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="parameter" maxOccurs="unbounded">
+									<xs:annotation>
+										<xs:appinfo>
+											<xdat:field size="1000">
+												<xdat:relation uniqueComposite="NAME"/>
+											</xdat:field>
+										</xs:appinfo>
+									</xs:annotation>
+									<xs:complexType>
+										<xs:simpleContent>
+											<xs:extension base="xs:string">
+												<xs:attribute name="name" type="xs:string" use="required">
+													<xs:annotation>
+														<xs:appinfo>
+															<xdat:field uniqueComposite="NAME"/>
+														</xs:appinfo>
+													</xs:annotation>
+												</xs:attribute>
+											</xs:extension>
+										</xs:simpleContent>
+									</xs:complexType>
+								</xs:element>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+					<xs:element name="notify" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+						<xs:annotation>
+							<xs:documentation>Email ID to which notification is to be sent</xs:documentation>
+							<xs:appinfo>
+								<xdat:field uniqueComposite="NOTIFY">
+									<xdat:relation uniqueComposite="NOTIFY"/>
+								</xdat:field>
+							</xs:appinfo>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="dataType" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>dataType as required by the workflow element</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="id" type="xs:string">
+						<xs:annotation>
+							<xs:documentation>is as required by the workflow element</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="supressNotification" type="xs:boolean">
+						<xs:annotation>
+							<xs:documentation>Boolean flag to suppress success notification in case custom emails are being sent</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="log" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>path to log4j properties file</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="catalogPath" type="xs:string" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>root path to the catalog</xs:documentation>
+						</xs:annotation>
+					</xs:element>
+					<xs:element name="parameterFile" minOccurs="0">
+						<xs:annotation>
+							<xs:documentation>The string content of this element is the xml as text</xs:documentation>
+						</xs:annotation>
+						<xs:complexType>
+							<xs:sequence>
+								<xs:element name="xml" minOccurs="0">
+									<xs:annotation>
+										<xs:appinfo>
+											<xdat:field size="10000"/>
+										</xs:appinfo>
+									</xs:annotation>
+									<xs:simpleType>
+										<xs:restriction base="xs:string">
+											<xs:maxLength value="10000"/>
+										</xs:restriction>
+									</xs:simpleType>
+								</xs:element>
+							</xs:sequence>
+							<xs:attribute name="path" use="optional">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:maxLength value="1000"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

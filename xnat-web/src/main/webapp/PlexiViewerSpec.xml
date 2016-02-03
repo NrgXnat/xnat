@@ -1,0 +1,159 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/project-skeletons/xnat/PlexiViewerSpec.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 2/7/14 12:19 PM
+  -->
+<Viewer xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="/var/lib/tomcat7/webapps/xnat17/schemas/xdat/PlexiViewer.xsd">
+	<PlexiViewer sessionType="PLEXI_DEFAULT">
+		<DefaultLoResType>8bit</DefaultLoResType>
+		<CacheLocation>/data/xnat17/cache</CacheLocation>
+		<Layout name="tal_111" voxelSize="1">
+			<Coordinates originX="88" originY="84" originZ="75"/>
+		</Layout>
+		<Layout name="tal_222" voxelSize="2">
+			<Coordinates originX="63" originY="63" originZ="34"/>
+		</Layout>
+		<Layout name="tal_333" voxelSize="3">
+			<Coordinates originX="24" originY="29" originZ="20"/>
+		</Layout>
+		<Layout name="native" voxelSize="1">
+			<Coordinates originX="0" originY="0" originZ="0"/>
+		</Layout>
+		<ViewableItem type="MPRAGE">
+			<SchemaLink element="xnat:imageScanData.type" value="MPRAGE"/>
+			<UserInterface selectionPriority="0" displayText="MPRAGE">
+				<LinkedDropDown viewableItemType="MPRAGE_RAW"/>
+				<LinkedDropDown viewableItemType="SUBJ"/>
+				<LinkedDropDown viewableItemType="GFC"/>
+				<LinkedDropDown viewableItemType="MASKED"/>
+				<!--<LinkedDropDown viewableItemType="FSEG"/> -->
+			</UserInterface>
+		</ViewableItem>
+		<ViewableItem type="MPRAGE_RAW" imageViewerClassName="org.nrg.plexiViewer.lite.viewer.MR.MRImage">
+			<UserInterface displayText="Raw" allowedToChooseID="true"/>
+			<Thumbnail format="GIF" converterClassName="org.nrg.plexiViewer.converter.CNLThumbnailConverter">
+				<Slice number="79" orientation="transverse"/>
+				<Slice number="80" orientation="sagittal"/>
+				<Slice number="99" orientation="coronal"/>
+			</Thumbnail>
+			<Lo-Res type="8bit" converterClassName="org.nrg.plexiViewer.converter.DefaultConverter" format="ANALYZE 7.5">
+				<MontageView scale="0.6">
+					<transverse start_slice="60" end_slice="180" slice_spacing="8"/>
+					<sagittal start_slice="35" end_slice="125" slice_spacing="5"/>
+					<coronal start_slice="60" end_slice="180" slice_spacing="8"/>
+				</MontageView>
+			</Lo-Res>
+			<Hi-Res format="DICOM">
+				<Layer element="xnat:imageScanData.file" value="MPRAGE_RAW" num="0"/>
+				<LayoutRef name="native"/>
+				<MontageView scale="0.6">
+					<transverse start_slice="60" end_slice="180" slice_spacing="8"/>
+					<sagittal start_slice="35" end_slice="125" slice_spacing="5"/>
+					<coronal start_slice="60" end_slice="180" slice_spacing="8"/>
+				</MontageView>
+			</Hi-Res>
+		</ViewableItem>
+		<ViewableItem type="GFC" imageViewerClassName="org.nrg.plexiViewer.lite.viewer.MR.MRImage">
+			<UserInterface displayText="Atlas Registered"/>
+			<Thumbnail format="GIF" converterClassName="org.nrg.plexiViewer.converter.CNLThumbnailConverter">
+				<Slice number="79" orientation="transverse"/>
+				<Slice number="80" orientation="sagittal"/>
+				<Slice number="99" orientation="coronal"/>
+			</Thumbnail>
+			<Lo-Res type="8bit" converterClassName="org.nrg.plexiViewer.converter.DefaultConverter" format="ANALYZE 7.5">
+				<MontageView scale="0.65">
+					<transverse start_slice="30" end_slice="140" slice_spacing="5"/>
+					<sagittal start_slice="35" end_slice="145" slice_spacing="5"/>
+					<coronal start_slice="30" end_slice="165" slice_spacing="5"/>
+				</MontageView>
+			</Lo-Res>
+			<Hi-Res format="ANALYZE 7.5">
+				<Layer element="xnat:reconstructedImageData.out.file" value="T88" num="0"/>
+				<LayoutRef name="tal_111"/>
+				<MontageView scale="0.65">
+					<transverse start_slice="30" end_slice="140" slice_spacing="5"/>
+					<sagittal start_slice="35" end_slice="145" slice_spacing="5"/>
+					<coronal start_slice="30" end_slice="165" slice_spacing="5"/>
+				</MontageView>
+			</Hi-Res>
+		</ViewableItem>
+		<ViewableItem type="MASKED" imageViewerClassName="org.nrg.plexiViewer.lite.viewer.MR.MRImage">
+			<UserInterface displayText="Masked Atlas Reg."/>
+			<Thumbnail format="GIF" converterClassName="org.nrg.plexiViewer.converter.CNLThumbnailConverter">
+				<Slice number="79" orientation="transverse"/>
+				<Slice number="80" orientation="sagittal"/>
+				<Slice number="99" orientation="coronal"/>
+			</Thumbnail>
+			<Lo-Res type="8bit" converterClassName="org.nrg.plexiViewer.converter.DefaultConverter" format="ANALYZE 7.5">
+				<MontageView scale="0.65">
+					<transverse start_slice="30" end_slice="140" slice_spacing="5"/>
+					<sagittal start_slice="30" end_slice="140" slice_spacing="5"/>
+					<coronal start_slice="80" end_slice="190" slice_spacing="5"/>
+				</MontageView>
+			</Lo-Res>
+			<Hi-Res format="ANALYZE 7.5">
+				<Layer element="xnat:reconstructedImageData.out.file" value="MASKED" num="0"/>
+				<LayoutRef name="tal_111"/>
+				<MontageView scale="0.65">
+					<transverse start_slice="30" end_slice="140" slice_spacing="5"/>
+					<sagittal start_slice="30" end_slice="140" slice_spacing="5"/>
+					<coronal start_slice="80" end_slice="190" slice_spacing="5"/>
+				</MontageView>
+			</Hi-Res>
+		</ViewableItem>
+		<ViewableItem type="SUBJ" imageViewerClassName="org.nrg.plexiViewer.lite.viewer.MR.MRImage">
+			<UserInterface displayText="Averaged"/>
+			<Thumbnail format="GIF" converterClassName="org.nrg.plexiViewer.converter.CNLThumbnailConverter">
+				<Slice number="79" orientation="transverse"/>
+				<Slice number="80" orientation="sagittal"/>
+				<Slice number="99" orientation="coronal"/>
+			</Thumbnail>
+			<Lo-Res type="8bit" converterClassName="org.nrg.plexiViewer.converter.DefaultConverter" format="ANALYZE 7.5">
+				<MontageView scale="0.6">
+					<transverse start_slice="60" end_slice="180" slice_spacing="8"/>
+					<sagittal start_slice="35" end_slice="125" slice_spacing="5"/>
+					<coronal start_slice="60" end_slice="180" slice_spacing="8"/>
+				</MontageView>
+			</Lo-Res>
+			<Hi-Res format="ANALYZE 7.5">
+				<Layer element="xnat:reconstructedImageData.out.file" value="SUBJ" num="0"/>
+				<LayoutRef name="native"/>
+				<MontageView scale="0.6">
+					<transverse start_slice="70" end_slice="180" slice_spacing="8"/>
+					<sagittal start_slice="35" end_slice="145" slice_spacing="5"/>
+					<coronal start_slice="70" end_slice="180" slice_spacing="8"/>
+				</MontageView>
+			</Hi-Res>
+		</ViewableItem>
+		<!--	<ViewableItem type="FSEG" imageViewerClassName="org.nrg.plexiViewer.lite.viewer.MR.MRImage">
+		<UserInterface displayText="Gray/White Segmented"/>
+		<Thumbnail format="GIF" converterClassName="org.nrg.plexiViewer.converter.CNLThumbnailConverter">
+			<Slice number="79" orientation="transverse"/>
+			<Slice number="80" orientation="sagittal"/>
+			<Slice number="99" orientation="coronal"/>
+		</Thumbnail>
+		<Lo-Res type="8bit" converterClassName="org.nrg.plexiViewer.converter.DefaultConverter" format="ANALYZE 7.5">
+			<MontageView scale="0.65">
+				<transverse start_slice="30" end_slice="140" slice_spacing="5"/>
+				<sagittal start_slice="35" end_slice="145" slice_spacing="5"/>
+				<coronal start_slice="30" end_slice="165" slice_spacing="5"/>
+			</MontageView>
+		</Lo-Res>
+		<Hi-Res format="ANALYZE 7.5">
+			<Layer element="xnat:imageAssessorData.out.file" value="FSEG" num="0"/>
+			<LayoutRef name="tal_111"/>
+			<MontageView scale="0.65">
+				<transverse start_slice="30" end_slice="140" slice_spacing="5"/>
+				<sagittal start_slice="35" end_slice="145" slice_spacing="5"/>
+				<coronal start_slice="30" end_slice="165" slice_spacing="5"/>
+			</MontageView>
+		</Hi-Res>
+	</ViewableItem> -->
+	</PlexiViewer>
+</Viewer>

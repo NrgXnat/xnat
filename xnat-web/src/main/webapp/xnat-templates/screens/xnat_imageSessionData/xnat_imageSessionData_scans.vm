@@ -1,0 +1,109 @@
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatImagesessiondata" *#
+#* @vtlvariable name="scan" type="org.nrg.xdat.om.XnatImagescandata" *#
+#* @vtlvariable name="resource" type="org.nrg.xdat.om.XnatAbstractresource" *#
+<!--BEGIN /screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->
+#macro(renderEmptyResourceCount)
+    #if ($data.getSession().getAttribute("userHelper").canEdit($item))
+    <a onclick="window.viewer.init(true);">Show Counts</a>
+    #else
+        #displayListAsTipText(["File Count Unknown", "No files were found associated with this scan. Contact a member or owner of this project to generate the file count data."])
+    #end
+#end
+
+<h3>Scans</h3>
+#set($scanAssessors =$!om.getScanAssessors())
+
+<table id="scan_list" cellpadding="0" cellspacing="4" width="80%">
+    <tr style="border:none;">
+        <th class="underscore" align=left>Scan</th>
+        <th class="underscore" align=left>Type</th>
+        #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.display-series-description","true")))
+            <th class="underscore" align=left>Series Desc</th>
+            #set($fileIndex="4")
+        #else
+            #set($fileIndex="3")
+        #end
+        <th class="underscore" align=left>Usability</th>
+        <th class="underscore" align=left>Files</th>
+        <th class="underscore" align=left>Note</th>
+    </tr>
+
+    #set ($scanCounter = 0)
+    #set ($scanWFiles = 0)
+    #foreach($scan in $om.getSortedScans())
+        #set ($scanID =$!scan.getProperty("ID"))
+
+        <tr valign=top border=0>
+            <td border=0 align=left NOWRAP>
+                <a name="LINK${scanCounter}" href="#LINK${scanCounter}" onClick=" return blocking($scanCounter);">
+                    <img id="IMG$scanCounter" src="$content.getURI('images/plus.jpg')" border=0/>
+                    $scanID
+                </a>
+            </td>
+            <td border=0 align=left NOWRAP>$!scan.getProperty("type")</td>
+            #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.display-series-description","true")))
+                <td border=0 align=left NOWRAP>$!scan.getProperty("series_description")</td>
+            #end
+            <td border=0 class="quality-$!scan.getProperty("quality")" style="font-weight:bold; text-align:left;"  NOWRAP>
+                $!scan.getProperty("quality")
+            </td>
+
+            <td border=0 align=left NOWRAP>
+                #if($scan.getFile().size()>0)
+                    <div id="scans_$!scan.getId()_stats" style='display:inline'>
+                        #set($stats = $!scan.getReadableFileStats())
+                    #if("$!stats.get(0)" == "" || $stats.size() == 0 || $stats.get(0).equals("0 B in 0 files"))
+                        #renderEmptyResourceCount()
+                    #elseif($stats.size() == 1)
+                        $stats.get(0)
+                    #else
+                        #displayListAsTipText($stats)
+                    #end
+                    </div>
+                    #set ($scanWFiles = $scanWFiles+1)
+                #else
+                    #renderEmptyResourceCount()
+                #end
+                #if($user.canEdit($om))
+                    <a class='uploadLink' style='display:none' href='' onclick='return false;' data-type='xnat:imageScanData' data-props='$!scan.getType()' data-uri='$content.getURI("/data/experiments/$om.getId()/scans/$scan.getId()")'>Upload</a>
+                #end
+            </td>
+            <td border=0 align=left NOWRAP>$!scan.getProperty("note")</td>
+        </tr>
+
+        <tr>
+            <td colspan="5" NOWRAP>
+                <div id="span$!scanCounter" style="position:relative; display:none;">
+                    #parse($turbineUtils.getTemplateName("_details",$scan.getXSIType(),$project))
+                </div>
+            </td>
+        </tr>
+        #set ($scanCounter= $scanCounter + 1)
+    #end
+    #if($scanWFiles>0)
+        <tr>
+            <td colspan="$fileIndex" align="right">
+            </td>
+            <td NOWRAP>
+                <div id="total_dicom_files" class="totals">
+                    <b>Total:</b>
+                    #set($sessionStats = $om.getSessionReadableScanStats())
+                    #if("$!sessionStats.get(0)" == "" || $sessionStats.size() == 0 || $sessionStats.get(0).equals("0 B in 0 files"))
+                        #renderEmptyResourceCount()
+                    #else
+                        #displayListAsTipText($sessionStats)
+                    #end
+                </div>
+            </td>
+        </tr>
+    #end
+</table>
+<BR/>
+<BR/>
+#set ($qcXsiType = "xnat:qcAssessmentData")
+#parse($turbineUtils.getTemplateName("report_summary",$qcXsiType,$project))
+<!--END /screens/xnat_imageSessionData/xnat_imageSessionData_scans.vm -->

@@ -1,0 +1,28 @@
+<h2> Please review the records before storing.</h2>
+
+<TABLE>
+#foreach($row in $summary)
+  <tr>
+  #foreach($column in $row)
+    <td>$column</td>
+  #end
+  </tr>
+#end
+
+</table>
+<form name="form1" method="post" action="$link.setAction("CSVUpload2")">  
+    <INPUT TYPE="hidden" name="fm_id" value="$fm.getID()"/>
+    <INPUT TYPE="hidden" name="project" value="$!project"/>
+    <DIV ID="formTags">
+    </DIV>
+ <table width="25%" border="0" align="center">
+	#auditBoxes("1" "" "" "Uploaded Spreadsheet")
+  <tr>
+    <td>
+      <div align="center">
+        <input type="submit" name="eventSubmit_doStore" value="Save" />
+        <input type="submit" name="Submit2" value="Cancel" />
+    </div></td>
+  </tr>
+</table>
+</form>

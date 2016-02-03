@@ -1,0 +1,9 @@
+<b>Welcome to the $system Web Archive! </b>
+
+<br>Your access privileges have been authorized.
+
+<br>Logon using: $username
+
+<br>To change password use the link <a href="$server/app/template/Index.vm"> My $system</A>
+
+<br>For help, contact <a href="mailto:$admin_email?subject=$system Assistance">$system Management</A>

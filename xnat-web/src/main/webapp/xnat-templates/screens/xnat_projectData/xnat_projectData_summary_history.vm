@@ -1,0 +1,17 @@
+#if($workflows && $workflows.size()>0)
+	#foreach( $workflow in $workflows ) 
+    		<DIV class="containerItem" title="$!workflow.getStatus()" 
+		#if($workflow.getStatus()=="Complete")
+			style="color:black;white-space:nowrap;">
+		#elseif($workflow.getStatus()=="Error")
+			style="color:red;white-space:nowrap;">
+		#else
+			style="color:green;white-space:nowrap;">
+		#end
+		$turbineUtils.formatDate($!workflow.getLaunchTime()):&nbsp;$!workflow.getOnlyPipelineName()
+		#if($workflow.getStatus()!="Complete")
+			&nbsp;&nbsp;$!workflow.getPercentagecomplete()
+		#end
+	    	</DIV	>
+	#end 
+#end

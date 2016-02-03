@@ -1,0 +1,31 @@
+#* @vtlvariable name="system" type="java.lang.String" *#
+#* @vtlvariable name="server" type="java.lang.String" *#
+#* @vtlvariable name="time" type="java.lang.String" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+<html>
+<head><title>Disabled User Account Verified</title></head>
+<body>
+    <table>
+        <thead>
+            <tr><th>Disabled User Account Verified</th></tr>
+        </thead>
+        <tbody>
+            <tr><th>Date:</th><td>$time</td></tr>
+            <tr><th>Site:</th><td>$system</td></tr>
+            <tr><th>Host:</th><td>$server</td></tr>
+            <tr><th>Username:</th><td>$user.login</td></tr>
+            <tr><th>First:</th><td>$user.firstname</td></tr>
+            <tr><th>Last:</th><td>$user.lastname</td></tr>
+        </tbody>
+    </table>
+
+    <p>The owner of this account has verified the email address associated with the account. </p>
+
+    #if ($user.isEnabled())
+        <p>The <a href="$server/app/action/DisplayItemAction/search_value/$user.login/search_element/xdat:user/search_field/xdat:user.login">verified user account <b>$user.login</b></a> has already been enabled.</p>
+    #else
+        <p>You can review and enable <a href="$server/app/action/DisplayItemAction/search_value/$user.login/search_element/xdat:user/search_field/xdat:user.login">the verified user account <b>$user.login</b></a>.</p>
+    #end
+
+</body>
+</html>

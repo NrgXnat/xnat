@@ -1,0 +1,139 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+#macro (dateEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatDateBox($field $item $vr $years)</td>
+</tr>
+#end
+
+#macro (textEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatTextBox($field $item "" $vr)</td>
+</tr>
+#end
+
+#macro (textEditNColsRow $names $fields)
+<tr>
+  #foreach ($name in $names)
+	  #set ($index = $velocityCount - 1)
+		<td>$name</td>
+		<td>#xdatTextBox("$fields.get($index)" $item "" $vr)</td>
+  #end
+</tr>
+#end
+
+#macro (boolRadioEditRow $name $field $isTrue)
+<tr>
+	<td>$name</td>
+	<td>#xdatBooleanRadio($field $item $isTrue $vr)</td>
+</tr>
+#end
+
+<!-- Builds a select box, displaying the choices in disp_values
+  -- and passing on the corresponding value from values.
+  -- Similar to (simpler than) xdatSelectBox, but no custom values are
+  -- allowed.
+  -- (This would be cleaner as a map, but map literals aren't implemented
+  --  in Velocity 1.3)
+  -->
+#macro (selectBox $name $item $defaultValue $values $disp_values $vr)
+#if ($vr)
+	#if ($vr.getField($name))
+		<font color="red">&#8658</font>
+	#end
+#end
+	#if ($item.getProperty($name))
+		<select name="$name">
+	#else
+		<select>
+	#end
+	<option value="">(SELECT)</option>
+	#foreach ($value in $values)
+		#set ($valueIndex = $velocityCount - 1)
+		#if ($defaultValue == $value)
+		  #set ($selectedAttribute = "selected=""true""")
+		#else
+		  #set ($selectedAttribute = "")
+		#end
+		#if ($disp_values && $disp_values.get($valueIndex))
+			<option $selectedAttribute value=$value>$disp_values.get($valueIndex)</option>
+		#else
+			<option $selectedAttribute>$value</option>
+		#end
+	#end		
+		</select>
+#end
+
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#set($years = [ $!turbineUtils.getYear()..1990])
+
+#if ($data.message)
+<div class="alert"> $data.message</div>
+#end
+
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+    <HR>
+#end
+
+<br>
+<div class="edit_title">Yale-Brown Obsessive Compulsive Scale</div>
+#parse("screens/xnat_edit_subjectAssessorData.vm")
+<div class="edit_header1">$displayManager.getSingularDisplayNameForImageSession() Info</div><br>
+#parse("/screens/EditProjectSpecificFields.vm")
+
+<table class="session_info_edit">
+	#dateEditRow("Date" "xnat_a:ybocsData/date")
+	#textEditRow("Time" "xnat_a:ybocsData/time")
+	#textEditRow("Visit ID" "xnat_a:ybocsData/visit_id")
+	#textEditRow("Age" "xnat_a:ybocsData/age")
+	<tr>
+		<td>Current or worst ever?</td>
+		<td>#selectBox("xnat_a:ybocsData/currentOrWorstEver" $item "" ["current", "worst ever"] ["(C)urrent", "(W)orst ever"] $vr)</td>
+	</tr>
+	#textEditRow("1. Time Spent on Obsessions" "xnat_a:ybocsData/timeOccupiedWithThoughts")
+	#textEditRow("2. Interference from Obsessions" "xnat_a:ybocsData/thoughtsInterfereFunctioning")
+	#textEditRow("3. Distress from Obsessions" "xnat_a:ybocsData/distressCaused")
+	#textEditRow("4. Resistance to Obsessions" "xnat_a:ybocsData/effortToResistThoughts")
+	#textEditRow("5. Control over Obsessions" "xnat_a:ybocsData/controlOverThoughts")
+	#textEditRow("6. Time Spent on Compulsions" "xnat_a:ybocsData/timePerforming")
+	#textEditRow("7. Interference from Compulsions" "xnat_a:ybocsData/behaviorsInterfereFunctioning")
+	#textEditRow("8. Distress from Compulsions" "xnat_a:ybocsData/feelingIfPrevented")
+	#textEditRow("9. Resistance to Compulsions" "xnat_a:ybocsData/effortToResistBehaviors")
+	#textEditRow("10. Control over Compulsions" "xnat_a:ybocsData/behaviorDriveStrength")
+	#boolRadioEditRow('Until "just right"?' "xnat_a:ybocsData/untilJustRight" false)
+	#textEditRow('Awareness of "just right"<br>(mental, physical, somewhere in between)' "xnat_a:ybocsData/untilJustRightAwareness")
+	#textEditRow('Perception of "just right"<br>(look, feel, sound)' "xnat_a:ybocsData/untilJustRightPerceptions")
+	#textEditRow('When "until just right" starts<br>(before starting compulsion, at start, during compulsion)' "xnat_a:ybocsData/whenStartUntilJustRight")
+	#textEditRow('How often "until just right"?<br>(frequently, occasionally, rarely, never)' "xnat_a:ybocsData/frequencyUntilJustRight")
+	#textEditRow('Age at first "until just right"' "xnat_a:ybocsData/firstUntilJustRightAge")
+	<tr><td colspan=2>#parse("/screens/EditProjectSpecificFields.vm")</td></tr>
+</table>
+
+<br>
+<div class="edit_header2">Notes</div>
+<br>
+<textarea name="xnat_a:ybocsData.note" rows="4" cols="50" style="text-align:left;">$!notes</textarea>
+
+<hr>
+
+#xdatEditProps($item $edit_screen)
+<input type="button" onclick="javascript:history.go(-1)" value="Back"/>
+&nbsp;&nbsp;&nbsp;
+<input type="button" onclick="validateForm();" name="eventSubmit_doInsert" value="Submit"/>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateSubjectAssessorForm();
+   return false;
+}
+</script>

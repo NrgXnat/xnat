@@ -1,0 +1,61 @@
+<!-- BEGIN: plugin-resources/webapp/xnat-templates/screens/XDATScreen_download_xnat_projectData.vm -->
+$page.setTitle("Download: $om.Id")
+
+<script type="text/javascript">
+	var stopTime=(new Date());
+	//persist the JSESSION for up to 1 day.
+	stopTime.setDate(stopTime.getDate() + 1); 
+	
+    jq(document).ready(function() {
+        // add "applet" class to body to support special handling for applets
+        jq('body').addClass('applet');
+
+
+        // / refresh timeout interval so applet doesn't lose its session.
+        setInterval(function(){
+			if(stopTime.getTime()>(new Date()).getTime()){
+    			XNAT.app.timeout.handleOk();
+			}
+		},60000);
+    });
+</script>
+
+<h2>Download $om.getName() Images</h2>
+<table border="0" >
+    <tr  bgcolor="white">
+        <td style="border-style:none;"  valign="top" align="left" colspan="2">
+            <applet code="org.nrg.xnat.fileManager.DownloaderApplet" codebase="$appletPath" archive="file-downloader-1.6.5.jar, xdat-beans-1.6.5.jar, nrgutil-2.0.0.jar, commons-lang-2.6.jar, log4j-1.2.17.jar" width="500" height="500">
+					#set($exptCount=0)
+					#foreach($pp in $om.getParticipants_participant())
+					#foreach($expt in $pp.getSubjectinfo().getExperiments_experiment())
+					#if($expt.getXSIType().equals("xnat:mrSessionData") || $expt.getXSIType().equals("xnat:petSessionData"))
+                            <param name="session$exptCount" value="$serverRoot/app/template/GetFileCatalog.vm/search_element/xnat%3AexperimentData/search_field/xnat%3AexperimentData.ID/search_value/$expt.Id">
+                            <param name="project$exptCount" value="$om.Id">
+															#set($exptCount=$exptCount + 1)
+															#end
+					#end
+					#end
+			    <param name="jsessionid" value="$jsessionid">
+            </applet>
+       </td>
+    </tr>
+    <tr style="border-style:none;">
+        <td style="border-style:none;" colspan="2" >
+        </td>
+    </tr>
+</table>
+
+
+
+<script>
+  var breadcrumbs=document.getElementById('breadcrumbs');
+  if (breadcrumbs!=null){
+    var bread = "<a href='$link.setPage('Index.vm')'>Home</a>";
+    bread = bread + "&nbsp;>&nbsp;<a href='$link.setPage('BrowseProjects.vm')'>Studies</a>";
+    bread = bread + "&nbsp;>&nbsp;<a href='$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$om.getId()")'>$om.getSecondaryId()</a>";
+    bread = bread + "&nbsp;>&nbsp;Download";
+    
+    breadcrumbs.innerHTML=bread;
+  }
+</script>
+<!-- END: plugin-resources/webapp/xnat-templates/screens/XDATScreen_download_xnat_projectData.vm -->

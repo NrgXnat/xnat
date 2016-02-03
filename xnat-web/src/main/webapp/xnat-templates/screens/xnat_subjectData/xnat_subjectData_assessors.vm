@@ -1,0 +1,88 @@
+			<BR>
+
+
+
+<div id="expts_container">
+
+            <div id="expts_link_legend">
+                #if($useTabs)
+                #else
+                    <span id="expts_header" class="edit_header1">Experiments</span>
+                #end
+                <a id="toggle_expts_link" style="display:none;text-decoration:underline;" onClick="XNAT.app.subject.toggleExptView();">View All Experiments</a>
+                <span id="expt_shared_legend" style="display:none;background-color:#FC9;margin-right: 2px;" class="withThinBorder">Shared</span>
+                <span id="expt_denied_legend" style="display:none;background-color:#F99;margin-right: 2px;" class="withThinBorder">Access Denied</span>
+            </div>
+
+				
+							 #set($hasOtherProjects=false)
+							 #if($pScope)
+					<div id="proj_expts" style="display:none">
+
+			       	<table width="100%">
+							         <TR>
+							           <TH align="left" class="underscore">Date</TH>
+							           <TH align="left" class="underscore">Experiment</TH>
+							           <TH align="left" class="underscore">$displayManager.getSingularDisplayNameForProject()</TH>
+							           <TH align="left" class="underscore">Label</TH>
+							         </TR>
+								 								#foreach ($assessor in $subject.getMinimalLoadAssessors())
+								 								 #if($assessor.hasProject($project))
+			     #parse($turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))
+											    #else
+			     							#set($hasOtherProjects=true)
+											    #end
+											    #end
+							</table>
+
+			</div><!-- /proj_expts -->
+										   #end
+					<div id="all_expts" style="display:none">
+
+    <table width="100%">
+        <TR>
+           <TH align="left" class="underscore">Date</TH>
+           <TH align="left" class="underscore">Experiment</TH>
+           <TH align="left" class="underscore">$displayManager.getSingularDisplayNameForProject()</TH>
+           <TH align="left" class="underscore">Label</TH>
+        </TR>
+								 								#foreach ($assessor in $subject.getMinimalLoadAssessors())
+			     #parse($turbineUtils.getTemplateName("_assessor","xnat:subjectData",$project))
+								 #end
+    </table>
+
+			</div><!-- /all_expts -->
+
+</div><!-- /expts_container -->
+
+<script type="text/javascript">   
+#if($pScope && $hasOtherProjects)
+XNAT.app.subject.toggleExptView=function(){
+  if(document.getElementById("all_expts").style.display=="block")
+  {
+    document.getElementById("toggle_expts_link").innerHTML="View All Experiments";
+    document.getElementById("expts_header").innerHTML="Experiments in ${project}";
+    document.getElementById("proj_expts").style.display="block";
+    document.getElementById("all_expts").style.display="none";
+  }else{
+    document.getElementById("toggle_expts_link").innerHTML="View $project Only";
+    document.getElementById("expts_header").innerHTML="All Experiments";
+    document.getElementById("proj_expts").style.display="none";
+    document.getElementById("all_expts").style.display="block";
+  }
+}
+ 
+  document.getElementById("toggle_expts_link").style.display="inline-block";
+  document.getElementById("proj_expts").style.display="block";
+  document.getElementById("expts_header").innerHTML="Experiments in ${project}";
+#else
+    document.getElementById("all_expts").style.display="block";
+#end
+
+#if($denied)
+document.getElementById("expt_denied_legend").style.display="inline-block";
+#end   
+#if($shared)
+document.getElementById("expt_shared_legend").style.display="inline-block";
+#end
+</script>

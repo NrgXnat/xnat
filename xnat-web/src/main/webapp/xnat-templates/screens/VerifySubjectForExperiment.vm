@@ -1,0 +1,60 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.addAttribute("onLoad", "document.form1.participant.focus();")
+<font face="$ui.sansSerifFonts" size="2">
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+#else
+	#set ($popup = "false")
+#end
+<form name="form1" method="post" action="$link.setPage("$!destination")">
+	<INPUT TYPE="hidden" NAME="popup" VALUE="$popup">
+    <table width="450">
+	<tr>
+		<td colspan="2">
+		<br>Is this $displayManager.getSingularDisplayNameForSubject().toLowerCase() correct?
+		<br><br></td>
+	</tr>
+					<tr>
+        	<TD>Archive Id: </TD><TD>$!item.getProperty("xnat:subjectData.ID")</TD>
+      </tr>
+      <tr>
+						            	<TD align="left">Birth year</TD>
+										<TD>$!subject.DOBDisplay</TD>
+							</tr>
+						
+							<tr>
+						            	<TD align="left">Handedness</TD>
+								   		<TD>$!subject.HandedText</TD>
+							</tr>
+						
+							<tr>
+						            	<TD align="left">Education (years)</TD>
+								   		<TD>$!subject.Education</TD>
+							</tr>
+						
+							<tr>
+						            	<TD align="left">SES</TD>
+								   		<TD>$!subject.Ses</TD>
+							</tr>
+						
+							<tr>
+						            <TD align="left">Date Added</TD>
+									<TD>$!subject.LongCreateTime</TD>
+							</tr>
+						
+							<tr>
+						            <TD align="left">Cohort</TD>
+						            <TD>$!subject.Cohort</TD>
+							</tr>
+	<tr>
+		<td></td>
+		<td>
+		<INPUT type="hidden" name="part_id" value="$item.getProperty("xnat:subjectData.ID")"/>
+		<INPUT type="hidden" name="tag" value="$!tag"/>
+				<input type="button" name="Cancel" value="Back" ONCLICK="javascript:history.go(-1)"/>&nbsp;&nbsp;<input type="submit" name="eventSubmit_doSetup" value="Submit"/>
+		</td>
+	</tr>
+    </table>
+  
+</form>
+</font>

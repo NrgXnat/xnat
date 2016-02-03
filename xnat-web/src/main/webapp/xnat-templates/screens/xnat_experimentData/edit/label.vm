@@ -1,0 +1,35 @@
+
+<table>
+ <tr>
+  <td>
+   <div id="label_placeholder">$!om.getLabel()</div><input type="hidden" id="$om.getXSIType()/label" name="$om.getXSIType()/label" value="$!om.getLabel()"/>
+  </td>
+  <td>
+   <a onclick="modifyLabel()">
+    		<img border="0" src="$content.getURI("images/e.gif")"/>
+   </a>
+  </td>
+ </tr>
+</table>
+<script type="text/javascript">  
+
+  function modifyLabel(){
+    if(window.labelEditor==undefined){
+      var config =new Object();
+      if(window.currentID!=""){
+        config.uri=serverRoot +"/REST/projects/" + window.currentProject +"/subjects/" + window.currentSubject + "/experiments/$om.getId()";
+      }
+      window.labelEditor=new LabelEditor(config);
+      window.labelEditor.onModification.subscribe(function (obj){
+         document.getElementById("label_placeholder").innerHTML=window.currentLabel;
+         document.getElementById("$om.getXSIType()/label").value=window.currentLabel;
+         confirmValues();
+      });
+    }
+      window.labelEditor.render();
+    window.labelEditor.panel.show();
+  }
+
+  window.exptLoader=new ExptLoader();
+
+</script>

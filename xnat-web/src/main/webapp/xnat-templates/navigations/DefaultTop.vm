@@ -1,0 +1,310 @@
+#* @vtlvariable name="timeLeft" type="java.lang.String" *#
+<!-- START: xnat-templates/navigations/DefaultTop.vm -->
+#if($popup)
+
+#else
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+#else
+	#set ($popup = "")
+#end
+#end
+
+#if($project)
+  #set($projectString="/project/$project")
+#end
+
+<script type="text/javascript" src="$content.getURI('scripts/lib/jquery-plugins/jquery.cookie.js')"></script>
+<!-- main_nav interactions -->
+<script type="text/javascript">
+
+    var cover_up_count = 0 ;
+
+    function coverApplet(jqObj){
+
+        cover_up_count++ ;
+
+        var cover_up_id = 'cover_up'+cover_up_count ;
+
+        var
+            jqObjPos = jqObj.offset(),
+            jqObjLeft = jqObjPos.left,
+            jqObjTop = jqObjPos.top,
+            jqObjMarginTop = jqObj.css('margin-top'),
+            jqObjWidth = jqObj.outerWidth()+4,
+            jqObjHeight = jqObj.outerHeight()+2
+        ;
+
+        jqObj.before('<iframe id="'+cover_up_id+'" class="applet_cover_up" src="about:blank" width="'+jqObjWidth+'" height="'+jqObjHeight+'"></iframe>');
+
+        jq('#'+cover_up_id).css({
+            display: 'block',
+            position: 'fixed',
+            width: jqObjWidth,
+            height: jqObjHeight,
+            marginTop: jqObjMarginTop,
+            left: jqObjLeft,
+            top: jqObjTop,
+            background: 'transparent',
+            border: 'none',
+            outline: 'none'
+        });
+
+    }
+
+    function unCoverApplets(jqObj){
+        jqObj.prev('iframe.applet_cover_up').detach();
+    }
+
+    jq(document).ready(function() {
+
+        var _body = jq('body');
+
+        function fadeInNav(jqObj){
+            jqObj.stop('clearQueue','gotoEnd');
+            jqObj.find(' > ul').fadeIn(80).addClass('open');
+        }
+
+        function fadeOutNav(jqObj){
+            jqObj.stop('clearQueue','gotoEnd');
+            jqObj.find(' > ul').fadeOut(100).removeClass('open');
+        }
+
+        // fancy fades on hover
+        jq('#main_nav > ul > li').hover(
+            function() {
+                fadeInNav(jq(this));
+                //jq('#main_nav li').removeClass('open');
+                if (_body.hasClass('applet')){
+                    coverApplet(jq(this).find(' > ul'));
+                }
+            },
+            function() {
+                fadeOutNav(jq(this));
+                if (_body.hasClass('applet')){
+                    unCoverApplets(jq(this).find(' > ul'));
+                }
+            }
+        );
+
+        // modifying widths of 2nd level menu
+        jq('#main_nav li li').hover(
+            function() {
+                var submenu_width = jq(this).outerWidth();
+                jq(this).find(' > ul').css({'left':submenu_width+1});
+                fadeInNav(jq(this));
+                if (_body.hasClass('applet')){
+                    coverApplet(jq(this).find(' > ul'));
+                }
+            },
+            function(){
+                fadeOutNav(jq(this));
+                if (_body.hasClass('applet')){
+                    unCoverApplets(jq(this).find(' > ul'));
+                }
+            }
+        );
+
+        // give menus with submenus a class of 'more'
+        jq('#main_nav li ul , #main_nav li li ul').closest('li').find(' > a').addClass('more');
+        jq('#main_nav li li ul').closest('li').addClass('more');
+        jq('#main_nav li li ul').addClass('subnav');
+
+        // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
+        jq('#logout_user').click(function(){
+            jq.cookie('WARNING_BAR','OPEN',{path:'/'});
+            jq.cookie('NOTIFICATION_MESSAGE','OPEN',{path: '/'});
+        });
+    }); // end (document).ready
+</script>
+<!-- end main_nav interactions -->
+
+
+## preloading background images for main_nav
+<div id="img_preload" style="position:fixed;left:-9999px;top:-9999px;">
+    <img src="$content.getURI('images/nav_bkgd.png')" alt="">
+    <img src="$content.getURI('images/nav_bkgd_hover.png')" alt="">
+</div>
+
+<style type="text/css">
+    #attention_icon { float: left ; padding-top: 7px ; padding-left: 11px ; }
+    #attention_icon:hover { cursor: pointer ; }
+</style>
+
+<div id="user_bar">
+    <img id="attention_icon" src="$content.getURI('images/attention.png')" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
+    #if($last_login)
+        <span id="last_login">Last login: $turbineUtils.formatDateTime($last_login)</span>
+    #end
+    #if($data.getSession().getAttribute("user").getUsername()=="guest")
+        <span id="user_info">Logged in as: <span style="color:red;">Guest</span> <b>|</b> <a href="$link.setPage("Login.vm")">Login</a> <b>|</b> <a href="$link.setPage("Register.vm")">Register</a></span>
+        <script type="text/javascript">
+            jq.cookie('guest','true',{path:'/'});
+        </script>
+    #elseif($data.getSession().getAttribute("user").getUsername())
+    ## use default timeout value from web.xml as the starting text in the "#timeLeft" element
+        <span id="user_info">Logged in as: &nbsp;<a href="$link.setPage("XDATScreen_MyXNAT.vm")">$!data.getSession().getAttribute("user").getUsername()</a> <b>|</b><span class="tip_icon" style="margin-right:3px;left:2px;top:3px;">
+            <span class="tip shadowed" style="top:20px;z-index:10000;white-space:normal;left:-150px;width:300px;background-color:#ffc;">Your XNAT session will auto-logout after a certain period of inactivity. You can reset that timer without reloading the page by clicking "renew."</span>
+        </span>
+        ## some kind of default text needs to be there so stuff doesn't shift around before the timer functions kick in
+            Auto-logout in: <b id="timeLeft">-:--:--</b> - <a id="timeLeftRenew" href="javascript:" onClick="XNAT.app.timeout.handleOk()">renew</a> <b>|</b> <a id="logout_user" href="$link.setAction("LogoutUser")">Logout</a></span>
+        <script type="text/javascript">
+            jq.cookie('guest','false',{path:'/'});
+        </script>
+    #end
+    <div class="clear"></div>
+</div><!-- /user_bar -->
+
+#if ($sessionCount > 1 || $sessionIpCount > 1 )
+##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.
+<script type="text/javascript">
+    jq(document).ready(function(){
+
+        if (jq.cookie('WARNING_BAR') == 'CLOSED'){
+            jq('#attention_icon').show();
+        }
+        else {
+            jq('#warning_bar').show();
+        }
+
+        jq('#attention_icon').click(function(){
+            jq('#warning_bar').slideToggle(200);
+        });
+
+        jq('#warning_bar .close').click(function(){
+            jq.cookie('WARNING_BAR','CLOSED',{path:'/'});
+            jq('#warning_bar').slideUp(200);
+        });
+
+    })
+</script>
+<div id="warning_bar" style="display:none;">
+    <span class="close"><img src="$content.getURI('images/close.gif')"></span>
+    <span>
+        #if ( $sessionIpCount > 1 )
+            ATTENTION: You have $sessionCount sessions open from $sessionIpCount distinct IP addresses.
+        <span class="tip_text">(<i>what does this mean?</i>)
+            <span class="tip shadowed">
+                You may have multiple browsers open or may be logged in from more than one computer. If you believe that someone other than you has logged in to your account, please contact your site administrator immediately.
+                The IP addresses are: $sessionIpCsv.
+            </span>
+        </span>
+        #else
+            ATTENTION: You have $sessionCount sessions open from one IP address.
+        <span class="tip_text">(<i>what does this mean?</i>)
+            <span class="tip shadowed">
+                There is more than one session open from this computer (at IP address $sessionIpCsv). You could be logged in to XNAT using the same credentials using multiple browsers or from separate user accounts on your computer. If you believe that someone other than you has logged in to your account, please contact your site administrator immediately.
+            </span>
+        </span>
+
+        #end
+    </span>
+</div>
+#end
+
+<div id="header" class="main_header">
+    #if($siteConfig.getProperty("siteWideAlertStatus","")=="2")
+        <div id="headNotification" class="$siteConfig.getProperty("siteWideAlertType","") hidden" style="margin-bottom: 2em;">
+            <span class="closeNotification"><img src="$content.getURI('images/close.gif')"></span>
+            <span>$siteConfig.getProperty("siteWideAlertMessage","")</span>
+        </div>
+
+        <script>
+            if (jq.cookie('NOTIFICATION_MESSAGE') !== 'CLOSED') {
+                jq('#headNotification').removeClass('hidden');
+            }
+
+            jq('.closeNotification').on('click',function(){
+                jq('#headNotification').slideUp().addClass('hidden');
+                jq.cookie('NOTIFICATION_MESSAGE','CLOSED',{path: '/'});
+            })
+        </script>
+    #end
+
+    <a id="header_logo" href="$link.setPage("Index.vm")">
+        #parse("/screens/Logo.vm")
+    </a>
+
+$navigation.setTemplate("XNATQuickSearch.vm")
+
+    <div id="main_nav">
+        <ul>
+            #addGlobalCustomScreens("topBar")
+        </ul>
+    </div><!-- /main_nav -->
+
+</div>  <!-- /header -->
+
+
+<script type="text/javascript">
+
+    jq(document).ready(function() {
+
+        // adjust height of header if logo is taller than 65px
+        var hdr_logo_height = jq('#header_logo').height();
+        if (hdr_logo_height > 65) {
+            jq('.main_header').height(hdr_logo_height + 10);
+        }
+
+        // adjust width of main nav if logo is wider than 175px
+        var hdr_logo_width = jq('#header_logo').width();
+        if (hdr_logo_width > 175) {
+            jq('#main_nav').width(932 - hdr_logo_width - 20);
+        }
+
+        //
+        //var recent_proj_height = jq('#min_projects_list > div').height();
+        var recent_proj_height = 67 ;
+        //jq('#min_projects_list, #min_expt_list').height(recent_proj_height * 5).css({'min-width':349,'overflow-y':'scroll'});
+
+    });
+
+    logged_in = true ;
+
+    // initialize the advanced search method toggler
+    XNAT.app.searchMethodToggler = function(_parent){
+
+        _parent = $$(_parent||'body');
+
+        var INPUTS = 'input, select, textarea, :input',
+            SEARCH_METHOD_CKBOXES = 'input.search-method',
+            __searchGroups = _parent.find('div.search-group'),
+            __searchMethodInputs = _parent.find(SEARCH_METHOD_CKBOXES);
+
+        // disable 'by-id' search groups by default
+        __searchGroups.filter('.by-id').addClass('disabled').
+            find(INPUTS).not(SEARCH_METHOD_CKBOXES).changeVal('').prop('disabled', true).addClass('disabled');
+
+        // enable 'by-criteria' search groups by default
+        __searchGroups.filter('.by-criteria').removeClass('disabled').
+            find(INPUTS).prop('disabled',false).removeClass('disabled');
+
+        // check 'by-criteria' checkboxes
+        __searchMethodInputs.filter('.by-criteria').prop('checked', true);
+
+        // don't add multiple click handlers
+        __searchMethodInputs.off('click');
+
+        // toggle the search groups
+        __searchMethodInputs.on('click', function(){
+
+            var method = this.value,
+                isChecked = this.checked;
+
+            __searchGroups.addClass('disabled').
+                find(INPUTS).not(SEARCH_METHOD_CKBOXES).changeVal('').prop('disabled', true).addClass('disabled');
+
+            __searchGroups.filter('.' + method).removeClass('disabled').
+                find(INPUTS).prop('disabled', false).removeClass('disabled');
+
+            // update the radio buttons/checkboxes
+            __searchMethodInputs.prop('checked',false);
+            __searchMethodInputs.filter('.' + method).prop('checked', true);
+            chosenUpdate();
+        });
+    };
+
+</script>
+
+<script src="$content.getURI("scripts/timeLeft.js")"></script>
+<!-- END: xnat-templates/navigations/DefaultTop.vm -->

@@ -1,0 +1,32 @@
+#* @vtlvariable name="hash" type="java.lang.String" *#
+#* @vtlvariable name="server" type="java.lang.String" *#
+#* @vtlvariable name="system" type="java.lang.String" *#
+#* @vtlvariable name="admin_email" type="java.lang.String" *#
+#* @vtlvariable name="par" type="org.nrg.xnat.turbine.utils.ProjectAccessRequest" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+#* @vtlvariable name="projectOM" type="org.nrg.xdat.om.XnatProjectdata" *#
+#set ($acceptUrl = "${server}/app/action/AcceptProjectAccess/par/${par.guid}?hash=${par.hashedEmail}")
+<div id="logo" align="center">#parse("/screens/Logo_Email.vm")</div>
+<hr>
+<TABLE>
+ <TR>
+  <TD><h3>$projectOM.getName() access invitation.</h3></TD>
+ </TR>
+ <TR><TD>
+$user.getFirstname() $user.getLastname() has invited you to join the $projectOM.getName() project.  
+#if($projectOM.getDescription())
+Project Description: $projectOM.getDescription()
+#end
+</TD></TR>
+ <TR>
+  <TD><a href="$acceptUrl">Proceed to the site to get started reviewing/using the data.</A></TD>
+ </TR>
+<TR><TD>
+<br><br>
+The $system Team<BR>
+
+<a href="$acceptUrl">$server</a><BR>
+
+<a href="mailto:$admin_email">$admin_email</a>
+
+</TD></TR></TABLE>

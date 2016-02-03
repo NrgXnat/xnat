@@ -1,0 +1,150 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("UserGroup Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>UserGroup Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xdat:userGroup/ID")</TD></TR>
+							<TR><TD>displayName</TD><TD>$!item.getStringProperty("xdat:userGroup/displayName")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<style type="text/css">
+<!--
+	TD.special {
+	border-width:1px;
+	border-color:black; 
+	border-style:solid
+	}
+-->
+</style>
+	#set ($unauthorizedColor = "CC99CC")
+	#set ($unDefinedColor = "FFCCCC")
+	<TR>
+		<TD align=left valign=top colspan="2">
+			<Table border="0">
+				#if($item.needsActivation())
+					<TR><TD align="left" class="special" style="background-color:$unauthorizedColor">&nbsp;!Note: This user's permissions are not fully authorized!&nbsp;
+					#if ($user.checkRole("Bossman"))
+						&nbsp;&nbsp;&nbsp;<A HREF="$link.setAction("XDATActionRouter").addPathInfo("xdataction","activate").addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)" >Authorize Now</a>
+					#end</TD></TR>
+				#end
+				#if(! $allSet.booleanValue())
+					<TR><TD align="left" class="special" style="background-color:$unDefinedColor">&nbsp;Note: Permissions have not been set for these fields. Data will not be accessible to this user.&nbsp;</TD></TR>
+				#end
+				<TR><TH align="left">Permissions
+				#if ($item.canEdit($user))
+				&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;<A HREF="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)" >Edit</a>
+				#end<BR><BR></TH></TR>
+				#set($permissionCount = 0)
+				#foreach ($elementManager in $allElements)
+					#set($elementName = $elementManager.get(0))
+					#set($permissionCount = $permissionCount + 1)
+					<TR>
+						<TD align="left">
+							<TABLE>
+								<TR>
+									<TD>
+										<A NAME="LINK${permissionCount}" HREF="#LINK${permissionCount}" onClick=" return blocking($permissionCount);return false;"><img ID="IMG$permissionCount" src="$content.getURI("images/plus.jpg")" border=0></A>
+									</TD>
+									#if (! $elementManager.get(4).booleanValue())
+										<TD align="left" class="special" style="background-color:$unDefinedColor"">
+									#elseif ($elementManager.get(3).booleanValue())
+									<TD align="left">
+									#else
+									<TD align="left" class="special" style="background-color:$unauthorizedColor">
+									#end
+										<A NAME="LINK${permissionCount}" HREF="#LINK${permissionCount}" onClick=" return blocking($permissionCount);return false;">&nbsp;&nbsp;$elementName</A>
+									</TD>
+								</TR>
+							</TABLE>
+						</TD>
+					<TR>
+						<TD>
+							<span ID="span$!permissionCount" style="position:relative; display:none;">
+							<TABLE>
+								<TR><TH colspan=2>&nbsp;</TH><TH>Create</TH><TH>Read</TH><TH>Edit</TH><TH>Delete</TH><TH>Activate</TH></TR>
+								#foreach ($perimissionItem in $elementManager.get(1))
+									#if($perimissionItem.wasSet())
+										#if($perimissionItem.isAuthenticated())
+										<TR>
+										#else
+										<TR bgcolor="$unauthorizedColor">
+										#end
+											<TD colspan=2 width="200" #if(!$perimissionItem.isAuthenticated())class="special"#end>$perimissionItem.getDisplayName()
+											#if($perimissionItem.getFullFieldName().endsWith("sharing/share/project"))
+												(SHARED)
+											#elseif($perimissionItem.getFullFieldName().endsWith("/project"))
+												(OWNED)
+											#end
+											</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canCreate())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canRead())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canEdit())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canDelete())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canActivate())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+										</TR>
+									#else
+										<TR bgcolor="$unDefinedColor">
+											<TD colspan=2 width="200" class="special" >$perimissionItem.getDisplayName()
+											#if($perimissionItem.getFullFieldName().endsWith("sharing/share/project"))
+												(SHARED)
+											#elseif($perimissionItem.getFullFieldName().endsWith("/project"))
+												(OWNED)
+											#end
+											</TD>
+											<TD class="special" >?</TD>
+											<TD class="special" >?</TD>
+											<TD class="special" >?</TD>
+											<TD class="special" >?</TD>
+											<TD class="special" >?</TD>
+										</TR>
+									#end
+								#end
+							</TABLE><BR>
+							</SPAN>
+						</TD>
+					</TR>
+				#end
+			</TABLE>
+            <script type="text/javascript">
+                function goToGroupsPage(){
+                    xmodal.loading.open('Please wait...');
+                    window.top.location.href = serverRoot + '/app/template/XDATScreen_groups.vm';
+                }
+            </script>
+            #if ($turbineUtils.GetPassedParameter("popup",$data)=="true")
+                <input type="button" name="btnClose" onclick="goToGroupsPage()" value="Close">
+            #else
+                <input type="button" name="btnClose" onclick="goToGroupsPage()" value="Done">
+            #end
+		</TD>
+	</TR>
+</TABLE>
+

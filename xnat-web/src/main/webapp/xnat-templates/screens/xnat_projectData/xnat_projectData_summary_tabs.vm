@@ -1,0 +1,109 @@
+<!-- BEGIN xnat-templates/screens/xnat_projectData/xnat_projectData_summary_tabs.vm -->
+<style>
+span.spacer{
+height:12px;
+width:1px;
+}
+</style>
+<div ID="project_summary_module" style="display:none">
+	<div id="projectSummary" class="yui-navset">
+		<ul class="yui-nav">
+      <li class="selected"><a href="#tab1"><em>Details<span class="spacer"></span></em></a></li>
+#set($canReadSubjects=$data.getSession().getAttribute("userHelper").canRead("xnat:subjectData/project","$project.getId()"))
+#if($canReadSubjects)
+		  #if($data.getSession().getAttribute("userHelper").canDelete($project))
+					<li><a href="#tab3"><em>Access<span class="spacer"></span></em></a></li>
+					<li><a href="#othermgmt"><em>Manage<span class="spacer"></span></em></a></li>
+					<li><a href="#tab4"><em>Pipelines<span class="spacer"></span></em></a></li>
+  #end
+#end
+            #foreach($tab in $tabs)
+                <li><a href="#$tab.getProperty("divName")"><em>$tab.getProperty("title")<span class="spacer"></span></em></a></li>
+            #end
+
+  </ul>
+ <div class="yui-content">   
+			<div id="tab1">
+				<p>#parse($turbineUtils.getTemplateName("_summary_details","xnat:projectData",$project.getId()))</p>
+			</div>  
+
+#if($canReadSubjects)
+ #if($data.getSession().getAttribute("userHelper").canCreate($project))
+					<div id="tab3">
+						<p>#parse($turbineUtils.getTemplateName("_summary_management","xnat:projectData",$project.getId()))</p>
+					</div>
+			 		<div id="othermgmt">
+			 			<p>#parse($turbineUtils.getTemplateName("_summary_manage","xnat:projectData",$project.getId()))</p>
+					</div>
+					<div id="tab4">
+						<p>#parse($turbineUtils.getTemplateName("_summary_pipeline","xnat:projectData",$project.getId()))</p>
+					</div>
+ #end
+#end
+            #foreach($tab in $tabs)
+                <div id="$tab.getProperty("divName")">
+                    #set($path = "screens/xnat_projectData/tabs/${tab.getProperty('fileName')}")
+                    <p>#parse($path)</p>
+                </div>
+            #end
+
+  </div> 
+</div>
+</div>
+
+<script type="text/javascript">   
+function summaryIndexChanged(){
+   var activeIndex=this.get("activeIndex");
+   YAHOO.util.Cookie.set("${project.getId()}.summary.index",activeIndex);
+}
+   
+function summaryTabManagerInit(){
+    window.summaryTabView = new YAHOO.widget.TabView('projectSummary');   
+    var oButton1= new YAHOO.widget.Button("button1");
+    var oButton2= new YAHOO.widget.Button("button2");
+#if($canReadSubjects)
+    #if($data.getSession().getAttribute("userHelper").canDelete($project))
+    var oButton3= new YAHOO.widget.Button("button3");
+    #end
+    #if($data.getSession().getAttribute("userHelper").canCreate($project))
+    var oButton4= new YAHOO.widget.Button("button4");
+    var oButton5= new YAHOO.widget.Button("button5");
+    #end
+#end
+
+
+    window.project_summary_module = new YAHOO.widget.Module("project_summary_module",{visible:false,zIndex:5});
+	
+#addCustomScreenJS($om.getXSIType() "report/tabs_js") 
+    
+    window.project_summary_module.show(); 		    
+    
+#if($canReadSubjects)
+    #if($topTab)
+    	var i=0;
+    	var found=false;
+    	while(window.summaryTabView.getTab(i)!=null && !found){
+    		var tabLabel=window.summaryTabView.getTab(i).get('label');
+    		var parseTabLabel=tabLabel.split('<');	
+    		//alert("tab #" + i + ": " + parseTabLabel[0] + ", $!topTab");
+        	if(parseTabLabel[0]=="$!topTab") {
+    			// We have a match!
+    			window.summaryTabView.set('activeIndex', i);
+    			found=true;
+    		}
+    		i++;
+        }
+    	if (!found) {
+    		window.summaryTabView.set('activeIndex', 0);
+    	}
+	#else
+    var tabIndex=YAHOO.util.Cookie.get("${project.getId()}.summary.index");
+    window.summaryTabView.set('activeIndex',tabIndex||0);
+    #end
+    window.summaryTabView.subscribe("activeTabChange",summaryIndexChanged);
+#end
+	
+					}
+					summaryTabManagerInit();
+</script>
+<!-- END xnat-templates/screens/xnat_projectData/xnat_projectData_summary_tabs.vm -->

@@ -1,0 +1,163 @@
+/*
+ * D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/webapp/xnat/images/dab_files/xdat.css
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/1/13 9:12 AM
+ */
+/***********************************************/
+/* HTML tag styles                             */
+/***********************************************/ 
+
+body {
+	margin:5px;
+	padding:0px;
+	font-size:11px;
+	line-height:13px;
+	font-weight:400;
+	font-family:verdana,geneva,helvetica;
+	background-color:white;
+	}
+  TH {
+    font-size:11px;
+    line-height:13px;
+	font-weight:700;
+	font-family:verdana,geneva,helvetica;
+	margin:0px 0px 0px 0px;	
+	border-top-style:none; 
+	border-right-style:none; 
+	border-left-style:none;
+	border-collapse: collapse;
+	PADDING-RIGHT: 4px;
+ 	PADDING-LEFT: 4px;
+	}
+  H2 {
+           line-height:16px;
+        }
+  p {
+	font-size:10px;
+	line-height:12px;
+	font-weight:400;
+	font-family:verdana,geneva,helvetica;
+	margin:0px 0px 0px 0px;	
+	}
+  TD {
+ 	PADDING-RIGHT: 4px;
+ 	PADDING-LEFT: 4px;
+	font-family:verdana,geneva,helvetica;
+	font-size:10px;
+	line-height:14px;
+  }
+A.plainText {	
+	text-decoration:none;
+	font-weight:100;
+	font-family:verdana,geneva,helvetica;
+ 	font-size:10px;
+	color:black
+}
+
+  A {
+ 	text-decoration:none;
+	font-weight:700;
+	font-family:verdana,geneva,helvetica;
+ 	font-size:11px;
+	color:rgb(51,51,102);
+  }
+
+input { 
+	font-size:11px;
+    	line-height:13px;
+	font-weight:500;
+	font-family:verdana,geneva,helvetica;
+	}
+
+select { 
+	font-size:11px;
+    	line-height:13px;
+	font-weight:500;
+	font-family:verdana,geneva,helvetica;
+	}
+
+DIV.error { 
+    width:500px;
+	background-color:#ff99cc;
+    border-width:1px;
+    border-style:solid;
+	font-size:14px;
+    line-height:16px;
+	font-weight:500;
+	font-family:verdana,geneva,helvetica;
+    overflow:auto;
+	padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    text-align:left;
+    clear:left;
+	}
+DIV.warning { 
+    width:500px;
+	background-color:#ffCCCC;
+    border-width:1px;
+    border-style:solid;
+	font-size:14px;
+    line-height:16px;
+	font-weight:500;
+	font-family:verdana,geneva,helvetica;
+    overflow:auto;
+	padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    text-align:left;
+    clear:left;
+	}
+DIV.note { 
+    width:500px;
+	background-color:#CCFFFF;
+    border-width:1px;
+    border-style:solid;
+	font-size:14px;
+    line-height:16px;
+	font-weight:500;
+	font-family:verdana,geneva,helvetica;
+    overflow:auto;
+	padding-top: 5px;
+    padding-bottom: 5px;
+    padding-left: 5px;
+    padding-right: 5px;
+    text-align:left;
+    clear:left;
+	}
+DIV.text{
+    font-size:11px;
+    line-height:13px;
+	font-family:verdana,geneva,helvetica;
+}
+DIV.edit_title{
+    font-size:16px;
+    line-height:18px;
+	font-weight:700;
+	font-family:verdana,geneva,helvetica;
+}
+DIV.edit_header1{
+    font-size:14px;
+    line-height:16px;
+	font-weight:700;
+	font-family:verdana,geneva,helvetica;
+}
+DIV.edit_header2{
+    font-size:12px;
+    line-height:14px;
+	font-weight:700;
+	font-family:verdana,geneva,helvetica;
+}
+DIV.edit_header3{
+    font-size:11px;
+    line-height:13px;
+	font-weight:700;
+	font-family:verdana,geneva,helvetica;
+}

@@ -1,0 +1,26 @@
+<DIV class="edit_header2" align="center">$displayManager.getPluralDisplayNameForProject()</div>
+<style type="text/css">
+ul.leftMenu{
+	list-style: none;
+	margin: 0;
+	padding: 0;
+	}
+li.leftMenu{
+	/*border:1px solid #DEDEDE;*/
+	}
+img {
+    border: none;
+} 
+</style>
+#set($projects = $data.getSession().getAttribute("userHelper").getCachedItems("xnat:projectData","active",false))
+#if ($projects.size()>0)
+<div STYLE="overflow:auto;">
+<div id="tabbedList">
+  <ul class="leftMenu">			
+			#foreach ($projectObject in $projects)
+<li class="leftMenu"><A href="$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectObject.getId()")">$projectObject.getSecondaryId()</A></li>
+			#end
+  </ul>
+</div>
+</div>
+#end

@@ -1,0 +1,140 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("Login.vm")
+#set ($siteId = $siteConfig.getProperty("siteId",""))
+$page.setTitle("$siteId - Register")
+
+<div id="login_area">
+##    #if($siteConfig.getProperty("siteWideAlertStatus","")!="0")
+##        <div class="$siteConfig.getProperty("siteWideAlertType","")" style="margin-bottom: 2em;"><strong>$siteConfig.getProperty("siteWideAlertMessage","")</strong></div>
+##    #end
+
+    <div id="register_box_container" style="margin-right: 60px;">
+        <div id="register_box">
+            <form name="form2" method="post" action="$link.setAction("XDATForgotLogin")" class="friendlyForm" id="register_form">
+                <p>Did you forget your username? Enter your email address and the matching username will be emailed to you.</p>
+                <p><label for="email">Email</label><input type="text" name="email" value="$!email"></p>
+                <p class="form-submit"><input type="submit" value="Request"></p>
+
+                <hr style="margin: 2em 0" />
+                <p id="register_forgot">
+                    <a href="javascript: openVerificationModal()">Resend email verification</a>
+                    <span class="sep"></span>
+                    <a href="$link.setPage("Login.vm")">Return to Login Page</a>
+                </p>
+            </form>
+        </div>
+    </div>
+
+    <div id="login_box_container">
+        <div id="login_box">
+            #if ( $data.getMessage() )
+                <div class="alert">
+                    $data.getMessage()
+                </div>
+            #end
+            <form name="form3" method="post" action="$link.setAction("XDATForgotLogin")" class="friendlyForm" id="login_form">
+                <p>Did you forget your password? Enter your username and a new password will be emailed to you.</p>
+                <p><label for="username">Username</label><input type="text" name="username" value="$!username"></p>
+                <p class="form-submit"><input type="submit" value="Request"> </p>
+
+                #foreach($key in $data.getParameters().getKeys())
+                    #if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception")
+                        <input type="hidden" name="$!turbineUtils.escapeParam($key)" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+                    #end
+                #end
+            </form>
+        </div>
+    </div>
+
+</div>
+
+<script>
+
+    function validEmailFormat(emailToTest) {
+        var re = /^(([^<>()[\]\\.,;:\s@\"]+(\.[^<>()[\]\\.,;:\s@\"]+)*)|(\".+\"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$/;
+        return re.test(emailToTest);
+    }
+
+    // set a 'master' position for all modals on this page
+    var modal_top = '20%';
+
+    var verificationRequestModalContent = '<p>Enter your email address to resend the verification email.</p>';
+    verificationRequestModalContent += '<p><label for="verificationEmail">Email</label><input name="verificationEmail" type="text" id="requestEmail" /></p>';
+
+    function openVerificationModal(){
+        xmodal.confirm({
+            content: verificationRequestModalContent,
+            height: 240,
+            top: modal_top,
+            className: 'friendlyForm',
+            okAction: function(obj){
+                var _emailToVerify = $(obj.$modal).find('#requestEmail').val();
+                requestVerificationEmail(_emailToVerify);
+            }
+        });
+    }
+
+    function requestVerificationEmail(emailToVerify){
+
+        emailToVerify = emailToVerify || jq('#requestEmail').val;
+
+        if (!validEmailFormat(emailToVerify)){
+            xmodal.message('Error','Invalid email format. Please enter an email address in the format "name@domain.com" and try again.',{action:function(){__email.focus().select()},top:modal_top});
+            return false;
+        }
+
+        xmodal.loading.open('Please Wait...');
+
+        var msg = {} ;
+        msg.buttonLabel = 'OK';
+        msg.top = modal_top;
+
+        var requestURL = serverRoot + '/data/services/sendEmailVerification?email=' + encodeURIComponent(emailToVerify) ;
+
+        var request = jQuery.ajax({
+            type: 'POST',
+            url: requestURL
+        });
+
+        request.done(function( data, status ){
+            xmodal.loading.close();
+            msg.title = 'Email Sent';
+            msg.content = 'A verification email has been sent to ' + emailToVerify + '.';
+            msg.action = function(){
+                if (window.requestModal) {
+                    xmodal.close(window.requestModal);
+                }
+                else {
+                    xmodal.closeAll();
+                }
+                window.location = serverRoot + '/app/template/Login.vm';
+            };
+            xmodal.message(msg)
+        });
+
+        request.fail(function( data, status, error ){
+            xmodal.loading.close();
+            //xmodal.closeAll();
+
+            var _status = data.status;
+
+            msg.title = 'Error';
+
+            if (_status === 503){
+                msg.content = 'You have exceeded the allowed number of email requests. Please try again later.';
+                xmodal.message(msg);
+            }
+            else if (_status === 400){
+                msg.content = 'Unknown email address.';
+                xmodal.message(msg);
+            }
+            else {
+                msg.content = 'An unexpected error has occurred. Please contact your administrator.';
+                xmodal.message(msg);
+            }
+        });
+    }
+
+
+</script>

@@ -1,0 +1,187 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+
+## is the code in this script deprecated?
+<SCRIPT LANGUAGE="JavaScript">
+<!--
+floatX=10;
+floatY=110;
+
+
+layerwidth=290;
+layerheight=30;
+halign="right";
+valign="top";
+delayspeed=2;
+
+// This script is copyright (c) Henrik Petersen, NetKontoret
+// Feel free to use this script on your own pages as long as you do not change it.
+// It is illegal to distribute the script as part of a tutorial / script archive.
+// Updated version available at: http://www.echoecho.com/toolfloatinglayer.htm
+// This comment and the 4 lines above may not be removed from the code.
+
+NS6=false;
+IE4=(document.all);
+if (!IE4) {NS6=(document.getElementById);}
+NS4=(document.layers);
+
+function adjust() {
+	if ((NS4) || (NS6)) {
+		if (lastX==-1 || delayspeed==0)
+		{
+			lastX=window.pageXOffset + floatX;
+			lastY=window.pageYOffset + floatY;
+		}
+		else
+		{
+			var dx=Math.abs(window.pageXOffset+floatX-lastX);
+			var dy=Math.abs(window.pageYOffset+floatY-lastY);	
+			var d=Math.sqrt(dx*dx+dy*dy);
+			var c=Math.round(d/10);
+			if (window.pageXOffset+floatX>lastX) {lastX=lastX+delayspeed+c;}
+			if (window.pageXOffset+floatX<lastX) {lastX=lastX-delayspeed-c;}
+			if (window.pageYOffset+floatY>lastY) {lastY=lastY+delayspeed+c;}
+			if (window.pageYOffset+floatY<lastY) {lastY=lastY-delayspeed-c;}
+		}
+		if (NS4){
+			document.layers['floatlayer'].pageX = lastX;
+			document.layers['floatlayer'].pageY = floatY;
+		}
+		if (NS6){
+			document.getElementById('floatlayer').style.left=lastX;
+			document.getElementById('floatlayer').style.top=floatY;
+		}
+	}
+	else if (IE4){
+		if (lastX==-1 || delayspeed==0)
+		{
+		
+			//CHANGE y to 0 if on mac
+			var detect = navigator.userAgent.toLowerCase();
+			if (detect.indexOf('mac')!=-1)
+			{
+				floatY=0;
+			}
+			lastX=document.body.scrollLeft + floatX;
+			lastY=floatY;
+		}
+		else
+		{
+			var dx=Math.abs(document.body.scrollLeft+floatX-lastX);
+			var dy=Math.abs(document.body.scrollTop+floatY-lastY);
+			var d=Math.sqrt(dx*dx+dy*dy);
+			var c=Math.round(d/10);
+			if (document.body.scrollLeft+floatX>lastX) {lastX=lastX+delayspeed+c;}
+			if (document.body.scrollLeft+floatX<lastX) {lastX=lastX-delayspeed-c;}
+			if (document.body.scrollTop+floatY>lastY) {lastY=lastY+delayspeed+c;}
+			if (document.body.scrollTop+floatY<lastY) {lastY=lastY-delayspeed-c;}
+		}
+		document.all['floatlayer'].style.posLeft = lastX;
+		document.all['floatlayer'].style.posTop = floatY;
+	} 
+	setTimeout('adjust()',50);
+}
+
+var dataTableWidth=50;
+var dataTableHeight=320;
+
+function define()
+{
+if ((NS4) || (NS6)) 
+{ 
+if (halign=="left") {floatX=ifloatX};
+if (halign=="right") {floatX=window.innerWidth-ifloatX-layerwidth-20};
+if (halign=="center") {floatX=Math.round((window.innerWidth-20)/2)-Math.round(layerwidth/2)};
+if (valign=="top") {floatY=floatY};
+if (valign=="bottom") {floatY=window.innerHeight-ifloatY-layerheight};
+if (valign=="center") {floatY=Math.round((window.innerHeight-20)/2)-Math.round(layerheight/2)};
+}
+if (IE4) 
+{
+if (halign=="left") {floatX=ifloatX};
+if (halign=="right") {floatX=document.body.offsetWidth-ifloatX-layerwidth-20}
+if (halign=="center") {floatX=Math.round((document.body.offsetWidth-20)/2)-Math.round(layerwidth/2)}
+if (valign=="top") {floatY=floatY};
+if (valign=="bottom") {floatY=document.body.offsetHeight-ifloatY-layerheight}
+if (valign=="center") {floatY=Math.round((document.body.offsetHeight-20)/2)-Math.round(layerheight/2)}
+}
+
+	if (document.getElementById && document.getElementById('dataTable'))
+	{
+		if ((NS4) || (NS6)) 
+		{ 
+			
+			document.getElementById('dataTable').style.width = window.innerWidth-dataTableWidth;
+			document.getElementById('dataTable').style.height = window.innerHeight-dataTableHeight;
+			document.getElementById('dataTable').style.overflow = "auto";
+		}
+		if (IE4) 
+		{
+			document.getElementById('dataTable').style.width = document.body.offsetWidth-dataTableWidth;
+			document.getElementById('dataTable').style.height = document.body.offsetHeight-dataTableHeight;
+			document.getElementById('dataTable').style.overflow = "auto";
+			
+			//document.getElementById('dataTable').style.border = "1px solid #888";
+			//document.getElementById('dataRows').style.border = "1px solid #888";
+			//document.getElementById('headerRow').style.border = "1px solid #888";
+		}	
+	}
+	else if (document.all && document.all['dataTable'])
+	{
+		if ((NS4) || (NS6)) 
+		{ 
+			document.all['dataTable'].style.width = window.innerWidth-dataTableWidth;
+			document.all['dataTable'].style.height = window.innerHeight-dataTableHeight;
+			document.all['dataTable'].style.overflow = "auto";
+		}
+		if (IE4) 
+		{
+			document.all['dataTable'].style.width = document.body.offsetWidth-dataTableWidth;
+			document.all['dataTable'].style.height = document.body.offsetHeight-dataTableHeight;
+			document.all['dataTable'].style.overflow = "auto";
+		}
+	}
+}
+//-->
+</script>
+## what does this do?
+#if($pageCSS)
+<link rel="stylesheet" type="text/css" href="$content.getURI("$pageCSS")">
+#end
+
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+#if($search)
+    #if($search.isSuperSearch() || $search.isStoredSearch())
+        <script type="text/javascript">
+            jq(window).load(showSpan("panel$search.getElement().getXSIType()"));
+        </script>
+    #end
+#end
+
+<!-- path: xdat-templates/layouts/DefaultExptList -->
+
+<table id="wrapper_table" height="100%" border="0" valign="top">
+    <tr>
+    <td height="60">
+      $navigation.setTemplate("/DefaultTop.vm")
+    </td>
+  </tr>
+  <tr>
+    <td align="left" valign="top">
+      $navigation.setTemplate("/Breadcrumb.vm")
+      <div id="layout_content2" style="display:none;">Loading...</DIV>
+      <div id="layout_content">$screen_placeholder</DIV>
+    </td>
+  </tr>
+  <tr>
+    <td valign="bottom">
+    	$navigation.setTemplate("/DefaultBottom.vm")
+    </td>
+  </tr>
+</table>
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

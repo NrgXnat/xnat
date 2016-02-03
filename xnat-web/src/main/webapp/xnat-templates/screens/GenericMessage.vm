@@ -1,0 +1,11 @@
+$msg
+
+<script>
+  var breadcrumbs=document.getElementById('breadcrumbs');
+  if (breadcrumbs!=null){
+    #if ($breadcrumbLinks)
+    bread = bread + $breadcrumbLinks;
+    #end
+    breadcrumbs.innerHTML=bread;
+  }
+</script>

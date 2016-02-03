@@ -1,0 +1,29 @@
+<tr>
+	<th>Pass</th>
+	<td style="font-weight:bold;">
+		#if ($!scan.getStringProperty("xnat:qcScanData/pass").equals("1"))
+			<span style="color:green">Passed</span>
+		#elseif($!scan.getStringProperty("xnat:qcScanData/pass").equals("0"))
+			<span style="color:red">Failed</span>
+		#else
+			<span style="color:gold">Unknown ($!scan.getStringProperty("xnat:qcScanData/pass")</span>
+		#end
+	</td>
+</tr>
+
+#if( $scan.getStringProperty("xnat:qcScanData/coverage") )
+	<tr><th>Coverage</th><td>$!scan.getStringProperty("xnat:qcScanData/coverage")</td></tr>
+#end
+#if( $!scan.getStringProperty("xnat:qcScanData/motion") )
+	<tr><th>Motion</th><td>$!scan.getStringProperty("xnat:qcScanData/motion")</td></tr>
+#end
+#if( $!scan.getStringProperty("xnat:qcScanData/otherImageArtifacts") )
+	<tr>
+		<th>Other Image Artifacts</th>
+		<td>$!scan.getStringProperty("xnat:qcScanData/otherImageArtifacts")</td>
+	</tr>
+#end
+#if( $!scan.getStringProperty("xnat:qcScanData/comments") )
+	<tr><th>Comments</th><td>$!scan.getStringProperty("xnat:qcScanData/comments")</td></tr>
+#end
+	

@@ -1,0 +1,14 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<TABLE width=100%>
+	<TR>
+		<TD>
+			$!data_item
+		</TD>
+	    <td valign="top">
+	   		#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+	    </td>
+	</TR>
+</TABLE>

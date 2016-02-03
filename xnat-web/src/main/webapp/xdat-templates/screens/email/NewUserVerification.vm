@@ -1,0 +1,3 @@
+Dear $name,
+<br><br>Please click this link to verify your email address: <a href="$verifyEmailLink">Verify Email</a>
+<br><br>This link will expire in 24 hours.

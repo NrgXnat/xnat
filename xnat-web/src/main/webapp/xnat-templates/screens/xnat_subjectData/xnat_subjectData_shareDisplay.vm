@@ -1,0 +1,57 @@
+						#set($read_projects=$data.getSession().getAttribute("userHelper").getAllowedValues("$item.getXSIType()","$item.getXSIType()/project","read"))
+						<table><tr><td>
+						<table align="left">
+								<tr>
+						            	<TH align="left">Primary $displayManager.getSingularDisplayNameForProject()</TH>
+						            	<TD>#if($read_projects.contains($om.getProject()))$!om.getProjectDisplayID()#else******#end</TD>
+							</tr>
+#if($read_projects.contains($om.getProject()))
+														 #if($om.getLabel())
+								  <tr>
+						            	<TH align="left"><label ID='${om.getXSIType()}_label'>ID in primary $displayManager.getSingularDisplayNameForProject().toLowerCase()</label></TH>
+						            	<TD>$!om.getLabel()</TD>
+							  </tr>
+							 #end
+							 #if($om.getGroup())
+															  <tr>
+						            	<TH align="left"><label ID='${om.getXSIType()}_label'>Research group within primary $displayManager.getSingularDisplayNameForProject().toLowerCase()</label></TH>
+						            	<TD>$!om.getGroup()</TD>
+							  </tr>
+							 #end
+							#end
+							</table>
+</td></tr>
+
+ #if($om.getSharing_share().size()>0)
+<tr><td>&nbsp;</td></tr>
+<tr><td>
+<table cellspacing="0px">
+ <tr>
+  <td class="highlighted">Other $displayManager.getSingularDisplayNameForProject() Sharing</td>
+ </tr>
+ <tr>
+  <td style="border:1px solid #AAAAAA">
+       <TABLE> 
+        <tr><th>$displayManager.getSingularDisplayNameForProject()</th><th>ID</th><th>Group</th></tr>
+       #foreach($pp in $om.getSharing_share())
+        #if($read_projects.contains($pp.getProperty("project")))
+         <TR>
+          <TD>$pp.getProjectDisplayID()</TD>
+          <TD>$!pp.getProperty("label")</TD>
+          <TD>$!pp.getProperty("group")</TD>
+         </TR>
+        #else
+         <TR>
+          <TD>*****</TD>
+          <TD>*****</TD>
+          <TD>*****</TD>
+         </TR>
+        #end
+       #end
+       </TABLE>
+  </td>
+ </tr>
+</table>
+</td></tr>
+ #end
+ </table>

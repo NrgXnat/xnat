@@ -1,0 +1,150 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("MRSession Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#else
+	#set ($popup = "false")
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3" style="line-height:16px;"><b>MR Image Information</b></font><BR>
+						#if ($data.message)
+<BR><DIV class="error">$data.message</DIV><br>
+#end
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TH align="left">ID</TH><TD>$!item.getStringProperty("xnat:mrSessionData/ID")</TD></TR>
+							<TR><TD align="left"></TD><TD></TD></TR>
+							<TR><TH align="left">Modality</TH><TD>$!item.getStringProperty("xnat:mrSessionData/modality")</TD></TR>
+							<TR><TH align="left">Date</TH><TD>$!item.getProperty("xnat:mrSessionData/date")</TD></TR>
+							<TR><TH align="left">Time</TH><TD>$!item.getProperty("xnat:mrSessionData/time")</TD></TR>
+							<TR><TH align="left">Scanner</TH><TD>$!item.getStringProperty("xnat:mrSessionData/scanner")</TD></TR>
+							<TR><TH align="left">Operator</TH><TD>$!item.getStringProperty("xnat:mrSessionData/operator")</TD></TR>
+							<TR><TH align="left">Accession Number</TH><TD>$!item.getStringProperty("xnat:mrSessionData/dcmAccessionNumber")</TD></TR>
+							<TR><TH align="left">Patient Id</TH><TD>$!item.getStringProperty("xnat:mrSessionData/dcmPatientId")</TD></TR>
+							<TR><TH align="left">Patient Name</TH><TD>$!item.getStringProperty("xnat:mrSessionData/dcmPatientName")</TD></TR>
+</TABLE>
+						</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:mrSessionData -->
+			<TABLE>
+			#if($item.getProperty("xnat:mrSessionData/investigator/firstname"))
+				<TR>
+					<TD align="left" valign="top">
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:mrSessionData/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">Investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TH align="left">Firstname</TH><TD>$!item.getStringProperty("xnat:mrSessionData/investigator/firstname")</TD></TR>
+										<TR><TH align="left">Lastname</TH><TD>$!item.getStringProperty("xnat:mrSessionData/investigator/lastname")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:mrSessionData/investigator -->
+					</TD>
+				</TR>
+			#end
+								<TR>
+					<TD align="left" valign="top">
+					</TD>
+				</TR>
+											<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">Scans<br><br></font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+					<DIV STYLE="width:96%;background-color:#ffffff;overflow:auto;">
+						<TABLE CELLSPACING="0" STYLE="border-collapse: collapse;" BORDER=1>
+																						<TR>
+<TH>ID</TH>
+<TH>type</TH>
+<TH>voxelRes</TH>
+<TH>orientation</TH>
+<TH>fov</TH>
+<TH>tr</TH>
+<TH>te</TH>
+<TH>ti</TH>
+<TH>flip</TH>
+<TH>sequence</TH>
+<TH>startTime</TH>
+<TH>imageType</TH>
+<TH>scanSequence</TH>
+<TH>seqVariant</TH>
+<TH>scanOptions</TH>
+<TH>acqType</TH>
+												</TR>
+							#set($xnat_mrScanData_3_NUM_ROWS=$om.getSortedScans().size())
+							#if($xnat_mrScanData_3_NUM_ROWS>0)
+#set ($scanCounter = 1)
+#set ($rowCounter = 1)
+	#set($color = "FFFFFF")
+	#set ($TOP_SCAN = $xnat_mrScanData_3_NUM_ROWS - 1)
+								#foreach($xnat_mrScanData_3_COUNTER in [0..$TOP_SCAN])
+													<TR BGCOLOR="#$color">
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("ID")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("type")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/voxelRes/x")/$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("/parameters/voxelRes/y")/$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/voxelRes/z") $!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/voxelRes/units")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/orientation")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/fov/x")/$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("/parameters/fov/y")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/tr")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/te")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/ti")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/flip")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/sequence")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("startTime")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/imageType")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/scanSequence")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/seqVariant")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/scanOptions")</TD>
+<TD>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("parameters/acqType")</TD>
+</TR>
+#if($!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("note"))
+															<TR BGCOLOR="#$color">																					<TD colspan=26 align=left>$!om.getSortedScans().get($xnat_mrScanData_3_COUNTER).getProperty("note")</TD></TR>
+#end
+#set ($rowCounter = $rowCounter + 1)
+#set ($scanCounter = $scanCounter + 1)
+	#if($color == "DEDEDE")
+		#set($color = "FFFFFF")
+	#else
+		#set($color = "DEDEDE")
+	#end
+								#end
+							#end
+							</TABLE>
+							</DIV>						
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+
+END xnat:mrSessionData -->
+		</TD>
+	</TR>
+</TABLE>
+			

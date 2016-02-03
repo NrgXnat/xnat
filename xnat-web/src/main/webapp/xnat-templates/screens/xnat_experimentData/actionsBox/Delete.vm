@@ -1,0 +1,19 @@
+<!-- Sequence: 10 -->
+	#if ($item.canDelete($user))
+      <li class="yuimenuitem lockable">
+       <A href="" ONCLICK="restDelete();return false;"><div class="ic"><img border="0" src="$content.getURI("images/delete.gif")"/></div><div class="ic_spacer">&nbsp;</div>Delete</A>
+      </li>
+	#end
+	<script type="text/javascript" src="$content.getURI("scripts/restDeleter.js")"></script>
+	<script>
+	function restDelete(){
+				var expt=null;
+				  #if($project)
+				  
+				  #else
+				    #set($project=$om.getProject())
+				  #end
+													   window.deleter=new RestDeleter(_a,{defaultHeight:450,defaultWidth:600});
+   					window.deleter.init();
+				}
+	</script>

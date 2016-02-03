@@ -1,0 +1,594 @@
+#set($showUserDropdown=true)
+<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/project_mgmt/ProjectManagement.js')"></SCRIPT>
+<script>
+function DefaultEnterKey(e,button){
+var keynum
+var keychar
+var numcheck
+
+if(window.event) // IE
+	{
+	  keynum = e.keyCode
+	  if (keynum==13){
+    window.document.getElementById(button).click();
+	    return true;
+	  }
+	}
+else if(e) // Netscape/Firefox/Opera
+	{
+	  keynum = e.which
+	  if (keynum==13){
+    window.document.getElementById(button).click();
+	    return false;
+	  }
+	}
+	  return true;
+}
+</script>
+<TABLE>
+<TR>
+  <TD COLSPAN="2"><h2 style="margin-bottom:0px">$om.getName()</h2></TD>
+ </TR>
+ <TR>
+  <TD></TD>
+  <TD ROWSPAN="3" valign="top">
+
+
+ <TABLE ID="par_container" width="420" #if($pars.size()==0) STYLE="display:none;"#end>
+  	  <TR>
+  	   <TD class="highlighted">
+<TABLE>
+ <TBODY ID="open_pars">
+<TR>
+  <TD COLSPAN="3"><h3 style="margin-bottom:0px">Access Requests</h3></TD>
+ </TR>
+ #foreach($par in $pars)
+  <TR>
+   <TD NOWRAP>#if($par.getEmail())$!par.getEmail()#else$!par.getUserString()#end</TD>
+   <TD NOWRAP>$par.getLevel()</TD>
+   <TD NOWRAP>
+    #if($par.getEmail())EMAILED
+    #else
+    <form name="form1" method="post" action="$link.setAction("ProcessAccessRequest")">
+     <input type="hidden" name="project" value="$om.getId()"/>
+		     <input type="hidden" name="id" value="$par.getUserId()"/>
+     <input type="hidden" name="access_level" value="$par.getLevel()"/>
+     <input type="submit" name="eventSubmit_doDenial" value="DENY" />&nbsp;&nbsp;&nbsp;<input type="submit" name="eventSubmit_doApprove" value="APPROVE" />
+    </form>
+    #end
+   </TD>
+  </TR>
+ #end
+  </TBODY>
+</TABLE>
+  	   </TD>
+  	  </TR>
+ <TR>
+  <TD COLSPAN="3">&nbsp;</TD>
+ </TR>
+  	 </TABLE>
+
+<TABLE>
+  	  <TR>
+  	   <TD class="highlighted">
+   <script language="javascript">
+    function inviteUser(){
+      var email = document.getElementById("invite_email").value;
+      if (email!=""){
+       var access_level=document.getElementById("access_level").options[document.getElementById("access_level").selectedIndex].value;
+       if (!containsEmail(email))
+       {
+         if (confirm('' + email + ' does not correspond to a currently registered account.  The user may have an account under another email address.  Select cancel to try a different account.  Or, press OK to send an email inviting this user.')){
+           var invitationArgs=[document.getElementById("invite_email"),document.getElementById("access_level"),document.getElementById("invite_user_button"),document.getElementById("open_pars"),document.getElementById("par_container")];
+ 			          var inviteCallback={
+             	success:ProjectInvitation.handleSuccess,
+             	failure:ProjectInvitation.handleFailure,
+             	argument:invitationArgs,
+             	scope:ProjectInvitation
+           };
+           ProjectInvitation.startRequest(email,access_level,"$om.getId()",inviteCallback);
+
+         }else{
+           	document.getElementById("invite_email").value='';
+         }
+         return false;
+       }else{
+         if ("collaborator"==access_level){
+           if (!containsCollaborator(email))
+           	   addCollaborator(email);
+           	document.getElementById("invite_email").value='';
+           	return false;
+         }else if ("member"==access_level){
+           if (!containsMember(email))
+           	   addMember(email);
+           	document.getElementById("invite_email").value='';
+           	return false;
+         }else if ("owner"==access_level){
+           if (!containsOwner(email))
+           	   addOwner(email);
+           	document.getElementById("invite_email").value='';
+           	return false;
+         }
+       }
+      }
+    }
+   </script>
+<TABLE>
+<TR>
+  <TD COLSPAN="3"><h3 style="margin-bottom:0px">Invite User</h3>
+  Enter the email address of the user to add.</TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="3" NOWRAP><INPUT type="text" name="email" ID="invite_email"/>
+   <select name="access_level" id="access_level"><option value="collaborator">Collaborator</option><option value="member">Member</option><option value="owner">Owner</option></select>
+   <input type="button" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" ONCLICK="inviteUser();"/>
+</TD>
+ </TR>
+</TABLE>
+  	   </TD>
+  	  </TR>
+  	 </TABLE>
+</TD>
+ </TR>
+<form method="post" action="$link.setAction("ManageProjectAccess")">
+<INPUT type="hidden" ID="owners" name="owners" value=""/>
+<INPUT type="hidden" ID="members" name="members" value=""/>
+<INPUT type="hidden" ID="collaborators" name="collaborators" value=""/>
+ #set($guest=$om.getPublicAccessibility())
+ <TR>
+  <TD class="highlighted">
+   <INPUT type="hidden" name="project" value="$om.getId()"/>
+  	 <TABLE width="420">
+ <TR>
+  <TD><h3 style="margin-bottom:0px">Public accessibility: $guest</h3></TD>
+ </TR>
+  	  <TR>
+  	   <TD><TABLE><TR><TD valign="top">
+              <TABLE cellpadding="5" cellspacing="0">
+                <TR><TD NOWRAP><DIV title="Only you and study members will be able to access study data." style="cursor:pointer" ONCLICK="document.getElementById('private_access').checked=true;document.getElementById('balloon').innerHTML=this.title;"><input type="radio" ID="private_access" name="accessibility" value="private" #if($guest=="private")CHECKED#end/> Private</DIV></TD><TD></TD></TR>
+                <TR><TD NOWRAP><DIV title="All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data." style="cursor:pointer" ONCLICK="document.getElementById('protected_access').checked=true;document.getElementById('balloon').innerHTML=this.title;"><input id="protected_access" type="radio" name="accessibility" value="protected" #if($guest=="protected")CHECKED#end/> Protected</DIV></TD><TD></TD></TR>
+                <TR><TD NOWRAP><DIV title="All users will be able to access study data for analysis and download." style="cursor:pointer" ONCLICK="document.getElementById('public_access').checked=true;document.getElementById('balloon').innerHTML=this.title;"><input id="public_access" type="radio" name="accessibility" value="public" #if($guest=="public")CHECKED#end/> Public</DIV></TD><TD></TD></TR>
+              </TABLE>
+              </TD><TD valign="top" >
+              <table width="100%" valign="top" BORDER=1 STYLE="	border-collapse: collapse;"><TR><TD valign="top">
+              <DIV ID="balloon" border="1">Only you and study members will be able to access study data.</DIV>
+              </TD></TR>
+              </TABLE>
+          </TD></TR>
+            <TR><TD colspan="2"><A href="$link.setPage("AccessPolicy.vm")">Brainscape Security and Access Policy</A></TD></TR>
+          </TABLE>
+  	   </TD>
+  	  </TR>
+  	 </TABLE>
+  	</TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="2">&nbsp;</TD>
+ </TR>
+   	 </TABLE>
+<STYLE>
+.groupDisplay{
+#if($showUserDropdown)
+width:500;
+#else
+width:700;
+#end
+}
+</STYLE>
+<TABLE>
+ <TR>
+  <TD>
+  	 <TABLE>
+
+#if ($data.message)
+ <TR>
+  <TD COLSPAN="2"><DIV class="error">$data.message</DIV></TD>
+ </TR>
+#end
+ <TR>
+  <TD COLSPAN="2"><h3 style="margin-bottom:0px">$displayManager.getSingularDisplayNameForProject() Owners</h3></TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="2">
+   <TABLE  CLASS="groupDisplay">
+    <TR>
+  	   <TD valign="top">Study owners can read, insert, modify and delete $displayManager.getSingularDisplayNameForProject().toLowerCase(), $displayManager.getSingularDisplayNameForSubject().toLowerCase() and experiment data.</TD>
+  	  </TR>
+  	 </TABLE>
+  </TD>
+ </TR>
+ <TR>
+  	   <TD><DIV ID="ownersDIV" STYLE="height:100px;width:500px;overflow:auto;border-width:1px;border-style:solid;"></DIV>
+  	   </TD><TD valign="top">
+
+  	</TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="2">&nbsp;</TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="2"><h3 style="margin-bottom:0px">$displayManager.getSingularDisplayNameForProject() Members</h3></TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="2">
+    <TABLE CLASS="groupDisplay">
+  	  <TR>
+  	   <TD valign="top">Study members can read, insert and modify $displayManager.getSingularDisplayNameForSubject().toLowerCase() and experiment data, but cannot delete content and cannot edit $displayManager.getSingularDisplayNameForProject().toLowerCase() settings.</TD>
+  	   </TR>
+  	 </TABLE>
+  </TD>
+ </TR>
+ <TR>
+  	   <TD><DIV ID="memberDIV" STYLE="height:100px;width:500px;overflow:auto;border-width:1px;border-style:solid;"></DIV>
+  	   </TD><TD valign="top">
+
+  	</TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="2">&nbsp;</TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="2"><h3 style="margin-bottom:0px">$displayManager.getSingularDisplayNameForProject() Collaborators</h3></TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="2">
+  	 <TABLE  CLASS="groupDisplay">
+  	  <TR>
+  	   <TD valign="top">Study collaborators can read, download and use $displayManager.getSingularDisplayNameForProject().toLowerCase(), $displayManager.getSingularDisplayNameForSubject().toLowerCase() and experiment data, but cannot edit or delete any content.</TD>
+  	  </TR>
+  	 </TABLE>
+</TD>
+ </TR>
+ <TR>
+  	   <TD><DIV ID="collaboratorsDIV" STYLE="height:100px;width:500px;overflow:auto;border-width:1px;border-style:solid;"></DIV>
+  	   </TD>
+  <TD valign="top">
+  	</TD>
+ <TR>
+  <TD COLSPAN="2">&nbsp;</TD>
+ </TR>
+ </TR>
+ <TR>
+  <TD COLSPAN="2" ALIGN="center">
+  	  <label><INPUT type="checkbox" value="email" name="sendmail"> Send Email to New Users</label>
+  </TD>
+ </TR>
+  	  <TR>
+  	   <TD align="center" colspan="2"><input type="submit" name="eventSubmit_doPerform" value="Save" />
+  	   </TD>
+  	  </TR>
+   </TABLE>
+  </TD>
+  <TD VALIGN="top">
+    #if($showUserDropdown)
+<TABLE>
+  	  <TR>
+  	   <TD class="highlighted">
+<TABLE>
+ <TR>
+  <TD COLSPAN="3"><h3>Select User to Add</h3>
+  Select the user(s) and the desired level of access.</TD>
+ </TR>
+ <TR>
+  <TD>
+    LEVEL:&nbsp;<SELECT ID="level_select" name="level_select">
+      <OPTION VALUE="">(SELECT)</OPTION>
+      <OPTION VALUE="owner">owner</OPTION>
+      <OPTION VALUE="member">member</OPTION>
+      <OPTION VALUE="collaborator">collaborator</OPTION>
+    </SELECT>
+  </TD>
+ </TR>
+ <TR>
+  <TD>
+    <SELECT ID="user_select" name="user_select" SIZE=30 MULTIPLE>
+
+    </SELECT>
+  </TD>
+ </TR>
+ <TR>
+  <TD align="center">
+    <input type="button" name="eventSubmit_doDenial" value="ADD" ONCLICK="selectUser();"/>
+  </TD>
+ </TR>
+</TABLE>
+  	   </TD>
+  	  </TR>
+ </TR>
+</TABLE>
+#end
+  </TD>
+ </TR>
+</TABLE>
+	</form>
+<script language="javascript">
+var allEmails = new Array();
+var allUsers = new Array();
+var memberEmails = new Array();
+var collaboratorEmails = new Array();
+var ownerEmails = new Array();
+
+var modified = false;
+
+function addEmail(email){
+   if (!containsEmail(email))
+   	   allEmails.push(email);
+}
+function addUser(email,user_name){
+  var userO = new Array();
+  userO.push(email);
+  userO.push(user_name);
+  allUsers.push(userO);
+
+  addEmail(email);
+}
+
+function addMember(email){
+   if (email==undefined)
+     email = document.getElementById("member_email").value;
+   if (!containsEmail(email))
+   {
+      xModalMessage('Project Validation', "'" + email + "' does not match an existing user");
+      return false;
+   }else{
+      if (!containsMember(email)){
+      	   memberEmails.push(email);
+      	   removeOwnerByEmail(email);
+      	   removeCollaboratorByEmail(email);
+      	}
+      	document.getElementById("invite_email").value='';
+      drawMembers();
+      modified = true;
+      	return true;
+   }
+}
+
+function addCollaborator(email){
+   if (email==undefined)
+      email = document.getElementById("collaborator_email").value;
+   if (!containsEmail(email))
+   {
+      xModalMessage('Project Validation', "'" + email + "' does not match an existing user");
+      return false;
+   }else{
+      if (!containsCollaborator(email)){
+      	   collaboratorEmails.push(email);
+      	   removeOwnerByEmail(email);
+      	   removeMemberByEmail(email);
+      }
+      document.getElementById("invite_email").value='';
+      	drawCollaborators();
+      modified = true;
+      	return true;
+   }
+}
+
+function addOwner(email){
+   if (email==undefined)
+      email = document.getElementById("owner_email").value;
+   if (!containsEmail(email))
+   {
+      xModalMessage('Project Validation', "'" + email + "' does not match an existing user");
+      return false;
+   }else{
+      if (!containsOwner(email)){
+      	   ownerEmails.push(email);
+      	   removeMemberByEmail(email);
+      	   removeCollaboratorByEmail(email);
+      	}
+      	document.getElementById("invite_email").value='';
+      	drawOwners();
+      modified = true;
+      	return true;
+   }
+}
+
+function containsEmail(email){
+  for (var emailCounter=0;emailCounter<allEmails.length;emailCounter++)
+  {
+     if (email==allEmails[emailCounter])
+     {
+       return true;
+     }
+  }
+
+  return false;
+}
+
+function containsMember(email){
+   for (var memberCounter=0;memberCounter<memberEmails.length;memberCounter++)
+  {
+     if (email==memberEmails[memberCounter])
+     {
+       return true;
+     }
+  }
+
+  return false;
+}
+
+function containsCollaborator(email){
+  for (var collaboratorEmailsCounter=0;collaboratorEmailsCounter<collaboratorEmails.length;collaboratorEmailsCounter++)
+  {
+     if (email==collaboratorEmails[collaboratorEmailsCounter])
+     {
+       return true;
+     }
+  }
+
+  return false;
+}
+
+function containsOwner(email){
+  for (var ownerEmailsCounter=0;ownerEmailsCounter<ownerEmails.length;ownerEmailsCounter++)
+  {
+     if (email==ownerEmails[ownerEmailsCounter])
+     {
+       return true;
+     }
+  }
+
+  return false;
+}
+
+function removeMemberByEmail(email){
+  for (var memberCounter=0;memberCounter<memberEmails.length;memberCounter++)
+  {
+     if (email==memberEmails[memberCounter])
+     {
+       break;
+       var found= true
+     }
+  }
+  if(undefined==found){
+     removeMember(memberCounter);
+  }
+}
+
+function removeMember(index){
+  memberEmails.splice(index,1);
+  drawMembers();
+}
+
+function removeCollaboratorByEmail(email){
+  for (var collaboratorEmailsCounter=0;collaboratorEmailsCounter<collaboratorEmails.length;collaboratorEmailsCounter++)
+  {
+     if (email==collaboratorEmails[collaboratorEmailsCounter])
+     {
+       break;
+       var found= true
+     }
+  }
+  if(undefined==found){
+     removeCollaborator(collaboratorEmailsCounter);
+  }
+}
+
+function removeCollaborator(index){
+  collaboratorEmails.splice(index,1);
+  drawCollaborators();
+}
+
+function removeOwnerByEmail(email){
+  for (var ownerEmailsCounter=0;ownerEmailsCounter<ownerEmails.length;ownerEmailsCounter++)
+  {
+     if (email==ownerEmails[ownerEmailsCounter])
+     {
+       break;
+       var found= true
+     }
+  }
+  if(undefined==found){
+     removeOwner(ownerEmailsCounter);
+  }
+}
+
+function removeOwner(index){
+  ownerEmails.splice(index,1);
+  drawOwners();
+}
+
+function getUsername(email){
+  var temp ="";
+  for(var userCount=0;userCount<allUsers.length;userCount++){
+    if (allUsers[userCount][0]==email){
+      temp += allUsers[userCount][1] + " ";
+    }
+  }
+
+  return temp;
+}
+
+function selectUser(){
+  var user_select = document.getElementById("user_select");
+  var level_select = document.getElementById("level_select");
+
+  if (level_select.selectedIndex>0)
+  {
+    var level= level_select.options[level_select.selectedIndex].value;
+
+    for(var optionCount=0;optionCount<user_select.options.length;optionCount++)
+    {
+      if(user_select.options[optionCount].selected){
+        var useremail= user_select.options[optionCount].value;
+        if (level=="owner")
+          addOwner(useremail);
+        else if (level=="member")
+          addMember(useremail);
+        else if (level=="collaborator")
+          addCollaborator(useremail);
+
+        user_select.options[optionCount].selected=false;
+      }
+    }
+  }else{
+    xModalMessage('Project Validation', 'Select the level of access.');
+    level_select.focus();
+  }
+}
+
+var user_select = document.getElementById("user_select");
+
+//ADDING ELEMENTS FROM VELOCITY to JAVASCRIPT
+#foreach($username in $allUsers.keySet())
+addUser("$allUsers.get($username)","$username");
+#if($showUserDropdown)user_select.options[user_select.options.length]= new Option("$username ($allUsers.get($username))","$allUsers.get($username)");#end
+#end
+//MEMBERS
+#foreach($email in $membersEmails)
+memberEmails.push("$email");
+#end
+//COLLABORATORS
+#foreach($email in $collaboratorEmails)
+collaboratorEmails.push("$email");
+#end
+//OWNERS
+#foreach($email in $ownerEmails)
+ownerEmails.push("$email");
+#end
+//END
+
+function populateUsers(){
+
+}
+
+function drawMembers(){
+var memberDIV=document.getElementById("memberDIV");
+var memberText = "<TABLE>";
+for (var memberCount=0;memberCount<memberEmails.length;memberCount++)
+{
+   memberText+="<TR><TD><input type=\"button\" value=\"Remove\" ONCLICK=\"removeMember(" + memberCount + ");\"/></TD><TD>" + memberEmails[memberCount] + "</TD><TD>" + getUsername(memberEmails[memberCount]) + "</TD></TR>";
+}
+memberText+="</TABLE>";
+document.getElementById("members").value=memberEmails.toString();
+memberDIV.innerHTML=memberText;
+}
+
+function drawCollaborators(){
+var collaboratorsDIV=document.getElementById("collaboratorsDIV");
+var collaboratorsText = "<TABLE>";
+for (var colCount=0;colCount<collaboratorEmails.length;colCount++)
+{
+   collaboratorsText+="<TR><TD><input type=\"button\" value=\"Remove\" ONCLICK=\"removeCollaborator(" + colCount + ");\"/></TD><TD>" + collaboratorEmails[colCount] + "</TD><TD>" + getUsername(collaboratorEmails[colCount]) + "</TD></TR>";
+}
+collaboratorsText+="</TABLE>";
+document.getElementById("collaborators").value= collaboratorEmails.toString().toString();
+collaboratorsDIV.innerHTML=collaboratorsText;
+}
+
+function drawOwners(){
+var ownersDIV=document.getElementById("ownersDIV");
+var ownersText = "<TABLE>";
+for (var ownerCount=0;ownerCount<ownerEmails.length;ownerCount++)
+{
+   ownersText+="<TR><TD><input type=\"button\" value=\"Remove\" ONCLICK=\"removeOwner(" + ownerCount + ");\"/></TD><TD>" + ownerEmails[ownerCount] + "</TD><TD>" + getUsername(ownerEmails[ownerCount]) + "</TD></TR>";
+}
+ownersText+="</TABLE>";
+document.getElementById("owners").value= ownerEmails.toString().toString();
+ownersDIV.innerHTML=ownersText;
+}
+
+drawOwners();
+drawMembers();
+drawCollaborators();
+</script>

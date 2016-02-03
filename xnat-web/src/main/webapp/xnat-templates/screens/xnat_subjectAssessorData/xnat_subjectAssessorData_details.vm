@@ -1,0 +1,102 @@
+			<!--BEGIN xnat_subjectAssessorData_details.vm -->
+			<table border="0" width="95%" >
+				 <tr>
+  					<td valign="top">
+  					<!--BEGIN EXPT SUMMARY TABS -->
+<STYLE>
+span.spacer{
+height:12px;
+width:1px;
+}
+</STYLE>
+<div ID="expt_summary_module" style="display:none">
+ <DIV id="exptSummary" class="yui-navset">
+  <ul class="yui-nav" style="">
+      <li class="selected"><a href="#tab1"><em>Details<span class="spacer"></span></em></a></li>
+      <li><a href="#tab2"><em>$displayManager.getPluralDisplayNameForProject()<span class="spacer"></span></em></a></li>
+	  #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
+            <li><a href="#$tab.getProperty("divName")"><em>$tab.getProperty("title")<span class="spacer"></span></em></a></li>
+        #end
+  </ul>
+ <div class="yui-content">   
+  <div id="tab1"><p>
+ <table>
+ <tr>
+ <td valign="top">
+<table>
+#parse($turbineUtils.getTemplateName("_keyFields",$om.getXSIType(),$project))
+</table>
+  </td>
+  <td valign="top">
+<table>
+#parse($turbineUtils.getTemplateName("_subject_brief",$om.getXSIType(),$project))					
+</table>
+  </td>
+  </tr>
+ </table>
+</p></div>  
+ 
+  <div id="tab2"><p>
+#parse($turbineUtils.getTemplateName("sharing",$om.getXSIType(),$!project))
+</p></div>
+
+            #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
+                <div id="$tab.getProperty("divName")">
+                    #set($path = "screens/${tab.getProperty('path')}")
+                    <p>#parse($path)</p>
+                </div>
+            #end
+  </div> 
+ </DIV>
+</div>
+<script type="text/javascript">   
+function toggleLI(_name){
+	var elements = document.getElementsByName("li_"+_name);
+	for(var trI=0;trI<elements.length;trI++){
+		if(elements[trI].style.display=="none"){
+			elements[trI].style.display="block";
+		}else{
+			elements[trI].style.display="none";
+		}
+	}	
+}
+function summaryIndexChanged(){
+   var activeIndex=this.get("activeIndex");
+   YAHOO.util.Cookie.set("${project.getId()}.summary.index",activeIndex);
+}
+   
+function summaryTabManagerInit(){
+    window.summaryTabView = new YAHOO.widget.TabView('exptSummary');   
+
+	
+    window.expt_summary_module = new YAHOO.widget.Module("expt_summary_module",{visible:false,zIndex:5});
+	
+#addCustomScreenJS($om.getXSIType() "report/tabs_js") 
+    
+    window.expt_summary_module.show(); 		    
+    
+    var tabIndex=YAHOO.util.Cookie.get("${om.getId()}.summary.index");
+    window.summaryTabView.set('activeIndex',tabIndex||0);
+    
+    window.summaryTabView.subscribe("activeTabChange",summaryIndexChanged);
+					}
+					summaryTabManagerInit();
+</script>
+<!--END SUBJECT SUMMARY TABS -->
+
+  </td>					
+					  <td valign="top" align="right" rowspan="2">
+#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+	  </td>
+ </tr>
+			</table>
+			
+#if ($item.getStringProperty("note"))
+	<table>
+		<tr>
+			<th align="left" valign="top">Notes: </th>
+			<td valign="top">$!item.getStringProperty("note")</td>
+		</tr>
+	</table>
+#end
+<!--END xnat_subjectAssessorData_details.vm -->

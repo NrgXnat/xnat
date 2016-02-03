@@ -1,0 +1,768 @@
+#* @vtlvariable name="userObject" type="org.nrg.xdat.security.XDATUser" *#
+#* @vtlvariable name="item" type="org.nrg.xft.XFTItem" *#
+#* @vtlvariable name="hasFailedLoginAttempts" type="java.lang.Boolean" *#
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+		    #set ($dataPopup = $turbineUtils.GetPassedParameter("popup",$data))
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+#parse("/screens/LoadProjectsJS.vm")
+<form id="userform" name="form1" method="post" action="$link.setAction("ModifyUserGroups")">
+<table width=100% align="left" border="0">
+	<tr>
+		<td align="left">
+			#addCustomScreens($om.getXSIType() "report/preDetails")
+<div id="subject_summary_module" style="display:none">
+ <div id="subjectSummary" class="yui-navset" style="min-width:480px;max-width:650px;">
+  <ul class="yui-nav" style="">
+      <li class="selected"><a href="#tab1"><em>Details<span class="spacer"></span></em></a></li>
+	  ##<!-- inject additional tabs-->
+	  #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
+            <li><a href="#$tab.getProperty("divName")"><em>$tab.getProperty("title")<span class="spacer"></span></em></a></li>
+        #end
+  </ul>
+
+ <div class="yui-content">
+
+  ##<!-- details tab -->
+  <div id="tab1"><p>
+			#parse($turbineUtils.getTemplateName("details","xdat:user",$!project))
+</p></div>
+
+    ##<!-- inject additional tabs -->
+    #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/tabs"))
+        <div id="$tab.getProperty("divName")">
+            #set($path = "screens/${tab.getProperty('path')}")
+            <p>#parse($path)</p>
+        </div>
+	#end
+
+  </div>
+
+
+ </div>
+</div>
+<script type="text/javascript">
+
+    function goToUsersPage(){
+        xmodal.loading.open('Please wait...');
+        window.top.location.href = serverRoot + '/app/template/XDATScreen_admin.vm';
+    }
+
+function clearFailedLogins() {
+    var callback = {
+        cache:false, // Turn off caching for IE
+        success:function(response) {
+            document.getElementById("reset_user").style.display='none';
+            closeModalPanel("resetting");
+        },
+        failure:function(response){
+            closeModalPanel("resetting");
+            xmodal.message('User Validation', 'Failed to reset user $userObject.getUsername(): ' + response);
+        }
+    };
+
+    openModalPanel("resetting", "Resetting failed user login attempts for user $userObject.getUsername()...");
+    YAHOO.util.Connect.asyncRequest('PUT', serverRoot +'/data/user/actions/$userObject.getUsername()/reset?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp='+ (new Date()).getTime(), callback, null);
+}
+
+function clearEmailRequests() {
+    var callback = {
+        cache:false, // Turn off caching for IE
+        success:function(response) {
+            document.getElementById("reset_user").style.display='none';
+            closeModalPanel("resetting");
+        },
+        failure:function(response){
+            closeModalPanel("resetting");
+            xmodal.message('User Validation', 'Failed to reset user $userObject.getUsername(): ' + response);
+        }
+    };
+
+    openModalPanel("resetting", "Resetting email requests for user $userObject.getUsername()...");
+    YAHOO.util.Connect.asyncRequest('PUT', serverRoot +'/data/user/actions/$userObject.getUsername()/resetEmailRequests?XNAT_CSRF=' + window.csrfToken + '&format=json&stamp='+ (new Date()).getTime(), callback, null);
+}
+
+function summaryIndexChanged(){
+   var activeIndex=this.get("activeIndex");
+   YAHOO.util.Cookie.set("${project.getId()}.summary.index",activeIndex);
+}
+
+function summaryTabManagerInit(){
+    window.summaryTabView = new YAHOO.widget.TabView('subjectSummary');
+    window.subject_summary_module = new YAHOO.widget.Module("subject_summary_module",{visible:false,zIndex:5});
+
+#addCustomScreenJS($om.getXSIType() "report/tabs_js")
+
+    window.subject_summary_module.show();
+
+    var tabIndex=YAHOO.util.Cookie.get("${om.getId()}.summary.index");
+    window.summaryTabView.set('activeIndex',tabIndex||0);
+
+    window.summaryTabView.subscribe("activeTabChange",summaryIndexChanged);
+}
+					summaryTabManagerInit();
+</script>
+		</td>
+	    <td valign="top">
+			#if($dataPopup)
+			#else
+				#set ($dataPopup = "false")
+			#end
+			#set ($elementSecurity = $element.getElementSecurity())
+			#if ($elementSecurity)
+				#set ($actions = $elementSecurity.getElementActions())
+				#if ($actions.size() > 0)
+                    <div id="actionsMenu" class="yuimenu">
+                        <div class="bd">
+                            <ul class="first-of-type">
+                                <li class="yuimenuitem first-of-type">
+                                    <a class="yuimenuitemlabel">Actions</a>
+                                </li>
+                            </ul>
+                            <ul>
+                                #if ($item.getBooleanProperty("enabled") && $hasFailedLoginAttempts)
+                                    <li class="yuimenuitem" id="reset_user">
+                                        <a class="yuimenuitemlabel" href="#" onclick="clearFailedLogins()">Clear Failed Logins</a>
+                                    </li>
+                                #end
+                                #if ($item.getBooleanProperty("enabled") && $emailRequestsBlocked)
+                                    <li class="yuimenuitem" id="reset_user">
+                                        <a class="yuimenuitemlabel" href="#" onclick="clearEmailRequests()">Clear Email Requests</a>
+                                    </li>
+                                #end
+                                #foreach ($actionObject in $actions)
+                                    #if ($actionObject.getName().equalsIgnoreCase("activate"))
+                                        #if ($user.checkRole("Bossman"))
+                                            #if($item.needsActivation())
+                                                <li class="yuimenuitem">
+                                                    <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)">
+                                                        ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                        $actionObject.getDisplayName()
+                                                    </a>
+                                                </li>
+                                            #end
+                                        #end
+                                    #elseif ($actionObject.getName().equalsIgnoreCase("edit"))
+                                        #if ($item.canEdit($user))
+                                            <li class="yuimenuitem">
+                                                <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)">
+                                                    ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                    $actionObject.getDisplayName()
+                                                </a>
+                                            </li>
+                                        #end
+                                    #elseif ($actionObject.getName().equalsIgnoreCase("enable"))
+                                        #if ($item.canEdit($user))
+                                            #if ($item.getBooleanProperty("enabled"))
+                                                <li class="yuimenuitem">
+                                                    <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)">
+                                                        ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                        Disable Login
+                                                    </a>
+                                                </li>
+                                            #else
+                                                <li class="yuimenuitem">
+                                                    <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)">
+                                                        ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                        Enable Login
+                                                    </a>
+                                                </li>
+                                            #end
+                                        #end
+                                    #elseif ($actionObject.getName().equalsIgnoreCase("print_activate"))
+                                        #if($item.needsActivation())
+                                            <li class="yuimenuitem">
+                                                <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)">
+                                                    ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                    $actionObject.getDisplayName()
+                                                </a>
+                                            </li>
+                                        #end
+                                    #elseif ($actionObject.getName().equalsIgnoreCase("email_activate"))
+                                        #if($item.needsActivation())
+                                            <li class="yuimenuitem">
+                                                <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)">
+                                                    ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                    $actionObject.getDisplayName()
+                                                </a>
+                                            </li>
+                                        #end
+                                    #else
+                                        <li class="yuimenuitem">
+                                            <a class="yuimenuitemlabel" title="$actionObject.getDisplayName()" data-name="$actionObject.getName()" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName()).addPathInfo("search_element","$element.getFullXMLName()").addPathInfo("search_field","$search_field").addPathInfo("search_value","$search_value").addPathInfo("popup",$dataPopup)">
+                                                ## #if($actionObject.hasImage())<img border="0" src="$content.getURI("images/$actionObject.getImage()")"/>#end
+                                                $actionObject.getDisplayName()
+                                            </a>
+                                        </li>
+                                    #end
+                                #end
+
+                            </ul>
+                        </div>
+                    </div>
+                #end
+			#end
+
+	    </td>
+	</tr>
+		<tr>
+			<td align=left colspan=2 valign=top>&nbsp;
+			</td>
+		</tr>
+				<tr>
+					<td>
+						#addCustomScreens($om.getXSIType() "report/postDetails")
+					</td>
+				</tr>
+                <tr>
+                        <td align=left colspan=2>
+                        <table style="width:100%;max-width:670px;background:#f0f0f0;border:1px solid #ccc">
+                        <tr>
+                            <td valign="top">
+                            <table border="0" width="100%">
+                                <tr><th align=left colspan="3">STEP 1: Enable and Verify Account</th></tr>
+                                <tr>
+                                    <td align=left style="width:80px">
+                                        <input type="radio" id="enabledRadio" name="xdat:user.enabled" value="true" #if($item.getBooleanProperty("enabled"))checked #end/><label for="enabledRadio">Enabled</label>
+                                    </td>
+                                    <td align=left>
+                                        <input type="radio" id="disabledRadio" name="xdat:user.enabled" value="false" #if(!$item.getBooleanProperty("enabled"))checked #end/><label for="disabledRadio">Disabled</label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align=left style="width:80px">
+                                        <input type="radio" id="verifiedRadio" name="xdat:user.verified" value="true" #if($item.getBooleanProperty("verified"))checked #end/><label for="verifiedRadio">Verified</label>
+                                    </td>
+                                    <td align=left>
+                                        <input type="radio" id="unverifiedRadio" name="xdat:user.verified" value="false" #if(!$item.getBooleanProperty("verified"))checked #end/><label for="unverifiedRadio">Unverified</label>
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td align=right colspan="2">
+                                        <input type="submit" class="btn1" name="eventSubmit_doPerform" value="Submit">
+##                                        <button type="submit" class="btn1" name="eventSubmit_doPerform">Save</button>&nbsp;
+                                    #if ($turbineUtils.GetPassedParameter("popup",$data)=="true")
+##                                        <button type="button" onclick="javascript:window.close()">Close</button>
+                                        <button type="button" onclick="goToUsersPage()">Done</button>
+                                    #else
+                                        <button type="button" onclick="goToUsersPage()">Done</button>
+                                    #end
+                                    </td>
+                                </tr>
+                            </table>
+                            </td>
+                        </tr>
+                        </table>
+                        </td>
+                </tr>
+		<tr>
+			<td align=left colspan=2 valign=top>&nbsp;
+			</td>
+		</tr>
+	    <tr><td align=left colspan=2 valign=top>
+            <table style="width:100%;max-width:670px;background:#f0f0f0;border:1px solid #ccc">
+            <tr>
+                <td valign="top">
+                    <table border="0" width="100%">
+                    <tr>
+                        <th align=left colspan="2">STEP 2: Assign $displayManager.getSingularDisplayNameForProject().toLowerCase() membership and roles</th>
+                    </tr>
+                    <tr>
+                        <td align=left colspan=2 valign=top>
+                            <div id="groupDIV"></div>
+                        </td>
+                    </tr>
+                    <tr>
+                        <td align=left colspan=2 valign=top>
+                            <div id="addGroupDIV"></div>
+                        </td>
+                    </tr>
+
+	<script type="text/javascript">
+	var selectedgroups = new Array();
+	var selectedtags = new Array();
+
+	var allgroups = new Array();
+	var alltags = new Array();
+
+	function addTag(t){
+	  var matched = false;
+	  for (var atx=0;atx<alltags.length;atx++){
+	     if (alltags[atx]==t)
+	     {
+	       matched=true;
+	       break;
+	     }
+	  }
+
+        if (!matched) {
+	     alltags.push(t);
+	}
+    }
+
+	function xdat_userGroup(id,name,tag){
+	 this.id=id;
+	 this.name=name;
+	 this.tag=tag;
+	 addTag(tag);
+	}
+	#foreach($group in $allGroups)
+		#if("$!group.getTag()" != "")
+		allgroups.push(new xdat_userGroup("$group.getId()", "$!group.getDisplayname()", "$!group.getTag()"));
+		#end
+	#end
+
+
+	function addGroupToSelectedArray(g,t){
+	   var matched = false;
+	   var x =0;
+	   for (var agsax=0;agsax<selectedtags.length;agsax++){
+	     if (selectedtags[agsax]==t)
+	     {
+	       matched=true;
+	       break;
+	     }
+	   }
+
+	   if (matched){
+	     selectedgroups[agsax]=g;
+	   }else{
+	     selectedgroups.push(g);
+	     selectedtags.push(t);
+	   }
+	}
+
+	function getTagForGroup(g){
+	  var t = null;
+	  for(var tgx=0;tgx<allgroups.length;tgx++){
+	    if (allgroups[tgx].id==g){
+	      t= allgroups[tgx].tag;
+	    }
+	  }
+
+	  return t;
+	}
+
+	function hasTag(tag){
+	  var t = false;
+	  for(var hTx=0;hTx<selectedtags.length;hTx++){
+	    if (selectedtags[hTx]==tag){
+	      t= true;
+	    }
+	  }
+
+	  return t;
+	}
+
+	function getTagIndex(tag){
+	  var t = -1;
+	  for(var gTIx=0;gTIx<selectedtags.length;gTIx++){
+	    if (selectedtags[gTIx]==tag){
+	      t=gTIx;
+	      break;
+	    }
+	  }
+
+	  return t;
+	}
+
+	function hasGroup(g){
+	  var t = false;
+	  for(var hGx=0;hGx<selectedgroups.length;hGx++){
+	    if (selectedgroups[hGx]==g){
+	      t= true;
+	    }
+	  }
+
+	  return t;
+	}
+
+	function getGroupsForTag(t){
+	  var groupArray= new Array();
+
+	  for(var gGFTi=0;gGFTi<allgroups.length;gGFTi++){
+	    if (allgroups[gGFTi].tag==t){
+	      groupArray.push(allgroups[gGFTi]);
+	    }
+	  }
+
+	  return groupArray;
+	}
+
+	function addGroup(g){
+	  var t = getTagForGroup(g);
+	  if (t!=null){
+	    addGroupToSelectedArray(g,t);
+	  }
+	}
+
+	#foreach($groupid in $userObject.getGroups_groupid())
+addGroup("$!groupid.getGroupid()");
+	#end
+
+	function renderGroups(){
+	  var groupCounter =1;
+	  var groupDIV=document.getElementById("groupDIV");
+	  if ( groupDIV.hasChildNodes() )
+				  {
+					     while ( groupDIV.childNodes.length >= 1 )
+					     {
+					        groupDIV.removeChild( groupDIV.firstChild );
+					     }
+				  }
+
+	  var t = document.createElement("TABLE");
+	  var tBody = document.createElement("TBODY");
+	  t.appendChild(tBody);
+
+	  //Sorts selectedgroups and selectedtags arrays by $displayManager.getSingularDisplayNameForProject().toLowerCase() name
+	  	var found = true;
+        var tempGroup;
+        var tempTag;
+        while(found)
+        {
+          found = false;
+          for(i = 0; i < selectedtags.length - 1; i++)
+          {
+            if(window.projectTracker.getProjectById(selectedtags[i]).getDisplayName().toLowerCase() > window.projectTracker.getProjectById(selectedtags[i+1]).getDisplayName().toLowerCase())
+            {
+              found = true;
+			  tempGroup = selectedgroups[i + 1];
+              tempTag = selectedtags[i + 1];
+              selectedgroups[i + 1] = selectedgroups[i];
+              selectedtags[i + 1] = selectedtags[i];
+              selectedgroups[i] = tempGroup;
+              selectedtags[i] = tempTag;
+            }
+          }
+        }
+
+	  for(var stX=0;stX<selectedtags.length;stX++){
+	     var tr= document.createElement("TR");
+
+	     var td= document.createElement("TD");
+	     td.innerHTML=groupCounter;
+	     tr.appendChild(td);
+
+	     td= document.createElement("TH");
+	     td.align="left";
+	     td.innerHTML=window.projectTracker.getProjectById(selectedtags[stX]).getDisplayName();
+	     tr.appendChild(td);
+
+	     var name=selectedgroups[stX];
+
+	     var input = document.createElement("SELECT");
+	     input.id="xdat:user.groups.groupID[" + (groupCounter) + "].groupID";
+	     input.name="xdat:user.groups.groupID[" + (groupCounter) + "].groupID";
+	     input.style.display="none";
+	     var groupsFTag=getGroupsForTag(selectedtags[stX]);
+	     input.options[0]=new Option("NONE","NONE");
+	     for(var h=0;h<groupsFTag.length;h++){
+	        input.options[h+1]=new Option(groupsFTag[h].name,groupsFTag[h].id);
+	        if(groupsFTag[h].id==selectedgroups[stX]){
+	          input.selectedIndex=h+1;
+	          name = groupsFTag[h].name;
+	        }
+	     }
+	     input.tag=selectedtags[stX];
+	     input.onchange=function(){editPerformed(this);};
+
+	     td= document.createElement("TD");
+	     td.innerHTML=name;
+	     tr.appendChild(td);
+
+	     td= document.createElement("TD");
+	     td.appendChild(input);
+	     tr.appendChild(td);
+
+	     var newInputV = document.createElement('input');
+	     newInputV.type='button';
+	     newInputV.value='Edit';
+	     newInputV.onclick=function(){editRequested(this.previousSibling);};
+	     td.style.whiteSpace="nowrap";
+	     td.appendChild(newInputV);
+
+	     tr.appendChild(td);
+
+	     tBody.appendChild(tr);
+
+	     groupCounter++;
+	  }
+
+	  groupDIV.appendChild(t);
+
+	  var addGroupDIV=document.getElementById("addGroupDIV");
+
+	  if ( addGroupDIV.hasChildNodes() )
+				  {
+					     while ( addGroupDIV.childNodes.length >= 1 )
+					     {
+					        addGroupDIV.removeChild( addGroupDIV.firstChild );
+					     }
+				  }
+
+	  var t = document.createElement("TABLE");
+	  var tbody = document.createElement("TBODY");
+	  var tr = document.createElement("TR");
+
+	  t.appendChild(tbody);
+	  tbody.appendChild(tr);
+	  addGroupDIV.appendChild(t);
+
+	  var td = document.createElement("TD");
+	  td.innerHTML="Add to $displayManager.getSingularDisplayNameForProject().toLowerCase():";
+	  tr.appendChild(td);
+
+      //Do a case-insensitive sort before adding the options to the dropdown.
+      alltags.sort(function(a,b){a = a.toLowerCase(); b = b.toLowerCase(); if (a>b) return 1; if (a<b) return -1; return 0;});
+
+	  var select =document.createElement("SELECT");
+	  select.id="all_projects";
+	  select.options[select.options.length]=new Option("(SELECT)","");
+	  for(var atl=0;atl<alltags.length;atl++){
+            var projectId = alltags[atl];
+            if (!hasTag(projectId)) {
+                var project = window.projectTracker.getProjectById(projectId);
+                if (project) {
+                    select.options[select.options.length] = new Option(projectId, projectId);
+                }
+            }
+        }
+        select.onchange = function () {
+            populateLevels(this);
+        };
+
+	  td = document.createElement("TD");
+	  td.appendChild(select);
+	  tr.appendChild(td);
+
+
+
+	  td = document.createElement("TD");
+	  td.innerHTML=" as ";
+	  tr.appendChild(td);
+
+
+
+	  var select =document.createElement("SELECT");
+	  select.id="projects_levels";
+	  select.options[select.options.length]=new Option("(SELECT)","");
+	  td = document.createElement("TD");
+	  td.appendChild(select);
+	  tr.appendChild(td);
+
+
+	  td = document.createElement("TD");
+	     var newInputV = document.createElement('input');
+	     newInputV.type='button';
+	     newInputV.value='Add';
+	     newInputV.onclick=function(){addRequested();};
+	     td.style.whiteSpace="nowrap";
+	     td.appendChild(newInputV);
+	  tr.appendChild(td);
+
+
+	  tbody.appendChild(tr);
+	}
+
+	function editRequested(select){
+	  select.style.display="block";
+	}
+
+	function addRequested(){
+	  if (document.getElementById("projects_levels").selectedIndex>0 && document.getElementById("all_projects").selectedIndex>0){
+	    addGroupToSelectedArray(document.getElementById("projects_levels").options[document.getElementById("projects_levels").selectedIndex].value,document.getElementById("all_projects").options[document.getElementById("all_projects").selectedIndex].value);
+	    renderGroups();
+	  }
+	}
+
+	function populateLevels(select){
+	  if(document.getElementById("all_projects").selectedIndex>0){
+	    var input =document.getElementById("projects_levels");
+	    var t = document.getElementById("all_projects").options[document.getElementById("all_projects").selectedIndex].value;
+	    var groupsFTag=getGroupsForTag(t);
+	     input.options[0]=new Option("(SELECT)","");
+	     for(var gFTh=0;gFTh<groupsFTag.length;gFTh++){
+	        input.options[gFTh+1]=new Option(groupsFTag[gFTh].name,groupsFTag[gFTh].id);
+	     }
+	  }
+	}
+
+	function editPerformed(select){
+	  var _option=select.options[select.selectedIndex];
+	  var _value =_option.value;
+	  if (_value=="NONE"){
+	    var index=getTagIndex(select.tag);
+	    if (index>-1){
+	      selectedgroups.splice(index,1);
+	      selectedtags.splice(index,1);
+	    }
+	  }else{
+	    addGroupToSelectedArray(_value,select.tag);
+	  }
+	  select.style.display="none";
+	  renderGroups();
+	}
+
+	renderGroups();
+	</script>
+				<input type="hidden" name="xdat:user.login" value="$!item.getProperty("login")"/>
+				#xdatEditProps($item $edit_screen)
+
+		<tr>
+            <td align="right">
+                <input type="submit" class="btn1" name="eventSubmit_doPerform" value="Submit">
+                #if ($turbineUtils.GetPassedParameter("popup",$data)=="true")
+##                    <button type="button" onclick="javascript:window.close()">Close</button>
+                    <button type="button" onclick="goToUsersPage()">Done</button>
+                #else
+                    <button type="button" onclick="goToUsersPage()">Done</button>
+                #end
+            </td>
+        </tr>
+</table>
+</td>
+</tr>
+</table>
+</td>
+</tr>
+		<tr>
+			<td align=left colspan=2 valign=top>&nbsp;
+			</td>
+		</tr>
+				<tr>
+			<td align=left colspan=2 valign=top>
+                <table style="width:100%;max-width:670px;background:#f0f0f0;border:1px solid #ccc">
+					<tr>
+						<td valign="top">
+							<table width="100%">
+								<tr><th align=left colspan="4">STEP 3: Define security settings</th>
+                                </tr>
+								<tr>
+									<th align=left colspan="4"><br>System Roles</th>
+								</tr>
+								#foreach($role in $allRoles)
+								<tr><td align=left colspan="4">
+                                    <input type="checkbox" id="role_$role.getKey()" name="custom_role" value="$role.getKey()" #if($userObject.checkRole($role.getKey()))checked#end/> <label for="role_">$role.getName()</label>
+								: $!role.getDescription()
+								</td></tr>
+									#if($role.getWarning())
+                                    <tr>
+                                        <td align="center" valign="top"><img src="$content.getURI("images/rc.gif")" border="0"></td>
+                                        <td align="left" colspan="3">$role.getWarning()</td>
+    								</tr>
+                                    <tr>
+                                        <td colspan="2">&nbsp;</td>
+    								</tr>
+    								 #end
+								#end
+
+
+							  #set($groupCounter=0)
+
+                                #if($turbineUtils.toBoolean($siteConfig.getProperty("security.allow-data-admins","true")))
+                                    <tr>
+                                        <th align=left colspan="2"><br>Allow All Data Access: </th>
+                                    </tr>
+                                    <tr>
+                                        <td align="center" valign="top" style="width:20px"><img src="$content.getURI("images/rc.gif")" border="0"></td>
+                                        <td align="left">WARNING: Allowing 'All Data Access' will allow this user to see ALL data stored in this system.  It supersedes project membership.  Most accounts on your server should NOT have All Data Access allowed.</td>
+                                    </tr>
+                                    <tr>
+                                        <td colspan="2">
+                                            <span align=left nowrap>
+                                                <input type="radio" id="data_none" name="xdat:user.groups.groupID[$groupCounter].groupID" value="" checked/><label for="data_none">No</label>
+                                            </span>
+                                            &nbsp;&nbsp;&nbsp;
+                                            <span align=left nowrap>
+                                                <input type="radio" id="data_access" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ACCESS" #if($userObject.getGroup("ALL_DATA_ACCESS"))checked#end/><label for="data_access">Read Only</label>
+                                            </span>
+                                            &nbsp;&nbsp;&nbsp;
+                                            <span align=left nowrap>
+                                                <input type="radio" id="data_admin" name="xdat:user.groups.groupID[$groupCounter].groupID" value="ALL_DATA_ADMIN" #if($userObject.getGroup("ALL_DATA_ADMIN"))checked#end/><label for="data_admin">Read, Edit & Delete</label>
+                                            </span>
+                                        </td>
+                                    </tr>
+                                #end
+                                <tr>
+                                    <td align=right colspan="2">
+                                        <input type="button" class="btn1" onclick="XNAT.app.userRoles.update();" name="eventSubmit_doPerform" value="Submit">
+                                        #if ($turbineUtils.GetPassedParameter("popup",$data)=="true")
+##                                            <button type="button" onclick="javascript:window.close()">Close</button>
+                                            <button type="button" onclick="goToUsersPage()">Done</button>
+                                        #else
+                                            <button type="button" onclick="goToUsersPage()">Done</button>
+                                        #end
+                                    </td>
+                                </tr>
+							  #set($groupCounter=$groupCounter+1)
+							</table>
+						</td>
+					</tr>
+				</table>
+					</td>
+				</tr>
+    <script>
+        XNAT.app.userRoles=new Object();
+        XNAT.app.userRoles.update=function(){
+            var urString="";
+            var urBoxs=document.getElementsByName("custom_role");
+            for(var urC=0;urC<urBoxs.length;urC++){
+                if(urBoxs[urC].checked){
+                    if(urC>0){
+                        urString+=",";
+                    }
+
+                    urString+=urBoxs[urC].value;
+                }
+            }
+
+            openModalPanel("role_mod","Modifying Roles");
+
+            YAHOO.util.Connect.asyncRequest('POST',serverRoot+"/REST/user/$userObject.getLogin()/roles$?XNAT_CSRF=" + csrfToken + "&roles="+urString,{
+                success : function()
+                {
+                    document.getElementById("userform").submit();
+                    closeModalPanel('role_mod');
+                },
+                failure: function(){
+                    closeModalPanel('role_mod');
+                    alert("Failed to store roles.");
+                },
+                cache:false, // Turn off caching for IE
+                scope: this
+            });
+        }
+
+    </script>
+    <tr>
+					<td>
+						#addCustomScreens($om.getXSIType() "report/postContent")
+					</td>
+				</tr>
+</table>
+</form>
+
+<script type="text/javascript">
+
+    // hacks for Actions menu items
+    (function(){
+
+        var __actions = jq('#actionsMenu');
+
+        // hack to remove the "Change Permissions" link
+        __actions.find('a[title="Change Permissions"]').closest('li').remove();
+
+        // view the XML in a popup
+        __actions.find('a[href*="/xdataction/xml/"]').on('click', function(e){
+            e.preventDefault();
+            XNAT.ui.popup.viewXML(this.href);
+        });
+
+    })();
+
+</script>

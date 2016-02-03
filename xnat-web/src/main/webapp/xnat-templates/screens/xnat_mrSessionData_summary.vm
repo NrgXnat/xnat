@@ -1,0 +1,19 @@
+<div class="edit_title">$om.getSchemaElement().getSingularDescription() Summary</div>
+<table>
+	<tr>
+		<td>Patient name</td>
+		<td>$!item.getStringProperty("xnat:mrSessionData/dcmPatientName")</td>
+	</tr>
+	<tr>
+		<td>Patient ID</td>
+		<td>$!item.getStringProperty("xnat:mrSessionData/dcmPatientId")</td>
+	</tr>
+	<tr>
+		<td>Date/time</td>
+		<td>$!item.getStringProperty("xnat:mrSessionData/date") $!item.getStringProperty("xnat:mrSessionData/time")</td>
+	</tr>
+	<tr>
+		<td>Accession number</td>
+		<td>$!item.getStringProperty("xnat:mrSessionData/dcmAccessionNumber")</td>
+	</tr>
+</table>

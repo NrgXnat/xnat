@@ -1,0 +1,114 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#macro (dateEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatDateBox($field $item $vr $years)</td>
+</tr>
+#end
+
+#macro (textEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatTextBox($field $item "" $vr)</td>
+</tr>
+#end
+
+#macro (oneTextOneBoolEditRow $tName $tField $bName $bField $isTrue)
+<tr>
+	<td>$tName</td>
+	<td>#xdatTextBox($tField $item "" $vr)</td>
+	<td>$bName</td>
+	<td>#xdatBooleanRadio($bField $item $isTrue $vr)</td>
+</tr>
+#end
+
+#macro (textEditNColsRow $names $fields)
+<tr>
+  #foreach ($name in $names)
+	  #set ($index = $velocityCount - 1)
+		<td>$name</td>
+		<td>#xdatTextBox("$fields.get($index)" $item "" $vr)</td>
+  #end
+</tr>
+#end
+
+#macro (boolRadioEditRow $name $field $isTrue)
+<tr>
+	<td>$name</td>
+	<td>#xdatBooleanRadio($field $item $isTrue $vr)</td>
+</tr>
+#end
+
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#set($years = [ $!turbineUtils.getYear()..1990])
+
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+
+<br>
+<div class="edit_title">Pittsburgh Side Effects</div>
+#parse("screens/xnat_edit_subjectAssessorData.vm")
+<div class="edit_header1">$displayManager.getSingularDisplayNameForImageSession() Info</div><br>
+#parse("/screens/EditProjectSpecificFields.vm")
+
+<table class="session_info_edit">
+	#dateEditRow("Date" "xnat_a:sideEffectsPittsburghData/date")
+	#textEditRow("Time" "xnat_a:sideEffectsPittsburghData/time")
+	#textEditRow("Visit ID" "xnat_a:sideEffectsPittsburghData/visit_id")
+	#textEditRow("Age" "xnat_a:sideEffectsPittsburghData/age")
+	#textEditRow("Motor Tics" "xnat_a:sideEffectsPittsburghData/motorTics")
+	#textEditRow("Buccal-Lingual Movements" "xnat_a:sideEffectsPittsburghData/buccal_lingualMovements")
+	#textEditRow("Picking Skin/Fingers/Nails/Lip" "xnat_a:sideEffectsPittsburghData/picking_skin_fingers_nails_lip")
+	#textEditRow("Worried/Anxious" "xnat_a:sideEffectsPittsburghData/worried_anxious")
+	#textEditRow("Dull/Tired/Listless" "xnat_a:sideEffectsPittsburghData/dull_tired_listless")
+	#textEditRow("Sedation" "xnat_a:sideEffectsPittsburghData/sedation")
+	#textEditRow("Stomachache" "xnat_a:sideEffectsPittsburghData/stomachache")
+	#textEditRow("Nausea/Vomiting" "xnat_a:sideEffectsPittsburghData/nausea_vomiting")
+	#textEditRow("Crabby/Irritable" "xnat_a:sideEffectsPittsburghData/crabby_irritable")
+	#textEditRow("Tearful/Sad/Depressed" "xnat_a:sideEffectsPittsburghData/tearful_sad_depressed")
+	#textEditRow("Hallucinations" "xnat_a:sideEffectsPittsburghData/hallucinations")
+	#textEditRow("Trouble Sleeping" "xnat_a:sideEffectsPittsburghData/troubleSleeping")
+	#textEditRow("Loss of Appetite" "xnat_a:sideEffectsPittsburghData/lossOfAppetite")
+	#textEditRow("Trouble Concentrating/Distractible" "xnat_a:sideEffectsPittsburghData/troubleConcentrating_distractible")
+	#textEditRow("Dizziness/Lightheadedness" "xnat_a:sideEffectsPittsburghData/dizziness_lightheadedness")
+	#textEditRow("Headaches" "xnat_a:sideEffectsPittsburghData/headaches")
+	#textEditRow("Social Withdrawal" "xnat_a:sideEffectsPittsburghData/socialWithdrawal")
+	#textEditRow("Dry Mouth" "xnat_a:sideEffectsPittsburghData/dryMouth")
+	#textEditRow("Palpitations" "xnat_a:sideEffectsPittsburghData/palpitations")
+	<tr><td colspan=2>#parse("/screens/EditProjectSpecificFields.vm")</td></tr>
+</table>
+
+<br>
+<div class="edit_header2">Notes</div>
+<br>
+<textarea name="xnat_a:sideEffectsPittsburghData.note" rows="4" cols="50" style="text-align:left;">$!notes</textarea>
+
+<hr>
+
+#xdatEditProps($item $edit_screen)
+<input type="button" onclick="javascript:history.go(-1)" value="Back"/>
+&nbsp;&nbsp;&nbsp;
+<input type="button" onclick="validateForm();" name="eventSubmit_doInsert" value="Submit"/>
+
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateSubjectAssessorForm();
+   return false;
+}
+</script>

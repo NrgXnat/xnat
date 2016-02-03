@@ -1,0 +1,468 @@
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+
+<div id="breadcrumbs"></div>
+#if($subject)
+    #if($subject.class.name == "java.lang.String")
+        #set($subjectId = $subject)
+    #else
+        #set($subjectId = $subject.getId())
+    #end
+#end
+<script src="$content.getURI("scripts/xnat/ui/breadcrumbs.js")"></script>
+<script language="javascript">
+
+    window.isProjectPage = (XNAT.data.context.xsiType === 'xnat:projectData');
+
+    // wrap it up to keep things
+    // out of global scope
+    (function(){
+
+        var crumbs = [];
+
+        #if($project.getItem())
+
+        #else
+            #if($om.getProject())
+                #if($project)
+
+                #else
+                    #set($project=$om.getProject())
+                #end
+            #else
+                #if ($om)
+                    $!om.setProject($project)
+                #end
+            #end
+        #end
+
+        #if($project)
+            #if($om)
+                //HAS OM
+                #if($om.getItem().instanceOf("xnat:mrAssessorData"))
+                    //mrAssessorData
+                    #if($mr)
+
+                    #else
+                        #if($mr.getMrSessionData())
+                            #set($pet=$om.getMrSessionData())
+                        #end
+                    #end
+                    #if($subject)
+
+                    #else
+                        #if($mr.getSubjectData())
+                            #set($subject= $mr.getSubjectData())
+                        #elseif($part)
+                            #set($subject=$part)
+                        #end
+                    #end
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $project))
+                    #if($!displayId)
+                        // 61
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$project")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 71
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subject.getId()").addPathInfo("project","$project")',
+                            label: '#if($!subject.getIdentifier($project,true))$!subject.getIdentifier($project,true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($mr)
+                        // 81
+                        crumbs.push({
+                            id:    '$!mr.getId()',
+                            type:  'MR',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:mrSessionData").addPathInfo("search_field","xnat:mrSessionData.ID").addPathInfo("search_value","$mr.getId()").addPathInfo("project","$project")',
+                            label: '#if($!mr.getIdentifier($project,true))$!mr.getIdentifier($project,true)#elseif($mr.getLabel())$!mr.getLabel()#else$!mr.getId()#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.Id)
+                            // 92
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$project")',
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 100
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.Id)
+                            // 108
+                            crumbs.push({
+                                link:  null,
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+                #elseif($om.getItem().instanceOf("xnat:petAssessorData"))
+                    //petAssessorData
+                    #if($pet)
+
+                    #else
+                        #if($om.getPetSessionData())
+                            #set($pet=$om.getPetSessionData())
+                        #end
+                    #end
+                    #if($subject)
+
+                    #else
+                        #if($pet.getSubjectData())
+                            #set($subject= $pet.getSubjectData())
+                        #else
+                            #if($part)
+                                #set($subject=$part)
+                            #end
+                        #end
+                    #end
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $project))
+                    #if($!displayId)
+                        // 139
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$project")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 149
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subject.getId()").addPathInfo("project","$project")',
+                            label: '#if($!subject.getIdentifier($project,true))$!subject.getIdentifier($project,true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($pet)
+                        // 159
+                        crumbs.push({
+                            id:    '$!pet.getId()',
+                            type:  'PET',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:petSessionData").addPathInfo("search_field","xnat:petSessionData.ID").addPathInfo("search_value","$pet.getId()").addPathInfo("project","$project")',
+                            label: '#if($!pet.getIdentifier($project,true))$!pet.getIdentifier($project,true)#elseif($pet.getLabel())$!pet.getLabel()#else$!pet.getId()#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.Id)
+                            // 170
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$project")',
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 178
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.Id)
+                            // 186
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  null,
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+                #elseif($om.getItem().instanceOf("xnat:subjectAssessorData"))
+                    //subjectAssessorData
+                    #if($subject)
+
+                    #else
+                        #if($om.getSubjectData())
+                            #set($subject= $om.getSubjectData())
+                        #else
+                            #if($part)
+                                #set($subject=$part)
+                            #end
+                        #end
+                    #end
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $project))
+                    #if($!displayId)
+                        // 211
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$project")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 221
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subject.getId()").addPathInfo("project","$project")',
+                            label: '#if($!subject.getIdentifier($project,true))$!subject.getIdentifier($project,true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.Id)
+                            // 232
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$project")',
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 240
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.Id)
+                            // 248
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  null,
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+                #elseif($om.getItem().instanceOf("xnat:imageAssessorData"))
+                    //imageAssessorData
+                    #if($om.getImageSessionData())
+                        #set($imageSession=$om.getImageSessionData())
+                    #end
+
+
+                    #if($subject)
+
+                    #else
+                        #if($imageSession.getSubjectData())
+                            #set($subject= $imageSession.getSubjectData())
+                        #else
+                            #if($part)
+                                #set($subject=$part)
+                            #end
+                        #end
+                    #end
+
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $project))
+                    #if($!displayId)
+                        // 278
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$project")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($subject)
+                        // 288
+                        crumbs.push({
+                            id:    '$!subjectId',
+                            type:  '$displayManager.getSingularDisplayNameForSubject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value","$subject.getId()").addPathInfo("project","$project")',
+                            label: '#if($!subject.getIdentifier($project,true))$!subject.getIdentifier($project,true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subjectId#end'
+                        });
+
+                    #end
+                    #if($imageSession)
+                        // 298
+                        crumbs.push({
+                            id:    '$!imageSession.getId()',
+                            type:  '$displayManager.getSingularDisplayNameForImageSession().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$imageSession.getXSIType()").addPathInfo("search_field","${imageSession.getXSIType()}.ID").addPathInfo("search_value","$imageSession.getId()").addPathInfo("project","$project")',
+                            label: '#if($!imageSession.getIdentifier($project,true))$!imageSession.getIdentifier($project,true)#elseif($imageSession.getLabel())$!imageSession.getLabel()#else$!imageSession.getId()#end'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.Id)
+                            // 309
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$project")',
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 317
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.Id)
+                            // 325
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  null,
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+                #elseif($om.getItem().getGenericSchemaElement().getPrimaryElements().indexOf("xnat:experimentData")!=-1)
+                    //experimentData
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $project))
+                    #if($!displayId)
+                        // 339
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  window.isProjectPage ? null :
+                                           '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$project")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($page_name)
+                        #if($om.Id)
+                            // 351
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$project")',
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 359
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.Id)
+                            // 367
+                            // prevent 'bonus' breadcrumb on project page
+                            if (!window.isProjectPage){
+                                crumbs.push({
+                                    id:    '$!om.getId()',
+                                    link:  null,
+                                    label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                                });
+                            }
+                        #end
+                    #end
+
+                ## #elseif($om.getItem().instanceOf("xnat:subjectData") != -1)
+                #elseif($om.getItem().instanceOf("xnat:subjectData"))
+                    //subjectData
+                    #set($displayId = $turbineUtils.getProjectDisplayID($om, $project))
+                    #if($!displayId)
+                        // 384
+                        crumbs.push({
+                            id:    '$displayId',
+                            type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                            link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$project")',
+                            label: '$displayId'
+                        });
+
+                    #end
+                    #if($pageName)
+                        #if($om.Id)
+                            // 395
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","$om.getXSIType()").addPathInfo("search_field","$om.getXSIType().ID").addPathInfo("search_value","$om.getId()").addPathInfo("project","$project")',
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                        // 403
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #else
+                        #if($om.Id)
+                            // 411
+                            crumbs.push({
+                                id:    '$!om.getId()',
+                                link:  null,
+                                label: '#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end'
+                            });
+
+                        #end
+                    #end
+
+                #elseif($om.getItem().instanceOf("xnat:projectData"))
+                    //projectData
+
+                #else
+                    //UNKNOWN
+                    // 426
+                    crumbs.push({
+                        link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$project")',
+                        label: '$displayManager.getSingularDisplayNameForProject().toUpperCase(): $!project'
+                    });
+
+                    #if($page_name)
+                        // 433
+                        crumbs.push({
+                            link:  null,
+                            label: '$pageName'
+                        });
+
+                    #end
+                #end
+            #else
+                //NO OM
+                // 443
+                crumbs.push({
+                    id:    '$!project',
+                    type:  '$displayManager.getSingularDisplayNameForProject().toUpperCase()',
+                    link:  '$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$project")',
+                    label: '$!project'
+                });
+
+                #if($page_name)
+                    // 452
+                    crumbs.push({
+                        link:  null,
+                        label: '$pageName'
+                    });
+
+                #end
+            #end
+        #end
+
+
+        XNAT.ui.breadcrumbs.render('#breadcrumbs', crumbs);
+
+
+    })();
+
+</script>

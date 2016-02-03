@@ -1,0 +1,84 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+#parse("/screens/admin_bar.vm")
+
+<style type="text/css">
+    #more-options { margin: 15px 2px; }
+    #more-options a {
+        display: block; width: 240px; margin: 10px 0; padding: 12px 15px;
+        background: #f0f0f0; border: 1px solid #e0e0e0; border-radius: 3px;
+        font-size: 14px;
+    }
+    #more-options a:hover {
+        background: #e8e8e8; border-color: #d8d8d8;
+    }
+</style>
+
+<div id="admin-more" class="admin-content">
+
+    <div class="header"><b>More Options:</b></div>
+
+    <div id="more-options">
+
+        <a href="$link.setPage("Configuration.vm")">Configuration</a>
+
+        <a href="$link.setPage("XDATScreen_EditScript.vm").addPathInfo("user","Test")">View Edit Script</a>
+
+        <a class="iframe-dialog" href="$link.setPage("XDATScreen_emailSpecifications.vm").addPathInfo("popup","true")?message=false">Set Email Settings</a>
+
+        <a href="$link.setAction("RefreshAction").addPathInfo("refresh","ElementSecurity")">Reload Security Settings</a>
+
+        <a href="$link.setAction("RefreshAction").addPathInfo("refresh","DisplayManager")">Reload Display Documents</a>
+
+        <a href="$link.setAction("RefreshAction").addPathInfo("refresh","ClearDBCache")">Clear DB Cache</a>
+
+        <a href="$link.setAction("RefreshAction").addPathInfo("refresh","PGVacuum")">Vacuum/Analyze Database</a>
+
+        <a href="$link.setAction("RefreshAction").addPathInfo("refresh","ClearStudyRoutings")">Clear Study Routings</a>
+
+        <a href="$link.setAction("SearchAction").addPathInfo("element","wrk:workflowData").addPathInfo("querytype","new")">View All Workflows</a>
+
+        <a class="iframe-dialog" href="$link.setPage("XDATScreen_active_sessions.vm").addPathInfo("popup","true")">Monitor $displayManager.getPluralDisplayNameForImageSession()</a>
+
+        <a class="iframe-dialog" href="$link.setPage("XDATScreen_admin_projectAccess.vm").addPathInfo("popup","true")">$displayManager.getSingularDisplayNameForProject() Accessibility</a>
+
+        <a class="iframe-dialog" href="$link.setPage("AdminSummary.vm").addPathInfo("popup","true")">Summary</a>
+
+        <a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a>
+
+        #addGlobalCustomScreens("admin/options")
+
+    </div>
+
+</div>
+
+<script type="text/javascript">
+    (function(){
+        jq('#more-options').find('a.iframe-dialog').click(function(e){
+            e.preventDefault();
+            var link = this.href;
+            XNAT.ui.dialog.iframe({
+                src: link,
+                width: '80%',
+                height: '80%',
+                minHeight: 540,
+                minWidth: 720,
+                maxWidth: 1160,
+                title: ' ',
+//                titleStyle: 'visibility:hidden;opacity:0;',
+//                onClose: function(){
+//                    xmodal.loading.open('Please wait...');
+//                    window.top.location.reload(true);
+//                },
+                footer: false
+            });
+        });
+    })();
+</script>

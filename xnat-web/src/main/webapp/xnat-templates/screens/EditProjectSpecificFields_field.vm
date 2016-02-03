@@ -1,0 +1,81 @@
+<tr>
+			 <th align="left" nowrap><label for="$!f.getXmlpath()" #if($f.getRequired()==1 || $f.getRequired()) class="formLabelRequired" #end>$!f.getName()</label>#if($f.getRequired()==1 || $f.getRequired()) <span class="noteRequired">*</span> #end</th>
+						 <td nowrap>
+			  #if ($f.getGroup())
+			   #if($!om.getProperty($!f.getXmlpath()))
+			     #set($isDisabled=false)
+			   #else
+			     #set($isDisabled=true)
+			   #end
+			   <input type="radio" #if($isDisabled==false)defaultChecked checked#end name="field_group_$f.getGroup()" onclick="_${f.getGroup()}_click('$!f.getXmlpath()');"/>
+			   <script  type="text/javascript">
+			     if(window._${f.getGroup()}==undefined)
+			     {
+			       window._${f.getGroup()}=new Array();
+			       
+			       function _${f.getGroup()}_click(v){
+			        for(var _groupCounter=0;_groupCounter<window._${f.getGroup()}.length;_groupCounter++)
+			        {
+			          if(window._${f.getGroup()}[_groupCounter]==v){
+			            var fInput=document.getElementById(window._${f.getGroup()}[_groupCounter]);
+			            fInput.disabled=false;
+			          }else{
+			            var fInput=document.getElementById(window._${f.getGroup()}[_groupCounter]);
+			            fInput.disabled=true;
+			            //if(fInput.type !=undefined && fInput.type =="text"){
+			            //  fInput.value="";
+			            //}
+			          }
+			        }
+			       }
+			     }
+			     
+			     window._${f.getGroup()}.push("$!f.getXmlpath()");
+			   </script>
+			  #else
+			     #set($isDisabled=false)
+			  #end
+			  #if ($vr)
+            	    #if($vr.getField($f.getCleanedXMLPath()))
+            		      <span style="color:red;">&#8658</span>
+            	    #end
+			  #end
+			  
+	#if($f.getDatatype()=="boolean")
+		#if($!om.getProperty($!f.getXmlpath()))
+			#set($currentValue=$!om.getBooleanProperty($!f.getXmlpath()))
+		#else
+			#if($f.getRequired()==1 || $f.getRequired())
+				#set($currentValue=true )
+			#end
+		#end
+		#if($f.getRequired()==0 || !$f.getRequired())
+			<label><input #if($isDisabled)disabled#end type="radio" id="$!f.getXmlpath()" name="$!f.getXmlpath()" value="NULL" #if($currentValue=="")CHECKED#end/> No value</label>
+		#end
+		<label><input #if($isDisabled)disabled#end type="radio" id="$!f.getXmlpath()" name="$!f.getXmlpath()" value="true" #if($currentValue)CHECKED#end/> True</label>
+		<label><input #if($isDisabled)disabled#end type="radio" id="$!f.getXmlpath()" name="$!f.getXmlpath()" value="false" #if($currentValue==false)CHECKED#end/> False</label>
+  #elseif($f.getDatatype()=="date")
+		<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/yui/build/calendar/calendar-min.js')"></SCRIPT>
+		<link type="text/css" rel="stylesheet" href="$content.getURI('scripts/yui/build/calendar/assets/skins/sam/calendar.css')"> 
+		<input #if($isDisabled)disabled#end type="text" ID="$!f.getXmlpath()" name="$!f.getXmlpath()" #if($om.getProperty($!f.getXmlpath())) value="$turbineUtils.formatDate($!om.getDateProperty($!f.getXmlpath()),"MM/dd/yyyy")" #end  #if($f.getRequired()==1 || $f.getRequired()) class="required" #else class="nullable $!f.getDatatype()" #end/>
+		<script type="text/javascript">
+	      insertCalendar(document.getElementById("$!f.getXmlpath()"),"$!f.getName()");
+	    </script>
+  #else
+    #if($f.getPossiblevalues_possiblevalue().size()>0)
+			<select #if($isDisabled)disabled#end id="$!f.getXmlpath()" name="$!f.getXmlpath()" #if($f.getRequired()==1 || $f.getRequired()) class="required" #end>
+    			<option value="NULL">(SELECT)</option>
+    			#foreach($pv in $f.getPossiblevalues_possiblevalue())
+    				#if($pv.getDisplay())
+    					<option value="$pv.getPossiblevalue()" #if($om.getProperty($!f.getXmlpath())==$pv.getPossiblevalue()) SELECTED #end>$pv.getDisplay()</option>
+    				#else
+    				    <option value="$pv.getPossiblevalue()" #if($om.getProperty($!f.getXmlpath())==$pv.getPossiblevalue()) SELECTED #end>$pv.getPossiblevalue()</option>
+    				#end
+    			#end
+    		</select>
+		#else
+			<input #if($f.getRequired()==1 || $f.getRequired()) class="required $!f.getDatatype()" #else class="nullable $!f.getDatatype()" #end #if($isDisabled)disabled#end type="text" size="10" id="$!f.getXmlpath()" name="$!f.getXmlpath()" value="$!om.getProperty($!f.getXmlpath())" />
+		#end
+  #end
+		  </td>
+		</tr>

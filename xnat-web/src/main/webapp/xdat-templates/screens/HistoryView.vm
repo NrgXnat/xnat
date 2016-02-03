@@ -1,0 +1,25 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/ScreenOnly.vm")
+<style>
+th.meta,td.meta{
+	background-color:#DEDEDE;
+}
+</style>
+
+<script>
+function toggleRows(_classname){
+	var elements = YAHOO.util.Dom.getElementsByClassName(_classname);
+	for(var trI=0;trI<elements.length;trI++){
+		if(elements[trI].style.display==""){
+			elements[trI].style.display="none";
+		}else{
+			elements[trI].style.display="";
+		}
+	}
+}
+</script>
+
+<table>
+	$built_html
+</table>
+

@@ -1,0 +1,202 @@
+<SCRIPT language="javascript">
+function ElementFieldMapping(name){
+this.elementName=name;
+this.fields = new Array();
+this.extensionPaths = new Array();
+this.extensionTypes = new Array();
+}
+var allElements = new Array();
+         #foreach($entry in $allElements.entrySet())
+  var mapping = new ElementFieldMapping("$entry.getKey()");
+  #set($fieldCounter=0)
+           #set($fields=$entry.getValue().get(0))
+           #set($extensions=$entry.getValue().get(1))
+           #foreach($field in $fields)
+  mapping.fields[$fieldCounter]="$field";
+  #set($fieldCounter=$fieldCounter + 1)
+           #end
+  #set($fieldCounter=0)
+           #foreach($e in $extensions.entrySet())
+  mapping.extensionPaths[$fieldCounter]="$e.getKey()";
+  mapping.extensionTypes[$fieldCounter]=new Array();
+  #foreach($foreign in $e.getValue())
+  mapping.extensionTypes[$fieldCounter].push("$foreign");
+  #end
+  #set($fieldCounter=$fieldCounter + 1)
+           #end
+  allElements.push(mapping);
+         #end
+         
+function getElementFieldMapping(name){
+  for(var i=0;i<allElements.length;i++){
+    if (allElements[i].elementName==name){
+       return allElements[i];
+    }
+  }
+}
+
+function renderAdditionalFields(header,destinationDIV,selectBox){
+  var dest = document.getElementById(destinationDIV);
+  while(dest.firstChild){
+      dest.removeChild(dest.firstChild );  
+  }
+  
+  var checkAll = document.getElementById("checkALL");
+  if (selectBox.selectedIndex!=0){
+      var foreignElementName = selectBox.options[selectBox.selectedIndex].value;
+      var elementMapping = getElementFieldMapping(foreignElementName);
+      for(var i=0;i<elementMapping.fields.length;i++){
+         var field = elementMapping.fields[i];
+         
+			         var newDIV = document.createElement("DIV");
+			         newDIV.className="field rootField";
+			         
+			         var inputBox = document.createElement("INPUT");
+			         inputBox.type="checkbox";
+			         inputBox.name="fields";
+			         inputBox.checked=checkAll.checked;
+			         inputBox.value=header +"[@xsi:type='" + foreignElementName +"']" + field.substring(field.indexOf("/"));;
+			         
+			         newDIV.appendChild(inputBox);
+			         
+			         var labelTxt= document.createElement("LABEL");
+			         labelTxt.innerHTML=header + field.substring(field.indexOf("/"));
+			         newDIV.appendChild(labelTxt);
+			         
+			         dest.appendChild(newDIV);
+      }
+  }
+}
+
+function renderAdditionalFields(header,destinationDIV,selectBoxID){
+  var dest = document.getElementById(destinationDIV);
+  while(dest.firstChild){
+      dest.removeChild(dest.firstChild );  
+  }
+  var selectBox=document.getElementById(selectBoxID);
+  
+  var checkAll = document.getElementById("checkALL");
+  if (selectBox.selectedIndex!=0){
+      var foreignElementName = selectBox.options[selectBox.selectedIndex].value;
+      var elementMapping = getElementFieldMapping(foreignElementName);
+      for(var i=0;i<elementMapping.fields.length;i++){
+         var field = elementMapping.fields[i];
+         
+			         var newDIV = document.createElement("DIV");
+			         newDIV.className="field rootField";
+			         
+			         var inputBox = document.createElement("INPUT");
+			         inputBox.type="checkbox";
+			         inputBox.name="fields";
+			         inputBox.checked=checkAll.checked;
+			         inputBox.value=header +"[@xsi:type='" + foreignElementName +"']" + field.substring(field.indexOf("/"));;
+			         
+			         newDIV.appendChild(inputBox);
+			         
+			         var labelTxt= document.createElement("LABEL");
+			         labelTxt.innerHTML=header + field.substring(field.indexOf("/"));
+			         newDIV.appendChild(labelTxt);
+			         	         
+			         
+			         dest.appendChild(newDIV);
+      }
+      
+      for(var i=0;i<elementMapping.extensionPaths.length;i++){
+         var field = elementMapping.extensionPaths[i];
+         
+			         var newDIV = document.createElement("DIV");
+			         newDIV.className="extension rootExtension";
+			         
+			         var labelTxt= document.createElement("LABEL");
+			         labelTxt.innerHTML="<B>" + header + field.substring(field.indexOf("/")) + "</B>";
+			         newDIV.appendChild(labelTxt);
+			         
+			         var newSelectBox= document.createElement("SELECT");
+			         newSelectBox.ID=field +"SEL";
+			         newSelectBox.onchange=new function(){renderAdditionalFields("" + field + "","" + field + "",field +"SEL");};
+			         newSelectBox.options[0]=new Option('','(SELECT)');
+			         for(var j=0;j<elementMapping.extensionTypes[i].length;j++){
+			           newSelectBox.options[j + 1]=new Option(elementMapping.extensionTypes[i][j],elementMapping.extensionTypes[i][j]);
+			         }
+			         newDIV.appendChild(newSelectBox);
+			         
+			         dest.appendChild(newDIV);
+			         
+			         newDIV = document.createElement("DIV");
+			         newDIV.className="extension rootExtension";
+			         newDIV.ID="$e.getKey()";
+			         newDIV.innerHTML="This field can be extended by multiple data types.  Please select the data-type you would like to use.";
+			         	         			         
+			         dest.appendChild(newDIV);
+      }
+  }
+}
+
+function checkAll(){
+ var tbls = document.getElementsByTagName("input");
+ var checkAll = document.getElementById("checkALL");
+	 for (ti=0;ti<tbls.length;ti++) {
+		   thisTbl = tbls[ti];
+		   if (thisTbl.id != "checkALL") {
+			     thisTbl.checked=checkAll.checked;
+		   }
+	 }
+}
+#set($root=$fm.getElementName())
+var root = getElementFieldMapping("$root");
+</SCRIPT>
+	#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+    <form name="form1" method="post" action="$link.setAction("CSVUpload1")">
+    <INPUT TYPE="hidden" name="fm_id" value="$fm.getID()"/>
+<table valign="top" width="90%" border="0" align="center" cellpadding="5" cellspacing="0" bgcolor="#DEDEDE">
+      <tr bgcolor="#FFFFFF">
+        <td colspan="2" bgcolor="#FFFFFF"><DIV class="edit_header1">Step 2: Select the fields which will map to columns in your comma-delimited file.</DIV></td>
+      </tr>
+      <tr bgcolor="#FFFFFF">
+        <td colspan="2" bgcolor="#FFFFFF"><input type="checkbox" ID="checkALL" ONCLICK="checkAll();"/> Check All</td>
+      </tr>
+      <tr>
+        <td colspan="2"><DIV ID="rootDIV">
+        <DIV class="field rootField">
+        #set($rootFields=$allElements.get($root))
+           #set($fields=$rootFields.get(0))
+           #set($extensions=$rootFields.get(1))
+           #set($required=$rootFields.get(2))
+           #foreach($field in $required)
+<DIV class="field rootField"><input type="hidden" value="$field" name="fields"/> <b>$field (Required)</b></DIV>
+           #end
+           #foreach($field in $fields)
+<DIV class="field rootField"><input type="checkbox" value="$field" name="fields"/> $field</DIV>
+           #end
+           #foreach($e in $extensions.entrySet())
+<DIV class="extension rootExtension"><B>$e.getKey()</B>
+<SELECT ID="$e.getKey()SEL" ONCHANGE="renderAdditionalFields('$e.getKey()','$e.getKey()','$e.getKey()SEL');">
+  <OPTION VALUE="">(SELECT)</OPTION>
+  #foreach($foreign in $e.getValue())
+   <OPTION VALUE="$foreign">$foreign</OPTION>
+  #end
+</SELECT>
+</DIV>
+<DIV class="extension rootExtension" ID="$e.getKey()">This field can be extended by multiple data types.  Please select the data-type you would like to use.</DIV>
+           #end
+</DIV></td>
+      </tr>
+      <tr>
+        <td colspan="2">&nbsp;</td>
+      </tr>
+    </table>
+    <br />
+ <table width="25%" border="0" align="center">
+  <tr>
+    <td></td>
+    <td>
+        <input type="submit" name="eventSubmit_doPerform" value="Submit" />
+    </td><td>
+        <input type="button" name="Submit2" value="Cancel" />
+    </div></td>
+  </tr>
+</table>
+
+</form>

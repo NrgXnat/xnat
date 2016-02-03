@@ -1,0 +1,44 @@
+/*
+ * D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/webapp/xnat/scripts/xMenu/xMenu.css
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 8/13/13 9:23 AM
+ */
+/*
+    CSS for xMenu script
+*/
+
+/* these styles can be overridden on the page that uses the xMenu.js script */
+/*select.xmenu { display: none ; }*/
+div.xmenu {
+    display: inline-block ; margin: 0 4px ; padding: 0 ; top: -4px ; vertical-align: top ;
+    position: relative ; background-color: transparent ; z-index: inherit ; }
+div.xmenu > div { background: #e0e0e0 url('images/select_bkgd_w_arrow.png') right center no-repeat ; border: 1px solid #c0c0c0 ; border-radius: 6px ; background-clip: border-box ; }
+div.xmenu.disabled { opacity: 0.5 ; }
+div.xmenu.disabled:hover { cursor: default !important ; }
+div.xmenu.open {  }
+div.xmenu.open > div { background: url('images/select_bkgd_w_arrow_open.png') right center no-repeat ; border-bottom-left-radius: 0 ; border-bottom-right-radius: 0 ; }
+div.xmenu .button_content {
+    display: block ; margin: 0 34px 0 0 ; padding: 0 0 0 10px ; white-space: nowrap ; overflow: hidden ;
+    width: 120px ; height: 20px ; line-height: 21px ; color: #202020 ;
+    /*background: transparent url('images/select_arrow_down.png') right center no-repeat ;*/ }
+div.xmenu .button_content.image { padding: 0 0 0 4px ; background-repeat: no-repeat !important ; }
+div.xmenu .button_content img { position: relative ; vertical-align: middle ; }
+div.xmenu:hover { cursor: pointer ; }
+div.xmenu ul { display: none ; min-width: 100% ; max-height: 275px ; overflow-x: hidden ; overflow-y: auto ; margin: 0 ; padding: 0 ; position: absolute ; list-style: none ; background-color: #fff ; /* border-bottom: 1px solid #e0e0e0 ; border-radius: 0 0 9px 9px ; */ background-clip: border-box ; box-shadow: 0 10px 20px rgba(0,0,0,0.5) ; }
+.ltie9 div.xmenu ul { border: 1px solid #c0c0c0 ; }
+div.xmenu ul li { display: block ; margin: 0 ; padding: 0 ; border: 1px solid #e0e0e0 ; border-top: none ; }
+div.xmenu ul li:first-child { border-top: 1px solid #e0e0e0 ; }
+/*div.xmenu ul li:last-child { display: block ; }*/
+div.xmenu ul li.selected { display: block ; }
+div.xmenu ul li a { display: block ; padding: 6px 30px 6px 9px ; color: #202020 ; font-weight: normal ; text-decoration: none ; white-space: nowrap ; background-color: #fff ; }
+div.xmenu ul li a:hover { color: #000 ; background-color: #CBECFF ; }
+div.xmenu ul li.image a { background-position: 10px center ; background-repeat: no-repeat !important ; }
+div.xmenu ul.open { display: block ; }
+div.xmenu ul.open li { display: block ; }
+div.xmenu ul.open li a.selected,
+div.xmenu ul.open li a.selected:hover { background-color: #CBECFF ; }

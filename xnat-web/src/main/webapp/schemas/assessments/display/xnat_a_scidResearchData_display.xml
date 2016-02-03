@@ -1,0 +1,1223 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xnat_a:scidResearchData" full-description="SCID" brief-description="SCID">
+	<Arc name="PARTICIPANT_EXPERIMENT">
+		<CommonField id="PART_ID" local-field="SUBJECT_ID"/>
+		<CommonField id="DATE" local-field="DATE"/>
+		<CommonField id="EXPT_ID" local-field="EXPT_ID"/>
+	</Arc>
+	<DisplayField id="SUBJECT_ID" header="Subject" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData.subject_ID"/>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat:subjectData','xnat:subjectData.ID');">
+				<InsertValue id="Field1" field="SUBJECT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="EXPT_ID" header="ID" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData.ID"/>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat_a:scidResearchData','xnat_a:scidResearchData.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="RPT" header="ID" visible="true" image="true">
+		<Content type="sql">'/@WEBAPP/images/r.gif'::text</Content>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat_a:scidResearchData','xnat_a:scidResearchData.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="DATE" header="Date" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData.date"/>
+	</DisplayField>
+	<DisplayField id="AGE" header="Age" visible="true" searchable="true" data-type="integer">
+	<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData.date"/>
+	<DisplayFieldElement name="Field2" schema-element="xnat:demographicData.dob"/>
+	<DisplayFieldElement name="Field3" schema-element="xnat:demographicData.yob"/>
+	<Content type="sql">CAST(COALESCE(FLOOR(CAST((CAST(((@Field1) - (@Field2))AS FLOAT4)/365) AS numeric)),FLOOR((EXTRACT(YEAR FROM @Field1)) - (@Field3))) AS numeric)</Content>
+	</DisplayField>
+	<DisplayField header="Projects" id="PROJECTS" data-type="string">
+		<DisplayFieldElement name="Field1" viewName="XNAT_A_SCIDRESEARCHDATA_PROJECTS" viewColumn="PROJECTS"/>
+	</DisplayField>
+	<DisplayField header="Label" id="LABEL" data-type="string">
+	<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData.ID"/>
+	<DisplayFieldElement name="Field2" schema-element="xnat_a:scidResearchData.label"/>
+	<Content type="sql">COALESCE(@Field2, @Field1)</Content>
+		<HTML-Link>
+			<SecureLink elementName="xnat_a:scidResearchData">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="xnat_a:scidResearchData/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="xnat_a:scidResearchData/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat_a:scidResearchData/search_field/xnat_a:scidResearchData.ID">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat_a:scidResearchData','xnat_a:scidResearchData.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+			<Property name="TITLE" value="Inserted: @Field1 (@Field2)">
+				<InsertValue id="Field1" field="INSERT_DATE"/>
+				<InsertValue id="Field2" field="INSERT_USER"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="PROJECT" header="Project" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData.project"/>
+	</DisplayField>
+	<DisplayField id="XNAT_A_SCIDRESEARCHDATA_PROJECT_IDENTIFIER" header="XNAT_A_SCIDRESEARCHDATA ID" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">xnat_a_scidresearchdata_project_id</Content>
+		<HTML-Link>
+			<SecureLink elementName="xnat_a:scidResearchData">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="xnat_a:scidResearchData/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="xnat_a:scidResearchData/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat_a:scidResearchData/search_field/xnat_a:scidResearchData.ID/project/@Field2">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+				<InsertValue id="Field2" field="@WHERE"/>
+			</Property>
+		</HTML-Link>
+		<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS xnat_a_scidresearchdata_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="xnat_a:scidResearchData.ID" queryField="sharing_share_xnat_experimentda_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField id="INSERT_DATE" header="Inserted" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData.meta.insert_date"/>
+	</DisplayField>
+	<DisplayField id="INSERT_USER" header="Creator" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData.meta.insert_user.login"/>
+	</DisplayField>
+	<DisplayField id="XNAT_A_SCIDRESEARCHDATA_FIELD_MAP" header="Field" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">field</Content>
+		<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='xnat_a:scidResearchData') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="xnat_a:scidResearchData.ID" queryField="expt_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField id="ADMINISTRATOR" header="administrator" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/administrator"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_CURRENTMAJORDEPRESSIVEEPISODE" header="currentMajorDepressiveEpisode" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/currentMajorDepressiveEpisode"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_PASTMAJORDEPRESSIVEEPISODE" header="pastMajorDepressiveEpisode" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/pastMajorDepressiveEpisode"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_CURRENTMANICEPISODE" header="currentManicEpisode" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/currentManicEpisode"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_PASTMANICEPISODE" header="pastManicEpisode" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/pastManicEpisode"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_CURRENTHYPOMANICEPISODE" header="currentHypomanicEpisode" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/currentHypomanicEpisode"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_PASTHYPOMANICEPISODE" header="pastHypomanicEpisode" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/pastHypomanicEpisode"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_CURRENTDYSTHMICEPISODE" header="currentDysthmicEpisode" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/currentDysthmicEpisode"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_CURRENTMOODDISORDERDUETOMEDICALCONDITION" header="currentMoodDisorderDueToMedicalCondition" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/currentMoodDisorderDueToMedicalCondition"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_PASTMOODDISORDERDUETOMEDICALCONDITION" header="pastMoodDisorderDueToMedicalCondition" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/pastMoodDisorderDueToMedicalCondition"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_CURRENTSUBSTANCEINDUCEDMOODDISORDER" header="currentSubstanceInducedMoodDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/currentSubstanceInducedMoodDisorder"/>
+	</DisplayField>
+	<DisplayField id="MOODEPISODES_PASTSUBSTANCEINDUCEDMOODDISORDER" header="pastSubstanceInducedMoodDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodEpisodes/pastSubstanceInducedMoodDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_CURRENTDELUSIONS" header="currentDelusions" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/currentDelusions"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_PASTDELUSIONS" header="pastDelusions" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/pastDelusions"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_CURRENTHALLUCINATIONS" header="currentHallucinations" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/currentHallucinations"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_PASTHALLUCINATIONS" header="pastHallucinations" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/pastHallucinations"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_CURRENTDISORGANIZEDSPEECHBEHAVIOR" header="currentDisorganizedSpeechBehavior" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/currentDisorganizedSpeechBehavior"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_PASTDISORGANIZEDSPEECHBEHAVIOR" header="pastDisorganizedSpeechBehavior" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/pastDisorganizedSpeechBehavior"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_CURRENTCATATONICBEHAVIOR" header="currentCatatonicBehavior" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/currentCatatonicBehavior"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_PASTCATATONICBEHAVIOR" header="pastCatatonicBehavior" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/pastCatatonicBehavior"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_CURRENTNEGATIVESYMPTOMS" header="currentNegativeSymptoms" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/currentNegativeSymptoms"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICSYMPTOMS_PASTNEGATIVESYMPTOMS" header="pastNegativeSymptoms" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticSymptoms/pastNegativeSymptoms"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIA" header="currentSchizophrenia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentSchizophrenia"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIA" header="pastSchizophrenia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastSchizophrenia"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTPARANOIDTYPE" header="currentParanoidType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentParanoidType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTPARANOIDTYPE" header="pastParanoidType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastParanoidType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTCATATONICTYPE" header="currentCatatonicType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentCatatonicType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTCATATONICTYPE" header="pastCatatonicType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastCatatonicType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTDISORGANIZEDTYPE" header="currentDisorganizedType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentDisorganizedType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTDISORGANIZEDTYPE" header="pastDisorganizedType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastDisorganizedType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTUNDIFFERENTIATEDTYPE" header="currentUndifferentiatedType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentUndifferentiatedType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTUNDIFFERENTIATEDTYPE" header="pastUndifferentiatedType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastUndifferentiatedType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTRESIDUALTYPE" header="currentResidualType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentResidualType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTRESIDUALTYPE" header="pastResidualType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastResidualType"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIFORMDISORDER" header="currentSchizophreniformDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentSchizophreniformDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIFORMDISORDER" header="pastSchizophreniformDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastSchizophreniformDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTSCHIZOAFFECTIVEDISORDER" header="currentSchizoaffectiveDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentSchizoaffectiveDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTSCHIZOAFFECTIVEDISORDER" header="pastSchizoaffectiveDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastSchizoaffectiveDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTDELUSIONALDISORDER" header="currentDelusionalDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentDelusionalDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTDELUSIONALDISORDER" header="pastDelusionalDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastDelusionalDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTBRIEFPSYCHOTICDISORDER" header="currentBriefPsychoticDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentBriefPsychoticDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTBRIEFPSYCHOTICDISORDER" header="pastBriefPsychoticDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastBriefPsychoticDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERDUETOMEDICALCONDITIO" header="currentPsychoticDisorderDueToMedicalCondition" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderDueToMedicalCondition"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERDUETOMEDICALCONDITION" header="pastPsychoticDisorderDueToMedicalCondition" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderDueToMedicalCondition"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTSUBSTANCEINDUCEDPSYCHOTICDISORDER" header="currentSubstanceInducedPsychoticDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentSubstanceInducedPsychoticDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTSUBSTANCEINDUCEDPSYCHOTICDISORDER" header="pastSubstanceInducedPsychoticDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastSubstanceInducedPsychoticDisorder"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERNOS" header="currentPsychoticDisorderNOS" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderNOS"/>
+	</DisplayField>
+	<DisplayField id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERNOS" header="pastPsychoticDisorderNOS" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderNOS"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_CURRENTBIPOLAR1DISORDER" header="currentBipolar1Disorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/currentBipolar1Disorder"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_PASTBIPOLAR1DISORDER" header="pastBipolar1Disorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/pastBipolar1Disorder"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_CURRENTBIPOLAR2DISORDER" header="currentBipolar2Disorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/currentBipolar2Disorder"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_PASTBIPOLAR2DISORDER" header="pastBipolar2Disorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/pastBipolar2Disorder"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_CURRENTOTHERBIPOLARDISORDER" header="currentOtherBipolarDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/currentOtherBipolarDisorder"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_PASTOTHERBIPOLARDISORDER" header="pastOtherBipolarDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/pastOtherBipolarDisorder"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_CURRENTMAJORDEPRESSIVEDISORDER" header="currentMajorDepressiveDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/currentMajorDepressiveDisorder"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_PASTMAJORDEPRESSIVEDISORDER" header="pastMajorDepressiveDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/pastMajorDepressiveDisorder"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_CURRENTDEPRESSIVEDISORDERNOS" header="currentDepressiveDisorderNOS" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/currentDepressiveDisorderNOS"/>
+	</DisplayField>
+	<DisplayField id="MOODDISORDERS_PASTDEPRESSIVEDISORDERNOS" header="pastDepressiveDisorderNOS" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/moodDisorders/pastDepressiveDisorderNOS"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLDEPENDENCE" header="currentAlcoholDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTALCOHOLDEPENDENCE" header="pastAlcoholDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLABUSE" header="currentAlcoholAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTALCOHOLABUSE" header="pastAlcoholAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEDEPENDENCE" header="currentAmphetamineDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEDEPENDENCE" header="pastAmphetamineDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEABUSE" header="currentAmphetamineAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEABUSE" header="pastAmphetamineAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISDEPENDENCE" header="currentCannabisDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentCannabisDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTCANNABISDEPENDENCE" header="pastCannabisDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastCannabisDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISABUSE" header="currentCannabisAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentCannabisAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTCANNABISABUSE" header="pastCannabisAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastCannabisAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEDEPENDENCE" header="currentCocaineDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentCocaineDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTCOCAINEDEPENDENCE" header="pastCocaineDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastCocaineDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEABUSE" header="currentCocaineAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentCocaineAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTCOCAINEABUSE" header="pastCocaineAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastCocaineAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENDEPENDENCE" header="currentHallucinogenDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENDEPENDENCE" header="pastHallucinogenDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENABUSE" header="currentHallucinogenAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENABUSE" header="pastHallucinogenAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDDEPENDENCE" header="currentOpioidDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentOpioidDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTOPIOIDDEPENDENCE" header="pastOpioidDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastOpioidDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDABUSE" header="currentOpioidAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentOpioidAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTOPIOIDABUSE" header="pastOpioidAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastOpioidAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEDEPENDENCE" header="currentPhencyclidineDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEDEPENDENCE" header="pastPhencyclidineDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEABUSE" header="currentPhencyclidineAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEABUSE" header="pastPhencyclidineAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICDEPENDEN" header="currentSedativeHypnoticAnxiolyticDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICDEPENDENCE" header="pastSedativeHypnoticAnxiolyticDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICABUSE" header="currentSedativeHypnoticAnxiolyticAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICABUSE" header="pastSedativeHypnoticAnxiolyticAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTPOLYSUBSTANCEDEPENDENCE" header="currentPolysubstanceDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentPolysubstanceDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTPOLYSUBSTANCEDEPENDENCE" header="pastPolysubstanceDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastPolysubstanceDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNDEPENDENCE" header="currentOtherOrUnknownDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNDEPENDENCE" header="pastOtherOrUnknownDependence" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownDependence"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNABUSE" header="currentOtherOrUnknownAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownAbuse"/>
+	</DisplayField>
+	<DisplayField id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNABUSE" header="pastOtherOrUnknownAbuse" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownAbuse"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTPANICWITHAGORAPHOBIA" header="currentPanicWithAgoraphobia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentPanicWithAgoraphobia"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTPANICWITHAGORAPHOBIA" header="pastPanicWithAgoraphobia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastPanicWithAgoraphobia"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTPANICWITHOUTAGORAPHOBIA" header="currentPanicWithoutAgoraphobia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentPanicWithoutAgoraphobia"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTPANICWITHOUTAGORAPHOBIA" header="pastPanicWithoutAgoraphobia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastPanicWithoutAgoraphobia"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTAGORAPHOBIAWITHOUTPANICHX" header="currentAgoraphobiaWithoutPanicHx" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentAgoraphobiaWithoutPanicHx"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTAGORAPHOBIAWITHOUTPANICHX" header="pastAgoraphobiaWithoutPanicHx" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastAgoraphobiaWithoutPanicHx"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTSOCIALPHOBIA" header="currentSocialPhobia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentSocialPhobia"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTSOCIALPHOBIA" header="pastSocialPhobia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastSocialPhobia"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTSPECIFICPHOBIA" header="currentSpecificPhobia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentSpecificPhobia"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTSPECIFICPHOBIA" header="pastSpecificPhobia" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastSpecificPhobia"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTOCD" header="currentOCD" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentOCD"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTOCD" header="pastOCD" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastOCD"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTPTSD" header="currentPTSD" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentPTSD"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTPTSD" header="pastPTSD" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastPTSD"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTGENERALIZEDANXIETYDISORDER" header="currentGeneralizedAnxietyDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentGeneralizedAnxietyDisorder"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTANXIETYDUETOMEDICALCONDITION" header="currentAnxietyDueToMedicalCondition" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDueToMedicalCondition"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTANXIETYDUETOMEDICALCONDITION" header="pastAnxietyDueToMedicalCondition" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDueToMedicalCondition"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTSUBSTANCEINDUCEDANXIETYDISORDER" header="currentSubstanceInducedAnxietyDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentSubstanceInducedAnxietyDisorder"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTSUBSTANCEINDUCEDANXIETYDISORDER" header="pastSubstanceInducedAnxietyDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastSubstanceInducedAnxietyDisorder"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_CURRENTANXIETYDISORDERNOS" header="currentAnxietyDisorderNOS" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDisorderNOS"/>
+	</DisplayField>
+	<DisplayField id="ANXIETYDISORDERS_PASTANXIETYDISORDERNOS" header="pastAnxietyDisorderNOS" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDisorderNOS"/>
+	</DisplayField>
+	<DisplayField id="SOMATOFORMDISORDERS_SOMATIZATIONDISORDER" header="somatizationDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/somatoformDisorders/somatizationDisorder"/>
+	</DisplayField>
+	<DisplayField id="SOMATOFORMDISORDERS_UNDIFFERENTIATEDSOMATFORMDISORDER" header="undifferentiatedSomatformDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/somatoformDisorders/undifferentiatedSomatformDisorder"/>
+	</DisplayField>
+	<DisplayField id="SOMATOFORMDISORDERS_PAINDISORDER" header="painDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/somatoformDisorders/painDisorder"/>
+	</DisplayField>
+	<DisplayField id="SOMATOFORMDISORDERS_HYPOCHONDRIASIS" header="hypochondriasis" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/somatoformDisorders/hypochondriasis"/>
+	</DisplayField>
+	<DisplayField id="SOMATOFORMDISORDERS_BODYDYSMORPHICDISORDER" header="bodyDysmorphicDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/somatoformDisorders/bodyDysmorphicDisorder"/>
+	</DisplayField>
+	<DisplayField id="EATINGDISORDERS_CURRENTANOREXIANERVOSA" header="currentAnorexiaNervosa" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/eatingDisorders/currentAnorexiaNervosa"/>
+	</DisplayField>
+	<DisplayField id="EATINGDISORDERS_PASTANOREXIANERVOSA" header="pastAnorexiaNervosa" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/eatingDisorders/pastAnorexiaNervosa"/>
+	</DisplayField>
+	<DisplayField id="EATINGDISORDERS_CURRENTBULIMIANERVOSA" header="currentBulimiaNervosa" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/eatingDisorders/currentBulimiaNervosa"/>
+	</DisplayField>
+	<DisplayField id="EATINGDISORDERS_PASTBULIMIANERVOSA" header="pastBulimiaNervosa" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/eatingDisorders/pastBulimiaNervosa"/>
+	</DisplayField>
+	<DisplayField id="EATINGDISORDERS_CURRENTBINGEEATINGDISORDER" header="currentBingeEatingDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/eatingDisorders/currentBingeEatingDisorder"/>
+	</DisplayField>
+	<DisplayField id="EATINGDISORDERS_PASTBINGEEATINGDISORDER" header="pastBingeEatingDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/eatingDisorders/pastBingeEatingDisorder"/>
+	</DisplayField>
+	<DisplayField id="ADJUSTMENTDISORDER" header="adjustmentDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/adjustmentDisorder"/>
+	</DisplayField>
+	<DisplayField id="OPTIONAL_CURRENTACUTESTRESSDISORDER" header="currentAcuteStressDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/optional/currentAcuteStressDisorder"/>
+	</DisplayField>
+	<DisplayField id="OPTIONAL_PASTACUTESTRESSDISORDER" header="pastAcuteStressDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/optional/pastAcuteStressDisorder"/>
+	</DisplayField>
+	<DisplayField id="OPTIONAL_CURRENTMINORDEPRESSIVEDISORDER" header="currentMinorDepressiveDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/optional/currentMinorDepressiveDisorder"/>
+	</DisplayField>
+	<DisplayField id="OPTIONAL_PASTMINORDEPRESSIVEDISORDER" header="pastMinorDepressiveDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/optional/pastMinorDepressiveDisorder"/>
+	</DisplayField>
+	<DisplayField id="OPTIONAL_CURRENTMIXEDANXIETYDEPRESSIVEDISORDER" header="currentMixedAnxietyDepressiveDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/optional/currentMixedAnxietyDepressiveDisorder"/>
+	</DisplayField>
+	<DisplayField id="OPTIONAL_PASTMIXEDANXIETYDEPRESSIVEDISORDER" header="pastMixedAnxietyDepressiveDisorder" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/optional/pastMixedAnxietyDepressiveDisorder"/>
+	</DisplayField>
+	<DisplayField id="OPTIONAL_PASTSYMPOMATICDETAILS" header="pastSympomaticDetails" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:scidResearchData/optional/pastSympomaticDetails"/>
+	</DisplayField>
+	<DisplayVersion versionName="listing" default-order-by="DATE" default-sort-order="DESC" brief-description="SCID" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="RPT"/>
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="GENDER" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="ADMINISTRATOR"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTDYSTHMICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERDUETOMEDICALCONDITIO"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICDEPENDEN"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTGENERALIZEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_SOMATIZATIONDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_UNDIFFERENTIATEDSOMATFORMDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_PAINDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_HYPOCHONDRIASIS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_BODYDYSMORPHICDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="ADJUSTMENTDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTSYMPOMATICDETAILS"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="listing_csv" default-order-by="DATE" default-sort-order="DESC" brief-description="SCID" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="ADMINISTRATOR"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTDYSTHMICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERDUETOMEDICALCONDITIO"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICDEPENDEN"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTGENERALIZEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_SOMATIZATIONDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_UNDIFFERENTIATEDSOMATFORMDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_PAINDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_HYPOCHONDRIASIS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_BODYDYSMORPHICDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="ADJUSTMENTDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTSYMPOMATICDETAILS"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="full" default-order-by="DATE" default-sort-order="DESC" brief-description="SCID" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="EXPT_ID"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="ADMINISTRATOR"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTDYSTHMICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERDUETOMEDICALCONDITIO"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICDEPENDEN"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTGENERALIZEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_SOMATIZATIONDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_UNDIFFERENTIATEDSOMATFORMDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_PAINDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_HYPOCHONDRIASIS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_BODYDYSMORPHICDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="ADJUSTMENTDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTSYMPOMATICDETAILS"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="detailed" default-order-by="DATE" default-sort-order="DESC" brief-description="SCID" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="ADMINISTRATOR"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTDYSTHMICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERDUETOMEDICALCONDITIO"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICDEPENDEN"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTGENERALIZEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_SOMATIZATIONDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_UNDIFFERENTIATEDSOMATFORMDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_PAINDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_HYPOCHONDRIASIS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_BODYDYSMORPHICDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="ADJUSTMENTDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTSYMPOMATICDETAILS"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="project_bundle" default-order-by="DATE" default-sort-order="DESC" brief-description="SCID" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="XNAT_A_SCIDRESEARCHDATA_PROJECT_IDENTIFIER"/>
+		<DisplayFieldRef id="SUB_PROJECT_IDENTIFIER" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="ADMINISTRATOR"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMAJORDEPRESSIVEEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTHYPOMANICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTDYSTHMICEPISODE"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTMOODDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="MOODEPISODES_CURRENTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="MOODEPISODES_PASTSUBSTANCEINDUCEDMOODDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDELUSIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTHALLUCINATIONS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTDISORGANIZEDSPEECHBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTCATATONICBEHAVIOR"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_CURRENTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICSYMPTOMS_PASTNEGATIVESYMPTOMS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIA"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPARANOIDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTCATATONICTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDISORGANIZEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTUNDIFFERENTIATEDTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTRESIDUALTYPE"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOPHRENIFORMDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSCHIZOAFFECTIVEDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTDELUSIONALDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTBRIEFPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERDUETOMEDICALCONDITIO"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTSUBSTANCEINDUCEDPSYCHOTICDISORDER"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_CURRENTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="PSYCHOTICDISORDERS_PASTPSYCHOTICDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR1DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTBIPOLAR2DISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTOTHERBIPOLARDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTMAJORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="MOODDISORDERS_CURRENTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="MOODDISORDERS_PASTDEPRESSIVEDISORDERNOS"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTALCOHOLABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTAMPHETAMINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCANNABISABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTCOCAINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTHALLUCINOGENABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOPIOIDABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPHENCYCLIDINEABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICDEPENDEN"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTSEDATIVEHYPNOTICANXIOLYTICABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTPOLYSUBSTANCEDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNDEPENDENCE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_CURRENTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="SUBSTANCEUSEDISORDERS_PASTOTHERORUNKNOWNABUSE"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPANICWITHOUTAGORAPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTAGORAPHOBIAWITHOUTPANICHX"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSOCIALPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSPECIFICPHOBIA"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTOCD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTPTSD"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTGENERALIZEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDUETOMEDICALCONDITION"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTSUBSTANCEINDUCEDANXIETYDISORDER"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_CURRENTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="ANXIETYDISORDERS_PASTANXIETYDISORDERNOS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_SOMATIZATIONDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_UNDIFFERENTIATEDSOMATFORMDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_PAINDISORDER"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_HYPOCHONDRIASIS"/>
+		<DisplayFieldRef id="SOMATOFORMDISORDERS_BODYDYSMORPHICDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTANOREXIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBULIMIANERVOSA"/>
+		<DisplayFieldRef id="EATINGDISORDERS_CURRENTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="EATINGDISORDERS_PASTBINGEEATINGDISORDER"/>
+		<DisplayFieldRef id="ADJUSTMENTDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTACUTESTRESSDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMINORDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_CURRENTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTMIXEDANXIETYDEPRESSIVEDISORDER"/>
+		<DisplayFieldRef id="OPTIONAL_PASTSYMPOMATICDETAILS"/>
+	</DisplayVersion>
+	<ViewLink alias="XNAT_A_SCIDRESEARCHDATA_PROJECTS">
+		<Mapping TableName="XNAT_A_SCIDRESEARCHDATA_PROJECTS">
+			<MappingColumn rootElement="xnat_a:scidResearchData" fieldElement="xnat_a:scidResearchData.ID" mapsTo="id"/>
+		</Mapping>
+	</ViewLink>
+	<SQLView name="XNAT_A_SCIDRESEARCHDATA_PROJECTS" sql="SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='xnat_a:scidResearchData' GROUP BY expt.id,expt.project"/>
+</Displays>

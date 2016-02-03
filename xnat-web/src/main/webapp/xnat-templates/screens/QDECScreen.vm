@@ -1,0 +1,165 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/Popup.vm")
+<script type="text/javascript">
+function isAlphaNumeric(str) {
+  try {
+	  var numeric = str;
+	  for(var j=0; j<numeric.length; j++) {
+	     var alphaa = numeric.charAt(j);
+	     var ch = alphaa.charCodeAt(0);
+		  if((ch > 47 && ch<59) || (ch > 64 && ch<91) || (ch > 96 && ch<123) || (ch == 95)) {
+		  }else	{
+		    return false;
+		  }
+	   }
+   return true;
+ }catch(e){return false;}
+}
+
+function checkform() {
+  var rtn = false;
+  var discreteVar1=document.getElementById('discreteVar1');
+  var discreteVar2=document.getElementById('discreteVar2');
+  var continuousVar1=document.getElementById('continuousVar1');
+  var continuousVar2=document.getElementById('continuousVar2');
+  var analysis_name=document.getElementById('analysis_name');
+
+  var msg = "";
+  if (discreteVar1.value =="bad" && discreteVar2.value =="bad" && continuousVar1.value =="bad" && continuousVar2.value=="bad") {
+    msg += "* select atleast one variable for the analysis\n";
+  }
+
+  if (analysis_name.value=="") {
+      msg += "* enter Analysis name\n";
+  }
+  if (msg == "") {
+    var analysis_name_isAplhaNumeric = isAlphaNumeric(analysis_name.value);
+    if (!analysis_name_isAplhaNumeric) {
+      xModalMessage('QDEC Group Analysis', 'Please enter an alpha numeric value for analysis name');
+    }else {
+	    rtn = true;
+    }
+  }else {
+    xModalMessage('QDEC Group Analysis', 'Please '+ msg);
+  }
+  return rtn;
+}
+</script>
+
+<form name="QDECOptions" method="post" action="$link.setAction("QDECAction")" ONSUBMIT="return checkform();" >
+
+<h2>QDEC GROUP ANALYSIS</h2>
+
+<table width="300" border="1">
+  <tr>
+    <th align="left">Assign a short name for the analysis</th>
+  </tr>
+  <tr>
+     <td><input type="text" name="analysis_name" id="analysis_name"> </td>
+  </tr>
+</table>
+
+<table width="300" border="1">
+  <tr>
+    <th scope="col" colspan="2" align="left">Select Discrete Variables for Analysis</th>
+  </tr>
+  <tr>
+    <td align="center">Variable 1:</td>
+    <td>
+		<select name="discreteVar1" id="discreteVar1">
+		 <option value="bad">(SELECT)</option>
+		 #foreach($header in $discereteCols)
+		 <option value="$header">$header</option>
+		 #end
+
+		</select>
+	</td>
+  </tr>
+  <tr>
+    <td align="center">Variable 2:</td>
+    <td><select name="discreteVar2" id="discreteVar2">
+		 <option value="bad">(SELECT)</option>
+		 #foreach($header in $discereteCols)
+		 <option value="$header">$header</option>
+		 #end
+		</select>
+	</td>
+  </tr>
+</table>
+<br/>
+<table width="300" border="1">
+  <tr>
+    <th scope="col" colspan="2" align="left">Select Continuous Variables for Analysis</th>
+  </tr>
+  <tr>
+    <td align="center">Variable 1:</td>
+    <td>
+		<select name="continuousVar1" id="continuousVar1">
+		 <option value="bad">(SELECT)</option>
+		 #foreach($header in $continuousCols)
+		 <option value="$header">$header</option>
+		 #end
+		</select>
+	</td>
+  </tr>
+  <tr>
+    <td align="center">Variable 2:</td>
+    <td><select name="continuousVar2" id="continuousVar2">
+		 <option value="bad">(SELECT)</option>
+		 #foreach($header in $continuousCols)
+		 <option value="$header">$header</option>
+		 #end
+		</select>
+	</td>
+  </tr>
+</table>
+<br/>
+<table width="300" border="1">
+  <tr>
+    <th scope="col" colspan="2" align="left">Morphometric Measures</th>
+  </tr>
+  <tr>
+    <td>Measure:</td>
+    <td>
+		<select name="morph_measure">
+		 <option value="thickness">Thickness</option>
+		 <option value="area">Area</option>
+		 <option value="area.pial">Area Pial</option>
+		 <option value="sulc">Sulc</option>
+		 <option value="curv">Curv</option>
+		 #*<option value="white.K">White.K</option>
+		 <option value="white.H">White.H</option>*#
+		 <option value="jacobian_white">Jacobian White</option>
+		</select>
+	</td>
+  </tr>
+  <tr>
+    <td>Hemisphere:</td>
+    <td><select name="morph_hemisphere">
+		 <option value="lh">Left</option>
+ 		 <option value="rh">Right</option>
+		</select>
+	</td>
+  </tr>
+  <tr>
+    <td>Smoothing (FWHM):</td>
+    <td><select name="morph_fwhm">
+		 <option value="0">0</option>
+		 <option value="5">5</option>
+		 <option value="10" selected>10</option>
+		 <option value="15">15</option>
+		 <option value="20">20</option>
+		 <option value="25">25</option>
+		</select>
+	</td>
+  </tr>
+</table>
+<br/>
+
+<input name="eventSubmit_doQdec" type="submit" value="Analyze"  />
+
+<input type="hidden" name="hdn_pipelinename" value="Freesurfer/QDECGroupAnalysis.xml"/>
+<input type="hidden" name="hdn_id_col" value="ID"/>
+
+</form>
+

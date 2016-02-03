@@ -1,0 +1,12 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+
+<table width="100%" height="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td valign="bottom" align="right">
+            <a target="_blank" href="http://www.nbirn.net/" onmouseover="return true;">
+                <img src="$content.getURI("images/small_birn_logo.png")" border=0>
+            </a>
+            &nbsp;$navigation.setTemplate("/powered_by.vm")
+        </td>
+    </tr>
+</table>

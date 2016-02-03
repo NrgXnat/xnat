@@ -1,0 +1,48 @@
+<table>
+ <tr>
+  <td>
+   <div id="subject_placeholder">$!om.getSubjectData().getLabel() </div><input type="hidden" id="$om.getXSIType()/subject_id" name="$om.getXSIType()/subject_id" value="$!om.getSubjectId()"/>
+  </td>
+  <td>
+   <a onclick="modifySubject();">
+    		<img border="0" src="$content.getURI("images/e.gif")"/>
+   </a>
+  </td>
+ </tr>
+</table>
+<script type="text/javascript">  
+
+   	             var create_subject_link ="$link.setPage('XDATScreen_edit_xnat_subjectData.vm').addPathInfo('popup','true')";
+	                create_subject_link+="/destination/JS_Parent_Return.vm/project/"+window.currentProject;
+	                
+  function modifySubject(){
+   if(window.currentProject!=""){
+    if(window.subjectEditor==undefined){
+      var config=new Object();
+	  
+	  #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-subject-create-from-expt-edit","true")))
+	  	config.create_subject_link=create_subject_link;
+	  #end
+
+      if(window.currentID!=""){
+        config.uri=serverRoot +"/REST/projects/" + window.currentProject +"/subjects/" + window.currentSubject + "/experiments/" + window.currentID;
+      }
+      window.subjectEditor=new SubjectEditor(config);
+      window.subjectEditor.onModification.subscribe(function (obj){
+         document.getElementById("subject_placeholder").innerHTML=this.new_subject_name;
+         document.getElementById("$om.getXSIType()/subject_id").value=this.new_subject;
+         config.uri=serverRoot +"/REST/projects/" + window.currentProject +"/subjects/" + window.currentSubject + "/experiments/" + window.currentID;
+         confirmValues();
+      });
+      window.subjectEditor.render();
+    }else{
+      window.subjectEditor.refresh();
+    }
+    window.subjectEditor.panel.show();
+   }else{
+     xModalMessage('Modify Subject', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase() before selecting a $displayManager.getSingularDisplayNameForSubject().toLowerCase().');
+     modifyProject();
+   }
+  }
+  
+</script>

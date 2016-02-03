@@ -1,0 +1,27 @@
+<div id="logo" align="center">#parse("/screens/Logo_Email.vm")</div>
+<hr>
+<div id="content">
+Dear $!user.getFirstname() $!user.getLastname()<br><br>
+The following batch procedure has been completed:
+<br>$process
+
+<br><br><p>
+$messages.size() successful transfer(s).
+#foreach($m in $messages)
+<br>$m
+#end
+</p>
+#if($errors.size()>0)
+<br><br><p>
+$errors.size() error(s) occurred.
+#foreach($m in $errors)
+<br>$m.get(0): $m.get(1)
+#end
+</p>
+#end
+<br><br><p>Details for this $displayManager.getSingularDisplayNameForProject().toLowerCase() are available at <a href="$server">the website</a>.</p>
+
+<br><br>
+The $system Team
+<a href="$server">$server</a>
+<a href="mailto:$admin_email">$admin_email</a>

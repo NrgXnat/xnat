@@ -1,0 +1,25 @@
+#set ($hasDefaced = false)
+#foreach($file in $!scan.getFile())
+    #if ($file.getLabel()=='DEFACE_QC')
+        #set ($hasDefaced = true)
+    #end
+#end
+#if($hasDefaced)
+
+    #set ($scanID =$!scan.getProperty("ID"))
+    #set ($restPrefix = "data/experiments/${om.getId()}/scans/${scanID}/resources/DEFACE_QC/files/study${scanID}")
+        <tr>
+            <td></td>
+            <td>Facemasking <br/> QC Image <br/>Surface</td>
+            <td>
+                <A target="_blank" HREF="$content.getURI("${restPrefix}_normfilter_surf.png")" ><img ID="deface${scanID}_surf3" src="$content.getURI("${restPrefix}_normfilter_surf.png")" border=0 height=auto width=250></A>
+            </td>
+        </tr>
+        <tr>
+            <td></td>
+            <td>Facemasking <br/> QC Image <br/>Slice</td>
+            <td>
+                <A target="_blank" HREF="$content.getURI("${restPrefix}_normfilter.png")" ><img ID="deface${scanID}_3" src="$content.getURI("${restPrefix}_normfilter.png")" border=0 height=auto width=350></A>
+            </td>
+        </tr>
+#end

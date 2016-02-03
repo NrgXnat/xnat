@@ -1,0 +1,20 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($actionObjects = $data.getSession().getAttribute("user").getActionCollection() )
+#if ($actionObjects.size() > 1)
+	<table align="left" valign="top">
+		<tr>
+	       <td>
+			<b style="text-decoration:underline">Tasks</b><br>
+			<table align="left" valign="top">
+			#foreach ($actionObject in $actionObjects)
+				#if ($actionObject.getName() != "browse")
+					<tr><td valign="top"></td><td align="left"><a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName())" onmouseover="return true;">$actionObject.getDisplayName()</a></td></tr>
+				#end
+			#end
+			</table>
+			<br>
+		  </td>
+		</tr>
+	</table>
+<br>
+#end

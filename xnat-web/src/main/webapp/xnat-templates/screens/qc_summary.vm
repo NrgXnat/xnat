@@ -1,0 +1,117 @@
+#set($scanAssessors =$!om.getScanAssessors())
+
+#if ($scanAssessors.size()>0)
+
+	#set($scanCounter=7900)
+
+	<A name="LINK${scanCounter}" HREF="#LINK${scanCounter}" onClick=" return blocking($scanCounter);">
+		<img ID="IMG$scanCounter" src="$content.getURI("images/plus.jpg")" border=0>
+		<font face="$ui.sansSerifFonts" size="4" style="line-height:18px;"><b>$displayManager.getSingularDisplayNameForImageSession() QC Status</b></font>
+	</a>
+
+	<div ID="span$!scanCounter" style="position:relative; display:none;">
+		<br>
+		<table BORDER=1 STYLE="	border-collapse: collapse;">
+			<tr>
+				<td>
+					<table>
+						<tr>
+							<th> </th>
+							<th>Status </th>
+							<th>Rater </th>
+							<th>Date </th>
+						</tr>
+						#if($!om.getProtocolValidation())
+							#set ( $pv = $om.getProtocolValidation())
+							#set ( $pvID = $!pv.getProperty("ID"))
+							#set ( $pvField = "${pv.getXSIType()}.ID")
+							<tr>
+								<th align="left">$!pv.getHeader()</th>
+								<td>
+									#if($user.canRead($pv))
+										#set ( $pvUrl = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$!pv.getXSIType()).addPathInfo('search_field',$pvField).addPathInfo('search_value',$pvID).addPathInfo('popup',$popup).addPathInfo('project',$project)" )
+										<a href="$pvUrl">
+											#if ($!pv.getCheck_status().equals("1")||$!pv.getCheck_status().equalsIgnoreCase("pass")||$!pv.getCheck_status().equalsIgnoreCase("passed"))
+												Passed
+											#elseif($!pv.getCheck_status().equals("0")||$!pv.getCheck_status().equalsIgnoreCase("fail")||$!pv.getCheck_status().equalsIgnoreCase("failed"))
+												Failed
+											#else
+												Unknown
+											#end
+										</a>
+									#else
+										Unknown
+									#end
+								</td>
+								<td></td>
+								<td>
+									$!pv.getStringProperty("date")
+								</td>
+							</tr>
+						#end
+						#if($!om.getScreeningAssessment())
+							#set ( $scr = $om.getScreeningAssessment())
+							#set ( $scrID = $!scr.getProperty("ID"))
+							#set ( $scrField = "${scr.getXSIType()}.ID")
+							<tr>
+								<th align="left">$!scr.getHeader()</th>
+								<td>
+									#set ( $scrUrl = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$!scr.getXSIType()).addPathInfo('search_field',$scrField).addPathInfo('search_value',$scrID).addPathInfo('popup',$popup).addPathInfo('project',$project)" )
+									#if($user.canRead($scr))
+										<a href="$scrUrl">
+											#if ($!scr.getStringProperty("pass").equals("1")||$!scr.getStringProperty("pass").equalsIgnoreCase("pass")||$!scr.getStringProperty("pass").equalsIgnoreCase("passed"))
+												Passed
+											#elseif($!scr.getStringProperty("pass").equals("0")||$!scr.getStringProperty("pass").equalsIgnoreCase("fail")||$!scr.getStringProperty("pass").equalsIgnoreCase("failed"))
+												Failed
+											#else
+												Unknown
+											#end
+										</a>
+									#else
+										Unknown
+									#end
+								</td>
+								<td>
+									$!scr.getStringProperty("rater")
+								</td>
+								<td>
+									$!scr.getStringProperty("date")
+								</td>
+							</tr>
+						#end
+						#if($!om.getManualQC())
+							#set ( $qc = $om.getManualQC())
+							#set ( $qcID = $!qc.getProperty("ID"))
+							#set ( $qcField = "${qc.getXSIType()}.ID")
+							<tr>
+								<th align="left">$!qc.getHeader()</th>
+								<td>
+									#if($user.canRead($qc))
+										#set ( $qcUrl = "$link.setAction('DisplayItemAction').addPathInfo('search_element',$!qc.getXSIType()).addPathInfo('search_field',$qcField).addPathInfo('search_value',$qcID).addPathInfo('popup',$popup).addPathInfo('project',$project)" )
+										<a href="$qcUrl">
+											#if ($!qc.getStringProperty("pass").equals("1")||$!qc.getStringProperty("pass").equalsIgnoreCase("pass")||$!qc.getStringProperty("pass").equalsIgnoreCase("passed"))
+												Passed
+											#elseif($!qc.getStringProperty("pass").equals("0")||$!qc.getStringProperty("pass").equalsIgnoreCase("fail")||$!qc.getStringProperty("pass").equalsIgnoreCase("failed"))
+												Failed
+											#else
+												Unknown
+											#end
+										</a>
+									#else
+										Unknown
+									#end
+								</td>
+								<td>
+									$!qc.getStringProperty("rater")
+								</td>
+								<td>
+									$!qc.getStringProperty("date")
+								</td>
+							</tr>
+						#end
+					</table>
+				</td>
+			</tr>
+		</table>
+	</div>
+#end

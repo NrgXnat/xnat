@@ -1,0 +1,5 @@
+#* @vtlvariable name="om" type="org.nrg.xdat.om.XnatCtsessiondata" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#parse($turbineUtils.getTemplateName("edit", $om.getXSIType(), $project, "edit"))
+			

@@ -1,0 +1,26 @@
+#set($exptCounts = $project.getExperimentCountByXSIType())
+#hasCustomScreens("xnat:projectData" "actionsBox")
+#if ($hasCustomScreens)
+    <!-- actions menu -->
+    <DIV id="actionsMenu" class="yuimenu">
+     <DIV class="bd">
+      <ul class="first-of-type">
+           	<li class="yuimenuitem">
+            <a class="yuimenuitemlabel">Actions</a>
+           </li>
+      </ul>
+      <ul>
+		
+	#addCustomScreens("xnat:projectData" "actionsBox")
+#end
+      </ul>
+     </DIV>
+    </DIV>
+<SCRIPT>
+YAHOO.util.Event.onContentReady("actionsMenu", function () {
+    var actionsMenu = new YAHOO.widget.Menu("actionsMenu", { autosubmenudisplay: true,scrollincrement:5,position:"static",maxheight:150});
+    // Render the MenuBar instance
+    actionsMenu.getItem(0).cfg.setProperty("disabled",true);
+    actionsMenu.render();
+});
+</SCRIPT>

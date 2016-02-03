@@ -1,0 +1,46 @@
+#* @vtlvariable name="projectString" type="java.lang.String" *#
+#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="user" type="org.nrg.xdat.security.XDATUser" *#
+#* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
+#set($user = $data.getSession().getAttribute("user"))
+<!-- Sequence: 10 -->
+    #if($siteConfig.getProperty("UI.allow-non-admin-project-creation","true").equals("true") || $data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData"))
+    <li><a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">$displayManager.getSingularDisplayNameForProject()</a></li>
+     #end
+    <!-- -->
+    #if ($data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData"))
+        #if($project)
+            #if($project.getId())
+                #if($data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData/project",$project.getId()))
+                    <li><a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","xnat:subjectData")/project/$!project.getId()">$displayManager.getSingularDisplayNameForSubject()</a></li>
+                #end
+            #else
+                #if($data.getSession().getAttribute("userHelper").canCreate("xnat:subjectData/project",$project))
+                    <li><a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","xnat:subjectData")$!projectString">$displayManager.getSingularDisplayNameForSubject()</a></li>
+                #end
+            #end
+        #else
+            <!-- -->
+            <li><a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","xnat:subjectData")">$displayManager.getSingularDisplayNameForSubject()</a></li>
+            <!-- -->
+        #end
+    #end
+
+    #renderTopListType("xnat:mrSessionData")
+    #renderTopListType("xnat:petSessionData")
+    #renderTopListType("xnat:ctSessionData")
+    #if($project)
+        #if($project.getId())
+            <li><a href="$link.setPage("XDATScreen_add_experiment.vm").addPathInfo('project',$project.getId())">Experiment</a></li>
+        #else
+            <li><a href="$link.setPage("XDATScreen_add_experiment.vm").addPathInfo('project',$project)">Experiment</a></li>
+        #end
+    #else
+        <!-- -->
+        <li><a href="$link.setPage("XDATScreen_add_experiment.vm")">Experiment</a></li>
+        <!-- -->
+    #end
+    <!-- -->

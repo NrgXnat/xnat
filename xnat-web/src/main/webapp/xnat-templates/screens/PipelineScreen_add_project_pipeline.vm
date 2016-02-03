@@ -1,0 +1,241 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+<style type="text/css">
+    .help_popup {
+        position: absolute;
+        visibility: hidden;
+        background-color: #fec;
+        layer-background-color: #fec;
+        width: 200px;
+        border-left: 1px solid black;
+        border-top: 1px solid black;
+        border-bottom: 3px solid black;
+        border-right: 3px solid black;
+        padding: 3px;
+        z-index: 10;
+    }
+</style>
+
+<script type="text/javascript">
+
+function getStyleObject(objectId) {
+    // cross-browser function to get an objects style object given its id
+    if(document.getElementById && document.getElementById(objectId)) {
+	// W3C DOM
+	return document.getElementById(objectId).style;
+    } else if (document.all && document.all(objectId)) {
+	// MSIE 4 DOM
+	return document.all(objectId).style;
+    } else if (document.layers && document.layers[objectId]) {
+	// NN 4 DOM.. note: this wont find nested layers
+	return document.layers[objectId];
+    } else {
+	return false;
+    }
+} // getStyleObject
+
+
+function changeObjectVisibility(objectId, newVisibility) {
+    // get a reference to the cross-browser style object and make sure the object exists
+    var styleObject = getStyleObject(objectId);
+    if(styleObject) {
+	styleObject.visibility = newVisibility;
+	return true;
+    } else {
+	// we couldn't find the object, so we can't change its visibility
+	return false;
+    }
+} // changeObjectVisibility
+
+function moveObject(objectId, newXCoordinate, newYCoordinate) {
+    // get a reference to the cross-browser style object and make sure the object exists
+    var styleObject = getStyleObject(objectId);
+    if(styleObject) {
+	styleObject.left = newXCoordinate;
+	styleObject.top = newYCoordinate;
+	return true;
+    } else {
+	// we could not find the object, so we cannot very well move it
+	return false;
+    }
+} // moveObject
+
+
+var xOffset = 5;
+var yOffset = -5;
+
+function showPopup (targetObjectId, eventObj) {
+    if(eventObj) {
+	// hide any currently-visible popups
+	hideCurrentPopup();
+	// stop event from bubbling up any farther
+	eventObj.cancelBubble = true;
+	// move popup div to current cursor position 
+	// (add scrollTop to account for scrolling for IE)
+	var newXCoordinate = (eventObj.pageX)?eventObj.pageX + xOffset:eventObj.x + xOffset + ((document.body.scrollLeft)?document.body.scrollLeft:0);
+	var newYCoordinate = (eventObj.pageY)?eventObj.pageY + yOffset:eventObj.y + yOffset + ((document.body.scrollTop)?document.body.scrollTop:0);
+	moveObject(targetObjectId, newXCoordinate, newYCoordinate);
+	// and make it visible
+	if( changeObjectVisibility(targetObjectId, 'visible') ) {
+	    // if we successfully showed the popup
+	    // store its Id on a globally-accessible object
+	    window.currentlyVisiblePopup = targetObjectId;
+	    return true;
+	} else {
+	    // we could not show the popup, boo hoo!
+	    return false;
+	}
+    } else {
+	// there was no event object, so we wont be able to position anything, so give up
+	return false;
+    }
+} // showPopup
+
+function hideCurrentPopup() {
+    // note: we have stored the currently-visible popup on the global object window.currentlyVisiblePopup
+    if(window.currentlyVisiblePopup) {
+	changeObjectVisibility(window.currentlyVisiblePopup, 'hidden');
+	window.currentlyVisiblePopup = false;
+    }
+} // hideCurrentPopup
+
+
+</script>
+
+$data.setLayoutTemplate("Popup.vm")
+$page.setTitle("Modify Pipeline")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#if ($data.message)
+    <div class="alert">$data.message</div>
+#end
+
+<form id="form1" name="form1" method="post" action="$link.setAction("ManagePipeline")">
+
+    #if($vr)
+        <div class="error">Invalid parameters:<br>$vr.toHTML()</div>
+        <hr>
+    #end
+
+    #set ($schemaType = $newpipeline.getSchemaElementName())
+    #set ($dblQts='"')
+    #set ($sizeOfTextBox = 45)
+
+    $newpipeline.getDescription()
+
+    <br/>
+    <br/>
+
+    #set ($checked="")
+    #if ($isAutoArchive)
+        #set ($checked="checked")
+    #end
+
+    <table width="100%">
+        <tr>
+            <td colspan="2" align="left"><b>Pipeline setup</b></td>
+        </tr>
+        <tr>
+            <td colspan="2" align="left">
+                <table>
+                    <tr>
+                        <td>
+                            <b>Launch pipeline automatically when $displayManager.getSingularDisplayNameForImageSession().toLowerCase() is archived?</b>
+                        </td>
+                        <td><input type="checkbox" name="auto_archive" $checked/></td>
+                    </tr>
+                </table>
+
+                <input type="hidden" id=$dblQts${schemaType}.stepId$dblQts name=$dblQts${schemaType}.stepId$dblQts value="$newpipeline.getName()"/>
+                <input type="hidden" id=$dblQts${schemaType}.displayText$dblQts name=$dblQts${schemaType}.displayText$dblQts value="$newpipeline.getDisplaytext()"/>
+                <input type="hidden" id=$dblQts${schemaType}.name$dblQts name=$dblQts${schemaType}.name$dblQts value="$newpipeline.getName()"/>
+                <input type="hidden" id=$dblQts${schemaType}.location$dblQts name=$dblQts${schemaType}.location$dblQts value="$newpipeline.getLocation()"/>
+                <input type="hidden" id=$dblQts${schemaType}.customwebpage$dblQts name=$dblQts${schemaType}.customwebpage$dblQts value="$!newpipeline.getCustomwebpage()"/>
+                <input type="hidden" id=$dblQts${schemaType}.description$dblQts name=$dblQts${schemaType}.description$dblQts value='$!newpipeline.getDescription()'/>
+
+            </td>
+        </tr>
+
+        #set ($parameters =$newpipeline.getParameters_parameter())
+        #if ($parameters.size() > 0)
+
+            <tr>
+                <td><b>$displayManager.getSingularDisplayNameForProject() specific pipeline parameters:</b></td>
+                <td>&nbsp;</td>
+            </tr>
+            <tr>
+                <td colspan="2" align="left">Note: Parameters that take multiple values should be comma-separated</td>
+            </tr>
+            <tr>
+                <td colspan="2" align="left">
+                    <table>
+                        <tr>
+                            <th>Name</th>
+                            <th colspan="2" align="center">Values</th>
+                        </tr>
+                        #set ($c = 0)
+                        #foreach ($parameter in $parameters)
+                            <tr>
+                                <td>
+                                    <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[$c].name$dblQts name=$dblQts${schemaType}.parameters.parameter[$c].name$dblQts value="$parameter.getName()"/>
+                                    <span style="font-size:12px;">$parameter.getName()</span>
+                                    <input type="hidden" size="45" id=$dblQts${schemaType}.parameters.parameter[$c].schemaLink$dblQts name=$dblQts${schemaType}.parameters.parameter[$c].schemaLink$dblQts value="$!parameter.getSchemalink()"/>
+                                </td>
+                                #if ($!parameter.getCsvvalues())
+                                    <td>
+                                        <input type="text" size="45" id=$dblQts${schemaType}.parameters.parameter[$c].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[$c].csvValues$dblQts value="$!parameter.getCsvvalues()"/>
+                                    </td>
+                                #else
+                                    <td>$!parameter.getSchemalink() </td>
+                                #end
+                                <td>
+                                    <a href="#" style="outline: none;" onclick="return !showPopup('desc$c', event);">Help</a>
+                                    <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[$c].description$dblQts name=$dblQts${schemaType}.parameters.parameter[$c].description$dblQts value="$!parameter.getDescription()"/>
+                                </td>
+                            </tr>
+                            #set ($c = $c + 1)
+                        #end
+                    </table>
+
+                    #set ($c = 0)
+                    #foreach ($parameter in $parameters)
+
+                        <div class="help_popup" onclick="event.cancelBubble = true;" id=desc$c>
+                            <p><b>$parameter.getName(): </b>$!parameter.getDescription() </p>
+                            <a href="#" onclick="hideCurrentPopup(); return false;">Close</a>
+                        </div>
+                        #set ($c = $c + 1)
+
+                    #end
+                </td>
+            </tr>
+
+        #else
+
+            <tr>
+                <td colspan="2" align="left">There are no paramaters to set for this pipeline. Click on Submit button to add this pipeline to your $displayManager.getSingularDisplayNameForProject().toLowerCase()</td>
+            </tr>
+
+        #end
+
+        <tr>
+            <td colspan="2" align="center">
+                <input type="button" onclick="window.close();" value="Close"/>&nbsp;&nbsp;&nbsp;<input type="submit" name="eventSubmit_doAddprojectpipeline" value="Submit"/>
+            </td>
+        </tr>
+
+    </table>
+
+    <input type="hidden" name="search_element" value="xnat:projectData"/>
+    <input type="hidden" name="search_field" value="xnat:projectData.ID"/>
+    <input type="hidden" name="search_value" value="$project"/>
+    <input type="hidden" name="project" value="$project"/>
+    <input type="hidden" name="pipeline_path" value="$pipeline_path"/>
+    <input type="hidden" name="dataType" value="$dataType"/>
+    <input type="hidden" name="schemaType" value="$schemaType"/>
+    <input type="hidden" name="edit" value="$edit"/>
+    <input type="hidden" name="destination" value="JS_Parent_Return.vm"/>
+
+</form>
+

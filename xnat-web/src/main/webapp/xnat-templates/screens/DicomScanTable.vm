@@ -1,0 +1,19 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/ScreenOnly.vm")
+
+<div>The DICOM tags for the first dicom file in this scan.</div>
+<br>
+<table>
+	<tr>
+		<th>Tag</th>
+		<th>Description</th>
+		<th>Value</th>
+	</tr>
+#foreach($row in $table.toArrayListOfLists())
+	<tr>
+		<td>$!row.get(0)</td>
+		<td>$!row.get(4)</td>
+		<td>$!row.get(3)</td>
+	</tr>
+#end
+</table>

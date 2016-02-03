@@ -1,0 +1,95 @@
+#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#set($showUserList = !$turbineUtils.toBoolean($siteConfig.getProperty("restrictUserListAccessToAdmins", "true")) || $data.getSession().getAttribute("user").checkRole("Administrator"))
+<script type="text/javascript" src="$content.getURI("scripts/project/userMgmt.js")"></script>						         
+
+<table class="mgmt_container">
+ <tr>
+  <td valign="top">
+   <label><input id="showDeactivatedUsersCheck" type="checkbox" onclick="window.userManager.reloadUsersForProject();">Show Deactivated Users</label>
+   <div id="user_mgmt_div"></div>
+  </td>
+  <td valign="top">
+   <div id="user_invite_div">
+<TABLE>
+ <TR>
+  <TD COLSPAN="3"><h4 id="add_invite_user_header" style="margin-bottom:0px">Add/Invite User</h4>
+  Enter the email address of the user to add.</TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="3" NOWRAP><INPUT type="text" name="email" ID="invite_email" style="margin-bottom:3px"/>
+   <BR><select name="access_level" id="access_level" style="margin-bottom:3px"></select>
+   <BR><input type="button" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" ONCLICK="window.userManager.inviteUserFromForm();"/>
+  </TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="3">&nbsp;</TD>
+ </TR>
+#if($showUserList)
+ <TR>
+  <TD COLSPAN="3"><h4 id="user_list_header" style="margin-bottom:0px">Add Users from List</h4></TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="3" NOWRAP>
+  <input type="button" id="popup_all_users_button" disabled="true" value="Show List" ONCLICK="window.userManager.popupAllUsersBox();"/>
+  </TD>
+ </TR>
+#end
+</TABLE>
+   </div>
+  </td>
+ </tr>
+  <tr><td>&nbsp;</td></tr>
+ <tr>
+  <td colspan="2" class="highlighted" id="access_container">
+#set($guest=$om.getPublicAccessibility())
+#if($guest=="")
+#set($guest="private")
+#end
+<input type="hidden" id="current_accessibility" value="$guest"/>
+						       <DIV style="font-weight:700;">&nbsp;Define Default $displayManager.getSingularDisplayNameForProject() Accessibility</DIV>
+       <TABLE cellpadding="5" cellspacing="0">
+            <TR><TD NOWRAP><input id="private_access" onclick="if(document.getElementById('current_accessibility').value!=this.value)document.getElementById('accessibility_save').disabled=false;else document.getElementById('accessibility_save').disabled=true;" type="radio" name="accessibility" value="private" #if($guest=="private")CHECKED#end/> Private</TD><TD>Only you and study members will be able to access study data.</TD></TR>
+            <TR><TD NOWRAP><input id="protected_access" onclick="if(document.getElementById('current_accessibility').value!=this.value)document.getElementById('accessibility_save').disabled=false;else document.getElementById('accessibility_save').disabled=true;" type="radio" name="accessibility" value="protected" #if($guest=="protected")CHECKED#end /> Protected</TD><TD>All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data.</TD></TR>
+            <TR><TD NOWRAP><input id="public_access" onclick="if(document.getElementById('current_accessibility').value!=this.value)document.getElementById('accessibility_save').disabled=false;else document.getElementById('accessibility_save').disabled=true;" type="radio" name="accessibility" value="public" #if($guest=="public")CHECKED#end/> Public</TD><TD>All users will be able to access study data for analysis and download.</TD></TR>
+            <TR><TD COLSPAN="2"><input type="button" onclick="(new DefaultAccessibilityManager(document.getElementById('access_container'),'$project.getId()')).set();" id="accessibility_save" value="Save" disabled="true"/></TD></TR>
+       </TABLE>
+						  </td>
+						 </tr>
+ <tr>
+  <td colspan="2" class="highlighted" id="invite_container">
+						       <DIV style="font-weight:700;">&nbsp;$displayManager.getSingularDisplayNameForProject() Invitations</DIV>
+<script type="text/javascript" src="$content.getURI("scripts/project/parManager.js")"></script>
+<div id="pil"></div>
+</div>
+<script type="text/javascript">
+var parList=new PARManager("pil",{URI:serverRoot+"/REST/projects/$om.getId()/pars",projectBased:true});
+parList.init();
+</script>
+						  </td>
+						 </tr>
+						</table>
+<script language="javascript">
+function summaryUserTabChange(obj){
+   if(obj.newValue.get("href")=="#tab3"){
+            if (window.userManager == undefined) {
+                window.userManager = new UserManager("user_mgmt_div", "$project.getId()", $showUserList);
+            }
+   }
+}
+
+function addUserMgmtMonitor(){
+    if(window.summaryTabView.get("activeTab").get("href")=="#tab3"){
+            if (window.userManager == undefined) {
+                window.userManager = new UserManager("user_mgmt_div", "$project.getId()", $showUserList);
+            }
+    }else{
+        window.summaryTabView.subscribe("activeTabChange",summaryUserTabChange);
+    }
+}
+	
+YAHOO.util.Event.onDOMReady(addUserMgmtMonitor);
+	
+</script>

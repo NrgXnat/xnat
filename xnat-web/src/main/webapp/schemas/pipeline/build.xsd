@@ -1,0 +1,77 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Mohana Ramaratnam (Washington University) -->
+<xs:schema targetNamespace="http://nrg.wustl.edu/build" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:build="http://nrg.wustl.edu/build" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="Build" type="build:buildData">
+		<xs:annotation>
+			<xs:documentation>Comment describing your root element</xs:documentation>
+		</xs:annotation>
+	</xs:element>
+	<xs:complexType name="imageSessionData">
+		<xs:sequence>
+			<xs:element name="pipeline" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:complexContent>
+						<xs:extension base="build:pipelineData">
+							<xs:attribute name="stepId" type="xs:string" use="required"/>
+						</xs:extension>
+					</xs:complexContent>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="type" type="xs:string" use="required"/>
+	</xs:complexType>
+	<xs:complexType name="pipelineParameterData">
+		<xs:sequence>
+			<xs:element name="parameter" maxOccurs="unbounded">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:choice minOccurs="0">
+							<xs:element name="schemaLink" type="xs:string"/>
+							<xs:element name="csvValues" type="xs:string"/>
+						</xs:choice>
+						<xs:element name="description" type="xs:string" minOccurs="0"/>
+					</xs:sequence>
+					<xs:attribute name="name" type="xs:string" use="required"/>
+					<xs:attribute name="multipleValues" type="xs:boolean" use="optional" default="true"/>
+					<xs:attribute name="editable" type="xs:boolean" use="optional" default="true"/>
+					<xs:attribute name="batchParam" type="xs:boolean" use="optional" default="false"/>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="pipelineData">
+		<xs:sequence>
+			<xs:element name="displayText" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>The text to be displayed on the web page for this pipeline. Used more like a title for the page</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="name" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Name of the pipeline</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="location" type="xs:string" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Path to pipeline descriptor</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="description" type="xs:string">
+				<xs:annotation>
+					<xs:documentation>Short description of the pipeline</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="parameters" type="build:pipelineParameterData" minOccurs="0"/>
+			<xs:element name="customwebpage" minOccurs="0">
+				<xs:annotation>
+					<xs:documentation>Name of the custom page which will be used to display this pipeline step, if the auto generated page doesnt suit the user requirements</xs:documentation>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="buildData">
+		<xs:sequence>
+			<xs:element name="project" type="build:imageSessionData" maxOccurs="unbounded"/>
+		</xs:sequence>
+	</xs:complexType>
+</xs:schema>

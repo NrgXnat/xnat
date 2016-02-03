@@ -1,0 +1,21 @@
+			<!--BEGIN xnat_mrSessionData_keyFields.vm -->
+#parse($turbineUtils.getTemplateName("_keyFields","xnat:imageSessionData",$project))
+						#if($!item.getProperty("marker"))
+							<tr>
+								<th align="left">Marker: </th>
+								<td>$!item.getProperty("marker")</td>
+							</tr>
+							#end
+						#if($!item.getProperty("stabilization"))
+							<tr>
+								<th align="left">Stabilization: </th>
+								<td>$!item.getProperty("stabilization")</td>
+							</tr>
+							#end
+						#if($!item.getProperty("coil"))
+							<tr>
+								<th align="left">Receiver coil: </th>
+								<td>$!item.getProperty("coil")</td>
+							</tr>
+							#end
+										<!--END xnat_mrSessionData_keyFields.vm -->

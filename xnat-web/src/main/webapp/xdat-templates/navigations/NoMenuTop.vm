@@ -1,0 +1,24 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setBgColor($ui.bgcolor)
+
+<div id="user_bar" class="no_menu">
+    #if($last_login)
+        <span id="last_login">Last login: $turbineUtils.formatDateTime($last_login)</span>
+	#end
+	#if($data.getSession().getAttribute("user"))
+        #if($data.getSession().getAttribute("user").getUsername()=="guest")
+            <span id="user_info">Logged in as: <span style="color:red;">Guest</span> <b>|</b> <a href="$link.setPage("Login.vm")">Login</a> <b>|</b> <a href="$link.setPage("Register.vm")">Register</a></span>
+        #elseif($data.getSession().getAttribute("user").getUsername())
+        ## use default timout value from web.xml as the starting text in the "timeLeft" element
+            <span id="user_info">Logged in as: &nbsp;<a href="$link.setPage("XDATScreen_MyXNAT.vm")">$!data.getSession().getAttribute("user").getUsername()</a> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
+		#end
+	#end
+    <div class="clear"></div>
+</div><!-- /user_bar -->
+
+
+<div id="header" class="main_header">
+    <a id="header_logo" href="$link.setPage("Index.vm")#if($data.getParameters().getString('par'))/par/$data.getParameters().getString('par')#end">
+        #parse("/screens/Logo.vm")
+    </a>
+</div>

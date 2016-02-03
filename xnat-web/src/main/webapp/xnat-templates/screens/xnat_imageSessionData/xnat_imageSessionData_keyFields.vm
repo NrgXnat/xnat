@@ -1,0 +1,20 @@
+#parse($turbineUtils.getTemplateName("_keyFields","xnat:subjectAssessorData",$project))
+#if($!item.getProperty("operator"))
+							<tr>
+								<th align="left">Operator: </th>
+								<td>$!item.getProperty("operator")</td>
+							</tr>
+							#end
+#if($!item.getProperty("scanner") || $!item.getProperty("scanner.model") || $!item.getProperty("scanner.manufacturer"))
+							<tr>
+		<th align="left">Scanner:</th>
+		<td>$!item.getProperty("scanner") $!item.getProperty("scanner.manufacturer") $!item.getProperty("scanner.model")</td>
+	</tr>
+#end
+
+#if($!item.getProperty("acquisition_site"))
+	<tr>
+		<th align="left">Acquisition Site:</th>
+		<td>$!item.getProperty("acquisition_site")</td>
+	</tr>
+#end

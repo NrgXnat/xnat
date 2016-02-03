@@ -1,0 +1,323 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">DCMCatalog Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>ID</TD><TD>#xdatStringBox("cat:dcmCatalog/ID" $item "" $vr)</TD></TR>
+							<TR><TD>name</TD><TD>#xdatStringBox("cat:dcmCatalog/name" $item "" $vr)</TD></TR>
+							<TR><TD>description</TD><TD>#xdatStringBox("cat:dcmCatalog/description" $item "" $vr)</TD></TR>
+													#xdatHiddenBox("cat:dcmCatalog/cat_catalog_id" $item "")
+							<TR><TD>dimensions/x</TD><TD>#xdatTextBox("cat:dcmCatalog/dimensions/x" $item "" $vr)</TD></TR>
+							<TR><TD>dimensions/y</TD><TD>#xdatTextBox("cat:dcmCatalog/dimensions/y" $item "" $vr)</TD></TR>
+							<TR><TD>dimensions/z</TD><TD>#xdatTextBox("cat:dcmCatalog/dimensions/z" $item "" $vr)</TD></TR>
+							<TR><TD>dimensions/volumes</TD><TD>#xdatTextBox("cat:dcmCatalog/dimensions/volumes" $item "" $vr)</TD></TR>
+							<TR><TD>voxelRes/x</TD><TD>#xdatTextBox("cat:dcmCatalog/voxelRes/x" $item "" $vr)</TD></TR>
+							<TR><TD>voxelRes/y</TD><TD>#xdatTextBox("cat:dcmCatalog/voxelRes/y" $item "" $vr)</TD></TR>
+							<TR><TD>voxelRes/z</TD><TD>#xdatTextBox("cat:dcmCatalog/voxelRes/z" $item "" $vr)</TD></TR>
+							<TR><TD>voxelRes/units</TD><TD>#xdatStringBox("cat:dcmCatalog/voxelRes/units" $item "" $vr)</TD></TR>
+							<TR><TD>orientation</TD><TD>#xdatStringBox("cat:dcmCatalog/orientation" $item "" $vr)</TD></TR>
+							<TR><TD>UID</TD><TD>#xdatStringBox("cat:dcmCatalog/UID" $item "" $vr)</TD></TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN cat:dcmCatalog -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+<!-- BEGIN cat:dcmCatalog/metaFields/metaField -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/metaFields/metaField</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>metaField</TD>
+								<TD>name</TD>
+							</TR>
+							#foreach($cat_catalog_metaField_1_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("cat:dcmCatalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER]/metaField" $item "" $vr)</TD>
+									<TD>#xdatTextBox("cat:dcmCatalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER]/name" $item "" $vr)</TD>
+									#xdatHiddenBox("cat:dcmCatalog/metaFields/metaField[$cat_catalog_metaField_1_COUNTER]/cat_catalog_metaField_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END cat:dcmCatalog/metaFields/metaField -->
+<!-- BEGIN cat:dcmCatalog/tags/tag -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/tags/tag</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>tag</TD>
+							</TR>
+							#foreach($cat_catalog_tag_1_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("cat:dcmCatalog/tags/tag[$cat_catalog_tag_1_COUNTER]/tag" $item "" $vr)</TD>
+									#xdatHiddenBox("cat:dcmCatalog/tags/tag[$cat_catalog_tag_1_COUNTER]/cat_catalog_tag_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END cat:dcmCatalog/tags/tag -->
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($cat_catalog_1_COUNTER in [0..5])
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>ID</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/ID" $item "" $vr)</TD></TR>
+												<TR><TD>name</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/name" $item "" $vr)</TD></TR>
+												<TR><TD>description</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/description" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/cat_catalog_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/metaFields/metaField -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/metaFields/metaField</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>metaField</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($cat_catalog_metaField_2_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/metaFields/metaField[$cat_catalog_metaField_2_COUNTER]/metaField" $item "" $vr)</TD>
+														<TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/metaFields/metaField[$cat_catalog_metaField_2_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/metaFields/metaField[$cat_catalog_metaField_2_COUNTER]/cat_catalog_metaField_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/metaFields/metaField -->
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+												</TR>
+												#foreach($cat_catalog_tag_2_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/tags/tag[$cat_catalog_tag_2_COUNTER]/tag" $item "" $vr)</TD>
+														#xdatHiddenBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/tags/tag[$cat_catalog_tag_2_COUNTER]/cat_catalog_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/tags/tag -->
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE><TR><TD>
+												#foreach($cat_entry_2_COUNTER in [0..5])
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER] -->
+													<TABLE>
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR><TD>URI</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/URI" $item "" $vr)</TD></TR>
+																	<TR><TD>ID</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/ID" $item "" $vr)</TD></TR>
+																	<TR><TD>name</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/name" $item "" $vr)</TD></TR>
+																	<TR><TD>description</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/description" $item "" $vr)</TD></TR>
+																	<TR><TD>format</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/format" $item "" $vr)</TD></TR>
+																	<TR><TD>content</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/content" $item "" $vr)</TD></TR>
+																	<TR><TD>cachePath</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/cachePath" $item "" $vr)</TD></TR>
+																	<TR><TD>createdTime</TD><TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/createdTime" $item "" $vr)</TD></TR>
+																	<TR><TD>createdBy</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/createdBy" $item "" $vr)</TD></TR>
+																	<TR><TD>createdEventId</TD><TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/createdEventId" $item "" $vr)</TD></TR>
+																	<TR><TD>modifiedTime</TD><TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/modifiedTime" $item "" $vr)</TD></TR>
+																	<TR><TD>modifiedBy</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/modifiedBy" $item "" $vr)</TD></TR>
+																	<TR><TD>modifiedEventId</TD><TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/modifiedEventId" $item "" $vr)</TD></TR>
+																	<TR><TD>digest</TD><TD>#xdatStringBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/digest" $item "" $vr)</TD></TR>
+																							#xdatHiddenBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/cat_entry_id" $item "")
+																</TABLE>
+															</TD>
+														</TR>
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/metaFields/metaField -->
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/metaFields/metaField</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR>
+																		<TD>metaField</TD>
+																		<TD>name</TD>
+																	</TR>
+																	#foreach($cat_entry_metaField_3_COUNTER in [0..5])
+																		<TR>
+																			<TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/metaFields/metaField[$cat_entry_metaField_3_COUNTER]/metaField" $item "" $vr)</TD>
+																			<TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/metaFields/metaField[$cat_entry_metaField_3_COUNTER]/name" $item "" $vr)</TD>
+																			#xdatHiddenBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/metaFields/metaField[$cat_entry_metaField_3_COUNTER]/cat_entry_metaField_id" $item "")
+																		</TR>
+																	#end
+																</TABLE>
+															</TD>
+														</TR>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/metaFields/metaField -->
+<!-- BEGIN cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/tags/tag -->
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/tags/tag</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR>
+																		<TD>tag</TD>
+																	</TR>
+																	#foreach($cat_entry_tag_3_COUNTER in [0..5])
+																		<TR>
+																			<TD>#xdatTextBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/tags/tag[$cat_entry_tag_3_COUNTER]/tag" $item "" $vr)</TD>
+																			#xdatHiddenBox("cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/tags/tag[$cat_entry_tag_3_COUNTER]/cat_entry_tag_id" $item "")
+																		</TR>
+																	#end
+																</TABLE>
+															</TD>
+														</TR>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER]/tags/tag -->
+													</TABLE>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER]/entries/entry[$cat_entry_2_COUNTER] -->
+												#end
+											</TD></TR></TABLE>
+										</TD>
+									</TR>
+								</TABLE>
+<!-- END cat:dcmCatalog/sets/entrySet[$cat_catalog_1_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($cat_entry_3_COUNTER in [0..5])
+<!-- BEGIN cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>URI</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/URI" $item "" $vr)</TD></TR>
+												<TR><TD>ID</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/ID" $item "" $vr)</TD></TR>
+												<TR><TD>name</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/name" $item "" $vr)</TD></TR>
+												<TR><TD>description</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/description" $item "" $vr)</TD></TR>
+												<TR><TD>format</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/format" $item "" $vr)</TD></TR>
+												<TR><TD>content</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/content" $item "" $vr)</TD></TR>
+												<TR><TD>cachePath</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/cachePath" $item "" $vr)</TD></TR>
+												<TR><TD>createdTime</TD><TD>#xdatTextBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/createdTime" $item "" $vr)</TD></TR>
+												<TR><TD>createdBy</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/createdBy" $item "" $vr)</TD></TR>
+												<TR><TD>createdEventId</TD><TD>#xdatTextBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/createdEventId" $item "" $vr)</TD></TR>
+												<TR><TD>modifiedTime</TD><TD>#xdatTextBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/modifiedTime" $item "" $vr)</TD></TR>
+												<TR><TD>modifiedBy</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/modifiedBy" $item "" $vr)</TD></TR>
+												<TR><TD>modifiedEventId</TD><TD>#xdatTextBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/modifiedEventId" $item "" $vr)</TD></TR>
+												<TR><TD>digest</TD><TD>#xdatStringBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/digest" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/cat_entry_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>metaField</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($cat_entry_metaField_4_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField[$cat_entry_metaField_4_COUNTER]/metaField" $item "" $vr)</TD>
+														<TD>#xdatTextBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField[$cat_entry_metaField_4_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField[$cat_entry_metaField_4_COUNTER]/cat_entry_metaField_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/metaFields/metaField -->
+<!-- BEGIN cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+												</TR>
+												#foreach($cat_entry_tag_4_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag[$cat_entry_tag_4_COUNTER]/tag" $item "" $vr)</TD>
+														#xdatHiddenBox("cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag[$cat_entry_tag_4_COUNTER]/cat_entry_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER]/tags/tag -->
+								</TABLE>
+<!-- END cat:dcmCatalog/entries/entry[$cat_entry_3_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END cat:dcmCatalog -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

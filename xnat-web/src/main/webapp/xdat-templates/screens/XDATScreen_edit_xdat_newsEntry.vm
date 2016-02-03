@@ -1,0 +1,73 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">News Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>date</TD><TD>#xdatTextBox("xdat:newsEntry/date" $item "" $vr)</TD></TR>
+							<TR><TD>title</TD><TD>#xdatStringBox("xdat:newsEntry/title" $item "" $vr)</TD></TR>
+							<TR><TD>description</TD>
+							<TD><textarea name="xdat:newsEntry/description" cols=50 rows=4>$!item.getProperty("xdat:newsEntry/description")</textarea></TD></TR>
+							<TR><TD>link</TD><TD>#xdatStringBoxWSize("xdat:newsEntry/link" $item "" $vr 30)</TD></TR>
+													#xdatHiddenBox("xdat:newsEntry/xdat_newsEntry_id" $item "")
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xdat:newsEntry -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+			</TABLE>
+<!-- END xdat:newsEntry -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		##<TR><TD COLSPAN=2 ALIGN=left>
+    <input type="button" onclick="validateForm();" name="eventSubmit_doInsert" value="Submit"/>
+        ##</TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+<SCRIPT>
+function validateForm(){
+document.getElementById("form1").submit();
+}
+</SCRIPT>
+

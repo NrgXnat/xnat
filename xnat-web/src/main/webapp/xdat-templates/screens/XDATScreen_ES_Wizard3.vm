@@ -1,0 +1,69 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<p>
+<form name="form1" method="post" action="$link.setAction("ElementSecurityWizard")">
+<INPUT TYPE="hidden" NAME="popup" VALUE="$popup">
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+    <HR>
+#end
+<table border="0" width="600">
+	<tr>
+		<TH align=center colspan=2>$!item.getXSIType() Details</TH>
+	</tr>
+	<TR>
+		<TD align=left>Data Type</TD>
+		<TD align=left>
+			#xdatTextBox("xdat:element_security.element_name" $item "" $vr)
+		</TD>
+	</TR>
+	#set($count = 0)
+	#foreach($ea in $item.getChildItems("xdat:element_security.element_actions.element_action"))
+		<input type="hidden" name="xdat:element_security.element_actions.element_action__${count}.element_action_name" VALUE="$item.getProperty("xdat:element_security.element_actions.element_action__${count}.element_action_name")"/>
+		<input type="hidden" name="xdat:element_security.element_actions.element_action__${count}.display_name" VALUE="$item.getProperty("xdat:element_security.element_actions.element_action__${count}.display_name")"/>
+		#set($count = $count + 1)
+	#end
+	<TR>
+	<TD align=left colspan=2>
+		<BR>Are there any additional actions which can be performed on this data type?  If so, list them below.<BR><BR>
+		<TABLE>
+			<TR>
+				<TH colspan=2>Additional Actions</TH>
+			</TR>
+			<TR>
+				<TD>Name</TD><TD>Display Name</TD>
+			</TR>
+			#foreach($c in [$count..10] )
+			<TR>
+				<TD>#xdatTextBox("xdat:element_security.element_actions.element_action__${c}.element_action_name" $item "" $vr)</TD>
+				<TD>#xdatTextBox("xdat:element_security.element_actions.element_action__${c}.display_name" $item "" $vr)
+				#xdatHiddenBox("xdat:element_security.element_actions.element_action__${c}.xdat_element_action_type_id" $item "")</TD>
+			</TR>
+			#end
+			</TABLE>
+		</TD>	
+	</TR>
+	<tr>
+		<td></td>
+		<td>
+		#set($count = 0)
+		#foreach($ea in $item.getChildItems("xdat:element_security.primary_security_fields.primary_security_field"))
+			<input type="hidden" name="xdat:element_security.primary_security_fields.primary_security_field__${count}.primary_security_field" VALUE="$!item.getProperty("xdat:element_security.primary_security_fields.primary_security_field__${count}.primary_security_field")"/>
+			#set($count = $count + 1)
+		#end
+		#xdatHiddenBox("xdat:element_security.secondary_password" $item "")
+		#xdatHiddenBox("xdat:element_security.secure_ip" $item "")
+		#xdatHiddenBox("xdat:element_security.secure" $item "")
+		#xdatHiddenBox("xdat:element_security.searchable" $item "")
+		#xdatHiddenBox("xdat:element_security.browse" $item "")		
+		
+		#xdatHiddenBox("xdat:element_security.accessible" $item "")
+		#xdatHiddenBox("xdat:element_security.usage" $item "")
+		#xdatHiddenBox("xdat:element_security.singular" $item "")
+		#xdatHiddenBox("xdat:element_security.plural" $item "")
+		#xdatHiddenBox("xdat:element_security.category" $item "")
+		#xdatEditProps($item $edit_screen)
+    		<input type="submit" name="eventSubmit_doStep4" value="Complete Setup"/>
+		</td>
+	</tr>
+</TABLE>
+</form>

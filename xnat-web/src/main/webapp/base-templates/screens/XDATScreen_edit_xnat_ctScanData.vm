@@ -1,0 +1,249 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">CTScan Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>image_session_ID</TD><TD>#xdatStringBox("xnat:ctScanData/image_session_ID" $item "" $vr)</TD></TR>
+							<TR><TD>note</TD><TD>#xdatStringBox("xnat:ctScanData/note" $item "" $vr)</TD></TR>
+							<TR><TD>quality</TD><TD>#xdatStringBox("xnat:ctScanData/quality" $item "" $vr)</TD></TR>
+							<TR><TD>condition</TD><TD>#xdatStringBox("xnat:ctScanData/condition" $item "" $vr)</TD></TR>
+							<TR><TD>series_description</TD><TD>#xdatStringBox("xnat:ctScanData/series_description" $item "" $vr)</TD></TR>
+							<TR><TD>documentation</TD><TD>#xdatStringBox("xnat:ctScanData/documentation" $item "" $vr)</TD></TR>
+							<TR><TD>scanner</TD><TD>#xdatStringBox("xnat:ctScanData/scanner" $item "" $vr)</TD></TR>
+							<TR><TD>scanner/manufacturer</TD><TD>#xdatStringBox("xnat:ctScanData/scanner/manufacturer" $item "" $vr)</TD></TR>
+							<TR><TD>scanner/model</TD><TD>#xdatStringBox("xnat:ctScanData/scanner/model" $item "" $vr)</TD></TR>
+							<TR><TD>modality</TD><TD>#xdatStringBox("xnat:ctScanData/modality" $item "" $vr)</TD></TR>
+							<TR><TD>frames</TD><TD>#xdatTextBox("xnat:ctScanData/frames" $item "" $vr)</TD></TR>
+							<TR><TD>operator</TD><TD>#xdatStringBox("xnat:ctScanData/operator" $item "" $vr)</TD></TR>
+							<TR><TD>startTime</TD><TD>#xdatTextBox("xnat:ctScanData/startTime" $item "" $vr)</TD></TR>
+							<TR><TD>ID</TD><TD>#xdatStringBox("xnat:ctScanData/ID" $item "" $vr)</TD></TR>
+							<TR><TD>type</TD><TD>#xdatStringBox("xnat:ctScanData/type" $item "" $vr)</TD></TR>
+							<TR><TD>UID</TD><TD>#xdatStringBox("xnat:ctScanData/UID" $item "" $vr)</TD></TR>
+							<TR><TD>project</TD><TD>#xdatStringBox("xnat:ctScanData/project" $item "" $vr)</TD></TR>
+													#xdatHiddenBox("xnat:ctScanData/xnat_imageScanData_id" $item "")
+							<TR><TD>parameters/voxelRes/units</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/voxelRes/units" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/voxelRes/x</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/voxelRes/x" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/voxelRes/y</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/voxelRes/y" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/voxelRes/z</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/voxelRes/z" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/orientation</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/orientation" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/fov/x</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/fov/x" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/fov/y</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/fov/y" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/rescale/intercept</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/rescale/intercept" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/rescale/slope</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/rescale/slope" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/kvp</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/kvp" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/acquisitionNumber</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/acquisitionNumber" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/imageType</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/imageType" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/options</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/options" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/collectionDiameter</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/collectionDiameter" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/distanceSourceToDetector</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/distanceSourceToDetector" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/distanceSourceToPatient</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/distanceSourceToPatient" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/gantryTilt</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/gantryTilt" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/tableHeight</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/tableHeight" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/rotationDirection</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/rotationDirection" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/exposureTime</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/exposureTime" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/xrayTubeCurrent</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/xrayTubeCurrent" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/exposure</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/exposure" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/filter</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/filter" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/generatorPower</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/generatorPower" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/convolutionKernel</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/convolutionKernel" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/collimationWidth/single</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/collimationWidth/single" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/collimationWidth/total</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/collimationWidth/total" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/tableSpeed</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/tableSpeed" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/tableFeedPerRotation</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/tableFeedPerRotation" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/pitchFactor</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/pitchFactor" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/estimatedDoseSaving/modulation</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/estimatedDoseSaving/modulation" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/estimatedDoseSaving</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/estimatedDoseSaving" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/ctDIvol</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/ctDIvol" $item "" $vr)</TD></TR>
+							<TR><TD>parameters/derivation</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/derivation" $item "" $vr)</TD></TR>
+							<TR><TD>dcmValidation</TD><TD>#xdatStringBox("xnat:ctScanData/dcmValidation" $item "" $vr)</TD></TR>
+							<TR><TD>dcmValidation/status</TD><TD>#xdatBooleanRadio("xnat:ctScanData/dcmValidation/status" $item false $vr)</TD></TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:ctScanData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+<!-- BEGIN xnat:ctScanData/sharing/share -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/sharing/share</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>share</TD>
+								<TD>label</TD>
+								<TD>project</TD>
+							</TR>
+							#foreach($xnat_imageScanData_share_1_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/share" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/label" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/project" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:ctScanData/sharing/share[$xnat_imageScanData_share_1_COUNTER]/xnat_imageScanData_share_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:ctScanData/sharing/share -->
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_abstractResource_1_COUNTER in [0..5])
+<!-- BEGIN xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>label</TD><TD>#xdatStringBox("xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/label" $item "" $vr)</TD></TR>
+												<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/file_count" $item "" $vr)</TD></TR>
+												<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/xnat_abstractResource_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_abstractResource_tag_2_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/tag" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag[$xnat_abstractResource_tag_2_COUNTER]/xnat_abstractResource_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER]/tags/tag -->
+								</TABLE>
+<!-- END xnat:ctScanData/file[$xnat_abstractResource_1_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:ctScanData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>#xdatStringBox("xnat:ctScanData/validation/method" $item "" $vr)</TD></TR>
+										<TR><TD>date</TD><TD>#xdatDateBox("xnat:ctScanData/validation/date" $item $vr $years)</TD></TR>
+										<TR><TD>notes</TD><TD>#xdatStringBox("xnat:ctScanData/validation/notes" $item "" $vr)</TD></TR>
+										<TR><TD>validated_by</TD><TD>#xdatStringBox("xnat:ctScanData/validation/validated_by" $item "" $vr)</TD></TR>
+										<TR><TD>status</TD><TD>#xdatStringBox("xnat:ctScanData/validation/status" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat:ctScanData/validation/xnat_validationData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:ctScanData/validation -->
+					</TD>
+				</TR>
+<!-- BEGIN xnat:ctScanData/parameters/focalSpots/focalSpot -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/parameters/focalSpots/focalSpot</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>focalSpot</TD>
+							</TR>
+							#foreach($xnat_ctScanData_focalSpot_3_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:ctScanData/parameters/focalSpots/focalSpot[$xnat_ctScanData_focalSpot_3_COUNTER]/focalSpot" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:ctScanData/parameters/focalSpots/focalSpot[$xnat_ctScanData_focalSpot_3_COUNTER]/xnat_ctScanData_focalSpot_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:ctScanData/parameters/focalSpots/focalSpot -->
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:ctScanData/parameters/contrastBolus -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:ctScanData/parameters/contrastBolus</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>agent</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/contrastBolus/agent" $item "" $vr)</TD></TR>
+										<TR><TD>route</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/contrastBolus/route" $item "" $vr)</TD></TR>
+										<TR><TD>volume</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/contrastBolus/volume" $item "" $vr)</TD></TR>
+										<TR><TD>totalDose</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/contrastBolus/totalDose" $item "" $vr)</TD></TR>
+										<TR><TD>flowRate</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/contrastBolus/flowRate" $item "" $vr)</TD></TR>
+										<TR><TD>flowDuration</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/contrastBolus/flowDuration" $item "" $vr)</TD></TR>
+										<TR><TD>activeIngredient</TD><TD>#xdatStringBox("xnat:ctScanData/parameters/contrastBolus/activeIngredient" $item "" $vr)</TD></TR>
+										<TR><TD>concentration</TD><TD>#xdatTextBox("xnat:ctScanData/parameters/contrastBolus/concentration" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat:ctScanData/parameters/contrastBolus/xnat_contrastBolus_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:ctScanData/parameters/contrastBolus -->
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:ctScanData -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

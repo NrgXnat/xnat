@@ -1,0 +1,143 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/project-skeletons/xnat/src/schemas/pipeline/display/workflowData_display.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 2/7/14 12:19 PM
+  -->
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="wrk:workflowData" full-description="Workflow" brief-description="Workflow">
+	<DisplayField id="DATA_TYPE" header="data_type" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/data_type"/>
+	</DisplayField>
+	<DisplayField id="WORKFLOW_ID" header="Workflow ID" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/wrk_workflowdata_id"/>
+		<HTML-Link>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/wrk:workflowData/search_field/wrk:workflowData.wrk_workflowdata_id">
+				<InsertValue id="Field1" field="WORKFLOW_ID"/>
+			</Property>
+			<Property name="ONCLICK" value="return rpt('@Field1','wrk:workflowData','wrk:workflowData.wrk_workflowdata_id');">
+				<InsertValue id="Field1" field="WORKFLOW_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+    <DisplayField id="ID" header="ID" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="wrk:workflowData/ID"/>
+    </DisplayField>
+    <DisplayField id="EXTERNALID" header="ExternalID" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/ExternalID"/>
+	</DisplayField>
+	<DisplayField id="CURRENT_STEP_LAUNCH_TIME" header="current_step_launch_time" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/current_step_launch_time"/>
+	</DisplayField>
+	<DisplayField id="CURRENT_STEP_ID" header="current_step_id" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/current_step_id"/>
+	</DisplayField>
+	<DisplayField id="STATUS" header="status" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/status"/>
+		<Content type="sql">'&lt;B&gt;' || CASE @Field1 WHEN 'Complete' THEN '&lt;FONT COLOR=green&gt;Complete&lt;/FONT&gt;' WHEN 'In Progress' THEN '&lt;FONT COLOR=yellow&gt;In Progress&lt;/FONT&gt;' WHEN 'Running' THEN '&lt;FONT COLOR=yellow&gt;Running&lt;/FONT&gt;' WHEN 'Queued' THEN '&lt;FONT COLOR=orange&gt;Queued&lt;/FONT&gt;' WHEN 'Failed' THEN '&lt;FONT COLOR=red&gt;Failed&lt;/FONT&gt;' ELSE '&lt;FONT COLOR=orange&gt;' || @Field1 || '&lt;/FONT&gt;' END || '&lt;/B&gt;' </Content>
+		<HTML-Link>
+			<Property name="TITLE" value="@Field1">
+				<InsertValue id="Field1" field="CURRENT_STEP_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="PIPELINE_NAME" header="pipeline_name" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/pipeline_name"/>
+	</DisplayField>
+	<DisplayField id="NEXT_STEP_ID" header="next_step_id" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/next_step_id"/>
+	</DisplayField>
+	<DisplayField id="STEP_DESCRIPTION" header="step_description" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/step_description"/>
+	</DisplayField>
+	<DisplayField id="LAUNCH_TIME" header="launch_time" visible="true" searchable="true" data-type="date">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/launch_time"/>
+	</DisplayField>
+	<DisplayField id="PERCENTAGECOMPLETE" header="percentageComplete" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/percentageComplete"/>
+	</DisplayField>
+    <DisplayField id="JOB_ID" header="Job ID" visible="true" searchable="true">
+        <DisplayFieldElement name="Field1" schema-element="wrk:workflowData/jobid"/>
+    </DisplayField>
+	<DisplayField id="LAST_MODIFIED" header="Modified" visible="true" searchable="true" data-type="date">
+		<DisplayFieldElement name="Field1" schema-element="wrk:workflowData/meta/insert_date"/>
+		<DisplayFieldElement name="Field2" schema-element="wrk:workflowData/meta/last_modified"/>
+		<Content type="sql">COALESCE(@Field2, @Field1)</Content>
+	</DisplayField>
+    <DisplayField id="SESSION_LABEL" header="Session" searchable="true" data-type="string">
+        <DisplayFieldElement name="Field1" viewName="SESSION_LABEL_VIEW" viewColumn="session_label"/>
+        <HTML-Link>
+            <Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/@Field2/search_field/@Field2.ID">
+                <InsertValue id="Field1" field="ID"/>
+                <InsertValue id="Field2" field="DATA_TYPE"/>
+            </Property>
+            <Property name="ONCLICK" value="return rpt('@Field1','@Field2','@Field2.ID');">
+                <InsertValue id="Field1" field="ID"/>
+                <InsertValue id="Field2" field="DATA_TYPE"/>
+            </Property>
+        </HTML-Link>
+    </DisplayField>
+    <ViewLink alias="SESSION_LABEL_VIEW">
+        <Mapping TableName="SESSION_LABEL_VIEW">
+            <MappingColumn rootElement="wrk:workflowData" fieldElement="wrk:workflowData.wrk_workflowdata_id" mapsTo="workflow_id"/>
+        </Mapping>
+    </ViewLink>
+    <SQLView name="SESSION_LABEL_VIEW" sql="SELECT DISTINCT ex.label AS session_label, ex.project AS project, wf.wrk_workflowdata_id AS workflow_id FROM wrk_workflowData wf LEFT JOIN xnat_experimentData ex ON ex.id = wf.id"/>
+    <DisplayField id="PROJECT" header="Project" searchable="true" data-type="string">
+        <DisplayFieldElement name="Field1" viewName="SESSION_LABEL_VIEW" viewColumn="project"/>
+        <HTML-Link>
+            <Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat:projectData/search_field/xnat:projectData.ID">
+                <InsertValue id="Field1" field="PROJECT"/>
+            </Property>
+            <Property name="ONCLICK" value="return rpt('@Field1','xnat:projectData','xnat:projectData.ID');">
+                <InsertValue id="Field1" field="PROJECT"/>
+            </Property>
+        </HTML-Link>
+    </DisplayField>
+    <DisplayField id="SUBJECT_LABEL" header="Subject" searchable="true" data-type="string">
+        <DisplayFieldElement name="Field1" viewName="SUBJECT_LABEL_VIEW" viewColumn="subject_label"/>
+        <HTML-Link>
+            <Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat:subjectData/search_field/xnat:subjectData.ID">
+                <InsertValue id="Field1" field="ID"/>
+            </Property>
+            <Property name="ONCLICK" value="return rpt('@Field1','xnat:subjectData','xnat:subjectData.ID');">
+                <InsertValue id="Field1" field="ID"/>
+            </Property>
+        </HTML-Link>
+    </DisplayField>
+    <ViewLink alias="SUBJECT_LABEL_VIEW">
+        <Mapping TableName="SUBJECT_LABEL_VIEW">
+            <MappingColumn rootElement="wrk:workflowData" fieldElement="wrk:workflowData.wrk_workflowdata_id" mapsTo="workflow_id"/>
+        </Mapping>
+    </ViewLink>
+    <SQLView name="SUBJECT_LABEL_VIEW" sql="SELECT DISTINCT sub.label AS subject_label, wf.wrk_workflowdata_id AS workflow_id FROM wrk_workflowData wf LEFT JOIN xnat_subjectData sub ON sub.id = wf.id"/>
+    <DisplayField id="USERFULLNAME" header="Userfullname" searchable="true" data-type="string">
+        <DisplayFieldElement name="Field1" viewName="USERFULLNAME_VIEW" viewColumn="userfullname"/>
+    </DisplayField>
+    <DisplayField id="USERLOGIN" header="Userlogin" searchable="true" data-type="string">
+        <DisplayFieldElement name="Field1" viewName="USERFULLNAME_VIEW" viewColumn="login"/>
+    </DisplayField>
+    <DisplayField id="USEREMAIL" header="Useremail" searchable="true" data-type="string">
+        <DisplayFieldElement name="Field1" viewName="USERFULLNAME_VIEW" viewColumn="email"/>
+    </DisplayField>
+    <ViewLink alias="USERFULLNAME_VIEW">
+        <Mapping TableName="USERFULLNAME_VIEW">
+            <MappingColumn rootElement="wrk:workflowData" fieldElement="wrk:workflowData.wrk_workflowdata_id" mapsTo="workflow_id"/>
+        </Mapping>
+    </ViewLink>
+    <SQLView name="USERFULLNAME_VIEW" sql="SELECT wrk.wrk_workflowdata_id AS workflow_id, u.login, u.firstname, u.lastname, u.firstname || ' ' ||  u.lastname AS userfullname, u.email FROM wrk_workflowData wrk LEFT JOIN wrk_workflowdata_meta_data meta ON wrk.workflowData_info=meta.meta_data_id LEFT JOIN xdat_user u ON meta.insert_user_xdat_user_id=u.xdat_user_id"/>
+    <DisplayVersion versionName="listing" default-order-by="LAST_MODIFIED" default-sort-order="DESC" brief-description="Workflow" dark-color="9999CC" light-color="CCCCFF">
+        <DisplayFieldRef id="WORKFLOW_ID"/>
+        <DisplayFieldRef id="PIPELINE_NAME"/>
+        <DisplayFieldRef id="LAUNCH_TIME"/>
+        <DisplayFieldRef id="STATUS"/>
+        <DisplayFieldRef id="CURRENT_STEP_ID"/>
+        <DisplayFieldRef id="JOB_ID"/>
+        <DisplayFieldRef id="USERFULLNAME"/>
+        <DisplayFieldRef id="SESSION_LABEL"/>
+    </DisplayVersion>
+</Displays>

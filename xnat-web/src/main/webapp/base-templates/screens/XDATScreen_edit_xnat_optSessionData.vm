@@ -1,0 +1,1019 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">OPTSession Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD colspan='2'>
+								#parse("/screens/xnat_edit_subjectAssessorData.vm")
+							</TD></TR>
+							<tr>
+								<TD colspan="2">#parse("/screens/EditProjectSpecificFields.vm")</TD>
+							</tr>
+							<TR><TD>scanner</TD><TD>#xdatStringBox("xnat:optSessionData/scanner" $item "" $vr)</TD></TR>
+							<TR><TD>scanner/manufacturer</TD><TD>#xdatStringBox("xnat:optSessionData/scanner/manufacturer" $item "" $vr)</TD></TR>
+							<TR><TD>scanner/model</TD><TD>#xdatStringBox("xnat:optSessionData/scanner/model" $item "" $vr)</TD></TR>
+							<TR><TD>operator</TD><TD>#xdatStringBox("xnat:optSessionData/operator" $item "" $vr)</TD></TR>
+							<TR><TD>prearchivePath</TD><TD>#xdatStringBox("xnat:optSessionData/prearchivePath" $item "" $vr)</TD></TR>
+							<TR><TD>dcmAccessionNumber</TD><TD>#xdatStringBox("xnat:optSessionData/dcmAccessionNumber" $item "" $vr)</TD></TR>
+							<TR><TD>dcmPatientId</TD><TD>#xdatStringBox("xnat:optSessionData/dcmPatientId" $item "" $vr)</TD></TR>
+							<TR><TD>dcmPatientName</TD><TD>#xdatStringBox("xnat:optSessionData/dcmPatientName" $item "" $vr)</TD></TR>
+							<TR><TD>dcmPatientBirthDate</TD><TD>#xdatDateBox("xnat:optSessionData/dcmPatientBirthDate" $item $vr $years)</TD></TR>
+							<TR><TD>session_type</TD><TD>#xdatStringBox("xnat:optSessionData/session_type" $item "" $vr)</TD></TR>
+							<TR><TD>modality</TD><TD>#xdatStringBox("xnat:optSessionData/modality" $item "" $vr)</TD></TR>
+							<TR><TD>UID</TD><TD>#xdatStringBox("xnat:optSessionData/UID" $item "" $vr)</TD></TR>
+							<TR><TD>age</TD><TD>#xdatTextBox("xnat:optSessionData/age" $item "" $vr)</TD></TR>
+							<TR><TD>date</TD><TD>#xdatDateBox("xnat:optSessionData/date" $item $vr $years)</TD></TR>
+							<TR><TD>time</TD><TD>#xdatTextBox("xnat:optSessionData/time" $item "" $vr)</TD></TR>
+							<TR><TD>duration</TD><TD>#xdatTextBox("xnat:optSessionData/duration" $item "" $vr)</TD></TR>
+							<TR><TD>delay</TD><TD>#xdatTextBox("xnat:optSessionData/delay" $item "" $vr)</TD></TR>
+							<TR><TD>delay/ref_expt_id</TD><TD>#xdatStringBox("xnat:optSessionData/delay/ref_expt_id" $item "" $vr)</TD></TR>
+							<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/note" $item "" $vr)</TD></TR>
+							<TR><TD>acquisition_site</TD><TD>#xdatStringBox("xnat:optSessionData/acquisition_site" $item "" $vr)</TD></TR>
+							<TR><TD>visit_id</TD><TD>#xdatStringBox("xnat:optSessionData/visit_id" $item "" $vr)</TD></TR>
+							<TR><TD>visit</TD><TD>#xdatStringBox("xnat:optSessionData/visit" $item "" $vr)</TD></TR>
+							<TR><TD>version</TD><TD>#xdatTextBox("xnat:optSessionData/version" $item "" $vr)</TD></TR>
+							<TR><TD>original</TD><TD>#xdatStringBox("xnat:optSessionData/original" $item "" $vr)</TD></TR>
+							<TR><TD>protocol</TD><TD>#xdatStringBox("xnat:optSessionData/protocol" $item "" $vr)</TD></TR>
+							<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/label" $item "" $vr)</TD></TR>
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:optSessionData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_regionResource_1_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>creator/firstname</TD><TD>#xdatStringBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/creator/firstname" $item "" $vr)</TD></TR>
+												<TR><TD>creator/lastname</TD><TD>#xdatStringBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/creator/lastname" $item "" $vr)</TD></TR>
+												<TR><TD>name</TD><TD>#xdatStringBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/name" $item "" $vr)</TD></TR>
+												<TR><TD>hemisphere</TD><TD>#xdatStringBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/hemisphere" $item "" $vr)</TD></TR>
+												<TR><TD>session_id</TD><TD>#xdatStringBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/session_id" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/xnat_regionResource_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+<!-- BEGIN xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file -->
+											<TABLE>
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+															<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/note" $item "" $vr)</TD></TR>
+															<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/label" $item "" $vr)</TD></TR>
+															<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/file_count" $item "" $vr)</TD></TR>
+															<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/file_size" $item "" $vr)</TD></TR>
+																					#xdatHiddenBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/xnat_abstractResource_id" $item "")
+														</TABLE>
+													</TD>
+												</TR>
+<!-- BEGIN xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/tags/tag -->
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/tags/tag</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+															<TR>
+																<TD>tag</TD>
+																<TD>name</TD>
+															</TR>
+															#foreach($xnat_abstractResource_tag_3_COUNTER in [0..5])
+																<TR>
+																	<TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/tag" $item "" $vr)</TD>
+																	<TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/name" $item "" $vr)</TD>
+																	#xdatHiddenBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/tags/tag[$xnat_abstractResource_tag_3_COUNTER]/xnat_abstractResource_tag_id" $item "")
+																</TR>
+															#end
+														</TABLE>
+													</TD>
+												</TR>
+<!-- END xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file/tags/tag -->
+											</TABLE>
+<!-- END xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/file -->
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+<!-- BEGIN xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage -->
+											<TABLE>
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+															<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/note" $item "" $vr)</TD></TR>
+															<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/label" $item "" $vr)</TD></TR>
+															<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/file_count" $item "" $vr)</TD></TR>
+															<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/file_size" $item "" $vr)</TD></TR>
+																					#xdatHiddenBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/xnat_abstractResource_id" $item "")
+														</TABLE>
+													</TD>
+												</TR>
+<!-- BEGIN xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/tags/tag -->
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/tags/tag</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+															<TR>
+																<TD>tag</TD>
+																<TD>name</TD>
+															</TR>
+															#foreach($xnat_abstractResource_tag_4_COUNTER in [0..5])
+																<TR>
+																	<TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/tag" $item "" $vr)</TD>
+																	<TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/name" $item "" $vr)</TD>
+																	#xdatHiddenBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/tags/tag[$xnat_abstractResource_tag_4_COUNTER]/xnat_abstractResource_tag_id" $item "")
+																</TR>
+															#end
+														</TABLE>
+													</TD>
+												</TR>
+<!-- END xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage/tags/tag -->
+											</TABLE>
+<!-- END xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/baseimage -->
+										</TD>
+									</TR>
+<!-- BEGIN xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/subregionlabels/label -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/subregionlabels/label</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>label</TD>
+													<TD>id</TD>
+													<TD>hemisphere</TD>
+												</TR>
+												#foreach($xnat_regionResource_label_4_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/subregionlabels/label[$xnat_regionResource_label_4_COUNTER]/label" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/subregionlabels/label[$xnat_regionResource_label_4_COUNTER]/id" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/subregionlabels/label[$xnat_regionResource_label_4_COUNTER]/hemisphere" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/subregionlabels/label[$xnat_regionResource_label_4_COUNTER]/xnat_regionResource_label_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER]/subregionlabels/label -->
+								</TABLE>
+<!-- END xnat:optSessionData/regions/region[$xnat_regionResource_1_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_imageScanData_4_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>image_session_ID</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/image_session_ID" $item "" $vr)</TD></TR>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>quality</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/quality" $item "" $vr)</TD></TR>
+												<TR><TD>condition</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/condition" $item "" $vr)</TD></TR>
+												<TR><TD>series_description</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/series_description" $item "" $vr)</TD></TR>
+												<TR><TD>documentation</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/documentation" $item "" $vr)</TD></TR>
+												<TR><TD>scanner</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/scanner" $item "" $vr)</TD></TR>
+												<TR><TD>scanner/manufacturer</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/scanner/manufacturer" $item "" $vr)</TD></TR>
+												<TR><TD>scanner/model</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/scanner/model" $item "" $vr)</TD></TR>
+												<TR><TD>modality</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/modality" $item "" $vr)</TD></TR>
+												<TR><TD>frames</TD><TD>#xdatTextBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/frames" $item "" $vr)</TD></TR>
+												<TR><TD>operator</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/operator" $item "" $vr)</TD></TR>
+												<TR><TD>startTime</TD><TD>#xdatTextBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/startTime" $item "" $vr)</TD></TR>
+												<TR><TD>ID</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/ID" $item "" $vr)</TD></TR>
+												<TR><TD>type</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/type" $item "" $vr)</TD></TR>
+												<TR><TD>UID</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/UID" $item "" $vr)</TD></TR>
+												<TR><TD>project</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/project" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/xnat_imageScanData_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/sharing/share -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/sharing/share</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>share</TD>
+													<TD>label</TD>
+													<TD>project</TD>
+												</TR>
+												#foreach($xnat_imageScanData_share_5_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/sharing/share[$xnat_imageScanData_share_5_COUNTER]/share" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/sharing/share[$xnat_imageScanData_share_5_COUNTER]/label" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/sharing/share[$xnat_imageScanData_share_5_COUNTER]/project" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/sharing/share[$xnat_imageScanData_share_5_COUNTER]/xnat_imageScanData_share_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/sharing/share -->
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE><TR><TD>
+												#foreach($xnat_abstractResource_5_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER] -->
+													<TABLE>
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/note" $item "" $vr)</TD></TR>
+																	<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/label" $item "" $vr)</TD></TR>
+																	<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/file_count" $item "" $vr)</TD></TR>
+																	<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																							#xdatHiddenBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/xnat_abstractResource_id" $item "")
+																</TABLE>
+															</TD>
+														</TR>
+<!-- BEGIN xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/tags/tag -->
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/tags/tag</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR>
+																		<TD>tag</TD>
+																		<TD>name</TD>
+																	</TR>
+																	#foreach($xnat_abstractResource_tag_6_COUNTER in [0..5])
+																		<TR>
+																			<TD>#xdatTextBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/tags/tag[$xnat_abstractResource_tag_6_COUNTER]/tag" $item "" $vr)</TD>
+																			<TD>#xdatTextBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/tags/tag[$xnat_abstractResource_tag_6_COUNTER]/name" $item "" $vr)</TD>
+																			#xdatHiddenBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/tags/tag[$xnat_abstractResource_tag_6_COUNTER]/xnat_abstractResource_tag_id" $item "")
+																		</TR>
+																	#end
+																</TABLE>
+															</TD>
+														</TR>
+<!-- END xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER]/tags/tag -->
+													</TABLE>
+<!-- END xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/file[$xnat_abstractResource_5_COUNTER] -->
+												#end
+											</TD></TR></TABLE>
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+<!-- BEGIN xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/validation -->
+											<TABLE>
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/validation</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+															<TR><TD>method</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/validation/method" $item "" $vr)</TD></TR>
+															<TR><TD>date</TD><TD>#xdatDateBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/validation/date" $item $vr $years)</TD></TR>
+															<TR><TD>notes</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/validation/notes" $item "" $vr)</TD></TR>
+															<TR><TD>validated_by</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/validation/validated_by" $item "" $vr)</TD></TR>
+															<TR><TD>status</TD><TD>#xdatStringBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/validation/status" $item "" $vr)</TD></TR>
+																					#xdatHiddenBox("xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/validation/xnat_validationData_id" $item "")
+														</TABLE>
+													</TD>
+												</TR>
+											</TABLE>
+<!-- END xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER]/validation -->
+										</TD>
+									</TR>
+								</TABLE>
+<!-- END xnat:optSessionData/scans/scan[$xnat_imageScanData_4_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_reconstructedImageData_7_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>image_session_ID</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/image_session_ID" $item "" $vr)</TD></TR>
+												<TR><TD>ID</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/ID" $item "" $vr)</TD></TR>
+												<TR><TD>type</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/type" $item "" $vr)</TD></TR>
+												<TR><TD>baseScanType</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/baseScanType" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/xnat_reconstructedImageData_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/inScans/scanID -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/inScans/scanID</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>scanID</TD>
+												</TR>
+												#foreach($xnat_reconstructedImageData_scanID_8_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/inScans/scanID[$xnat_reconstructedImageData_scanID_8_COUNTER]/scanID" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/inScans/scanID[$xnat_reconstructedImageData_scanID_8_COUNTER]/xnat_reconstructedImageData_scanID_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/inScans/scanID -->
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE><TR><TD>
+												#foreach($xnat_abstractResource_8_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER] -->
+													<TABLE>
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/note" $item "" $vr)</TD></TR>
+																	<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/label" $item "" $vr)</TD></TR>
+																	<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/file_count" $item "" $vr)</TD></TR>
+																	<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																							#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/xnat_abstractResource_id" $item "")
+																</TABLE>
+															</TD>
+														</TR>
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/tags/tag -->
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/tags/tag</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR>
+																		<TD>tag</TD>
+																		<TD>name</TD>
+																	</TR>
+																	#foreach($xnat_abstractResource_tag_9_COUNTER in [0..5])
+																		<TR>
+																			<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/tags/tag[$xnat_abstractResource_tag_9_COUNTER]/tag" $item "" $vr)</TD>
+																			<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/tags/tag[$xnat_abstractResource_tag_9_COUNTER]/name" $item "" $vr)</TD>
+																			#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/tags/tag[$xnat_abstractResource_tag_9_COUNTER]/xnat_abstractResource_tag_id" $item "")
+																		</TR>
+																	#end
+																</TABLE>
+															</TD>
+														</TR>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER]/tags/tag -->
+													</TABLE>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/in/file[$xnat_abstractResource_8_COUNTER] -->
+												#end
+											</TD></TR></TABLE>
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE><TR><TD>
+												#foreach($xnat_abstractResource_9_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER] -->
+													<TABLE>
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/note" $item "" $vr)</TD></TR>
+																	<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/label" $item "" $vr)</TD></TR>
+																	<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/file_count" $item "" $vr)</TD></TR>
+																	<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																							#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/xnat_abstractResource_id" $item "")
+																</TABLE>
+															</TD>
+														</TR>
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/tags/tag -->
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/tags/tag</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR>
+																		<TD>tag</TD>
+																		<TD>name</TD>
+																	</TR>
+																	#foreach($xnat_abstractResource_tag_10_COUNTER in [0..5])
+																		<TR>
+																			<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/tags/tag[$xnat_abstractResource_tag_10_COUNTER]/tag" $item "" $vr)</TD>
+																			<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/tags/tag[$xnat_abstractResource_tag_10_COUNTER]/name" $item "" $vr)</TD>
+																			#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/tags/tag[$xnat_abstractResource_tag_10_COUNTER]/xnat_abstractResource_tag_id" $item "")
+																		</TR>
+																	#end
+																</TABLE>
+															</TD>
+														</TR>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER]/tags/tag -->
+													</TABLE>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/out/file[$xnat_abstractResource_9_COUNTER] -->
+												#end
+											</TD></TR></TABLE>
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance -->
+											<TABLE>
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+																					#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/prov_process_id" $item "")
+														</TABLE>
+													</TD>
+												</TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE><TR><TD>
+															#foreach($prov_processStep_11_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER] -->
+																<TABLE>
+																	<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]</font></TH></TR>
+																	<TR>
+																		<TD align="left" valign="top">
+																			<TABLE>
+																				<TR><TD>program</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/program" $item "" $vr)</TD></TR>
+																				<TR><TD>program/version</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/program/version" $item "" $vr)</TD></TR>
+																				<TR><TD>program/arguments</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/program/arguments" $item "" $vr)</TD></TR>
+																				<TR><TD>timestamp</TD><TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/timestamp" $item "" $vr)</TD></TR>
+																				<TR><TD>cvs</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/cvs" $item "" $vr)</TD></TR>
+																				<TR><TD>user</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/user" $item "" $vr)</TD></TR>
+																				<TR><TD>machine</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/machine" $item "" $vr)</TD></TR>
+																				<TR><TD>platform</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/platform" $item "" $vr)</TD></TR>
+																				<TR><TD>platform/version</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/platform/version" $item "" $vr)</TD></TR>
+																				<TR><TD>compiler</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/compiler" $item "" $vr)</TD></TR>
+																				<TR><TD>compiler/version</TD><TD>#xdatStringBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/compiler/version" $item "" $vr)</TD></TR>
+																										#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/prov_processStep_id" $item "")
+																			</TABLE>
+																		</TD>
+																	</TR>
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/library -->
+																	<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/library</font></TH></TR>
+																	<TR>
+																		<TD align="left" valign="top">
+																			<TABLE>
+																				<TR>
+																					<TD>library</TD>
+																					<TD>version</TD>
+																				</TR>
+																				#foreach($prov_processStep_library_12_COUNTER in [0..5])
+																					<TR>
+																						<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/library[$prov_processStep_library_12_COUNTER]/library" $item "" $vr)</TD>
+																						<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/library[$prov_processStep_library_12_COUNTER]/version" $item "" $vr)</TD>
+																						#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/library[$prov_processStep_library_12_COUNTER]/prov_processStep_library_id" $item "")
+																					</TR>
+																				#end
+																			</TABLE>
+																		</TD>
+																	</TR>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER]/library -->
+																</TABLE>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance/processStep[$prov_processStep_11_COUNTER] -->
+															#end
+														</TD></TR></TABLE>
+													</TD>
+												</TR>
+											</TABLE>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/provenance -->
+										</TD>
+									</TR>
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/parameters/addParam -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/parameters/addParam</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>addField</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_addField_12_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/parameters/addParam[$xnat_addField_12_COUNTER]/addField" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/parameters/addParam[$xnat_addField_12_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/parameters/addParam[$xnat_addField_12_COUNTER]/xnat_addField_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/parameters/addParam -->
+<!-- BEGIN xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/computations/datum -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/computations/datum</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>name</TD>
+													<TD>value</TD>
+													<TD>source</TD>
+													<TD>units</TD>
+												</TR>
+												#foreach($xnat_computationData_12_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/computations/datum[$xnat_computationData_12_COUNTER]/name" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/computations/datum[$xnat_computationData_12_COUNTER]/value" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/computations/datum[$xnat_computationData_12_COUNTER]/source" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/computations/datum[$xnat_computationData_12_COUNTER]/units" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/computations/datum[$xnat_computationData_12_COUNTER]/xnat_computationData_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER]/computations/datum -->
+								</TABLE>
+<!-- END xnat:optSessionData/reconstructions/reconstructedImage[$xnat_reconstructedImageData_7_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_imageAssessorData_12_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>date</TD><TD>#xdatDateBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/date" $item $vr $years)</TD></TR>
+												<TR><TD>time</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/time" $item "" $vr)</TD></TR>
+												<TR><TD>duration</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/duration" $item "" $vr)</TD></TR>
+												<TR><TD>delay</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/delay" $item "" $vr)</TD></TR>
+												<TR><TD>delay/ref_expt_id</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/delay/ref_expt_id" $item "" $vr)</TD></TR>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>acquisition_site</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/acquisition_site" $item "" $vr)</TD></TR>
+												<TR><TD>visit_id</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/visit_id" $item "" $vr)</TD></TR>
+												<TR><TD>visit</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/visit" $item "" $vr)</TD></TR>
+												<TR><TD>version</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/version" $item "" $vr)</TD></TR>
+												<TR><TD>original</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/original" $item "" $vr)</TD></TR>
+												<TR><TD>protocol</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/protocol" $item "" $vr)</TD></TR>
+												<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/label" $item "" $vr)</TD></TR>
+												<TR><TD>imageSession_ID</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/imageSession_ID" $item "" $vr)</TD></TR>
+											</TABLE>
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance -->
+											<TABLE>
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+																					#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/prov_process_id" $item "")
+														</TABLE>
+													</TD>
+												</TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE><TR><TD>
+															#foreach($prov_processStep_14_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER] -->
+																<TABLE>
+																	<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]</font></TH></TR>
+																	<TR>
+																		<TD align="left" valign="top">
+																			<TABLE>
+																				<TR><TD>program</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/program" $item "" $vr)</TD></TR>
+																				<TR><TD>program/version</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/program/version" $item "" $vr)</TD></TR>
+																				<TR><TD>program/arguments</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/program/arguments" $item "" $vr)</TD></TR>
+																				<TR><TD>timestamp</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/timestamp" $item "" $vr)</TD></TR>
+																				<TR><TD>cvs</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/cvs" $item "" $vr)</TD></TR>
+																				<TR><TD>user</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/user" $item "" $vr)</TD></TR>
+																				<TR><TD>machine</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/machine" $item "" $vr)</TD></TR>
+																				<TR><TD>platform</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/platform" $item "" $vr)</TD></TR>
+																				<TR><TD>platform/version</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/platform/version" $item "" $vr)</TD></TR>
+																				<TR><TD>compiler</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/compiler" $item "" $vr)</TD></TR>
+																				<TR><TD>compiler/version</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/compiler/version" $item "" $vr)</TD></TR>
+																										#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/prov_processStep_id" $item "")
+																			</TABLE>
+																		</TD>
+																	</TR>
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/library -->
+																	<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/library</font></TH></TR>
+																	<TR>
+																		<TD align="left" valign="top">
+																			<TABLE>
+																				<TR>
+																					<TD>library</TD>
+																					<TD>version</TD>
+																				</TR>
+																				#foreach($prov_processStep_library_15_COUNTER in [0..5])
+																					<TR>
+																						<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/library[$prov_processStep_library_15_COUNTER]/library" $item "" $vr)</TD>
+																						<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/library[$prov_processStep_library_15_COUNTER]/version" $item "" $vr)</TD>
+																						#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/library[$prov_processStep_library_15_COUNTER]/prov_processStep_library_id" $item "")
+																					</TR>
+																				#end
+																			</TABLE>
+																		</TD>
+																	</TR>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER]/library -->
+																</TABLE>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance/processStep[$prov_processStep_14_COUNTER] -->
+															#end
+														</TD></TR></TABLE>
+													</TD>
+												</TR>
+											</TABLE>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/provenance -->
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator -->
+											<TABLE>
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+															<TR><TD>title</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator/title" $item "" $vr)</TD></TR>
+															<TR><TD>firstname</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator/firstname" $item "" $vr)</TD></TR>
+															<TR><TD>lastname</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator/lastname" $item "" $vr)</TD></TR>
+															<TR><TD>institution</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator/institution" $item "" $vr)</TD></TR>
+															<TR><TD>department</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator/department" $item "" $vr)</TD></TR>
+															<TR><TD>email</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator/email" $item "" $vr)</TD></TR>
+															<TR><TD>phone</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator/phone" $item "" $vr)</TD></TR>
+															<TR><TD>ID</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator/ID" $item "" $vr)</TD></TR>
+																					#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator/xnat_investigatorData_id" $item "")
+														</TABLE>
+													</TD>
+												</TR>
+											</TABLE>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/investigator -->
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/validation -->
+											<TABLE>
+												<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/validation</font></TH></TR>
+												<TR>
+													<TD align="left" valign="top">
+														<TABLE>
+															<TR><TD>method</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/validation/method" $item "" $vr)</TD></TR>
+															<TR><TD>date</TD><TD>#xdatDateBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/validation/date" $item $vr $years)</TD></TR>
+															<TR><TD>notes</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/validation/notes" $item "" $vr)</TD></TR>
+															<TR><TD>validated_by</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/validation/validated_by" $item "" $vr)</TD></TR>
+															<TR><TD>status</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/validation/status" $item "" $vr)</TD></TR>
+																					#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/validation/xnat_validationData_id" $item "")
+														</TABLE>
+													</TD>
+												</TR>
+											</TABLE>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/validation -->
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE><TR><TD>
+												#foreach($xnat_abstractResource_17_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER] -->
+													<TABLE>
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/note" $item "" $vr)</TD></TR>
+																	<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/label" $item "" $vr)</TD></TR>
+																	<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/file_count" $item "" $vr)</TD></TR>
+																	<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																							#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/xnat_abstractResource_id" $item "")
+																</TABLE>
+															</TD>
+														</TR>
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/tags/tag -->
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/tags/tag</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR>
+																		<TD>tag</TD>
+																		<TD>name</TD>
+																	</TR>
+																	#foreach($xnat_abstractResource_tag_18_COUNTER in [0..5])
+																		<TR>
+																			<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/tags/tag[$xnat_abstractResource_tag_18_COUNTER]/tag" $item "" $vr)</TD>
+																			<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/tags/tag[$xnat_abstractResource_tag_18_COUNTER]/name" $item "" $vr)</TD>
+																			#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/tags/tag[$xnat_abstractResource_tag_18_COUNTER]/xnat_abstractResource_tag_id" $item "")
+																		</TR>
+																	#end
+																</TABLE>
+															</TD>
+														</TR>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER]/tags/tag -->
+													</TABLE>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/resources/resource[$xnat_abstractResource_17_COUNTER] -->
+												#end
+											</TD></TR></TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/fields/field -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/fields/field</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>field</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_experimentData_field_18_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/fields/field[$xnat_experimentData_field_18_COUNTER]/field" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/fields/field[$xnat_experimentData_field_18_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/fields/field[$xnat_experimentData_field_18_COUNTER]/xnat_experimentData_field_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/fields/field -->
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE><TR><TD>
+												#foreach($xnat_abstractResource_18_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER] -->
+													<TABLE>
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/note" $item "" $vr)</TD></TR>
+																	<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/label" $item "" $vr)</TD></TR>
+																	<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/file_count" $item "" $vr)</TD></TR>
+																	<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																							#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/xnat_abstractResource_id" $item "")
+																</TABLE>
+															</TD>
+														</TR>
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/tags/tag -->
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/tags/tag</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR>
+																		<TD>tag</TD>
+																		<TD>name</TD>
+																	</TR>
+																	#foreach($xnat_abstractResource_tag_19_COUNTER in [0..5])
+																		<TR>
+																			<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/tags/tag[$xnat_abstractResource_tag_19_COUNTER]/tag" $item "" $vr)</TD>
+																			<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/tags/tag[$xnat_abstractResource_tag_19_COUNTER]/name" $item "" $vr)</TD>
+																			#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/tags/tag[$xnat_abstractResource_tag_19_COUNTER]/xnat_abstractResource_tag_id" $item "")
+																		</TR>
+																	#end
+																</TABLE>
+															</TD>
+														</TR>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER]/tags/tag -->
+													</TABLE>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/in/file[$xnat_abstractResource_18_COUNTER] -->
+												#end
+											</TD></TR></TABLE>
+										</TD>
+									</TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE><TR><TD>
+												#foreach($xnat_abstractResource_19_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER] -->
+													<TABLE>
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/note" $item "" $vr)</TD></TR>
+																	<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/label" $item "" $vr)</TD></TR>
+																	<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/file_count" $item "" $vr)</TD></TR>
+																	<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																							#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/xnat_abstractResource_id" $item "")
+																</TABLE>
+															</TD>
+														</TR>
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/tags/tag -->
+														<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/tags/tag</font></TH></TR>
+														<TR>
+															<TD align="left" valign="top">
+																<TABLE>
+																	<TR>
+																		<TD>tag</TD>
+																		<TD>name</TD>
+																	</TR>
+																	#foreach($xnat_abstractResource_tag_20_COUNTER in [0..5])
+																		<TR>
+																			<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/tags/tag[$xnat_abstractResource_tag_20_COUNTER]/tag" $item "" $vr)</TD>
+																			<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/tags/tag[$xnat_abstractResource_tag_20_COUNTER]/name" $item "" $vr)</TD>
+																			#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/tags/tag[$xnat_abstractResource_tag_20_COUNTER]/xnat_abstractResource_tag_id" $item "")
+																		</TR>
+																	#end
+																</TABLE>
+															</TD>
+														</TR>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER]/tags/tag -->
+													</TABLE>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/out/file[$xnat_abstractResource_19_COUNTER] -->
+												#end
+											</TD></TR></TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/parameters/addParam -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/parameters/addParam</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>addField</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_addField_20_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/parameters/addParam[$xnat_addField_20_COUNTER]/addField" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/parameters/addParam[$xnat_addField_20_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/parameters/addParam[$xnat_addField_20_COUNTER]/xnat_addField_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER]/parameters/addParam -->
+								</TABLE>
+<!-- END xnat:optSessionData/assessors/assessor[$xnat_imageAssessorData_12_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:optSessionData/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>#xdatStringBox("xnat:optSessionData/investigator/title" $item "" $vr)</TD></TR>
+										<TR><TD>firstname</TD><TD>#xdatStringBox("xnat:optSessionData/investigator/firstname" $item "" $vr)</TD></TR>
+										<TR><TD>lastname</TD><TD>#xdatStringBox("xnat:optSessionData/investigator/lastname" $item "" $vr)</TD></TR>
+										<TR><TD>institution</TD><TD>#xdatStringBox("xnat:optSessionData/investigator/institution" $item "" $vr)</TD></TR>
+										<TR><TD>department</TD><TD>#xdatStringBox("xnat:optSessionData/investigator/department" $item "" $vr)</TD></TR>
+										<TR><TD>email</TD><TD>#xdatStringBox("xnat:optSessionData/investigator/email" $item "" $vr)</TD></TR>
+										<TR><TD>phone</TD><TD>#xdatStringBox("xnat:optSessionData/investigator/phone" $item "" $vr)</TD></TR>
+										<TR><TD>ID</TD><TD>#xdatStringBox("xnat:optSessionData/investigator/ID" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat:optSessionData/investigator/xnat_investigatorData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:optSessionData/investigator -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat:optSessionData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>#xdatStringBox("xnat:optSessionData/validation/method" $item "" $vr)</TD></TR>
+										<TR><TD>date</TD><TD>#xdatDateBox("xnat:optSessionData/validation/date" $item $vr $years)</TD></TR>
+										<TR><TD>notes</TD><TD>#xdatStringBox("xnat:optSessionData/validation/notes" $item "" $vr)</TD></TR>
+										<TR><TD>validated_by</TD><TD>#xdatStringBox("xnat:optSessionData/validation/validated_by" $item "" $vr)</TD></TR>
+										<TR><TD>status</TD><TD>#xdatStringBox("xnat:optSessionData/validation/status" $item "" $vr)</TD></TR>
+																#xdatHiddenBox("xnat:optSessionData/validation/xnat_validationData_id" $item "")
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat:optSessionData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_abstractResource_22_COUNTER in [0..5])
+<!-- BEGIN xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>note</TD><TD>#xdatStringBox("xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/note" $item "" $vr)</TD></TR>
+												<TR><TD>label</TD><TD>#xdatStringBox("xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/label" $item "" $vr)</TD></TR>
+												<TR><TD>file_count</TD><TD>#xdatTextBox("xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/file_count" $item "" $vr)</TD></TR>
+												<TR><TD>file_size</TD><TD>#xdatTextBox("xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/file_size" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/xnat_abstractResource_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/tags/tag -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/tags/tag</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>tag</TD>
+													<TD>name</TD>
+												</TR>
+												#foreach($xnat_abstractResource_tag_23_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/tags/tag[$xnat_abstractResource_tag_23_COUNTER]/tag" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/tags/tag[$xnat_abstractResource_tag_23_COUNTER]/name" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/tags/tag[$xnat_abstractResource_tag_23_COUNTER]/xnat_abstractResource_tag_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER]/tags/tag -->
+								</TABLE>
+<!-- END xnat:optSessionData/resources/resource[$xnat_abstractResource_22_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+<!-- BEGIN xnat:optSessionData/fields/field -->
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:optSessionData/fields/field</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+							<TR>
+								<TD>field</TD>
+								<TD>name</TD>
+							</TR>
+							#foreach($xnat_experimentData_field_23_COUNTER in [0..5])
+								<TR>
+									<TD>#xdatTextBox("xnat:optSessionData/fields/field[$xnat_experimentData_field_23_COUNTER]/field" $item "" $vr)</TD>
+									<TD>#xdatTextBox("xnat:optSessionData/fields/field[$xnat_experimentData_field_23_COUNTER]/name" $item "" $vr)</TD>
+									#xdatHiddenBox("xnat:optSessionData/fields/field[$xnat_experimentData_field_23_COUNTER]/xnat_experimentData_field_id" $item "")
+								</TR>
+							#end
+						</TABLE>
+					</TD>
+				</TR>
+<!-- END xnat:optSessionData/fields/field -->
+			</TABLE>
+<!-- END xnat:optSessionData -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateSubjectAssessorForm();
+   return false;
+}
+</script>

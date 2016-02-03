@@ -1,0 +1,76 @@
+##Copyright 2012 Radiologics, Inc
+##Developer: Tim Olsen tim@radiologics.com
+<h3>Notifications Configuration</h3>
+<div>
+<table id="notif_script_table">
+  <tr>
+    <td colspan="2" class="highlighted" id="notif_script_container">
+##      <DIV style="font-weight:700;">Notifications Configuration</DIV>
+      <TABLE>
+	<TR><TD></TD><TD>Emails should be comma separated (i.e. tim@somewhere.com,jenny@somewhere.com).</TD></TR>
+	<TR><TD></TD><TD><input type="text" name="notif_list" id="notif_list" SIZE="100"/></TD></TR>
+	<TR><TD COLSPAN="2"><input type="button" id="notif_script_save" value="Save" onclick="XNAT.app.notifUpdate();" /></TD></TR>
+      </TABLE>      
+    </td>
+  </tr>
+</table>
+<script>
+    XNAT.app.notifUpdate=function(){
+        this.notifs=YUIDOM.get("notif_list").value;
+        if(this.notifs.indexOf("'")>-1 || this.notifs.indexOf("\"")>-1){
+            xModalMessage('Email Notification', 'Notification emails cannot contain quotes.');
+            return false;
+        }
+        openModalPanel('notifs','Saving Emails');
+        if (this.notifs) {
+            YAHOO.util.Connect.asyncRequest('PUT',serverRoot+"/data/projects/$project.getId()/resources/notifications/files/archival.lst?inbody=true&overwrite=true&content=NOTIFY_ARCHIVAL&XNAT_CSRF=" + window.csrfToken,
+                    {
+                        success : function()
+                        {
+                            closeModalPanel('notifs');
+                            xModalMessage('Email Notification', 'Emails updated.');
+                        },
+                        failure: function(o){
+                            closeModalPanel('notifs');
+                            var options = {};
+                            var message = "Failed to store emails.<br><br>";
+                            var reasons = "";
+                            if(o.responseText){ ## Fixes XNAT-2989
+                                reasons = o.responseText.match(/\<h3\>(.*[\n\r])+\<\/h3\>/g);
+                                if(reasons && reasons[0]){
+                                    reasons = reasons[0].replace(/\<\/?h3\>/g,"").replace(/[\n\r]/g,"<br>");
+                                    options = {width: 500, height: 400};
+                                }else{
+                                    reasons = "";
+                                }
+                            }
+                            xModalMessage('Email Error', message + reasons, "OK", options);
+                        },
+                        cache:false, // Turn off caching for IE
+                        scope: this
+                    },
+                    this.notifs);
+        } else {
+            YAHOO.util.Connect.asyncRequest('DELETE',serverRoot+"/data/projects/$project.getId()/resources/notifications/files/archival.lst?content=NOTIFY_ARCHIVAL&XNAT_CSRF=" + window.csrfToken,
+                    {
+                        success : function()
+                        {
+                            closeModalPanel('notifs');
+                            xModalMessage('Email Notification', 'Emails updated.');
+                        },
+                        failure: function(){
+                            closeModalPanel('notifs');
+                            xModalMessage('Email Error', 'Failed to store emails');
+                        },
+                        cache:false, // Turn off caching for IE
+                        scope: this
+                    });
+        }
+    }
+ 	XNAT.app.notifsLoad=function(obj){
+      	YUIDOM.get("notif_list").value = obj.responseText;
+  	}
+  
+  YAHOO.util.Connect.asyncRequest('GET', serverRoot+'/data/projects/$project.getId()/resources/notifications/files/archival.lst', {success : XNAT.app.notifsLoad, failure : function(){}, cache : false, scope : this});
+</script>
+</div>

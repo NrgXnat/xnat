@@ -1,0 +1,51 @@
+    
+    <!-- actions menu -->
+    <DIV id="actionsMenu" class="yuimenu">
+     <DIV class="bd">
+      <ul class="first-of-type">
+           	<li class="yuimenuitem">
+            <a class="yuimenuitemlabel">Actions</A>
+           </li>
+      </ul>
+      <ul>
+#if($data.getSession().getAttribute("user").canEdit("xnat:subjectData/project",$project.getId()))
+				           <li class="yuimenuitem"> 
+            <a class="yuimenuitemlabel" href="#insertbox">Add</a>
+            <DIV ID="insertbox" class="yuimenu">
+             <DIV class="bd">
+              <ul class="first-of-type">
+              #foreach($protocol in $project.getStudyprotocol())	
+          	     <li class="yuimenuitem">
+                <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_${protocol.getDatatypeSchemaElement().getSQLName()}.vm").addPathInfo('project',$project.getId())">$protocol.getDatatypeSchemaElement().getSingularDescription()</A>
+               </li>
+              #end
+              </ul>
+             </DIV>
+            </DIV>
+           </li>
+           <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','LaunchUploadApplet').addPathInfo('project',$project.getId())">Upload Images</A>
+           </li>
+           <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','prearchives').addPathInfo('project',$project.getId())">View Prearchive</A>
+           </li>
+#end
+      </ul>
+      <ul>
+	           <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","xml_file").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Download XML</A>
+           </li>
+           <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="$link.setAction("ProjectDownloadAction").addPathInfo('project',$project.getId())">Download Images</A>
+           </li>
+      </ul>
+     </DIV>
+    </DIV>
+<SCRIPT language="javascript">
+YAHOO.util.Event.onContentReady("actionsMenu", function () {
+    var actionsMenu = new YAHOO.widget.Menu("actionsMenu", { autosubmenudisplay: true,scrollincrement:5,position:"static",maxheight:130});
+    // Render the MenuBar instance
+    actionsMenu.getItem(0).cfg.setProperty("disabled",true);
+    actionsMenu.render();
+});
+</SCRIPT>

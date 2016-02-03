@@ -1,0 +1,37 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+
+## moved 'onload' script in <body> tag to a jQuery function
+<script type="text/javascript">
+    jq(window).load(function(){
+        jq('#username').focus();
+    });
+</script>
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+
+<!-- path: xnat-templates/layouts/Login -->
+
+##<body id="page_body" class="yui-skin-sam" ONLOAD="document.getElementById('username').focus();">
+<table id="login_container"  cellpadding="0" cellspacing="0">
+    <tr>
+        <td valign="top">
+            $navigation.setTemplate("/NoMenuTop.vm")
+        </td>
+    </tr>
+    <tr>
+        <td align="left" valign="top">
+            <div id="layout_content2" style="display:none;">Loading...</div>
+            <div id="layout_content">$screen_placeholder</div>
+        </td>
+    </tr>
+</table>
+
+<div style="padding-right:20px;">
+    $navigation.setTemplate("/powered_by.vm")
+</div>
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

@@ -1,0 +1,50 @@
+<form enctype="multipart/form-data" method="POST" ONSUBMIT="return validateForm();" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="${item.getXSIType()}.ID" VALUE="$om.getId()"/>
+<input type="hidden" name="${item.getXSIType()}.investigator.firstname" VALUE="$item.getProperty("investigator.firstname")"/>
+<input type="hidden" name="${item.getXSIType()}.investigator.lastname" VALUE="$item.getProperty("investigator.lastname")"/>
+<input type="hidden" name="${item.getXSIType()}.subject_ID" VALUE="$item.getProperty("subject_ID")"/>
+
+<input type="hidden" name="${item.getXSIType()}.validation.date" VALUE="$currentDate"/>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle" colspan="3">
+		   <DIV class="edit_title">Validation Form: $om.getId()</DIV>
+					</TD>
+				</TR>
+								<TR>
+					<TD align="left">User:					</TD>
+										<TD align="left">$data.getSession().getAttribute("user").getLastname(), $data.getSession().getAttribute("user").getFirstname()					</TD>
+				</TR>
+												<TR>
+					<TD align="left">Status					:</TD>
+										<TD align="left">
+		
+#foreach ($quality in $qualityLabels)
+<label>
+<input ID="value$velocityCount" type="radio"
+       name="${item.getXSIType()}.validation.status value="$quality"
+       #if ($!item.getProperty("validation.status")==$quality)CHECKED#end>
+&nbsp;$quality</label>
+#end
+															</TD>
+				</TR>
+												<TR>
+					<TD align="left">Notes:					</TD>
+										<TD align="left"><textarea cols="40" rows="3" name="${item.getXSIType()}.validation.notes">$!item.getProperty("validation.notes")</textarea>					</TD>
+				</TR>
+				</table>
+				#xdatEditProps($item "XDATScreen_validate.vm")
+<DIV ID="ADDIN"></DIV>
+    	<input type="button" ONCLICK="javascript:history.go(-1)" value="Back"/>&nbsp;&nbsp;&nbsp;
+    	<input type="submit" name="eventSubmit_doPerform" value="Submit"/>
+</form>
+<SCRIPT language="javascript">
+function validateForm(){
+  if (document.getElementById("value1").checked || document.getElementById("value2").checked){
+    return true;
+  }else{
+    xModalMessage('Validation Error', 'Please select a status.');
+    return false;
+  }
+}
+</SCRIPT>

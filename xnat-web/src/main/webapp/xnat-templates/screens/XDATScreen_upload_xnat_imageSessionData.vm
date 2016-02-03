@@ -1,0 +1,367 @@
+<script type="text/javascript">
+	   
+function proceed() {
+   window.location="$link.setPage("VerifyTaggedDataUpload.vm").addPathInfo("search_field","$search_field").addPathInfo("search_element","$search_element").addPathInfo("search_value","$search_value").addPathInfo("uploadID","$uploadID").addPathInfo("project","$!project")";
+}
+
+function disableForm(theform) {
+	  if (document.getElementById)
+	  {
+			    document.getElementById('progressBar').style.display = 'block';
+	  }
+	  else if (document.all)
+	  {
+			    document.all['progressBar'].style.display = 'block';
+			  }
+			  
+  if (document.all || document.getElementById) {
+    for (i = 0; i < theform.length; i++) {
+      var tempobj = theform.elements[i];
+      if (tempobj.type.toLowerCase() == "submit" || tempobj.type.toLowerCase() == "reset" || tempobj.type.toLowerCase() == "button")
+        tempobj.disabled = true;
+    }
+    return true;
+  }
+  else {
+    return true;
+  }
+}
+   
+function enableForm() {
+  var theform;
+	  if (document.getElementById)
+	  {
+			    theform= document.getElementById('uploadFORM');
+	  }
+	  else if (document.all)
+	  {
+			    theform= document.all['uploadFORM'];
+			  }
+
+	  if (document.all || document.getElementById) {
+    for (i = 0; i < theform.length; i++) {
+      var tempobj = theform.elements[i];
+      if (tempobj.type.toLowerCase() == "submit" || tempobj.type.toLowerCase() == "reset" || tempobj.type.toLowerCase() == "button")
+         tempobj.disabled = false;
+    }
+    return true;
+  }else {
+		    return true;
+  }
+}
+		</script>
+	<script type="text/javascript">
+var i;
+var req;
+
+var uploadCount = 0;
+var extractCount = 0;
+var progressBar;
+var progressPercent;
+var uploadID = "$uploadID";
+var started=0;
+var extractTimeOut=300;
+
+function setUploadProgress(i)
+{
+  if(i==0)
+  {
+    document.getElementById("uploadPercent").innerHTML="";	
+    document.getElementById("uploadBar").style.width=0 +"px";
+  }else{
+    if (i>100)
+    {
+      
+    }else{
+      var pixels = i * 3;
+      if (i>10){document.getElementById("uploadPercent").innerHTML=parseInt(i)+"%";}
+      else{document.getElementById('preparing').innerHTML="";}
+      document.getElementById("uploadBar").style.width=pixels+"px";
+      document.getElementById('preparing').innerHTML="Loading File...&nbsp";
+    }
+  }
+}
+
+function setExtractSummary(messages){
+    document.getElementById("extractSummary").innerHTML=messages;
+}
+
+function setExtractProgress(i)
+{
+  if(i==0)
+  {
+    document.getElementById("extractPercent").innerHTML="";	
+    document.getElementById("extractBar").style.width=0 +"px";
+  }else{
+    if (i>100)
+    {
+      
+    }else{
+      var pixels = i * 3;
+      if (i>10){document.getElementById("extractPercent").innerHTML=parseInt(i)+"%";}
+      document.getElementById("extractBar").style.width=pixels+"px";
+    }
+  }
+}
+
+var checkProgressFinal = 0;
+
+function prog(theform)
+{
+  if(document.getElementById("image_archive").value!="")
+  {
+   disableForm(theform);
+   document.getElementById("iframe").src="";
+   started=0;
+   checkProgressFinal = 0;
+   progressBar=document.getElementById("uploadBar");
+   progressPercent=document.getElementById("uploadPercent");
+  
+   document.getElementById('preparing').style.display = 'block';
+   document.getElementById('preparing').innerHTML="Loading File...&nbsp";
+   setUploadProgress(0);
+   setExtractProgress(0);
+   setExtractSummary("");
+   resetProgress();
+   checkProgress();
+  
+   return true;
+  }else{
+    return false;
+  }
+}
+function callback() {
+    if (req.readyState == 4) {
+        if (req.status == 200) {
+      			         started=1;
+            // handle response 
+            var xmlDoc = req.responseXML;
+            //logResponse(req.responseText);
+            var uploadI=0;
+            var extractI=0;
+            var statusText = "";
+            var statusCount = 0;
+            if (xmlDoc)
+            {
+               var statusRoot = xmlDoc.getElementsByTagName("uploadStatus")[0];
+               if (statusRoot)
+               {
+                  var rootAttributes = statusRoot.attributes;
+                  if (rootAttributes){
+                     uploadI=parseInt(rootAttributes.getNamedItem("upload").value);
+                     extractI=parseInt(rootAttributes.getNamedItem("extract").value);
+                  }
+                  
+                  statusCount = statusRoot.childNodes.length;
+                  
+                  if (statusRoot.childNodes.length > 0)
+                  {
+                    statusText= "<br><br><TABLE width='400' cellpadding='2' cellspacing='0'><TR><TH>Extraction / Review summary:</TH></TR>";
+                    for(var j=0;j<statusRoot.childNodes.length;j++)
+                    {
+                       var statusChild = statusRoot.childNodes[j];
+                       var childAttributes = statusChild.attributes;
+                       if (childAttributes)
+                       {
+                          var level = childAttributes.getNamedItem("level").value;
+                          var message = childAttributes.getNamedItem("message").value;
+                          if (level=="COMPLETED")
+                          {
+                             statusText = statusText + "<TR bgcolor='#CCFFCC'>";
+                          }else if (level=="PROCESSING")
+                          {
+                             statusText = statusText + "<TR bgcolor='#CCFFFF'>";
+                          }else if (level=="WARNING")
+                          {
+                             statusText = statusText + "<TR bgcolor='#FFCCC'>";
+                          }else if (level=="FAILED")
+                          {
+                             statusText = statusText + "<TR bgcolor='#FF99CC'>";
+                          }else{
+                             statusText = statusText + "<TR bgcolor='#CCCCCC'>";
+                          }
+                          statusText = statusText + "<TD>" + message + "</TD></TR>";
+                       }
+                    }
+                    statusText = statusText + "</TABLE><br><br>"; 
+                  }
+               }
+            }
+            
+            //alert("Upload(" + uploadI + "); Extract(" + extractI + ");\r\n" + statusText);  
+
+	            if (uploadI==-1)
+	            {
+	               document.getElementById('preparing').innerHTML="&nbsp;&nbsp;&nbsp;<font color=red><B>Error: Upload Failed.  Please retry at a later time or contact technical support.</B></font>";
+            	   document.getElementById('preparing').style.display = 'block';
+	            }else if(extractI==-1){
+	               document.getElementById('preparing').innerHTML="&nbsp;&nbsp;&nbsp;<font color=red><B>Error: Extraction/Review Failed.  Please verify the integrity of the zipped file and the contained image files.</B></font>";
+            	   document.getElementById('preparing').style.display = 'block';
+	            }else if(uploadI!=100){
+	               //upload complete
+	               
+	               if (uploadCount != 98)
+	               {
+	                  uploadCount = uploadCount + 1;
+	               }
+	               
+	               if (uploadCount>40){extractTimeOut=600;}
+      			         if (uploadCount>50){extractTimeOut=800;}
+      			         if (uploadCount>60){extractTimeOut=1000;}
+      			         if (uploadCount>70){extractTimeOut=2000;}
+      			         if (uploadCount>80){extractTimeOut=3000;}
+      			         if (uploadCount>85){extractTimeOut=6000;}
+      			         if (uploadCount>88){extractTimeOut=9000;}
+      			         
+      			            setUploadProgress(uploadCount);
+      			            setExtractProgress(0);
+      			            
+      			      	      setTimeout("checkProgress();", extractTimeOut); 
+	            }else if(extractI==100){
+	               //extract complete
+	               setUploadProgress(100);
+      			         setExtractProgress(100);
+      			         
+      			         setExtractSummary(statusText);
+      			         if (checkProgressFinal == 0)
+      			         {
+      			            checkProgressFinal = 1;
+      			            //check progress one final time to capture final step summary
+      			      	      setTimeout("checkProgress();", 200); 
+      			         }
+	            }else{
+	               //extract in progress
+	               setUploadProgress(100);
+	               
+	               if (extractCount != 98)
+	               {
+	                  extractCount = extractCount + 1;
+	               }
+	               if (extractCount<10){extractTimeOut=500;}
+	               if (extractCount>10){extractTimeOut=100;}
+	               if (extractCount>20){extractTimeOut=1500;}
+	               if (extractCount>30){extractTimeOut=2000;}
+      			         if (extractCount>50){extractTimeOut=2800;}
+      			         if (extractCount>60){extractTimeOut=3300;}
+      			         if (extractCount>70){extractTimeOut=4000;}
+      			         if (extractCount>80){extractTimeOut=5000;}
+      			         if (extractCount>85){extractTimeOut=6000;}
+      			         if (extractCount>88){extractTimeOut=9000;}
+      			         
+      			         setExtractProgress(extractCount);
+      			         
+      			         if (statusCount> 0)
+      			         {
+      			           setExtractSummary(statusText);
+      			         }
+      			      	   setTimeout("checkProgress();", extractTimeOut); 
+	            }
+        }
+    }
+}
+
+function resetProgress(){
+   var url = "$content.getURI("servlet/AjaxServlet")?remote-class=org.nrg.xnat.ajax.UploadProgress";
+   url = url + "&remote-method=start";
+   url = url + "&ID=" + uploadID;
+   if (window.XMLHttpRequest) {
+       req = new XMLHttpRequest();
+   } else if (window.ActiveXObject) {
+       req = new ActiveXObject("Microsoft.XMLHTTP");
+   }
+   req.open("GET", url, true);
+   req.send(null);
+}
+
+function checkProgress(){
+   var url = "$content.getURI("servlet/AjaxServlet")?remote-class=org.nrg.xnat.ajax.UploadProgress";
+   url = url + "&remote-method=monitor";
+   url = url + "&ID=" + uploadID;
+   if (window.XMLHttpRequest) {
+       req = new XMLHttpRequest();
+   } else if (window.ActiveXObject) {
+       req = new ActiveXObject("Microsoft.XMLHTTP");
+   }
+   req.open("GET", url, true);
+   req.onreadystatechange = callback;
+   req.send(null);
+}
+</script>
+<form ID="uploadFORM" class="noHide" target="iframe" enctype="multipart/form-data" method="POST" action="$link.setAction("ExptFileUpload")" onSubmit="return prog(this);">
+<INPUT TYPE="hidden" name="popup" value="$!popup"/>
+<INPUT TYPE="hidden" name="ID" value="$uploadID"/>
+<INPUT TYPE="hidden" name="threshhold" value="151516279"/>
+#xdatPassItemFormFields($search_element $search_field $search_value $project)
+<TABLE>
+	<TR>
+		<TD colspan="3" align="left"><font face="$ui.sansSerifFonts" size="4" style="line-height:18px;"><b>Upload Additional Files</b></font></TD>
+	</TR>
+	<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+		<TR>
+		<TD colspan="3" align="right">	
+		<TABLE WIDTH="300" BORDER=1 STYLE="	border-collapse: collapse;">
+			<TR>
+<TD valign="top" align="left">
+<B>Instructions:</B><BR>
+Image files should be zipped (.zip or .tar.gz) and uploaded using the form below.  
+</td>
+</tr>
+</table>
+</TD>
+	</TR>
+		<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+	<TR>
+		<TH align="left">Tags</TH><TD colspan="2"><input id="tags" type="text" name="tags" size="50"/> (Separate multiple tags by commas)</TD>
+	</TR>
+	<TR>
+		<TH align="left">File</TH><TD colspan="2"><input id="image_archive" type="file" name="image_archive" size="75"/></TD>
+	</TR>
+	<TR>
+		<TD colspan="3" align="right">&nbsp;</TD>
+	</TR>
+	<TR>
+		<TD colspan="3" align="right"><input type="submit" name="eventSubmit_doPerform" value="Upload"/></TD>
+	</TR>
+</TABLE>
+</form>
+<br>
+			<span ID="progressBar" style="position:relative; display:none;">
+<div id="ex" style="position:relative;width:468px;background:#eeeeee;border:3px double #000000;">
+<TABLE width=="100%"><TR><TD colspan=2 align="left">
+<div id="preparing">Loading File...&nbsp;</div></TD></TR>
+<TR><TD>
+   <div id="uploadLabel">Upload:&nbsp;</div></TD>
+   <TD align="center">
+   <div id="emptyUpload" style="background-color:#cccccc;border:1px solid black;height:22px;width:300px;padding:0px;" align="left">
+	      <div id="uploadBar" style="position:relative;top:0px;left:0px;background-color:#333333;height:22px;width:0px;padding-top:5px;padding:0px;">
+          <div id="uploadPercent" style="position:relative;top:0px;left:0px;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0px;padding-top:5px;">
+          </div>
+      </div>
+   </div></TD></TR>
+   <TR><TD>&nbsp;</TD></TR>
+<TR><TD><div id="extractLabel">Extract/Review:&nbsp;</div></TD>
+  <TD align="center">
+   <div id="emptyExtract" style="background-color:#cccccc;border:1px solid black;height:22px;width:300px;padding:0px;" align="left">
+	      <div id="extractBar" style="position:relative;top:0px;left:0px;background-color:#333333;height:22px;width:0px;padding-top:5px;padding:0px;">
+          <div id="extractPercent" style="position:relative;top:0px;left:0px;color:#f0ffff;height:22px;text-align:center;font:bold;padding:0px;padding-top:5px;">
+          </div>
+      </div>
+   </div></TD></TR>
+   </TABLE>
+</div>
+<div>
+  <div id="extractSummary"/>
+</div>
+</span>
+<IFRAME id="iframe" name="iframe" src="" width="468" height="80" frameborder="0">
+PROGRESS BAR DISABLED. <BR>Try using a more recent web browser.
+</IFRAME>
+	<script type="text/javascript">
+progressBar=document.getElementById("uploadBar");
+progressPercent=document.getElementById("uploadPercent");
+	</script>
+			

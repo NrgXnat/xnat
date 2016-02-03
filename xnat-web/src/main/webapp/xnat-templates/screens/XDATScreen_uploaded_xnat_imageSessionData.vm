@@ -1,0 +1,210 @@
+#set($target=$content.getURI("/REST/services/archive"))
+#set($allowDataDeletion="false")
+#set($isUpload="true")
+<script>
+XNAT.app.isUpload = true;
+</script>
+			#parse($turbineUtils.getTemplateName("edit",$om.getXSIType(),$project,"edit"))
+
+<!-- begin validation warnings dialog -->
+<style type="text/css">
+#val_warning_div{
+	margin-top:12px;
+    overflow:auto;
+}
+#val_warning_div .valWARN,#val_warning_div .valCONFLICT,#val_warning_div .valFAIL, #val_warning_div .header {
+  border-bottom:1px solid #888;
+  font:11px Arial, Helvetica, sans-serif;
+  margin-top:0;
+  margin-bottom:0;
+  padding: 4px;
+  overflow:auto;
+}
+#val_warning_div .header {
+	background-color: #ccc;
+	font-weight: bold;
+}
+dl.valWARN, item.valWARN {
+	display:block;
+}
+dl.valFAIL, item.valFAIL {
+	display:block;
+}
+dl.valCONFLICT, item.valCONFLICT {
+	display:block;
+}
+#val_warning_div dl dl 	{ margin:1px 0;	}
+#val_warning_div dl dt, #val_warning_div dl dd {
+	display:block;
+	float:left;
+	padding:4px 0;
+}
+#val_warning_div dd 	{ 	margin-left:20px; }
+dd.valCode 	{	width:80px; font-weight:bold; position:relative;	}
+dd.valMessage 	{	width:630px;	}
+</style>
+<div id="uploads_warnings">
+	<div id='val_warning_dialog' style='visibility:hidden'>
+		<div class='hd'>Upload warnings</div>
+		<div class='bd' style=''>
+			<div id='val_warning_desc'>Merging the uploaded data into the pre-existing session will override the following warnings:</div>
+			<div id='val_warning_div'>
+			</div>
+			<div style="text-align:right; width:100%; margin-top:3px;" id='val_warning_quest'>Are you sure you want to proceed?</div>
+		</div>
+	</div>
+</div>
+<script type="text/javascript" src="$content.getURI("scripts/imageSessionData/archive.js")"></script>
+<script>	
+	//validation CODES that are not allowed to be overidden
+	XNAT.app.archiveValidator.fail_merge_on=$siteConfig.getProperty("security.fail_merge_on","[]");
+	XNAT.app.archiveValidator.xsiType="$om.getXSIType()";
+	#if($src)
+		XNAT.app.archiveValidator.url="$!src";
+	#end
+	
+    var myForm=YUIDOM.get("form1");
+	
+	//this form validation will run upon form submit.  It will temporarily stop the submit to validate the archive.  If it validates, the form submit will be restarted and it will skip this step
+    var archiveValidator={form:myForm,validate:function(){
+		if(XNAT.app.archiveValidator.validated==undefined || XNAT.app.archiveValidator.validated==false){
+    		XNAT.app.archiveValidator.validate();
+    		return false;
+    	}else{
+			concealContent();
+    		return true;
+    	}
+    }};
+    
+	//add it to the form onsubmit validation
+	YAHOO.util.Event.onDOMReady(function(){
+        _addFormValidation(archiveValidator);
+    });
+	
+	//reset validation on form edits (in case the validation fails, and the user changes a value and retries)
+	YAHOO.util.Event.addListener("$om.getXSIType()/project","change", function(){XNAT.app.archiveValidator.validated=false;});
+	YAHOO.util.Event.addListener("$om.getXSIType()/subject_id","change", function(){XNAT.app.archiveValidator.validated=false;});
+	YAHOO.util.Event.addListener("$om.getXSIType()/label","change", function(){XNAT.app.archiveValidator.validated=false;});
+</script>
+
+#set($url=$src)
+<script>
+	$("div.scanActions").each(function(i1,scan1){
+		var scanId=$(scan1).attr("data-scan-id");
+		var _html='<div style="white-space:nowrap;">';
+		
+//		_html+='<div class="btn-group">';
+//		_html+='<a class="btn dropdown-toggle scanActionSelect" data-toggle="dropdown" href="#" data-scan-id="' + scanId + '">Action <span class="caret"></span></a>';
+//		_html+='<ul class="dropdown-menu">';
+//		 _html+='<li>Review File Details</li>';
+//		 _html+='<li>Download Files</li>';
+//		 _html+='<li>Review DICOM Tags</li>';
+//		_html+='</ul>';
+//		_html+='</div>';
+
+
+		var _html='<select id class="scanActionSelect" data-scan-id="' + scanId + '">';
+		 _html+='<option value="">Actions</option>';
+		 _html+='<option value="files">Review File Details</option>';
+		 _html+='<option value="download">Download Files</option>';
+		 _html+='<option value="dicom">Review DICOM Tags</option>';
+		 _html+='</select>';
+		 
+		 
+		_html+='&nbsp;&nbsp;&nbsp;<div id="scan' + scanId + 'Files" style="display:inline;"><a href="#" class="nolink" onclick="XNAT.app.fileCounter.load();return false;" style="text-decoration:underline">Show Counts</a></div>';
+		_html+='</div>';
+		$(scan1).html(_html);
+	});
+	
+	$("select.scanActionSelect").click(function(){
+		var action= $(this).val();
+		if(action=="files"){
+			XNAT.app.prearchiveActions.reviewFileDetails('$url', $(this).attr("data-scan-id"), 'DICOM');
+		}else if(action=="download"){
+			XNAT.app.prearchiveActions.downloadFiles('$url', $(this).attr("data-scan-id"));
+		}else if(action=="dicom"){
+			XNAT.app.prearchiveActions.reviewDicomTags('$url', $(this).attr("data-scan-id"));
+		}
+		
+		$(this).val("");
+	});
+</script>
+<!-- BEGIN CONTENT FOR POPUP DIALOGS -->
+<script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_actions.js")"></script>
+<script type="text/javascript" src="$content.getURI('scripts/prearchive/PrearchiveDetails_files.js')"></script>
+<script>
+//add variables for PrearchiveDetails_files.js
+ XNAT.app.fileCounter.url="$url";
+ #foreach($scan in $om.getScans_scan())
+ 	XNAT.app.fileCounter.scans.push("$scan.getId()");
+ #end
+
+</script>
+
+
+<!-- begin file list dialog -->
+<div id="files_dialog" style="visibility:hidden"> 
+    <div class="hd" id="filesDialog_header">Prearchived files</div> 
+    <div class="bd" style="overflow:auto">
+		<div id="filesDialog_content">
+			
+		</div>
+	</div> 
+</div> 
+
+
+<!-- begin header dialog -->
+<div id="header_dialog" style="visibility:hidden"> 
+    <div class="hd" id="headerDialog_header">DICOM Headers</div> 
+    <div class="bd" style="overflow:auto">
+		<div id="headerDialog_content">
+			
+		</div>
+	</div> 
+</div> 
+
+<script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_fileDialog.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveDetails_headerDialog.js")"></script>
+<script>
+
+    jq(document.body).on('click','a.nolink',function(e){
+        e.preventDefault();
+    });
+
+    XNAT.app.prearchiveActions.downloadAllFiles = function( url ){
+        window.location = serverRoot + '/REST' + url + '?format=zip';
+        return false;
+    }
+
+    XNAT.app.prearchiveActions.downloadFiles = function( url, scan_id ){
+        window.location = serverRoot + '/REST' + url + '/scans/' + scan_id + '?format=zip';
+        return false;
+    }
+
+    XNAT.app.prearchiveActions.reviewFileDetails = function( url, scan_id, label ){
+        var RESTurl = serverRoot +
+            '/data' + url + '/scans/' + scan_id + '/resources/' + label +
+            '/files?format=html&requested_screen=PrearchiveFileList.vm&popup=true&prettyPrint=true';
+        XNAT.app.fileDialog.loadScan(RESTurl, 'Scan ' + scan_id + ' files');
+    }
+
+    XNAT.app.prearchiveActions.reviewDicomTags = function( url, scan_id ){
+        var RESTurl = serverRoot +
+            '/data/services/dicomdump?src=' + url + '/scans/' + scan_id +
+            '&format=html&requested_screen=DicomScanTable.vm&popup=true';
+        XNAT.app.headerDialog.load(RESTurl, 'Scan ' + scan_id + ' DICOM');
+    }
+
+    XNAT.app.fileDialog.url='$url';
+    XNAT.app.headerDialog.url='$url';
+
+    //automatically show file counts
+    XNAT.app.fileCounter.load();
+
+    XNAT.app.prearchiveActions.url="$url";
+    XNAT.app.prearchiveActions.timestamp="$timestamp";
+    XNAT.app.prearchiveActions.folder="$folder";
+    XNAT.app.prearchiveActions.loadLogs();
+
+</script>
+<script type="text/javascript" src="$content.getURI('/scripts/popupCentered.js')"></script>

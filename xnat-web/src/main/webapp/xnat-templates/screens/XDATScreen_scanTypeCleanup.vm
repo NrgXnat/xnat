@@ -1,0 +1,75 @@
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+$page.setTitle("Scan Type Cleanup")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ( $subjectHeadings = ["ID","Labels", "Date" ] )
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.getParameters().getString("popup"))
+    #set ($popup = $data.getParameters().getString("popup") )
+#else
+    #set ($popup = "false")
+#end
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyScanTypes")">
+
+    <table width="100%">
+        <TR>
+            <TD align="left" valign="middle">
+                <DIV class="edit_title">Scan Type Cleanup
+                    #if($om.getProperty("id"))
+                        for $om.getProperty("id")
+                    #end</DIV>
+            </TD>
+        </TR>
+    </TABLE>
+    <br>
+    <table cellPadding="0" cellSpacing="0" width="80%" >
+        <tr style="border-style:none;">
+            <th class="underscore" style="border-top-style:none; border-right-style:none; border-bottom-style:solid; border-left-style:none;" align=left>Change</th>
+            <th class="underscore" style="border-top-style:none; border-right-style:none; border-bottom-style:solid; border-left-style:none;" align=left>Series Desc</th>
+            <th class="underscore" style="border-top-style:none; border-right-style:none; border-bottom-style:solid; border-left-style:none;" align=left>Frames</th>
+            <th class="underscore" style="border-top-style:none; border-right-style:none; border-bottom-style:solid; border-left-style:none;" align=left>Image Type</th>
+            <th class="underscore" style="border-top-style:none; border-right-style:none; border-bottom-style:solid; border-left-style:none;" align=left>Scan Type</th>
+        </tr>
+
+
+        #set( $numRows = $queryResults.getNumRows() - 1)
+        #set( $proj = $om.getProperty("id"))
+        #xdatHiddenBox("numRows" $item "$numRows")
+        #xdatHiddenBox("project" $item "$proj")
+        #if($numRows>0)
+            #foreach($rowIndex in [0.. $numRows])
+                #set($row = $queryResults.nextRow())
+                #set($desc = $turbineUtils.escapeHTML($queryResults.getCellValue("series_description")))
+                #set($fr = $queryResults.getCellValue("frames"))
+                #set($imty = "") ## not all scan types have image type
+                #set($imty = $!queryResults.getCellValue("parameters_imagetype"))
+                #set($ty = $queryResults.getCellValue("type"))
+                <tr valign=top border=0>
+                    <td border=0 align=left NOWRAP>
+                        <input type="checkbox" id="change_${rowIndex}" name="change_${rowIndex}" value="doChange" />
+                    </td>
+                    <td border=0 align=left NOWRAP>
+                        $!turbineUtils.escapeHTML($queryResults.getCellValue("series_description"))
+                        #xdatHiddenBox("series_description_$rowIndex" $item "$!desc")
+                    </td>
+                    <td border=0 align=left NOWRAP>
+                        $!queryResults.getCellValue("frames")
+                        #xdatHiddenBox("frames_$rowIndex" $item "$!fr")
+                    </td>
+                    <td border=0 align=left NOWRAP>
+                        $!queryResults.getCellValue("parameters_imagetype")
+                        #xdatHiddenBox("parameters_imagetype_$rowIndex" $item "$!imty")
+                    </td>
+                    <td border=0 align=left NOWRAP>
+                        <input id="type_${rowIndex}" type="text" name="type_${rowIndex}" value="$!ty" onchange="$('#change_${rowIndex}').attr('checked','checked');"/>
+                    </td>
+                </tr>
+            #end
+        #end
+        <tr>
+            <td><input type="submit" name="eventSubmit_doInsert" value="Submit"/></td>
+        </tr>
+    </table>
+</form>

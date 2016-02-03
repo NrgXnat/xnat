@@ -1,0 +1,29 @@
+<!-- BEGIN xnat:qcScanData -->
+<tr>
+	<td>Scan ID</td>
+	<td>#xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter]/imageScan_ID" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Coverage</td>
+	<td>#xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter]/coverage" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Motion</td>
+	<td>#xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter]/motion" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Other Image Artifacts</td>
+	<td>#xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter]/otherImageArtifacts" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Comments</td>
+	<td>#xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter]/comments" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>Pass</td>
+	<td>
+		#xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter]/pass" $item "" $vr)
+		#xdatHiddenBox("xnat:qcManualAssessorData/scans/scan[$scan_counter]/xnat_qcScanData_id" $item "")
+	</td>
+</tr>
+<!-- END xnat:qcScanData -->

@@ -1,0 +1,109 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+
+$page.setTitle("XDAT")
+
+$page.setLinkColor($ui.alink)
+
+$page.setVlinkColor($ui.vlink)
+
+<script type="text/javascript">
+
+var server= "$content.getURI("images")/";
+
+</script>
+
+<form id="durationForm" method="GET" action="$link.setPage("AdminSummary.vm").addPathInfo("popup","true")">
+##<form id="durationForm" method="GET" action="$link.setPage("AdminSummary.vm")">
+From:
+<select name="duration1">
+  <option value="10 year" #if($duration1=="10 year") SELECTED #end>10 years ago</option>
+  <option value="1 year" #if($duration1=="1 year") SELECTED #end>1 year ago</option>
+  <option value="1 month" #if($duration1=="1 month") SELECTED #end>1 month ago</option>
+  <option value="1 week" #if($duration1=="1 week") SELECTED #end>1 week ago</option>
+  <option value="1 day" #if($duration1=="1 day") SELECTED #end>1 day ago</option>
+  <option value="1 hour" #if($duration1=="1 hour") SELECTED #end>1 hour ago</option>
+</select> to 
+<select name="duration2">
+  <option value="1 year" #if($duration2=="1 year") SELECTED #end>1 year ago</option>
+  <option value="1 month" #if($duration2=="1 month") SELECTED #end>1 month ago</option>
+  <option value="1 week" #if($duration2=="1 week") SELECTED #end>1 week ago</option>
+  <option value="1 day" #if($duration2=="1 day") SELECTED #end>1 day ago</option>
+  <option value="1 hour" #if($duration2=="1 hour") SELECTED #end>1 hour ago</option>
+  <option value="1 second" #if($duration2=="1 second") SELECTED #end>NOW</option>
+</select>
+ &nbsp; <input type="submit" value="Update">
+</form>
+
+
+<script type="text/javascript" src="$content.getURI("scripts/sortable_us.js")"></script>
+
+
+<div id="new_projects" class="section">
+    <h3>New $displayManager.getPluralDisplayNameForProject()</h3>
+    $qm.execute("select meta.insert_date as ""Date Created"", textcat(textcat(use.firstname, ' '),use.lastname) as ""Creator"", invest.lastname as ""Investigator"", proj.id as ""ID"", proj.name as ""Name"", proj.secondary_id as ""Secondary ID"", proj.description as ""Description"", proj.keywords as ""Keywords"" from xnat_projectdata_meta_data meta join xnat_projectdata proj on proj.projectdata_info = meta.meta_data_id left join xnat_investigatordata invest on proj.pi_xnat_investigatordata_id = invest.xnat_investigatordata_id left join xdat_user use on meta.insert_user_xdat_user_id = use.xdat_user_id where meta.insert_date > (NOW()-interval '$duration1') AND meta.insert_date < (NOW()-interval '$duration2')")
+</div>
+
+
+<div id="new_invs" class="section">
+    <h3>New Investigators</h3>
+    $qm.execute("select meta.insert_date as ""Date"", textcat(textcat(firstname,' '),lastname) as ""Name"", invest.institution as ""Institution"", invest.email as ""Email"" from xnat_investigatordata_meta_data meta join xnat_investigatordata invest on invest.investigatordata_info = meta.meta_data_id where meta.insert_date > (NOW()-interval '$duration1') AND meta.insert_date < (NOW()-interval '$duration2')")
+</div>
+
+
+<div id="new_pipe" class="section">
+    <h3>Pipelines</h3>
+    $qm.execute("SELECT CASE xs_lastposition('/'::text, pipeline_name)      WHEN 0 THEN pipeline_name::text                ELSE substring(substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1), 1, xs_lastposition('.'::text, substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1)) - 1)            END AS ""Pipeline"",status, COUNT(*) FROM wrk_workflowData WHERE launch_time > (NOW()-interval '$duration1') AND launch_time < (NOW()-interval '$duration2') AND pipeline_name NOT LIKE 'New%' GROUP BY status,CASE xs_lastposition('/'::text, pipeline_name)                WHEN 0 THEN pipeline_name::text                ELSE substring(substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1), 1, xs_lastposition('.'::text, substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1)) - 1)            END       ORDER BY CASE xs_lastposition('/'::text, pipeline_name)                WHEN 0 THEN pipeline_name::text                ELSE substring(substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1), 1, xs_lastposition('.'::text, substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1)) - 1)            END,status")
+</div>
+
+
+<div id="new_expts" class="section">
+    <h3>New Experiments</h3>
+    $qm.execute("SELECT project,element_name,COUNT AS new_expts,archiver,access_count AS project_access_count FROM (SELECT project,element_name,SUM(INV_COUNT) AS count, TRIM(', ' FROM xs_a_concat(archiver||', ')) AS archiver  FROM (	SELECT project,element_name,COUNT(*) AS INV_COUNT, login || ' (' || COUNT(*) ||')' AS archiver 	FROM xnat_experimentdata expt 	LEFT JOIN xdat_meta_element me ON expt.extension=me.xdat_meta_element_id 	LEFT JOIN xnat_experimentData_meta_data meta ON expt.experimentData_info=meta.meta_data_id 	left join xdat_user use on meta.insert_user_xdat_user_id = use.xdat_user_id  	where meta.insert_date > (NOW()-interval '$duration1') AND meta.insert_date < (NOW()-interval '$duration2') 	GROUP BY project,element_name,login ORDER BY project,element_name )subq GROUP BY project, element_name ) parentq LEFT JOIN(   SELECT search_value, COUNT(*) AS ACCESS_COUNT FROM xdat_search.xs_item_access where accessed > (NOW()-interval '$duration1') AND accessed < (NOW()-interval '$duration2') GROUP BY search_value )reads ON parentq.project=reads.search_value")
+</div>
+
+
+<div id="new_us" class="section">
+    <h3>New Users</h3>
+    $qm.execute("SELECT login,firstname,lastname,email,verified,enabled ,projects FROM xdat_user u  LEFT JOIN xdat_user_meta_data meta ON u.user_info=meta.meta_data_id  LEFT JOIN (  SELECT groups_groupid_xdat_user_xdat_user_id, TRIM(', ' FROM xs_a_concat(tag || ' (' || displayname ||')' || ', '))AS projects  FROM xdat_user_groupid map LEFT JOIN xdat_userGroup ug ON map.groupid=ug.id GROUP BY groups_groupid_xdat_user_xdat_user_id ) projects ON u.xdat_user_id=projects.groups_groupid_xdat_user_xdat_user_id WHERE meta.insert_date > (NOW()-interval '$duration1') AND meta.insert_date < (NOW()-interval '$duration2')")
+</div>
+
+
+<div id="act_us" class="section">
+    <h3>Active Users</h3>
+    $qm.execute("SELECT login,firstname,lastname,email,COUNT(*) AS ""Logins"" FROM xdat_user_login xul LEFT JOIN xdat_user xu ON xul.user_xdat_user_id=xu.xdat_user_id WHERE login_date > (NOW()-interval '${duration1}') AND login_date < (NOW()-interval '$duration2') GROUP BY login,firstname,lastname,email ORDER BY COUNT(*) DESC  ")
+</div>
+
+
+    <script type="text/javascript">
+
+        jq('div.section').each(function(){
+
+            var div = this,
+                __div = jq(div),
+                __table = __div.find('> table'),
+                table = __table[0],
+                table_id = div.id + '_TABLE';
+
+            div.style.marginTop = '20px';
+//            __div.css('margin-top','20px');
+//            __div.find('> h3').css('margin-bottom','10px');
+
+            // remove the table if there are no records
+            if (__table.find('> tbody > tr').length === 0){
+                __table.remove()
+                __div.append('<p style="margin-top:10px;">(none)<p>');
+                return;
+            }
+
+//            jq(table).removeAttr('width');
+
+            table.id = table_id;
+            table.className = 'sortable xnat-table alt1'
+            table.width = '100%';
+            table.style.marginTop = '10px';
+
+            ts_makeSortable(table);
+
+        });
+
+    </script>

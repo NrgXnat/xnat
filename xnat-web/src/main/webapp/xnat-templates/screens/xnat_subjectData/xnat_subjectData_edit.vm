@@ -1,0 +1,110 @@
+<!-- BEGIN /screens/xnat_subjectData/xnat_subjectData_edit.vm -->
+<h2>$!page_title</h2>
+#if ($data.message)
+    <div class="alert">$data.message</div>
+#end
+
+#if($vr)
+    <div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+#end
+
+#if ((! $matches.equals(null)) && ($matches.size() > 0))
+    <p>Matching $displayManager.getPluralDisplayNameForSubject().toLowerCase() found for specified identifier.</p>
+    <table align="left" cellspacing="0" cellpadding="5" width=300 border=0>
+        <tr>
+            #foreach ($heading in $subjectHeadings)
+                #headerCell($heading 2)
+            #end
+        </tr>
+        #foreach ($participant in $matches)
+            <tr>
+                #set($part_id = $participant.getProperty("xnat:subjectData/ID"))
+                #if($destination)
+
+                #else
+                    #set($destination="XDATScreen_report_xnat_subjectData.vm")
+                #end
+                <td>
+                    <a class="b" href="$link.setPage($destination).addPathInfo("search_element","xnat:subjectData").addPathInfo("search_field","xnat:subjectData.ID").addPathInfo("search_value",$part_id).addPathInfo("popup","true")">$part_id</a>
+                </td>
+                #set ($createTime = $participant.getItem().getInsertDate())
+                #set ($year = 1900 + $createTime.Year)
+                <td valign="left" nowrap>$!participant.getIdentifiers()</td>
+                #if($createTime)
+                    <td valign="left" nowrap>$!createTime.Month/$!createTime.Date/$!year</td>
+                #else
+                    <td valign="left" nowrap>--</td>
+                #end
+            </tr>
+        #end
+    </table>
+    <hr size=1 style="color:#ccc;">
+#end
+
+
+
+#xdatHiddenBox("xnat:subjectData/metadata/xnat_abstractsubjectmetadata_id" $item "")
+#xdatHiddenBox("xnat:subjectData/demographics/xnat_abstractdemographicdata_id" $item "")
+
+#if($subject.getId())
+    <input type="hidden" name="xnat:subjectData/ID" value="$!subject.getId()"/>
+    <p><label for="xnat:subjectData/ID">Accession Number:</label> $!subject.getId()</p>
+#end
+<hr size=1 style="color:#ccc; margin: 1em 0">
+
+<div>
+    <!-- LoadProjectsJS -->
+    #parse("/screens/LoadProjectsJS.vm")
+    #set($displayGroup=true)
+</div>
+
+<div>
+    <!-- xnat_subjectData_ProjectSelector -->
+    #parse("screens/xnat_subjectData/xnat_subjectData_ProjectSelector.vm")
+</div>
+
+<hr size=1 style="color:#ccc; margin: 1em 0">
+
+<div>
+    <!-- xnat_subjectData_edit_keyFields -->
+    #parse("/screens/xnat_subjectData/xnat_subjectData_edit_keyFields.vm")
+</div>
+
+<div>
+    <!-- EditProjectSpecificFields -->
+    #parse("/screens/EditProjectSpecificFields.vm")
+</div>
+
+#if($subject.getId())
+    <table>
+        #auditBoxes("2" "" "" "Modified Subject")
+    </table>
+#else
+    <table>
+        #auditBoxes("2" "" "Standard creation." "Created Subject")
+    </table>
+    #hideFormJustification()
+#end
+
+<input type="hidden" name="source" value="$!source">
+<input type="hidden" name="destination" value="$!{destination}">
+<input type="hidden" name="tag" value="$!{tag}">
+<input type="hidden" name="project" value="$!{project}">
+#xdatEditProps($item $edit_screen)
+
+<p><input type="submit" name="eventSubmit_doInsert" id="eventSubmit_doInsert" value="Submit"/></p>
+
+
+
+
+##<script type="text/javascript">
+##    function validateEditForm() {
+##        if (validateKeyFields()) {
+##            return true;
+##        }
+##        else {
+##            return false;
+##        }
+##    }
+##</script>
+<!-- END /screens/xnat_subjectData/xnat_subjectData_edit.vm -->

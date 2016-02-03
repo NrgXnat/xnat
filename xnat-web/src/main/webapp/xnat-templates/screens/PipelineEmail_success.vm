@@ -1,0 +1,9 @@
+#if ("$!assessorId"=="")
+#set ($link="$server/data/experiments/$expt.getId()?format=html")
+#else
+#set ($link="$server/data/experiments/$expt.getId()/assessors/${assessorId}?format=html")
+#end
+<p>Dear $user.getFirstname() $user.getLastname(),<br/>
+    $pipelineName has completed without errors for $expt.getLabel().<br/>
+    Details are available at <a href="$link">the $system.</a> </p>
+<p>$system Team</p>

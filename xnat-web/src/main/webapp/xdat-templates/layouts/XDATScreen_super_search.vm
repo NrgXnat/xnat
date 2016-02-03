@@ -1,0 +1,33 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+## keeping <body> tag here for reference
+##<body onload="selectDefault('xnat:mrSessionData');">
+<script type="text/javascript">
+    jq(window).load(selectDefault('xnat:mrSessionData'));
+</script>
+
+<!-- path: xdat-templates/layouts/XDATScreen_super_search -->
+
+<table id="wrapper_table" height="100%" border="0" valign="top">
+<tr>
+    <td colspan="2">
+      $navigation.setTemplate("/DefaultTop.vm")
+    </td>
+  </tr>
+</table>
+<table width="100%" border=0>
+  <tr>
+    <td align="left" valign="top">
+      $navigation.setTemplate("/Breadcrumb.vm")
+      <div id="layout_content2" style="display:none;">Loading...</DIV>
+      <div id="layout_content">$screen_placeholder</DIV>
+    </td>
+  </tr>
+</table>
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

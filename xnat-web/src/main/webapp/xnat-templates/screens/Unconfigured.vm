@@ -1,0 +1,4 @@
+$page.setTitle("Site Not Yet Ready")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+<DIV class="error">This site is not yet ready. Please check back once an administrator has finished configuring it.</DIV><br>

@@ -1,0 +1,198 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#macro(dateEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatDateBox($field $item $vr $years)</td>
+</tr>
+#end
+
+#macro(textEditRow $name $field)
+<tr>
+	<td>$name</td>
+	<td>#xdatTextBox($field $item "" $vr)</td>
+</tr>
+#end
+
+#macro(boolRadioEditRow $name $field $isTrue)
+<tr>
+	<td>$name</td>
+	<td>#xdatBooleanRadio($field $item $isTrue $vr)</td>
+</tr>
+#end
+
+#macro(tableHeaderNCols $header $subheads)
+<tr>
+	<th>$header</th>
+	#foreach($subhead in $subheads)
+	<th>$subhead</th>
+	#end
+</tr>
+#end
+
+#macro(textEditNColRow $name $fields)
+<tr>
+	<td>$name</td>
+	#foreach($field in $fields)
+		<td>#if("" != $field)#xdatTextBox($field $item "" $vr)#end</td>
+	#end
+#end
+
+
+<style type="text/css">
+table.session_info_edit tr td {
+	align: left;
+}
+</style>
+
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+#set($years = [ $!turbineUtils.getYear()..1990])
+
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifySubjectAssessorData")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+
+<br>
+<div class="edit_title">SCID Info</div>
+#parse("/screens/xnat_edit_subjectAssessorData.vm")
+<div class="edit_header1">$displayManager.getSingularDisplayNameForImageSession() Info</div><br>
+
+
+<table class="session_info_edit">
+	#dateEditRow("Date" "xnat_a:scidResearchData/date")
+	#textEditRow("Time" "xnat_a:scidResearchData/time")
+	#textEditRow("Visit ID" "xnat_a:scidResearchData/visit_id")
+	#textEditRow("Administrator" "xnat_a:scidResearchData/administrator")
+	#textEditRow("${displayManager.getSingularDisplayNameForSubject()} Age" "xnat_a:scidResearchData/age")
+	<tr><td colspan=2>#parse("/screens/EditProjectSpecificFields.vm")</td></tr>
+</table>
+
+<br>
+<div class="edit_header1">SCID Results</div>
+<br>
+
+<table class="session_info_edit">
+	#tableHeaderNCols("Mood Episodes" ["Current", "Past"])
+	#textEditNColRow("Major Depressive Episode" ["xnat_a:scidResearchData/moodEpisodes/currentMajorDepressiveEpisode", "xnat_a:scidResearchData/moodEpisodes/pastMajorDepressiveEpisode"])
+	#textEditNColRow("Manic Episode" ["xnat_a:scidResearchData/moodEpisodes/currentManicEpisode", "xnat_a:scidResearchData/moodEpisodes/pastManicEpisode"])
+	#textEditNColRow("Hypomanic Episode" ["xnat_a:scidResearchData/moodEpisodes/currentHypomanicEpisode", "xnat_a:scidResearchData/moodEpisodes/pastHypomanicEpisode"])
+	#textEditNColRow("Dysthmic Episode" ["xnat_a:scidResearchData/moodEpisodes/currentDysthmicEpisode", ""])
+	#textEditNColRow("Mood Disorder Due to Medical Condition" ["xnat_a:scidResearchData/moodEpisodes/currentMoodDisorderDueToMedicalCondition", "xnat_a:scidResearchData/moodEpisodes/pastMoodDisorderDueToMedicalCondition"])
+	#textEditNColRow("Substance-Induced Mood Disorder" ["xnat_a:scidResearchData/moodEpisodes/currentSubstanceInducedMoodDisorder", "xnat_a:scidResearchData/moodEpisodes/pastSubstanceInducedMoodDisorder"])
+
+	#tableHeaderNCols("Psychotic Symptoms" ["Current", "Past"])
+	#textEditNColRow("Delusions" ["xnat_a:scidResearchData/psychoticSymptoms/currentDelusions", "xnat_a:scidResearchData/psychoticSymptoms/pastDelusions"])
+	#textEditNColRow("Hallucinations" ["xnat_a:scidResearchData/psychoticSymptoms/currentHallucinations", "xnat_a:scidResearchData/psychoticSymptoms/pastHallucinations"])
+	#textEditNColRow("Disorganized Speech/Behavior" ["xnat_a:scidResearchData/psychoticSymptoms/currentDisorganizedSpeechBehavior", "xnat_a:scidResearchData/psychoticSymptoms/pastDisorganizedSpeechBehavior"])
+	#textEditNColRow("Catatonic Behavior" ["xnat_a:scidResearchData/psychoticSymptoms/currentCatatonicBehavior", "xnat_a:scidResearchData/psychoticSymptoms/pastCatatonicBehavior"])
+	#textEditNColRow("Negative Symptoms" ["xnat_a:scidResearchData/psychoticSymptoms/currentNegativeSymptoms", "xnat_a:scidResearchData/psychoticSymptoms/pastNegativeSymptoms"])
+	
+	#tableHeaderNCols("Psychotic Disorders" ["Current", "Past"])
+	#textEditNColRow("Schizophrenia" ["xnat_a:scidResearchData/psychoticDisorders/currentSchizophrenia", "xnat_a:scidResearchData/psychoticDisorders/pastSchizophrenia"])
+	#textEditNColRow("Paranoid Type" ["xnat_a:scidResearchData/psychoticDisorders/currentParanoidType", "xnat_a:scidResearchData/psychoticDisorders/pastParanoidType"])
+	#textEditNColRow("Catatonic Type" ["xnat_a:scidResearchData/psychoticDisorders/currentCatatonicType", "xnat_a:scidResearchData/psychoticDisorders/pastCatatonicType"])
+	#textEditNColRow("Disorganized Type" ["xnat_a:scidResearchData/psychoticDisorders/currentDisorganizedType", "xnat_a:scidResearchData/psychoticDisorders/pastDisorganizedType"])
+	#textEditNColRow("Undifferentiated Type" ["xnat_a:scidResearchData/psychoticDisorders/currentUndifferentiatedType", "xnat_a:scidResearchData/psychoticDisorders/pastUndifferentiatedType"])
+	#textEditNColRow("Residual Type" ["xnat_a:scidResearchData/psychoticDisorders/currentResidualType", "xnat_a:scidResearchData/psychoticDisorders/pastResidualType"])
+	#textEditNColRow("Schizophreniform Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentSchizophreniformDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastSchizophreniformDisorder"])
+	#textEditNColRow("Schizoaffective Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentSchizoaffectiveDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastSchizoaffectiveDisorder"])
+	#textEditNColRow("Delusional Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentDelusionalDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastDelusionalDisorder"])
+	#textEditNColRow("Brief Psychotic Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentBriefPsychoticDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastBriefPsychoticDisorder"])
+	#textEditNColRow("Psychotic Disorder due to a General Medical Condition" ["xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderDueToMedicalCondition", "xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderDueToMedicalCondition"])
+	#textEditNColRow("Substance-Induced Psychotic Disorder" ["xnat_a:scidResearchData/psychoticDisorders/currentSubstanceInducedPsychoticDisorder", "xnat_a:scidResearchData/psychoticDisorders/pastSubstanceInducedPsychoticDisorder"])
+	#textEditNColRow("Psychotic Disorder Not Otherwise Specified" ["xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderNOS", "xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderNOS"])
+	
+	#tableHeaderNCols("Mood Disorders" ["Current", "Past"])
+	#textEditNColRow("Bipolar I Disorder" ["xnat_a:scidResearchData/moodDisorders/currentBipolar1Disorder", "xnat_a:scidResearchData/moodDisorders/pastBipolar1Disorder"])
+	#textEditNColRow("Bipolar II Disorder" ["xnat_a:scidResearchData/moodDisorders/currentBipolar2Disorder", "xnat_a:scidResearchData/moodDisorders/pastBipolar2Disorder"])
+	#textEditNColRow("Other Bipolar Disorders" ["xnat_a:scidResearchData/moodDisorders/currentOtherBipolarDisorder", "xnat_a:scidResearchData/moodDisorders/pastOtherBipolarDisorder"])
+	#textEditNColRow("Major Depressive Disorder" ["xnat_a:scidResearchData/moodDisorders/currentMajorDepressiveDisorder", "xnat_a:scidResearchData/moodDisorders/pastMajorDepressiveDisorder"])
+	#textEditNColRow("Depressive Disorder Not Otherwise Specified" ["xnat_a:scidResearchData/moodDisorders/currentDepressiveDisorderNOS", "xnat_a:scidResearchData/moodDisorders/pastDepressiveDisorderNOS"])
+
+	#tableHeaderNCols("Substance Use Disorders" ["Current", "Past"])
+	#textEditNColRow("Alcohol Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholDependence"])
+	#textEditNColRow("Alcohol Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholAbuse"])
+	#textEditNColRow("Amphetamine Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineDependence"])
+	#textEditNColRow("Amphetamine Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineAbuse"])
+	#textEditNColRow("Cannabis Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentCannabisDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastCannabisDependence"])
+	#textEditNColRow("Cannabis Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentCannabisAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastCannabisAbuse"])
+	#textEditNColRow("Cocaine Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentCocaineDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastCocaineDependence"])
+	#textEditNColRow("Cocaine Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentCocaineAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastCocaineAbuse"])
+	#textEditNColRow("Hallucinogen Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenDependence"])
+	#textEditNColRow("Hallucinogen Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenAbuse"])
+	#textEditNColRow("Opioid Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentOpioidDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastOpioidDependence"])
+	#textEditNColRow("Opioid Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentOpioidAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastOpioidAbuse"])
+	#textEditNColRow("Phencyclidine Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineDependence"])
+	#textEditNColRow("Phencyclidine Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineAbuse"])
+	#textEditNColRow("Sedative/Hypnotic/Anxiolytic Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticDependence"])
+	#textEditNColRow("Sedative/Hypnotic/Anxiolytic Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticAbuse"])
+	#textEditNColRow("Polysubstance Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentPolysubstanceDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastPolysubstanceDependence"])
+	#textEditNColRow("Other or Unknown Substance Dependence" ["xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownDependence", "xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownDependence"])
+	#textEditNColRow("Other or Unknown Substance Abuse" ["xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownAbuse", "xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownAbuse"])
+
+	#tableHeaderNCols("Anxiety Disorders" ["Current", "Past"])
+	#textEditNColRow("Panic Disorder with Agoraphobia" ["xnat_a:scidResearchData/anxietyDisorders/currentPanicWithAgoraphobia", "xnat_a:scidResearchData/anxietyDisorders/pastPanicWithAgoraphobia"])
+	#textEditNColRow("Panic Disorder without Agoraphobia" ["xnat_a:scidResearchData/anxietyDisorders/currentPanicWithoutAgoraphobia", "xnat_a:scidResearchData/anxietyDisorders/pastPanicWithoutAgoraphobia"])
+	#textEditNColRow("Agoraphobia without History of Panic Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentAgoraphobiaWithoutPanicHx", "xnat_a:scidResearchData/anxietyDisorders/pastAgoraphobiaWithoutPanicHx"])
+	#textEditNColRow("Social Phobia" ["xnat_a:scidResearchData/anxietyDisorders/currentSocialPhobia", "xnat_a:scidResearchData/anxietyDisorders/pastSocialPhobia"])
+	#textEditNColRow("Specific Phobia" ["xnat_a:scidResearchData/anxietyDisorders/currentSpecificPhobia", "xnat_a:scidResearchData/anxietyDisorders/pastSpecificPhobia"])
+	#textEditNColRow("Obsessive-Compulsive Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentOCD", "xnat_a:scidResearchData/anxietyDisorders/pastOCD"])
+	#textEditNColRow("Posttraumatic Stress Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentPTSD", "xnat_a:scidResearchData/anxietyDisorders/pastPTSD"])
+	#textEditNColRow("Generalized Anxiety Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentGeneralizedAnxietyDisorder", ""])
+	#textEditNColRow("Anxiety Disorder Due to a General Medical Condition" ["xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDueToMedicalCondition", "xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDueToMedicalCondition"])
+	#textEditNColRow("Substance-Induced Anxiety Disorder" ["xnat_a:scidResearchData/anxietyDisorders/currentSubstanceInducedAnxietyDisorder", "xnat_a:scidResearchData/anxietyDisorders/pastSubstanceInducedAnxietyDisorder"])
+	#textEditNColRow("Anxiety Disorder Not Otherwise Specified" ["xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDisorderNOS", "xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDisorderNOS"])
+
+	#tableHeaderNCols("Somatoform Disorders" ["Current"])
+	#textEditNColRow("Somatization Disorder" ["xnat_a:scidResearchData/somatoformDisorders/somatizationDisorder"])
+	#textEditNColRow("Undifferentiated Somatform Disorder" ["xnat_a:scidResearchData/somatoformDisorders/undifferentiatedSomatformDisorder"])
+	#textEditNColRow("Pain Disorder" ["xnat_a:scidResearchData/somatoformDisorders/painDisorder"])
+	#textEditNColRow("Hypochondriasis" ["xnat_a:scidResearchData/somatoformDisorders/hypochondriasis"])
+	#textEditNColRow("Body Dysmorphic Disorder" ["xnat_a:scidResearchData/somatoformDisorders/bodyDysmorphicDisorder"])
+
+	#tableHeaderNCols("Eating Disorders" ["Current", "Past"])
+	#textEditNColRow("Anorexia Nervosa" ["xnat_a:scidResearchData/eatingDisorders/currentAnorexiaNervosa", "xnat_a:scidResearchData/eatingDisorders/pastAnorexiaNervosa"])
+	#textEditNColRow("Bulimia Nervosa" ["xnat_a:scidResearchData/eatingDisorders/currentBulimiaNervosa", "xnat_a:scidResearchData/eatingDisorders/pastBulimiaNervosa"])
+	#textEditNColRow("Binge Eating Disorder" ["xnat_a:scidResearchData/eatingDisorders/currentBingeEatingDisorder", "xnat_a:scidResearchData/eatingDisorders/pastBingeEatingDisorder"])
+
+	#tableHeaderNCols("Adjustment Disorder" ["Current"])
+	#textEditNColRow("Adjustment Disorder" ["xnat_a:scidResearchData/adjustmentDisorder"])
+
+	#tableHeaderNCols("Optional Module" ["Current", "Past"])
+	#textEditNColRow("Acute Stress Disorder" ["xnat_a:scidResearchData/optional/currentAcuteStressDisorder", "xnat_a:scidResearchData/optional/pastAcuteStressDisorder"])
+	#textEditNColRow("Minor Depressive Disorder" ["xnat_a:scidResearchData/optional/currentMinorDepressiveDisorder", "xnat_a:scidResearchData/optional/pastMinorDepressiveDisorder"])
+	#textEditNColRow("Mixed Anxiety Depressive Disorder" ["xnat_a:scidResearchData/optional/currentMixedAnxietyDepressiveDisorder", "xnat_a:scidResearchData/optional/pastMixedAnxietyDepressiveDisorder"])
+	#textEditNColRow("Symptomatic Details of Major Depressive/Manic Epsiodes" ["", "xnat_a:scidResearchData/optional/pastSympomaticDetails"])
+</table>
+
+<br>
+
+<div class="edit_header2">Notes</div>
+<br>
+<textarea name="xnat_a:scidResearchData.note" rows="4" cols="50" style="text-align:left;">$!notes</textarea>
+
+<hr>
+
+<input type="button" onclick="javascript:history.go(-1)" value="Back"/>
+&nbsp;&nbsp;&nbsp;
+<input type="button" onclick="validateForm();" name="eventSubmit_doInsert" value="Submit"/>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+
+   validateSubjectAssessorForm();
+   return false;
+}
+</script>

@@ -1,0 +1,253 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<table>
+	<tr>
+		<TD>
+<p>
+			<table border="0" width="500">
+				<TR>
+					<TD>
+						<TABLE>
+	<tr>
+		<TH align=center colspan=2>$!item.getProperty("xdat:element_security.element_name") Details<BR><BR></TH>
+		#xdatHiddenBox("xdat:element_security.element_name" $item "")
+	</tr>
+	<TR>
+		<TD align=left>Require Secondary Password?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.secondary_password"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Restrict By IP address?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.secure_ip"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is Secure?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.secure"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is Secure 'Create'?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.secure_create"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is Secure 'Read'?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.secure_read"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is Secure 'Edit'?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.secure_edit"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is Secure 'Delete'?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.secure_delete"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is Browseable?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.browse"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is Searchable?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.searchable"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is Quarantined?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.quarantine"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Sequence</TD>
+		<TD align=left>
+			$item.getProperty("xdat:element_security.sequence")
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is Accessible?</TD>
+		<TD align=left>
+			#if ($item.getBooleanProperty("xdat:element_security.accessible"))
+			YES
+			#else
+			NO
+			#end
+		</TD>
+	</TR>
+	
+	<TR>
+		<TD align=left>Usage</TD>
+		<TD align=left>
+			$!item.getProperty("xdat:element_security.usage")
+		</TD>
+	</TR>
+	
+	<TR>
+		<TD align=left>Singular</TD>
+		<TD align=left>
+			$!item.getProperty("xdat:element_security.singular")
+		</TD>
+	</TR>
+	
+	<TR>
+		<TD align=left>Plural</TD>
+		<TD align=left>
+			$!item.getProperty("xdat:element_security.plural")
+		</TD>
+	</TR>
+	
+	<TR>
+		<TD align=left>Code</TD>
+		<TD align=left>
+			$!item.getProperty("xdat:element_security.code")
+		</TD>
+	</TR>
+	
+	<TR>
+		<TD align=left>Category</TD>
+		<TD align=left>
+			$!item.getProperty("xdat:element_security.category")
+		</TD>
+	</TR>
+						</TABLE>
+		<td valign="top" align="right">
+	   		#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+	    </td>
+	    			</TR>
+	   			</TABLE>
+	   		</TD>
+	   	</TR>
+</table>
+<TABLE>
+	<TR>
+		<TD align=left colspan=2>
+		<TABLE>
+			<TR>
+				<TH colspan=6>Report Actions</TH>
+			</TR>
+			<TR>
+				<TH NOWRAP>Name</TH><TH NOWRAP>Display Name</TH><TH NOWRAP>Grouping</TH><TH NOWRAP>Image</TH><TH NOWRAP>Popup</TH><TH NOWRAP>Secure Access</TH><TH NOWRAP>Feature</TH><TH NOWRAP>Additional Parameters</TH><TH NOWRAP>Sequence</TH>
+			</TR>
+			#foreach($action in $item.getChildItems("xdat:element_security.element_actions.element_action") )
+			<TR>
+				<TD>$!action.getProperty("xdat:element_action_type.element_action_name")</TD>
+				<TD>$!action.getProperty("xdat:element_action_type.display_name")</TD>
+				<TD>$!action.getProperty("xdat:element_action_type.grouping")</TD>
+				<TD>$!action.getProperty("xdat:element_action_type.image")</TD>
+				<TD>$!action.getProperty("xdat:element_action_type.popup")</TD>
+				<TD>$!action.getProperty("xdat:element_action_type.secureAccess")</TD>
+				<TD>$!action.getProperty("xdat:element_action_type.secureFeature")</TD>
+				<TD>$!action.getProperty("xdat:element_action_type.parameterString")</TD>
+				<TD>$!action.getProperty("xdat:element_action_type.sequence")</TD>
+			</TR>
+			#end
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left colspan=2>
+		<TABLE>
+			<TR>
+				<TH colspan=6>Listing Actions</TH>
+			</TR>
+			<TR>
+				<TH NOWRAP>Name</TH><TH NOWRAP>Display Name</TH><TH NOWRAP>Image</TH><TH NOWRAP>Popup</TH><TH NOWRAP>Secure Access</TH><TH NOWRAP>Feature</TH><TH NOWRAP>Additional Parameters</TH><TH NOWRAP>Sequence</TH>
+			</TR>
+			#foreach($action in $item.getChildItems("xdat:element_security.listing_actions.listing_action") )
+			<TR>
+				<TD>$!action.getProperty("xdat:element_security_listing_action.element_action_name")</TD>
+				<TD>$!action.getProperty("xdat:element_security_listing_action.display_name")</TD>
+				<TD>$!action.getProperty("xdat:element_security_listing_action.image")</TD>
+				<TD>$!action.getProperty("xdat:element_security_listing_action.popup")</TD>
+				<TD>$!action.getProperty("xdat:element_security_listing_action.secureAccess")</TD>
+				<TD>$!action.getProperty("xdat:element_security_listing_action.secureFeature")</TD>
+				<TD>$!action.getProperty("xdat:element_security_listing_action.parameterString")</TD>
+				<TD>$!action.getProperty("xdat:element_security_listing_action.sequence")</TD>
+			</TR>
+			#end
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left colspan=2>
+		<TABLE>
+			<TR>
+				<TH>Primary Security Fields</TH>
+			</TR>
+			#foreach ($psf in $item.getChildItems("xdat:element_security.primary_security_fields.primary_security_field") )
+			<TR>
+				<TD>$psf.getProperty("xdat:primary_security_field.primary_security_field")</TD>
+			</TR>
+			#end
+		</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left colspan=2>
+		&nbsp;
+		</TD>
+	</TR>
+				
+</table>
+	</p>
+	
+</table>

@@ -1,0 +1,16 @@
+<!-- manage project & subject -->
+			<script type="text/javascript" LANGUAGE="javascript" src="$content.getURI('scripts/subjectAssessorData/proj_tools.js')"></SCRIPT>
+<table border="0" cellpadding=5>
+ <tr>
+  <th align="left">$displayManager.getSingularDisplayNameForProject()</th>
+  <td>
+			#parse($turbineUtils.getTemplateName("project.vm",$om.getXSIType(),$project,"edit"))
+  </td>
+ </tr>
+ <tr>
+  <th align="left">Label</th>
+  <td>
+  			#parse($turbineUtils.getTemplateName("label.vm",$om.getXSIType(),$project,"edit"))
+  </td>
+ </tr>
+</table>

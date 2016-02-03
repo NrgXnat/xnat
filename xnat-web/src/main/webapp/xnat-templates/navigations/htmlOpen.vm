@@ -1,0 +1,15 @@
+<!DOCTYPE html>
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!--[if lt IE 7]> <html class="ie ie6 ltie7 ltie8 ltie9 ltie10 no-js"> <![endif]-->
+<!--[if IE 7]>    <html class="ie ie7 ltie8 ltie9 ltie10 no-js"> <![endif]-->
+<!--[if IE 8]>    <html class="ie ie8 ltie9 ltie10 no-js"> <![endif]-->
+<!--[if IE 9]>    <html class="ie ie9 ltie10 no-js"> <![endif]-->
+<!--[if gt IE 9]><!--> <html class="no-js"> <!--<![endif]-->
+##<!-- the "no-js" class is for Modernizr - are we even using that? -->
+
+<head>
+<!-- path: xnat-templates/navigations/htmlOpen -->
+    <title>$!systemName</title>
+    <!-- HeaderIncludes -->
+    $navigation.setTemplate("/HeaderIncludes.vm")
+    <!-- /HeaderIncludes -->

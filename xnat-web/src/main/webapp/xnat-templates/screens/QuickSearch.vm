@@ -1,0 +1,93 @@
+<!-- QuickSearch -->
+<div>
+    $!systemName currently contains $proj_count $displayManager.getPluralDisplayNameForProject().toLowerCase(),
+    $sub_count $displayManager.getPluralDisplayNameForSubject().toLowerCase(),
+    and $isd_count imaging $displayManager.getPluralDisplayNameForImageSession().toLowerCase().
+</div>
+<br/>
+## this "spacer" thing is not good
+## let's make it go away
+<style>
+    span.spacer{ display:none !important; }
+</style>
+
+<div id="front_search" class="yui-navset"></div>
+
+<script type="text/javascript">
+
+    var frontTabs = new YAHOO.widget.TabView('front_search');
+
+    frontTabs.addTab(new YAHOO.widget.Tab({
+        active: true,
+        label: '$displayManager.getPluralDisplayNameForProject()',
+        content: '<div id="quick-search-project" data-type="projectData" class="quick-search-tab"></div>'
+    }));
+
+    frontTabs.addTab(new YAHOO.widget.Tab({
+        label: '$displayManager.getPluralDisplayNameForSubject()',
+        content: '<div id="quick-search-subject" data-type="subjectData" class="quick-search-tab"></div>'
+    }));
+
+    frontTabs.addTab(new YAHOO.widget.Tab({
+        label: 'MR',
+        content: '<div id="quick-search-mr" data-type="mrSessionData" class="quick-search-tab"></div>'
+    }));
+
+    frontTabs.addTab(new YAHOO.widget.Tab({
+        label: 'PET',
+        content: '<div id="quick-search-pet" data-type="petSessionData" class="quick-search-tab"></div>'
+    }));
+
+    frontTabs.addTab(new YAHOO.widget.Tab({
+        label: 'CT',
+        content: '<div id="quick-search-ct" data-type="ctSessionData" class="quick-search-tab"></div>'
+    }));
+
+
+    // get the tab contents with jQuery's $().load() method
+    // instead of loading on tab click with YUI
+    // (loads the HTML returned via AJAX into the <div>)
+
+    $('div.quick-search-tab').each(function(){
+
+        var container = $(this),
+            dataType = container.data('type'),
+            url = XNAT.url.restUrl('/app/template/DataTypeSearch.vm/dataType/xnat:' + dataType, '', true, false);
+
+        // get JUST the <form> from the returned HTML
+        url += ' form.data-type-search'
+
+        container.load(url, function(){
+            // callbacks
+            chosenInit();
+            XNAT.app.searchMethodToggler(container);
+        });
+
+    });
+
+</script>
+
+<br>
+
+<table id="splash_table" width="100%" cellpadding="0" cellspacing="0">
+    <tr>
+        <td width="" valign="top">
+            <div id="projectsContainer" class="container">
+                <div class="withColor containerTitle">$displayManager.getPluralDisplayNameForProject()</div>
+                <div id="projectsBody" class="containerBody">
+                    #parse("/screens/minProjectsList.vm")
+                </div>
+            </div>
+        </td>
+        <td width="10">&nbsp;</td>
+        <td width="340" valign="top">
+            <div id="dataContainer" class="container">
+                <div class="withColor containerTitle">Recent Data Activity</div>
+                <div id="dataBody" class="containerBody">
+                    #parse("/screens/recentExptList.vm")
+                </div>
+            </div>
+        </td>
+    </tr>
+</table>
+<!-- /QuickSearch -->

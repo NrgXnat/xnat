@@ -1,0 +1,10 @@
+<tr>
+			  #formLabel("Accession #")
+				<TD>$!subject.getId()</TD>
+</tr>
+													<tr>
+			  #formLabel("Date Added")
+									  <TD>$!subject.InsertDate ($!subject.InsertUser.Login)</TD>
+							</tr>
+			#parse($turbineUtils.getTemplateName("_core_demographics","xnat:subjectData",$project))
+			#parse($turbineUtils.getTemplateName("_addtl_demographics","xnat:subjectData",$project))

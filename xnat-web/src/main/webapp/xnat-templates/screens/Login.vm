@@ -1,0 +1,194 @@
+<!-- BEGIN xnat-templates/screens/Login.vm -->
+#* @vtlvariable name="method" type="java.lang.String" *#
+#* @vtlvariable name="login_methods" type="java.util.List" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#set ($siteId = $siteConfig.getProperty("siteId",""))
+$page.setTitle("$siteId - Please Login")
+    $page.setBgColor($ui.bgcolor)
+    $page.addAttribute("onLoad", "document.getElementById('username').focus();")
+
+<script src="$content.getURI("scripts/lib/epicEditor/js/epiceditor.js")"></script>
+<div id="login_area">
+    <div id="ie8_error" class="error" style="display: none; margin-top: -4em; margin-bottom: 4em; background-image: none; z-index: 9">
+        $!systemName is not fully supported for use with Internet Explorer version 8 or below &ndash; there may be errors which prevent the site from working properly.
+        <br><br>
+        We recommend using a modern browser such as an up-to-date <a class="link" href="https://www.mozilla.org/en-US/firefox/desktop/" target="_blank">Mozilla Firefox</a>.
+    </div>
+
+#if($siteConfig.getProperty("siteWideAlertStatus","")!="0")
+    <div class="$siteConfig.getProperty("siteWideAlertType","")" style="margin-bottom: 2em;"><strong>$siteConfig.getProperty("siteWideAlertMessage","")</strong></div>
+#end
+
+#if($turbineUtils.GetPassedParameter("par",$data))
+## create custom layout when parameters are passed to the login page from an external link.
+    <div id="login_welcome">
+        #if($siteConfig.getProperty("siteDescriptionType","")=="Text")
+            <div id="siteDescription"></div>
+            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.getProperty("siteDescriptionText","")</textarea>
+            <script>
+                var mdtext = jq('#siteDescriptionMd').text();
+                var markedText = marked(mdtext);
+                jq('#siteDescription').html(markedText);
+            </script>
+        #else
+            #if($turbineUtils.resourceExists($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm")))
+                #parse($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm"))
+            #else
+                <p>Custom site description page not found!</p>
+            #end
+        #end
+    </div>
+
+    #if($data.getMessage())
+    <div class="warning">
+        <p><strong>Note: </strong><br />$data.getMessage()</p>
+    </div>
+    #end
+
+    <div id="register_box_container">
+        <h3>New User Registration <span class="btn btn-xs btn-inline right" onclick="javascript:showLogin()">Already Have an Account?</span></h3>
+        <div id="register_box">
+            #parse("/screens/register_box.vm")
+        </div>
+    </div>
+
+    <div id="login_box_container" class="hidden">
+        <h3>Existing User Login <span class="btn btn-xs btn-inline right" onclick="javascript:showRegistration()">Register?</span> </h3>
+        <div class="message">
+            <p><strong>Note: </strong> It looks like you received an invitation to join this site via email. Logging in here will accept that invitation and tie it with your existing $siteConfig.getProperty("siteId","") account. </p>
+            <p>&nbsp;</p>
+            <p>Not what you want? <a href="$content.getURI('/app/template/Login.vm')"><strong>Default Log In Page</strong></a></p>
+        </div>
+        <hr style="margin: 2em 0" />
+        <div id="login_box">
+            <form name="form1" method="post" action="$content.getURI("/j_spring_security_check")" class="friendlyForm" id="login_form">
+                #if($login_methods && $login_methods.size() == 0)
+                    <input type="hidden" id="login_method" name="login_method" value="Database">
+                #elseif($login_methods && $login_methods.size() > 1)
+                    <label for="login_method">Login</label>
+                    <select id="login_method" class="chosen-menu" data-chosen-opts="width:160px" name="login_method">
+                        #foreach ($method in $login_methods)
+                            <option value="$method">$method</option>
+                        #end
+                    </select>
+                #end
+                <p><label for="username">User</label>
+                    <input type="text" id="username" name="j_username"></p>
+
+                <p><label for="password">Password</label>
+                    <input type="password" name="j_password" autocomplete="off"></p>
+
+                <p class="form-submit">
+                        <span id="register_forgot">
+                            <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
+                        </span>
+                    <input id="loginButton" type="submit" name="login" value="Login">
+                </p>
+
+                #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
+                    #if ($key!="action" && $key!="template" &&$key!="password" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception" &&$key!="username" &&$key!="exception")
+                        <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+                    #end
+                #end
+            </form>
+        </div>
+    </div>
+
+    <script>
+        function showLogin() {
+            jq('#register_box_container').addClass('hidden');
+            jq('#login_box_container').removeClass('hidden');
+        }
+
+        function showRegistration() {
+            jq('#register_box_container').removeClass('hidden');
+            jq('#login_box_container').addClass('hidden');
+        }
+    </script>
+
+#else
+## standard layout for login page
+
+    <div id="login_welcome">
+        <div id="login_welcome">
+            #if($siteConfig.getProperty("siteDescriptionType","")=="Text")
+                <div id="siteDescription"></div>
+                <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.getProperty("siteDescriptionText","")</textarea>
+                <script>
+                    var mdtext = jq('#siteDescriptionMd').text();
+                    var markedText = marked(mdtext);
+                    jq('#siteDescription').html(markedText);
+                </script>
+            #else
+                #if($turbineUtils.resourceExists($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm")))
+                    #parse($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm"))
+                #else
+                    <p>Custom site description page not found!</p>
+                #end
+            #end
+        </div>
+    </div>
+
+    <div id="login_box">
+        #if($data.getMessage())
+            <div class="message" style="border-bottom: 0">
+                <p><strong>Note: </strong><br />$data.getMessage()</p>
+            </div>
+        #end
+
+        <form name="form1" method="post" action="$content.getURI("/j_spring_security_check")" class="friendlyForm" id="login_form">
+            #if($login_methods && $login_methods.size() == 0)
+                <input type="hidden" id="login_method" name="login_method" value="Database">
+            #elseif($login_methods && $login_methods.size() > 1)
+                <label for="login_method">Login</label>
+                <select id="login_method" class="chosen-menu" data-chosen-opts="width:160px" name="login_method">
+                    #foreach ($method in $login_methods)
+                        <option value="$method">$method</option>
+                    #end
+                </select>
+            #end
+            <p><label for="username">User</label>
+                <input type="text" id="username" name="j_username"></p>
+
+            <p><label for="password">Password</label>
+                <input type="password" name="j_password" autocomplete="off"></p>
+
+            <p class="form-submit">
+            <span id="register_forgot">
+                <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
+                <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
+            </span>
+                <input id="loginButton" type="submit" name="login" value="Login">
+            </p>
+
+            <input type="hidden" name="XNAT_CSRF" value="">
+        </form>
+    </div>
+
+    #end
+</div>
+<!-- END xnat-templates/screens/Login.vm -->
+
+<script>
+    // detect IE8, prevent user logon. From http://stackoverflow.com/a/15983064
+    function isIE () {
+        var myNav = navigator.userAgent.toLowerCase();
+        return (myNav.indexOf('msie') != -1) ? parseInt(myNav.split('msie')[1]) : false;
+    }
+
+    if (isIE() === 8) {
+//        document.getElementById('login_box').style.backgroundColor = '#ffdfdf';
+//        // IE8 code
+//        jq('#login_box')
+//                .css('background-color','#ffdfdf')
+//                .find('input').prop('disabled','disabled');
+        jq('#ie8_error').show();
+    }
+
+</script>

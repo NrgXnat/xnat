@@ -1,0 +1,104 @@
+<SCRIPT language="javascript">
+function toggleAll(check,names) {
+  for(var j=0;j<names.length;j++){
+    var allScans = document.getElementsByName(names[j]);
+    for (var i=0;i<allScans.length;i++){
+      allScans[i].checked=check.checked;
+    }
+  }
+}
+
+function validateForm(){ 
+   var typeSelected = false;
+   var scans = document.getElementsByName("scans");
+   for (var i=0;i<scans.length;i++){
+      if (scans[i].checked){
+        typeSelected=true;
+      }
+   }
+   if (!typeSelected){
+       xModalMessage('Dicom DIR Download', 'Please select at least one scan.');
+      return false;
+   }
+   return true;
+}
+
+function remove_last_char(s){
+  if (s.length > 1) {
+     return s.substring(0,s.length-1);
+  }
+  else {
+     return s;
+  }
+}
+
+function build_comma_delimited(items) {
+    var comma_delimited = ""
+    var num_items = items.length;
+    for (var i=0;i<num_items;i++) {
+	if (items[i].checked) {			  
+        comma_delimited = comma_delimited + items[i].value + ",";
+        }
+    }
+    return remove_last_char(comma_delimited);
+}
+
+function buildDicomDir () {
+  if (this.validateForm()) {
+    var label = document.getElementById("label").value;
+    var project = document.getElementById("project").value;
+    var subject = document.getElementById("subject").value;
+    var comma_delimited_scans = build_comma_delimited(document.getElementsByName("scans"));
+    var pathname = serverRoot + "/" + "REST/projects/" + project + "/subjects/" + subject + "/experiments/" + label + "/scans/" + comma_delimited_scans + "/DICOMDIR";
+    window.location.pathname = pathname;			  
+  }
+}
+</SCRIPT>
+
+<FORM name="downloadForm" ACTION="">
+  <DIV class="edit_header1">Dicom DIR Download</DIV>
+  <DIV class="spacer">&nbsp;</DIV>
+  <TABLE border="0">
+    <TR>
+      <TD><DIV class="edit_header2">Select scans to download</DIV></TD>
+      <TD></TD>
+      <INPUT type="hidden" value=$om.getLabel() id="label">
+      <INPUT type="hidden" value=$om.getProject() id="project">
+      <INPUT type="hidden" value=$om.getSubjectId() id="subject">
+    <TR>
+      <TD VALIGN="top" style="border: 1px solid grey;" ROWSPAN="4">
+	<DIV ID="dataTable" style="dispay:none">
+	  <DIV STYLE="overflow:auto;height:300px;width:300px;">
+	    <TABLE border="0" ID="subTable" cellspacing="0">
+	      <TR class="">
+		<TD ><INPUT type="checkbox" value="" ONCLICK="toggleAll(this,['scans']);" ID="toggleAllScans" /></TD>
+		<TD NOWRAP colspan="2"><label for="toggleAllScans">Toggle All ($om.getSortedScans().size())</label></TD>
+	      </TR>
+	      #set($rowColor="even")
+	      #foreach($scan in $om.getSortedScans())
+	           <TR class="$rowColor">
+	           	<TD></TD>
+	           	<TD ><INPUT type="checkbox" value="$scan.getId()" name="scans"/></TD>
+	           #if($scan.getType())	
+  	           	<TD NOWRAP>$!scan.getId() : $!scan.getType()</TD>
+                   #else
+	           	<TD NOWRAP>$!scan.getId() : Unassigned</TD>
+                   #end
+	           </TR>
+	           #if($rowColor=="even")
+	           #set($rowColor="")
+	           #else
+	           #set($rowColor="even")
+	           #end
+	      #end
+	    </TABLE>
+	  </DIV>
+	</DIV>
+      </TD>
+    </TR>
+  </TABLE>
+  <br>
+  <br>
+  <DIV class="edit_header2">Submit Data Request</DIV>
+  <input type="button" value="Submit" onClick="buildDicomDir()"/>
+</FORM>

@@ -1,0 +1,122 @@
+#* @vtlvariable name="session_id" type="java.lang.String" *#
+#* @vtlvariable name="scan_type" type="java.lang.String" *#
+#* @vtlvariable name="visit_id" type="java.lang.String" *#
+#* @vtlvariable name="session_date" type="java.lang.String" *#
+#* @vtlvariable name="subject_id" type="java.lang.String" *#
+#* @vtlvariable name="project" type="java.lang.String" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="arc" type="org.nrg.xdat.om.ArcArchivespecification" *#
+<!-- UploadApplet.vm -->
+<script type="text/javascript" src="https://java.com/js/deployJava.js"></script>
+<p style="width:760px;margin-bottom:20px;font-size:12px;">This tool supports uploading DICOM and ECAT formatted medical imaging data. If you are unsure of the format of your data, please contact
+    the help desk for assistance. The tool takes a few moments to load, during which time you may see a blank screen below. Please be patient while the tool loads.
+    The tool requires Java 1.6 or newer to operate. If your browser does not have this version of Java installed, please contact your IT support for assistance.</p>
+
+<div id='appletDiv'></div>
+<script type="text/javascript">
+	var stopTime=(new Date());
+	//persist the JSESSION for up to 1 day.
+	stopTime.setDate(stopTime.getDate() + 1); 
+	
+    jq(function() {
+
+        // / refresh timeout interval so applet doesn't lose its session.
+        setInterval(function(){
+			if(stopTime.getTime()>(new Date()).getTime()){
+    			XNAT.app.timeout.handleOk();
+			}
+		},60000);
+		
+        // add "applet" class to body to support special handling for applets
+        jq('body').addClass('applet');
+
+        // The upload applet requires at least Java 1.5 (because of the wizard library).
+        // We use Java's deployJava.js (http://java.sun.com/javase/6/docs/technotes/guides/jweb/deployment_advice.html)
+        // to ensure that a supported version of the JRE exists on the client.
+        // Use an anonymous function to prevent global scope
+        (function() {
+            var SUPPORTED_JRE_VERSIONS = ["1.6", "1.7", "1.8"];
+            function hasSupport(versions) {
+                for (var i=0; i < versions.length; i++) {
+                    if (deployJava.versionCheck(versions[i])) {
+                        return true;
+                    }
+                }
+                return false;
+            }
+            if (!hasSupport(SUPPORTED_JRE_VERSIONS)) {
+                xmodal.message('Unsupported Java Runtime', 'Upload applet will not work without supported JRE version. Requires one of ' + SUPPORTED_JRE_VERSIONS.join(", "));
+            }
+        })();
+
+    });
+
+function loadApplet() {
+
+    var attributes = { code: 'org.nrg.upload.ui.UploadAssistantApplet', codebase: '$content.getURI("applet/")', width: 800, height: 500, /* class: 'upload_applet', */ archive: 'UploadAssistant-1.6.5.jar, DicomEdit-4.0.0.jar, DicomUtils-1.3.1.jar, dicomtools-1.6.5.jar, config-1.6.5.jar, framework-1.6.5.jar, antlr-runtime-3.5.2.jar, commons-codec-1.5.jar, commons-lang-2.6.jar, dcm4che-core-2.0.25.jar, dicom-xnat-sop-1.6.5.jar, dicom-xnat-util-1.6.5.jar, ecat-edit-0.2.0.jar, ecat-io-0.1.0.jar, guava-18.0.jar, java-uuid-generator-3.1.3.jar, javax.inject-1.jar, jcalendar-1.4.jar, joda-time-2.1.jar, json-20140107.jar, log4j-1.2.17.jar, nrgutil-2.0.0.jar, slf4j-api-1.7.7.jar, slf4j-log4j12-1.7.7.jar, wizard-1.1.jar, jackson-annotations-2.5.2.jar, jackson-core-2.5.2.jar, jackson-databind-2.5.2.jar' };
+    var parameters = { 'xnat-url': '$!arc.getSiteUrl()', 'xnat-admin-email': '$!arc.getSiteAdminEmail()', 'xnat-description': '$!arc.getSiteId()', 'n-upload-threads': '4', 'fixed-size-streaming': 'true', 'java_arguments': '-Djnlp.packEnabled=true', 'jsessionid': '$jsessionid'};
+
+parameters['window-name'] = this.window.name;
+
+#if( $project )
+        parameters['xnat-project'] = '$project';
+    #if( $subject_id )
+            parameters['xnat-subject'] = '$subject_id';
+    #end
+    #if( $session_id )
+            parameters['xnat-session-label'] = '$session_id';
+    #end
+    #if( $session_date )
+        parameters['xnat-scan-date'] = '$session_date';
+    #end
+    #if( $visit_id )
+            parameters['xnat-visit-id'] = '$visit_id';
+    #end
+    #if( $visit )
+            parameters['xnat-visit'] = '$visit';
+    #end
+    #if( $protocol )
+            parameters['xnat-protocol'] = '$protocol';
+    #end
+    #if( $expectedModality )
+            parameters['expected-modality'] = '$expectedModality';
+    #end
+    #if( $scan_type )
+            parameters['xnat-scan-type'] = '$scan_type';
+    #end
+#end
+$!appletParams
+    deployJava.runApplet(attributes, parameters, '1.6');
+}
+
+// temporarily removed because calling loadApplet() in the dialog caused the window to lose all HTML...
+//if (YAHOO.util.Cookie.get("appletLoadNotification") == null) {
+//   var dialog = new YAHOO.widget.SimpleDialog("dialog", {
+//        width:"20em",
+//        close:false,
+//        fixedcenter:true,
+//        constraintoviewport:true,
+//        modal:true,
+//        icon:YAHOO.widget.SimpleDialog.ICON_WARN,
+//        visible:true,
+//        draggable:false,
+//        buttons: [{ text:'OK', isDefault:true, handler: function() {
+//            this.hide();
+//            var tomorrow = new Date();
+//            tomorrow.setDate(tomorrow.getDate() + 1);
+//            YAHOO.util.Cookie.set("appletLoadNotification", true, { expires: tomorrow });
+//            loadApplet();
+//        } }]
+//    });
+
+//    dialog.render(document.getElementById('layout_content'));
+//    dialog.setHeader('Applet now loading...');
+//    dialog.setBody('This page will load the XNAT image upload applet. This may take some time. Please be patient and allow the applet to fully load. Click <b>OK</b> to begin.');
+//    dialog.bringToTop();
+//    dialog.show();
+//} else {
+    loadApplet();
+//}
+</script>
+
+<!-- /UploadApplet.vm -->

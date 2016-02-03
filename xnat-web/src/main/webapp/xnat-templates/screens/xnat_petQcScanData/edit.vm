@@ -1,0 +1,168 @@
+<!-- BEGIN xnat:petQcScanData -->
+#set($yes_no_options = ["Yes", "No"])
+#set($session = $om.getImageSessionData())
+#set($tracer = $session.getProperty("tracer/name"))
+<tr>
+	<th colspan="2" align="left">
+		#set($imageScan_ID = $item.getStringProperty("xnat:qcManualAssessorData/scans/scan[$scan_counter]/imageScan_ID"))
+		<font face="$ui.sansSerifFonts" size="3">
+			Scan
+			#if ($imageScan_ID)
+				$imageScan_ID
+				#xdatHiddenBox("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/imageScan_ID" $item $imageScan_ID)
+			#end
+		</font>
+	</th>
+</tr>
+
+<tr>
+	<td>Acquisition</td>
+	<td>
+		#if ($tracer == "PIB")
+			#set($acquistion_options = ["Standard (6 frames x 5 min/frame; start 40 min post-inj.)", "Custom Dynamic (must include 6 frames @ 5 min/frame from 40-70 min post-inj.)", "Static* (1 frame x 30 min; from 30-60 min post-inj)"])
+		#else
+			#set($acquistion_options = ["Standard  (6 frames x 5 min/frame; start 30 min post-inj.)", "Custom Dynamic (must include 6 frames @ 5 min/frame from 30-60 min post-inj.)", "Static* (1 frame x 30 min; from 30-60 min post-inj)"])
+		#end
+		#xdatSelectBoxWSingleValue("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/acquisition" $item $acquistion_options $vr)
+		<br />
+		* Allowable only for BioGraph PET/CT scanners without list-mode capability
+	</td>
+</tr>
+<tr>
+	<td>Correct Reconstruction Algorithm?</td>
+	<td>#qcYesNoNASelect("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/correctReconstructionAlgorithm" $item $vr)</td>
+</tr>
+<tr>
+	<td>Reconstruction Algorithm Used</td>
+	<td>
+		#set($reconstruction_options = ["Fore/2D-OSEM", "OSEM/3D-OP", "3D-RAMLA", "3D Back-projection"])
+		#xdatSelectBoxWSingleValue("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/reconstructionAlgorithmUsed" $item $reconstruction_options $vr)
+	</td>
+</tr>
+<tr>
+	<td>&nbsp;&nbsp;&nbsp;If OSEM or RAMLA, correct # iterations and subsets?</td>
+	<td>#qcYesNoNASelect("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/correctIterationsAndSubsets" $item $vr)</td>
+</tr>
+<tr>
+	<td>Correct Filters/TRIM?</td>
+	<td>#qcYesNoNASelect("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/correctFilters" $item $vr)</td>
+</tr>
+<tr>
+	<td>Correct Slice Thickness (PET/CT systems)?</td>
+	<td>#qcYesNoNASelect("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/correctSliceThickness" $item $vr)</td>
+</tr>
+<tr>
+	<td>Acceptable Voxel Size?</td>
+	<td>#qcYesNoNASelect("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/acceptableVoxelSize" $item $vr)</td>
+</tr>
+<tr>
+	<td>Indicate Unacceptable Frames, if any</td>
+	<td>#xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/unacceptableFrames" $item "" $vr)</td>
+</tr>
+<tr>
+	<td>&nbsp;&nbsp;&nbsp;Indicate why frames were unacceptable</td>
+	<td>
+		#set($reason_unacceptable_options = ["$displayManager.getSingularDisplayNameForSubject() Motion"])
+		#xdatSelectBoxWSingleValue("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/reasonFramesUnacceptable" $item $reason_unacceptable_options $vr)
+	</td>
+</tr>
+<tr>
+	<td>Pass QC (If NO, complete A and B)?</td>
+	<td>
+		#qcYesNoSelect("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/pass" $item $vr)
+		#xdatHiddenBox("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/xnat_qcScanData_id" $item "")
+	</td>
+</tr>
+<tr>
+	<td valign="top">&nbsp;&nbsp;&nbsp;A. Processing Errors</td>
+	<td>	
+		##xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter]/processingErrors" $item "" $vr)
+		
+		#set($processing_errors_options = ["Incorrect reconstruction algorithm", "Incorrect filtering", "Incorrect slice thickness", "Incorrect voxel size", "Attenuation Error", "Inadequate counts", "Inadequate field of view", "Incorrect acquisition protocol", "Unfixable image artifact (e.g. attenuation, normalization, etc.)"])
+		#set($processing_error_counter = 0)
+		#set( $processing_errors = $scan.getChildItems("xnat:petQcScanData/processingErrors/processingError"))
+		#foreach ($current_option in $processing_errors_options)
+			#set($processing_error_id = "xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/processingErrors/processingError[$processing_error_counter]")
+			<input type="checkbox" name="$processing_error_id" id="$processing_error_id" value="$current_option" 
+				#foreach ($processing_error in $processing_errors)
+					$processing_error.getIDValue()
+					#if ($processing_error.getStringProperty("processingError") == $current_option)
+						checked
+					#end 
+				#end
+			/> 
+			$current_option
+			<br />
+			#set($processing_error_counter = $processing_error_counter + 1)
+		#end 
+		Other: 
+		<input type="text" 
+			#foreach ($processing_error in $processing_errors)
+				#set ($exists = false)
+				#foreach ($current_option in $processing_errors_options)
+					#if ($processing_error.getStringProperty("processingError") == $current_option)
+						#set ($exists = true)
+					#end
+				#end
+				#if (!$exists) 
+					value="$processing_error.getStringProperty("processingError")" 
+					## should break here
+				#end
+			#end
+		/>
+	</td>
+</tr>
+<tr>
+	<td>&nbsp;&nbsp;&nbsp;B. QC Outcome</td>
+	<td>
+	
+		#if ($tracer == "PIB")
+			#set($outcome_options = ["Request Reprocessing", "Unuseable"])
+		#else
+			#set($outcome_options = ["Request Reprocessing", "Request Rescan", "Unuseable - Don't request rescan (provide details)", "Allow Rescan (rescan not requested)"])
+		#end	
+		
+		#xdatSelectBoxWSingleValue("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/qcOutcome" $item $outcome_options $vr)
+	</td>
+</tr>
+	
+#if ($tracer == "FDG")
+	<tr>
+		<td>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Reason for not rescanning</td>
+		<td>	
+				#xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/qcOutcomeReason" $item "" $vr)
+		</td>
+	</tr>
+#end	
+<tr>
+	<td colspan="2"><b>Imaging Issues</b></td>
+</tr>
+<tr>
+	<td>&nbsp;&nbsp;&nbsp;Motion</td>
+	<td>
+		#set($motion_options = ["none", "mild", "mild-to-moderate", "moderate", "moderate-to-severe"])
+		#xdatSelectBoxWSingleValue("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/motion" $item $motion_options $vr)
+	</td>
+</tr>
+
+#set($cutoff_options = ["none", "0-3mm", "3-6mm", "6-9mm", ">9mm"])
+<tr>
+	<td>&nbsp;&nbsp;&nbsp;Top Cutoff</td>
+	<td>#xdatSelectBoxWSingleValue("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/topCutoff" $item $cutoff_options $vr)</td>
+</tr>
+<tr>
+	<td>&nbsp;&nbsp;&nbsp;Bottom Cutoff</td>
+	<td>#xdatSelectBoxWSingleValue("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/bottomCutoff" $item $cutoff_options $vr)</td>
+</tr>
+<tr>
+	<td>&nbsp;&nbsp;&nbsp;Other</td>
+	<td>#xdatTextBox("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/other" $item "" $vr)</td>
+</tr>
+<tr>
+	<td valign="top">Additional QC Comments</td>
+	<td>#xdatTextArea("xnat:qcManualAssessorData/scans/scan[$scan_counter][@xsi:type=xnat:petQcScanData]/comments" $item "" $vr 3 30)</td>
+</tr>
+
+<!-- END xnat:petQcScanData -->
+
+		

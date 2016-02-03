@@ -1,0 +1,6 @@
+<!-- Sequence: 10 -->
+<!-- Upload/Default -->
+    <li><a href="$link.setPage("LaunchUploadApplet.vm")">Images</a></li>
+    <li><a href="$link.setPage("XMLUpload.vm")">XML</a></li>
+    <li><a href="$link.setPage("XDATScreen_uploadCSV.vm")">Spreadsheet</a></li>
+    <li><a href="$link.setPage("XDATScreen_prearchives.vm")">Go to prearchive</a></li>

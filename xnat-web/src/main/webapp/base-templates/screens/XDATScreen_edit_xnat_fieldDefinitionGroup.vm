@@ -1,0 +1,119 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<font color="red" size="3">$data.message</font>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ModifyItem")">
+<input type="hidden" name="project" value="$!{project}" >
+#if($vr)
+	<font color="red">Invalid parameters:<BR>$vr.toHTML()</font>
+<HR>
+#end
+
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<DIV class="edit_title">FieldDefinitionSet Details</DIV>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>ID</TD><TD>#xdatStringBox("xnat:fieldDefinitionGroup/ID" $item "" $vr)</TD></TR>
+							<TR><TD>data-type</TD><TD>#xdatStringBox("xnat:fieldDefinitionGroup/data-type" $item "" $vr)</TD></TR>
+							<TR><TD>description</TD><TD>#xdatStringBox("xnat:fieldDefinitionGroup/description" $item "" $vr)</TD></TR>
+							<TR><TD>shareable</TD><TD>#xdatBooleanRadio("xnat:fieldDefinitionGroup/shareable" $item false $vr)</TD></TR>
+							<TR><TD>project-specific</TD><TD>#xdatBooleanRadio("xnat:fieldDefinitionGroup/project-specific" $item false $vr)</TD></TR>
+													#xdatHiddenBox("xnat:fieldDefinitionGroup/xnat_fieldDefinitionGroup_id" $item "")
+						</TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat:fieldDefinitionGroup -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#foreach($xnat_fieldDefinitionGroup_field_1_COUNTER in [0..5])
+<!-- BEGIN xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER] -->
+								<TABLE>
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR><TD>name</TD><TD>#xdatStringBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/name" $item "" $vr)</TD></TR>
+												<TR><TD>type</TD><TD>#xdatStringBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/type" $item "" $vr)</TD></TR>
+												<TR><TD>datatype</TD><TD>#xdatStringBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/datatype" $item "" $vr)</TD></TR>
+												<TR><TD>required</TD><TD>#xdatBooleanRadio("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/required" $item false $vr)</TD></TR>
+												<TR><TD>sequence</TD><TD>#xdatTextBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/sequence" $item "" $vr)</TD></TR>
+												<TR><TD>xmlPath</TD><TD>#xdatStringBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/xmlPath" $item "" $vr)</TD></TR>
+												<TR><TD>group</TD><TD>#xdatStringBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/group" $item "" $vr)</TD></TR>
+																		#xdatHiddenBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/xnat_fieldDefinitionGroup_field_id" $item "")
+											</TABLE>
+										</TD>
+									</TR>
+<!-- BEGIN xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue -->
+									<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue</font></TH></TR>
+									<TR>
+										<TD align="left" valign="top">
+											<TABLE>
+												<TR>
+													<TD>possibleValue</TD>
+													<TD>display</TD>
+												</TR>
+												#foreach($xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER in [0..5])
+													<TR>
+														<TD>#xdatTextBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue[$xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER]/possibleValue" $item "" $vr)</TD>
+														<TD>#xdatTextBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue[$xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER]/display" $item "" $vr)</TD>
+														#xdatHiddenBox("xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue[$xnat_fieldDefinitionGroup_field_possibleValue_2_COUNTER]/xnat_fieldDefinitionGroup_field_possibleValue_id" $item "")
+													</TR>
+												#end
+											</TABLE>
+										</TD>
+									</TR>
+<!-- END xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER]/possibleValues/possibleValue -->
+								</TABLE>
+<!-- END xnat:fieldDefinitionGroup/fields/field[$xnat_fieldDefinitionGroup_field_1_COUNTER] -->
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat:fieldDefinitionGroup -->
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		#xdatEditProps($item $edit_screen)
+		<TR><TD COLSPAN=2 ALIGN=left><input type="button" ONCLICK="validateForm();"  name="eventSubmit_doInsert" value="Submit"/></TD></TR>
+		</TD>
+	</TR>
+</TABLE>
+</form>
+
+<script type="text/javascript">
+function validateForm()
+{
+   //INSERT CUSTOM CONTENT HERE
+}
+</script>

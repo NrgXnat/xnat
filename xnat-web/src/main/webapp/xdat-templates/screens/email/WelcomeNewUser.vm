@@ -1,0 +1,5 @@
+Welcome to the $system Web Archive!
+<br><br>You can now log on to the $system at:
+<a href="$server">$server</a>
+<br><br>Your username is: $username<br>
+<br><br>For support, contact the <a href="mailto:$admin_email?subject=$system Assistance">$system Management </A>

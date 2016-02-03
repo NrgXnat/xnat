@@ -1,0 +1,64 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+$page.setTitle("CNDA -- Central Neuroimaging Data Archive")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ( $exptHeadings = ["Date", "Type", "ID", "Investigator" ] )
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+#else
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">				
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="2"><b>Investigator Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<table align="left">
+							<tr>
+						            	<TH align="left">ID</TH>
+								   		<TD>$!item.getProperty("ID")</TD>
+							</tr>
+							<tr>
+						            	<TH align="left">Name</TH>
+								   		<TD>$!item.getProperty("title") $!item.getProperty("firstname") $!item.getProperty("lastname")</TD>
+							</tr>
+							<tr>
+						            	<TH align="left">Institution</TH>
+								   		<TD>$!item.getProperty("institution")</TD>
+							</tr>
+							<tr>
+						            	<TH align="left">Department</TH>
+								   		<TD>$!item.getProperty("department")</TD>
+							</tr>
+							<tr>
+						            	<TH align="left">Email</TH>
+								   		<TD><A href="mailto:$!item.getProperty("email")">$!item.getProperty("email")</A></TD>
+							</tr>
+							<tr>
+						            	<TH align="left">Phone</TH>
+								   		<TD>$!item.getProperty("phone")</TD>
+							</tr>
+						</table>
+					</TD>
+					<TD valign="top" align="right">
+						#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+</TABLE>

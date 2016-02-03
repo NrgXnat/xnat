@@ -1,0 +1,147 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("Bundle Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>Bundle Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xdat:stored_search/ID")</TD></TR>
+														<TR><TD>Brief Description</TD><TD>$!item.getStringProperty("xdat:stored_search/brief-description")</TD></TR>
+							<TR><TD>Description</TD><TD>$!item.getStringProperty("xdat:stored_search/description")</TD></TR>
+							<TR><TD>Pivot Data Type</TD><TD>$!item.getStringProperty("xdat:stored_search/root_element_name")</TD></TR>
+							<TR><TD>Sort By</TD><TD>$!item.getStringProperty("xdat:stored_search/sort_by/element_name") $!item.getStringProperty("xdat:stored_search/sort_by/field_ID")</TD></TR>
+							<TR><TD>Display Diff Columns</TD><TD>#xdatBooleanDisplay("xdat:stored_search/allow-diff-columns" $item true)</TD></TR>
+							<TR><TD>Limited Access</TD><TD>#xdatBooleanDisplay("xdat:stored_search/secure" $item true)</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xdat_search_field_1_NUM_ROWS=$item.getChildItems("xdat:stored_search/search_field").size())
+							
+							#if($xdat_search_field_1_NUM_ROWS>0)
+								<BR><font face="$ui.sansSerifFonts" size="2"><b>Displayed Fields ($xdat_search_field_1_NUM_ROWS)</b></font><BR>
+								#set($xdat_search_field_1_NUM_ROWS=$xdat_search_field_1_NUM_ROWS - 1)
+								<TABLE>
+									<TR>
+										<TH>element_name</TH>
+										<TH>field_ID</TH>
+										<TH>type</TH>
+										<TH>header</TH>
+										<TH>value</TH>
+										<TH>sequence</TH>
+									</TR>
+								#foreach($xdat_search_field_1_COUNTER in [0..$xdat_search_field_1_NUM_ROWS])									
+										<TR>
+											<TD>$!item.getStringProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/element_name")</TD>
+											<TD>$!item.getStringProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/field_ID")</TD>
+											<TD>$!item.getStringProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/type")</TD>
+											<TD>$!item.getStringProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/header")</TD>
+											<TD>$!item.getStringProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/value")</TD>
+											<TD>$!item.getIntegerProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/sequence")</TD>
+										</TR>
+								#end
+									</TABLE>
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xdat_criteria_set_2_NUM_ROWS=$item.getChildItems("xdat:stored_search/search_where").size())
+							#if($xdat_criteria_set_2_NUM_ROWS>0)
+								#set($xdat_criteria_set_2_NUM_ROWS=$xdat_criteria_set_2_NUM_ROWS - 1)
+								#foreach($xdat_criteria_set_2_COUNTER in [0..$xdat_criteria_set_2_NUM_ROWS])
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">Where Clause</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TH>method</TH><TD>$!item.getStringProperty("xdat:stored_search/search_where[$xdat_criteria_set_2_COUNTER]/method")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xdat_criteria_3_NUM_ROWS=$item.getChildItems("xdat:stored_search/search_where[$xdat_criteria_set_2_COUNTER]/criteria").size())
+													#if($xdat_criteria_3_NUM_ROWS>0)
+														<font face="$ui.sansSerifFonts" size="2"><b>Criteria</b></font><BR>
+														#set($xdat_criteria_3_NUM_ROWS=$xdat_criteria_3_NUM_ROWS - 1)
+														
+															<TABLE>
+																<TR>
+																	<TH>schema_field</TH>
+																	<TH>comparison_type</TH>
+																	<TH>value</TH>
+																</TR>
+														#foreach($xdat_criteria_3_COUNTER in [0..$xdat_criteria_3_NUM_ROWS])
+																<TR>
+																	<TD>$!item.getStringProperty("xdat:stored_search/search_where[$xdat_criteria_set_2_COUNTER]/criteria[$xdat_criteria_3_COUNTER]/schema_field")</TD>
+																	<TD>$!item.getStringProperty("xdat:stored_search/search_where[$xdat_criteria_set_2_COUNTER]/criteria[$xdat_criteria_3_COUNTER]/comparison_type")</TD>
+																	<TD>$!item.getStringProperty("xdat:stored_search/search_where[$xdat_criteria_set_2_COUNTER]/criteria[$xdat_criteria_3_COUNTER]/value")</TD>
+																</TR>
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xdat_user_4_NUM_ROWS=$item.getChildItems("xdat:stored_search/allowed_user").size())
+							#if($xdat_user_4_NUM_ROWS>0)
+								#set($xdat_user_4_NUM_ROWS=$xdat_user_4_NUM_ROWS - 1)
+								<BR><font face="$ui.sansSerifFonts" size="2"><b>Allowed Users</b></font><BR>
+									<TABLE>
+								#foreach($xdat_user_4_COUNTER in [0..$xdat_user_4_NUM_ROWS])
+										<TR>
+											<TD>$!item.getStringProperty("xdat:stored_search/allowed_user[$xdat_user_4_COUNTER]/login")</TD>
+										</TR>
+								#end
+									</TABLE>
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+</TABLE>

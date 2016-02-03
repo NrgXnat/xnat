@@ -1,0 +1,95 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<p>
+<form name="form1" method="post" action="$link.setAction("ElementSecurityWizard")">
+<INPUT TYPE="hidden" NAME="popup" VALUE="$popup">
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+    <HR>
+#end
+<table border="0" width="600">
+	<tr>
+		<TH align=center colspan=2>$!item.getProperty("xdat:element_security.element_name") Access Options<BR><BR></TH>
+		#xdatHiddenBox("xdat:element_security.element_name" $item "")
+	</tr>
+	<TR>
+		<TD align=left>Require Secondary Password for this Data Type?</TD>
+		<TD align=left>
+			#xdatBooleanRadio("xdat:element_security.secondary_password" $item false $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Restrict Access to this Data Type by IP address?</TD>
+		<TD align=left>
+			#xdatBooleanRadio("xdat:element_security.secure_ip" $item false $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is this Data Type Secure?</TD>
+		<TD align=left>
+			#if($hasDefaultField.booleanValue())	
+				#xdatBooleanRadio("xdat:element_security.secure" $item true $vr)
+			#else
+				#xdatBooleanRadio("xdat:element_security.secure" $item false $vr)
+			#end
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is this Data Type Browseable?</TD>
+		<TD align=left>
+			#xdatBooleanRadio("xdat:element_security.browse" $item true $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is this Data Type Searchable?</TD>
+		<TD align=left>
+			#xdatBooleanRadio("xdat:element_security.searchable" $item true $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Should new data of this data type be inserted as 'quarantine'?</TD>
+		<TD align=left>
+			#xdatBooleanRadio("xdat:element_security.quarantine" $item false $vr)
+		</TD>
+	</TR>
+	<TR>
+		<TD align=left>Is schema entry publicly Accessible?</TD>
+		<TD align=left>
+			#xdatBooleanRadio("xdat:element_security.accessible" $item true $vr)
+		</TD>
+	</TR>
+	
+	<TR>
+		<TD align=left>Usage (comma-delimited list): Which $displayManager.getPluralDisplayNameForProject().toLowerCase() can use this type if not accessible?</TD>
+		<TD align=left>
+#xdatTextBox("xdat:element_security.usage" $item "" $vr)
+		</TD>
+	</TR>
+	
+	<TR>
+		<TD align=left>Singular Name</TD>
+		<TD align=left>
+#xdatTextBox("xdat:element_security.singular" $item "" $vr)
+		</TD>
+	</TR>
+	
+	<TR>
+		<TD align=left>Plural Name</TD>
+		<TD align=left>
+#xdatTextBox("xdat:element_security.plural" $item "" $vr)
+		</TD>
+	</TR>
+	
+	<TR>
+		<TD align=left>Category</TD>
+		<TD align=left>
+#xdatTextBox("xdat:element_security.category" $item "" $vr)
+		</TD>
+	</TR>
+	#xdatHiddenBox("xdat:element_security.pre_load" $item false)
+	<tr>
+		<td colspan=2 align="left"><BR>
+    			<input type="submit" name="eventSubmit_doStep2" value="Next"/>
+		</td>
+	</tr>
+</TABLE>
+</form>

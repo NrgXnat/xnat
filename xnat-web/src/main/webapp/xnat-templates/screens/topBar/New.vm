@@ -1,0 +1,7 @@
+<!-- Sequence: 20 -->
+
+<li><a href="#new">New</a>
+    <ul>
+        #addGlobalCustomScreens("topBar/New")
+    </ul>
+</li>

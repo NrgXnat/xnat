@@ -1,0 +1,19 @@
+<h3>Define Scan Type Mapping Settings</h3>
+<div>
+    <table id="scan_type_mapping_table">
+    <tr>
+        <td colspan="2" class="highlighted" id="scan_type_mapping_container">
+            #set($stm=$project.getUseScanTypeMapping())
+##            <DIV style="font-weight:700;">&nbsp;Define Scan Type Mapping Settings</DIV>
+            <TABLE cellpadding="5" cellspacing="0">
+                <TR><TD NOWRAP><input id="yes_scan_type_mapping" type="radio" name="scan_type_mapping" value="true" #if($stm)CHECKED#end/> YES</TD><TD>Incoming scans will have their type attribute set based on historical scan type mapping data.</TD></TR>
+                <TR><TD NOWRAP><input id="no_scan_type_mapping"  type="radio" name="scan_type_mapping" value="false" #if(!$stm)CHECKED#end /> NO</TD><TD>Incoming scans will have their type attribute set to be identical to their series description.</TD></TR>
+                <TR><TD COLSPAN="2"><input type="button" id="project_scan_type_mapping_save" value="Save" disabled="true"/></TD></TR>
+            </TABLE>
+        </td>
+    </tr>
+</table>
+<script>
+    window.scan_type_mapping=(new RadioSettingsManager(document.getElementById('scan_type_mapping_container'),{'URI':serverRoot+'/REST/projects/$project.getId()/scan_type_mapping/','radio_ids':['yes_scan_type_mapping','no_scan_type_mapping'],'current_value':'$stm','button':'project_scan_type_mapping_save'}));
+</script>
+</div>

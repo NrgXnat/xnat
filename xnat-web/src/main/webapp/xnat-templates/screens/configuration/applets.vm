@@ -1,0 +1,57 @@
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+<!-- Title: Applet -->
+<div class="mgmt_container">
+    <div id="applet_mgmt_div" class="row">
+        <p>
+            This is the site-wide applet settings script applied to the Upload Applet.
+        </p>
+
+        <p>
+            <label for="enableProjectAppletScript">Project-Specific Applet Scripts?</label>
+            <input type="checkbox" id="enableProjectAppletScript" name="enableProjectAppletScript" onchange="window.appletManager.dirtyForm();" disabled />
+            <small>The site-wide applet settings script can be supplemented by applet settings specified at the
+                $displayManager.getSingularDisplayNameForProject().toLowerCase() level if this setting is enabled.</small>
+        </p>
+
+        <p><label for="appletScript"><b>Script:</b></label></p>
+        <textarea id="appletScript" name="appletScript" rows="20" cols="80" disabled></textarea>
+    </div>
+    <div class="buttons">
+        <input type="button" class="submit" value="Save" name="eventSubmit_doPerform" id="applet_save_button" onclick="window.appletManager.saveTabSettings();" />&nbsp;
+        <input type="button" class="reset" value="Reset" name="eventSubmit_doReset" id="applet_reset_button" onclick="window.appletManager.resetForm();" disabled/>
+    </div>
+</div>
+
+<script type="text/javascript">
+
+    function dirtyIfClean() {
+        if (!window.appletManager.wasDirty()) {
+            window.appletManager.dirtyForm();
+        }
+    }
+
+    $('#enableProjectAppletScript').bind('input propertychange', dirtyIfClean);
+    $('#appletScript').bind('input propertychange', dirtyIfClean);
+
+    function configurationAppletTabChange(obj) {
+        if(obj.newValue.get("href")=="#applets") {
+            if(window.appletManager==undefined) {
+                window.appletManager = new SettingsTabManager('applet_mgmt_div', 'applet');
+            }
+        }
+    }
+
+    function addAppletMgmtMonitor(){
+        if(window.configurationTabView.get("activeTab").get("href")=="#applets") {
+            if(window.appletManager==undefined) {
+                window.appletManager = new SettingsTabManager('applet_mgmt_div', 'applet');
+            }
+        } else {
+            window.configurationTabView.subscribe("activeTabChange", configurationAppletTabChange);
+        }
+    }
+
+    YAHOO.util.Event.onDOMReady(addAppletMgmtMonitor);
+    putConfigurationControls('applet', ['enableProjectAppletScript', 'appletScript']);
+
+</script>

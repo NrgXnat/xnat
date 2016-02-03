@@ -1,0 +1,82 @@
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="hideReactivateAccountForm" type="java.lang.Boolean" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="topMessage" type="java.lang.String" *#
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($template = $data.getTemplateInfo())
+#set ($token = $data.getParameters().getString("token"))
+#set ($login = $data.getParameters().getString("login"))
+$!template.setLayoutTemplate("Noninteractive.vm")
+$page.setTitle("XDAT -- Account Disabled")
+$page.setBgColor($ui.bgcolor)
+<script>
+    function requestVerificationEmail(){
+
+        var requestURL =  "$!content.getURI('/data/services/sendEmailVerification')";
+        var logoutURL = '$link.setAction("LogoutUser")';
+        var email = document.getElementById("requestEmail").value;
+
+        var msgOptions = {} ;
+        msgOptions.action = function(){ window.location = serverRoot + "/app/template/Login.vm"; };
+
+        this.success = function(){
+            xModalLoadingClose();
+            xModalMessage('Email Sent','A verification email has been sent to ' + email,'OK', msgOptions);
+        }
+
+        this.failed = function(o){
+            xModalLoadingClose();
+            if(o.status === 503){
+                xModalMessage('Error','You have exceeded the allowed number of email requests. Please try again later.','OK', msgOptions);
+            }else if(o.status === 400){
+                xModalMessage('Error','Unknown email address.','OK', msgOptions);
+            }else{
+                xModalMessage('Error','An unexpected error has occurred. Please contact your administrator.','OK', msgOptions);
+            }
+        }
+
+        this.insertCallback = {
+            failure : this.failed,
+            success : this.success,
+            scope   : this
+        };
+
+        this.logoutCallback = {/* No callback actually needed from the logout call. */};
+
+        if(email && requestURL){
+            xModalLoadingOpen({title:'Please wait...'});
+            YAHOO.util.Connect.asyncRequest('POST', requestURL + '?email=' + encodeURIComponent(email), this.insertCallback, null, this);
+            YAHOO.util.Connect.asyncRequest('GET', logoutURL, this.logoutCallback, null, this);
+        }
+    }
+</script>
+
+<div VALIGN="top">
+    #parse("/screens/newPasswordValidationJS.vm")
+    <table valign="top" align="center">
+        #if ( $data.getMessage() )
+            <tr>
+                <td colspan="3" style="color:#900">
+                    <div class="error">$data.getMessage()</div><br>
+                </td>
+            </tr>
+        #end
+        #if (!$!hideReactivateAccount)
+            <tr>
+                <th colspan="3" align="left">
+                    $!topMessage
+                </th>
+            </tr>
+            <tr>
+                <td colspan="3">
+                    <hr/>
+                </td>
+            </tr>
+            <tr>
+                #formLabel("Email")
+                <td><input id="requestEmail" type="text" name="email" value="$!email"></td>
+                <td><input class="ui_sansSerifFonts" type="button" value="Request" onclick="requestVerificationEmail()"></td>
+            </tr>
+        #end
+    </table>
+</div>

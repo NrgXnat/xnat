@@ -1,0 +1,103 @@
+#macro (qcYesNo $name $qcItem)
+	#if ($qcItem.getStringProperty($name) == "1")
+		Yes
+	#elseif ($qcItem.getStringProperty($name) == "0")
+		No
+	#else
+		$!qcItem.getStringProperty($name)
+	#end
+#end
+
+#parse($turbineUtils.getTemplateName("report","xnat:imageAssessorData",$project))
+
+<script type="text/javascript">
+	document.title = "Manual QC Assessment for $!mr.getIdentifier($project,false)";
+</script>
+
+<style>
+
+.qcScanTable th, .qcSessionTable th {
+	text-align:left;
+}
+
+.qcScanTable td {
+	vertical-align:top;
+}
+</style>
+
+<h2>Overall QC for $!mr.getIdentifier($project,false)</h2>
+<table class="qcSessionTable">
+	<tr>
+		<th>Pass</th>
+		<td style="font-weight:bold;">
+			#if ($!item.getStringProperty("xnat:qcManualAssessorData/pass").equals("1"))
+				<span style="color:green">Passed</span>
+			#elseif($!item.getStringProperty("xnat:qcManualAssessorData/pass").equals("0"))
+				<span style="color:red">Failed</span>
+			#else
+				<span style="color:gold">
+					Unknown 
+					#if ($!item.getStringProperty("xnat:qcManualAssessorData/pass"))
+						($!item.getStringProperty("xnat:qcManualAssessorData/pass"))
+					#end
+				</span>
+			#end
+		</td>
+	</tr>
+	<tr>
+		<th>Payable</th>
+		<td>
+			#qcYesNo("xnat:qcManualAssessorData/payable" $item)
+		</td>
+	</tr>
+	#if( $!item.getStringProperty("xnat:qcManualAssessorData/rescan") )
+		<tr><th>Rescan</th>
+			<td>
+				#qcYesNo("xnat:qcManualAssessorData/rescan" $item)
+			</td>
+		</tr>
+	#end
+	#if( $item.getProperty("xnat:qcManualAssessorData/rater") )
+		<tr><th>Rater</th><td>$!item.getStringProperty("xnat:qcManualAssessorData/rater")</td></tr>
+	#end
+	#if( $item.getProperty("xnat:qcManualAssessorData/incidentalFindings") )
+		<tr>
+			<th>Incidental Findings</th>
+			<td>
+				$!item.getStringProperty("xnat:qcManualAssessorData/incidentalFindings")
+			</td>
+		</tr>
+	#end
+	#if( $item.getProperty("xnat:qcManualAssessorData/stereotacticMarker") )
+		<tr><th>Stereotactic Marker</th><td>$!item.getStringProperty("xnat:qcManualAssessorData/stereotacticMarker")</td></tr>
+	#end
+	#if( $item.getProperty("xnat:qcManualAssessorData/comments") )
+		<tr><th>Comments</th><td>$!item.getStringProperty("xnat:qcManualAssessorData/comments")</td></tr>
+	#end
+</table>
+
+#set ($scans = $om.getScans_scan())
+#if ($scans && $scans.size() > 0)
+	<h2>Scans</h2>
+	<table class="qcScanTable">
+		#foreach($scan in $scans)
+			#set($mrScan=$mr.getScanById($!scan.getStringProperty("xnat:qcScanData/imageScan_ID")))
+			<tr>
+				<td>
+					#set($snapshot=$mrScan.getSnapshot())
+					#if($snapshot)
+						<img src="$content.getURI("$!snapshot.getThumbnail()")"> 
+					#else
+						N/A
+					#end
+				</td>
+				<td>
+					<h3>Scan $!scan.getStringProperty("xnat:qcScanData/imageScan_ID")</h3>
+					<table>
+						#parse($turbineUtils.getTemplateName("details",$scan.getXSIType(),$project))
+					</table>
+				</td>
+			</tr>
+		#end
+	</table>
+#end

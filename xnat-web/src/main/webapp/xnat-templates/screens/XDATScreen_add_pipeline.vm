@@ -1,0 +1,64 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$data.setLayoutTemplate("Popup.vm")
+$page.setTitle("Modify Pipeline")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+<p>
+<form ID="form1" name="form1" method="post" action="$link.setAction("ManagePipeline")">
+#if($vr)
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+<HR>
+#end
+
+#set ($generatedElementsCnt = 10)
+#set ($parametersCnt = 20)
+
+<TABLE width="100%">
+	<TR>
+		<TD colspan="2" align="left"><b> Add a new pipeline </b></TD>
+	</TR>
+		<input type="hidden"  id="pipe:pipelineDetails.description" name="pipe:pipelineDetails.description" value=" "/>
+	<TR>
+		<TD>Enter Path to Pipeline descriptor xml <font color="red">&#8658</font></TD>
+		<TD> <input type="text" size="70" onChange=""  id="pipe:pipelineDetails.path" name="pipe:pipelineDetails.path" value="$!item.getProperty('pipe:pipelineDetails.path')"/></TD>
+		#if ($vr)
+			#if($vr.getField("pipe:pipelineDetails.path"))
+				<font color="red">&#8658</font><BR>
+			#end
+		#end
+
+	</TR>
+	<TR>
+		<TD>Enter Name of the custom webpage to launch this pipeline </TD>
+		<TD> <input type="text" size="70" name="pipe:pipelineDetails.customwebpage" value=""/></TD>
+	</TR>
+
+	<TR>
+		<TD colspan="2" align="center"><input type="button" ONCLICK="javascript:window.close();" value="Close"/>&nbsp;&nbsp;&nbsp;<input type="submit" ONCLICK="return validateForm();" name="eventSubmit_doAdd" value="Add"/></TD>
+	</TR>
+</TABLE>
+
+<script type="text/javascript">
+function validateForm()
+{
+     if(document.getElementById("pipe:pipelineDetails.path").value == "")
+      {
+        document.getElementById("pipe:pipelineDetails.path").focus();
+        xModalMessage('Add Pipeline Validation', 'Please set a valid path for the pipeline descriptor.');
+        return false;
+      }
+     if(document.getElementById("pipe:pipelineDetails.path").value.lastIndexOf("\\") != -1)
+      {
+        document.getElementById("pipe:pipelineDetails.path").focus();
+        xModalMessage('Add Pipeline Validation', "Please enter the path using forward slashes '/' rather than backslashes '\\'.");
+        return false;
+      }
+     return true;	
+}
+</script>
+
+</form>
+

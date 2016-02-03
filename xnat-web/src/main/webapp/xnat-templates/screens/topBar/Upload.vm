@@ -1,0 +1,6 @@
+<!-- Sequence: 30 -->
+<li><a href="#upload">Upload</a>
+    <ul>
+        #addGlobalCustomScreens("topBar/Upload")
+    </ul>
+</li>

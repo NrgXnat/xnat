@@ -1,0 +1,260 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+##<script type="text/javascript">
+##String.prototype.format = function() {
+##	var name = "to";
+##	return (name == this.substring(0,2))
+##}
+##function CheckAll() {
+##	var inputs = document.getElementsByTagName("input");
+##	for (var i =0; i<inputs.length; i++) {
+##  	    if (inputs[i].type=="checkbox") {
+##	  	    	var boxName = inputs[i].name;
+##	  	    	if (boxName.format(i)) {
+##  	       		  inputs[i].checked = true;
+##	  	 		}
+##	  	}
+##  	}
+##  	return false;
+##}
+##</script>
+#if ($data.message)
+<div class="error">$data.message</div><br>
+#end
+#parse("/screens/admin_bar.vm")
+
+<style type="text/css">
+    #email-form th { width: 20px; }
+    #email-form .full-name { padding-right: 20px; white-space: nowrap; }
+</style>
+
+<div id="email-form" class="admin-content">
+
+    <h3>Send Email</h3>
+
+    <br>
+
+    <form name="Mail" method="post" action="$link.setAction("EmailAction").setPage("XDATScreen_email.vm")" style="font-size:inherit;">
+
+            #if ($users.size() != 0)
+
+                ##<button class="btn-sm" onclick="CheckAll($users.size())">Check All</button>
+
+                <table class="xnat-table rows-only" style="float:left;">
+                    <thead>
+                    <tr>
+                        <th><a href="#!" class="email-all link" data-toggle="to" title="click to send email to all users">To</a></th>
+                        <th><a href="#!" class="email-all link" data-toggle="cc" title="click to CC email to all users">CC</a></th>
+                        <th><a href="#!" class="email-all link" data-toggle="bcc" title="click to BCC email to all users">BCC</a></th>
+                        <th style="text-align:left;">Name</th>
+                    </tr>
+                    </thead>
+                    <tbody>
+                        #set ($backColor = 0)
+                        #set ($rowCount = 1)
+                        #foreach ($usr in $users)
+                            #set($usrEmail = $usr.getStringProperty("email"))
+                            #if ($usrEmail!="")
+                                #if ($backColor == 0)
+                            <tr class="odd highlight">
+                                    #set ($backColor = 1)
+                                #else
+                            <tr class="even highlight">
+                                    #set ($backColor = 0)
+                                #end
+                                <td class="checkbox">
+                                    <input type="checkbox" class="to" name="to$velocityCount" #if($emailTo.equalsIgnoreCase($usrEmail))checked#end>
+                                </td>
+                                <td class="checkbox">
+                                    <input type="checkbox" class="cc" name="cc$velocityCount">
+                                </td>
+                                <td class="checkbox">
+                                    <input type="checkbox" class="bcc" name="bcc$velocityCount">
+                                </td>
+                                <td class="full-name">
+                                    $!usr.getStringProperty("firstname") $!usr.getStringProperty("lastname")
+                                    <input type="hidden" name="EMAILID_$velocityCount" value="$usrEmail">
+                                </td>
+
+                            </tr>
+                                #set ($rowCount = $rowCount + 1)
+                            #end
+                        #end
+                    </tbody>
+                </table>
+
+                <input type="hidden" name="RowCount" value="$rowCount">
+
+                <div id="email-content" style="float:left;padding:0 0 30px 20px;position:relative;">
+
+                    <h4 style="margin:0 0 5px 0;">Subject:</h4>
+
+                    <input type="text" class="email-subject" name="subject" size="47">
+
+                    <br><br>
+
+                    <h4 style="margin:0 0 5px 0;">Message Body:</h4>
+                    <textarea name="message" class="email-message" cols="47" rows="15"></textarea>
+
+                    ## hack: hide the 'submit' button and trigger a click on it after form is validated.
+                    <input type="submit" class="hidden" name="eventSubmit_doPerform" style="display:none;" value="Send">
+                    <button type="button" id="send-email" class="btn1" style="position:absolute;right:0;bottom:0;">Send</button>
+                    ## probably don't need a 'cancel' button - if you don't want to send the email, don't press "Send"
+                    ##<input type="button" name="cancel" value="Cancel" onclick="javascript:history.go(-1);">
+
+                    <div class="clear"></div>
+
+                </div>
+
+                <div class="clear"></div>
+
+            #end
+
+    </form>
+
+</div>
+
+<script type="text/javascript">
+    (function(){
+
+        var all = {
+                to: false,
+                cc: false,
+                bcc: false
+            };
+
+        function toggleBool(val){
+            return val === true ? false : true;
+        }
+
+        // check/uncheck all checkboxes
+        jq('.email-all').click(function(e){
+            e.preventDefault();
+            // to, cc, or bcc?
+            var what = jq(this).data('toggle');
+            // flip the state of all.to, all.cc, or all.bcc
+            all[what] = toggleBool(all[what]);
+            jq('input.'+what).prop('checked', all[what]);
+        });
+
+        // make sure we've got a subject and message to send
+        // and at least one "to" recipient
+        jq('#send-email').click(function(e){
+
+            var __form = jq('form[name="Mail"]'),
+                valid = false,
+                tos = __form.find('input.to').filter(':checked');
+
+            if (tos.length > 0){
+                valid = true;
+            }
+
+            if (!__form.find('.email-subject').val() || !__form.find('.email-message').val()){
+                valid = false;
+            }
+
+            if (valid === false){
+                xmodal.message(
+                    'Form Validation',
+                    'You must enter a subject and message and check the <b>"to"</b> checkbox for at least one recipient.',
+                    { top: '20%' }
+                );
+            }
+            else {
+                __form.find('input[name="eventSubmit_doPerform"]').trigger('click');
+            }
+
+        });
+
+    })();
+</script>
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+##<table border="0" width="95%">
+##	<tr>
+##		<td colspan=2>
+##			<form name="Mail" method="post" action="$link.setAction("EmailAction").setPage("XDATScreen_email.vm")">
+##			<DIV VALIGN="top" align="left">
+##			#if ($users.size()!=0)
+##				<table >
+##					<tr>
+##						<td valign=top>
+##							<table >
+##								<tr>
+##									#set ($checkAll = "<a href ='' onmouseover='return true;' ONCLICK = 'return CheckAll($users.size())'><font size=1>Check All</font></a>" )
+##									<td colspan=3> $checkAll </td>
+##								</tr>
+##								<tr>
+##									<th> TO </th>
+##									<th> CC </th>
+##									<th> BCC </th>
+##									<th> Name </th>
+##								</tr>
+##								#set ($backColor = 0)
+##								#set ($rowCount = 1)
+##								#foreach ($usr in $users)
+##									#set($usrEmail = $usr.getStringProperty("email"))
+##					 				#if ($usrEmail!="")
+##										#if ($backColor == 0)
+##											<TR bgcolor="FFFFFF">
+##											#set ($backColor = 1)
+##										#else
+##											<TR bgcolor="DEDEDE">
+##											#set ($backColor = 0)
+##										#end
+##										#if ($emailTo.equalsIgnoreCase($usrEmail))
+##											<td> <input type="checkbox" name="to$velocityCount" CHECKED> </td>
+##										#else
+##											<td> <input type="checkbox" name="to$velocityCount"> </td>
+##										#end
+##										<td> <input type="checkbox" name="cc$velocityCount"> </td>
+##										<td> <input type="checkbox" name="bcc$velocityCount"> </td>
+##										<td> $!usr.getStringProperty("firstname") $!usr.getStringProperty("lastname")<input type="hidden" name="EMAILID_$velocityCount" value="$usrEmail"></td>
+##
+##										</tr>
+##										#set ($rowCount = $rowCount + 1)
+##			 						#end
+##								#end
+##							</table>
+##							<input type="hidden" name="RowCount" value="$rowCount">
+##						</td>
+##						<td valign=top>
+## 							Subject <input type=text name=subject size=47><BR>
+##							<textarea COLS="40" NAME="message" ROWS="15" ></textarea>
+##							<TABLE WIDTH=100%>
+##								<tr>
+##									<td colspan=2 align=center>
+##										<input type="submit" name="eventSubmit_doPerform" value="Send">
+##										&nbsp;
+##										<input type="button" name="cancel" value="Cancel" onclick="javascript:history.go(-1);">
+##									</td>
+##								</tr>
+##							</TABLE>
+##						</td>
+##					</tr>
+##				</table>
+##			#end
+##			</div>
+##			</form>
+##		</td>
+##	</tr>
+##</table>

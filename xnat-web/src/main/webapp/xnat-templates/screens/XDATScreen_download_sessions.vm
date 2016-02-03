@@ -1,0 +1,406 @@
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#* @vtlvariable name="scan_formats" type="java.util.List" *#
+#* @vtlvariable name="scan" type="java.util.List" *#
+#* @vtlvariable name="sessionSummary" type="java.util.List" *#
+#* @vtlvariable name="sessionRow" type="java.util.List" *#
+#* @vtlvariable name="scans" type="java.util.List" *#
+#* @vtlvariable name="resources" type="java.util.List" *#
+#* @vtlvariable name="resource" type="java.util.List" *#
+#* @vtlvariable name="recons" type="java.util.List" *#
+#* @vtlvariable name="assessors" type="java.util.List" *#
+#set($showResources = $resources && $resources.size() > 0)
+#set($showRecons = $recons && $recons.size() > 0)
+#set($showAssessors = $assessors && $assessors.size() > 0)
+<SCRIPT language="javascript">
+    function toggleAll(check, names) {
+        for (var j = 0; j < names.length; j++) {
+            var allSessions = document.getElementsByName(names[j]);
+            for (var i = 0; i < allSessions.length; i++) {
+                allSessions[i].checked = check.checked;
+            }
+        }
+    }
+
+    function validateForm() {
+        var sessionsSelected = false;
+        var allSessions = document.getElementsByName("sessions");
+        for (var i = 0; i < allSessions.length; i++) {
+            if (allSessions[i].checked) {
+                sessionsSelected = true;
+            }
+        }
+
+        if (!sessionsSelected) {
+            xModalMessage('Download Sessions', 'Please select at least one imaging $displayManager.getSingularDisplayNameForImageSession().toLowerCase() from section 1.');
+            return false;
+        }
+
+        var typeSelected = false;
+        allSessions = document.getElementsByName("scan_type");
+        for (i = 0; i < allSessions.length; i++) {
+            if (allSessions[i].checked) {
+                typeSelected = true;
+            }
+        }
+
+        if (typeSelected) {
+            return true;
+        }
+
+        allSessions = document.getElementsByName("resources");
+        for (i = 0; i < allSessions.length; i++) {
+            if (allSessions[i].checked) {
+                typeSelected = true;
+            }
+        }
+
+        if (typeSelected) {
+            return true;
+        }
+
+        allSessions = document.getElementsByName("recon");
+        for (i = 0; i < allSessions.length; i++) {
+            if (allSessions[i].checked) {
+                typeSelected = true;
+            }
+        }
+
+        if (typeSelected) {
+            return true;
+        }
+
+        allSessions = document.getElementsByName("assessors");
+        for (i = 0; i < allSessions.length; i++) {
+            if (allSessions[i].checked) {
+                typeSelected = true;
+            }
+        }
+
+        if (typeSelected) {
+            return true;
+        }
+        else {
+            xModalMessage('Download Sessions', 'Please select at least one format of imaging data to download from section 2.');
+            return false;
+        }
+    }
+</SCRIPT>
+
+<FORM id="downloadForm" name="downloadForm" METHOD="post" ACTION="$link.setAction("DownloadSessionsAction2")" ONSUBMIT="return validateForm();">
+<DIV class="edit_header1">Imaging Data Download</DIV>
+<DIV class="spacer">&nbsp;</DIV>
+<TABLE border="0">
+<TR>
+    <TD>
+        <DIV class="edit_header2"><img src="$content.getURI("images/number_1.gif")" border=0> Confirm $displayManager.getPluralDisplayNameForImageSession() for download</DIV>
+    </TD>
+    <TD></TD>
+    <TD>
+        <DIV class="edit_header2"><img src="$content.getURI("images/number_2.gif")" border=0> Select image data to download</DIV>
+    </TD>
+    <TD></TD>
+    <TD>
+        <DIV class="edit_header2"><img src="$content.getURI("images/number_3.gif")" border=0> Select download format</DIV>
+    </TD>
+<TR>
+<TD VALIGN="top" class="withColor" ROWSPAN="4">
+    <DIV ID="dataTable" style="display: none;">
+        <DIV STYLE="overflow: auto; height: 550px;">
+            <TABLE border="0" ID="subTableSessions" cellspacing="0">
+                <TR class="">
+                    <TD><INPUT type="checkbox" value="" ONCLICK="toggleAll(this,['sessions']);" ID="toggleAllSessions" CHECKED/></TD>
+                    <TD NOWRAP colspan="2"><label for="toggleAllSessions">Toggle All (#if($sessionSummary) $!sessionSummary.size() #else 0 #end)</label></TD>
+                </TR>
+
+                #set($rowColor="even")
+                #foreach($sessionRow in $sessionSummary)
+                    <TR class="$rowColor">
+                        <TD></TD>
+                        <TD><INPUT type="checkbox" value="$sessionRow.get(0)" ID="$sessionRow.get(0)" name="sessions" CHECKED/></TD>
+                        <TD NOWRAP><label for="$sessionRow.get(0)">$sessionRow.get(1)</label></TD>
+                        <TD NOWRAP><label for="$sessionRow.get(0)">$!sessionRow.get(2)</label></TD>
+                    </TR>
+
+                    #if($rowColor=="even")
+                        #set($rowColor="")
+                    #else
+                        #set($rowColor="even")
+                    #end
+                #end
+            </TABLE>
+        </DIV>
+    </DIV>
+</TD>
+<TD ROWSPAN="4">&nbsp;&nbsp;&nbsp;</TD>
+<TD VALIGN="top" class="withColor" ROWSPAN="4">
+    <SCRIPT language="javascript">
+        document.getElementById("dataTable").style.display = "block";
+    </SCRIPT>
+
+    <DIV>
+        <TABLE>
+            <TR>
+                <TD colspan="2">
+                    <DIV class="edit_header3">Scan Formats</DIV>
+                </TD>
+            </TR>
+
+            <TR>
+                <TD colspan="2">
+                    <TABLE>
+                        #set($counter = 0)
+                        #foreach($scan in $scan_formats)
+                            #if($!scan.get(0))
+                                <TR>
+                                    <TD><input type="checkbox" id="scan_format$counter" name="scan_format" value="$!scan.get(0)" checked="true"/></TD>
+                                    <TD><label for="scan_format$counter">$!scan.get(0)</label></TD>
+                                </TR>
+                            #else
+                                <TR>
+                                    <TD><input type="checkbox" id="scan_format$counter" name="scan_format" value="NULL" checked="checked"/></TD>
+                                    <TD><label for="scan_format$counter">Unspecified</label></TD>
+                                </TR>
+                            #end
+                            #set($counter = $counter + 1)
+                        #end
+                    </TABLE>
+                </TD>
+            </TR>
+
+            <TR>
+                <TD colspan="2">&nbsp;</TD>
+            </TR>
+
+            <TR>
+                <TD><INPUT type="checkbox" value=""
+                           ONCLICK="toggleAll(this,['scan_type'#if($showResources),'resources'#end #if($showRecons),'recon'#end #if($showAssessors),'assessors'#end]);"
+                           ID="toggleAllScanTypes" checked="true"/></TD>
+                <TD><label for="toggleAllScanTypes">Toggle All</label></TD>
+            </TR>
+
+            <TR>
+                <TD></TD>
+                <TD>
+                    <DIV class="edit_header3">Scan Types</DIV>
+                </TD>
+            </TR>
+
+            <TR>
+                <TD></TD>
+                <TD>
+                    <TABLE>
+                        #set($counter = 0)
+                        #foreach($scan in $scans)
+                            #if($!scan.get(0))
+                                <TR>
+                                    <TD><input type="checkbox" id="scan_type$counter" name="scan_type" value="$!scan.get(0)" checked="true"/></TD>
+                                    <TD><label for="scan_type$counter">$!scan.get(0) ($!scan.get(1))</label></TD>
+                                </TR>
+                            #else
+                                <TR>
+                                    <TD><input type="checkbox" id="scan_type$counter" name="scan_type" value="NULL"/></TD>
+                                    <TD><label for="scan_type$counter">Unassigned ($!scan.get(1))</label></TD>
+                                </TR>
+                            #end
+                            #set($counter = $counter + 1)
+                        #end
+                    </TABLE>
+                </TD>
+            </TR>
+
+            <TR>
+                <TD colspan="2">&nbsp;</TD>
+            </TR>
+
+            #if ($showResources)
+                <TR>
+                    <TD></TD>
+                    <TD>
+                        <DIV class="edit_header3">Additional Resources</DIV>
+                    </TD>
+                </TR>
+
+                <TR>
+                    <TD></TD>
+                    <TD>
+                        <TABLE>
+                            #set($counter = 0)
+                            #foreach($resource in $resources)
+                                #if($!resource.get(0))
+                                    <TR>
+                                        <TD><input type="checkbox" id="resources$counter" name="resources" value="$!resource.get(0)" checked="true"/></TD>
+                                        <TD><label for="resources$counter">$!resource.get(0)</label></TD>
+                                    </TR>
+                                #else
+                                    <TR>
+                                        <TD><input type="checkbox" id="resources$counter" name="resources" value="NULL"/></TD>
+                                        <TD><label for="resources$counter">Unspecified</label></TD>
+                                    </TR>
+                                #end
+                                #set($counter = $counter + 1)
+                            #end
+                        </TABLE>
+                    </TD>
+                </TR>
+
+                <TR>
+                    <TD colspan="2">&nbsp;</TD>
+                </TR>
+            #end
+
+            #if ($showRecons)
+                <TR>
+                    <TD></TD>
+                    <TD>
+                        <DIV class="edit_header3">Reconstructions</DIV>
+                    </TD>
+                </TR>
+
+                <TR>
+                    <TD></TD>
+                    <TD>
+                        <TABLE ID="subTableScans">
+                            #set($counter = 0)
+                            #foreach($scan in $recons)
+                                #if($!scan.get(0))
+                                    <TR>
+                                        <TD><input type="checkbox" id="recon$counter" name="recon" value="$!scan.get(0)" checked="true"/></TD>
+                                        <TD><label for="recon$counter">$!scan.get(0) ($!scan.get(1))</label></TD>
+                                    </TR>
+                                #else
+                                    <TR>
+                                        <TD><input type="checkbox" id="recon$counter" name="recon" value="NULL"/></TD>
+                                        <TD><label for="recon$counter">Unassigned ($!scan.get(1))</label></TD>
+                                    </TR>
+                                #end
+                                #set($counter = $counter + 1)
+                            #end
+                        </TABLE>
+                    </TD>
+                </TR>
+
+                <TR>
+                    <TD colspan="2">&nbsp;</TD>
+                </TR>
+            #end
+
+            #if ($showAssessors)
+                <TR>
+                    <TD></TD>
+                    <TD>
+                        <DIV class="edit_header3">Assessments</DIV>
+                    </TD>
+                </TR>
+
+                <TR>
+                    <TD></TD>
+                    <TD>
+                        <TABLE>
+                            #set($counter = 0)
+                            #foreach($scan in $assessors)
+                                #if($!scan.get(2))
+                                    <TR>
+                                        <TD><input type="checkbox" id="assessors$counter" name="assessors" value="$!scan.get(0)" checked="true"/></TD>
+                                        <TD><label for="assessors$counter">$!scan.get(2) ($!scan.get(1))</label></TD>
+                                    </TR>
+                                #else
+                                    <TR>
+                                        <TD><input type="checkbox" id="assessors$counter" name="assessors" value="$!scan.get(0)"/></TD>
+                                        <TD><label for="assessors$counter">$!scan.get(0) ($!scan.get(1))</label></TD>
+                                    </TR>
+                                #end
+                                #set($counter = $counter + 1)
+                            #end
+                        </TABLE>
+                    </TD>
+                </TR>
+
+                <TR>
+                    <TD colspan="2">&nbsp;</TD>
+                </TR>
+            #end
+
+        </TABLE>
+    </DIV>
+</TD>
+<TD ROWSPAN="4">&nbsp;&nbsp;&nbsp;</TD>
+<TD VALIGN="top" width="300" class="withColor">
+    <TABLE>
+        <TR>
+            <TD><INPUT type="radio" id="download_option" name="download_option" value="applet" CHECKED></TD>
+            <TD><label for="download_option">Option 1: Direct download</label></TD>
+        </TR>
+        <TR>
+            <TD></TD>
+            <TD style="font-size:11px;">
+                You will be prompted to enter a local directory to copy the data to. Then, all of
+                the requested imaging data will be directly downloaded via a java applet into that directory.
+            </TD>
+        </TR>
+        <TR>
+            <TD>&nbsp;</TD>
+        </TR>
+        <TR>
+            <TD><INPUT type="radio" id="download_option" name="download_option" value="catalog"></TD>
+            <TD><label for="download_option">Option 2: Catalog XML (.xcat)</label></TD>
+        </TR>
+
+        <TR>
+            <TD></TD>
+            <TD style="font-size:11px;">Download an xml representation of the files. This xml can then be used by
+                specific applications to download the data at the user's command.
+            </TD>
+        </TR>
+        <TR>
+            <TD>&nbsp;</TD>
+        </TR>
+        <TR>
+            <TD><input type="checkbox" id="projectIncludedInPath" name="projectIncludedInPath" value="true"/>
+            <TD><label for="projectIncludedInPath">Include $displayManager.getSingularDisplayNameForProject().toLowerCase() in file paths</label></TD>
+        </TR>
+        <TR>
+            <TD><input type="checkbox" id="subjectIncludedInPath" name="subjectIncludedInPath" value="true"/>
+            <TD><label for="subjectIncludedInPath">Include $displayManager.getSingularDisplayNameForSubject().toLowerCase() in file paths</label></TD>
+        </TR>
+        <TR>
+            <TD><input type="checkbox" id="simplified" name="simplified" checked value="true"/>
+            <TD><label for="simplified">Simplify downloaded archive structure</label></TD>
+        </TR>
+        <TR>
+            <TD colspan="2">&nbsp;</TD>
+        </TR>
+    </TABLE>
+</TD>
+</TR>
+<TR>
+    <TD>&nbsp;</TD>
+</TR>
+<TR>
+    <TD>
+        <DIV class="edit_header2"><img src="$content.getURI("images/number_4.gif")" border=0> Submit Data Request</DIV>
+    </TD>
+</TR>
+<TR>
+    <TD style="vertical-align: top">
+        <TABLE class="withColor">
+            <TR>
+                <TD><input type="submit" value="Submit" name="eventSubmit_doPerform"/></TD>
+            </TR>
+            <TR>
+                <TD style="font-size:11px;">Upon page submission, the pertinent files will be reviewed and organized for
+                    download. Depending on the number of files, this may take several minutes to process.
+                </TD>
+            </TR>
+        </TABLE>
+    </TD>
+</TR>
+</TABLE>
+</FORM>
+
+<script type="text/javascript">
+    jq(document).ready(function(){
+        jq('#subTableSessions tr:first').addClass('first');
+    });
+</script>

@@ -1,0 +1,50 @@
+<!-- Sequence: 5 -->
+
+<!-- xnat_projectData/actionsBox/Add -->
+
+#if($data.getSession().getAttribute("userHelper").canEdit("xnat:subjectData/project",$project.getId()))
+				           <li class="yuimenuitem"> 
+            <a class="yuimenuitemlabel" href="#insertbox">Add</a>
+            <DIV ID="insertbox" class="yuimenu">
+             <DIV class="bd">
+              <ul class="first-of-type" style="width: 500px;">
+              <li class="yuimenuitem">
+                <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_xnat_subjectData.vm").addPathInfo('project',$project.getId())">$displayManager.getSingularDisplayNameForSubject()</A>
+              </li>
+              #foreach($dataType in $exptCounts.keySet())
+               #set($ed=$!data.getSession().getAttribute("userHelper").getBrowseableElementDisplay($dataType))	
+          	     <li class="yuimenuitem">
+                <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo('project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</A>
+               </li>
+              #end
+              #set($key="xnat:mrSessionData")
+              #if(!$exptCounts.containsKey($key))
+               #set($ed=$!data.getSession().getAttribute("userHelper").getBrowseableElementDisplay($key))	
+          	     #if($ed)
+          	     <li class="yuimenuitem">
+                <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_edit_${ed.getSQLName()}.vm").addPathInfo('project',$project.getId())">$ed.getSchemaElement().getSingularDescription()</A>
+               </li>
+               #end
+              #end
+              <li class="yuimenuitem">
+                <a class="yuimenuitemlabel" href="$link.setPage("XDATScreen_add_experiment.vm").addPathInfo('project',$project.getId())">More</A>
+               </li>
+              </ul>
+             </DIV>
+            </DIV>
+           </li>
+           <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','LaunchUploadApplet').addPathInfo('project',$project.getId())">Upload Images</A>
+            
+           </li>
+           <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo('xdataction','prearchives').addPathInfo('project',$project.getId())">View Prearchive</A>
+           </li>
+           #if($project.getUseScanTypeMapping())
+		   <li class="yuimenuitem">
+            <a class="yuimenuitemlabel" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","scanTypeCleanup").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Scan Type Cleanup</A> 
+           </li>
+           #end
+      </ul>
+      <ul>
+#end

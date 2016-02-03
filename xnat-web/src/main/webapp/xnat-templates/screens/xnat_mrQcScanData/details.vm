@@ -1,0 +1,24 @@
+#parse($turbineUtils.getTemplateName("details","xnat:qcScanData",$project))
+
+#if( $scan.getStringProperty("xnat:mrQcScanData/blurring") )
+	<tr><th>Blurring, Ghosting, Ringing</th><td>$!scan.getStringProperty("xnat:mrQcScanData/blurring")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:mrQcScanData/imageContrast") )
+	<tr><th>Image Contrast</th><td>$!scan.getStringProperty("xnat:mrQcScanData/imageContrast")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:mrQcScanData/flow") )
+	<tr><th>Flow</th><td>$!scan.getStringProperty("xnat:mrQcScanData/flow")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:mrQcScanData/inhomogeneity") )
+	<tr><th>Inhomogeneity</th><td>$!scan.getStringProperty("xnat:mrQcScanData/inhomogeneity")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:mrQcScanData/wrap") )
+	<tr><th>Wrap</th><td>$!scan.getStringProperty("xnat:mrQcScanData/wrap")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:mrQcScanData/susceptibility") )
+	<tr><th>Susceptibility</th><td>$!scan.getStringProperty("xnat:mrQcScanData/susceptibility")</td></tr>
+#end
+#if( $scan.getStringProperty("xnat:mrQcScanData/interpacMotion") )
+	<tr><th>Interpac Motion</th><td>$!scan.getStringProperty("xnat:mrQcScanData/interpacMotion")</td></tr>
+#end
+

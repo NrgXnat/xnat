@@ -1,0 +1,54 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("NoMenu.vm")
+$page.setTitle("XDAT -- Register")
+$page.setBgColor($ui.bgcolor)
+<div valign="top">
+<form name="form2" method="post" action="$link.setAction("XDATForgotLogin")">
+  <table valign="top" align="center">
+#if ( $data.getMessage() )
+  <tr><td colspan="2">
+      <div class="error">$data.getMessage()</div><br />
+  </td></tr>
+#end
+    <tr>
+    	<th colspan="3" align="left">Did you forget your username?</th>
+    </tr>
+    <tr>
+    	<td colspan="3" align="left">Enter your email address and the matching username will be emailed to you.</td>
+    </tr>
+    <tr>
+      #formLabel("Email")
+  	  <td><input type="text" name="email" value="$!email"></td>
+  	  <td>
+         <input type="submit" value="Request">
+        </td>
+    </tr>
+    <tr>
+    	<td colspan="3"><br><br></td>
+    </tr>
+    <tr>
+    	<th colspan="3"><br/></th>
+    </tr>
+    <tr>
+    	<th colspan="3" align="left">Did you forget your password?</th>
+    </tr>
+    <tr>
+    	<td colspan="3" align="left">Enter your username and a new password will be emailed to you.</td>
+    </tr>
+    <tr>
+      #formLabel("Username")
+  	  <td><input type="text" name="username" value="$!username"></td>
+  	  <td>
+         <input type="submit" value="Request">
+        </td>
+    </tr>
+    <tr>
+      <td colspan="3" style="text-align:center; font-weight: bold;">
+        <br/><br/>
+          <a href="$link.setPage("ResendEmail.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Resend email verification</a>
+      </td>
+    </tr>
+  </table>
+</form>
+</div>

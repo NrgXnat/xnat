@@ -1,0 +1,26 @@
+
+				#elementActionsBoxNoEnd($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+				#addCustomScreens("$element" "actionsBox") 
+				#parse($turbineUtils.getTemplateName("actionsBoxAddons","$om.getXSIType()",$!project))
+		 </ul>
+     </DIV>
+    </DIV>
+ <script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+<style type="text/css">   
+  .icon-of { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/of.gif")) no-repeat;}   
+  .icon-f { display:block; font-size:11px; height: 17px; padding-left: 4px;}
+  .icon-cf { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/cf.gif")) no-repeat;} 
+  .ygtvcheck0 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check0.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+  .ygtvcheck1 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check1.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+  .ygtvcheck2 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check2.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+</style>
+				<script type="text/javascript">
+				var _a = new Array();
+#foreach ($assessor in $om.getMinimalLoadAssessors())
+													   _a.push({"label": window.available_elements.getByName("$assessor.getXSIType()").singular +" $!assessor.getLabel() ($!assessor.getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectId()/experiments/$om.getId()/assessors/$assessor.getId()" #if($assessor.canRead($user)),canRead:true#else,canRead:false#end,checked:true,xsiType:window.available_elements.getByName("$assessor.getXSIType()").singular,date:"$!assessor.getDate()",primary_label:"$!assessor.getIdentifier($project)"});
+#end
+   _a.push({"label": window.available_elements.getByName("$om.getXSIType()").singular +" $!om.getLabel() ($!om.getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectId()/experiments/$om.getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:window.available_elements.getByName("$om.getXSIType()").singular,date:"$!om.getDate()",primary_label:"$!om.getIdentifier($project)"});
+   													_a.push({"label": "$displayManager.getSingularDisplayNameForSubject() $!om.getSubjectData().getIdentifier($project) ($!om.getSubjectData().getId())","ru":"/REST/projects/$project/subjects/$om.getSubjectData().getId()","redirect":serverRoot+"/REST/projects/$project",canRead:true,checked:true,xsiType:"Subject",date:"",primary_label:"$!om.getSubjectData().getIdentifier($project)",allowDelete:false});
+					
+				</script>
+				

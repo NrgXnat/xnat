@@ -1,0 +1,47 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<script type="text/javascript">
+<!--
+function popup(url)
+
+{
+if (! window.focus)return true;
+var search = document.searchForm.searchValue.value;
+var href = url  + "/searchValue/" + search  + "/popup/true";
+document.searchForm.searchValue.focus();
+window.open(href, '', 'width=320,height=420,status=yes,resizable=yes,scrollbars=no');
+
+return false;
+
+}
+
+
+function frmsearchForm_Validate() {
+	if (!document.searchForm.searchOn.value) {
+        xModalMessage('Search Validation', 'Enter $displayManager.getSingularDisplayNameForSubject() or $displayManager.getSingularDisplayNameForImageSession() Id to search.');
+		return false;
+	}
+	return true;
+}
+
+
+//-->
+</script>
+			<form name="searchForm" action="$link.setAction("QuickSearchAction")" onSubmit="return frmQuickSearch_Validate();">
+				<table align="left" border="0" >
+				<tr>
+					   <td align="left">
+					   		<font size="2"><u><b>Search</b></u><br></font>
+					   </td>
+				  </tr>
+				 <tr>
+					   <td align="left">
+					   		<input style="font-family:'arial'; font-style:normal; font-weight:normal; font-size:10px;" maxlength="40" size="26" type="text" name="searchValue" value="$!field">
+					   </td>
+				  </tr>
+				  <tr>
+				  	<TD align="right">
+				        <input style="font-family:'arial'; font-style:normal; font-weight:normal; font-size:10px;"  type="submit" name="eventSubmit_doPerform" value="Search"/>
+				    </td>
+				  </tr>
+				</table>
+			</form>

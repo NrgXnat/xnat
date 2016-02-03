@@ -1,0 +1,49 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+
+<script language="javascript">
+	function ConfirmEmail()
+	{
+		if(YUIDOM.get('new_email').value == YUIDOM.get('confirm_email').value)
+		{
+			if(YUIDOM.get('new_email')!="" && YUIDOM.get('new_email').value.indexOf('@')>-1 && YUIDOM.get('new_email').value.indexOf(' ')==-1 && YUIDOM.get('new_email').value.length < 255){
+				return true;
+			}else{
+                xModalMessage('Email Validation', 'Please enter a valid email address.');
+				return false;
+			}
+		}else{
+            xModalMessage('Email Validation', 'Values do not match.');
+			YUIDOM.get('new_email').value='';
+			YUIDOM.get('confirm_email').value='';
+			return false;
+		}
+	}
+</script>
+<p>
+<form name="form1" class="noHide" method="post" action="$link.setAction("ModifyEmail")" ONSUBMIT="return ConfirmEmail();">
+
+<table border="0" width="95%">
+	<tr>
+		<TH align=center colspan=2>Change Email for $!item.getProperty("firstname") $!item.getProperty("lastname") ($!item.getProperty("login"))</TH>
+	</tr>
+		<tr>
+		<TD align=right>Current Email:</TD><TD>$!item.getProperty("email")</TD>
+	</tr>
+	<tr>
+		<TD align=right>Enter new Email:</TD><TD><INPUT id="new_email" type="text" name="xdat:user.email" value=""/></TD>
+	</tr>
+	<tr>
+		<TD align=right>Confirm new Email:</TD><TD><INPUT id="confirm_email" type="text" name="confirm_email" value=""/></TD>
+	</tr>
+<input type="hidden" name="destination" value="Index.vm"/>
+<input type="hidden" name="message" value="Email Changed."/>
+	#xdatHiddenBox("xdat:user.xdat_user_id" $item "")
+	#xdatHiddenBox("xdat:user.login" $item "")
+	#xdatEditProps($item $edit_screen)
+	<TR><TD COLSPAN=2 ALIGN=center><input type="submit" name="eventSubmit_doSetup" value="Submit"/></TD></TR>
+</table>
+</form>
+</p>

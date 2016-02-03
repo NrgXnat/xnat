@@ -1,0 +1,89 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Tim Olsen (Washington University) -->
+<xs:schema xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="Instance_Settings">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="Databases">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Database">
+								<xs:complexType>
+									<xs:attribute name="Type">
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:enumeration value="POSTGRESQL"/>
+												<xs:enumeration value="MYSQL"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:attribute>
+									<xs:attribute name="Id" type="xs:string"/>
+									<xs:attribute name="Url" type="xs:string"/>
+									<xs:attribute name="User" type="xs:string"/>
+									<xs:attribute name="Pass" type="xs:string"/>
+									<xs:attribute name="Driver" type="xs:string"/>
+									<xs:attribute name="MaxConnections" type="xs:integer"/>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Package" minOccurs="0">
+					<xs:complexType>
+						<xs:attribute name="Name" type="xs:string"/>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Models">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Data_Model" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:attribute name="File_Name" type="xs:string"/>
+									<xs:attribute name="File_Location" type="xs:string"/>
+									<xs:attribute name="DB" type="xs:string"/>
+									<xs:attribute name="package" type="xs:string" use="optional"/>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Data_Type_Codes" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Type_Code_Mapping" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:attribute name="Model_Id" type="xs:string"/>
+									<xs:attribute name="Model_Element" type="xs:string"/>
+									<xs:attribute name="Code" type="xs:string"/>
+									<xs:attribute name="Brief_Description" type="xs:string"/>
+									<xs:attribute name="Full_Description" type="xs:string"/>
+									<xs:attribute name="Log_Location" type="xs:string"/>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Pivots" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="Pivot" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:attribute name="Model_Id" type="xs:string"/>
+									<xs:attribute name="Model_Element" type="xs:string"/>
+									<xs:attribute name="Mapping1" type="xs:string"/>
+									<xs:attribute name="Mapping2" type="xs:string"/>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="admin_email" type="xs:string"/>
+			<xs:attribute name="smtp_server" type="xs:string" use="optional"/>
+			<xs:attribute name="archive_root_path" type="xs:string" use="optional"/>
+			<xs:attribute name="cache_path" type="xs:string" use="optional"/>
+			<xs:attribute name="prearchive_path" type="xs:string" use="optional"/>
+			<xs:attribute name="site_url" type="xs:string" use="optional"/>
+		</xs:complexType>
+	</xs:element>
+</xs:schema>

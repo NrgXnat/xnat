@@ -1,0 +1,48 @@
+<b>$!msg</b>
+#if($sessions.size()>0)
+<table>
+<tr>
+ <th>User</th>
+ <th>Created</th>
+ <th>Last</th>
+ <th>Objects</th>
+</tr>
+#set ($sessionCounter = 1000)
+#set ($scanCounter = 0)
+#foreach($session in $sessions)
+<tr>
+ <td NOWRAP><A name="LINK${sessionCounter}" HREF="#LINK${sessionCounter}" onClick=" return blocking($sessionCounter);">
+			<img ID="IMG$sessionCounter" src="$content.getURI("images/plus.jpg")" border=0> $!session.getAttribute("user").getLogin()</A></td>
+ <td>$!turbineUtils.formatDateTime($session.getCreationTime())</td>
+ <td>$!turbineUtils.formatDateTime($session.getLastAccessedTime())</td>
+ <td>
+		<A name="LINK${scanCounter}" HREF="#LINK${scanCounter}" onClick=" return blocking($scanCounter);">
+			<img ID="IMG$scanCounter" src="$content.getURI("images/plus.jpg")" border=0> Attributes</A>
+					<span ID="span$!scanCounter" style="position:relative; display:none;">
+					 <table>
+ #foreach($attrName in $session.getAttributeNames())
+ <tr>
+  <td>$attrName</td><td>$session.getAttribute($attrName).getClass().getName()</td>
+ </tr>
+ #end
+ </table>
+</span>
+ </td>
+</tr>
+<tr>
+ <td></td>
+ <td colspan="3">
+ 					<span ID="span$!sessionCounter" style="position:relative; display:none;">
+  <table>
+    #foreach($history in $session.getAttribute("request_history"))
+    <tr><td>$history</td></tr>
+    #end
+  </table>					
+ 					</span>
+ </td>
+</tr>
+#set ($sessionCounter = $sessionCounter + 1)
+#set ($scanCounter = $scanCounter + 1)
+#end
+</table>
+#end

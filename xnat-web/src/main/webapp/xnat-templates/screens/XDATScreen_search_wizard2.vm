@@ -1,0 +1,113 @@
+<!-- start: screens/XDATScreen_search_wizard2.vm -->
+
+#set ($user = $data.getSession().getAttribute("user"))
+
+#if(!$user || !$ELEMENT_0)
+## If $user or $ELEMENT_O is null, display a message explaining that the search data has expired.
+## Fixes XNAT-2195
+<style type="text/css">
+    p.advanced_err { font-size: 13px; }
+    #searchWizard1s { margin: 0 20px; }
+    #searchWizard1s h2 { margin-top: 0; }
+</style>
+
+<p class="advanced_err">The data for this search query has expired.</p>
+<p class="advanced_err">Please return to the beginning of the advanced search wizard.</p>
+
+<button onclick="document.location=serverRoot+'/app/template/XDATScreen_search_wizard1.vm'" type="button">Advanced Search</button>
+<button onclick="document.location=serverRoot+'/app/template/Index.vm'" type="button">Home</button>
+
+
+#else
+<form class="search-wizard" style="max-width:800px;" name="searchWizard1s" method="post" action="$link.setAction("DisplaySearchAction")">
+
+    <h2 style="margin:0 0 20px;">Advanced Search - Criteria</h2>
+
+    <ol class="steps">
+
+        <li class="step1">
+            <h3>Pivot Data-type: $user.getElementSecurity($ELEMENT_0).getPluralDescription()</h3>
+            <input type="hidden" name="ELEMENT_0" value="$ELEMENT_0">
+        </li>
+
+        <li class="step2">
+            <h3>Additional Data-types:</h3>
+
+            #if($additional_types.size()>0)
+                <table class="addl-data-types" cellpadding="3" style="border-collapse:collapse;">
+                    #foreach ($key in $additional_types.keySet())
+                        <tr>
+                            <td>
+                                <b>$user.getElementSecurity($key).getPluralDescription()</b>
+                            </td>
+                            <td nowrap>
+                                $additional_types.get($key)
+                                <input type="hidden" name="super_$key" value="$additional_types.get($key)">
+                            </td>
+                        </tr>
+                    #end
+                </table>
+            #else
+                None.
+            #end
+
+        </li>
+
+        <li class="step3">
+
+            <h3>Define Search Criteria:</h3>
+
+            <p>Define the constraints which will determine which rows show up in your search results.</p>
+
+            <p style="margin-bottom:20px;">
+                You must also select a search method (this affects all tabs below):
+                <label class="search-method-label" style="border-right:1px solid #ccc;">
+                    <input type="checkbox" class="search-method by-criteria" value="by-criteria"> By Specific Criteria</label>
+                <label class="search-method-label">
+                    <input type="checkbox" class="search-method by-id" value="by-id"> By Exact ID</label>
+            </p>
+
+            <div id="super_search" class="yui-navset" style="max-width:800px !important;margin-top:30px;margin-left:-40px;">
+                <ul class="yui-nav" style="">
+                    <li class="selected">
+                        <a href="#$ELEMENT_0"><em>$user.getElementSecurity($ELEMENT_0).getPluralDescription()</em></a>
+                    </li>
+                    #foreach ($key in $additional_types.keySet())
+                        #if(!$key.equals($ELEMENT_0))
+                            <li>
+                                <a href="#$key"><em>$user.getElementSecurity($key).getPluralDescription()</em></a>
+                            </li>
+                        #end
+                    #end
+                </ul>
+                <div class="yui-content">
+                    <div id="$ELEMENT_0">
+                        <p>#xdatSearchElement($user.getElementSecurity($ELEMENT_0).getSchemaElement() 3)</p>
+                    </div>
+                    #foreach ($key in $additional_types.keySet())
+                        #if(!$key.equals($ELEMENT_0))
+                            <div id="$key">
+                                <p>#xdatSearchElement($user.getElementSecurity($key).getSchemaElement() 3)</p>
+                            </div>
+                        #end
+                    #end
+                </div>
+            </div>
+
+            <script type="text/javascript">
+                var frontTabs = new YAHOO.widget.TabView('super_search');
+                wrangleTabs('#super_search');
+                XNAT.app.searchMethodToggler();
+            </script>
+
+        </li>
+
+    </ol>
+
+    <input type="submit" name="eventSubmit_doPerform" style="float:right;" value="Submit">
+
+    <div class="clear"></div>
+
+</form>
+#end
+<!-- end: screens/XDATScreen_search_wizard2.vm -->

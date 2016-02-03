@@ -1,0 +1,32 @@
+					<!--BEGIN /screens/xnat_experimentData/xnat_experimentData_resources.vm -->
+
+<DIV class="edit_header1" style="margin-top:16px;">Additional Resources &nbsp;&nbsp;&nbsp;&nbsp;&nbsp; 					<DIV id="resources" style="display:inline;font-weight:500;font-size:10px;"><a onclick="window.fileCounter.execute();">Show File Counts</a></DIV> 
+</DIV>
+<DIV id="span_resource" style="position:relative; display:none;margin-bottom:16px;">
+  <table>
+    <tbody id="res_file_listing">
+    </tbody>
+  </table>
+</DIV>
+<br/>
+	
+<style>
+/* custom styles for inline instances */
+.yui-skin-sam .yui-ac-input { position:static;width:20em; vertical-align:middle;}
+.yui-skin-sam .yui-ac-container { width:20em;left:0px;}
+
+/* buttons */
+.yui-ac .yui-button {vertical-align:middle;}
+.yui-ac .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-rt.png")) center center no-repeat }
+.yui-ac .open .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-dn.png")) center center no-repeat}
+
+/* custom styles for scrolling container */ 
+	#type_auto_div { 
+    padding-bottom:2em; 
+	}
+	#type_auto_div .yui-ac-content { 
+    max-height:20em;overflow:auto;overflow-x:hidden; /* set scrolling */ 
+    _height:20em; /* ie6 */ 
+	} 
+</style>
+					<!--END /screens/xnat_experimentData/xnat_experimentData_resources.vm -->

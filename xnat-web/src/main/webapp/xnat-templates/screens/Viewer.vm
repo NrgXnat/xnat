@@ -1,0 +1,89 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("Viewer: $om.Id")
+
+#set ($age = $om.SubjectAge)
+#if ($age < 0)
+#set ($age = "--")
+#end
+
+#set ($qt='"')
+
+<script type="text/javascript">
+    jq(document).ready(function() {
+        // add "applet" class to body to support special handling for applets
+        jq('body').addClass('applet');
+    });
+</script>
+
+<table border="0" >
+    <tr  bgcolor="white">
+        <td style="border-style:none;"  valign="top" align="left" colspan="2">
+				<applet name="plexiviewer" code="org.nrg.plexiViewer.lite.applet.PlexiViewerApplet"
+					codebase="$!appletPath" archive="plexiviewer-1.6.5.jar, ij-1.49t.jar, framework-1.6.5.jar, xdat-beans-1.6.5.jar, log4j-1.2.17.jar, commons-lang-2.6.jar, nrgutil-2.0.0.jar"
+					width=250 height=200>
+					<param name="sessionId" value="$om.Id">
+					#if ($startDisplayWith)
+						<param name="startDisplayWith" value="$!startDisplayWith">
+					#end
+					<param name="jsessionid" value="$jsessionid">
+				</applet>
+       </td>
+    </tr>
+    <tr style="border-style:none;">
+        <td style="border-style:none;" >
+    	    <b>$displayManager.getSingularDisplayNameForImageSession() information</b>
+	 </td>
+	        <td style="border-style:none;" valign="top" align="right">
+	    <a class=b HREF="" onClick="return popup('$link.setPage('ViewerHelp.vm').addPathInfo('popup','true')','$om.Id')">Help</a>
+        </td>
+    </tr>
+    <tr style="border-style:none;">
+        <td style="border-style:none;" colspan="2" >
+	    <textarea
+			rows="10"
+			cols="32"
+			style="font-family:'courier'; font-style:normal; font-weight:normal; font-size:12px; border-style:ridge;">$displayManager.getSingularDisplayNameForImageSession().toUpperCase() ID:   $om.Label
+LAB ID:       $!om.SubjectData.LabId
+MAP#:         $!om.SubjectData.Map
+AGE:          $age
+GENDER:       $om.SubjectData.GenderText
+HANDEDNESS:   $om.SubjectData.HandedText
+ACQ. DATE:    $!om.Date
+SCANNER:      $!om.Scanner
+STABILIZATION:$!om.Stabilization
+REF. MARKER:  $!om.Marker
+INVESTIGATOR: $!om.Investigator.Firstname $!om.Investigator.Lastname
+OPERATOR:     $!om.Operator
+
+#foreach ($scan in $om.Scans_scan)
+$scan.Id   $!scan.Type   $!scan.Quality
+#end
+
+Additional notes
+$!om.Note
+
+#foreach ($scan in $om.Scans_scan)
+SCAN NUMBER: $!scan.Id
+TYPE:        $!scan.Type
+Quality:     $!scan.Quality
+Vox res (mm):$!scan.Parameters_voxelres_x x $!scan.Parameters_voxelres_y x $!scan.Parameters_voxelres_z
+Rect. Fov:   $!scan.Parameters_fov_x/$!scan.Parameters_fov_y
+Matrix:      $!scan.Parameters_matrix_x/$!scan.Parameters_matrix_y
+Partitions:  $!scan.Parameters_partitions
+Orientation: $!scan.Parameters_orientation
+TR (ms):     $!scan.Parameters_tr
+TE (ms):     $!scan.Parameters_te
+TI (ms):     $!scan.Parameters_ti
+Flip:        $!scan.Parameters_flip
+Sequence:    $!scan.Parameters_sequence
+Origin:      $!scan.Parameters_origin
+Time:        $!scan.startTime
+Note:        $!scan.Note
+
+#end
+</textarea>
+        </td>
+    </tr>
+</table>
+
+

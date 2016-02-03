@@ -1,0 +1,44 @@
+Instructions To XNAT Administrator$!{h3_}
+#if($html)
+#set($hr="<hr/>")
+#else
+#set($hr="=============================================================")
+#end$!{hr}
+A user, ${user.getFirstname()} ${user.getLastname()} (${user.getEmail()}), has
+reported an issue in the instance of XNAT that you administer.  Please take 
+the appropriate action on your site to resolve the user's issue.$!{br}$!{br}
+
+If the issue represents a bug in XNAT, please forward this email to the XNAT 
+developers at bugs@xnat.org. When sending, please add any additional materials, 
+such as server logs, that may aid the developers in resolving the issue.$!{br}$!{br}
+
+$!{dl}Summary$!{d_}
+$!{hr}
+$!{dv}$!{summary}$!{d_}$!{br}$!{br}
+
+$!{dl}Description$!{d_}
+$!{hr}
+$!{dv}#if(!$html)$!{description}#else$!{htmlDescription}#end$!{d_}$!{br}$!{br}
+
+$!{dl}Client Information$!{d_}
+$!{hr}$!{t}
+$!{tr}$!{tdl}   Login: $!{td_}			$!{tdv}${user.getLogin()}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   Email: $!{td_}			$!{tdv}${user.getEmail()}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   Browser User-Agent: $!{td_}		$!{tdv}${user_agent}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   Remote Address: $!{td_}		$!{tdv}${remote_addr}$!{td_}$!{tr_}
+$!{t_}$!{br}$!{br}
+
+$!{dl}Server Information$!{d_}
+$!{hr}$!{t}
+$!{tr}$!{tdl}   Server Time: $!{td_}			$!{tdv}${time}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   XNAT Host: $!{td_}			$!{tdv}${xnat_host}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   XNAT Version: $!{td_}		$!{tdv}${xnat_version}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   Servlet Container: $!{td_}		$!{tdv}${server_info}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   PostgreSQL Version: $!{td_}		$!{tdv}${postgres_version}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   Java Vendor: $!{td_}			$!{tdv}${java_vendor}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   Java Version: $!{td_}			$!{tdv}${java_version}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   OS Name: $!{td_}			$!{tdv}${os_name}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   OS Architecture: $!{td_}		$!{tdv}${os_arch}$!{td_}$!{tr_}
+$!{tr}$!{tdl}   OS Version: $!{td_}			$!{tdv}${os_version}$!{td_}$!{tr_}
+$!{t_}
+$!{br}

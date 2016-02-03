@@ -1,0 +1,38 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- XDAT DefaultLeft -->
+<script type="text/javascript">
+<!--
+
+function frmsearchForm_Validate() {
+	if (!document.searchForm.searchOn.value) {
+        xModalMessage('Search Validation', 'Enter $displayManager.getSingularDisplayNameForSubject() or $displayManager.getSingularDisplayNameForImageSession() Id to search.');
+		return false;
+	}
+	return true;
+}
+
+
+//-->
+</script>
+<table border="0" valign="top" class="withColor" cellspacing="0" cellpadding="0">
+	<tr align="left" valign="top">
+    <td>
+		   $navigation.setTemplate("QuickSearch.vm")
+	    </td>
+	</tr>
+	<tr align="left" valign="top">
+    <td>
+		    $navigation.setTemplate("SubMenu1.vm")
+	    </td>
+	</tr>
+	<tr align="left" valign="top">
+   <td>
+		$navigation.setTemplate("SubMenu2.vm")
+	   </td>
+	</tr>
+	<tr align="left" valign="top">
+   <td>
+		$navigation.setTemplate("SubMenu3.vm")
+	   </td>
+	</tr>
+</table>

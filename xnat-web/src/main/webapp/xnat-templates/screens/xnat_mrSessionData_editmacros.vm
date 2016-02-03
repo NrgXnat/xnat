@@ -1,0 +1,2 @@
+#set($stabilizations = [])
+#set($markers = ["left","right","other","none"])

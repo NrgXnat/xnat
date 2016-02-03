@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  ~ D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/conf/mq-context.xml
+  ~ XNAT http://www.xnat.org
+  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ All Rights Reserved
+  ~
+  ~ Released under the Simplified BSD.
+  ~
+  ~ Last modified 2/7/14 12:19 PM
+  -->
+
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xmlns:amq="http://activemq.apache.org/schema/core"
+       xmlns:jms="http://www.springframework.org/schema/jms"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
+            http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
+            http://activemq.apache.org/schema/core http://activemq.apache.org/schema/core/activemq-core.xsd
+			http://www.springframework.org/schema/jms http://www.springframework.org/schema/jms/spring-jms.xsd">
+
+    <!-- Pull in property values from services definition files. -->
+    <context:property-placeholder location="WEB-INF/conf/services.properties, WEB-INF/conf/services-custom.properties" ignore-resource-not-found="true" ignore-unresolvable="true" />
+
+    <!-- embedded ActiveMQ Broker -->
+    <amq:broker id="activeMQBroker" brokerName="activeMQBroker" useJmx="false" persistent="true" schedulerSupport="false" >
+        <amq:persistenceAdapter>
+            <!-- We'll use XNAT's data source, make sure the Spring ID matches. (For unit testing it's provided by the Spring test
+                context) Also, turning off locking, as we've no need for it with a single broker, and it was causing errors in the ActiveMQ
+                cleanup threads. -->
+            <amq:jdbcPersistenceAdapter dataSource="#dataSource" useLock="false" />
+        </amq:persistenceAdapter>
+        <amq:systemUsage>
+            <amq:systemUsage>
+                <amq:tempUsage><amq:tempUsage limit="${amq.usage.temp}"/></amq:tempUsage>
+                <amq:memoryUsage><amq:memoryUsage limit="${amq.usage.mem}"/></amq:memoryUsage>
+                <amq:storeUsage><amq:storeUsage limit="${amq.usage.store}"/></amq:storeUsage>
+            </amq:systemUsage>
+        </amq:systemUsage>
+    </amq:broker>
+
+    <!-- ActiveMQ ConnectionFactory for JMS to use. Spring will find and use the broker we've declared above. -->
+    <amq:connectionFactory id="activeMQConnectionFactory" brokerURL="vm://localhost" redeliveryPolicyMap="#activeMQRedeliveryPolicyMap" />
+
+    <amq:redeliveryPolicyMap id="activeMQRedeliveryPolicyMap">
+        <amq:defaultEntry>
+            <amq:redeliveryPolicy useExponentialBackOff="true" maximumRedeliveries="4" initialRedeliveryDelay="300000"
+                                  backOffMultiplier="3" destination="#defaultRequest"/>
+        </amq:defaultEntry>
+        <amq:redeliveryPolicyEntries>
+            <amq:redeliveryPolicy queue="automatedScriptRequest" maximumRedeliveries="0" destination="#automatedScriptRequest"/>
+            <amq:redeliveryPolicy queue="moveStoredFileRequest" useExponentialBackOff="true" maximumRedeliveries="4"
+                                  initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#moveStoredFileRequest"/>
+            <amq:redeliveryPolicy queue="prearchiveOperationRequest" useExponentialBackOff="true" maximumRedeliveries="4"
+                                  initialRedeliveryDelay="300000" backOffMultiplier="3" destination="#prearchiveOperationRequest"/>
+            <!-- Additional redelivery policies go here; otherwise default is used. The destination attribute is not apparently used, but is required. -->
+        </amq:redeliveryPolicyEntries>
+    </amq:redeliveryPolicyMap>
+
+    <!-- lets wrap in a pool to avoid creating a connection per send -->
+    <bean name="springConnectionFactory" class="org.springframework.jms.connection.CachingConnectionFactory">
+        <property name="targetConnectionFactory" ref="activeMQConnectionFactory" />
+    </bean>
+
+    <!-- Spring JMS Template -->
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <property name="connectionFactory" ref="springConnectionFactory" />
+    </bean>
+
+    <!-- queues -->
+    <amq:queue id="defaultRequest" physicalName="defaultRequest" />
+    <amq:queue id="automatedScriptRequest" physicalName="automatedScriptRequest" />
+    <amq:queue id="moveStoredFileRequest" physicalName="moveStoredFileRequest" />
+    <amq:queue id="prearchiveOperationRequest" physicalName="prearchiveOperationRequest" />
+    <!-- new request types go here -->
+
+    <!-- message consumers -->
+    <bean id="defaultRequestListener" class="org.nrg.xnat.services.messaging.DefaultRequestListener" />
+    <bean id="automatedScriptRequestListener" class="org.nrg.xnat.services.messaging.automation.AutomatedScriptRequestListener" />
+    <bean id="moveStoredFileRequestListener" class="org.nrg.xnat.services.messaging.file.MoveStoredFileRequestListener" />
+    <bean id="prearchiveOperationRequestListener" class="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequestListener" />
+
+    <!-- listeners for new request types go here -->
+    <bean id="dlqMessageListener" class="org.nrg.framework.messaging.DlqListener">
+        <property name="messageListenerMapping">
+            <description>
+                This maps MQ request types with the listener class and handler method that should handle that request.
+                This lets the dead-letter functionality properly re-try MQ requests. In future versions, we should get
+                the per-queue dead-letter handling to work and make the general dead-letter function handle only unknown
+                or improperly formed MQ requests.
+            </description>
+            <map>
+                <entry key="org.nrg.xnat.services.messaging.automation.AutomatedScriptRequest" value="org.nrg.xnat.services.messaging.automation.AutomatedScriptRequestListener.onRequest"/>
+                <entry key="org.nrg.xnat.services.messaging.file.MoveStoredFileRequest" value="org.nrg.xnat.services.messaging.file.MoveStoredFileRequestListener.onRequest"/>
+                <entry key="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequest" value="org.nrg.xnat.services.messaging.prearchive.PrearchiveOperationRequestListener.onRequest"/>
+                <!-- update with new request types and their listener methods -->
+            </map>
+        </property>
+    </bean>
+
+    <bean id="errorHandler" class="org.nrg.xnat.services.messaging.XnatMqErrorHandler"/>
+
+    <!-- Spring JMS Listener Container -->
+    <jms:listener-container connection-factory="springConnectionFactory" concurrency="10-40" acknowledge="transacted" error-handler="errorHandler">
+        <jms:listener destination="defaultRequest" ref="defaultRequestListener" method="onRequest" />
+        <jms:listener destination="automatedScriptRequest" ref="automatedScriptRequestListener" method="onRequest" />
+        <jms:listener destination="moveStoredFileRequest" ref="moveStoredFileRequestListener" method="onRequest" />
+        <jms:listener destination="prearchiveOperationRequest" ref="prearchiveOperationRequestListener" method="onRequest" />
+        <!-- update with requests, their listeners, and methods  -->
+        <!-- I tried referencing my own DLQ in the redelivery policy but ActiveMQ ignores it and uses the default system DLQ -->
+        <!-- So we'll just listen on that queue instead -->
+        <jms:listener destination="ActiveMQ.DLQ" ref="dlqMessageListener" method="onReceiveDeadLetter" />
+    </jms:listener-container>
+
+</beans>

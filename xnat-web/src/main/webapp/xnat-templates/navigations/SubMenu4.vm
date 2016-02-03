@@ -1,0 +1,23 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set($projects = $data.getSession().getAttribute("userHelper").getAllItems("xnat:projectData",false))
+#if ($projects.size()>0)
+<table align="left" valign="top">
+	<tr>
+       <td>
+			##<font size="2">
+                <u><b>$displayManager.getPluralDisplayNameForProject()</b></u><br>
+            ##</font>
+			<div style="max-height:250px;overflow:auto;">
+			<table align="left" valign="top">
+			
+			#foreach ($projectObject in $projects)
+				<tr><td valign="top"></td><td align="left"><A href="$link.setAction("DisplayItemAction").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$projectObject.getId()")">$projectObject.getId()</A></td></tr>
+			#end
+				</table>
+				</div>
+			<br>
+	  </td>
+	</tr>
+</table>
+		   <br>
+#end

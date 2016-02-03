@@ -1,0 +1,106 @@
+##Copyright 2009 Washington University in St. Louis All Rights Reserved
+
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/Popup.vm")
+$page.setTitle("Protocol Check Setup")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<font face="$ui.sansSerifFonts">				
+
+<form ID="form1" name="form1" method="post" action="$link.setAction("ManagePipeline")">
+#set ($dblQts='"')
+
+<b> Protocol validation pipeline setup for $project </b>
+
+<br/>
+
+<p>
+$newpipeline.getDescription()
+</p>
+
+#set ($schemaType = $newpipeline.getSchemaElementName())
+
+<br/>
+<br/>
+
+
+<p>
+<b> Please define the following parameters for your project: </b> 
+</p>
+ <table>
+	<TR>
+		<TD><b>Launch pipeline automatically when session is archived.</b></TD>
+		<TD> <input type="checkbox"  name="auto_archive" $checked/> </TD>
+	</TR>
+
+	 <TR>
+	   <TD><input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[0].name$dblQts name=$dblQts${schemaType}.parameters.parameter[0].name$dblQts value="sessionType"/><b>Experiment Type</b></TD> 
+	   <TD><select id=$dblQts${schemaType}.parameters.parameter[0].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[0].csvValues$dblQts>
+			#foreach ($element in $elements)
+			<OPTION VALUE="$element">$element</OPTION>
+			#end
+		</select>		
+   	    <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[0].description$dblQts name=$dblQts${schemaType}.parameters.parameter[0].description$dblQts value="XSIType of the experiment"/>
+	  </tr>
+	 <TR>
+	   <TD><input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[1].name$dblQts name=$dblQts${schemaType}.parameters.parameter[1].name$dblQts value="catalog_content"/><b>Content attribute set within the validation catalog</b></TD> 
+	   <TD><input type="text" size="45" id=$dblQts${schemaType}.parameters.parameter[1].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[1].csvValues$dblQts value="DEFAULT"/> 
+   	    <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[1].description$dblQts name=$dblQts${schemaType}.parameters.parameter[1].description$dblQts value="The catalog_content value is used to select among the many entries in the catalog file"/>
+	  </tr>
+	 <TR>
+	   <TD><input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[5].name$dblQts name=$dblQts${schemaType}.parameters.parameter[5].name$dblQts value="notify"/><b>Notification options:</b></TD> 
+	   <TD><input type="radio" id=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts value="0"> Do not notify &nbsp; <input type="radio" id=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts value="1"checked>Do Notify <input type="radio" id=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts  name=$dblQts${schemaType}.parameters.parameter[5].csvValues$dblQts value="2">Notify a list of people ONLY if validation fails</TD>
+   	    <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[5].description$dblQts name=$dblQts${schemaType}.parameters.parameter[5].description$dblQts value="Notify parameter"/>
+	  </tr>
+
+	  	<TR>
+	  		<TD colspan="2" align="center"><input type="button" ONCLICK="javascript:window.close();" value="Close"/>&nbsp;&nbsp;&nbsp;<input type="submit"  name="eventSubmit_doAddprojectpipeline" value="Submit"/></TD>
+		</TR>
+
+ </table>
+
+## session parameter
+
+	   <input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[2].name$dblQts name=$dblQts${schemaType}.parameters.parameter[2].name$dblQts value="session"/> 
+	   <input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[2].schemaLink$dblQts  name=$dblQts${schemaType}.parameters.parameter[2].schemaLink$dblQts value="xnat:experimentData/ID"/> 
+ 	   <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[2].description$dblQts name=$dblQts${schemaType}.parameters.parameter[2].description$dblQts value="XPATH to Experiment ID"/>
+
+## sessionLabel parameter
+
+	   <input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[3].name$dblQts name=$dblQts${schemaType}.parameters.parameter[3].name$dblQts value="sessionLabel"/> 
+	   <input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[3].schemaLink$dblQts  name=$dblQts${schemaType}.parameters.parameter[3].schemaLink$dblQts value="xnat:experimentData/label"/> 
+ 	   <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[3].description$dblQts name=$dblQts${schemaType}.parameters.parameter[3].description$dblQts value="XPATH to Experiment Label"/>
+
+## xnat_project parameter
+
+	   <input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[4].name$dblQts name=$dblQts${schemaType}.parameters.parameter[4].name$dblQts value="xnat_project"/> 
+	   <input type="hidden"  id=$dblQts${schemaType}.parameters.parameter[4].schemaLink$dblQts  name=$dblQts${schemaType}.parameters.parameter[4].schemaLink$dblQts value="xnat:experimentData/project"/> 
+ 	   <input type="hidden" id=$dblQts${schemaType}.parameters.parameter[4].description$dblQts name=$dblQts${schemaType}.parameters.parameter[4].description$dblQts value="XPATH to Experiment Project"/>
+
+
+<input type="hidden"  id=$dblQts${schemaType}.stepId$dblQts name=$dblQts${schemaType}.stepId$dblQts value="AUTO_ARCHIVE_PROTOCOLCHECK"/></TD>
+<input type="hidden"   id=$dblQts${schemaType}.displayText$dblQts name=$dblQts${schemaType}.displayText$dblQts value="ProtocolCheck"/>
+<input type="hidden"  id=$dblQts${schemaType}.name$dblQts name=$dblQts${schemaType}.name$dblQts value="ProtocolCheck"/>
+<input type="hidden"  id=$dblQts${schemaType}.location$dblQts name=$dblQts${schemaType}.location$dblQts value="$newpipeline.getLocation()"/>
+<input type="hidden"  id=$dblQts${schemaType}.customwebpage$dblQts name=$dblQts${schemaType}.customwebpage$dblQts value="$newpipeline.getCustomwebpage()"/>
+<input type="hidden"  id=$dblQts${schemaType}.description$dblQts name=$dblQts${schemaType}.description$dblQts value='$newpipeline.getDescription()'/>
+
+
+
+<input type="hidden" name="search_element" value="xnat:projectData"/>
+<input type="hidden" name="search_field" value="xnat:projectData.ID"/>
+<input type="hidden" name="search_value" value="$project"/>
+<input type="hidden" name="project" value="$project"/>
+<input type="hidden" name="pipeline_path" value="$pipeline_path"/>
+<input type="hidden" name="dataType" value="$dataType"/>
+<input type="hidden" name="schemaType" value="$schemaType"/>
+<input type="hidden" name="edit" value="$edit"/>
+<input type="hidden" name="destination" value="JS_Parent_Return.vm"/>
+
+
+</form>

@@ -1,0 +1,93 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/Popup.vm")
+$page.setTitle("Protocol Validation")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+<font face="$ui.sansSerifFonts">				
+
+#set ($sessionId = $om.getLabel())
+#set ($dblQts='"')
+<form name="ProtocolCheckOptions" method="post" action="$link.setAction("ManagePipeline")" >
+<TABLE>
+<TR>
+<TD>
+<b>
+  <font face="$ui.sansSerifFonts">
+	      $displayManager.getSingularDisplayNameForImageSession(): $sessionId 
+  </font>
+</b>
+</TD>
+<TD>
+<b>
+  <font face="$ui.sansSerifFonts">
+	      $displayManager.getSingularDisplayNameForProject(): $om.getProject()
+  </font>
+</b>
+</TD>
+</TR>
+</TABLE>
+
+<br/>
+
+The following parameters have been set for the protocol validation pipeline
+<br/> 
+<table>
+<tr>
+<td>catalog_content</td>
+<input type="hidden"  id=${dblQts}param[1].name$dblQts name=${dblQts}param[1].name$dblQts value="catalog_content"/>
+<input type="hidden"  id=${dblQts}param[1].name.rowcount$dblQts name=${dblQts}param[1].name.rowcount$dblQts value="1"/>
+<td><input type="text" id=${dblQts}param[1][0].value$dblQts  name=${dblQts}param[1][0].value$dblQts value="$projectSettings.get("catalog_content").getCsvvalues()"/></td>
+</tr>
+#set ($notification_option=$projectSettings.get("notify").getCsvvalues())
+<tr>
+<td>notify</td>
+<input type="hidden"  id=${dblQts}param[5].name$dblQts name=${dblQts}param[5].name$dblQts value="notify"/>
+<input type="hidden"  id=${dblQts}param[5].name.rowcount$dblQts name=${dblQts}param[5].name.rowcount$dblQts value="1"/>
+<TD><input type="radio" id=${dblQts}param[5][0].value$dblQts  name=${dblQts}param[5][0].value$dblQts value="0" #if ($notification_option.equals("0")) checked #end> Do not notify &nbsp; <input type="radio" id=${dblQts}param[5][0].value$dblQts  name=${dblQts}param[5][0].value$dblQts value="1"#if ($notification_option.equals("1")) checked #end>Do Notify <input type="radio" id=${dblQts}param[5][0].value$dblQts  name=${dblQts}param[5][0].value$dblQts value="2"#if ($notification_option.equals("2")) checked #end>Notify a list of people ONLY if validation fails</TD></tr>
+
+</table>
+
+
+## sessionType parameter
+	  <input type="hidden"  id=${dblQts}param[0].name$dblQts name=${dblQts}param[0].name$dblQts value="sessionType"/> 
+	  <input type="hidden"  id=${dblQts}param[0].name.rowcount$dblQts name=${dblQts}param[0].name.rowcount$dblQts value="1"/>
+	  <input type="hidden" id=${dblQts}param[0][0].value$dblQts  name=${dblQts}param[0][0].value$dblQts value="$om.getXSIType()"/>
+
+
+## session parameter
+	  <input type="hidden"  id=${dblQts}param[2].name$dblQts name=${dblQts}param[2].name$dblQts value="session"/> 
+	  <input type="hidden"  id=${dblQts}param[2].name.rowcount$dblQts name=${dblQts}param[2].name.rowcount$dblQts value="1"/>
+	  <input type="hidden" id=${dblQts}param[2][0].value$dblQts  name=${dblQts}param[2][0].value$dblQts value="$om.getId()"/>
+
+## sessionLabel parameter
+
+	  <input type="hidden"  id=${dblQts}param[3].name$dblQts name=${dblQts}param[3].name$dblQts value="sessionLabel"/> 
+	  <input type="hidden"  id=${dblQts}param[3].name.rowcount$dblQts name=${dblQts}param[3].name.rowcount$dblQts value="1"/>
+	  <input type="hidden" id=${dblQts}param[3][0].value$dblQts  name=${dblQts}param[3][0].value$dblQts value="$om.getLabel()"/>
+
+## xnat_project parameter
+
+	  <input type="hidden"  id=${dblQts}param[4].name$dblQts name=${dblQts}param[4].name$dblQts value="xnat_project"/> 
+	  <input type="hidden"  id=${dblQts}param[4].name.rowcount$dblQts name=${dblQts}param[4].name.rowcount$dblQts value="1"/>
+	  <input type="hidden" id=${dblQts}param[4][0].value$dblQts  name=${dblQts}param[4][0].value$dblQts value="$om.getProject()"/>
+
+
+<br/>
+#xdatPassItemFormFields($search_element $search_field $search_value $project)
+
+<input type="hidden" name="schema_type" value="$om.getXSIType()">
+<input type="hidden" name="param_cnt" value="6">
+<input type="hidden" name="pipeline_path" value="validation_tools/Validate.xml">
+<input type="hidden" name="launch_now" value="true">
+
+#insertCustomPipelineNotification("process")
+
+   <input type="submit" id="submitBtn" $disabled  value="Run processing"  name="eventSubmit_doLaunchpipeline"/>
+    			&nbsp;&nbsp;
+    <input type="button" ONCLICK="javascript:self.close()" value="Close"/>    			
+    <p>&nbsp;</p>

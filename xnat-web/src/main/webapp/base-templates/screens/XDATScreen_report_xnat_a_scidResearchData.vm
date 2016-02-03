@@ -1,0 +1,348 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("SCID Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>SCID Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>subject_ID</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/subject_ID")</TD></TR>
+							<TR><TD>age</TD><TD>$!item.getDoubleProperty("xnat_a:scidResearchData/age")</TD></TR>
+							<TR><TD>date</TD><TD>$!item.getProperty("xnat_a:scidResearchData/date")</TD></TR>
+							<TR><TD>time</TD><TD>$!item.getProperty("xnat_a:scidResearchData/time")</TD></TR>
+							<TR><TD>duration</TD><TD>$!item.getProperty("xnat_a:scidResearchData/duration")</TD></TR>
+							<TR><TD>delay</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/delay")</TD></TR>
+							<TR><TD>delay/ref_expt_id</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/delay/ref_expt_id")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/note")</TD></TR>
+							<TR><TD>acquisition_site</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/acquisition_site")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/ID")</TD></TR>
+							<TR><TD>project</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/project")</TD></TR>
+							<TR><TD>visit_id</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/visit_id")</TD></TR>
+							<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/visit")</TD></TR>
+							<TR><TD>version</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/version")</TD></TR>
+							<TR><TD>original</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/original")</TD></TR>
+							<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/protocol")</TD></TR>
+							<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/label")</TD></TR>
+							<TR><TD>administrator</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/administrator")</TD></TR>
+							<TR><TD>moodEpisodes/currentMajorDepressiveEpisode</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/currentMajorDepressiveEpisode")</TD></TR>
+							<TR><TD>moodEpisodes/pastMajorDepressiveEpisode</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/pastMajorDepressiveEpisode")</TD></TR>
+							<TR><TD>moodEpisodes/currentManicEpisode</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/currentManicEpisode")</TD></TR>
+							<TR><TD>moodEpisodes/pastManicEpisode</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/pastManicEpisode")</TD></TR>
+							<TR><TD>moodEpisodes/currentHypomanicEpisode</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/currentHypomanicEpisode")</TD></TR>
+							<TR><TD>moodEpisodes/pastHypomanicEpisode</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/pastHypomanicEpisode")</TD></TR>
+							<TR><TD>moodEpisodes/currentDysthmicEpisode</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/currentDysthmicEpisode")</TD></TR>
+							<TR><TD>moodEpisodes/currentMoodDisorderDueToMedicalCondition</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/currentMoodDisorderDueToMedicalCondition")</TD></TR>
+							<TR><TD>moodEpisodes/pastMoodDisorderDueToMedicalCondition</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/pastMoodDisorderDueToMedicalCondition")</TD></TR>
+							<TR><TD>moodEpisodes/currentSubstanceInducedMoodDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/currentSubstanceInducedMoodDisorder")</TD></TR>
+							<TR><TD>moodEpisodes/pastSubstanceInducedMoodDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodEpisodes/pastSubstanceInducedMoodDisorder")</TD></TR>
+							<TR><TD>psychoticSymptoms/currentDelusions</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/currentDelusions")</TD></TR>
+							<TR><TD>psychoticSymptoms/pastDelusions</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/pastDelusions")</TD></TR>
+							<TR><TD>psychoticSymptoms/currentHallucinations</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/currentHallucinations")</TD></TR>
+							<TR><TD>psychoticSymptoms/pastHallucinations</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/pastHallucinations")</TD></TR>
+							<TR><TD>psychoticSymptoms/currentDisorganizedSpeechBehavior</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/currentDisorganizedSpeechBehavior")</TD></TR>
+							<TR><TD>psychoticSymptoms/pastDisorganizedSpeechBehavior</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/pastDisorganizedSpeechBehavior")</TD></TR>
+							<TR><TD>psychoticSymptoms/currentCatatonicBehavior</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/currentCatatonicBehavior")</TD></TR>
+							<TR><TD>psychoticSymptoms/pastCatatonicBehavior</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/pastCatatonicBehavior")</TD></TR>
+							<TR><TD>psychoticSymptoms/currentNegativeSymptoms</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/currentNegativeSymptoms")</TD></TR>
+							<TR><TD>psychoticSymptoms/pastNegativeSymptoms</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticSymptoms/pastNegativeSymptoms")</TD></TR>
+							<TR><TD>psychoticDisorders/currentSchizophrenia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentSchizophrenia")</TD></TR>
+							<TR><TD>psychoticDisorders/pastSchizophrenia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastSchizophrenia")</TD></TR>
+							<TR><TD>psychoticDisorders/currentParanoidType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentParanoidType")</TD></TR>
+							<TR><TD>psychoticDisorders/pastParanoidType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastParanoidType")</TD></TR>
+							<TR><TD>psychoticDisorders/currentCatatonicType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentCatatonicType")</TD></TR>
+							<TR><TD>psychoticDisorders/pastCatatonicType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastCatatonicType")</TD></TR>
+							<TR><TD>psychoticDisorders/currentDisorganizedType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentDisorganizedType")</TD></TR>
+							<TR><TD>psychoticDisorders/pastDisorganizedType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastDisorganizedType")</TD></TR>
+							<TR><TD>psychoticDisorders/currentUndifferentiatedType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentUndifferentiatedType")</TD></TR>
+							<TR><TD>psychoticDisorders/pastUndifferentiatedType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastUndifferentiatedType")</TD></TR>
+							<TR><TD>psychoticDisorders/currentResidualType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentResidualType")</TD></TR>
+							<TR><TD>psychoticDisorders/pastResidualType</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastResidualType")</TD></TR>
+							<TR><TD>psychoticDisorders/currentSchizophreniformDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentSchizophreniformDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/pastSchizophreniformDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastSchizophreniformDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/currentSchizoaffectiveDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentSchizoaffectiveDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/pastSchizoaffectiveDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastSchizoaffectiveDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/currentDelusionalDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentDelusionalDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/pastDelusionalDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastDelusionalDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/currentBriefPsychoticDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentBriefPsychoticDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/pastBriefPsychoticDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastBriefPsychoticDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/currentPsychoticDisorderDueToMedicalCondition</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderDueToMedicalCondition")</TD></TR>
+							<TR><TD>psychoticDisorders/pastPsychoticDisorderDueToMedicalCondition</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderDueToMedicalCondition")</TD></TR>
+							<TR><TD>psychoticDisorders/currentSubstanceInducedPsychoticDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentSubstanceInducedPsychoticDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/pastSubstanceInducedPsychoticDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastSubstanceInducedPsychoticDisorder")</TD></TR>
+							<TR><TD>psychoticDisorders/currentPsychoticDisorderNOS</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/currentPsychoticDisorderNOS")</TD></TR>
+							<TR><TD>psychoticDisorders/pastPsychoticDisorderNOS</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/psychoticDisorders/pastPsychoticDisorderNOS")</TD></TR>
+							<TR><TD>moodDisorders/currentBipolar1Disorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/currentBipolar1Disorder")</TD></TR>
+							<TR><TD>moodDisorders/pastBipolar1Disorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/pastBipolar1Disorder")</TD></TR>
+							<TR><TD>moodDisorders/currentBipolar2Disorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/currentBipolar2Disorder")</TD></TR>
+							<TR><TD>moodDisorders/pastBipolar2Disorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/pastBipolar2Disorder")</TD></TR>
+							<TR><TD>moodDisorders/currentOtherBipolarDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/currentOtherBipolarDisorder")</TD></TR>
+							<TR><TD>moodDisorders/pastOtherBipolarDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/pastOtherBipolarDisorder")</TD></TR>
+							<TR><TD>moodDisorders/currentMajorDepressiveDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/currentMajorDepressiveDisorder")</TD></TR>
+							<TR><TD>moodDisorders/pastMajorDepressiveDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/pastMajorDepressiveDisorder")</TD></TR>
+							<TR><TD>moodDisorders/currentDepressiveDisorderNOS</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/currentDepressiveDisorderNOS")</TD></TR>
+							<TR><TD>moodDisorders/pastDepressiveDisorderNOS</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/moodDisorders/pastDepressiveDisorderNOS")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentAlcoholDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastAlcoholDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentAlcoholAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentAlcoholAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastAlcoholAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastAlcoholAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentAmphetamineDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastAmphetamineDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentAmphetamineAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentAmphetamineAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastAmphetamineAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastAmphetamineAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentCannabisDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentCannabisDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastCannabisDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastCannabisDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentCannabisAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentCannabisAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastCannabisAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastCannabisAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentCocaineDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentCocaineDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastCocaineDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastCocaineDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentCocaineAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentCocaineAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastCocaineAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastCocaineAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentHallucinogenDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastHallucinogenDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentHallucinogenAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentHallucinogenAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastHallucinogenAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastHallucinogenAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentOpioidDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentOpioidDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastOpioidDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastOpioidDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentOpioidAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentOpioidAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastOpioidAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastOpioidAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentPhencyclidineDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastPhencyclidineDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentPhencyclidineAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentPhencyclidineAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastPhencyclidineAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastPhencyclidineAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentSedativeHypnoticAnxiolyticDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastSedativeHypnoticAnxiolyticDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentSedativeHypnoticAnxiolyticAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentSedativeHypnoticAnxiolyticAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastSedativeHypnoticAnxiolyticAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastSedativeHypnoticAnxiolyticAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentPolysubstanceDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentPolysubstanceDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastPolysubstanceDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastPolysubstanceDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentOtherOrUnknownDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastOtherOrUnknownDependence</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownDependence")</TD></TR>
+							<TR><TD>substanceUseDisorders/currentOtherOrUnknownAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/currentOtherOrUnknownAbuse")</TD></TR>
+							<TR><TD>substanceUseDisorders/pastOtherOrUnknownAbuse</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/substanceUseDisorders/pastOtherOrUnknownAbuse")</TD></TR>
+							<TR><TD>anxietyDisorders/currentPanicWithAgoraphobia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentPanicWithAgoraphobia")</TD></TR>
+							<TR><TD>anxietyDisorders/pastPanicWithAgoraphobia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastPanicWithAgoraphobia")</TD></TR>
+							<TR><TD>anxietyDisorders/currentPanicWithoutAgoraphobia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentPanicWithoutAgoraphobia")</TD></TR>
+							<TR><TD>anxietyDisorders/pastPanicWithoutAgoraphobia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastPanicWithoutAgoraphobia")</TD></TR>
+							<TR><TD>anxietyDisorders/currentAgoraphobiaWithoutPanicHx</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentAgoraphobiaWithoutPanicHx")</TD></TR>
+							<TR><TD>anxietyDisorders/pastAgoraphobiaWithoutPanicHx</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastAgoraphobiaWithoutPanicHx")</TD></TR>
+							<TR><TD>anxietyDisorders/currentSocialPhobia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentSocialPhobia")</TD></TR>
+							<TR><TD>anxietyDisorders/pastSocialPhobia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastSocialPhobia")</TD></TR>
+							<TR><TD>anxietyDisorders/currentSpecificPhobia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentSpecificPhobia")</TD></TR>
+							<TR><TD>anxietyDisorders/pastSpecificPhobia</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastSpecificPhobia")</TD></TR>
+							<TR><TD>anxietyDisorders/currentOCD</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentOCD")</TD></TR>
+							<TR><TD>anxietyDisorders/pastOCD</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastOCD")</TD></TR>
+							<TR><TD>anxietyDisorders/currentPTSD</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentPTSD")</TD></TR>
+							<TR><TD>anxietyDisorders/pastPTSD</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastPTSD")</TD></TR>
+							<TR><TD>anxietyDisorders/currentGeneralizedAnxietyDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentGeneralizedAnxietyDisorder")</TD></TR>
+							<TR><TD>anxietyDisorders/currentAnxietyDueToMedicalCondition</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDueToMedicalCondition")</TD></TR>
+							<TR><TD>anxietyDisorders/pastAnxietyDueToMedicalCondition</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDueToMedicalCondition")</TD></TR>
+							<TR><TD>anxietyDisorders/currentSubstanceInducedAnxietyDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentSubstanceInducedAnxietyDisorder")</TD></TR>
+							<TR><TD>anxietyDisorders/pastSubstanceInducedAnxietyDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastSubstanceInducedAnxietyDisorder")</TD></TR>
+							<TR><TD>anxietyDisorders/currentAnxietyDisorderNOS</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/currentAnxietyDisorderNOS")</TD></TR>
+							<TR><TD>anxietyDisorders/pastAnxietyDisorderNOS</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/anxietyDisorders/pastAnxietyDisorderNOS")</TD></TR>
+							<TR><TD>somatoformDisorders/somatizationDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/somatoformDisorders/somatizationDisorder")</TD></TR>
+							<TR><TD>somatoformDisorders/undifferentiatedSomatformDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/somatoformDisorders/undifferentiatedSomatformDisorder")</TD></TR>
+							<TR><TD>somatoformDisorders/painDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/somatoformDisorders/painDisorder")</TD></TR>
+							<TR><TD>somatoformDisorders/hypochondriasis</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/somatoformDisorders/hypochondriasis")</TD></TR>
+							<TR><TD>somatoformDisorders/bodyDysmorphicDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/somatoformDisorders/bodyDysmorphicDisorder")</TD></TR>
+							<TR><TD>eatingDisorders/currentAnorexiaNervosa</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/eatingDisorders/currentAnorexiaNervosa")</TD></TR>
+							<TR><TD>eatingDisorders/pastAnorexiaNervosa</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/eatingDisorders/pastAnorexiaNervosa")</TD></TR>
+							<TR><TD>eatingDisorders/currentBulimiaNervosa</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/eatingDisorders/currentBulimiaNervosa")</TD></TR>
+							<TR><TD>eatingDisorders/pastBulimiaNervosa</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/eatingDisorders/pastBulimiaNervosa")</TD></TR>
+							<TR><TD>eatingDisorders/currentBingeEatingDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/eatingDisorders/currentBingeEatingDisorder")</TD></TR>
+							<TR><TD>eatingDisorders/pastBingeEatingDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/eatingDisorders/pastBingeEatingDisorder")</TD></TR>
+							<TR><TD>adjustmentDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/adjustmentDisorder")</TD></TR>
+							<TR><TD>optional/currentAcuteStressDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/optional/currentAcuteStressDisorder")</TD></TR>
+							<TR><TD>optional/pastAcuteStressDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/optional/pastAcuteStressDisorder")</TD></TR>
+							<TR><TD>optional/currentMinorDepressiveDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/optional/currentMinorDepressiveDisorder")</TD></TR>
+							<TR><TD>optional/pastMinorDepressiveDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/optional/pastMinorDepressiveDisorder")</TD></TR>
+							<TR><TD>optional/currentMixedAnxietyDepressiveDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/optional/currentMixedAnxietyDepressiveDisorder")</TD></TR>
+							<TR><TD>optional/pastMixedAnxietyDepressiveDisorder</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/optional/pastMixedAnxietyDepressiveDisorder")</TD></TR>
+							<TR><TD>optional/pastSympomaticDetails</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/optional/pastSympomaticDetails")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat_a:scidResearchData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_share_1_NUM_ROWS=$item.getChildItems("xnat_a:scidResearchData/sharing/share").size() - 1)
+							#if($xnat_experimentData_share_1_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_share_1_COUNTER in [0..$xnat_experimentData_share_1_NUM_ROWS])
+<!-- BEGIN xnat_a:scidResearchData/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/sharing/share[$xnat_experimentData_share_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>share</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/sharing/share[$xnat_experimentData_share_1_COUNTER]/share")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/sharing/share[$xnat_experimentData_share_1_COUNTER]/label")</TD></TR>
+													<TR><TD>project</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/sharing/share[$xnat_experimentData_share_1_COUNTER]/project")</TD></TR>
+													<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/sharing/share[$xnat_experimentData_share_1_COUNTER]/visit")</TD></TR>
+													<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/sharing/share[$xnat_experimentData_share_1_COUNTER]/protocol")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat_a:scidResearchData/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:scidResearchData/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/investigator/title")</TD></TR>
+										<TR><TD>firstname</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/investigator/firstname")</TD></TR>
+										<TR><TD>lastname</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/investigator/lastname")</TD></TR>
+										<TR><TD>institution</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/investigator/institution")</TD></TR>
+										<TR><TD>department</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/investigator/department")</TD></TR>
+										<TR><TD>email</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/investigator/email")</TD></TR>
+										<TR><TD>phone</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/investigator/phone")</TD></TR>
+										<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/investigator/ID")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:scidResearchData/investigator -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:scidResearchData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/validation/method")</TD></TR>
+										<TR><TD>date</TD><TD>$!item.getProperty("xnat_a:scidResearchData/validation/date")</TD></TR>
+										<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/validation/notes")</TD></TR>
+										<TR><TD>validated_by</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/validation/validated_by")</TD></TR>
+										<TR><TD>status</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/validation/status")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:scidResearchData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_4_NUM_ROWS=$item.getChildItems("xnat_a:scidResearchData/resources/resource").size() - 1)
+							#if($xnat_abstractResource_4_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_4_COUNTER in [0..$xnat_abstractResource_4_NUM_ROWS])
+<!-- BEGIN xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_5_NUM_ROWS=$item.getChildItems("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_5_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_5_COUNTER in [0..$xnat_abstractResource_tag_5_NUM_ROWS])
+<!-- BEGIN xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat_a:scidResearchData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_field_6_NUM_ROWS=$item.getChildItems("xnat_a:scidResearchData/fields/field").size() - 1)
+							#if($xnat_experimentData_field_6_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_field_6_COUNTER in [0..$xnat_experimentData_field_6_NUM_ROWS])
+<!-- BEGIN xnat_a:scidResearchData/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:scidResearchData/fields/field[$xnat_experimentData_field_6_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>field</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/fields/field[$xnat_experimentData_field_6_COUNTER]/field")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:scidResearchData/fields/field[$xnat_experimentData_field_6_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat_a:scidResearchData/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat_a:scidResearchData -->
+		</TD>
+	</TR>
+</TABLE><BR>#parse("/screens/ReportProjectSpecificFields.vm")

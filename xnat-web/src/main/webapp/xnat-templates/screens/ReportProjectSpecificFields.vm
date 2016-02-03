@@ -1,0 +1,54 @@
+<!--BEGIN ReportProjectSpecificFields.vm -->
+#set($groups=$om.getFieldDefinitionGroups($item.getXSIType(), $project))
+#if($groups.size()>0)
+	#foreach($group in $groups)
+		#if($group.getProjectSpecific()==false && $group.getFields_field().size()>0)
+        <DIV class="edit_header1">#if($group.getDescription())$group.getDescription()#else $group.getId() Fields#end</DIV><BR>
+        <table >
+			#foreach($f in $group.getFields_field())
+				#if($!om.getProperty($f.getXmlpath()))
+                    <tr>
+                        <th align="left" nowrap>$!f.getName()</th>
+                        <td>$!om.getProperty($f.getXmlpath())</td>
+                    </tr>
+				#end
+			#end
+        </table>
+        <BR><BR>
+		#end
+	#end
+
+	#set($fieldCounter=0)
+	<DIV ID="specific_section"></DIV>
+	<TABLE>
+	<TR>
+		#set($groupCount=0)
+		#foreach($group in $groups)
+			#if(($group.getBooleanProperty("project-specific",true)) && $group.getFields_field().size()>0)
+				#if($groupCount>2)
+				</TR><TR>
+				#end
+				<TD valign="top">
+					<DIV class="container" style="width:180px;">
+						<DIV class="withColor containerTitle">&nbsp;$group.getId()</DIV>
+						<DIV class="containerBody">
+							<table >
+								#foreach($f in $group.getFields_field())
+									#if($!om.getProperty($f.getXmlpath()))
+										<tr>
+											<th align="left" nowrap>$!f.getName()</th>
+											<td>$!om.getProperty($f.getXmlpath())</td>
+										</tr>
+									#end
+								#end
+							</table>
+						</DIV>
+					</DIV>
+				</td>
+				#set($groupCount=$groupCount+1)
+			#end
+		#end
+	</TR>
+	</TABLE>
+#end
+<!--END ReportProjectSpecificFields.vm -->

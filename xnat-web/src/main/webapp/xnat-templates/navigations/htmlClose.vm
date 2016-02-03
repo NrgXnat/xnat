@@ -1,0 +1,20 @@
+<!-- path: xnat-templates/navigations/htmlClose -->
+## may not need this - container for timeout warning
+##<div id="timeout_dialog_wrapper"></div>
+</div><!-- /page_wrapper -->
+##<div id="loading" class="xmask" style="z-index:20001;display:none;">
+##    <div class="loading xmodal open fixed" style="display:block;width:260px;height:92px;margin-left:-133px;margin-top:-49px;">
+##        <div class="title">
+##            <span class="inner">Please wait...</span>
+##            <div class="close button"></div>
+##        </div>
+##        <div class="body content" style="height:67px;">
+##            <div class="inner">
+##                <img src="$content.getURI('images/loading_bar.gif')" alt="loading">
+##            </div>
+##        </div>
+##    </div>
+##</div><!-- /#loading -->
+<script type="text/javascript" src="$content.getURI('scripts/footer.js')"></script>
+</body>
+</html>

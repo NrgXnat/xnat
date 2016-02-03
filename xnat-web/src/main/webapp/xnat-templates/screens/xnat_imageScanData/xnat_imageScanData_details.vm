@@ -1,0 +1,62 @@
+<table>
+    <tr>
+        <td> </td>
+        <td>Image </td>
+        <td align="left">
+            <A target="_blank" HREF="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=ORIGINAL&index=0")" >
+				<IMG SRC="$content.getURI("/REST/experiments/$om.getId()/scans/$scan.getId()/resources/SNAPSHOTS/files?file_content=THUMBNAIL&index=0")">
+			</A>
+        </td>
+
+    </tr>
+	#if($scan.getProperty("quality"))
+        <tr>
+            <td></td>
+            <td>Quality</td>
+            <td align="left">$!scan.getProperty("quality")</td>
+        </tr>
+	#end
+	#if($scan.getProperty("startTime"))
+        <tr>
+            <td></td>
+            <td>Start Time</td>
+            <td align="left">$!scan.getProperty("startTime")</td>
+        </tr>
+	#end
+	#if($scan.getProperty("condition"))
+        <tr>
+            <td></td>
+            <td>Condition</td>
+            <td align="left">$!scan.getProperty("condition")</td>
+        </tr>
+	#end
+	#if($scan.getProperty("series_description"))
+        <tr>
+            <td></td>
+            <td>Series Desc</td>
+            <td align="left">$!scan.getProperty("series_description")</td>
+        </tr>
+	#end
+	#if($scan.getProperty("modality"))
+        <tr>
+            <td></td>
+            <td>Modality</td>
+            <td align="left">$!scan.getProperty("modality")</td>
+        </tr>
+	#end
+	#if($scan.getProperty("frames"))
+        <tr>
+            <td></td>
+            <td>Frames</td>
+            <td align="left">$!scan.getProperty("frames")</td>
+        </tr>
+	#end
+
+	#if($scan.getUid())
+    <tr>
+        <td> </td>
+        <td colspan="2">
+			<a target="_blank" href="$content.getURI("/REST/services/dicomdump?src=/archive/projects/$om.getProject()/experiments/$om.getId()/scans/$scan.getId()&format=html&requested_screen=DicomScanTable.vm")">View DICOM Headers</a>
+		</td>
+	#end
+</table>

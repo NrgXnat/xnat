@@ -1,0 +1,365 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Tim Olsen (Washington University) -->
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xnat:mrSessionData" full-description="MR Session" brief-description="MR Session">
+	<Arc-Definition Id="ASSESSOR">
+		<CommonField id="EXPT_ID" type="STRING"/>
+		<CommonField id="ASSESSED_EXPT_ID" type="STRING"/>
+		<Bridge-Element name="xnat:mrSessionData" field="SESSION_ID"/>
+		<Filter field="EXPT_ID" filterType="distinct"/>
+		<Filter field="ASSESSED_EXPT_ID" filterType="equals"/>
+	</Arc-Definition>
+	<Arc name="PARTICIPANT_EXPERIMENT">
+		<CommonField id="PART_ID" local-field="SUBJECT_ID"/>
+		<CommonField id="DATE" local-field="DATE"/>
+		<CommonField id="EXPT_ID" local-field="SESSION_ID"/>
+	</Arc>
+	<DisplayField id="SESSION_ID" header="Session" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.ID"/>
+		<HTML-Link>
+			<SecureLink elementName="xnat:mrSessionData">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="xnat:mrSessionData/sharing/share/project"/>
+			</SecureLink>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat:mrSessionData','xnat:mrSessionData.ID');">
+				<InsertValue id="Field1" field="SESSION_ID"/>
+			</Property>
+		</HTML-Link>
+		<description>MR Session Accession Number</description>
+	</DisplayField>
+	<DisplayField id="VIEW" header="" visible="true" image="true">
+		<Content type="sql">'/@WEBAPP/images/v.gif'::text</Content>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return viewer('@Field1');">
+				<InsertValue id="Field1" field="SESSION_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="SUBJECT_ID" header="Subject" visible="false" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.subject_ID"/>
+		<description>Subject Accession Number</description>
+	</DisplayField>
+	<DisplayField id="SUBJECT_LABEL" header="Subject Label" data-type="String" searchable="true">
+		<DisplayFieldElement name="Field1" viewName="SUBJECT_LABEL" viewColumn="SUBJECT_LABEL"/>
+	</DisplayField>
+	<DisplayField id="RPT" header="" visible="true" image="true">
+		<Content type="sql">'/@WEBAPP/images/r.gif'::text</Content>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat:mrSessionData','xnat:mrSessionData.ID');">
+				<InsertValue id="Field1" field="SESSION_ID"/>
+			</Property>
+			<Property name="TITLE" value="Inserted: @Field1 (@Field2)">
+				<InsertValue id="Field1" field="INSERT_DATE"/>
+				<InsertValue id="Field2" field="INSERT_USER"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="DATE" header="Date" visible="true" searchable="true" data-type="date" sort-order="DESC">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.date"/>
+		<description>MR Session Date (DATE)</description>
+	</DisplayField>
+	<DisplayField id="DATE_CHAR" header="Date" visible="true" sort-by="DATE" sort-order="DESC">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.date"/>
+		<Content type="sql">CAST(@Field1 AS VARCHAR)</Content>
+		<description>MR Session Date (String)</description>
+	</DisplayField>
+	<DisplayField id="INVEST_SEARCH" header="PI" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.investigator.firstname"/>
+		<DisplayFieldElement name="Field2" schema-element="xnat:mrSessionData.investigator.lastname"/>
+		<Content type="sql">@Field1 || ' ' || @Field2</Content>
+		<description>Primary Investigator (first and last name)</description>
+	</DisplayField>
+	<DisplayField id="INVEST" header="PI" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.investigator.lastname"/>
+		<description>Primary Investigator (last name)</description>
+	</DisplayField>
+	<DisplayField id="INVEST_ID" header="PI" visible="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.investigator.xnat_investigatorData_id"/>
+	</DisplayField>
+	<DisplayField id="INVEST_CSV" header="PI" visible="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.investigator.lastname"/>
+	</DisplayField>
+	<DisplayField id="MR_NOTES" header="Notes" visible="true" data-type="string">
+		<DisplayFieldElement name="COL1" schema-element="xnat:mrSessionData.note"/>
+		<Content type="sql">substring(@COL1 FROM 0 FOR 10)</Content>
+	</DisplayField>
+	<DisplayField id="MR_NOTES_CSV" header="Notes" visible="true" data-type="string">
+		<DisplayFieldElement name="COL1" schema-element="xnat:mrSessionData.note"/>
+		<Content type="sql">@COL1</Content>
+	</DisplayField>
+	<DisplayField id="OPERATOR" header="Operator" visible="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.operator"/>
+		<Content type="sql">substring(@Field1 FROM 0 FOR 6)</Content>
+	</DisplayField>
+	<DisplayField id="TYPE" header="Type" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.session_type"/>
+	</DisplayField>
+	<DisplayField id="SCANNER" header="Scanner" visible="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.scanner"/>
+	</DisplayField>
+	<DisplayField id="MARKER" header="Marker" visible="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.marker"/>
+		<Content type="sql">substring(@Field1 FROM 0 FOR 6)</Content>
+	</DisplayField>
+	<DisplayField id="STABILIZATION" header="Stabilization" visible="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.stabilization"/>
+		<Content type="sql">substring(@Field1 FROM 0 FOR 6)</Content>
+	</DisplayField>
+	<DisplayField id="OPERATOR_CSV" header="Operator" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.operator"/>
+	</DisplayField>
+	<DisplayField id="SCANNER_CSV" header="Scanner" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.scanner"/>
+	</DisplayField>
+	<DisplayField id="MARKER_CSV" header="Marker" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.marker"/>
+	</DisplayField>
+	<DisplayField id="STABILIZATION_CSV" header="Stabilization" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.stabilization"/>
+	</DisplayField>
+	<DisplayField id="GEN_AGE" header="Age" visible="true" searchable="true" data-type="float">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.date"/>
+		<DisplayFieldElement name="Field2" schema-element="xnat:demographicData.dob"/>
+		<DisplayFieldElement name="Field3" schema-element="xnat:demographicData.yob"/>
+		<DisplayFieldElement name="Field4" schema-element="xnat:mrSessionData.age"/>
+		<Content type="sql">CAST(ROUND(CAST(COALESCE(@Field4,EXTRACT(YEAR FROM AGE(@Field1, @Field2)),(EXTRACT(YEAR FROM @Field1)) - (@Field3)) AS numeric),2) AS numeric)</Content>
+	</DisplayField>
+	<DisplayField id="AGE" header="Age" visible="true" searchable="true" data-type="float">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.date"/>
+		<DisplayFieldElement name="Field2" schema-element="xnat:demographicData.dob"/>
+		<DisplayFieldElement name="Field3" schema-element="xnat:demographicData.yob"/>
+		<DisplayFieldElement name="Field5" schema-element="xnat:demographicData.age"/>
+		<DisplayFieldElement name="Field4" schema-element="xnat:mrSessionData.age"/>
+		<Content type="sql">CAST(FLOOR(CAST(COALESCE(@Field4,@Field5,EXTRACT(YEAR FROM AGE(@Field1, @Field2)),(EXTRACT(YEAR FROM @Field1)) - (@Field3)) AS numeric)) AS numeric)</Content>
+	</DisplayField>
+	<DisplayField header="DTI Count" id="DTI_COUNT" data-type="integer" searchable="true">
+		<DisplayFieldElement name="Field1" viewName="DTI_COUNT" viewColumn="DTI_COUNT"/>
+	</DisplayField>
+	<DisplayField id="INSERT_DATE" header="Inserted" visible="true" searchable="true" data-type="date">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.meta.insert_date"/>
+	<description>Date session was archived</description>
+	</DisplayField>
+	<DisplayField id="INSERT_USER" header="Creator" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.meta.insert_user.login"/>
+	<description>User who archived session</description>
+	</DisplayField>
+	<DisplayField id="LAST_MODIFIED" header="Modified" visible="true" searchable="true" data-type="date">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.meta.insert_date"/>
+		<DisplayFieldElement name="Field2" schema-element="xnat:mrSessionData.meta.last_modified"/>
+		<Content type="sql">COALESCE(@Field2, @Field1)</Content>
+	</DisplayField>
+	<DisplayField id="MR_SCAN_COUNT_AGG" header="Scans" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" viewName="MR_SCAN_COUNT_AGG" viewColumn="TYPE_COUNT"/>
+	<description>Aggregated Scan Counts</description>
+	</DisplayField>
+	<DisplayField id="WORKFLOW_STATUS" header="Process">
+		<DisplayFieldElement name="Field1" viewName="ORDERED_WORKFLOWS" viewColumn="STATUS"/>
+		<DisplayFieldElement name="Field2" viewName="ORDERED_WORKFLOWS" viewColumn="PIPELINE_NAME"/>
+		<Content type="sql">'&lt;B&gt;' || CASE @Field1 WHEN 'Complete' THEN '&lt;FONT COLOR=green&gt;' || @Field2 || '&lt;/FONT&gt;' WHEN 'In Progress' THEN '&lt;FONT COLOR=SlateGrey&gt;' || @Field2 || '&lt;/FONT&gt;' WHEN 'Running' THEN '&lt;FONT COLOR=SlateGrey&gt;' || @Field2 || '&lt;/FONT&gt;' WHEN 'Queued' THEN '&lt;FONT COLOR=orange&gt;' || @Field2 || '&lt;/FONT&gt;' WHEN 'Failed' THEN '&lt;FONT COLOR=red&gt;' || @Field2 || '&lt;/FONT&gt;' ELSE '&lt;FONT COLOR=orange&gt;' || @Field2 || '&lt;/FONT&gt;' END || '&lt;/B&gt;'</Content>
+	</DisplayField>
+	<DisplayField header="Projects" id="PROJECTS" data-type="string">
+		<DisplayFieldElement name="Field1" viewName="MR_PROJECTS" viewColumn="PROJECTS"/>
+		<description>All Projects for this session</description>
+	</DisplayField>
+	<DisplayField id="PROJECT" header="Project" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.project"/>
+	<description>Primary Project for this session</description>
+	</DisplayField>
+	<DisplayField id="MR_PROJECT_IDENTIFIER" header="MR ID" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">mr_project_id</Content>
+		<HTML-Link>
+			<SecureLink elementName="xnat:mrSessionData">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="xnat:mrSessionData/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="xnat:mrSessionData/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat:mrSessionData/search_field/xnat:mrSessionData.ID/project/@Field2">
+				<InsertValue id="Field1" field="SESSION_ID"/>
+				<InsertValue id="Field2" field="@WHERE"/>
+			</Property>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat:mrSessionData','xnat:mrSessionData.ID');">
+				<InsertValue id="Field1" field="SESSION_ID"/>
+			</Property>
+		</HTML-Link>
+		<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS mr_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="xnat:mrSessionData.ID" queryField="sharing_share_xnat_experimentda_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField header="Label" id="LABEL" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:mrSessionData.label"/>
+		<DisplayFieldElement name="Field2" schema-element="xnat:mrSessionData.ID"/>
+		<Content type="sql">COALESCE(@Field1, @Field2)</Content>
+		<HTML-Link>
+			<SecureLink elementName="xnat:mrSessionData">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="xnat:mrSessionData/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="xnat:mrSessionData/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat:mrSessionData/search_field/xnat:mrSessionData.ID">
+				<InsertValue id="Field1" field="SESSION_ID"/>
+			</Property>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat:mrSessionData','xnat:mrSessionData.ID');">
+				<InsertValue id="Field1" field="SESSION_ID"/>
+			</Property>
+			<Property name="TITLE" value="Inserted: @Field1 (@Field2)">
+				<InsertValue id="Field1" field="INSERT_DATE"/>
+				<InsertValue id="Field2" field="INSERT_USER"/>
+			</Property>
+		</HTML-Link>
+		<description>Session ID</description>
+	</DisplayField>
+	<DisplayField id="MR_EXPT_COUNT" header="Count" visible="true" searchable="false" data-type="integer" xsi:type="SubQueryField">
+		<Content type="sql">mr_project_count</Content>
+		<SubQuery>SELECT COUNT(*) as mr_project_count, imagesession_id FROM xnat_mrAssessorData sad LEFT JOIN xnat_imageAssessorData iad ON sad.id=iad.id LEFT JOIN xnat_experimentData ex ON sad.ID=ex.ID JOIN xdat_meta_element xme ON ex.extension=xme.xdat_meta_element_id WHERE xme.element_name='@WHERE' GROUP BY imagesession_id</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="xnat:mrSessionData.ID" queryField="imagesession_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField id="XNAT_MRSESSIONDATA_FIELD_MAP" header="Field" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">field</Content>
+		<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS mrsession_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='xnat:mrSessionData') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="xnat:mrSessionData.ID" queryField="mrsession_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayVersion versionName="listing" default-order-by="DATE" dark-color="DEDEDE" light-color="FFFFFF" default-sort-order="DESC">
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="PROJECT"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="GENDER_TEXT" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="TYPE"/>
+		<DisplayFieldRef id="SCANNER"/>
+		<DisplayFieldRef id="MR_SCAN_COUNT_AGG"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="listing_csv" default-order-by="DATE" dark-color="DEDEDE" light-color="FFFFFF" default-sort-order="DESC">
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="PROJECT"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="GENDER_TEXT" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="TYPE"/>
+		<DisplayFieldRef id="SCANNER"/>
+		<DisplayFieldRef id="MR_SCAN_COUNT_AGG"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="project_bundle" default-order-by="DATE" dark-color="DEDEDE" light-color="FFFFFF" default-sort-order="DESC">
+		<DisplayFieldRef id="MR_PROJECT_IDENTIFIER"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="SUB_PROJECT_IDENTIFIER" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="SCANNER"/>
+		<DisplayFieldRef id="MR_SCAN_COUNT_AGG"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="root" default-order-by="DATE" dark-color="DEDEDE" light-color="FFFFFF" default-sort-order="DESC">
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="PROJECT"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="GENDER_TEXT" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="AGE"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="brief" default-order-by="MR_NOTES" brief-description="Mr Session" dark-color="99FF99" light-color="CCFFCC">
+		<DisplayFieldRef id="MR_NOTES"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="detailed" default-order-by="OPERATOR" brief-description="Mr Session" dark-color="99FF99" light-color="CCFFCC">
+		<DisplayFieldRef id="MR_NOTES"/>
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="OPERATOR"/>
+		<DisplayFieldRef id="COHORT" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="SCANNER"/>
+		<DisplayFieldRef id="MARKER"/>
+		<DisplayFieldRef id="STABILIZATION"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="brief_csv" default-order-by="MR_NOTES" brief-description="Mr Session" dark-color="99FF99" light-color="CCFFCC">
+		<DisplayFieldRef id="MR_NOTES_CSV"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="detailed_csv" default-order-by="MR_NOTES" brief-description="Mr Session" dark-color="99FF99" light-color="CCFFCC">
+		<DisplayFieldRef id="MR_NOTES_CSV"/>
+		<DisplayFieldRef id="OPERATOR_CSV"/>
+		<DisplayFieldRef id="COHORT" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="SCANNER_CSV"/>
+		<DisplayFieldRef id="MARKER_CSV"/>
+		<DisplayFieldRef id="STABILIZATION_CSV"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="core" default-order-by="SESSION" brief-description="Mr Session" dark-color="dedede" light-color="ffffff">
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="GENDER_TEXT" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="AGE"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="core_csv" default-order-by="EXPT_DATE">
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="GENDER_TEXT" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="AGE"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="meta_data" default-order-by="SES" brief-description="Mr Session" dark-color="99FF99" light-color="CCFFCC">
+		<DisplayFieldRef id="RPT"/>
+		<DisplayFieldRef id="VIEW"/>
+		<DisplayFieldRef id="SESSION_ID"/>
+		<DisplayFieldRef id="LAST_MODIFIED"/>
+		<DisplayFieldRef id="INVEST"/>
+		<DisplayFieldRef id="INSERT_USER"/>
+		<DisplayFieldRef id="PREARCHIVE"/>
+	</DisplayVersion>
+	<ViewLink alias="ORDERED_WORKFLOWS">
+		<Mapping TableName="ORDERED_WORKFLOWS">
+			<MappingColumn rootElement="xnat:mrSessionData" fieldElement="xnat:mrSessionData.ID" mapsTo="id"/>
+		</Mapping>
+	</ViewLink>
+	<ViewLink alias="MR_PROJECTS">
+		<Mapping TableName="MR_PROJECTS">
+			<MappingColumn rootElement="xnat:mrSessionData" fieldElement="xnat:mrSessionData.ID" mapsTo="id"/>
+		</Mapping>
+	</ViewLink>
+	<ViewLink alias="MR_SCAN_COUNT_AGG">
+		<Mapping TableName="MR_SCAN_COUNT_AGG">
+			<MappingColumn rootElement="xnat:mrSessionData" fieldElement="xnat:mrSessionData.ID" mapsTo="image_session_id"/>
+		</Mapping>
+	</ViewLink>
+	<ViewLink alias="DTI_COUNT">
+		<Mapping TableName="DTI_COUNT">
+			<MappingColumn rootElement="xnat:mrSessionData" fieldElement="xnat:mrSessionData.ID" mapsTo="image_session_id"/>
+		</Mapping>
+	</ViewLink>
+	<ViewLink alias="SUBJECT_LABEL">
+		<Mapping TableName="SUBJECT_LABEL">
+			<MappingColumn rootElement="xnat:mrSessionData" fieldElement="xnat:mrSessionData.ID" mapsTo="image_session_id"/>
+		</Mapping>
+	</ViewLink>
+	<SQLView name="mr_scan_count_agg" sql="SELECT image_session_id, TRIM(', ' FROM xs_a_concat(TYPE_COUNT || ', ')) AS TYPE_COUNT FROM (SELECT image_session_id, (TYPE || '(' || COUNT(id) || ')') AS TYPE_COUNT FROM xnat_imageScanData GROUP BY image_session_id,TYPE ORDER BY image_session_id,TYPE) _TYPES GROUP BY image_session_id"/>
+	<SQLView name="MR_PROJECTS" sql="SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='xnat:mrSessionData' GROUP BY expt.id,expt.project"/>
+	<SQLView name="ordered_workflows" sql="SELECT wrk_workflowdata.id, status, wrk_workflowdata_id,
+        CASE pipeline_name
+            WHEN 'Transfer'::text THEN 'Archive'::text
+	    ELSE 
+		CASE xs_lastposition('/'::text, pipeline_name::text) WHEN 0 THEN pipeline_name ELSE
+		substring(substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1), 1, xs_lastposition('.'::text, substring(pipeline_name::text, xs_lastposition('/'::text, pipeline_name::text) + 1)) - 1)
+        END END AS pipeline_name
+   FROM wrk_workflowdata
+   RIGHT JOIN ( SELECT wrk_workflowdata.id, max(wrk_workflowdata.launch_time) AS launch_time
+           FROM wrk_workflowdata
+          GROUP BY wrk_workflowdata.id) wrk_max ON wrk_workflowdata.id::text = wrk_max.id::text AND wrk_workflowdata.launch_time = wrk_max.launch_time"/>
+	<SQLView name="DTI_COUNT" sql="SELECT image_session_id,COUNT(*) AS DTI_COUNT FROM xnat_imagescandata WHERE series_description LIKE '%DTI%' OR type LIKE '%DTI%' GROUP BY image_session_id"/>
+	<SQLView name="SUBJECT_LABEL" sql="SELECT isd.id AS image_session_id, sd.label AS subject_label from xnat_imageSessionData isd left join xnat_subjectassessordata sad on isd.id = sad.id LEFT JOIN xnat_subjectdata sd ON sad.subject_id = sd.id;"/>
+	<SQLFunction name="xs_lastPosition" content="CREATE OR REPLACE FUNCTION xs_lastPosition(text, text)
+  RETURNS int4 AS
+$BODY$
+    DECLARE
+       t text;
+       i int4:=0;
+    begin
+       t = $2;
+       WHILE(POSITION($1 in t)!=0) LOOP
+            i = i + POSITION($1 in t);
+            t = substring(t from (POSITION($1 in t) + 1));
+       END LOOP;
+       RETURN i;
+    END;
+$BODY$
+  LANGUAGE 'plpgsql' VOLATILE;"/>
+</Displays>

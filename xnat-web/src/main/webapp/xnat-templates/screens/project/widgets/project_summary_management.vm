@@ -1,0 +1,38 @@
+<script type="text/javascript" src="$content.getURI("scripts/project/userMgmt.js")"></script>
+						         
+
+						<table class="mgmt_container">
+ <tr>
+  <td valign="top">
+   <div id="user_mgmt_div"></div>
+  </td>
+  <td valign="top">
+   <div id="user_invite_div">
+<TABLE>
+ <TR>
+  <TD COLSPAN="3"><h3 style="margin-bottom:0px">Invite User</h3>
+  Enter the email address of the user to add.</TD>
+ </TR>
+ <TR>
+  <TD COLSPAN="3" NOWRAP><INPUT type="text" name="email" ID="invite_email" style="margin-bottom:3px"/>
+   <BR><select name="access_level" id="access_level" style="margin-bottom:3px"><option value="collaborator">Collaborator</option><option value="member">Member</option><option value="owner">Owner</option></select>
+   <BR><input type="button" value="Add User" name="eventSubmit_doPerform" ID="invite_user_button" ONCLICK="window.userManager.inviteUser(this);"/>
+  </TD>
+ </TR>
+</TABLE>
+   </div>
+  </td>
+ </tr>
+ <tr>
+  <td colspan="2">
+<DIV class="containerItem">Sharing: $project.getPublicAccessibility()</DIV>
+						  </td>
+						 </tr>
+						</table>
+<script language="javascript">
+function userManagerInit(){
+   window.userManager = new UserManager("user_mgmt_div","$project.getId()");
+}
+	YAHOO.util.Event.onDOMReady(userManagerInit);
+	
+</script>

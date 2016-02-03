@@ -1,0 +1,39 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+
+<!-- path: xdat-templates/layouts/Login -->
+
+## moved 'onload' script in <body> tag to a jQuery function
+<script type="text/javascript">
+    jq(window).load(function(){
+        jq('#username').focus();
+    });
+</script>
+<table id="login_container" height="500" border="0" valign="top">
+    <tr height="120">
+    <td valign="top">
+      $navigation.setTemplate("/NoMenuTop.vm")
+    </td>
+  </tr>
+  <tr>
+    <td align="left" valign="top">
+      <div id="layout_content2" style="display:none;">Loading...</div>
+      <div id="layout_content">$screen_placeholder</div>
+    </td>
+  </tr>
+  <tr>
+    <td valign="bottom">
+
+        $navigation.setTemplate("/powered_by.vm")
+
+    </td>
+  </tr>
+</table>
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

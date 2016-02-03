@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+
+<!-- ======================================================================== -->
+<!--                                                                          -->
+<!--  Default Intake file for Turbine Skeleton                                -->
+<!--                                                                          -->
+<!-- $Id: application-intake.xml,v 1.1 2005/07/18 20:47:21 big Exp $      -->
+<!--                                                                          -->
+<!-- ======================================================================== -->
+
+<!DOCTYPE input-data PUBLIC "JAKARTA//TURBINE intake.dtd//EN"
+                                        "http://jakarta.apache.org/turbine/dtd/intake_2_3.dtd">
+
+<input-data>
+  <group name="dummy" key="dummy">
+    <field name="dummy" key="dummy" />
+  </group>
+</input-data>

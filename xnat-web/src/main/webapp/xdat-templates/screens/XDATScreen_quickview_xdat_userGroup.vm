@@ -1,0 +1,69 @@
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("UserGroup Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>$!item.getStringProperty("xdat:userGroup/displayName") Group Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+		</TD>
+	</TR>
+	<style type="text/css">
+<!--
+	TD.special {
+	border-width:1px;
+	border-color:black; 
+	border-style:solid
+	}
+-->
+</style>
+	#set ($unauthorizedColor = "CC99CC")
+	#set ($unDefinedColor = "FFCCCC")
+	<TR>
+		<TD align=left valign=top colspan="2">
+			<Table border="0">
+				<TR><TH align="left">Permissions
+<BR><BR></TH></TR>
+					<TR>
+						<TD>
+							<TABLE>
+								<TR><TH colspan=2>&nbsp;</TH><TH>Create</TH><TH>Read</TH><TH>Edit</TH><TH>Delete</TH><TH>Activate</TH></TR>
+				#set($permissionCount = 0)
+				#foreach ($elementManager in $allElements)
+					#set($elementName = $elementManager.get(0))
+					#set($permissionCount = $permissionCount + 1)
+								#foreach ($perimissionItem in $elementManager.get(1))
+									#if($perimissionItem.wasSet())
+										#if($perimissionItem.isAuthenticated())
+										<TR>
+										#else
+										<TR bgcolor="$unauthorizedColor">
+										#end
+											<TD colspan=2 width="200" #if(!$perimissionItem.isAuthenticated())class="special"#end>$perimissionItem.getFullFieldName()</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canCreate())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canRead())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canEdit())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canDelete())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+											<TD #if(!$perimissionItem.isAuthenticated())class="special"#end>#if($perimissionItem.canActivate())<IMG SRC="$content.getURI('images/cg.gif')"/>#else<IMG SRC="$content.getURI('images/cr.gif')"/> #end</TD>
+										</TR>
+									#end
+								#end
+				#end
+			</TABLE>
+		</TD>
+	</TR>
+</TABLE>

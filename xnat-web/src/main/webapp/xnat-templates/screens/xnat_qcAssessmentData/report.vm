@@ -1,0 +1,6 @@
+#parse($turbineUtils.getTemplateName("report","xnat:imageAssessorData",$project))
+
+#set ($type = $om.getType())
+
+			   
+#parse($turbineUtils.getTemplateName("report",$om.getXSIType(),$project,$type))

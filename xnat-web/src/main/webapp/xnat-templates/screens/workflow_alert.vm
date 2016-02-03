@@ -1,0 +1,128 @@
+<!-- ACTIVE PROCESSES -->
+<span ID="workflow_active"  style="width:100%;position:relative;display:none;">
+	#set($hasActiveProcess = false)
+	<table id="activeTable" align="center" width="100%" style="border:1px solid #ccc;border-collapse:collapse;">
+	
+		<tr><th>Active Processes</th></tr>
+		<tr><td align="center">
+		<table>
+			#foreach( $workflow in $om.getWorkflows() )
+				#if($workflow.isActive())
+					#set($hasActiveProcess = true)
+					<tr id="$workflow.getWorkflowId()">
+						<td valign="middle"><b>$workflow.getOnlyPipelineName():</b>
+						</td><td valign="middle">$!workflow.getStatus()</td><td valign="middle">$!workflow.getPercentagecomplete()</td>
+						<td valign="middle">Start Time: $!workflow.getLaunchTime()</td>
+						#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+							<td valign="middle">
+								<a onclick="dismissNotification('$workflow.getWorkflowId()', 'Failed')">[Mark as Failed]</a>
+							</td>
+						#end
+					</tr>
+				#end
+			#end
+		</table>
+		</td></tr>
+	</table>
+</span>
+
+#if($hasActiveProcess)
+	<script type="text/javascript">
+		document.getElementById("workflow_active").style.display = 'block';
+	</script>
+#end
+
+<!-- PROCESSING ERRORS -->
+<span ID="workflow_error"  style="width:100%;position:relative; display:none;">
+	#set($hasErrorProcess = false)
+	<table id="errorTable" align="center" width="100%" BORDER=1 STYLE="	border-collapse: collapse;">
+		<tr><th><font color="red">Processing Exception</font></th></tr>
+		<tr><td align="center">
+		<table>
+		#set ($completed = [])
+
+		#foreach( $workflow in $om.getWorkflows() ) 
+			#if($workflow.getStatus()=="Complete")
+				#set($added = $completed.add($workflow.getOnlyPipelineName()))
+			#end
+			#if($workflow.getStatus()=="Error" || $workflow.getStatus()=="Failed")
+				#if(!$completed.contains($workflow.getOnlyPipelineName()))
+					#set($hasErrorProcess = true)
+					<tr>
+						<td valign="middle"><b>$workflow.getOnlyPipelineName():</b>
+						</td><td valign="middle">$!workflow.getStatus()</td><td valign="middle">$!workflow.getPercentagecomplete()</td>
+						<td valign="middle">Start Time: $!workflow.getLaunchTime()</td>
+						#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+							<td valign="middle">
+								<a onclick="dismissNotification('$workflow.getWorkflowId()', 'Failed (Dismissed)')">[Dismiss]</a>
+							</td>
+						#end
+					</tr>
+				#end
+			#end
+		#end 
+		</table>
+		</td></tr>
+	</table>
+</span>
+
+#if($hasErrorProcess)
+	<script type="text/javascript">
+		document.getElementById("workflow_error").style.display = 'block';
+	</script>
+#end
+
+<script type="text/javascript">
+
+	function dismissNotification(id, st){
+	
+		function workflowUpdate(){
+
+            xmodal.loading.open('Please wait...');
+
+            function workflowUpdateOK(data, status, o){
+                xmodal.loading.close();
+                xmodal.message('Success','Successfully updated workflow status to "<b>' + st + '</b>".', { action: function(){ document.location.reload(true) } });
+                console.log('Status: ' + status);
+            }
+
+            function workflowUpdateFailed(o, status, error){
+                xmodal.loading.close();
+                xmodal.message('Error','An unexpected error has occurred. Please contact your administrator.');
+				console.log('Status: ' + status + '. Error: ' + error);
+            }
+
+			var params = [];
+			params.push('wrk:workflowData/status=' + st);
+            params.push('XNAT_CSRF=' + csrfToken);
+			params.push('XNAT_XHR=' + Date.now());
+
+			var url = serverRoot + '/data/workflows/' + id + '?' + params.join('&');
+
+			jQuery.ajax({
+				type: 'PUT',
+                url: encodeURI(url),
+				success: workflowUpdateOK,
+                error: workflowUpdateFailed
+			});
+
+		}
+
+        var confirmation_message =
+                '<p>Are you sure you want to change the status of this ' +
+                'workflow to "<b>' + st + '</b>"?</p>' +
+				'<div class="message" style="margin-top:20px;"><b>Note:</b> ' +
+				'This will not affect the actual pipeline. If the pipeline ' +
+				'is still running, it may change the status.</div>';
+
+        xmodal.confirm({
+            content: confirmation_message,
+			okAction: workflowUpdate,
+			cancelAction: function(){ return },
+			width: 420,
+			height: 240
+        });
+
+	};
+
+</script>

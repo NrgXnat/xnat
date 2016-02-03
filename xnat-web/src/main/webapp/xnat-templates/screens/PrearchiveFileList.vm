@@ -1,0 +1,107 @@
+#if($popup=="true")
+	#set ($template = $data.getTemplateInfo())
+	$!template.setLayoutTemplate("ScreenOnly.vm")
+#end
+<table width="100%">
+	<tr>
+		<td>
+            <table class="file-details padding-sm" width="100%" cellspacing="0">
+            	<tr class="file-details-header">
+            		<th align="left" width="">File</th>
+            		<th align="center" width="100px">Size</th>
+            		<th width="240px">&nbsp;</th>
+            	</tr>
+			#set($lastURL="0")
+            #foreach($row in $table.toArrayListOfLists())
+				#set($lastURL=$content.getURI("$!row.get(2)"))
+            	<tr class="file-details-row highlight-row">
+            		<td class="scan-image-link">
+                        <a class="image-download" href="$lastURL" style="text-decoration:underline" title="Download File: $!row.get(0)">$!row.get(0)</a>
+                    </td>
+            		<td class="scan-image-size" align="center">$!row.get(1)</td>
+            		<td class="scan-image-buttons" align="right">
+            		#if($!row.get(2).contains("/DICOM/"))
+						#set($hasDICOM="1")
+            			<button onclick="XNAT.app.headerDialog.load('$content.getURI("/REST/services/dicomdump?src=$!row.get(2).substring(5)&format=html&requested_screen=DicomFileTable.vm")','File $!row.get(0) DICOM');">Review DICOM Tags</button>
+						##&nbsp;&nbsp;<a onclick="document.getElementById('viewer').src='$lastURL'">JPEG</a>
+##                        <button onclick="popupCentered('$lastURL?format=image/jpeg', '', 256, 256, 2.2, {location:'no',scrollbars:'no',toolbar:'no',status:'no'})">View Image</button>
+                        <button
+                            class="view-image-button" data-popup-opts="$lastURL|$!row.get(0)|256|256"
+                            ##data-popup="$lastURL?format=image/jpeg | View Image | 256 | 256 | 3 | location=no,status=no,toolbar=no,scrollbars=no"
+                            ##onclick="popupCentered('$lastURL?format=image/jpeg', '', 256, 256, 'location=no,scrollbars=no,toolbar=no,status=no')"
+                            >View Image</button>
+                        ##window.open('$lastURL?format=image/jpeg','Image Popup','scrollbars=no,width=256,height=256,resizable,status,chrome,centerscreen')
+                    #end
+            		</td>
+            	</tr>
+            #end
+            </table>
+		</td>
+        #if($lastURL!="0")
+		<!--<td>
+			<img id="viewer" src="$lastURL" border="0"/>
+		</td>-->
+		#end
+	</tr>
+</table>
+
+<script type="text/javascript">
+
+    (function(){
+
+        var jq = jQuery;
+
+        jq('.view-image-button').click(function(){
+            var __btn, params=[], url, title, width, height, imageModal={};
+            __btn = jq(this);
+            params = __btn.data('popup-opts').split('|');
+            url = params[0];
+            title = params[1];
+            width = params[2];
+            height = params[3];
+            imageModal.content =
+                '<div style="text-align:center;background:#000;">' +
+                '<a class="image-download" href="' + url + '" title="Download File: ' + title + '" style="display:block;height:' + height + 'px;">' +
+                '<img src="' + url + '?format=image/jpeg" alt="preview">' +
+                '</a>' +
+                '<p style="margin:0;padding:6px 0 10px;background:#303030;">' +
+                    '<a class="image-download" ' +
+                        'href="' + url + '" ' +
+                        'title="Download File: ' + title + '" ' +
+                        'style="color:#c0c0c0;">(click to download original file)</a>' +
+                '</p>'+
+                '</div>';
+            imageModal.title = 'Image: ' + title;
+            imageModal.width = parseInt(width,10);
+            imageModal.height = parseInt(height,10) + 54;
+            imageModal.footer = false;
+            imageModal.modal = false;
+            imageModal.scroll = false;
+            imageModal.padding = 0;
+            xmodal.open(imageModal);
+        });
+
+        // remove event handlers in 'imageDownload' namespace
+        // to prevent firing more than once on the same element
+        // since this template (and JavaScript) is (re)loaded multiple times
+        jq(document.body).off('click.imageDownload', 'a.image-download');
+
+        // download original file from link or image preview
+        jq(document.body).on('click.imageDownload', 'a.image-download', function(e){
+            e.preventDefault();
+            var title = this.title;
+            var url   = this.href;
+            xmodal.confirm({
+                width: 500,
+                title: 'Download',
+                content: title + '?',
+                okLabel: 'Download',
+                okAction: function(){
+                    window.location.href = url;
+                }
+            });
+        });
+
+    })();
+
+</script>

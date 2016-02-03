@@ -1,0 +1,112 @@
+<!-- Title: Features -->
+<style type="text/css">
+    #features-controls th.featureEnabled,
+    #features-controls th.featureBanned {
+        min-width: 80px;
+    }
+    #features-controls td label {
+        width: auto;
+    }
+</style>
+<div class="mgmt_container">
+    <div id="features_mgmt_div" class="row">
+        These features are currently supported by your XNAT Server.  As a site administrator, you can 'ban' any of these features
+		so that the features they represent will be concealed on the site.  Or, you can mark features as 'on by default' so that the features will be enabled for all users 
+		unless blocked for specific groups.  Features membership is also configurable on a per project/group level.
+	</div>
+
+    <div id="features_grp_config_div" class="row">
+        <a href='$content.getURI("/app/template/ManageGroupTypeFeatures.vm")'>Advanced</a>
+	</div>
+
+    <table id="features-controls" class="xnat-table features">
+        <thead>
+        <tr class="header">
+            <th class="featureName">Name</th>
+            <th class="featureDesc">Description</th>
+            <th class="featureEnabled">On By Default</th>
+            <th class="featureBanned">Banned</th>
+        </tr>
+        </thead>
+        <tbody>
+        #foreach($feature in $features)
+            <tr class="featureItem highlight" id="">
+                <td class="featureName" nowrap>$feature.getName()</td>
+                <td class="featureDesc">$feature.getDescription()</td>
+                <td class="featureEnabled checkbox">
+                    <label>
+                    <input type="checkbox"
+                        class='featureToggle'
+                        id="$feature.getKey()_enabled"
+                        onchange='return manageEnable(this);'
+                        data-feature="$feature.getKey()"
+                        #if($feature.isOnByDefault()) checked #end
+                        #if($feature.isBanned()) disabled #end >
+                    </label>
+                </td>
+                <td class="featureBanned checkbox">
+                    <label>
+                    <input type="checkbox"
+                        class='featureToggle'
+                        id="$feature.getKey()_banned"
+                        onchange='return manageBanned(this);'
+                        data-feature="$feature.getKey()"
+                        #if($feature.isBanned()) checked #end >
+                    </label>
+                </td>
+            </tr>
+        #end
+        </tbody>
+    </table>
+
+</div>
+
+<script>
+function manageEnable(check){
+	var key=$(check).attr("data-feature");
+	
+	YAHOO.util.Connect.asyncRequest('POST',serverRoot+"/REST/services/features?XNAT_CSRF=" + csrfToken,
+		{success : featureSuccess, failure : featureFailure, cache : false, scope : check},
+		"{'key':'" + key + "','enabled':" + check.checked + "}",
+		check);
+		
+	$("input.featureToggle").attr("disabled", true);
+}
+function manageBanned(check){
+	var key=$(check).attr("data-feature");
+	
+	YAHOO.util.Connect.asyncRequest('POST',serverRoot+"/REST/services/features?XNAT_CSRF=" + csrfToken,
+		{success : featureSuccess, failure : featureFailure, cache : false, scope : check},
+		"{'key':'" + key + "','banned':" + check.checked + "}",
+		check);
+		
+	$("input.featureToggle").attr("disabled", true);
+	
+	if(check.checked){
+		$("#"+key+"_enabled").removeClass("featureToggle");
+	}else{
+		$("#"+key+"_enabled").addClass("featureToggle");
+	}
+}
+function featureSuccess(res){
+	if(this.id.endsWith("_banned")){
+		var key=$(this).attr("data-feature");
+		if(this.checked){
+    		$("#"+key+"_enabled").removeClass("featureToggle");
+    	}else{
+    		$("#"+key+"_enabled").addClass("featureToggle");
+    	}
+	}
+
+	$("input.featureToggle").removeAttr("disabled");
+}
+function featureFailure(res){
+	if(this.checked){
+		this.checked=false;
+	}else{
+		this.checked=true;
+	}
+
+	$("input.featureToggle").removeAttr("disabled");
+}
+</script>

@@ -1,0 +1,36 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+##<body onload="setupPanes();">
+## hopefully the script below does the same as above
+<script type="text/javascript">
+    jq(window).load(setupPanes());
+</script>
+
+<!-- path: xdat-templates/layouts/DefaultWTabs -->
+
+<table id="wrapper_table" height="100%" border="0" valign="top">
+    <tr>
+    <td>
+      $navigation.setTemplate("/DefaultTop.vm")
+    </td>
+  </tr>
+  <tr>
+    <td align="left" valign="top">
+      $navigation.setTemplate("/Breadcrumb.vm")
+      <div id="layout_content2" style="display:none;">Loading...</DIV>
+      <div id="layout_content">$screen_placeholder</DIV>
+    </td>
+  </tr>
+  <tr>
+    <td valign="bottom">
+      $navigation.setTemplate("/DefaultBottom.vm")
+    </td>
+  </tr>
+</table>
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

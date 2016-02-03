@@ -1,0 +1,30 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- BEGIN /screens/XDATScreen_edit_xnat_subjectData.vm -->
+$page.setTitle("Add ${displayManager.getSingularDisplayNameForSubject()}")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ( $subjectHeadings = ["ID","Labels", "Date" ] )
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+#else
+	#set ($popup = "false")
+#end
+
+<form id="editSubjectForm" method="post" action="$link.setAction("EditSubjectAction")">
+#parse("/screens/xnat_subjectData/xnat_subjectData_edit.vm")
+</form>
+
+<script type="text/javascript">
+
+    // set value of all inputs with "nullify" class to "NULL"
+    jq('#editSubjectForm').submit(function(e){
+        jq(this).find('input.nullify').val('NULL');
+        return true;
+    });
+
+</script>
+
+<!-- END /screens/XDATScreen_edit_xnat_subjectData.vm -->

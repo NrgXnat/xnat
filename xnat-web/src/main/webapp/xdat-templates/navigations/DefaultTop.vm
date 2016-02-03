@@ -1,0 +1,43 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#if($popup)
+
+#else
+#if ($turbineUtils.GetPassedParameter("popup",$data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+#else
+	#set ($popup = "")
+#end
+#end
+<table cellspacing="0" border="0">
+   <tr valign="bottom">
+	<td align="left" class="logo_img"><a href="$link.setPage("Index.vm")" onmouseover="return true;">#parse("/screens/Logo.vm")</a></td>
+<td>
+<ul class="topMenu" style="white-space: nowrap;">
+<li style="cursor:pointer;" class="topMenu" ONCLICK="location.href='$link.setPage("Index.vm")';" ONMOUSEOVER="this.style.backgroundColor='FFFFFF';" ONMOUSEOUT="this.style.backgroundColor=this.parentNode.style.backgroundColor;">Home</li>
+#set ($actionObjects = $data.getSession().getAttribute("user").getActionCollection() )
+#if ($actionObjects.size() > 1)
+<li class="topMenu" ONMOUSEOVER="document.getElementById('taskMenu').style.display='block';" ONMOUSEOUT="document.getElementById('taskMenu').style.display='none';">
+<DIV style="font-weight:700;">Tasks</DIV>
+<DIV style="text-align:left;">
+<ul ID="taskMenu" class="withColor topSubMenu">
+			#foreach ($actionObject in $actionObjects)
+				#if ($actionObject.getName() != "browse")
+<li class="withColor topSubMenu" style="cursor:pointer;" class="topMenu" ONCLICK="location.href='$link.setAction("XDATActionRouter").addPathInfo("xdataction",$actionObject.getName())';" ONMOUSEOVER="this.style.backgroundColor='FFFFFF';" ONMOUSEOUT="this.style.backgroundColor=this.parentNode.style.backgroundColor;">$actionObject.getDisplayName()</li>
+				#end
+			#end
+</ul>
+</DIV>
+</li>
+#end
+	#if($data.getSession().getAttribute("user").getUsername()=="guest")
+<li class="topMenu" style="cursor:pointer;" class="topMenu" ONCLICK="location.href='$link.setPage("Login.vm")';" ONMOUSEOVER="this.style.backgroundColor='FFFFFF';" ONMOUSEOUT="this.style.backgroundColor=this.parentNode.style.backgroundColor;">Login</li>
+<li class="topMenu" style="cursor:pointer;" class="topMenu" ONCLICK="location.href='$link.setPage("Register.vm")';" ONMOUSEOVER="this.style.backgroundColor='FFFFFF';" ONMOUSEOUT="this.style.backgroundColor=this.parentNode.style.backgroundColor;">Register</li>
+	#else
+<li class="topMenu" style="cursor:pointer;" class="topMenu" ONCLICK="location.href='$link.setAction("LogoutUser")';" ONMOUSEOVER="this.style.backgroundColor='FFFFFF';" ONMOUSEOUT="this.style.backgroundColor=this.parentNode.style.backgroundColor;">Logout</li>
+	#end
+<li class="topMenu" style="padding:0;height:100%;border:0;background-color:#FFFFFF;font-weight:500;">#if($data.getSession().getAttribute("user").getUsername()!="guest")<DIV class="text" style="white-space:nowrap;">User: $!data.getSession().getAttribute("user").getUsername()#end</div></li>
+</ul>
+</td>
+   </tr>
+</table>
+<br>

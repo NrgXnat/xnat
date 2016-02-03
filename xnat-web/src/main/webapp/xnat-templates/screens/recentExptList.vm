@@ -1,0 +1,6 @@
+<script type="text/javascript" src="$content.getURI("scripts/experiments/recentExptList.js")"></script>
+<div id="min_expt_list"></div>
+<script type="text/javascript">
+var exptList=new MinExptList("min_expt_list");
+exptList.init();
+</script>

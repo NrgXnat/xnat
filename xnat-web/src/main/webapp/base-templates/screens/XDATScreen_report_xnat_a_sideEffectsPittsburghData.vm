@@ -1,0 +1,231 @@
+<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+$page.setTitle("SideEffectsPittsburgh Details")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($turbineUtils.GetPassedParameter("popup", $data))
+	#set ($popup = $turbineUtils.GetPassedParameter("popup", data) )
+	#set ($popup = "false")
+#end
+<TABLE width="100%">
+	<TR>
+		<TD>
+			<table width="100%">
+				<TR>
+					<TD align="left" valign="middle">
+						<font face="$ui.sansSerifFonts" size="3"><b>SideEffectsPittsburgh Details</b></font>
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+			<TABLE width="100%">
+				<TR>
+					<TD valign="top">
+						<TABLE>
+							<TR><TD>subject_ID</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/subject_ID")</TD></TR>
+							<TR><TD>age</TD><TD>$!item.getDoubleProperty("xnat_a:sideEffectsPittsburghData/age")</TD></TR>
+							<TR><TD>date</TD><TD>$!item.getProperty("xnat_a:sideEffectsPittsburghData/date")</TD></TR>
+							<TR><TD>time</TD><TD>$!item.getProperty("xnat_a:sideEffectsPittsburghData/time")</TD></TR>
+							<TR><TD>duration</TD><TD>$!item.getProperty("xnat_a:sideEffectsPittsburghData/duration")</TD></TR>
+							<TR><TD>delay</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/delay")</TD></TR>
+							<TR><TD>delay/ref_expt_id</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/delay/ref_expt_id")</TD></TR>
+							<TR><TD>note</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/note")</TD></TR>
+							<TR><TD>acquisition_site</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/acquisition_site")</TD></TR>
+							<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/ID")</TD></TR>
+							<TR><TD>project</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/project")</TD></TR>
+							<TR><TD>visit_id</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/visit_id")</TD></TR>
+							<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/visit")</TD></TR>
+							<TR><TD>version</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/version")</TD></TR>
+							<TR><TD>original</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/original")</TD></TR>
+							<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/protocol")</TD></TR>
+							<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/label")</TD></TR>
+							<TR><TD>motorTics</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/motorTics")</TD></TR>
+							<TR><TD>buccal_lingualMovements</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/buccal_lingualMovements")</TD></TR>
+							<TR><TD>picking_skin_fingers_nails_lip</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/picking_skin_fingers_nails_lip")</TD></TR>
+							<TR><TD>worried_anxious</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/worried_anxious")</TD></TR>
+							<TR><TD>dull_tired_listless</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/dull_tired_listless")</TD></TR>
+							<TR><TD>sedation</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/sedation")</TD></TR>
+							<TR><TD>stomachache</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/stomachache")</TD></TR>
+							<TR><TD>nausea_vomiting</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/nausea_vomiting")</TD></TR>
+							<TR><TD>crabby_irritable</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/crabby_irritable")</TD></TR>
+							<TR><TD>tearful_sad_depressed</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/tearful_sad_depressed")</TD></TR>
+							<TR><TD>hallucinations</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/hallucinations")</TD></TR>
+							<TR><TD>troubleSleeping</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/troubleSleeping")</TD></TR>
+							<TR><TD>lossOfAppetite</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/lossOfAppetite")</TD></TR>
+							<TR><TD>troubleConcentrating_distractible</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/troubleConcentrating_distractible")</TD></TR>
+							<TR><TD>dizziness_lightheadedness</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/dizziness_lightheadedness")</TD></TR>
+							<TR><TD>headaches</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/headaches")</TD></TR>
+							<TR><TD>socialWithdrawal</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/socialWithdrawal")</TD></TR>
+							<TR><TD>dryMouth</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/dryMouth")</TD></TR>
+							<TR><TD>palpitations</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/palpitations")</TD></TR>
+						</TABLE>
+					</TD>
+					<TD valign="top" align="right">
+						#parse($turbineUtils.getTemplateName("actions",$om.getXSIType(),$project))
+					</TD>
+				</TR>
+			</TABLE>
+		</TD>
+	</TR>
+	<TR>
+		<TD>
+<!-- BEGIN xnat_a:sideEffectsPittsburghData -->
+			<TABLE>
+				<TR><TH align="left"><font face="$ui.sansSerifFonts" size="2">Related Items</font></TH></TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE>
+						</TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_share_1_NUM_ROWS=$item.getChildItems("xnat_a:sideEffectsPittsburghData/sharing/share").size() - 1)
+							#if($xnat_experimentData_share_1_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_share_1_COUNTER in [0..$xnat_experimentData_share_1_NUM_ROWS])
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/sharing/share[$xnat_experimentData_share_1_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>share</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/sharing/share[$xnat_experimentData_share_1_COUNTER]/share")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/sharing/share[$xnat_experimentData_share_1_COUNTER]/label")</TD></TR>
+													<TR><TD>project</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/sharing/share[$xnat_experimentData_share_1_COUNTER]/project")</TD></TR>
+													<TR><TD>visit</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/sharing/share[$xnat_experimentData_share_1_COUNTER]/visit")</TD></TR>
+													<TR><TD>protocol</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/sharing/share[$xnat_experimentData_share_1_COUNTER]/protocol")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/sharing/share[$xnat_experimentData_share_1_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/investigator -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/investigator</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>title</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/investigator/title")</TD></TR>
+										<TR><TD>firstname</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/investigator/firstname")</TD></TR>
+										<TR><TD>lastname</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/investigator/lastname")</TD></TR>
+										<TR><TD>institution</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/investigator/institution")</TD></TR>
+										<TR><TD>department</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/investigator/department")</TD></TR>
+										<TR><TD>email</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/investigator/email")</TD></TR>
+										<TR><TD>phone</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/investigator/phone")</TD></TR>
+										<TR><TD>ID</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/investigator/ID")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/investigator -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/validation -->
+						<TABLE>
+							<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/validation</font></TH></TR>
+							<TR>
+								<TD align="left" valign="top">
+									<TABLE>
+										<TR><TD>method</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/validation/method")</TD></TR>
+										<TR><TD>date</TD><TD>$!item.getProperty("xnat_a:sideEffectsPittsburghData/validation/date")</TD></TR>
+										<TR><TD>notes</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/validation/notes")</TD></TR>
+										<TR><TD>validated_by</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/validation/validated_by")</TD></TR>
+										<TR><TD>status</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/validation/status")</TD></TR>
+									</TABLE>
+								</TD>
+							</TR>
+						</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/validation -->
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_abstractResource_4_NUM_ROWS=$item.getChildItems("xnat_a:sideEffectsPittsburghData/resources/resource").size() - 1)
+							#if($xnat_abstractResource_4_NUM_ROWS>=0)
+								#foreach($xnat_abstractResource_4_COUNTER in [0..$xnat_abstractResource_4_NUM_ROWS])
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>note</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/note")</TD></TR>
+													<TR><TD>label</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/label")</TD></TR>
+													<TR><TD>file_count</TD><TD>$!item.getIntegerProperty("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_count")</TD></TR>
+													<TR><TD>file_size</TD><TD>$!item.getProperty("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/file_size")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE><TR><TD>
+													#set($xnat_abstractResource_tag_5_NUM_ROWS=$item.getChildItems("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag").size() - 1)
+													#if($xnat_abstractResource_tag_5_NUM_ROWS>=0)
+														#foreach($xnat_abstractResource_tag_5_COUNTER in [0..$xnat_abstractResource_tag_5_NUM_ROWS])
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+															<TABLE>
+																<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]</font></TH></TR>
+																<TR>
+																	<TD align="left" valign="top">
+																		<TABLE>
+																			<TR><TD>tag</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/tag")</TD></TR>
+																			<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER]/name")</TD></TR>
+																		</TABLE>
+																	</TD>
+																</TR>
+															</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER]/tags/tag[$xnat_abstractResource_tag_5_COUNTER] -->
+														#end
+													#end
+												</TD></TR></TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/resources/resource[$xnat_abstractResource_4_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+				<TR>
+					<TD align="left" valign="top">
+						<TABLE><TR><TD>
+							#set($xnat_experimentData_field_6_NUM_ROWS=$item.getChildItems("xnat_a:sideEffectsPittsburghData/fields/field").size() - 1)
+							#if($xnat_experimentData_field_6_NUM_ROWS>=0)
+								#foreach($xnat_experimentData_field_6_COUNTER in [0..$xnat_experimentData_field_6_NUM_ROWS])
+<!-- BEGIN xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+									<TABLE>
+										<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_6_COUNTER]</font></TH></TR>
+										<TR>
+											<TD align="left" valign="top">
+												<TABLE>
+													<TR><TD>field</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_6_COUNTER]/field")</TD></TR>
+													<TR><TD>name</TD><TD>$!item.getStringProperty("xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_6_COUNTER]/name")</TD></TR>
+												</TABLE>
+											</TD>
+										</TR>
+									</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData/fields/field[$xnat_experimentData_field_6_COUNTER] -->
+								#end
+							#end
+						</TD></TR></TABLE>
+					</TD>
+				</TR>
+			</TABLE>
+<!-- END xnat_a:sideEffectsPittsburghData -->
+		</TD>
+	</TR>
+</TABLE><BR>#parse("/screens/ReportProjectSpecificFields.vm")

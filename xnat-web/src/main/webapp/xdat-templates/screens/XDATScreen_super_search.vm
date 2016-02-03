@@ -1,0 +1,108 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<script language="javascript">
+var spans = new Array();
+function showSpan(spanName)
+{
+  for(var spanCount=0;spanCount<spans.length;spanCount++)
+  {
+    var spanPanel = document.getElementById(spans[spanCount]);
+    if(spanPanel.id==spanName)
+    {
+      spanPanel.style.display='block';
+    }else{
+      spanPanel.style.display='none';
+    }
+  }
+  return false;
+}
+function selectDefault(elementName){
+  showSpan('panel' + elementName);
+}
+</script>
+<div id="container1" VALIGN="top">
+  <TABLE VALIGN="top">
+  	<TR>
+  		<TD colspan=2>
+  		 <TABLE width="100%">
+  		  <TR>
+  		   <TD>&nbsp;</TD>
+  		  </TR>
+  		  <TR>
+  		   <TD valign="top"><a href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","search")" onmouseover="return true;">Standard Search</A></TD>
+  		   <TD valign="top" align="left"><H3>Dynamic Super Search</H3></TD>
+  		  </TR>
+  		  <TR>
+  		   <TD>&nbsp;</TD>
+  		  </TR>
+  		 </TABLE>
+  		</TD>
+  		</TR>
+  	<TR>
+  		<TD COLSPAN=2>
+  		<FORM name="search$velocityCount" method="post" action="$link.setAction("DisplaySearchAction")">
+  			<TABLE>
+			  #set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplaysByDesc())
+			  	  <TR><TH>Pivot Element</TH><TD colspan=2>
+		  			<select id="exptType" name="ELEMENT_0" ONCHANGE="return showPaneFromList(this);">
+					  	#foreach ($typeObject in $typeObjects)
+						  	<option value="$typeObject.getElementName()" #if($typeObject.getElementName()=="xnat:mrSessionData") SELECTED #end>$typeObject.getDescription()</option>
+						  #end
+					  </select><BR><BR></tD></TR>
+				  #foreach ($typeObject in $typeObjects)
+				  	<TR><TD><B>$typeObject.getDescription()</B></TD>
+				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="" CHECKED/> None</TD>
+				  		#if($typeObject.getVersions().get("brief") || $typeObject.getVersions().get("detailed"))
+				  		#if($typeObject.getVersions().get("brief"))
+				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="brief"/> Brief</TD>
+				  		#else
+				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="brief" DISABLED/> Brief</TD>
+				  		#end
+				  		#if($typeObject.getVersions().get("detailed"))
+				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="detailed"/> Detailed</TD>
+				  		#else
+				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="detailed" DISABLED/> Detailed</TD>
+				  		#end
+				  		#else
+				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="brief" DISABLED/> Brief</TD>
+				  		<TD NOWRAP><INPUT type="radio" name="super_$typeObject.getElementName()" value="detailed"/> Detailed</TD>		
+				  		#end
+				  	</TR>
+				  #end
+				  <TR><TD COLSPAN=4 ALIGN=right>
+	  		<input type="submit" name="eventSubmit_doPerform" value="Submit"/></TD></TR>
+			  </TABLE>
+  		</TD>
+  	</TR>
+  	<TR VALIGN="top">
+  		<TD VALIGN="top">
+		  	<ul>
+			  #set ($typeObjects = $data.getSession().getAttribute("userHelper").getSearchableElementDisplaysByDesc())
+				  #foreach ($typeObject in $typeObjects)
+				  	<li style="border-bottom:1px solid #6D99B6;padding:3px 5px 5px 5px;"><a href="#" onClick="return showSpan('panel$typeObject.getElementName()')" id="tab$velocityCount">$typeObject.getDescription()</a></li>
+				  #end
+			  </ul>
+		</TD>
+		<TD>
+#foreach ($typeObject in $typeObjects)
+					  <SCRIPT language="javascript">spans.push("panel$typeObject.getElementName()");</SCRIPT>
+			  <span id="panel$typeObject.getElementName()" VALIGN="top" style="display:none;">
+				  <TABLE VALIGN="top">
+				  	<TR>
+				  		<TH colspan=2 valign="top">$typeObject.getDescription() Search Criteria</TH>
+				  	</TR>
+				  	<TR>
+				  		<TD>#xdatSearchElement($typeObject.getSchemaElement() 3)
+				  		</TD>
+				  	</TR>
+				  </TABLE>
+		      </span>
+			#end  			  
+  		</TD>
+  		<TR>
+	  		<TD colspan=2 ALIGN="center">
+	  		</TD>
+	  		</FORM>
+	  	</TR>
+  	</TR>
+  </TABLE>
+</div>

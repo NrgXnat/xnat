@@ -1,0 +1,14 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("NoMenu.vm")
+$page.setTitle("XDAT -- Verify Email")
+$page.setBgColor($ui.bgcolor)
+<DIV VALIGN="top">
+#if ($autoApproval == "true")
+<font face="$ui.sansSerifFonts" size=4 style="line-height:18px;"><p><b>Your email address has been verified.</b></p></font><BR>
+<font face="$ui.sansSerifFonts" size=4 style="line-height:18px;"><p><a href="Login.vm">Click Here</a> to continue.</p></font>
+#else
+<font face="$ui.sansSerifFonts" size=4 style="line-height:18px;"><p><b>Your email address has been verified. Your user account will now be reviewed and enabled by the site administrator. When this is complete, you will receive an email inviting you to login to the site.</b></p></font><BR>
+<font face="$ui.sansSerifFonts" size=4 style="line-height:18px;"><p><a href="Login.vm">Click Here</a> to continue.</p></font>	
+#end
+</DIV>

@@ -1,0 +1,71 @@
+<SCRIPT type="text/javascript">
+#if($project)
+var project="$project";
+	#set($displayedFields=["xnat:subjectData/ID","xnat:subjectData/label","xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender","xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/handedness"])
+#set($displayedHeaders=["Accession","Label","Gender","Handedness"])
+	#else
+	var project = null;
+	#set($displayedFields=["xnat:subjectData/ID","xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender","xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/handedness"])
+#set($displayedHeaders=["Accession","Gender","Handedness"])
+	#end
+		var displayedFields=new Array();
+		#foreach($df in $displayedFields)
+		displayedFields.push("$df");
+		#end
+	var displayedFieldHeaders=new Array();
+			#foreach($dfh in $displayedHeaders)
+		displayedFieldHeaders.push("$dfh");
+		#end
+		
+	</SCRIPT>
+<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/subject/SubjectForm.js')"></SCRIPT>
+<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/subject/SubjectFinder.js')"></SCRIPT>
+<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/subject/subjectSearch.js')"></SCRIPT>
+<script type="text/javascript" LANGUAGE="JavaScript" src="$content.getURI('scripts/yui/build/calendar/calendar-min.js')"></SCRIPT>
+<link type="text/css" rel="stylesheet" href="$content.getURI('scripts/yui/build/calendar/assets/skins/sam/calendar.css')"> 
+#if($part)
+ 
+#else
+ #set($part=$om.getSubjectData())
+#end
+<input ID="subject_id" type="hidden" name="$!{item.getXSIType()}.subject_ID" value="$!part.getId()" />
+<DIV ID="subjectFinderForm"></DIV>
+
+<SCRIPT type="text/javascript">
+var subjectFinderForm = document.getElementById("subjectFinderForm");
+
+
+window.manager = new SubjectFinder(project,subjectFinderForm);
+
+
+
+#if($part)
+ var _default = new xnat_subjectData();
+ _default.setId("$!part.getId()");
+ #foreach($df in $displayedFields)
+  _default.setProperty("$!df","$!part.getProperty($df)");
+ #end
+ window.manager.select(_default);
+#else
+ window.manager.showOption1();
+#end
+
+		window.create_subject_link ="$link.setPage('XDATScreen_edit_xnat_subjectData.vm').addPathInfo('popup','true')";
+window.create_subject_link+="/project/$project/destination/JS_Parent_Return.vm";
+
+window.success=function(subject_id){
+  window.manager.message("The $displayManager.getSingularDisplayNameForSubject().toLowerCase() you entered was stored.");
+  window.manager.selectById(subject_id);
+  if(window.manager.subjectForm!=undefined){
+    window.manager.subjectForm.close();
+		    window.manager.subjectForm=null;
+		  }
+}
+window.failure=function(msg){
+  window.manager.message(msg);
+  if(window.manager.subjectForm!=undefined){
+    window.manager.subjectForm.close();
+		    window.manager.subjectForm=null;
+		  }
+}
+</script>

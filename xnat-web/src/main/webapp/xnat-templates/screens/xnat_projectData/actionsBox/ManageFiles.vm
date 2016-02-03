@@ -1,0 +1,67 @@
+<!-- BEGIN xnat-templates/screens/xnat_projectData/actionsBox/ManageFiles.vm -->
+#if($user.checkFeature($om,"manage_files") && $turbineUtils.toBoolean($siteConfig.getProperty("UI.show-project-manage-files","true")))
+     <li class="yuimenuitem">
+			<A href="" ONCLICK="window.viewer.render();return false;">
+				<div class="ic">
+					<img border="0" src="$content.getURI("scripts/yui/build/treeview/assets/img/folders/cf.gif")"/>
+				</div>
+				<div class="ic_spacer">&nbsp;</div>
+				Manage Files
+			</A>
+	 </li>
+
+<script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
+<script type="text/javascript">
+  	var obj=new Object();
+  	obj.uri=serverRoot + "/REST/projects/$!om.getId()";
+    obj.refresh = serverRoot + "/data/services/refresh/catalog?options=" + encodeURIComponent("populateStats,append,delete,checksum") + "&XNAT_CSRF=" + csrfToken + "&resource=/archive/projects/$!om.getId()";
+    obj.objectId = "$!om.getId()";
+    obj.objectType = "project";
+
+        #if ($item.canEdit($data.getSession().getAttribute("user")))
+	      obj.canEdit=true;
+    #else
+	      obj.canEdit=false;
+	#end
+  	#if ($item.canDelete($data.getSession().getAttribute("user")))
+          obj.canDelete=true;
+    #else
+          obj.canDelete=false;
+    #end
+
+  obj.catalogs=new Object();
+  obj.catalogs.ids=new Array();
+  window.viewer=new FileViewer(obj);
+    
+  function showFiles(){
+    window.viewer.render();
+  }
+</script>
+<style type="text/css">   
+	/* custom styles for inline instances */
+.yui-skin-sam .yui-ac-input { position:static;width:20em; vertical-align:middle;}
+.yui-skin-sam .yui-ac-container { width:20em;left:0px;}
+
+/* buttons */
+.yui-ac .yui-button {vertical-align:middle;}
+.yui-ac .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-rt.png")) center center no-repeat }
+.yui-ac .open .yui-button button {background: url($content.getURI("scripts/yui/build/autocomplete/assets/img/ac-arrow-dn.png")) center center no-repeat}
+
+/* custom styles for scrolling container */ 
+	#type_auto_div { 
+    padding-bottom:2em; 
+	}
+	#type_auto_div .yui-ac-content { 
+    max-height:20em;overflow:auto;overflow-x:hidden; /* set scrolling */ 
+    _height:20em; /* ie6 */ 
+	} 
+	
+  .icon-of { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/of.gif")) no-repeat;}
+  .icon-f { display:block; font-size:11px; height: 17px; padding-left: 4px;}
+  .icon-cf { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/cf.gif")) no-repeat;} 
+  .ygtvcheck0 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check0.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+  .ygtvcheck1 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check1.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+  .ygtvcheck2 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check2.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+</style>
+#end
+<!-- END xnat-templates/screens/xnat_projectData/actionsBox/ManageFiles.vm -->

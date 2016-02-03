@@ -1,0 +1,117 @@
+/*
+ * D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/webapp/xnat/scripts/tabWrangler/tabWrangler.css
+ * XNAT http://www.xnat.org
+ * Copyright (c) 2014, Washington University School of Medicine
+ * All Rights Reserved
+ *
+ * Released under the Simplified BSD.
+ *
+ * Last modified 7/17/13 2:15 PM
+ */
+/*
+ * CSS for the Tab Wrangler
+ */
+
+
+/* //////////////////////////////////////////////////
+    normalize
+////////////////////////////////////////////////// */
+/*html, * html, body { width: 100% ; height: 100% ; margin: 0 ; padding: 0 ; position: relative ; }*/
+/*body { font-family: Helvetica,Arial,sans-serif ; font-size: 13px ; }*/
+/*label, select, option { margin: 0 ; padding: 0 ; }*/
+/*em { font-style: normal ; }*/
+/*a:active, a:focus { outline: 0 !important ; }*/
+
+
+/* //////////////////////////////////////////////////
+    tabs container
+////////////////////////////////////////////////// */
+.yui-navset.wrangled { width: 870px !important ; position: relative ; overflow: visible ; }
+
+
+/* //////////////////////////////////////////////////
+    tabs
+////////////////////////////////////////////////// */
+.yui-navset ul.yui-nav { white-space: nowrap ; }
+.yui-navset.wrangled ul.yui-nav { height: 29px ; position: relative !important ; overflow: visible !important ; white-space: nowrap ; border: none !important ; }
+.yui-navset.wrangled ul.yui-nav li { height: 28px !important ; }
+.yui-navset.wrangled ul.yui-nav li.selected { height: 29px !important ; }
+.yui-navset ul.yui-nav li.disabled,
+.yui-navset.wrangled ul.yui-nav li.phantom { position: fixed ; left: -9999px ; }
+/*.yui-navset.wrangled ul.yui-nav li.selector { position: fixed ; left: -9999px ; }*/
+/*ul.yui-nav {*/
+	/*height: 28px ; margin: 0 ; padding: 0 ; list-style: none ;*/
+	/* background: #c0c0c0 ; *//* *//* border: 1px solid #c0c0c0 ; border-bottom: none ; *//* white-space: nowrap ; }*/
+/*ul.yui-nav li {*/
+    /*display: inline-block ; margin: 0 0 0 -1px ; list-style: none ;*/
+    /*border: 1px solid #c0c0c0 ; border-bottom: none ; }*/
+/*ul.yui-nav li:first-of-type,*/
+/*ul.yui-nav li.first { margin: 0 ; }*/
+/*ul.yui-nav li a {*/
+	/*display: block ; height: 28px ; margin: 0 ; padding: 0 15px ;*/
+	/*line-height: 28px ; vertical-align: middle ;*/
+	/*color: #000 ; background: #f0f0f0 ; text-decoration: none ; }*/
+/*ul.yui-nav li a:hover { background: #d1dfeb ; }*/
+/*ul.yui-nav li a > b { padding: 0 5px ; color: #fff ; background: #808080 ; }*/
+/*ul.yui-nav li[title="active"],*/
+/*ul.yui-nav li.selected { border-color: midnightblue ; }*/
+/*ul.yui-nav li[title="active"] a,*/
+/*ul.yui-nav li.selected a { color: #fff ; background: midnightblue ; }*/
+/* the 'selector' tab */
+/**/
+/*ul.yui-nav li.selector {*/
+    /*margin: 0 ; position: absolute ; top: 0 ; right: 150px ;*/
+    /*border-color: #000 ; box-shadow: 0 0 20px #000 ; }*/
+/*ul.yui-nav li.selector a { color: #fff ; background: #333 ; background: rgba(0,0,0,0.8) ; font-weight: bold ; text-shadow: 0 0 5px #000 ; }*/
+/**/
+
+/* //////////////////////////////////////////////////*/
+    /*content*/
+/*////////////////////////////////////////////////// */
+/* .yui-navset div.yui-content { border-top: 5px solid #084FAB !important ; } */
+/*div.yui-content { min-height: 600px ; padding: 20px ; background: #f0f0f0 ; border-top: 8px solid midnightblue ; }*/
+/*div.yui-content > div { padding: 20px ; background: #fff ; border: 1px solid #c0c0c0 ; }*/
+
+
+/* //////////////////////////////////////////////////
+    flippers
+////////////////////////////////////////////////// */
+.flipper_box {
+    display: block !important ; width: 200px ; /* height: 28px !important ; */ margin: 0 !important ;
+    padding-top: 0 !important ; padding-right: 0 !important ; /* padding-left: 40px !important ; */
+    position: absolute !important ; right: 0 !important ; top: 0 !important ;
+    text-align: right !important ; vertical-align: middle !important ; font-size: 11px ; font-weight: normal ;
+    /* color: #000 ; */ background: /* rgba(205,0,0,0.5) */ url('images/fade_right_white_40w.png') left center repeat-y ; /* border-color: #fff */ ;
+    white-space: nowrap ;
+}
+.flipper_box .flippers { display: block ; /* width: 143px ; */ /* height: 28px ; */ text-align: right ; }
+.flipper_box .flippers .flipper,
+.flipper_box .flippers .selector {
+    display: inline-block ; margin: 0 !important ; padding: 0 !important ; height: 27px ;
+    font-weight: normal ; line-height: 20px ; vertical-align: middle ; text-align: center ; text-decoration: none ;
+    color: #fff !important ; background: #808080 url('images/tab_flipper_bkgd_dark.png') center top repeat-x !important ;
+    border: 1px solid #686868 !important ;
+    /* box-shadow: 0 0 10px rgba(0,0,0,1) ; */
+}
+.flipper_box .flippers .flipper.left { width: 45px ; border-right: none !important ; }
+.flipper_box .flippers .flipper.right { width: 45px ; }
+.flipper_box .flippers .flipper.first { width: 28px ; /* border-top-left-radius: 5px ; */ border-right: none !important ; }
+.flipper_box .flippers .flipper.last { width: 28px ; /* border-top-right-radius: 5px ; */ border-left: none !important ; }
+.flipper_box .flippers .flipper.disabled { color: #aaa !important ; background: #808080 !important ; }
+.flipper_box .flippers .flipper.disabled:hover { cursor: default ; }
+.flipper_box .flippers .flipper.disabled:active { color: #999 ; background: #787878 ; cursor: default ; }
+.flipper_box .flippers .flipper:active { background: /* #e0e0e0 */ /* rgb(229, 242, 255) */ #808080 !important ; color: #fff !important ; outline: none ; }
+.flipper_box .flippers .flipper img { display: block ; padding: 3px 6px !important ; border: none !important ; }
+.flipper_box .flippers .flipper > b { position: relative ; top: 2px ; font-size: 20px !important ; font-weight: normal ; }
+.flipper_box .flippers > b { display: inline-block ; width: 90px ; font-weight: bold ; text-align: center ; }
+.flipper_box .flippers > b:hover { cursor: default ; }
+.flipper_box button { height: 15px ; }
+
+.flipper_box .flippers > *:first-child { border-top-left-radius: 5px ; }
+.flipper_box .flippers > *:last-child { border-top-right-radius: 5px ; }
+
+
+/* //////////////////////////////////////////////////
+    add tab <select> menu
+////////////////////////////////////////////////// */
+.yui-navset.wrangled .flipper_box .select_add_tab { display: block ; width: 114px ; position: relative ; top: 3px ; left: 5px ; }

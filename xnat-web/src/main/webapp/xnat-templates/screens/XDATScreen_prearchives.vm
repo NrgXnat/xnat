@@ -1,0 +1,37 @@
+##Copyright 2007,2008 Washington University
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageCSS = "style/prearchives.css")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<DIV id="error-message" class="error">$data.message</DIV><br>
+#end
+
+<BR>
+
+<script type="text/javascript">
+	window.XNAT.app.prearchive = {};
+	window.XNAT.app.prearchive.project="$!project";
+</script>
+
+<br>
+<div id="prearchive_table"></div>
+<div id="progress-bar"></div>
+<div id="col_table"></div>
+<div id="prearcs" class="prearcs"></div>
+<div id="serverRoot" title="$content.getURI('')"></div>
+<div id="project" title="$!project"></div>
+<div id="role" title="$!role"></div>
+<br>
+
+<script type="text/javascript" src="$content.getURI('scripts/qooxdoo/prearchiveui/build/script/prearchiveui.js')"></script>
+
+<div id="match-op" class="match-op"></div>
+
+##<!-- <script type="text/javascript" src="$content.getURI('scripts/xstypes.js')"></script> -->
+##<!-- <script type="text/javascript" src="$content.getURI('scripts/HtmlAlert.js')"></script> -->
+##<!-- <script type="text/javascript" src="$content.getURI('scripts/inbox.js')"></script> -->
+##<!-- <script type="text/javascript" src="$content.getURI('scripts/prearc.js')"></script> -->

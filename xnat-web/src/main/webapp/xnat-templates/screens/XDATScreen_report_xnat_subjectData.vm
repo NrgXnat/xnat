@@ -1,0 +1,4 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+			#parse($turbineUtils.getTemplateName("_report","xnat:subjectData",$project))

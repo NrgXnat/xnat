@@ -1,0 +1,78 @@
+<style>
+li.change_header{
+    border-width:1px;
+    border-style:solid;
+}
+ul.history, li.LIhistory,ul.historyWrapper,li.historyWrapper,li.historyHeader{
+	list-style: none;
+}
+li.LIhistory,ul.historyWrapper,li.historyWrapper,li.historyHeader{
+	padding:3px;
+}
+</style>
+<ul class="historyWrapper">
+#foreach($sum in $change_sets.entrySet())
+	<li class="historyWrapper">
+		<ul class="history">
+			<li id="ul_$!sum.getKey().getTime()" class="change_header withColor historyHeader">
+				<a id="a_$!sum.getKey().getTime()" style="display:block" onclick="toggleLI('$!sum.getKey().getTime()');">
+					($turbineUtils.formatDate($sum.getKey(),"SSS")) $sum.getValue().toString()
+				</a>
+			</li>
+		#set($modified=0)
+		#set($added=0)
+		#set($removed=0)
+    	#foreach($ent in $sum.getValue().getEvents())
+			<li name="li_$!sum.getKey().getTime()" style="display:none" class="$!ent.Action LIhistory">$ent.Action $!ent.ObjectHeader $!ent.ObjectLabel 
+			#if($ent.Action.equals("Modified"))
+				$!ent.Field.FieldLabel from '$!ent.Field.OldValue' to '$!ent.Field.NewValue'
+				#if($ent.Parent && $ent.getParents().size()>0)
+					 of $!ent.Parent.ObjectHeader $!ent.Parent.ObjectLabel
+				#end
+				#set($modified=$modified+1)
+			#elseif($ent.Action.equals("Removed"))
+				#set($removed=$removed+1)
+				#if($ent.Parent && $ent.getParents().size()>0)
+					 from $!ent.Parent.ObjectHeader $!ent.Parent.ObjectLabel
+				#end
+			#else
+				#set($added=$added+1)
+				#if($ent.Parent && $ent.getParents().size()>0)
+					 to $!ent.Parent.ObjectHeader $!ent.Parent.ObjectLabel
+				#end
+			#end
+			#if($ent.getParents().size()>1)
+				#set($grandparents=$ent.getParents().size() - 1)
+				##intentially leave off the last one.
+				#foreach($grandparent in [$grandparents..1])
+					 of $ent.getParents().get($grandparent).ObjectHeader $ent.getParents().get($grandparent).ObjectLabel
+				#end				
+			#end
+			</li>
+    	#end
+    	</ul>
+			<script>
+				var _li=document.getElementById("ul_$!sum.getKey().getTime()");
+				#if($modified>0)
+					_li.style.backgroundColor="#ff99cc";
+				#elseif($removed>0)
+					_li.style.backgroundColor="#ffCCCC";
+				#end
+			</script>
+	</li>
+#end
+</ul>
+
+<script>
+function toggleLI(_name){
+	var elements = document.getElementsByName("li_"+_name);
+	for(var trI=0;trI<elements.length;trI++){
+		if(elements[trI].style.display=="none"){
+			elements[trI].style.display="block";
+		}else{
+			elements[trI].style.display="none";
+		}
+	}	
+}
+</script>
+			

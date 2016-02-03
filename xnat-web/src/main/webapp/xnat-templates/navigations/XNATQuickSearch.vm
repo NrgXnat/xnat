@@ -1,0 +1,47 @@
+<!-- search script -->
+<script type="text/javascript">
+<!--
+function DefaultEnterKey(e,button){
+var keynum, keychar, numcheck ;
+
+if(window.event) // IE
+	{
+	  keynum = e.keyCode ;
+	  if (keynum==13){
+	    submitQuickSearch();
+	    return true;
+	  }
+	}
+else if(e) // Netscape/Firefox/Opera
+	{
+	  keynum = e.which ;
+	  if (keynum==13){
+	    submitQuickSearch();
+	    return false;
+	  }
+	}
+	  return true;
+}
+
+function submitQuickSearch(){
+	    concealContent();
+	    if(document.getElementById('quickSearchForm').value!="")
+    		   document.getElementById('quickSearchForm').submit();
+}
+
+#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-advanced-search","true")))
+    function advancedSearch(){
+    	window.location="$link.setPage("XDATScreen_search_wizard1.vm")";
+    }
+#end
+//-->
+</script>
+<!-- end search script -->
+
+<form id="quickSearchForm" method="post" action="$link.setAction("QuickSearchAction")">
+    <input id="searchValue" name="searchValue" type="text" maxlength="40" size="25" value="$!field" />
+    <a id="search_btn" class="btn1" href="javascript:;" onClick="submitQuickSearch();">Search</a>
+#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-advanced-search","true")))
+    <a id="advanced_btn" class="btn2" href="javascript:;" onClick="advancedSearch();">Advanced</a>
+#end
+</form>

@@ -1,0 +1,25 @@
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("Login.vm")
+$page.setTitle("Verification Sent")
+
+<div id="login_area">
+    #if($data.getMessage())
+        <div class="message" style="border-bottom: 0">
+            <p><strong>Note: </strong><br />$data.getMessage()</p>
+        </div>
+    #end
+    <h1>Email Verification Sent</h1>
+    <p>Thank you for your interest in our site. You have been sent a link to verify your email address. Please check your email. If you do not receive the email soon, you can request a new confirmation email.</p>
+    <p style="margin-top: 1em;"><a href="$link.setPage("Login.vm")"><button class="btn btn2">Go to the Login Screen</button></a> <button class="btn btn2" onclick="resend()">Resend Confirmation Email</button> </p>
+
+    <form id="resend" action="$content.getURI('/app/template/ResendVerification.vm')" method="POST">
+        <input type="hidden" name="emailTo" id="emailTo" value="${emailTo}" />
+        <input type="hidden" name="emailUsername" id="emailUsername" value="${emailUsername}" />
+    </form></div>
+
+<script type="text/javascript">
+function resend() {
+	 var form = document.getElementById("resend");
+	 form.submit();
+}
+</script>

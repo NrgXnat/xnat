@@ -1,0 +1,47 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT -- Please Login")
+$page.setBgColor($ui.bgcolor)
+$page.addAttribute("onLoad", "document.getElementById('username').focus();")
+<div valign="top">
+    <br>
+    <br>
+    <form name="form1" method="post" action="$content.getURI("/j_spring_security_check")">
+        <table valign="top" align="center">
+            #if ( $data.getMessage() && $data.getMessage()!="" )
+                <tr><td colspan="2"><div class="error">$data.getMessage()</div><br><br>
+                </td></tr>
+            #end
+            #if($msg)
+                <tr><td colspan="2">
+                    $msg<br>
+                </td></tr>
+            #end
+            <tr>
+                #formLabel("User")
+                <td><input type="text" id="username" name="username"></td>
+            </tr>
+            <tr>
+                #formLabel("Password")
+                <td><input type="password" name="password" autocomplete="off"></td>
+            </tr>
+            <tr>
+                <td></td>
+                <td align ="left">
+                    #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
+                        #if ($key!="action" && $key!="template" &&$key!="password" &&$key!="username" &&$key!="exception")
+                            <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+                        #end
+                    #end
+                    <input type="submit" value="Login">
+                </td>
+            </tr>
+            <tr>
+                <td align="left" colspan="2">&nbsp;</td>
+            </tr>
+            <tr>
+                <td align ="left"><a href="$link.setPage("Register.vm")">Register</a></td>
+                <td align ="left"><a href="$link.setPage("ForgotLogin.vm")">Forgot login or password?</a></td>
+            </tr>
+        </table>
+    </form>
+</div>

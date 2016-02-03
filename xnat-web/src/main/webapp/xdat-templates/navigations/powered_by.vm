@@ -1,0 +1,4 @@
+
+<div id="xnat_power" style="">
+    <a target="_blank" href="http://www.xnat.org/" style=""><img src="$content.getURI('images/xnat_power_small.png')"></a>
+</div>

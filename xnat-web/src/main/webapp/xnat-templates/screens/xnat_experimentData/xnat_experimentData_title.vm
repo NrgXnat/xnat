@@ -1,0 +1,1 @@
+<DIV id="report_title" class="edit_title">#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$om.getLabel()#else$om.getId()#end</DIV>

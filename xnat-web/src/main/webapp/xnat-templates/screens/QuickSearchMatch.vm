@@ -1,0 +1,48 @@
+<script language="javascript">
+var server= "$content.getURI("images")/";
+</script>
+<style>
+IMG{
+ border:0;
+}
+</style>
+<script type="text/javascript" src="$content.getURI("scripts/sortable_us.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/toggleBox.js")"></script>
+<DIV class="edit_header2">Your search matched $matchCount entries.</DIV>
+<DIV class="spacer"></DIV>
+<DIV>The matches are grouped below by data type.  Please select the pertinent entry.</DIV>
+<DIV class="spacer">&nbsp;</DIV>
+
+#foreach($key in $matches.keySet())
+#set($matchList = $matches.get($key))
+#set($typeProjectMappingList=$typeProjectMapping.get($key))
+ <DIV ID="${key}Container" class="container">
+     <DIV class="withColor containerTitle" style="cursor:pointer;" onclick="javascript:toggleBox('$key');return false;"><TABLE width="100%" cellpadding="0" cellspacing="0"><TR><TD>$elementNames.get($key)</TD><TD align="right"><div style="cursor:pointer;display:inline;height:12px" onclick=""><img id="${key}Image" src="$content.getURI("/images/minimize.gif")" border="0"/></div></TD></TR></TABLE></DIV>
+						     <DIV ID="${key}Body" class="containerBody" #if($matchList.size()>6)style="height:140px;"#end>
+						     #foreach($p in $matchList.keySet())
+						      <TABLE WIDTH="100%">
+						        <TR>
+						         <TD><A name="LINK${key}_$p" HREF="#LINK${key}_$p" onClick=" return blocking('${key}_$p');">			<img ID="IMG${key}_$p" src="$content.getURI("images/plus.jpg")" border=0>&nbsp;$pMappings.get($p) ($matchList.get($p).size())</A></TD>
+						        </TR>
+						        <TR>
+						         <TD>
+<SPAN ID="span${key}_$p" style="position:relative; display:none;">
+						          <TABLE>
+						            #foreach($match in $matchList.get($p))
+						             <TR>
+						              <TD><A HREF="$link.setAction("DisplayItemAction").addPathInfo("search_element","${key}").addPathInfo("search_field","${key}.ID").addPathInfo("search_value",$match.getProperty("ID")).addPathInfo("popup","$!popup").addPathInfo("project","$!p")">$!match.getIdentifier($p,false)</A></TD>
+						             </TR>
+						            #end
+						          </TABLE>
+						</SPAN>
+						         </TD>
+						        </TR>
+						      </TABLE>
+						     #end
+						     </DIV>
+						 </DIV>
+						 <DIV class="spacer">&nbsp;</DIV>
+						#end
+						<script language="javascript">
+						//sortables_init();
+						</script>

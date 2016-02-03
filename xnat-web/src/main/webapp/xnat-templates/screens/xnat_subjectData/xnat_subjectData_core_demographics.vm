@@ -1,0 +1,18 @@
+												#if($subject.DOBDisplay)
+							<tr>
+						            	<TH align="left">Birth year</TH>
+										<TD>$!subject.DOBDisplay</TD>
+							</tr>
+						#end						
+												#if($subject.GenderText)
+							<tr>
+						            	<TH align="left">Gender</TH>
+						            	<TD>$!subject.GenderText</TD>
+							</tr>
+						#end						
+						#if($subject.HandedText)
+							<tr>
+						            	<TH align="left">Handedness</TH>
+								   		<TD>$!subject.HandedText</TD>
+							</tr>
+						#end 

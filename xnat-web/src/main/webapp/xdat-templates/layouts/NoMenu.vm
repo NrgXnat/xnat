@@ -1,0 +1,31 @@
+$navigation.setTemplate("/htmlOpen.vm")
+## insert any template-specific <head> code here
+
+$navigation.setTemplate("/bodyOpen.vm")
+## insert any template-specific code here that needs to be directly after opening <body> tag
+
+
+<!-- path: xdat-templates/layouts/NoMenu -->
+
+<table id="wrapper_table" height="500" border="0" valign="top">
+<tr height="120">
+        <td valign="top">
+            $navigation.setTemplate("/NoMenuTop.vm")
+        </td>
+    </tr>
+    <tr>
+        <td align="left" valign="top">
+            <div id="layout_content2" style="display:none;">Loading...</DIV>
+            <div id="layout_content">$screen_placeholder</DIV>
+        </td>
+    </tr>
+    <tr>
+        <td valign="bottom">
+            $navigation.setTemplate("/DefaultBottom.vm")
+        </td>
+    </tr>
+</table>
+
+## insert any template-specific code here that needs to be directly before closing </body> tag
+
+$navigation.setTemplate("/htmlClose.vm")

@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xnat:reconstructedImageData" full-description="ReconstructedImage" brief-description="ReconstructedImage">
+	<DisplayField id="INSERT_DATE" header="Inserted" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:reconstructedImageData.meta.insert_date"/>
+	</DisplayField>
+	<DisplayField id="INSERT_USER" header="Creator" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat:reconstructedImageData.meta.insert_user.login"/>
+	</DisplayField>
+	<DisplayField id="IMAGE_SESSION_ID" header="image_session_ID" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat:reconstructedImageData/image_session_ID"/>
+	</DisplayField>
+	<DisplayField id="ID" header="ID" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat:reconstructedImageData/ID"/>
+	</DisplayField>
+	<DisplayField id="TYPE" header="type" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat:reconstructedImageData/type"/>
+	</DisplayField>
+	<DisplayField id="BASESCANTYPE" header="baseScanType" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat:reconstructedImageData/baseScanType"/>
+	</DisplayField>
+	<DisplayVersion versionName="listing" default-order-by="IMAGE_SESSION_ID" default-sort-order="DESC" brief-description="ReconstructedImage" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="IMAGE_SESSION_ID"/>
+		<DisplayFieldRef id="ID"/>
+		<DisplayFieldRef id="TYPE"/>
+		<DisplayFieldRef id="BASESCANTYPE"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="full" default-order-by="IMAGE_SESSION_ID" default-sort-order="DESC" brief-description="ReconstructedImage" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="IMAGE_SESSION_ID"/>
+		<DisplayFieldRef id="ID"/>
+		<DisplayFieldRef id="TYPE"/>
+		<DisplayFieldRef id="BASESCANTYPE"/>
+	</DisplayVersion>
+</Displays>

@@ -1,0 +1,3 @@
+#set($mr = $!om.getImageSessionData())
+
+<h2> Acquisition Validation for $!mr.getIdentifier($project,false) </h2>

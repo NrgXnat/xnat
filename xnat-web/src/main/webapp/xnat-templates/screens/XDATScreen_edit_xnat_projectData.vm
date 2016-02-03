@@ -1,0 +1,150 @@
+<script type="text/javascript" src="$content.getURI("scripts/project/accessibility.js")"></script>
+
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+#set($days = [ 1..31 ])
+#set($years = [ $!turbineUtils.getYear()..1900])
+#if ($data.message)
+<div class="alert">$data.message</div>
+#end
+<form id="edit_project_form" name="form1" method="post" action="$link.setAction("ModifyProject")" onsubmit="return validateProjectForm(this)">
+    #if($vr)
+        <div class="error">Invalid parameters:<br>$vr.toHTML()</div>
+        <hr>
+    #end
+    <table width="100%">
+        <tr>
+            <td>
+                <div class="edit_title">$page_title</div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                <div class="container" style="width:750px;float:left;margin:5px;">
+                    <div class="withColor containerTitle">&nbsp;Step 1: Enter $displayManager.getSingularDisplayNameForProject().toLowerCase() details</div>
+                    <div class="containerBody">
+                        <div class="containerItem">
+                            Define the details of this $displayManager.getSingularDisplayNameForProject().toLowerCase(). The '$displayManager.getSingularDisplayNameForProject() ID' should be a
+                            single word or acronym which will identify your $displayManager.getSingularDisplayNameForProject().toLowerCase(). It will be
+                            used on the file system to name directories and files, so it shouldn't contain any wild characters or spaces. The 'Running Title'
+                            will be used throughout the website to identify your $displayManager.getSingularDisplayNameForProject().toLowerCase().<br>
+                        </div>
+                        <hr>
+                        <div class="containerItem">
+                            #set($parentTemplate='edit')
+                            #parse("/screens/xnat_projectData/edit/details.vm")
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        <tr>
+            <td>
+                #set($guest=$om.getPublicAccessibility())
+                <div class="container" style="width:750px;float:left;margin:5px;">
+                    <div class="withColor containerTitle">&nbsp;Step 2: Define $displayManager.getSingularDisplayNameForProject() Accessibility</div>
+                    <div class="containerBody">
+                        <div class="containerItem">Select the accessibility of your $displayManager.getSingularDisplayNameForProject().toLowerCase().
+                            <br>
+                            <hr>
+                        </div>
+                        <div class="containerItem">
+                            <table width="100%">
+                                <tr>
+                                    <td class="highlighted" valign="top">
+                                        <table cellpadding="0" cellspacing="0">
+                                            <tr>
+                                                <td valign="top" style="padding:10px 20px 10px 10px;border-right:1px solid #ccc;">
+                                                    <label id="private_access_div" title="Only you and study members will be able to access study data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'private_access');">
+                                                        <input type="radio" id="private_access" name="accessibility" value="private" #if($guest=="private")checked#end/> Private
+                                                    </label>
+
+                                                    <label id="protected_access_div" title="All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'protected_access');">
+                                                        <input type="radio" id="protected_access" name="accessibility" value="protected" #if($guest=="protected")checked#end/> Protected
+                                                    </label>
+
+                                                    <label id="public_access_div" title="All users will be able to access study data for analysis and download." style="display:block;white-space:nowrap;" onclick="checkAccessibilityRadioButton(this, 'public_access');">
+                                                        <input type="radio" id="public_access" name="accessibility" value="public" #if($guest=="public")checked#end/> Public
+                                                    </label>
+                                                </td>
+                                                <td valign="top" style="padding:10px 160px 10px 20px;">
+                                                    <div id="balloon" style="border:none;">Only you and study members will be able to access study data.</div>
+                                                </td>
+                                            </tr>
+                                        </table>
+                                    </td>
+                                </tr>
+                            </table>
+                            <br/>
+                        </div>
+                    </div>
+                </div>
+            </td>
+        </tr>
+        #xdatEditProps($item $edit_screen)
+        #auditBoxes("2" "" "" "Modified $displayManager.getSingularDisplayNameForProject().toLowerCase()")
+        <tr>
+            <th align="left">&nbsp;</th>
+        </tr>
+        <tr>
+            <td align="right" style="padding-right:10px;"><input type="submit" name="eventSubmit_doPerform" value="Submit"/></td>
+        </tr>
+    </table>
+</form>
+
+<script>
+
+    function validateProjectForm(_form) {
+
+        var __form = jq(_form);
+        __form.find('.invalid').removeClass('invalid');
+
+        var Project = XNAT.app.displayNames.singular.project ;
+        //var __projID = jq(document.getElementById("xnat:projectData/ID"));
+        var __projTitle = jq(document.getElementById("xnat:projectData/name"));
+        var __projRunningTitle = jq(document.getElementById("xnat:projectData/secondary_ID"));
+
+        //var projIDVal = jQuery.trim(__projID.val()));
+        var projTitleVal = jQuery.trim(__projTitle.val());
+        var projRunningTitleVal = jQuery.trim(__projRunningTitle.val());
+
+        var invalid_count = 0 ;
+        //if (projIDVal == '') {
+        //    xModalMessage('Validation', 'Please enter a ' + Project.toLowerCase() + ' abbreviation.');
+        //    __projID.addClass('invalid');
+        //    invalid_count++;
+        //}
+        if (projRunningTitleVal == '') {
+            xModalMessage('Validation', 'Please enter a running title.');
+            __projRunningTitle.addClass('invalid');
+            invalid_count++;
+        }
+        if (projRunningTitleVal.length > 24) {
+            xModalMessage('Validation', 'Please enter a running title of 24 characters or less.');
+            __projRunningTitle.addClass('invalid');
+            invalid_count++;
+        }
+        if (projTitleVal == '') {
+            xModalMessage('Validation', 'Please enter a ' + Project.toLowerCase() + ' title.');
+            __projTitle.addClass('invalid');
+            invalid_count++;
+        }
+        if (projTitleVal.length > 199) {
+            xModalMessage('Validation', 'Please enter a ' + Project.toLowerCase() + ' title of 199 characters or less.');
+            __projTitle.addClass('invalid');
+            invalid_count++;
+        }
+        if (invalid_count > 0) {
+            __form.find('.invalid').first().focus();
+            return false ;
+        }
+        else {
+            __projTitle.val(projTitleVal);
+            __projRunningTitle.val(projRunningTitleVal);
+            return true;
+        }
+    }
+
+</script>

@@ -1,0 +1,57 @@
+<table>
+ <tr>
+  <th align="left">ID:</th>
+  <td>$!item.getStringProperty("xnat:projectData/ID") 
+#if($item.getChildItems("aliases/alias").size()>0)
+&nbsp;&nbsp;&nbsp;Aka: 
+ #foreach($alias in $item.getChildItems("aliases/alias"))
+ $alias.getProperty("alias")&nbsp;
+ #end
+#end
+  </td>
+ </tr>  
+#if($item.getProperty("xnat:projectData/description"))
+ <tr>
+  <th align="left" valign="top">Description:</th>
+  <td>
+  #if($!item.getStringProperty("xnat:projectData/description").length()>300)
+     <div style="height:100;overflow:auto">$!item.getStringProperty("xnat:projectData/description")</div>
+  #else
+  	    $!item.getStringProperty("xnat:projectData/description")
+  #end
+  </td>
+ </tr> 
+#end
+#if($item.getProperty("xnat:projectData/keywords"))
+ <tr>
+  <th align="left">Keywords:</th>
+  <td>$!item.getStringProperty("xnat:projectData/keywords")
+  </td>
+ </tr>
+#end
+#if($item.getProperty("xnat:projectData/PI"))
+ <tr>
+  <th align="left">PI:</th>
+  <td>$!item.getStringProperty("xnat:projectData/PI/lastname"), $!item.getStringProperty("xnat:projectData/PI/firstname")
+  </td>
+ </tr>
+#end
+#if($om.getInvestigators_investigator().size()>0)
+ <tr>
+  <th align="left">Investigators: </th>
+  <td>
+#foreach($invest in $om.getInvestigators_investigator())
+#if($velocityCount>1);#end $!invest.getLastname(), $!invest.getFirstname()
+#end
+  </td>
+ </tr>
+#end
+</table>
+			 #if($data.getSession().getAttribute("userHelper").canCreate($project))
+   						      <BR><A ID="button1" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","edit").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Edit Details</A>
+			    #if($data.getSession().getAttribute("userHelper").canDelete($project) && $turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-project-delete","true")))
+						         <A ID="button3" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","delete").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Delete</A>
+						    #end
+						    <A ID="button5" href="$link.setAction("XDATActionRouter").addPathInfo("xdataction","protocols").addPathInfo("search_element","xnat:projectData").addPathInfo("search_field","xnat:projectData.ID").addPathInfo("search_value","$!{project.getId()}").addPathInfo("popup","$!popup")">Manage Custom Variables</A>
+
+						 #end

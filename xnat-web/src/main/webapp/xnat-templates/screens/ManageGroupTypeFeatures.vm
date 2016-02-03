@@ -1,0 +1,48 @@
+#* @vtlvariable name="features" type="java.util.Collection" *#
+#* @vtlvariable name="feature" type="org.nrg.xdat.security.helpers.FeatureDefinitionI" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+<!-- Title: Features -->
+<table id="group-type-features" class="xnat-table features" style="display:none;">
+    <thead class="header">
+    <tr>
+        <th class="featureGroup">Group</th>
+        #foreach($feature in $features)
+			#if($feature.isBanned())
+				<th class="featureBanned">$feature.getName()</th>
+			#else
+				<th class="featureEnabled">$feature.getName()</th>
+			#end
+        #end
+    </tr>
+    </thead>
+    <tbody id='featureBody'>
+    ## body built dynamically in manageFeatures.js
+    </tbody>
+</table>
+
+<style>
+td.featureBanned{
+	text-decoration: line-through;
+}
+tr.siteRole{
+	background-color:#FBEFF8;
+}
+tr.siteRole:hover{
+	background-color:#E6D0E1;
+}
+</style>
+
+##moved common code to manageFeatures.js (also used in ManageProjectFeatures.vm)
+<script type="text/javascript" src="$content.getURI("scripts/features/manageFeatures.js")"></script>
+
+<script>
+XNAT.app.featureMgr.level="type";
+
+#foreach($feature in $features)
+XNAT.app.featureMgr.features.push({"key": "$!feature.key", "name": "$!feature.name", "desc": "$!feature.description", "banned": "$!feature.banned"});
+#end
+
+XNAT.app.featureMgr.init();
+</script>
+
+<div style="margin-top:20px;background-color:#FBEFF8;padding:3px;" class="withThinBorder">Site wide roles supersede all other permissions.  If a user belongs to a role with access to a feature, they will have access to it no matter the settings of their group membership. Use with discretion.</div>

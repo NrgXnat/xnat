@@ -1,0 +1,112 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#if ($data.message)
+<div class="error">$data.message</div>
+<br>
+#end
+
+#parse("/screens/userValidationJS.vm")
+
+<div id="edit-user-container">
+
+    <form name="form1" method="post" action="$link.setAction("ModifyUser")" onsubmit="return XNAT.app.register.validateForm()">
+
+        <input type="hidden" name="xdat:user.xdat_user_id" value="$!item.getProperty("xdat_user_id")">
+
+        <table id="edit-user-details" border="0" style="font-size:13px;">
+            <tr>
+                <th colspan="2" align="left">
+                    <h3>User Details</h3>
+                </th>
+            </tr>
+            <tr>
+                <td class="label">Username:</td>
+                #if($item.getProperty("xdat_user_id"))
+                    <td>$!item.getProperty("login")
+                        <input
+                            type="hidden"
+                            id="xdat:user.login"
+                            name="xdat:user.login"
+                            value="$!item.getProperty("login")">
+                    </td>
+                #else
+                    <td><input
+                        class="required alphaNumSP"
+                        type="text"
+                        size="35"
+                        id="xdat:user.login"
+                        name="xdat:user.login" value="$!item.getProperty("login")"
+                        onchange="validateUsername(this,'eventSubmit_doSetup');">
+                    </td>
+                #end
+            </tr>
+            <tr>
+                <td class="label">Password:</td>
+                <td>
+                    <input
+                        class="required"
+                        type="password"
+                        size="35"
+                        id="xdat:user.primary_password"
+                        name="xdat:user.primary_password"
+                        value="$!item.getProperty("xdat:user.primary_password")"
+                        autocomplete="off">
+                </td>
+            </tr>
+            #xdatHiddenBox("xdat:user.enabled" $item "false")
+            <tr>
+                <td class="label">First Name:</td>
+                <td>
+                    <input
+                        class="required alphaSP"
+                        type="text"
+                        size="35"
+                        id="xdat:user.firstname"
+                        name="xdat:user.firstname"
+                        value="$!item.getProperty("firstname")"
+                        onchange="validateName(this, 'First', 'eventSubmit_doSetup');">
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Last Name:</td>
+                <td>
+                    <input
+                        class="required alphaSP"
+                        type="text"
+                        size="35"
+                        id="xdat:user.lastname"
+                        name="xdat:user.lastname"
+                        value="$!item.getProperty("lastname")"
+                        onchange="validateName(this, 'Last', 'eventSubmit_doSetup');">
+                </td>
+            </tr>
+            <tr>
+                <td class="label">Email:</td>
+                <td>
+                    <input
+                        class="required"
+                        type="text"
+                        size="35"
+                        id="xdat:user.email"
+                        name="xdat:user.email"
+                        value="$!item.getProperty("email")"
+                        onchange="validateEmail(this,'eventSubmit_doSetup');">
+                </td>
+            </tr>
+            #xdatEditProps($item $edit_screen)
+                <tr>
+                    <td colspan="2" align="right">
+                        <input
+                            type="submit"
+                            class="btn1"
+                            id="eventSubmit_doSetup"
+                            name="eventSubmit_doSetup"
+                            value="Submit">
+                    </td>
+                </tr>
+        </table>
+    </form>
+
+</div>

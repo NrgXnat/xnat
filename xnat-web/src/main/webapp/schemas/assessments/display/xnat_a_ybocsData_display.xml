@@ -1,0 +1,271 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<Displays xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="../../xdat/display.xsd" schema-element="xnat_a:ybocsData" full-description="YBOCS" brief-description="YBOCS">
+	<Arc name="PARTICIPANT_EXPERIMENT">
+		<CommonField id="PART_ID" local-field="SUBJECT_ID"/>
+		<CommonField id="DATE" local-field="DATE"/>
+		<CommonField id="EXPT_ID" local-field="EXPT_ID"/>
+	</Arc>
+	<DisplayField id="SUBJECT_ID" header="Subject" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData.subject_ID"/>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat:subjectData','xnat:subjectData.ID');">
+				<InsertValue id="Field1" field="SUBJECT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="EXPT_ID" header="ID" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData.ID"/>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat_a:ybocsData','xnat_a:ybocsData.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="RPT" header="ID" visible="true" image="true">
+		<Content type="sql">'/@WEBAPP/images/r.gif'::text</Content>
+		<HTML-Link>
+			<Property name="HREF" value="none"/>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat_a:ybocsData','xnat_a:ybocsData.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="DATE" header="Date" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData.date"/>
+	</DisplayField>
+	<DisplayField id="AGE" header="Age" visible="true" searchable="true" data-type="integer">
+	<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData.date"/>
+	<DisplayFieldElement name="Field2" schema-element="xnat:demographicData.dob"/>
+	<DisplayFieldElement name="Field3" schema-element="xnat:demographicData.yob"/>
+	<Content type="sql">CAST(COALESCE(FLOOR(CAST((CAST(((@Field1) - (@Field2))AS FLOAT4)/365) AS numeric)),FLOOR((EXTRACT(YEAR FROM @Field1)) - (@Field3))) AS numeric)</Content>
+	</DisplayField>
+	<DisplayField header="Projects" id="PROJECTS" data-type="string">
+		<DisplayFieldElement name="Field1" viewName="XNAT_A_YBOCSDATA_PROJECTS" viewColumn="PROJECTS"/>
+	</DisplayField>
+	<DisplayField header="Label" id="LABEL" data-type="string">
+	<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData.ID"/>
+	<DisplayFieldElement name="Field2" schema-element="xnat_a:ybocsData.label"/>
+	<Content type="sql">COALESCE(@Field2, @Field1)</Content>
+		<HTML-Link>
+			<SecureLink elementName="xnat_a:ybocsData">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="xnat_a:ybocsData/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="xnat_a:ybocsData/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat_a:ybocsData/search_field/xnat_a:ybocsData.ID">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+			<Property name="ONCLICK" value="return rpt('@Field1','xnat_a:ybocsData','xnat_a:ybocsData.ID');">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+			</Property>
+			<Property name="TITLE" value="Inserted: @Field1 (@Field2)">
+				<InsertValue id="Field1" field="INSERT_DATE"/>
+				<InsertValue id="Field2" field="INSERT_USER"/>
+			</Property>
+		</HTML-Link>
+	</DisplayField>
+	<DisplayField id="PROJECT" header="Project" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData.project"/>
+	</DisplayField>
+	<DisplayField id="XNAT_A_YBOCSDATA_PROJECT_IDENTIFIER" header="XNAT_A_YBOCSDATA ID" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">xnat_a_ybocsdata_project_id</Content>
+		<HTML-Link>
+			<SecureLink elementName="xnat_a:ybocsData">
+				<securityMappingValue displayFieldId="PROJECTS" schemaElementMap="xnat_a:ybocsData/sharing/share/project"/>
+				<securityMappingValue displayFieldId="PROJECT" schemaElementMap="xnat_a:ybocsData/project"/>
+			</SecureLink>
+			<Property name="HREF" value="@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/xnat_a:ybocsData/search_field/xnat_a:ybocsData.ID/project/@Field2">
+				<InsertValue id="Field1" field="EXPT_ID"/>
+				<InsertValue id="Field2" field="@WHERE"/>
+			</Property>
+		</HTML-Link>
+		<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS xnat_a_ybocsdata_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="xnat_a:ybocsData.ID" queryField="sharing_share_xnat_experimentda_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField id="INSERT_DATE" header="Inserted" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData.meta.insert_date"/>
+	</DisplayField>
+	<DisplayField id="INSERT_USER" header="Creator" visible="true" searchable="true" data-type="string">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData.meta.insert_user.login"/>
+	</DisplayField>
+	<DisplayField id="XNAT_A_YBOCSDATA_FIELD_MAP" header="Field" visible="true" searchable="false" data-type="string" xsi:type="SubQueryField">
+		<Content type="sql">field</Content>
+		<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='xnat_a:ybocsData') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>
+		<MappingColumns>
+			<MappingColumn schemaField="xnat_a:ybocsData.ID" queryField="expt_id"/>
+		</MappingColumns>
+	</DisplayField>
+	<DisplayField id="CURRENTORWORSTEVER" header="currentOrWorstEver" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/currentOrWorstEver"/>
+	</DisplayField>
+	<DisplayField id="TIMEOCCUPIEDWITHTHOUGHTS" header="timeOccupiedWithThoughts" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/timeOccupiedWithThoughts"/>
+	</DisplayField>
+	<DisplayField id="THOUGHTSINTERFEREFUNCTIONING" header="thoughtsInterfereFunctioning" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/thoughtsInterfereFunctioning"/>
+	</DisplayField>
+	<DisplayField id="DISTRESSCAUSED" header="distressCaused" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/distressCaused"/>
+	</DisplayField>
+	<DisplayField id="EFFORTTORESISTTHOUGHTS" header="effortToResistThoughts" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/effortToResistThoughts"/>
+	</DisplayField>
+	<DisplayField id="CONTROLOVERTHOUGHTS" header="controlOverThoughts" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/controlOverThoughts"/>
+	</DisplayField>
+	<DisplayField id="TIMEPERFORMING" header="timePerforming" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/timePerforming"/>
+	</DisplayField>
+	<DisplayField id="BEHAVIORSINTERFEREFUNCTIONING" header="behaviorsInterfereFunctioning" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/behaviorsInterfereFunctioning"/>
+	</DisplayField>
+	<DisplayField id="FEELINGIFPREVENTED" header="feelingIfPrevented" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/feelingIfPrevented"/>
+	</DisplayField>
+	<DisplayField id="EFFORTTORESISTBEHAVIORS" header="effortToResistBehaviors" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/effortToResistBehaviors"/>
+	</DisplayField>
+	<DisplayField id="BEHAVIORDRIVESTRENGTH" header="behaviorDriveStrength" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/behaviorDriveStrength"/>
+	</DisplayField>
+	<DisplayField id="UNTILJUSTRIGHT" header="untilJustRight" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/untilJustRight"/>
+	</DisplayField>
+	<DisplayField id="UNTILJUSTRIGHTAWARENESS" header="untilJustRightAwareness" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/untilJustRightAwareness"/>
+	</DisplayField>
+	<DisplayField id="UNTILJUSTRIGHTPERCEPTIONS" header="untilJustRightPerceptions" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/untilJustRightPerceptions"/>
+	</DisplayField>
+	<DisplayField id="WHENSTARTUNTILJUSTRIGHT" header="whenStartUntilJustRight" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/whenStartUntilJustRight"/>
+	</DisplayField>
+	<DisplayField id="FREQUENCYUNTILJUSTRIGHT" header="frequencyUntilJustRight" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/frequencyUntilJustRight"/>
+	</DisplayField>
+	<DisplayField id="FIRSTUNTILJUSTRIGHTAGE" header="firstUntilJustRightAge" visible="true" searchable="true">
+		<DisplayFieldElement name="Field1" schema-element="xnat_a:ybocsData/firstUntilJustRightAge"/>
+	</DisplayField>
+	<DisplayVersion versionName="listing" default-order-by="DATE" default-sort-order="DESC" brief-description="YBOCS" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="RPT"/>
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="GENDER" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="CURRENTORWORSTEVER"/>
+		<DisplayFieldRef id="TIMEOCCUPIEDWITHTHOUGHTS"/>
+		<DisplayFieldRef id="THOUGHTSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="DISTRESSCAUSED"/>
+		<DisplayFieldRef id="EFFORTTORESISTTHOUGHTS"/>
+		<DisplayFieldRef id="CONTROLOVERTHOUGHTS"/>
+		<DisplayFieldRef id="TIMEPERFORMING"/>
+		<DisplayFieldRef id="BEHAVIORSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="FEELINGIFPREVENTED"/>
+		<DisplayFieldRef id="EFFORTTORESISTBEHAVIORS"/>
+		<DisplayFieldRef id="BEHAVIORDRIVESTRENGTH"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTAWARENESS"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTPERCEPTIONS"/>
+		<DisplayFieldRef id="WHENSTARTUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FREQUENCYUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FIRSTUNTILJUSTRIGHTAGE"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="listing_csv" default-order-by="DATE" default-sort-order="DESC" brief-description="YBOCS" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="LABEL"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="CURRENTORWORSTEVER"/>
+		<DisplayFieldRef id="TIMEOCCUPIEDWITHTHOUGHTS"/>
+		<DisplayFieldRef id="THOUGHTSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="DISTRESSCAUSED"/>
+		<DisplayFieldRef id="EFFORTTORESISTTHOUGHTS"/>
+		<DisplayFieldRef id="CONTROLOVERTHOUGHTS"/>
+		<DisplayFieldRef id="TIMEPERFORMING"/>
+		<DisplayFieldRef id="BEHAVIORSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="FEELINGIFPREVENTED"/>
+		<DisplayFieldRef id="EFFORTTORESISTBEHAVIORS"/>
+		<DisplayFieldRef id="BEHAVIORDRIVESTRENGTH"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTAWARENESS"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTPERCEPTIONS"/>
+		<DisplayFieldRef id="WHENSTARTUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FREQUENCYUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FIRSTUNTILJUSTRIGHTAGE"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="full" default-order-by="DATE" default-sort-order="DESC" brief-description="YBOCS" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="EXPT_ID"/>
+		<DisplayFieldRef id="SUBJECT_LABEL" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="CURRENTORWORSTEVER"/>
+		<DisplayFieldRef id="TIMEOCCUPIEDWITHTHOUGHTS"/>
+		<DisplayFieldRef id="THOUGHTSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="DISTRESSCAUSED"/>
+		<DisplayFieldRef id="EFFORTTORESISTTHOUGHTS"/>
+		<DisplayFieldRef id="CONTROLOVERTHOUGHTS"/>
+		<DisplayFieldRef id="TIMEPERFORMING"/>
+		<DisplayFieldRef id="BEHAVIORSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="FEELINGIFPREVENTED"/>
+		<DisplayFieldRef id="EFFORTTORESISTBEHAVIORS"/>
+		<DisplayFieldRef id="BEHAVIORDRIVESTRENGTH"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTAWARENESS"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTPERCEPTIONS"/>
+		<DisplayFieldRef id="WHENSTARTUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FREQUENCYUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FIRSTUNTILJUSTRIGHTAGE"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="detailed" default-order-by="DATE" default-sort-order="DESC" brief-description="YBOCS" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="CURRENTORWORSTEVER"/>
+		<DisplayFieldRef id="TIMEOCCUPIEDWITHTHOUGHTS"/>
+		<DisplayFieldRef id="THOUGHTSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="DISTRESSCAUSED"/>
+		<DisplayFieldRef id="EFFORTTORESISTTHOUGHTS"/>
+		<DisplayFieldRef id="CONTROLOVERTHOUGHTS"/>
+		<DisplayFieldRef id="TIMEPERFORMING"/>
+		<DisplayFieldRef id="BEHAVIORSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="FEELINGIFPREVENTED"/>
+		<DisplayFieldRef id="EFFORTTORESISTBEHAVIORS"/>
+		<DisplayFieldRef id="BEHAVIORDRIVESTRENGTH"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTAWARENESS"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTPERCEPTIONS"/>
+		<DisplayFieldRef id="WHENSTARTUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FREQUENCYUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FIRSTUNTILJUSTRIGHTAGE"/>
+	</DisplayVersion>
+	<DisplayVersion versionName="project_bundle" default-order-by="DATE" default-sort-order="DESC" brief-description="YBOCS" dark-color="9999CC" light-color="CCCCFF">
+		<DisplayFieldRef id="XNAT_A_YBOCSDATA_PROJECT_IDENTIFIER"/>
+		<DisplayFieldRef id="SUB_PROJECT_IDENTIFIER" element_name="xnat:subjectData"/>
+		<DisplayFieldRef id="DATE"/>
+		<DisplayFieldRef id="AGE"/>
+		<DisplayFieldRef id="CURRENTORWORSTEVER"/>
+		<DisplayFieldRef id="TIMEOCCUPIEDWITHTHOUGHTS"/>
+		<DisplayFieldRef id="THOUGHTSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="DISTRESSCAUSED"/>
+		<DisplayFieldRef id="EFFORTTORESISTTHOUGHTS"/>
+		<DisplayFieldRef id="CONTROLOVERTHOUGHTS"/>
+		<DisplayFieldRef id="TIMEPERFORMING"/>
+		<DisplayFieldRef id="BEHAVIORSINTERFEREFUNCTIONING"/>
+		<DisplayFieldRef id="FEELINGIFPREVENTED"/>
+		<DisplayFieldRef id="EFFORTTORESISTBEHAVIORS"/>
+		<DisplayFieldRef id="BEHAVIORDRIVESTRENGTH"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTAWARENESS"/>
+		<DisplayFieldRef id="UNTILJUSTRIGHTPERCEPTIONS"/>
+		<DisplayFieldRef id="WHENSTARTUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FREQUENCYUNTILJUSTRIGHT"/>
+		<DisplayFieldRef id="FIRSTUNTILJUSTRIGHTAGE"/>
+	</DisplayVersion>
+	<ViewLink alias="XNAT_A_YBOCSDATA_PROJECTS">
+		<Mapping TableName="XNAT_A_YBOCSDATA_PROJECTS">
+			<MappingColumn rootElement="xnat_a:ybocsData" fieldElement="xnat_a:ybocsData.ID" mapsTo="id"/>
+		</Mapping>
+	</ViewLink>
+	<SQLView name="XNAT_A_YBOCSDATA_PROJECTS" sql="SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='xnat_a:ybocsData' GROUP BY expt.id,expt.project"/>
+</Displays>

@@ -1,0 +1,377 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.addAttribute("onLoad", "document.form1.destination.focus();")
+##<font face="$ui.sansSerifFonts" size="2">
+##<span class="ui_sansSerifFonts">
+
+<div id="add_experiment">
+
+    #if ($turbineUtils.GetPassedParameter("popup",$data))
+        #set ($popup = $turbineUtils.GetPassedParameter("popup",$data) )
+    #else
+        #set ($popup = "false")
+    #end
+
+    #set ($projectDisplayName = $displayManager.getSingularDisplayNameForProject())
+    #set ($subjectDisplayName = $displayManager.getSingularDisplayNameForSubject())
+
+    <form id="form1" name="form1" method="post" action="$link.setAction("CreateExperiment")">
+
+        <input type="hidden" name="popup" value="$popup">
+
+        ## if we know the project AND subject...
+        #if($part_id && $project)
+
+            <p id="selected_project" class="selected">
+                <b class="label">$projectDisplayName: </b>
+                <span class="selected_label" title="$project"><b>$project</b></span>
+                <input type="hidden" id="project" name="project" value="$project">
+            </p>
+            <p id="selected_subject" class="selected">
+                <b class="label">$subjectDisplayName: </b>
+                <span class="selected_label" title="$part_id"><b></b></span>
+                <input type="hidden" id="part_id" name="part_id" value="$part_id">
+            </p>
+
+            <script type="text/javascript">
+                // REALLY stupid hack to get the subject LABEL
+                // HOW DO YOU GET THIS THROUGH VELOCITY?
+                (function(){
+                    var subject_id = '$part_id';
+                    jq.getJSON(serverRoot + '/data/archive/subjects/' + subject_id + '?format=json', function(obj){
+                        jq('#selected_subject').find('.selected_label b').text(obj.items[0]['data_fields']['label']);
+                    })
+                })();
+            </script>
+
+        ## if we ONLY know the project
+        #elseif($project)
+
+            <p id="selected_project" class="selected">
+                <b class="label">$projectDisplayName: </b>
+                <span class="selected_label" title="$project"><b>$project</b></span>
+                <input type="hidden" id="project" name="project" value="$project">
+            </p>
+
+            <p>
+                <b class="label">$subjectDisplayName: </b>
+                <select disabled id="part_id" name="part_id" data-placeholder="Select a Subject"></select>
+            </p>
+
+        ## if we don't know the project OR subject
+        #else
+
+            <p>
+                <span class="label">$projectDisplayName: </span>
+                <select disabled id="project" name="project" data-placeholder="Select a Project"></select>
+            </p>
+            <p>
+                <span class="label">$subjectDisplayName: </span>
+                <select disabled id="part_id" name="part_id" data-placeholder="Select a Subject"></select>
+            </p>
+
+        #end
+
+        <br>
+
+        <div id="expt_list">
+
+            <p class="label">
+                <b>What type of experiment are you entering?</b>
+                <br>
+                <i>(clicking anywhere in the experiment row will immediately create a new experiment)</i>
+            </p>
+
+            <div class="rows">
+
+                #if ( $data.Message )
+
+                    <div class="error">$data.message</div>
+
+                #end
+
+                <div id="expt_list_filter">
+                    <p><span class="label" style="display:inline;">Filter: </span>&nbsp;<input type="text" size="45" value=""> &nbsp; <a id="filter_clear" class="btn2">clear</a> </p>
+                </div>
+
+                #set($dC=0)
+
+                #foreach($ed in $data.getSession().getAttribute("userHelper").getBrowseableCreateableElementDisplays())
+
+                    #set($gwe=$ed.getSchemaElement().getGenericXFTElement())
+
+                    #if($gwe.instanceOf("xnat:subjectAssessorData"))
+
+                        #set ($dataTypeID = $ed.getElementName())
+                        #set ($dataTypeLabel = $ed.getSchemaElement().getSingularDescription())
+
+                        <div class="expt-type row" data-type="$dataTypeID" title="$dataTypeLabel">
+                            <h4><a class="data_type" id="dt_$dataTypeID" title="$dataTypeID">$dataTypeLabel</a></h4>
+                            <p>$gwe.getWrapped().getXsDescription()</p>
+                        </div>
+
+                        #set($dC=$dC+1)
+
+                    #end
+
+                #end
+
+            </div><!-- /rows -->
+
+        </div><!-- /expt_list -->
+
+        <input type="hidden" id="data_type" name="data_type" value="">
+        <br>
+        <input type="submit" name="eventSubmit_doSetup" value="Submit" style="display:none;visibility:hidden;">
+
+    </form>
+
+</div>
+<!-- /add_experiment -->
+
+<script type="text/javascript" src="$content.getURI('scripts/projectSubjectSelector.js')"></script>
+<script type="text/javascript">
+
+window.context = {};
+
+window.context.projectID = window.selectedProject = '$!project';
+window.context.subjectID = window.selectedSubject = '$!part_id';
+
+window.page = 'add_experiment';
+
+jq.extend(true, XNAT.data.context, window.context);
+
+XNAT.app.projectSubjectSelector( jq('#project'), jq('#part_id'), jq('input[name="eventSubmit_doSetup"]'), window.selectedProject, window.selectedSubject);
+
+function verifyExptId(obj) {
+    // empty function
+}
+
+jq(function () {
+
+    // //////////////////////////////////////////////// //
+    // setting vars for this particular filter instance //
+    // //////////////////////////////////////////////// //
+
+    // class of filter box container
+    var __container = '#expt_list .rows' ;
+
+    // selector for the filter box(es)
+    var filter_input = '#expt_list_filter input';
+
+    // default text to show in filter_input field
+    var filter_default_text = "type here to filter list (press 'esc' to clear)";
+
+    // class of the option boxes
+    var option_boxes = '.row';
+
+    // option text we're testing
+    var option_text = option_boxes + ' ' + 'a';
+
+    // class for container of reset button next to filter_input field
+    var filter_input_reset = '#filter_clear';
+
+
+
+
+    // ///////////////////////////////// //
+    // shouldn't need to edit below here //
+    // ///////////////////////////////// //
+
+    var __filter_input = jq(filter_input);
+    var __option_boxes = jq(option_boxes);
+
+    var __active_container = __filter_input.closest(__container);
+
+    // show default filter input text
+    __filter_input.val(filter_default_text);
+
+    // show the options by default
+    __option_boxes.addClass('match');
+
+    // if the filter_input is blank or default,
+    // show default text on focus
+    // otherwise keep the text that's in there
+    __filter_input.focus(function () {
+
+        var _filter_val = jq(this).val();
+
+        if (_filter_val === '') {
+            __option_boxes.addClass('match');
+        }
+
+        else if (_filter_val === filter_default_text) {
+            jq(this).val('');
+            __option_boxes.addClass('match');
+        }
+
+    });
+
+    if (__filter_input.val() === '') {
+        __option_boxes.addClass('match');
+    }
+
+    // create new case-insensitive :contains selector
+    // usage - jq('.this_selector:containsNC("hello")').click(function() { ... });
+    jq.extend(jq.expr[":"], {
+        "containsNC": function (elem, i, match, array) {
+            return (elem.textContent || elem.innerText || "").toLowerCase().indexOf((match[3] || "").toLowerCase()) >= 0;
+        }
+    });
+
+
+    function resetFocusFilter() {
+        __filter_input.val('').focus();
+        __option_boxes.addClass('match');
+    }
+
+
+    __filter_input.keyup(function (e) {
+
+        var _filter_val = __filter_input.val();
+        var _filter_match = __active_container.find(option_text + ':containsNC(' + _filter_val + ')');
+
+        if (e.keyCode == 27) {  // key 27 = 'esc'
+            resetFocusFilter();
+            return false;
+        }
+
+        if (_filter_val > '') {
+            if (_filter_val != filter_default_text) {
+                __option_boxes.removeClass('match');
+                _filter_match.closest(option_boxes).addClass('match');
+            }
+        }
+        else {
+            __option_boxes.addClass('match');
+        }
+
+    });
+
+
+    // clear values and reset filter
+    jq(filter_input_reset).click(function () {
+        resetFocusFilter();
+    });
+
+
+    // if the filter_input is blank or default,
+    // show default text on blur
+    // otherwise keep the text that's in there
+    __filter_input.blur(function () {
+
+        var __input = jq(this);
+        var _filter_val = __input.val();
+
+        if (_filter_val == '') {
+            __input.val(filter_default_text);
+        }
+        else {
+            __input.val(_filter_val);
+        }
+
+    });
+
+
+    /**
+     * jQuery.fn.sortElements
+     * --------------
+     * @param Function comparator:
+     *   Exactly the same behaviour as [1,2,3].sort(comparator)
+     *
+     * @param Function getSortable
+     *   A function that should return the element that is
+     *   to be sorted. The comparator will run on the
+     *   current collection, but you may want the actual
+     *   resulting sort to occur on a parent or another
+     *   associated element.
+     *
+     *   E.g. jq('td').sortElements(comparator, function(){
+         *      return this.parentNode;
+         *   })
+     *
+     *   The <td>'s parent (<tr>) will be sorted instead
+     *   of the <td> itself.
+     */
+    jQuery.fn.sortElements = (function () {
+
+        var sort = [].sort;
+
+        return function (comparator, getSortable) {
+
+            getSortable = getSortable || function () {
+                return this;
+            };
+
+            var placements = this.map(function () {
+
+                var sortElement = getSortable.call(this),
+                    parentNode = sortElement.parentNode,
+
+                // Since the element itself will change position, we have
+                // to have some way of storing its original position in
+                // the DOM. The easiest way is to have a 'flag' node:
+                    nextSibling = parentNode.insertBefore(
+                        document.createTextNode(''),
+                        sortElement.nextSibling
+                    );
+
+                return function () {
+
+                    if (parentNode === this) {
+                        throw new Error(
+                            "You can't sort elements if any one is a descendant of another."
+                        );
+                    }
+
+                    // Insert before flag:
+                    parentNode.insertBefore(this, nextSibling);
+                    // Remove flag:
+                    parentNode.removeChild(nextSibling);
+
+                };
+
+            });
+
+            return sort.call(this, comparator).each(function (i) {
+                placements[i].call(getSortable.call(this));
+            });
+
+        };
+
+    })();
+
+    jq(option_boxes).sortElements(function(a, b){
+        return jq(a).text() > jq(b).text() ? 1 : -1;
+    });
+
+
+    //sortElements(__container, '.expt-type')
+
+
+    // super basic simple easy validation
+    jq('#form1 .row').click(function () {
+
+        var data_type_val = jq(this).find('.data_type').attr('title');
+
+        jq('#data_type').val(data_type_val);
+
+        if (jq('#project').val() > '') {
+            if (jq('#part_id').val() > '') {
+                jq('#form1').submit();
+            }
+            else {
+                xModalMessage('Add Experiment Validation', 'Please select a $displayManager.getSingularDisplayNameForSubject().toLowerCase().');
+            }
+        }
+        else {
+            xModalMessage('Add Experiment Validation', 'Please select a $displayManager.getSingularDisplayNameForProject().toLowerCase().');
+        }
+
+    });
+
+});
+
+</script>
+
+##</span>
+##</font>

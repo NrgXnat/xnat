@@ -1,0 +1,486 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+
+##<!DOCTYPE html PUBLIC "-//W3C//DTD HTML 3.2//EN">
+
+$page.setTitle("XDAT")
+
+$page.setLinkColor($ui.alink)
+
+$page.setVlinkColor($ui.vlink)
+
+#set($months = ["January", "February", "March", "April", "May", "June", "July", "August", "September", "October", "November", "December"])
+
+#set($days = [ 1..31 ])
+
+#set($years = [ $!turbineUtils.getYear()..1900])
+
+#if ($data.message)
+
+<DIV class="alert">$data.message</DIV><br>
+
+#end
+
+<p>
+
+<script>
+function verifySecurity(){
+	var elemName=$(YUIDOM.get("xdat:stored_search/root_element_name")).val();
+
+	if(elemName==""){
+		xmodal.message('Selection Error', 'Please select a Pivot data type.');
+	}
+
+	if(elemName!=XNAT.app.lastElement){
+		XNAT.app.needsCheck=true;//we may need to verify this
+	}
+
+	XNAT.app.lastElement=elemName;
+
+	var registration=window.available_elements.getByName(elemName);
+    if ((XNAT.app.needsCheck) && (registration == null || registration == undefined)) {
+        xmodal.confirm({
+            width: 440,
+            height: 240,
+            content: "The selected root data type (" + XNAT.app.lastElement + ") is not a " +
+					 "<b>secured</b> data type. Creating this search may give users access " +
+					 "to data which you do not intend, potentially all data of this type in " +
+					 "the system (independent of project membership). Avoid creating queries " +
+					 "on un-secured types. If it is required, create proper criteria clauses " +
+					 "to limit access and limit 'allowed users' strictly.",
+            okAction: function(){
+                var form1 = YUIDOM.get("form1");
+                XNAT.app.needsCheck = false;
+                try {
+                    if (form1.managedSubmit()) {
+                        form1.submit();
+                    }
+                }
+                catch (e) {
+                    xmodal.message('Validation Error', 'Error performing validation.');
+                }
+            },
+            cancelAction: function(){
+            }
+        });
+        return false;
+    }
+    else {
+        return true;
+    }
+}
+</script>
+
+<form id="form1" name="form1" method="post" action="$link.setAction("ModifyStoredSearch")" onsubmit="return verifySecurity();">
+
+#if($vr)
+
+	<div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
+
+    <HR>
+
+#end
+
+    <script type="text/javascript">
+
+        function popupFields( textID, elementBox, headerID, typeID ){
+
+            var element_name;
+
+            if (!window.focus)return true;
+
+            if (document.getElementById) {
+                element_name = document.getElementById(elementBox).value;
+            }
+            else if (document.all) {
+                element_name = document.all[elementBox].value;
+            }
+
+            if (element_name == null || element_name == '') {
+                xmodal.message('Stored Search Validation', 'Please select a data type.');
+                return false;
+            }
+
+            var link = "$link.setPage('FieldPopup.vm').addPathInfo('popup','true')";
+            link = link + "/element_name/" + element_name.toString() + "/textID/" + textID.toString() + "/headerID/" + headerID.toString() + "/typeID/" + typeID.toString();
+
+            childWindow = window.open(link, '', 'width=400,height=300,status=yes,resizable=yes,scrollbars=yes,toolbar=yes');
+
+            if (childWindow.opener == null) childWindow.opener = self;
+
+            return false;
+
+        }
+
+        function popupSortFields( textID, elementBox ){
+
+            var element_name;
+
+            if (!window.focus){
+                return true;
+            }
+
+            if (document.getElementById) {
+                element_name = document.getElementById(elementBox).value;
+            }
+            else if (document.all) {
+                element_name = document.all[elementBox].value;
+            }
+
+            if (element_name == null || element_name == '') {
+                xmodal.message('Stored Search Validation', 'Please select a data type.');
+                return false;
+            }
+
+            var link = "$link.setPage('FieldPopup.vm').addPathInfo('popup','true')";
+            link = link + "/element_name/" + element_name.toString() + "/textID/" + textID.toString();
+
+            childWindow = window.open(link, '', 'width=400,height=300,status=yes,resizable=yes,scrollbars=yes,toolbar=yes');
+
+            if (childWindow.opener == null) {
+                childWindow.opener = self;
+            }
+
+            return false;
+
+        }
+
+    </script>
+
+    <TABLE width="100%">
+
+	<TR>
+
+		<TD>
+            <h3>Bundle Details</h3>
+		</TD>
+
+	</TR>
+
+	<TR>
+
+		<TD>
+
+			<TABLE width="100%">
+
+				<TR>
+
+					<TD valign="top">
+
+						<TABLE>
+
+							<TR><TD>ID</TD><TD>#xdatTextBox("xdat:stored_search/ID" $item "" $vr)</TD></TR>
+
+							<TR><TD>brief description</TD><TD>#xdatTextBox("xdat:stored_search/brief-description" $item "" $vr)</TD></TR>
+
+							<TR><TD>description</TD><TD>
+
+							<textarea name="xdat:stored_search/description" rows="3" cols="50" style="text-align:left;">$!item.getStringProperty("xdat:stored_search/description")</textarea></TD></TR>
+
+
+
+							<TR><TD>Pivot Data Type</TD>
+
+							<TD>
+
+							#if($elements)
+
+								#xdatSelectBoxWSingleValue("xdat:stored_search/root_element_name" $item $elements $vr)
+
+							#else
+
+								#xdatTextBox("xdat:stored_search/root_element_name" $item "" $vr)
+
+							#end
+
+							</TD>
+
+							</TR>
+
+
+
+							<TR><TD>Sort By Data Type</TD>
+
+							<TD>
+
+							#if($elements)
+
+								#xdatSelectBoxWSingleValue("xdat:stored_search/sort_by/element_name" $item $elements $vr)
+
+							#else
+
+								#xdatTextBox("xdat:stored_search/sort_by/element_name" $item "" $vr)
+
+							#end
+
+							</TD></TR>
+
+							<TR><TD>Sort By Field</TD>
+
+							<TD><A ONCLICK="return popupSortFields('SORT_FIELD','xdat:stored_search/sort_by/element_name');" href=""><IMG border=0 src="$content.getURI("images/update.gif")"/></A>
+
+							#if ($item.getProperty("xdat:stored_search/sort_by/field_ID"))
+
+								<input ID="SORT_FIELD" type="text" name="xdat:stored_search/sort_by/field_ID" value="$item.getProperty("xdat:stored_search/sort_by/field_ID")"/>
+
+							#else
+
+							<input ID="SORT_FIELD" type="text" name="xdat:stored_search/sort_by/field_ID" value=""/>
+
+							#end
+
+							</TD></TR>
+
+							<TR><TD>Display Diff Columns</TD><TD>#xdatBooleanRadio("xdat:stored_search/allow-diff-columns" $item true $vr)</TD></TR>
+
+							<TR><TD>Limited Access?</TD><TD>#xdatBooleanRadio("xdat:stored_search/secure" $item true $vr)</TD></TR>
+
+						</TABLE>
+
+					</TD>
+
+				</TR>
+
+			</TABLE>
+
+		</TD>
+
+	</TR>
+
+	<TR>
+
+		<TD>
+
+			<TABLE>
+
+				<TR><TH align="left"><BR><font face="$ui.sansSerifFonts" size="2">Displayed Fields</font></TH></TR>
+
+				<TR>
+
+					<TD align="left" valign="top">
+
+						#set($sfs = $item.getChildItems("xdat:stored_search/search_field"))
+
+						<TABLE>
+
+							<TR>
+
+								#if($sfs.size()>0)
+
+								<TD>Remove</TD>
+
+								#end
+
+								<TD>element_name</TD>
+
+								<TD>field_ID</TD>
+
+								<TD>sequence</TD>
+
+								<TD>type</TD>
+
+								<TD>header</TD>
+
+								<TD>search value</TD>
+
+							</TR>
+
+							#set($xdat_search_field_1_NUM_ROWS=$sfs.size())
+
+							#if($xdat_search_field_1_NUM_ROWS==0)
+
+								#set($xdat_search_field_1_NUM_ROWS=30)
+
+							#else
+
+								#set($xdat_search_field_1_NUM_ROWS=$xdat_search_field_1_NUM_ROWS + 5)
+
+							#end
+
+
+							#foreach($xdat_search_field_1_COUNTER in [0..$xdat_search_field_1_NUM_ROWS])
+
+								<TR>
+
+									#if($sfs.size()>0)
+
+										<TD>
+
+											#if($!item.getProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/xdat_search_field_id"))
+
+											<INPUT TYPE="checkbox" NAME="REMOVE__$xdat_search_field_1_COUNTER=xdat:search_field.xdat_search_field_id" VALUE="$!item.getProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/xdat_search_field_id")"/>
+
+											#end
+
+										</TD>
+
+									#end
+
+									<TD>
+
+									#if($elements)
+
+										#xdatSelectBoxWSingleValueWID("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/element_name" $item $elements $vr "SEARCH_FIELD_ELEMENT${xdat_search_field_1_COUNTER}")
+
+									#else
+
+										#xdatTextBoxWID("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/element_name" $item "" $vr "SEARCH_FIELD_ELEMENT${xdat_search_field_1_COUNTER}")
+
+									#end
+
+									</td>
+
+									<TD NOWRAP><A ONCLICK="return popupFields('SEARCH_FIELD${xdat_search_field_1_COUNTER}','SEARCH_FIELD_ELEMENT${xdat_search_field_1_COUNTER}','SEARCH_FIELD_HEADER${xdat_search_field_1_COUNTER}','SEARCH_FIELD_TYPE${xdat_search_field_1_COUNTER}');" href=""><IMG border=0 src="$content.getURI("images/update.gif")"/></A>
+
+									#if ($item.getProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/value"))
+
+									  #set($field = $item.getProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/field_ID"))
+
+									  #set($value = $item.getProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/value"))
+
+									  #if($field.indexOf("=$value")>0)
+
+									  #set($index = $field.indexOf("=$value"))
+
+									  <INPUT TYPE="text" value="$field.substring(0,$index)" name="xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/field_ID" id="xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/field_ID"/>
+
+									  #else
+
+									  #xdatTextBoxWID("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/field_ID" $item "" $vr "SEARCH_FIELD${xdat_search_field_1_COUNTER}")
+
+									  #end
+
+									#else
+
+									#xdatTextBoxWID("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/field_ID" $item "" $vr "SEARCH_FIELD${xdat_search_field_1_COUNTER}")
+
+									#end
+
+									</TD>
+
+									<TD>
+
+									#if ($vr)
+
+	#if($vr.getField("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/sequence"))
+
+		<font color="red">&#8658</font>
+
+	#end
+
+#end
+
+		<input size="5" id="xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/sequence" type="text" name="xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/sequence" value="$!item.getProperty("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/sequence")"/>
+
+</TD>
+
+									<TD>#xdatTextBoxWID("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/type" $item "" $vr "SEARCH_FIELD_TYPE${xdat_search_field_1_COUNTER}")</TD>
+
+									<TD>#xdatTextBoxWID("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/header" $item "" $vr "SEARCH_FIELD_HEADER${xdat_search_field_1_COUNTER}")</TD>
+
+									<TD>#xdatTextBoxWID("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/value" $item "" $vr "SEARCH_FIELD_VALUE${xdat_search_field_1_COUNTER}")</TD>
+
+									#xdatHiddenBox("xdat:stored_search/search_field[$xdat_search_field_1_COUNTER]/xdat_search_field_id" $item "")
+
+								</TR>
+
+							#end
+
+						</TABLE>
+
+					</TD>
+
+				</TR>
+                <TR>
+
+					<TD align="left" valign="top">
+
+						<TABLE><TR><TD>
+
+							<BR><font face="$ui.sansSerifFonts" size="2"><b>Allowed Users</b></font>
+
+							<BR>
+
+								#set($allowed_users=$item.getChildItems("xdat:stored_search/allowed_user"))
+
+								<TABLE>
+
+									<TR>
+
+										#if($allowed_users.size() > 0)
+
+										<TH>Remove</TH>
+
+										#end
+
+										<TH>login</TH>
+
+									</TR>
+
+							#foreach($xdat_user_2_COUNTER in [0..10])
+
+								<TR>
+
+									#xdatHiddenBox("xdat:stored_search/allowed_user[$xdat_user_2_COUNTER]/xdat_stored_search_allowed_user_id" $item "")
+
+									#if($allowed_users.size() > 0)
+
+										<TD>
+
+											#if($!item.getProperty("xdat:stored_search/allowed_user[$xdat_user_2_COUNTER]/xdat_stored_search_allowed_user_id"))
+
+												<INPUT TYPE="checkbox" NAME="REMOVE__$xdat_user_2_COUNTER=xdat:stored_search_allowed_user.xdat_stored_search_allowed_user_id" VALUE="$!item.getProperty("xdat:stored_search/allowed_user[$xdat_user_2_COUNTER]/xdat_stored_search_allowed_user_id")"/>
+
+											#end
+
+										</TD>
+
+									#end
+
+									<TD>
+
+									#if($users)
+
+										#xdatSelectBoxWSingleValue("xdat:stored_search/allowed_user[$xdat_user_2_COUNTER]/login" $item $users $vr)
+
+									#else
+
+										#xdatTextBox("xdat:stored_search/allowed_user[$xdat_user_2_COUNTER]/login" $item "" $vr)
+
+									#end
+
+									</TD>
+
+								</TR>
+
+							#end
+
+						</TD></TR></TABLE>
+
+					</TD>
+
+				</TR>
+
+			</TABLE>
+
+		</TD>
+
+	</TR>
+	<TR>
+
+		<TD>
+
+		#xdatEditProps($item $edit_screen)
+
+		<INPUT type="hidden" name="destination" value="$!destination"/>
+
+		</TD>
+
+	</TR>
+
+                <TR><TD COLSPAN=2 ALIGN=left><input type="submit" name="eventSubmit_doPerform" value="Submit"/></TD></TR>
+
+
+            </TABLE>
+
+</form>
+

@@ -1,0 +1,17 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("/Popup.vm")
+<SCRIPT language="javascript">
+window.resizeTo(600,380);
+</SCRIPT>
+<CENTER>
+#if ($data.message)
+	<div class="message">$data.message</div>
+	<br>
+#else
+	
+#end
+<BR><INPUT TYPE="Button" VALUE="CLOSE" ONCLICK="if (window.opener && !window.opener.closed) {
+window.opener.location.reload();
+} window.close()">
+</CENTER>

@@ -1,0 +1,322 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Tim Olsen (Washington University) -->
+<xs:schema targetNamespace="http://nrg.wustl.edu/display" xmlns:xs="http://www.w3.org/2001/XMLSchema" xmlns:display="http://nrg.wustl.edu/display" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="Displays">
+		<xs:annotation>
+			<xs:documentation>Comment describing your root element</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element ref="display:Arc-Definition" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element ref="display:Arc" minOccurs="0" maxOccurs="unbounded"/>
+				<xs:element name="DisplayField" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:complexContent>
+							<xs:extension base="display:FieldType">
+								<xs:attribute name="html-content" use="optional">
+									<xs:simpleType>
+										<xs:restriction base="xs:string">
+											<xs:enumeration value="true"/>
+											<xs:enumeration value="false"/>
+										</xs:restriction>
+									</xs:simpleType>
+								</xs:attribute>
+								<xs:attribute name="visible" type="xs:boolean"/>
+							</xs:extension>
+						</xs:complexContent>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="DisplayVersion" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="HTML-Header" type="display:HTML-Cell" minOccurs="0"/>
+							<xs:element name="DisplayFieldRef" maxOccurs="unbounded">
+								<xs:complexType>
+									<xs:attribute name="id" type="xs:string" use="required"/>
+									<xs:attribute name="header" type="xs:string" use="optional"/>
+									<xs:attribute name="element_name" type="xs:string" use="optional"/>
+									<xs:attribute name="type" use="optional">
+										<xs:simpleType>
+											<xs:restriction base="xs:string">
+												<xs:enumeration value="COUNT"/>
+											</xs:restriction>
+										</xs:simpleType>
+									</xs:attribute>
+									<xs:attribute name="value" type="xs:string" use="optional"/>
+									<xs:attribute name="visible" type="xs:boolean" use="optional"/>
+								</xs:complexType>
+							</xs:element>
+						</xs:sequence>
+						<xs:attribute name="versionName" type="xs:string" use="required"/>
+						<xs:attribute name="default-order-by" type="xs:string" use="required"/>
+						<xs:attribute name="brief-description" type="xs:string"/>
+						<xs:attribute name="dark-color" type="xs:string"/>
+						<xs:attribute name="light-color" type="xs:string"/>
+						<xs:attribute name="default-sort-order" type="xs:string"/>
+						<xs:attribute name="allow-diff-columns" type="xs:boolean"/>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SchemaLink" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element ref="display:Mapping" minOccurs="0"/>
+						</xs:sequence>
+						<xs:attribute name="element" type="xs:string" use="required"/>
+						<xs:attribute name="type">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="mapping"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+						<xs:attribute name="alias" type="xs:string" use="required"/>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="ViewLink" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element ref="display:Mapping"/>
+						</xs:sequence>
+						<xs:attribute name="alias" type="xs:string" use="required"/>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SQLView" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:attribute name="name" type="xs:string" use="required"/>
+						<xs:attribute name="sql" type="xs:string" use="required"/>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="SQLFunction" minOccurs="0" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:attribute name="name" type="xs:string"/>
+						<xs:attribute name="content" type="xs:string"/>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="schema-element" type="xs:string"/>
+			<xs:attribute name="HTML-header-link" type="xs:string"/>
+			<xs:attribute name="value_field" type="xs:string" use="optional"/>
+			<xs:attribute name="display_field" type="xs:string" use="optional"/>
+			<xs:attribute name="display_label" type="xs:string" use="optional"/>
+			<xs:attribute name="brief-description" type="xs:string"/>
+			<xs:attribute name="full-description" type="xs:string"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Mapping">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="MappingColumn" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:attribute name="rootElement" type="xs:string"/>
+						<xs:attribute name="fieldElement"/>
+						<xs:attribute name="mapsTo" type="xs:string"/>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="TableName" type="xs:string"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="DisplayFieldElement">
+		<xs:complexType>
+			<xs:attribute name="name" type="xs:string" use="required"/>
+			<xs:attribute name="schema-element" type="xs:string" use="optional"/>
+			<xs:attribute name="viewName" type="xs:string"/>
+			<xs:attribute name="viewColumn" type="xs:string"/>
+			<xs:attribute name="xdat-type">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="COUNT"/>
+						<xs:enumeration value="WHERE"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="HTML-Cell">
+		<xs:attribute name="width" type="xs:integer"/>
+		<xs:attribute name="height" type="xs:integer"/>
+		<xs:attribute name="valign">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="bottom"/>
+					<xs:enumeration value="top"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="align">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="left"/>
+					<xs:enumeration value="right"/>
+					<xs:enumeration value="center"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="serverLink" type="xs:string"/>
+	</xs:complexType>
+	<xs:element name="Arc-Definition">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="CommonField" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:attribute name="id" type="xs:string" use="required"/>
+						<xs:attribute name="type" use="required">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="DATE"/>
+									<xs:enumeration value="INTEGER"/>
+									<xs:enumeration value="STRING"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Bridge-Element">
+					<xs:complexType>
+						<xs:attribute name="name" type="xs:string" use="required"/>
+						<xs:attribute name="field" type="xs:string" use="required"/>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="Filter" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:attribute name="field" type="xs:string" use="required"/>
+						<xs:attribute name="filterType" use="required">
+							<xs:simpleType>
+								<xs:restriction base="xs:string">
+									<xs:enumeration value="closest"/>
+									<xs:enumeration value="before"/>
+									<xs:enumeration value="equals"/>
+									<xs:enumeration value="distinct"/>
+								</xs:restriction>
+							</xs:simpleType>
+						</xs:attribute>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="Id" type="xs:string" use="required"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="Arc">
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="CommonField" maxOccurs="unbounded">
+					<xs:complexType>
+						<xs:attribute name="id" type="xs:string" use="required"/>
+						<xs:attribute name="local-field" type="xs:string" use="required"/>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="name" type="xs:string" use="required"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="FieldType">
+		<xs:sequence>
+			<xs:element ref="display:DisplayFieldElement" minOccurs="0" maxOccurs="unbounded"/>
+			<xs:element name="Content" minOccurs="0">
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="xs:string">
+							<xs:attribute name="type">
+								<xs:simpleType>
+									<xs:restriction base="xs:string">
+										<xs:enumeration value="sql"/>
+										<xs:enumeration value="java"/>
+									</xs:restriction>
+								</xs:simpleType>
+							</xs:attribute>
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="HTML-Link" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="SecureLink" minOccurs="0">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="securityMappingValue" maxOccurs="unbounded">
+										<xs:complexType>
+											<xs:attribute name="displayFieldId" type="xs:string" use="required"/>
+											<xs:attribute name="schemaElementMap" type="xs:string" use="required"/>
+										</xs:complexType>
+									</xs:element>
+								</xs:sequence>
+								<xs:attribute name="elementName" type="xs:string" use="required"/>
+							</xs:complexType>
+						</xs:element>
+						<xs:element name="Property" maxOccurs="unbounded">
+							<xs:complexType>
+								<xs:sequence>
+									<xs:element name="InsertValue" minOccurs="0" maxOccurs="unbounded">
+										<xs:complexType>
+											<xs:attribute name="id"/>
+											<xs:attribute name="field"/>
+										</xs:complexType>
+									</xs:element>
+								</xs:sequence>
+								<xs:attribute name="name">
+									<xs:simpleType>
+										<xs:restriction base="xs:string"/>
+									</xs:simpleType>
+								</xs:attribute>
+								<xs:attribute name="value"/>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="HTML-Cell" type="display:HTML-Cell" minOccurs="0"/>
+			<xs:element name="HTML-Image" minOccurs="0">
+				<xs:complexType>
+					<xs:attribute name="width" type="xs:integer"/>
+					<xs:attribute name="height" type="xs:integer"/>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="description" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="header" type="xs:string" use="required"/>
+		<xs:attribute name="id" type="xs:string" use="required"/>
+		<xs:attribute name="image" type="xs:boolean" default="false"/>
+		<xs:attribute name="sort-by"/>
+		<xs:attribute name="sort-order">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="ASC"/>
+					<xs:enumeration value="DESC"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="searchable" type="xs:boolean"/>
+		<xs:attribute name="data-type">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="integer"/>
+					<xs:enumeration value="string"/>
+					<xs:enumeration value="float"/>
+					<xs:enumeration value="date"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="SubQueryField">
+		<xs:complexContent>
+			<xs:extension base="display:FieldType">
+				<xs:sequence minOccurs="0">
+					<xs:element name="SubQuery" type="xs:string" minOccurs="0"/>
+					<xs:element name="MappingColumns" minOccurs="0">
+						<xs:complexType>
+							<xs:sequence minOccurs="0">
+								<xs:element name="MappingColumn" minOccurs="0" maxOccurs="unbounded">
+									<xs:complexType>
+										<xs:attribute name="schemaField" type="xs:string"/>
+										<xs:attribute name="queryField" type="xs:string"/>
+									</xs:complexType>
+								</xs:element>
+							</xs:sequence>
+						</xs:complexType>
+					</xs:element>
+				</xs:sequence>
+			</xs:extension>
+		</xs:complexContent>
+	</xs:complexType>
+</xs:schema>

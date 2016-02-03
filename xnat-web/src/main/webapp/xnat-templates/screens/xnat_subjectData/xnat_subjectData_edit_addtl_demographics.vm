@@ -1,0 +1,56 @@
+<!-- BEGIN /screens/xnat_subjectData/xnat_subjectData_edit_addtl_demographics.vm -->
+		<tr>
+			#formLabel("Education")
+			<td>
+				#xdatTextBox("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/education" $item "" $vr)
+			</td>
+		</tr>
+		<tr>
+			#formLabel("Race")
+			<td>
+				#xdatTextBox("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/race" $item "" $vr)
+			</td>
+		</tr>
+		<tr>
+			#formLabel("Ethnicity")
+			<td>
+				#xdatTextBox("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/ethnicity" $item "" $vr)
+			</td>
+		</tr>
+		<tr>
+			#formLabel("Height (inches)")
+			<td>
+				#xdatTextBox("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/height" $item "" $vr)
+			</td>
+		</tr>
+		<tr>
+			#formLabel("Weight (lbs)")
+			<td>
+				#xdatTextBox("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/weight" $item "" $vr)
+			</td>
+		</tr>
+		<tr>
+			#formLabel("Recruitment Source")
+			<td>
+				#xdatTextBox("xnat:subjectData/src" $item "" $vr)
+			</td>
+		</tr>
+		<script type="text/javascript">
+            // this is now handled on XDATScreen_edit_xnat_subjectData.vm
+//            function validateDemographics() {
+//                if (document.getElementById("dob").checked) {
+//                    document.getElementById("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/yob").selectedIndex = 0;
+//                    document.getElementById("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/age").value = "NULL";
+//                }
+//                if (document.getElementById("age").checked) {
+//                    document.getElementById("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/yob").selectedIndex = 0;
+//                    document.getElementById("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/dob").value = "NULL";
+//                }
+//                if (document.getElementById("yob").checked) {
+//                    document.getElementById("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/dob").value = "NULL";
+//                    document.getElementById("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/age").value = "NULL";
+//                }
+//                return true;
+//            }
+		</script>
+		<!-- BEGIN /screens/xnat_subjectData/xnat_subjectData_edit_addtl_demographics.vm -->

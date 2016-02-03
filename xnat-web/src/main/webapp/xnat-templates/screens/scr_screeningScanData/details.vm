@@ -1,0 +1,17 @@
+<tr>
+	<th>Pass</th>
+	<td style="font-weight:bold;">
+		#if ($!scan.getStringProperty("scr:screeningScanData/pass").equals("1"))
+			<span style="color:green">Passed</span>
+		#elseif($!scan.getStringProperty("scr:screeningScanData/pass").equals("0"))
+			<span style="color:red">Failed</span>
+		#else
+			<span style="color:gold">Unknown ($!scan.getStringProperty("scr:screeningScanData/pass")</span>
+		#end
+	</td>
+</tr>
+
+#if( $!scan.getStringProperty("scr:screeningScanData/comments") )
+	<tr><th>Comments</th><td>$!scan.getStringProperty("scr:screeningScanData/comments")</td></tr>
+#end
+	

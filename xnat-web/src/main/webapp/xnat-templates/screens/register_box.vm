@@ -1,0 +1,73 @@
+#* @vtlvariable name="username" type="java.lang.String" *#
+#* @vtlvariable name="firstName" type="java.lang.String" *#
+#* @vtlvariable name="lastName" type="java.lang.String" *#
+#* @vtlvariable name="email" type="java.lang.String" *#
+#* @vtlvariable name="phone" type="java.lang.String" *#
+#* @vtlvariable name="lab" type="java.lang.String" *#
+#* @vtlvariable name="comments" type="java.lang.String" *#
+#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+<!-- BEGIN xnat-templates/screens/register_box.vm -->
+#parse("/screens/userValidationJS.vm")
+<form name="form2" id="register_form" class="friendlyForm" method="post" action="$link.setAction("XDATRegisterUser")" onSubmit="return XNAT.app.register.validateForm();">
+    #foreach($key in $!turbineUtils.GetDataParameterHash($data).keySet())
+        #if ($key!="action" && $key!="template" &&$key!="password" &&$key!="phone" &&$key!="comments" &&!$key.startsWith("xdat:user") &&$key!="username" &&$key!="exception")
+            <input type="hidden" name="$key" value="$!turbineUtils.escapeHTML($!turbineUtils.GetPassedParameter($key,$data))">
+        #end
+    #end
+    <p>
+        <label for="xdat:user.login" class="formLabelRequired">Username</label>
+        <input type="text" class="required alphaNumSP" id="xdat:user.login" name="xdat:user.login" value="$!username">
+    </p>
+    <p>
+        <label for="xdat:user.primary_password" class="formLabelRequired">Password</label>
+        <input type="password" id="xdat:user.primary_password" name="xdat:user.primary_password" autocomplete="off">
+    </p>
+    <p>
+        <label for="xdat:user.password_check" class="formLabelRequired">Re-enter password</label>
+        <input type="password" id="xdat:user.password_check" name="xdat:user.primary_password" autocomplete="off">
+    </p>
+    <hr/>
+    <p>
+        <label for="xdat:user.firstname" class="formLabelRequired">First Name</label>
+        <input type="text" class="required alphaSP" id="xdat:user.firstname" name="xdat:user.firstname" value="$!firstName">
+    </p>
+    <p>
+        <label for="xdat:user.lastname" class="formLabelRequired">Last Name</label>
+        <input type="text" class="required alphaSP" id="xdat:user.lastname" name="xdat:user.lastname" value="$!lastName">
+    </p>
+    <p>
+        <label for="xdat:user.email" class="formLabelRequired">Email</label>
+        <input type="text" class="required" id="xdat:user.email" name="xdat:user.email" value="$!email">
+    </p>
+    <p>
+        <label for="phone">Phone</label>
+        <input type="text" name="phone" value="$!phone">
+    </p>
+    <p>
+        <label for="lab">Study Site or Lab</label>
+        <input type="text" name="lab" value="$!lab">
+    </p>
+    #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-new-user-comments","true")))
+        <hr/>
+        <p>Please include a brief description of how you plan to use this site.</p>
+        <p>
+            <label for="comments">Comments</label>
+            <textarea name="comments" rows="4">$!comments</textarea>
+        </p>
+    #end
+    <p class="form-submit">
+        <a href="$content.getURI('/')" style="margin-right: 20px;">Cancel</a>
+        <input type="submit" value="Register" id="Register">
+    </p>
+</form>
+
+<script>
+    $(document).ready(function(){
+        $(".formLabelRequired").append(" <b>*</b>");
+        $("input").on("focusout",function(){ $(this).parent('p').find('.errorMsg').remove(); });
+    });
+</script>
+<!-- END xnat-templates/screens/register_box.vm -->

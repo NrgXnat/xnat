@@ -1,0 +1,55 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+$page.setTitle("XDAT")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+#set ($pageName = "SearchResults.vm")
+#set ($template = $data.getTemplateInfo())
+$!template.setLayoutTemplate("DefaultExptList.vm")
+#set ($currentPage = $currentPage + 1)
+#if ($data.message)
+<DIV class="error">$data.message</DIV><br>
+#end
+#parse("/screens/admin_bar.vm")
+		<BR><BR>
+<p>
+
+#set ($pipelines = $repository.getPipeline())
+
+
+#if ($pipelines.size() > 0)
+<table>
+
+<tr> <td> </td>  <tH> Applies To </tH> <tH> Generates </tH> <tH> Description </tH> <tH> Path </tH> </tr>
+
+#foreach ($pipeline in $pipelines)
+<tr> 
+	<td> #set ( $url = $link.setPage("XDATScreen_delete_pipeline.vm").addQueryData("popup","true").addQueryData("path","$pipeline.getPath()" )  ) 
+				<a href="#" ONCLICK="return popupWSize('$url',400,800);"> 
+				Delete
+				</a></td>
+	<td> $repository.getDisplayName($pipeline.getAppliesto()) </td>
+	<td> $repository.getElementsGeneratedBy($pipeline) </td>
+	<td> $pipeline.getDescription() </td>
+	<td> $pipeline.getPath() </td>
+</tr>
+#end
+
+</table>
+#else 
+ No pipelines have been setup for this site. 
+
+#end
+
+<br/>
+<table border="0" width="95%">
+	<tr>
+		<td align=center >
+			<font face="$ui.sansSerifFonts" size="2">
+				#set ( $url = $link.setPage("XDATScreen_add_pipeline.vm").addPathInfo("popup","true")  ) 
+				<a href="#" ONCLICK="return popupWSize('$url',800,800);"> 
+				Add Pipeline to Repository
+				</a>
+			</font>
+		</td>
+	</tr>
+</table>

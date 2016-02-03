@@ -1,0 +1,14 @@
+
+public class ArcGet{
+
+    
+    public DataHandler fromXML(String _xml) throws java.rmi.RemoteException 
+    {
+        return org.nrg.xnat.services.ArcGetService.FromXML(_xml);
+    }
+    
+    public DataHandler fromXML(String _session, String _xml) throws java.rmi.RemoteException 
+    {
+        return org.nrg.xnat.services.ArcGetService.FromXML(_session, _xml);
+    }
+}

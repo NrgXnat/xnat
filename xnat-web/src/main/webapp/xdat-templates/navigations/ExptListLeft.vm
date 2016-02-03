@@ -1,0 +1,24 @@
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- XDAT ExptListLeft -->
+<table border="0" valign="top" class="withColor">
+	<tr align="left" valign="top">
+        <td>
+		   $navigation.setTemplate("QuickSearch.vm")
+	    </td>
+	</tr>
+	<tr align="left" valign="top">
+        <td>
+		   $navigation.setTemplate("SubMenu1.vm")
+	    </td>
+	</tr>
+    <tr align="left" valign="top">
+       <td>
+			$navigation.setTemplate("SubMenu2.vm")
+	   </td>
+	</tr>
+	<tr align="left" valign="top">
+       <td>
+			$navigation.setTemplate("SubMenu3.vm")
+	   </td>
+	</tr>
+</table>

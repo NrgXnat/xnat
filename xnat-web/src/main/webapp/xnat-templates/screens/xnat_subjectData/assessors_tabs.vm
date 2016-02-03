@@ -1,0 +1,34 @@
+<div ID="assessor_tabs" style="display:none">
+    <div id="assessor_tab_summary" class="yui-navset">
+        <ul class="yui-nav" style="">
+            #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/assessor_tabs"))
+                <li><a href="#$tab.getProperty("divName")"><em>$tab.getProperty("title")<span class="spacer"></span></em></a></li>
+            #end
+            <li class="selected"><a href="#tab1"><em>Chronological<span class="spacer"></span></em></a></li>
+        </ul>
+        <div class="yui-content">
+            #foreach($tab in $turbineUtils.getTemplates($om.getXSIType(),"report/assessor_tabs"))
+                <div id="$tab.getProperty("divName")">
+                    #set($path = "screens/${tab.getProperty('path')}")
+                    <p>#parse($path)</p>
+                </div>
+            #end
+            <div id="tab1">
+                <p>
+                    #parse($turbineUtils.getTemplateName("_assessors","xnat:subjectData",$project))
+                </p>
+            </div>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+    function summaryTabManagerInit(){
+        XNAT.app.assessor_tabs = {};
+        XNAT.app.assessor_tabs.assessor_tab_summary = new YAHOO.widget.TabView('assessor_tab_summary');
+        XNAT.app.assessor_tabs.assessor_tabs = new YAHOO.widget.Module("assessor_tabs",{visible:false,zIndex:5});
+        #addCustomScreenJS($om.getXSIType() "report/assessor_tabs_js")
+        XNAT.app.assessor_tabs.assessor_tabs.show();
+        XNAT.app.assessor_tabs.assessor_tab_summary.set('activeIndex', 0);
+    }
+    summaryTabManagerInit();
+</script>

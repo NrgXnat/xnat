@@ -1,0 +1,37 @@
+<!-- BEGIN xnat-templates/screens/Index.vm -->
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="par_count" type="java.lang.Integer" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+#set ($template = $data.getTemplateInfo())
+#if($data.getParameters().getString("login").equals("true"))
+    $!template.setLayoutTemplate($siteConfig.getProperty("siteLandingLayout","/Index.vm"))
+#else
+    $!template.setLayoutTemplate($siteConfig.getProperty("siteHomeLayout","/Index.vm"))
+#end
+#if ($data.message)
+<div class="note">$data.message</div><br>
+#end
+
+#if(0 < $par_count)
+<div class="message">You have been invited to join $par_count $displayManager.getSingularDisplayNameForProject().toLowerCase()(s).&nbsp;
+<button onclick="window.location='$content.getURI("/app/template/PARManager.vm")'">Review</button>
+</div>
+<div style="line-height:6px">&nbsp;</div>
+#end
+#if($data.getParameters().getString("login").equals("true"))
+    #if($turbineUtils.resourceExists($siteConfig.getProperty("siteLoginLanding", "/screens/QuickSearch.vm")))
+        #parse($siteConfig.getProperty("siteLoginLanding","/screens/QuickSearch.vm"))
+    #else
+        <div>Custom site login landing page cannot be found!<br/><br/>Contact the site administrator.</div>
+    #end
+#else
+    #if($turbineUtils.resourceExists($siteConfig.getProperty("siteHome","/screens/QuickSearch.vm")))
+        #parse($siteConfig.getProperty("siteHome","/screens/QuickSearch.vm"))
+    #else
+        <div>Custom site home page cannot be found!<br/><br/>Contact the site administrator.</div>
+    #end
+#end
+<!-- END xnat-templates/screens/Index.vm -->

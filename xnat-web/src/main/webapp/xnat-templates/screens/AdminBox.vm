@@ -1,0 +1,7 @@
+<DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_admin.vm")" >Manage users</A></DIV>
+<DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_manage_pipeline.vm")" >Manage pipelines</A></DIV>
+<DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_dataTypes.vm")" >Manage data types</A></DIV>
+
+<DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_email.vm")" >Send email</A></DIV>
+
+<DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_admin_options.vm")" >More options...</A></DIV>

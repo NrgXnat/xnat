@@ -1,0 +1,64 @@
+#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/education"))
+<tr>
+    #formLabel("Education")
+    <td>
+        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/education")
+    </td>
+</tr>
+#end
+#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/employment"))
+<tr>
+    #formLabel("Employment")
+    <td>
+        #renderEmployment($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/employment"))
+    </td>
+</tr>
+#end
+#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/race"))
+<tr>
+    #formLabel("Race")
+    <td>
+        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/race")
+    </td>
+</tr>
+#end
+#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/ethnicity"))
+<tr>
+    #formLabel("Ethnicity")
+    <td>
+        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/ethnicity")
+    </td>
+</tr>
+#end
+#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/height"))
+<tr>
+    #formLabel("Height (inches)")
+    <td>
+        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/height")
+    </td>
+</tr>
+#end
+#if($subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/weight"))
+<tr>
+    #formLabel("Weight (lbs)")
+    <td>
+        $subject.getProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/weight")
+    </td>
+</tr>
+#end
+#if($subject.getProperty("xnat:subjectData/src"))
+<tr>
+    #formLabel("Recruitment Source")
+    <td>
+        $subject.getProperty("xnat:subjectData/src")
+    </td>
+</tr>
+#end
+#if($subject.getProperty("xnat:subjectData/group"))
+<tr>
+    #formLabel("Group")
+    <td>
+        $subject.getProperty("xnat:subjectData/group")
+    </td>
+</tr>
+#end

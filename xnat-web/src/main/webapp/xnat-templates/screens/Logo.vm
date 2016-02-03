@@ -1,0 +1,2 @@
+## max image size: 240w x 120h
+<img class="logo_img" src="$content.getURI("images/logo.png")" style="border:none;">

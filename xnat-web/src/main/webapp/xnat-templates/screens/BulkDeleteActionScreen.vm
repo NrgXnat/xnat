@@ -1,0 +1,128 @@
+## Screen is for XNAT-2408
+<form name="form1" method="post" action="$link.setAction("DeleteProjectData")" ONSUBMIT="return validateForm();">
+#set($user = $data.getSession().getAttribute("user"))
+#if($errMsg)
+	<p>$errMsg</p>
+	<br>
+	<input type="button" name="ok" value="Ok" onclick="goHome()"/>
+	<script type="text/javascript">
+	function goHome(){ window.location.href = serverRoot + "/"; }
+	</script>
+#else
+<div id="projectDeleteTree">
+	<ul>
+		<li yuiConfig='{"type":"TaskNode","expanded":true,"ru":"","canRead":true,primary_label:"Select All"}'>Select All<ul>
+		#foreach($subj in $items)
+			<li yuiConfig='{"type":"TaskNode","expanded":true,"ru":"/REST/projects/$subj.getProject()/subjects/$subj.getId()","redirectHome":true,"canRead":$subj.canDelete($user, $searchType),"xsiType":"xnat:subjectData","date":"",primary_label:"$!subj.getLabel()"}'>
+				$!subj.getLabel()
+				<ul>
+				#foreach($subj_assess in $subj.getAssessors())
+					<li yuiConfig='{"type":"TaskNode","expanded":true,"ru":"/REST/projects/$subj_assess.getProject()/subjects/$subj.getId()/experiments/$subj_assess.getId()","redirectHome":true,"canRead":$subj_assess.canDelete($user, $searchType),"xsiType":"$!subj_assess.getXsiType()","date":"$!subj_assess.getDate()",primary_label:"$!subj_assess.getLabel()"}'>
+						$!subj_assess.getLabel()
+						<ul>
+						#foreach($img_assess in $subj_assess.getAssessors())
+							<li yuiConfig='{"type":"TaskNode","ru":"/REST/projects/$img_assess.getProject()/subjects/$subj.getId()/experiments/$subj_assess.getId()/assessors/$img_assess.getId()","redirectHome":true,"canRead":$img_assess.canDelete($user, $searchType),"xsiType":"$!img_assess.getXsiType()","date":"$!img_assess.getDate()",primary_label:"$!img_assess.getLabel()"}'>
+								$!img_assess.getLabel()
+							</li>
+						#end
+						</ul>
+					</li>
+				#end
+				</ul>
+			</li>
+		#end
+		</ul></li>
+	</ul>
+</div>
+
+<script type="text/javascript" src="$content.getURI("scripts/yui/build/treeview/taskNode.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
+<script type="text/javascript" src="$content.getURI("scripts/restDeleter.js")"></script>
+
+<style type="text/css">   
+	.icon-of { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/of.gif")) no-repeat;}   
+	.icon-f { display:block; font-size:11px; height: 17px; padding-left: 4px;}
+	.icon-cf { display:block; height: 19px; padding-left: 20px; background: transparent url($content.getURI("scripts/yui/build/treeview/assets/img/folders/cf.gif")) no-repeat;} 
+	.ygtvcheck0 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check0.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+	.ygtvcheck1 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check1.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+	.ygtvcheck2 { background: url($content.getURI("scripts/yui/build/treeview/assets/img/check/check2.gif")) 0 0 no-repeat; width:16px; cursor:pointer }
+</style>
+
+<script type="text/javascript">
+	var pTree=document.getElementById("projectDeleteTree");
+	window.pdTree=new YAHOO.widget.TaskTreeView(pTree);
+	window.pdTree.draw();
+
+    function deleteEntries() {
+        var _a = window.pdTree.getCheckedNodes();
+        if (_a.length == 0) {
+            xModalMessage('Delete Action', 'Please select at least one item to delete.');
+        } else {
+            var removeFiles = document.getElementById("removeFiles");
+            if (removeFiles.checked) {
+                xModalConfirm({
+                    content: "Submission will cause the permanent deletion of all meta-data and physical files for the selected items.",
+                    okAction: function() {
+                        doDelete(_a);
+                    },
+                    cancelAction: confirmCancel
+                });
+            } else {
+                xModalConfirm({
+                    content: "If you don't delete the project's associated files from the file system, the files may later be accessible if someone creates a project with the same ID as the project you're deleting. Please confirm that you want to leave the files on the physical file system after deleting the project meta-data.",
+                    okAction: function() {
+                        doDelete(_a);
+                    },
+                    cancelAction: confirmCancel
+                });
+            }
+        }
+    }
+
+    function confirmCancel() {
+        xModalMessage('Operation cancelled', 'The selected items will not be deleted.');
+    }
+
+    function doDelete(raw) {
+        var _items = new Array();
+        for (var cnAC = 0; cnAC < raw.length; cnAC++) {
+            var tO = raw[cnAC].data;
+            tO.label = raw[cnAC].label;
+            _items.push(tO);
+        }
+        window.deleter = new RestDeleter(_items, {defaultHeight: 450, defaultWidth: 600});
+        window.deleter.init();
+    }
+</script>
+
+<table align="center">
+	
+	<tr><td>
+		<input type="checkbox" value="true" name="removeFiles" id="removeFiles" checked defaultchecked/> 
+		<label for="removeFiles">Remove Files from File System</label>
+	</td></tr>
+	
+	<tr><td>&nbsp;</td></tr>
+	#auditBoxes("" "" "" "Removed Project")
+	<tr><td>&nbsp;</td></tr>
+	
+	<tr><td>
+		<input type="button" name="eventSubmit_doPerform" value="Delete" onclick="deleteEntries();"/>
+		<input type="hidden" name="project" value="$om.getId()"/>
+		<input type="button" name="cancel" value="Cancel" onclick="javascript:history.go(-1);">
+	</td></tr>
+	
+</table>
+</form>
+
+
+<script>
+    var breadcrumbs = document.getElementById('breadcrumbs');
+    if (breadcrumbs != null) {
+        var bread = "<a href='$link.setPage('Index.vm')'>Home</a>";
+        bread = bread + "&nbsp;>&nbsp;Delete";
+
+        breadcrumbs.innerHTML = bread;
+    }
+</script>
+#end

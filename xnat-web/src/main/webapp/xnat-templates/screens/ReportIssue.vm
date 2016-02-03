@@ -1,0 +1,72 @@
+$page.setTitle("Report Issue")
+
+<style>
+	.issueReport {
+	   width: 500px;
+	}
+	.issueReport label {
+	   display: block;
+	   font-weight: bold;
+	}
+	
+	.issueReport p {
+	   display: block;
+	   padding-bottom: 10px;
+	}
+</style>
+
+<div class="issueReport">
+
+<h2>Report a Problem</h2>
+
+<p>
+	Please report any problems you have using the site or errors you encounter.
+	When reporting an issue, please provide as much detail as possible to make 
+	it easier for us to reproduce and fix the issue.    	
+</p> 
+<br />
+<p>
+	When you click the "Submit issue" button, your response will be emailed to 
+	the	local site administrator.  If the local administrator can not resolve the
+	issue, he or she can forward the issue to the <a target="_blank" href="http://xnat.org">
+    XNAT</a> developers. 
+</p>
+
+<hr />
+
+<form id="issueForm" enctype="multipart/form-data" action="$link.setAction("ReportIssue")" method="POST">
+    <p>
+    	<label for="summary">Summary</label>
+        <input name="summary" type="text" size="50" />   
+    </p>
+	
+	<p>
+		<label for="description">Description</label>
+		<textarea name="description" rows="15" cols="60">
+Please describe the issue you encountered:
+
+
+Where on the site did the issue occur?
+
+
+What were you doing when the issue occurred?
+
+
+Can you reproduce the issue?  If so what steps will reproduce the problem?
+1. 
+2. 
+3. 
+
+Any other details that could help us fix the issue?
+
+   </textarea>
+	</p>
+    <p>
+	   <label for="upload">Attach a file</label>
+	   <input name="upload" type="file" />
+	</p>
+	<p>
+		<input type="submit" value="Submit issue" />
+	</p>
+
+</form>

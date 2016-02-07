@@ -12,11 +12,6 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.util.Date;
-import java.util.List;
-
-import javax.mail.MessagingException;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
@@ -30,6 +25,10 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+
+import javax.mail.MessagingException;
+import java.util.Date;
+import java.util.List;
 
 public class XDATForgotLogin extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATForgotLogin.class);
@@ -116,7 +115,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
                                data.setScreenTemplate("Login.vm");
                             }else{
                                AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user,true,null);
-                               String text = "Dear " + user.getFirstname() + " " + user.getLastname() + ",<br/>\r\n" + "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "/app/template/ChangePassword.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
+                               String text = "Dear " + user.getFirstname() + " " + user.getLastname() + ",<br/>\r\n" + "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "/app/template/XDATScreen_UpdateUser.vm?a=" + token.getAlias() + "&s=" + token.getSecret() + "<br/>\r\nThis link will expire in 24 hours.";
                                XDAT.getMailService().sendHtmlMessage(admin, to, subject, text);
                                if(requestLog != null){ requestLog.logEmailRequest(to, new Date()); }
                                data.setMessage("You have been sent an email with a link to reset your password. Please check your email.");

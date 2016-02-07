@@ -147,9 +147,10 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
                 if (userId!=null) {
                 	wrk.setId(user.getID().toString());
                 }
-	    	}else{
-                throw new Exception("Couldn't find a user for the indicated login: " + user.getLogin());
-            }
+                else{
+                    throw new Exception("Couldn't find a user for the indicated login: " + user.getLogin());
+                }
+	    	}
 	    	
 			PersistentWorkflowUtils.complete(wrk,wrk.buildEvent());
 		} catch (Exception e) {

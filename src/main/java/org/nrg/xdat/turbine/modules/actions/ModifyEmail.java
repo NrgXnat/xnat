@@ -93,7 +93,7 @@ public class ModifyEmail extends SecureAction {
         		String newemail = existing.getEmail();
         		if(!newemail.contains("@")){
         			data.setMessage("Please enter a valid email address.");
-        			data.setScreenTemplate("XDATScreen_MyXNAT.vm");
+        			data.setScreenTemplate("XDATScreen_UpdateUser.vm");
         			return;
         		}
         		Users.save(existing, authenticatedUser, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Modified User Email"));

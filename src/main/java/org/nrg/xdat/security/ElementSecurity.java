@@ -50,10 +50,10 @@ import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
-import org.nrg.xft.event.Event;
-import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.ReactorEventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -1557,7 +1557,7 @@ public class ElementSecurity extends ItemWrapper{
 		}
         
         try {
-			EventManager.Trigger(Groups.getGroupDatatype(),Event.UPDATE);
+			ReactorEventUtils.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),XftItemEvent.UPDATE));
 		} catch (Exception e1) {
             logger.error("",e1);
 		}

@@ -30,9 +30,9 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.cache.CacheManager;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.event.Event;
-import org.nrg.xft.event.EventManager;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.ReactorEventUtils;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -204,7 +204,7 @@ public class UserGroupManager implements UserGroupServiceI{
     			}
     	        
     	        try {
-    				EventManager.Trigger(Groups.getGroupDatatype(),existing.getId(),Event.UPDATE);
+    				ReactorEventUtils.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),existing.getId(),XftItemEvent.UPDATE));
     			} catch (Exception e1) {
     	            logger.error("",e1);
     			}
@@ -284,7 +284,7 @@ public class UserGroupManager implements UserGroupServiceI{
 				PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());
     	        
     	        try {
-    				EventManager.Trigger(Groups.getGroupDatatype(),group.getId(),Event.UPDATE);
+    				ReactorEventUtils.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),group.getId(),XftItemEvent.UPDATE));
     			} catch (Exception e1) {
     	            logger.error("",e1);
     			}
@@ -521,7 +521,7 @@ public class UserGroupManager implements UserGroupServiceI{
 
 
         try {
-			EventManager.Trigger(Groups.getGroupDatatype(),g.getId(),Event.DELETE);
+ 			ReactorEventUtils.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),g.getId(),XftItemEvent.DELETE));
 		} catch (Exception e1) {
             logger.error("",e1);
 		}
@@ -628,10 +628,12 @@ public class UserGroupManager implements UserGroupServiceI{
 		((UserGroup)group).xdatGroup=null;
 		
 		try {
-			EventManager.Trigger(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), Event.UPDATE);
+			ReactorEventUtils.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME,group.getId(),XftItemEvent.UPDATE));
 			Groups.reloadGroupsForUser(user);
 		} catch (Exception e1) {
 			logger.error("", e1);
 		}
 	}
+
+
 }

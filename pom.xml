@@ -290,6 +290,16 @@
             <artifactId>ehcache-core</artifactId>
             <scope>test</scope>
         </dependency>
+	    <dependency>
+	      <groupId>io.projectreactor</groupId>
+	      <artifactId>reactor-bus</artifactId>
+	      <version>2.0.7.RELEASE</version>
+	    </dependency>
+	    <dependency>
+	      <groupId>io.projectreactor</groupId>
+	      <artifactId>reactor-core</artifactId>
+	      <version>2.0.7.RELEASE</version>
+	    </dependency>
     </dependencies>
 
     <pluginRepositories>

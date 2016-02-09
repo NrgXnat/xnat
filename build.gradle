@@ -10,9 +10,10 @@ sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
 repositories {
-    maven { url "http://maven.xnat.org/libs-release" }
-    maven { url "http://maven.xnat.org/libs-snapshot" }
-    maven { url "https://repo.maven.apache.org/maven2" }
+    maven { url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release" }
+    maven { url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot" }
+    mavenCentral()
+    jcenter()
 }
 
 configurations {

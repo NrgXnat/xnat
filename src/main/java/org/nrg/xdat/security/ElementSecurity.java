@@ -52,7 +52,7 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.event.ReactorEventUtils;
+import org.nrg.xft.event.XftEventService;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -1557,7 +1557,7 @@ public class ElementSecurity extends ItemWrapper{
 		}
         
         try {
-			ReactorEventUtils.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),XftItemEvent.UPDATE));
+        	XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),XftItemEvent.UPDATE));
 		} catch (Exception e1) {
             logger.error("",e1);
 		}

@@ -1409,12 +1409,12 @@
         <repository>
             <id>org.nrg.maven.artifacts.snapshot</id>
             <name>XNAT Snapshot Maven Repo</name>
-            <url>http://maven.xnat.org/libs-snapshot</url>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
         </repository>
         <repository>
             <id>org.nrg.maven.artifacts.release</id>
             <name>XNAT Release Maven Repo</name>
-            <url>http://maven.xnat.org/libs-release</url>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release</url>
         </repository>
     </repositories>
 
@@ -1422,25 +1422,25 @@
         <pluginRepository>
             <id>org.nrg.maven.plugins.snapshot</id>
             <name>XNAT Snapshot Maven Plugin Repo</name>
-            <url>http://maven.xnat.org/plugins-snapshot</url>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/plugins-snapshot</url>
         </pluginRepository>
         <pluginRepository>
             <id>org.nrg.maven.plugins.release</id>
             <name>XNAT Release Maven Plugin Repo</name>
-            <url>http://maven.xnat.org/plugins-release</url>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/plugins-release</url>
         </pluginRepository>
     </pluginRepositories>
 
     <distributionManagement>
         <repository>
-            <id>XNAT Server</id>
-            <name>XNAT Maven Library Release</name>
-            <url>http://maven.xnat.org/libs-release-local</url>
+            <id>XNAT Artifactory</id>
+            <name>XNAT Maven Release Library</name>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local</url>
         </repository>
         <snapshotRepository>
-            <id>XNAT Server</id>
-            <name>XNAT Maven Library Snapshots</name>
-            <url>http://maven.xnat.org/libs-snapshot-local</url>
+            <id>XNAT Artifactory</id>
+            <name>XNAT Maven Snapshot Library</name>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local</url>
         </snapshotRepository>
     </distributionManagement>
 

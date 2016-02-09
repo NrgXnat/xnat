@@ -104,12 +104,12 @@
         <repository>
             <id>org.nrg.maven.artifacts.snapshot</id>
             <name>XNAT Snapshot Maven Repo</name>
-            <url>http://maven.xnat.org/libs-snapshot</url>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
         </repository>
         <repository>
             <id>org.nrg.maven.artifacts.release</id>
             <name>XNAT Release Maven Repo</name>
-            <url>http://maven.xnat.org/libs-release</url>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release</url>
         </repository>
     </repositories>
 

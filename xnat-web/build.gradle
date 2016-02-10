@@ -278,16 +278,16 @@ dependencies {
 
 cargo {
     containerId = 'tomcat7x'
-    port = managerPort as int
+    port = deployPort as int
 
     deployable {
-        context = managerContext
+        context = deployContext
     }
 
     remote {
-        hostname = managerHost
-        username = managerUser
-        password = managerPassword
+        hostname = deployHost
+        username = deployUser
+        password = deployPassword
     }
 }
 

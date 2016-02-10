@@ -2,6 +2,26 @@
 
 This is the XNAT Web application build.
 
+### First steps ###
+
+In order for the build to work at the moment (and to be able to import the Gradle project into an IDE), you need to set up some properties in a file named **gradle.properties**. This can be placed in your global properties file, which is located in the folder **.gradle** under your home folder, or in the same folder as the **build.gradle** file.
+
+This properties file must contain values for the following properties:
+
+```
+repoUsername=xxx
+repoPassword=xxx
+deployHost=xxx
+deployPort=xxx
+deployContext=xxx
+deployUser=xxx
+deployPassword=xxx
+```
+
+The repo properties are used when deploying build artifacts to the Maven repository. The deploy properties are used when deploying to a remote Tomcat server. Note that the values for these properties don't need to be valid! If you're not going to deploy to the Maven repository and you're not going to deploy to a remote Tomcat server, you can use the values shown up above (i.e. "xxx" for everything) and be totally fine. Gradle will pitch a fit if there's not a value for these properties though, so you need to have something in there. We'll try to fix this so that you don't have to have junk values just to make it feel better about itself, but until that time just keep the placekeeper values in there.
+
+There are a lot of other useful properties you can set in **gradle.properties**, so it's worth spending a little time [reading about the various properties Gradle recognizes in this file](https://docs.gradle.org/current/userguide/build_environment.html).
+
 ### Building ###
 
 You can build with a simple Gradle command:
@@ -11,6 +31,20 @@ gradle clean war
 ```
 
 You may need to build the [XNAT Gradle plugin](https://bitbucket.org/xnatdev/gradle-xnat-plugin) first, although it should be available on the XNAT Maven repository.
+
+You can perform a build to your local Maven repository for development purposes like this:
+
+```bash
+gradle clean jar publishToMavenLocal
+```
+
+You can perform a build deploying to the XNAT Maven repository like this:
+
+```bash
+gradle clean jar publishToMavenLocal publishMavenJavaPublicationToMavenRepository
+```
+
+For this last one, the values set for **repoUsername** and **repoPassword** must be valid credentials for pushing artifacts to the Maven server.
 
 ### Deploying ###
 
@@ -56,5 +90,3 @@ deployPassword=s3cret
 ```
 
 You can also specify these on the Gradle command line. Just take each setting and preface it with **-D**.
-
-

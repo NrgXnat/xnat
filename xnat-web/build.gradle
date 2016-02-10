@@ -131,6 +131,7 @@ configurations {
     all*.exclude group: 'jdbc', module: 'jdbc'
     all*.exclude group: 'jms', module: 'jms'
     all*.exclude group: 'jython', module: 'jython'
+    all*.exclude group: 'org.nrg', module: 'nrg'
     all*.exclude group: 'net.sf.saxon', module: 'saxon'
     all*.exclude group: 'stax', module: 'stax-api'
     all*.exclude group: 'xml-apis', module: 'xml-apis'
@@ -138,6 +139,7 @@ configurations {
     all*.exclude module: 'log4j-slf4j-impl'
     all*.exclude module: 'pipelineCNDAXNAT'
     all*.exclude module: 'slf4j-simple'
+    all*.exclude module: 'xnatsrb'
 }
 
 dependencies {

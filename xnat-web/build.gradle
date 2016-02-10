@@ -278,16 +278,16 @@ dependencies {
 
 cargo {
     containerId = 'tomcat7x'
-    port = deployPort as int
+    port = propertyWithDefault('deployPort', 8080) as int
 
     deployable {
-        context = deployContext
+        context = propertyWithDefault('deployContext', '/')
     }
 
     remote {
-        hostname = deployHost
-        username = deployUser
-        password = deployPassword
+        hostname = propertyWithDefault('deployHost', 'localhost')
+        username = propertyWithDefault('deployUser', 'deploy')
+        password = propertyWithDefault('deployPassword', 'deploy')
     }
 }
 
@@ -349,4 +349,8 @@ publishing {
             }
         }
     }
+}
+
+def propertyWithDefault(def String property, def defaultValue) {
+    hasProperty(property) ? eval(property) : defaultValue
 }

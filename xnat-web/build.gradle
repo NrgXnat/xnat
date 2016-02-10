@@ -124,6 +124,7 @@ configurations {
     all*.exclude group: 'edu.ucar', module: 'netcdf'
     all*.exclude group: 'javax.jms', module: 'jms'
     all*.exclude group: 'javax.mail', module: 'mail'
+    all*.exclude group: 'javax.servlet', module: 'servlet-api'
     all*.exclude group: 'javax.sql', module: 'jdbc-stdext'
     all*.exclude group: 'javax.transaction', module: 'jta'
     all*.exclude group: 'jdbc', module: 'jdbc'

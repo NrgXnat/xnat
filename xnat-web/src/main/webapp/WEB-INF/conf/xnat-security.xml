@@ -78,6 +78,7 @@
     <bean id="xnatLogoutHandler" class="org.nrg.xnat.security.XnatLogoutHandler"/>
 
     <security:http auto-config="false" use-expressions="true" entry-point-ref="loginUrlAuthenticationEntryPoint">
+        <security:csrf disabled="true"/>
         <security:custom-filter position="CHANNEL_FILTER" ref="channelProcessingFilter"/>
         <security:custom-filter before="FORM_LOGIN_FILTER" ref="customAuthenticationFilter"/>
         <security:custom-filter after="BASIC_AUTH_FILTER" ref="customBasicAuthenticationFilter"/>
@@ -223,7 +224,7 @@
                 <value>/app/template/XDATScreen_UpdateUser.vm</value>
                 <value>/app/action/ModifyPassword</value>
                 <value>/app/template/Login.vm</value>
-                <value>/j_spring_security_check</value>
+                <value>/login</value>
             </list>
         </property>
     </bean>

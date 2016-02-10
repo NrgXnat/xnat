@@ -1,5 +1,5 @@
 #* @vtlvariable name="login_methods" type="java.util.List" *#
-<form name="form1" method="post" action="$content.getURI('')/j_spring_security_check">
+<form name="form1" method="post" action="$content.getURI('')/login">
     #set($showLoginMethodRow = true)
     #if(!($login_methods) || $login_methods.size() == 1)
         <input type="hidden" id="login_method" name="login_method" value="$login_methods.get(0)"/>
@@ -21,11 +21,11 @@
     #end
     <tr>
       #formLabel("User")
-  	  <td><input type="text" id="username" name="j_username"></td>
+  	  <td><input type="text" id="username" name="username"></td>
     </tr>
     <tr>
     	#formLabel("Password")
-  	  <td><input type="password" name="j_password" autocomplete="off"></td>
+  	  <td><input type="password" name="password" autocomplete="off"></td>
     </tr>
     <tr>
       <td></td>

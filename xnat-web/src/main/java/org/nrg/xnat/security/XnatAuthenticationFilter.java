@@ -38,8 +38,8 @@ public class XnatAuthenticationFilter extends UsernamePasswordAuthenticationFilt
 
     @Override
     public Authentication attemptAuthentication(HttpServletRequest request, HttpServletResponse response) throws AuthenticationException {
-        String username = request.getParameter("j_username");
-        String password = request.getParameter("j_password");
+        String username = StringUtils.isNotBlank(request.getParameter("username")) ? request.getParameter("username") : request.getParameter("j_username");
+        String password = StringUtils.isNotBlank(request.getParameter("password")) ? request.getParameter("password") : request.getParameter("j_password");
 
         // If we didn't find a username
         if (StringUtils.isBlank(username)) {

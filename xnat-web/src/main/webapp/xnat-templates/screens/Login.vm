@@ -67,7 +67,7 @@ $page.setTitle("$siteId - Please Login")
         </div>
         <hr style="margin: 2em 0" />
         <div id="login_box">
-            <form name="form1" method="post" action="$content.getURI("/j_spring_security_check")" class="friendlyForm" id="login_form">
+            <form name="form1" method="post" action="$content.getURI("/login")" class="friendlyForm" id="login_form">
                 #if($login_methods && $login_methods.size() == 0)
                     <input type="hidden" id="login_method" name="login_method" value="Database">
                 #elseif($login_methods && $login_methods.size() > 1)
@@ -79,10 +79,10 @@ $page.setTitle("$siteId - Please Login")
                     </select>
                 #end
                 <p><label for="username">User</label>
-                    <input type="text" id="username" name="j_username"></p>
+                    <input type="text" id="username" name="username"></p>
 
                 <p><label for="password">Password</label>
-                    <input type="password" name="j_password" autocomplete="off"></p>
+                    <input type="password" name="password" autocomplete="off"></p>
 
                 <p class="form-submit">
                         <span id="register_forgot">
@@ -142,7 +142,7 @@ $page.setTitle("$siteId - Please Login")
             </div>
         #end
 
-        <form name="form1" method="post" action="$content.getURI("/j_spring_security_check")" class="friendlyForm" id="login_form">
+        <form name="form1" method="post" action="$content.getURI("/login")" class="friendlyForm" id="login_form">
             #if($login_methods && $login_methods.size() == 0)
                 <input type="hidden" id="login_method" name="login_method" value="Database">
             #elseif($login_methods && $login_methods.size() > 1)
@@ -154,10 +154,10 @@ $page.setTitle("$siteId - Please Login")
                 </select>
             #end
             <p><label for="username">User</label>
-                <input type="text" id="username" name="j_username"></p>
+                <input type="text" id="username" name="username"></p>
 
             <p><label for="password">Password</label>
-                <input type="password" name="j_password" autocomplete="off"></p>
+                <input type="password" name="password" autocomplete="off"></p>
 
             <p class="form-submit">
             <span id="register_forgot">

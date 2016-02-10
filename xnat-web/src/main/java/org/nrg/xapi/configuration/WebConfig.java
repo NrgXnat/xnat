@@ -1,4 +1,4 @@
-package org.nrg.xapi.config;
+package org.nrg.xapi.configuration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

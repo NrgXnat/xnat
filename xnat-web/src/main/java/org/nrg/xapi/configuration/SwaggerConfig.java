@@ -1,4 +1,4 @@
-package org.nrg.xapi.config;
+package org.nrg.xapi.configuration;
 
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;

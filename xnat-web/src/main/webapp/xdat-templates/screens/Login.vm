@@ -5,7 +5,7 @@ $page.addAttribute("onLoad", "document.getElementById('username').focus();")
 <div valign="top">
     <br>
     <br>
-    <form name="form1" method="post" action="$content.getURI("/j_spring_security_check")">
+    <form name="form1" method="post" action="$content.getURI("/login")">
         <table valign="top" align="center">
             #if ( $data.getMessage() && $data.getMessage()!="" )
                 <tr><td colspan="2"><div class="error">$data.getMessage()</div><br><br>

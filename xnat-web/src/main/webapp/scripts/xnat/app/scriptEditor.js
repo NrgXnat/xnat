@@ -108,7 +108,7 @@ var XNAT = getObject(XNAT||{});
         else if (!/^[a-zA-Z][a-zA-Z0-9_]*$/.test(scriptId)){
             xmodal.message({
                 title: 'Error: Invalid Characters in Script ID',
-                message: 'Script ID can only consist of letters, numbers, and the underscore "_" character.',
+                message: 'Script ID must start with a letter and can only consist of letters, numbers, and the underscore "_" character.',
                 action: function(){
                     setTimeout(function(){
                         $scriptIdInput.focus().select();
@@ -145,7 +145,10 @@ var XNAT = getObject(XNAT||{});
                 xmodal.message('No Content', 'Please add script content and try again.');
             }
             else {
-                xhr.put(scriptURL(scriptId), data, {
+                var csrfParam = {
+                    XNAT_CSRF: csrfToken
+                };
+                xhr.put(scriptURL(scriptId, csrfParam), data, {
                     success: function(){
                         xmodal.message('Success', 'Your script was successfully saved.', {
                             action: function(){

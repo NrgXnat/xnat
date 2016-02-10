@@ -9,89 +9,82 @@ $page.setVlinkColor($ui.vlink)
 #if ($data.message)
 <div class="alert">$data.message</div>
 #end
-<form id="edit_project_form" name="form1" method="post" action="$link.setAction("ModifyProject")" onsubmit="return validateProjectForm(this)">
+<form id="edit-project-form" name="form1" method="post" action="$link.setAction("ModifyProject")" onsubmit="return validateProjectForm(this)">
     #if($vr)
         <div class="error">Invalid parameters:<br>$vr.toHTML()</div>
         <hr>
     #end
-    <table width="100%">
-        <tr>
-            <td>
-                <div class="edit_title">$page_title</div>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                <div class="container" style="width:750px;float:left;margin:5px;">
-                    <div class="withColor containerTitle">&nbsp;Step 1: Enter $displayManager.getSingularDisplayNameForProject().toLowerCase() details</div>
-                    <div class="containerBody">
-                        <div class="containerItem">
-                            Define the details of this $displayManager.getSingularDisplayNameForProject().toLowerCase(). The '$displayManager.getSingularDisplayNameForProject() ID' should be a
-                            single word or acronym which will identify your $displayManager.getSingularDisplayNameForProject().toLowerCase(). It will be
-                            used on the file system to name directories and files, so it shouldn't contain any wild characters or spaces. The 'Running Title'
-                            will be used throughout the website to identify your $displayManager.getSingularDisplayNameForProject().toLowerCase().<br>
-                        </div>
-                        <hr>
-                        <div class="containerItem">
-                            #set($parentTemplate='edit')
+    <div class="edit_title">$page_title</div>
+
+    <div class="container">
+        <div class="withColor containerTitle">&nbsp;Step 1: Enter $displayManager.getSingularDisplayNameForProject().toLowerCase() details</div>
+        <div class="containerBody">
+            <div class="containerItem">
+                Define the details of this $displayManager.getSingularDisplayNameForProject().toLowerCase(). The '$displayManager.getSingularDisplayNameForProject() ID' should be a
+                single word or acronym which will identify your $displayManager.getSingularDisplayNameForProject().toLowerCase(). It will be
+                used on the file system to name directories and files, so it shouldn't contain any wild characters or spaces. The 'Running Title'
+                will be used throughout the website to identify your $displayManager.getSingularDisplayNameForProject().toLowerCase().<br>
+            </div>
+            <hr>
+            <div class="containerItem">
+                #set($parentTemplate='edit')
                             #parse("/screens/xnat_projectData/edit/details.vm")
-                        </div>
-                    </div>
-                </div>
-            </td>
-        </tr>
-        <tr>
-            <td>
-                #set($guest=$om.getPublicAccessibility())
-                <div class="container" style="width:750px;float:left;margin:5px;">
-                    <div class="withColor containerTitle">&nbsp;Step 2: Define $displayManager.getSingularDisplayNameForProject() Accessibility</div>
-                    <div class="containerBody">
-                        <div class="containerItem">Select the accessibility of your $displayManager.getSingularDisplayNameForProject().toLowerCase().
-                            <br>
-                            <hr>
-                        </div>
-                        <div class="containerItem">
-                            <table width="100%">
+            </div>
+        </div>
+    </div>
+
+    <br>
+
+    #set($guest=$om.getPublicAccessibility())
+    <div class="container">
+        <div class="withColor containerTitle">&nbsp;Step 2: Define $displayManager.getSingularDisplayNameForProject() Accessibility</div>
+        <div class="containerBody">
+            <div class="containerItem">
+                Select the accessibility of your $displayManager.getSingularDisplayNameForProject().toLowerCase().
+            </div>
+            <hr style="margin:4px 0;">
+            <div class="containerItem">
+                <table width="100%">
+                    <tr>
+                        <td class="highlighted" valign="top">
+                            <table cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td class="highlighted" valign="top">
-                                        <table cellpadding="0" cellspacing="0">
-                                            <tr>
-                                                <td valign="top" style="padding:10px 20px 10px 10px;border-right:1px solid #ccc;">
-                                                    <label id="private_access_div" title="Only you and study members will be able to access study data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'private_access');">
-                                                        <input type="radio" id="private_access" name="accessibility" value="private" #if($guest=="private")checked#end/> Private
-                                                    </label>
+                                    <td valign="top" style="padding:10px 20px 10px 10px;border-right:1px solid #ccc;">
+                                        <label id="private_access_div" title="Only you and study members will be able to access study data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'private_access');">
+                                            <input type="radio" id="private_access" name="accessibility" value="private" #if($guest=="private")checked#end/> Private
+                                        </label>
 
-                                                    <label id="protected_access_div" title="All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'protected_access');">
-                                                        <input type="radio" id="protected_access" name="accessibility" value="protected" #if($guest=="protected")checked#end/> Protected
-                                                    </label>
+                                        <label id="protected_access_div" title="All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'protected_access');">
+                                            <input type="radio" id="protected_access" name="accessibility" value="protected" #if($guest=="protected")checked#end/> Protected
+                                        </label>
 
-                                                    <label id="public_access_div" title="All users will be able to access study data for analysis and download." style="display:block;white-space:nowrap;" onclick="checkAccessibilityRadioButton(this, 'public_access');">
-                                                        <input type="radio" id="public_access" name="accessibility" value="public" #if($guest=="public")checked#end/> Public
-                                                    </label>
-                                                </td>
-                                                <td valign="top" style="padding:10px 160px 10px 20px;">
-                                                    <div id="balloon" style="border:none;">Only you and study members will be able to access study data.</div>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                        <label id="public_access_div" title="All users will be able to access study data for analysis and download." style="display:block;white-space:nowrap;" onclick="checkAccessibilityRadioButton(this, 'public_access');">
+                                            <input type="radio" id="public_access" name="accessibility" value="public" #if($guest=="public")checked#end/> Public
+                                        </label>
+                                    </td>
+                                    <td valign="top" style="padding:10px 160px 10px 20px;">
+                                        <div id="balloon" style="border:none;">Only you and study members will be able to access study data.</div>
                                     </td>
                                 </tr>
                             </table>
-                            <br/>
-                        </div>
-                    </div>
-                </div>
-            </td>
-        </tr>
-        #xdatEditProps($item $edit_screen)
+                        </td>
+                    </tr>
+                </table>
+                <br/>
+            </div>
+        </div>
+    </div>
+
+    #xdatEditProps($item $edit_screen)
+    <table>
         #auditBoxes("2" "" "" "Modified $displayManager.getSingularDisplayNameForProject().toLowerCase()")
-        <tr>
-            <th align="left">&nbsp;</th>
-        </tr>
-        <tr>
-            <td align="right" style="padding-right:10px;"><input type="submit" name="eventSubmit_doPerform" value="Submit"/></td>
-        </tr>
     </table>
+
+    <div class="submit-right">
+        <input class="btn1" type="submit" name="eventSubmit_doPerform" value="Save Changes">
+        <div class="clear"></div>
+    </div>
+
 </form>
 
 <script>
@@ -112,27 +105,27 @@ $page.setVlinkColor($ui.vlink)
 
         var invalid_count = 0 ;
         //if (projIDVal == '') {
-        //    xModalMessage('Validation', 'Please enter a ' + Project.toLowerCase() + ' abbreviation.');
+        //    xmodal.message('Validation', 'Please enter a ' + Project.toLowerCase() + ' abbreviation.');
         //    __projID.addClass('invalid');
         //    invalid_count++;
         //}
         if (projRunningTitleVal == '') {
-            xModalMessage('Validation', 'Please enter a running title.');
+            xmodal.message('Validation', 'Please enter a running title.');
             __projRunningTitle.addClass('invalid');
             invalid_count++;
         }
         if (projRunningTitleVal.length > 24) {
-            xModalMessage('Validation', 'Please enter a running title of 24 characters or less.');
+            xmodal.message('Validation', 'Please enter a running title of 24 characters or less.');
             __projRunningTitle.addClass('invalid');
             invalid_count++;
         }
         if (projTitleVal == '') {
-            xModalMessage('Validation', 'Please enter a ' + Project.toLowerCase() + ' title.');
+            xmodal.message('Validation', 'Please enter a ' + Project.toLowerCase() + ' title.');
             __projTitle.addClass('invalid');
             invalid_count++;
         }
         if (projTitleVal.length > 199) {
-            xModalMessage('Validation', 'Please enter a ' + Project.toLowerCase() + ' title of 199 characters or less.');
+            xmodal.message('Validation', 'Please enter a ' + Project.toLowerCase() + ' title of 199 characters or less.');
             __projTitle.addClass('invalid');
             invalid_count++;
         }

@@ -420,13 +420,13 @@ YAHOO.util.Event.onDOMReady( function()
 		                	        appendImage(validators[elementId].box,"/images/checkmarkRed.gif",this.message);
 		                		}
 		                	}catch(e){
-                                xModalMessage('Email Validation Error', "Error performing validation.");
+                                xmodal.message('Email Validation Error', "Error performing validation.");
 		                		validators._ok=false;
 		                	}
 	                	}
 	                }
             	}catch(e){
-                    xModalMessage('Email Validation Error', "Error performing validation.");
+                    xmodal.message('Email Validation Error', "Error performing validation.");
             		validators._ok=false;
             	}
             	
@@ -486,7 +486,7 @@ YAHOO.util.Event.onDOMReady( function()
             	
                 return result;
         	}catch(e){
-                xModalMessage('Email Validation Error', "An error occurred during form validation.");
+                xmodal.message('Email Validation Error', "An error occurred during form validation.");
         		YAHOO.util.Event.stopEvent(env);
                 showContent();
                 return false;
@@ -578,17 +578,17 @@ jq(window).load(function(){
         if (email_value.length){
             if (emailFormatVerify(email_value)) {
                 if (confirm_alert == true) {
-                    xModalMessage('Email Validation', "Email verified.");
+                    xmodal.message('Email Validation', "Email verified.");
                 }
             }
             else {
-                xModalMessage('Email Validation', "Please enter a proper email address in the format: name@domain.com.");
+                xmodal.message('Email Validation', "Please enter a proper email address in the format: name@domain.com.");
                 setTimeout(function(){ email_input.focus(); }, 1);
             }
         }
         else {
             if (empty_alert == true) {
-                xModalMessage('Email Validation', "Please enter an email address.");
+                xmodal.message('Email Validation', "Please enter an email address.");
                 setTimeout(function(){ email_input.focus(); }, 1);
             }
         }
@@ -613,25 +613,8 @@ jq(window).load(function(){
 
     $('#loading').hide();
 
-    // print XNAT objects to the console if query string has ?jsdebug=true
-    if (window.jsdebug) {
-        if (window.console && window.console.log){
-            console.log('\n');
-            console.log('XNAT:');
-            console.log(XNAT);
-            console.log('\n');
-            console.log('XNAT.data:');
-            console.log(XNAT.data);
-            console.log('\n');
-            console.log('XNAT.data.context:');
-            console.log(XNAT.data.context);
-            console.log('\n');
-        }
-    }
-
-
-// end footer.js
 });
+
 
 // Set the leaving flag to false on every load.
 window.leaving = false;

@@ -69,25 +69,22 @@
 
 <br>
 
-<table id="splash_table" width="100%" cellpadding="0" cellspacing="0">
-    <tr>
-        <td width="" valign="top">
-            <div id="projectsContainer" class="container">
+<div id="home-data">
+
+            <div id="projects-container" class="container">
                 <div class="withColor containerTitle">$displayManager.getPluralDisplayNameForProject()</div>
                 <div id="projectsBody" class="containerBody">
                     #parse("/screens/minProjectsList.vm")
                 </div>
             </div>
-        </td>
-        <td width="10">&nbsp;</td>
-        <td width="340" valign="top">
-            <div id="dataContainer" class="container">
+
+            <div id="data-container" class="container">
                 <div class="withColor containerTitle">Recent Data Activity</div>
                 <div id="dataBody" class="containerBody">
                     #parse("/screens/recentExptList.vm")
                 </div>
             </div>
-        </td>
-    </tr>
-</table>
+
+    <div class="clear"></div>
+</div>
 <!-- /QuickSearch -->

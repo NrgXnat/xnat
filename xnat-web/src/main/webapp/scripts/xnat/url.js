@@ -11,8 +11,7 @@ var XNAT = getObject(XNAT||{});
         undefined;
 
     // these methods available in XNAT.url and XNAT.xurl...
-    // 'xurl' for easier(?) reference in source and to
-    // prevent potential conflicts with 'url' var names
+    // 'xurl' to prevent potential conflicts with local vars named 'url'
     XNAT.url = XNAT.xurl =
         xurl = url =
             extend(getObject(XNAT.xurl||{}), getObject(XNAT.url||{}));
@@ -68,9 +67,9 @@ var XNAT = getObject(XNAT||{});
             qsArray = [];
 
         forOwn(query, function(key, val){
-            if (xurl.encode){
-                key = xurl.encodeURIComponent(key);
-                val = xurl.encodeURIComponent(val);
+            if (XNAT.url.encode){
+                key = XNAT.url.encodeURIComponent(key);
+                val = XNAT.url.encodeURIComponent(val);
             }
             queryObject[key] = val;
             qsArray.push(key + '=' + val);
@@ -79,7 +78,7 @@ var XNAT = getObject(XNAT||{});
         // reset url.encode to true
         // probably don't want to do this here
         // it would be reset every time XNAT.url.processQueryObject() is run
-        //xurl.encode = true;
+        //XNAT.url.encode = true;
 
         // pass an array as the second (arr) argument
         // to add the query string params to an
@@ -110,7 +109,7 @@ var XNAT = getObject(XNAT||{});
         // { format: 'json', sort: 'asc' }
         if (isPlainObject(query)){
             // returns encoded data as query string params array
-            qsArray = xurl.processQueryObject(query, []);
+            qsArray = XNAT.url.processQueryObject(query, []);
         }
         // an array of parameters
         // ['format=json','sort=asc']
@@ -160,7 +159,7 @@ var XNAT = getObject(XNAT||{});
     url.toQueryArray = function(query, arr){
 
         var qsOutput = [],
-            qsObject = xurl.toQueryObject(query, arr);
+            qsObject = XNAT.url.toQueryObject(query, arr);
 
         // build up output array
         forOwn(qsObject, function(key, val){
@@ -176,8 +175,8 @@ var XNAT = getObject(XNAT||{});
     // string or array of query params
     // and convert to a full query string
     url.toQueryString = function(query, arr, encode){
-        xurl.encode = encode || xurl.encode;
-        var output = xurl.toQueryArray(query, arr).join('&');
+        XNAT.url.encode = encode || XNAT.url.encode;
+        var output = XNAT.url.toQueryArray(query, arr).join('&');
         return (output) ? ('?' + output) : '';
     };
 
@@ -201,7 +200,7 @@ var XNAT = getObject(XNAT||{});
         parts.params = {};
         if (parts.query){
             parts.paramsArray = parts.query.split('&');
-            parts.params = xurl.toQueryObject({}, parts.paramsArray);
+            parts.params = XNAT.url.toQueryObject({}, parts.paramsArray);
             //forEach(parts.paramsArray, function(part){
             //    if (!part) { return }
             //    var pieces = part.split('=');
@@ -218,7 +217,7 @@ var XNAT = getObject(XNAT||{});
     // and url hash
     url.addQueryString = function(url, query){
 
-        var _url = xurl.splitUrl(url),
+        var _url = XNAT.url.splitUrl(url),
             params, output;
 
         // the url, minus any params and "bonus" slashes
@@ -232,8 +231,8 @@ var XNAT = getObject(XNAT||{});
             query = extendCopy(_url.params, query);
         }
 
-        //params = xurl.toQueryString(query);
-        params = xurl.toQueryString(query, _url.paramsArray);
+        //params = XNAT.url.toQueryString(query);
+        params = XNAT.url.toQueryString(query, _url.paramsArray);
 
         if (params){
             output += (params.replace(/\?+/,'?'));
@@ -256,13 +255,13 @@ var XNAT = getObject(XNAT||{});
             parameter = url;
             url = window.location.href;
         }
-        return xurl.splitUrl(url).params[parameter] || null;
+        return XNAT.url.splitUrl(url).params[parameter] || null;
     };
 
 
     // change the baseURL without affecting the hash or query string
     url.updateBase = url.updateBaseUrl = function(url, newUrl){
-        var _url = xurl.splitUrl(url);
+        var _url = XNAT.url.splitUrl(url);
         if (_url.query){
             newUrl += ('?' + _url.query);
         }
@@ -275,7 +274,7 @@ var XNAT = getObject(XNAT||{});
 
     // change the url hash without affecting the base url or query string
     url.updateHash = function(url, newHash){
-        var _url = xurl.splitUrl(url),
+        var _url = XNAT.url.splitUrl(url),
             newUrl = _url.base;
         if (_url.query){
             newUrl += ('?' + _url.query);
@@ -291,13 +290,13 @@ var XNAT = getObject(XNAT||{});
     // the other query string parameters or base url or url hash
     url.updateQueryString = function(url, newQuery, doReplace){
 
-        var _url = xurl.splitUrl(url),
+        var _url = XNAT.url.splitUrl(url),
             newUrl = _url.base;
 
         url = (doReplace) ? _url.base : url;
 
         if (newQuery){
-            newUrl = xurl.addQueryString(url, newQuery);
+            newUrl = XNAT.url.addQueryString(url, newQuery);
         }
 
         if (_url.hash){
@@ -310,7 +309,7 @@ var XNAT = getObject(XNAT||{});
 
     // change the url query string without affecting the base url or url hash
     url.replaceQueryString = function(url, newQuery){
-        return xurl.updateQueryString(url, newQuery, true);
+        return XNAT.url.updateQueryString(url, newQuery, true);
     };
 
 
@@ -330,10 +329,9 @@ var XNAT = getObject(XNAT||{});
         // need to get a query object first
         // so we can add the XNAT_CSRF and
         // XNAT_XHR params to the end
-        params = (params) ? xurl.toQueryObject(params) : {};
+        params = (params) ? XNAT.url.toQueryObject(params) : {};
 
         if ((window.csrfToken || XNAT.csrfToken) && (isTrue(csrf))) {
-            //paramsArray.push('XNAT_CSRF=' + csrfToken);
             params.XNAT_CSRF = (window.csrfToken || XNAT.csrfToken);
         }
 
@@ -341,14 +339,13 @@ var XNAT = getObject(XNAT||{});
         // XNAT.xhr.cache === false (the default)
         if (xhr && !xhr.cache) {
             if (isUndefined(cacheParam) || isTrue(cacheParam)){
-                //paramsArray.push('XNAT_XHR=' + randomID('req', false));
                 params.XNAT_XHR = randomID(Date.now(), false);
             }
         }
 
         url = (window.serverRoot || XNAT.serverRoot || '') + '/' + url.replace(/^\/+/,'');
 
-        return xurl.addQueryString(url, params);
+        return XNAT.url.addQueryString(url, params);
 
     };
 
@@ -396,7 +393,7 @@ var XNAT = getObject(XNAT||{});
         newUrl += pathArray.join('/');
 
         if (query){
-            newUrl += xurl.toQueryString(query);
+            newUrl += XNAT.url.toQueryString(query);
         }
 
         if (hash){
@@ -433,6 +430,7 @@ var XNAT = getObject(XNAT||{});
     //};
 
     var urlGenerators = {
+        'scriptUrl':      'scripts',
         'dataUrl':        'data',
         'templateUrl':    'app/template',
         'actionUrl':      'app/action/XDATActionRouter/xdataction',
@@ -440,11 +438,11 @@ var XNAT = getObject(XNAT||{});
     };
 
     forOwn(urlGenerators, function(name, base){
-        xurl[name] = function(parts){
+        XNAT.url[name] = function(parts){
             if (arguments.length > 1){
                 parts = toArray(arguments);
             }
-            return xurl.buildUrl(base, parts);
+            return XNAT.url.buildUrl(base, parts);
         };
     });
     // the above object loop will output:
@@ -489,17 +487,17 @@ var XNAT = getObject(XNAT||{});
             'search_element', obj.element || obj.search_element,
             'search_field', obj.field || obj.search_field,
             'search_value', obj.value || obj.search_value,
-            xurl.toQueryString(obj.query)
+            XNAT.url.toQueryString(obj.query)
         ].concat(args); // pick up any extra args?
 
-        return xurl.buildUrl(obj.base, urlParts);
+        return XNAT.url.buildUrl(obj.base, urlParts);
 
     };
 
 
     // base/search_element/element/search_field/field/search_value/value
     url.searchUrl['doNotExecute'] = function(){
-        return xurl.searchUrl(
+        return XNAT.url.searchUrl(
             'app/template/XDATScreen_report_xnat_projectData.vm', // base
             'xnat:projectData', // element
             'xnat:projectData.ID', // field

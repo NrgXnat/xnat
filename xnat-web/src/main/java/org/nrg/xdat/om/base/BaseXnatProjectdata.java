@@ -1301,7 +1301,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
             }
 
             try {
-                EventManager.Trigger(Groups.getGroupDatatype(), Event.UPDATE);
+                ReactorEventUtils.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }

@@ -11,25 +11,13 @@ $navigation.setTemplate("/bodyOpen.vm")
 
 <!-- path: xdat-templates/layouts/DefaultWTabs -->
 
-<table id="wrapper_table" height="100%" border="0" valign="top">
-    <tr>
-    <td>
-      $navigation.setTemplate("/DefaultTop.vm")
-    </td>
-  </tr>
-  <tr>
-    <td align="left" valign="top">
-      $navigation.setTemplate("/Breadcrumb.vm")
-      <div id="layout_content2" style="display:none;">Loading...</DIV>
-      <div id="layout_content">$screen_placeholder</DIV>
-    </td>
-  </tr>
-  <tr>
-    <td valign="bottom">
-      $navigation.setTemplate("/DefaultBottom.vm")
-    </td>
-  </tr>
-</table>
+            $navigation.setTemplate("/DefaultTop.vm")
+
+            $navigation.setTemplate("/Breadcrumb.vm")
+            <div id="layout_content2" style="display:none;">Loading...</DIV>
+            <div id="layout_content">$screen_placeholder</DIV>
+
+            $navigation.setTemplate("/DefaultBottom.vm")
 
 ## insert any template-specific code here that needs to be directly before closing </body> tag
 

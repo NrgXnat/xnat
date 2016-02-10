@@ -18,10 +18,12 @@ import org.nrg.xdat.om.base.auto.AutoWrkWorkflowdata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
+import org.nrg.xft.event.ReactorEventUtils;
 import org.nrg.xft.event.EventUtils.CATEGORY;
 import org.nrg.xft.event.EventUtils.TYPE;
+import org.nrg.xft.event.WorkflowStatusEvent;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -392,7 +394,8 @@ public class BaseWrkWorkflowdata extends AutoWrkWorkflowdata implements Persiste
 		if(getStatus()!=null){			
 			//status changed
 			if(this.getWorkflowId()!=null){
-				EventManager.Trigger(SCHEMA_ELEMENT_NAME, this.getWorkflowId().toString(), this, getStatus());
+				ReactorEventUtils.triggerEvent(WorkflowStatusEvent.class.getName() + 
+						((this.getStatus()!=null) ? "." + this.getStatus() : ""),new WorkflowStatusEvent(this));
 			}
 		}
 	}

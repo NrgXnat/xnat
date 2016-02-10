@@ -10,7 +10,7 @@ def vPostgreSQL = '9.4.1207'
 def vServletApi = '3.1.0'
 def vTomcat = '7.0.67'
 def vCargo = '1.4.18'
-def vSlf4j = '1.7.14'
+def vSlf4j = '1.7.15'
 def vLog4j = '1.2.17'
 def vJunit = '4.12'
 def vSaxon = '9.1.0.8'
@@ -20,17 +20,15 @@ def vJython = '2.7.0'
 group 'org.nrg.xnat'
 version vXnat
 
-println "Using Java version ${JavaVersion.current()}"
-
 buildscript {
     repositories {
         jcenter()
         maven {
-            url 'http://maven.xnat.org/libs-release'
+            url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release'
             name 'XNAT Release Repository'
         }
         maven {
-            url 'http://maven.xnat.org/libs-snapshot'
+            url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot'
             name 'XNAT Snapshot Repository'
         }
     }
@@ -43,30 +41,37 @@ buildscript {
 
 repositories {
     mavenLocal()
-    mavenCentral()
-    jcenter()
     maven {
-        url 'http://maven.xnat.org/libs-release'
+        url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release'
         name 'XNAT Release Repository'
     }
     maven {
-        url 'http://maven.xnat.org/libs-snapshot'
+        url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot'
         name 'XNAT Snapshot Repository'
     }
     maven {
-        url 'http://maven.xnat.org/ext-release'
+        url 'http://nrgxnat.artifactoryonline.com/nrgxnat/ext-release'
         name 'XNAT External Release Repository'
     }
+    maven {
+        url 'http://www.dcm4che.org/maven2'
+        name 'dcm4che Maven Repository'
+    }
+    mavenCentral()
+    jcenter()
 }
 
 apply plugin: 'gradle-xnat-plugin'
 apply plugin: 'groovy'
 apply plugin: 'java'
-apply plugin: 'idea'
 apply plugin: 'war'
 apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'ivy-publish'
 apply plugin: 'com.bmuschko.tomcat'
 apply plugin: 'com.bmuschko.cargo'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
@@ -112,7 +117,6 @@ configurations {
     all*.exclude group: 'jamon'
     all*.exclude group: 'jakarta-regexp'
     all*.exclude group: 'org.apache.geronimo.specs'
-    all*.exclude group: 'torque'
     all*.exclude group: 'velocity'
     all*.exclude group: 'xmlrpc'
     all*.exclude group: 'ant', module: 'ant'
@@ -129,7 +133,6 @@ configurations {
     all*.exclude group: 'stax', module: 'stax-api'
     all*.exclude group: 'xml-apis', module: 'xml-apis'
     all*.exclude module: 'commons-beanutils-core'
-    all*.exclude module: 'jul-to-slf4j'
     all*.exclude module: 'log4j-slf4j-impl'
     all*.exclude module: 'pipelineCNDAXNAT'
     all*.exclude module: 'slf4j-simple'
@@ -270,4 +273,79 @@ dependencies {
 
     testCompile "junit:junit:${vJunit}"
     testCompile "org.springframework:spring-test:${vSpring}"
+}
+
+cargo {
+    containerId = 'tomcat7x'
+    port = managerPort as int
+
+    deployable {
+        context = managerContext
+    }
+
+    remote {
+        hostname = managerHost
+        username = managerUser
+        password = managerPassword
+    }
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('name', 'XNAT Server')
+                root.appendNode('description', 'XNAT is an open-source imaging informatics software platform dedicated to helping you perform imaging-based research. XNAT’s core functions manage importing, archiving, processing and securely distributing imaging and related study data. But its extended uses continue to evolve.')
+                root.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
+                root.appendNode('inceptionYear', '2016')
+
+                def scm = root.appendNode('scm')
+                scm.appendNode('url', 'https://bitbucket.org/xnatdev/xnat-web')
+                scm.appendNode('connection', 'scm:https://bitbucket.org/xnatdev/xnat-web.git')
+                scm.appendNode('developerConnection', 'scm:git://bitbucket.org/xnatdev/xnat-web.git')
+
+                def license = root.appendNode('licenses').appendNode('license')
+                license.appendNode('name', 'Simplified BSD 2-Clause License')
+                license.appendNode('url', 'http://xnat.org/about/license.php')
+                license.appendNode('distribution', 'repo')
+
+                def developers = root.appendNode('developers')
+                def rherrick = developers.appendNode('developer')
+                rherrick.appendNode('id', 'rherrick')
+                rherrick.appendNode('name', 'Rick Herrick')
+                rherrick.appendNode('email', 'jrherrick@wustl.edu')
+            }
+        }
+    }
+    repositories {
+        maven {
+            credentials {
+                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+                // line in the form -DrepoUsername=foo -DrepoPassword=bar.
+                username repoUsername
+                password repoPassword
+            }
+            if (project.version.endsWith('-SNAPSHOT')) {
+                url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
+            } else {
+                url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local"
+            }
+        }
+        ivy {
+            credentials {
+                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+                // line in the form -DrepoUsername=foo -DrepoPassword=bar.
+                username repoUsername
+                password repoPassword
+            }
+            if (project.version.endsWith('-SNAPSHOT')) {
+                url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
+            } else {
+                url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local"
+            }
+        }
+    }
 }

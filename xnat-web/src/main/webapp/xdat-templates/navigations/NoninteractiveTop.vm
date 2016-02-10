@@ -18,8 +18,12 @@ $page.setBgColor($ui.bgcolor)
 
 
 <div id="header" class="main_header">
+#if ($expired || $forgot)
+        #parse("/screens/Logo.vm")
+#else
     <a id="header_logo" href="$link.setPage("Index.vm")#if($data.getParameters().getString('par'))/par/$data.getParameters().getString('par')#end">
         #parse("/screens/Logo.vm")
     </a>
+#end
 </div>
 <!-- END NoninteractiveTop.vm -->

@@ -1,4 +1,4 @@
-package org.nrg.xnat.workflow;
+package org.nrg.xnat.event.listeners;
 
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -10,8 +10,6 @@ import org.apache.log4j.Logger;
 import org.apache.xmlbeans.XmlException;
 import org.nrg.pipeline.xmlbeans.AllResolvedStepsDocument;
 import org.nrg.pipeline.xmlbeans.ParameterData;
-import org.nrg.pipeline.xmlbeans.ParametersDocument;
-import org.nrg.pipeline.xmlbeans.PipelineDocument;
 import org.nrg.xdat.model.WrkXnatexecutionenvironmentParameterI;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.om.WrkXnatexecutionenvironment;
@@ -20,7 +18,7 @@ import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.event.Event;
+import org.nrg.xft.event.WorkflowStatusEvent;
 import org.nrg.xnat.notifications.NotifyProjectPipelineListeners;
 
 import java.io.File;
@@ -32,15 +30,37 @@ import java.util.*;
 /**
  * Created by flavin on 2/27/15.
  */
-public abstract class PipelineEmailHandlerAbst extends WorkflowSaveHandlerAbst {
+public abstract class PipelineEmailHandlerAbst extends WorkflowStatusEventHandlerAbst {
+    
+    /** The logger. */
     static Logger logger = Logger.getLogger(PipelineEmailHandlerAbst.class);
 
+    /** The default template success. */
     public final String DEFAULT_TEMPLATE_SUCCESS = "/screens/PipelineEmail_success.vm";
+    
+    /** The default subject success. */
     public final String DEFAULT_SUBJECT_SUCCESS = "processed without errors";
+    
+    /** The default template failure. */
     public final String DEFAULT_TEMPLATE_FAILURE = "/screens/PipelineEmail_failure.vm";
+    
+    /** The default subject failure. */
     public final String DEFAULT_SUBJECT_FAILURE = "";
 
-    public void send(Event e, WrkWorkflowdata wrk, XnatExperimentdata expt,Map<String,Object> params,String emailTemplate, String emailSubject, String list_name, List<String> otherEmails) throws Exception{
+    /**
+     * Send.
+     *
+     * @param e the e
+     * @param wrk the wrk
+     * @param expt the expt
+     * @param params the params
+     * @param emailTemplate the email template
+     * @param emailSubject the email subject
+     * @param list_name the list_name
+     * @param otherEmails the other emails
+     * @throws Exception the exception
+     */
+    public void send(WorkflowStatusEvent e, WrkWorkflowdata wrk, XnatExperimentdata expt,Map<String,Object> params,String emailTemplate, String emailSubject, String list_name, List<String> otherEmails) throws Exception{
         //temporary notification manager until we have the notification stuff flushed out.
         if (completed(e)) {
             (new NotifyProjectPipelineListeners(expt, wrk, emailTemplate, emailSubject, wrk.getUser(), params, list_name, otherEmails, "success")).send();
@@ -49,7 +69,18 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowSaveHandlerAbst {
         }
     }
 
-    public void standardPipelineEmailImpl(final Event e, WrkWorkflowdata wrk, final String pipelineName, final String template, final String subject, final String notificationFileName, Map<String,Object> params){
+    /**
+     * Standard pipeline email impl.
+     *
+     * @param e the e
+     * @param wrk the wrk
+     * @param pipelineName the pipeline name
+     * @param template the template
+     * @param subject the subject
+     * @param notificationFileName the notification file name
+     * @param params the params
+     */
+    public void standardPipelineEmailImpl(final WorkflowStatusEvent e, WrkWorkflowdata wrk, final String pipelineName, final String template, final String subject, final String notificationFileName, Map<String,Object> params){
 
         try {
             String _pipelineName = wrk.getPipelineName();
@@ -235,6 +266,12 @@ public abstract class PipelineEmailHandlerAbst extends WorkflowSaveHandlerAbst {
         }
     }
 
+    /**
+     * Tail log.
+     *
+     * @param log the log
+     * @return the list
+     */
     List<String> tailLog(List<String> log) {
         List<String> retList = Lists.newArrayList();
         if (log.size()==0) {

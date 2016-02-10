@@ -21,7 +21,7 @@ $navigation.setTemplate("/bodyOpen.vm")
 ## insert any template-specific code here that needs to be directly before closing </body> tag
 <script type="text/javascript">
     jq(function(){
-        if (getParameterByName('modal') === 'x'){
+        if (getQueryStringValue('modal') === 'x'){
             jq('body').addClass('xmodal-popup')
         }
     });

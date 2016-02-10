@@ -221,9 +221,9 @@ var XNAT = getObject(XNAT||{}),
         // use XNAT's cache-busting
         // query string parameter
         // instead of jQuery's
-        opts.cache = isDefined(opts.cache) ? opts.cache : true;
+        opts.cache = isDefined(opts.cache||undefined) ? opts.cache : true;
 
-        if (isDefined(opts.context||opts.scope)){
+        if (isDefined(opts.context||opts.scope||undefined)){
             opts.context = opts.scope =
                 opts.context || opts.scope || root;
         }

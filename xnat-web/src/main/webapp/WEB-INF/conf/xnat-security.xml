@@ -92,11 +92,11 @@
         <property name="openUrls">
             <list>
                 <value>/app/action/AcceptProjectAccess/par/*</value>
-                <value>/app/action/XDATChangePassword*</value>
+                <value>/app/action/ModifyPassword*</value>
                 <value>/app/action/XDATForgotLogin*</value>
                 <value>/app/action/XDATRegisterUser*</value>
                 <value>/app/action/InactiveAccountEmail*</value>
-                <value>/app/template/ChangePassword.vm*</value>
+                <value>/app/template/XDATScreen_UpdateUser.vm*</value>
                 <value>/app/template/Error.vm*</value>
                 <value>/app/template/ForgotLogin.vm*</value>
                 <value>/app/template/Login.vm*</value>
@@ -203,8 +203,8 @@
     </bean>
 
 	<bean id="expiredPasswordFilter" class="org.nrg.xnat.security.XnatExpiredPasswordFilter">
-        <property name="changePasswordPath" value="/app/template/ChangePassword.vm"/>
-        <property name="changePasswordDestination" value="/app/action/XDATChangePassword"/>
+        <property name="changePasswordPath" value="/app/template/XDATScreen_UpdateUser.vm"/>
+        <property name="changePasswordDestination" value="/app/action/ModifyPassword"/>
         <property name="logoutDestination" value="/app/action/LogoutUser"/>
         <property name="loginPath" value="/app/template/Login.vm"/>
         <property name="loginDestination" value="/app/action/XDATLoginUser"/>
@@ -220,8 +220,8 @@
         <property name="nonAdminErrorPath" value="/app/template/Unconfigured.vm"/>
         <property name="exemptedPaths">
             <list value-type="java.lang.String">
-                <value>/app/template/ChangePassword.vm</value>
-                <value>/app/action/XDATChangePassword</value>
+                <value>/app/template/XDATScreen_UpdateUser.vm</value>
+                <value>/app/action/ModifyPassword</value>
                 <value>/app/template/Login.vm</value>
                 <value>/j_spring_security_check</value>
             </list>

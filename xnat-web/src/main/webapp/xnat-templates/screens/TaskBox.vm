@@ -16,6 +16,6 @@ window.location.href='$link.setAction("SearchAction")/element/' + document.getEl
 			         #end
 						       </SELECT>
 						       <INPUT type="button" style="line-height:10px;" VALUE=">" ONCLICK="browse();"/></DIV>
-						       <DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_MyXNAT.vm")" >My XNAT</A></DIV>
+						       <DIV class="containerItem"><A HREF="$link.setPage("XDATScreen_UpdateUser.vm")" >My XNAT</A></DIV>
 						       <DIV class="containerItem">Upload: <A HREF="$link.setPage("ImageUpload.vm")" >images</A> <A HREF="$link.setPage("XMLUpload.vm")" >xml</A> <A HREF="$link.setPage("XDATScreen_uploadCSV.vm")" >spreadsheet</A></DIV>
 						       

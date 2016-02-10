@@ -342,7 +342,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
     private void checkUserChangePassword(HttpServletRequest request, HttpServletResponse response) throws IOException {
         try {
             String uri = new URI(request.getRequestURI()).getPath();
-            if (uri.endsWith("ChangePassword.vm") && request.getParameterMap().isEmpty()) {
+            if (uri.endsWith("XDATScreen_UpdateUser.vm") && request.getParameterMap().isEmpty()) {
                 response.sendRedirect(TurbineUtils.GetFullServerPath() + "/app/template/Login.vm");
             }
         } catch (URISyntaxException ignored) {

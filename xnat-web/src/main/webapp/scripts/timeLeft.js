@@ -47,8 +47,8 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
     timeout.cookieOptions = {path: '/'};
     timeout.synchronizingCookies = {
         get: function (cookieName) {
-            if (YAHOO.util.Cookie.exists(cookieName)) {
-                return YAHOO.util.Cookie.get(cookieName);
+            if (!!Cookies.get(cookieName)) {
+                return Cookies.get(cookieName);
             }
             else {
                 return null;
@@ -58,8 +58,9 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
             name: "SESSION_EXPIRATION_TIME",
             // no set function, there is no reason to ever change its value.
             get: function () {
-                if (YAHOO.util.Cookie.exists(timeout.synchronizingCookies.expirationTime.name)) {
-                    return timeout.parseExpirationTimeTuple(YAHOO.util.Cookie.get(timeout.synchronizingCookies.expirationTime.name));
+                var name = timeout.synchronizingCookies.expirationTime.name;
+                if (!!Cookies.get(name)) {
+                    return timeout.parseExpirationTimeTuple(Cookies.get(name));
                 }
                 else {
                     return null;
@@ -69,7 +70,7 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
         dialogDisplay: {
             name: "SESSION_EXPIRATION_TIME_DIALOG_DISPLAYING",
             set: function (status) {
-                YAHOO.util.Cookie.set(timeout.synchronizingCookies.dialogDisplay.name, status, timeout.cookieOptions);
+                Cookies.set(timeout.synchronizingCookies.dialogDisplay.name, status, timeout.cookieOptions);
             },
             get: function () {
                 return timeout.synchronizingCookies.get(timeout.synchronizingCookies.dialogDisplay.name);
@@ -78,7 +79,7 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
         sessionTimeout: {
             name: "SESSION_EXPIRATION_TIMEOUT",
             set: function (status) {
-                YAHOO.util.Cookie.set(timeout.synchronizingCookies.sessionTimeout.name, status, timeout.cookieOptions);
+                Cookies.set(timeout.synchronizingCookies.sessionTimeout.name, status, timeout.cookieOptions);
             },
             get: function () {
                 return timeout.synchronizingCookies.get(timeout.synchronizingCookies.sessionTimeout.name);
@@ -87,16 +88,16 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
         hasRedirected: {
             name: "SESSION_LOGOUT_HAS_REDIRECTED",
             set: function (context, status) {
-                YAHOO.util.Cookie.setSub(timeout.synchronizingCookies.hasRedirected.name, context, status, timeout.cookieOptions);
+                Cookies.set(timeout.synchronizingCookies.hasRedirected.name, ('{' + context + ':' + status + '}'), timeout.cookieOptions);
             },
             get: function (context) {
-                if (YAHOO.util.Cookie.exists(timeout.synchronizingCookies.hasRedirected.name)) {
-                    return YAHOO.util.Cookie.getSub(timeout.synchronizingCookies.hasRedirected.name, context, timeout.cookieOptions);
+                if (!!Cookies.get(timeout.synchronizingCookies.hasRedirected.name)) {
+                    return Cookies.getJSON(timeout.synchronizingCookies.hasRedirected.name, timeout.cookieOptions)[context];
                 }
                 return null;
             },
             clear: function () {
-                YAHOO.util.Cookie.setSubs(timeout.synchronizingCookies.hasRedirected.name, {cleared: "true"}, timeout.cookieOptions);
+                Cookies.set(timeout.synchronizingCookies.hasRedirected.name, '{cleared:true}', timeout.cookieOptions);
             }
         }
     };
@@ -179,7 +180,7 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
     timeout.handleOk = function () {
         timeout.hideWarningDialog(timeout.warningDialog);
         timeout.touchCallback.startTime = new Date().getTime();
-        YAHOO.util.Connect.asyncRequest('GET', serverRoot + '/data/version?XNAT_CSRF=' + window.csrfToken, timeout.touchCallback, null);
+        XNAT.xhr.get(XNAT.url.restUrl('/data/version'), timeout.touchCallback);
         $('applet').css('visibility', 'visible');
     };
 
@@ -198,8 +199,7 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
      * After touching the server, reset the synchronizing cookies and local variables
      */
     timeout.touchCallback = {
-        cache: false, // needed because otherwise IE will cache the responses
-        success: function (res) {
+        success: function (data, status, res) {
             var sessionExpired = res.responseText.indexOf("<HTML>") != -1;
             if (sessionExpired) {
                 timeout.redirectToLogin();
@@ -349,11 +349,11 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
         var hasRedirected = timeout.synchronizingCookies.hasRedirected.get(windowName);
         if (!hasRedirected) {
             timeout.synchronizingCookies.hasRedirected.set(windowName, "true");
-            YAHOO.util.Cookie.set('WARNING_BAR', 'OPEN', timeout.cookieOptions);
-            YAHOO.util.Cookie.set('guest', 'true', timeout.cookieOptions);
+            Cookies.set('WARNING_BAR', 'OPEN', timeout.cookieOptions);
+            Cookies.set('guest', 'true', timeout.cookieOptions);
             timeout.synchronizingCookies.sessionTimeout.set("true");
             var currTime = (new Date()).getTime();
-            YAHOO.util.Cookie.set('SESSION_TIMEOUT_TIME', currTime, timeout.cookieOptions);
+            Cookies.set('SESSION_TIMEOUT_TIME', currTime, timeout.cookieOptions);
             window.location.reload();
         }
     };
@@ -404,7 +404,7 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
 XNAT.app.timeout.refreshSynchronizingCookies();
 XNAT.app.timeout.initWarningDialog(XNAT.app.timeout.warningDialog);
 // only run the timer if *not* a guest user (if an authenticated user)
-if ((YAHOO.util.Cookie.exists('guest')) && (YAHOO.util.Cookie.get('guest') === 'false')) {
+if ((!!Cookies.get('guest')) && (Cookies.get('guest') === 'false')) {
     setInterval(
         function(){
             XNAT.app.timeout.syncSessionExpirationCookieWithLocal();
@@ -414,3 +414,21 @@ if ((YAHOO.util.Cookie.exists('guest')) && (YAHOO.util.Cookie.get('guest') === '
         XNAT.app.timeout.settings.timerInterval
     );
 }
+
+(function(){
+
+    var hash = window.location.hash.toLowerCase();
+
+    // force debug mode to 'stick' if set explicitly 'on' or 'off'
+    var debugOn = /(debug=on|debug=true)/.test(hash.toLowerCase());
+    var debugOff = /(debug=off|debug=false)/.test(hash.toLowerCase());
+
+    if (debugOn) { Cookies.set('debug','on') }
+    else if (debugOff) { Cookies.remove('debug') }
+
+    // if debugging, reset the timer every minute
+    if (debugOn || window.debug || isFalse(getQueryStringValue('timeout')) || /(on|true)/.test(Cookies.get('debug'))) {
+        setInterval(XNAT.app.timeout.handleOk, 60*1000);
+    }
+
+})();

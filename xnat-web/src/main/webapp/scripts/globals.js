@@ -29,16 +29,23 @@
     }
 }());
 
+function diddly(){}
+
+// utility for getting URL query string value
 function getQueryStringValue( param ){
     var search = window.location.search;
     if (!param || !search) { return '' }
-    if (search.indexOf(param) === -1) { return null }
+    if (search.indexOf(param) === -1) { return '' }
     var val = search.
         split(param+'=')[1].
         split('&')[0].
         split('#')[0].
         replace(/\/*$/,''); // remove any 'bonus' trailing slashes
     return decodeURIComponent(val);
+}
+
+function getParameterByName( name ){
+    return getQueryStringValue(name)
 }
 
 function firstDefined() {
@@ -682,14 +689,31 @@ window.loadedScripts = [];
 // did we load the page in 'debug' mode?
 // add ?jsdebug=true or #jsdebug to url
 // this is used to load non-minified scripts if true
-window.jsdebug = (function(){
-    return getQueryStringValue('jsdebug') === 'true' || window.location.hash.indexOf('jsdebug') > -1;
-})();
+function debugMode(){
+    var hash = window.location.hash.toLowerCase();
+    var debug = (getQueryStringValue('jsdebug') ||
+            getQueryStringValue('debug') ||
+            getQueryStringValue('js') ||
+            '').toLowerCase();
+    if (/(debug=off|debug=false)/.test(hash)) return false;
+    if (/(debug|true|on)/.test(debug)) return true;
+    if (/(debug)/.test(hash)) return true;
+    return false;
+}
+
+window.jsdebug = window.debug = debugMode();
 
 // return passed 'min' string if in jsdebug mode
 // ?jsdebug=true or #jsdebug
 function setMin(min){
-    return window.jsdebug ? '' : min || '.min'; // defaults to '.min'
+    return debugMode() ? '' : min || '';
+}
+
+function scriptUrl(url, min){
+    var parts = url.split('|');
+    url = parts[0].trim();
+    min = (min || parts[1] || '').trim();
+    return serverRoot + '/scripts/' + (url.replace(/\.js$/i,'')) + setMin(min) + '.js';
 }
 
 function getScriptElements(){
@@ -778,7 +802,7 @@ function scriptHTML( src, name ){
         script += '<script type="text/javascript"';
         script += ' src="' + src + '"';
         script += (name) ? ' data-name="' + name + '"' : '';
-        script += '></script>';
+        script += '><\/script>';
         //window.loadedScripts.push(_src);
     }
     return script;
@@ -789,6 +813,7 @@ function scriptHTML( src, name ){
 // call functions that rely on these scripts
 // AFTERWARDS in a separate <script> element
 // insertScript('/scripts/app/script', '.min', 'app.script');
+// DO NOT CALL insertScript() AFTER PAGE LOAD - ONLY ON INITIAL LOAD
 function insertScript( url, min, name ){
 
     var script = scriptParams(url);
@@ -857,24 +882,34 @@ insertScripts.configArraySample = [
 ];
 
 // returns new <script> DOM ELEMENT
-function scriptElement( src, name ){
+function scriptElement( src, title, body ){
     var script = document.createElement('script');
     script.type = "text/javascript";
-    // fast-track empty script (why would we need this?)
-    if (!src){
-        return script;
+    if (title){
+        script.title = title;
     }
-    script.src = src;
-    if (name){
-        script.title = name;
-        setElementData(script, 'name', name);
+    if (src){
+        script.src = src;
     }
-    if (script.src){
-        return script;
+    else {
+        script.innerHTML = body || '';
     }
-    // if nothing has been returned by now
-    // spit out a bogus fragment
-    return document.createDocumentFragment();
+    return script;
+}
+
+function writeScript( src, title, body ){
+    document.write(scriptElement(src, title, body).outerHTML)
+}
+
+function writeScripts(){
+    var scripts = arguments[0],
+        i = -1,
+        len = arguments.length;
+    if (len > 1) { scripts = arguments }
+    len = scripts.length;
+    while (++i < len){
+        writeScript.apply(null, [].concat(scripts[i]));
+    }
 }
 
 // load a script,

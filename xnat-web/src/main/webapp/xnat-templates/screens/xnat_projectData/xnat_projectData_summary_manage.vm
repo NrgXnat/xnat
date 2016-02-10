@@ -5,7 +5,6 @@
 #* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
 ##<link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
 <link rel="stylesheet" href="$content.getURI("scripts/lib/jquery-ui/jquery-ui-xnat.css")">
-<link rel="stylesheet" href="$content.getURI("scripts/lib/jquery-plugins/chosen/chosen.min.css")">
 <style type="text/css">
     
     .ui-accordion {

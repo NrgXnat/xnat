@@ -43,6 +43,8 @@
 
         everything: {
 
+            id: 'your-custom-id', // MUST BE UNIQUE (a unique id will be set automatically if undefined)
+
             className: 'foo bar stuff', // any 'legal' className string
 
             // use *either* 'kind' or 'size', not both, specific width/height overrides both

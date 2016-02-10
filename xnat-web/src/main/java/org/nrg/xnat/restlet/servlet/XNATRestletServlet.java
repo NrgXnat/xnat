@@ -14,15 +14,11 @@ import com.noelios.restlet.ext.servlet.ServerServlet;
 import org.apache.commons.io.FileUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.dcm.DicomSCPManager;
-import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.XdatUserAuth;
-import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.XdatUserAuthService;
-import org.nrg.xft.event.EventListener;
-import org.nrg.xft.event.EventManager;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.editscript.DicomEdit;
 import org.nrg.xnat.helpers.merge.AnonUtils;
@@ -30,7 +26,6 @@ import org.nrg.xnat.helpers.prearchive.PrearcConfig;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
 import org.nrg.xnat.security.XnatPasswordEncrypter;
 import org.nrg.xnat.services.PETTracerUtils;
-import org.nrg.xnat.workflow.WorkflowSaveHandlerAbst;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -119,27 +114,10 @@ public class XNATRestletServlet extends ServerServlet {
 
         XnatPasswordEncrypter.execute();
 
-        addWorkflowListeners();
-
         XDAT.getContextService().getBean(DicomSCPManager.class).startOrStopDicomSCPAsDictatedByConfiguration();
     }
 
-    private void addWorkflowListeners(){
-    	try {
-			List<Class<?>> classes = Reflection.getClassesForPackage("org.nrg.xnat.workflow.listeners");
-
-			if(classes!=null && classes.size()>0){
-				 for(Class<?> clazz: classes){
-					 if(WorkflowSaveHandlerAbst.class.isAssignableFrom(clazz)){
-						EventManager.AddListener(WrkWorkflowdata.SCHEMA_ELEMENT_NAME,(EventListener)clazz.newInstance());
-					 }
-				 }
-			 }
-		} catch (Exception e) {
-			logger.error("",e);
-		}
-    }
-
+    
     /**
      * Adds users from /old xdat_user table to new user authentication table if they are not already there. New local database users now get added to both automatically, but this is necessary
      * so that those who upgrade from an earlier version will still have their users be able to log in. Password expiry times are also added so that pre-existing users still have their passwords expire.

@@ -11,22 +11,11 @@ $navigation.setTemplate("/bodyOpen.vm")
 
 <!-- path: xdat-templates/layouts/XDATScreen_search -->
 
-<table id="wrapper_table" height="100%" border="0" valign="top">
-<tr>
-    <td colspan="2">
-      $navigation.setTemplate("/DefaultTop.vm")
-    </td>
-  </tr>
-</table>
-<table width="100%" border=0>
-  <tr>
-    <td align="left" valign="top">
-      $navigation.setTemplate("/Breadcrumb.vm")
-      <div id="layout_content2" style="display:none;">Loading...</DIV>
-      <div id="layout_content">$screen_placeholder</DIV>
-    </td>
-  </tr>
-</table>
+            $navigation.setTemplate("/DefaultTop.vm")
+
+            $navigation.setTemplate("/Breadcrumb.vm")
+            <div id="layout_content2" style="display:none;">Loading...</DIV>
+            <div id="layout_content">$screen_placeholder</DIV>
 
 ## insert any template-specific code here that needs to be directly before closing </body> tag
 

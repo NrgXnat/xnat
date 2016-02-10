@@ -287,12 +287,12 @@ function sortElements( _parent, _child ){
 
 // force a jQuery object and allow use of
 // non-standard id names with special prefix:
-// $$('#=weird:id/that.XNAT.will[create]').addClass('cray-cray');
+// $$('@#weird:id/that.XNAT.will[create]').addClass('cray-cray');
 function $$( el, id_prefix ){
     // can't decide on a prefix for selection by id
     // use ONE of these:
-    // id= | id: | @= | @: | @ | #= | #: | #/
-    var ID_PREFIX = /^(id=|id:|@=|@:|@|#=|#:|#\/)/;
+    // id= | id: | @id= | @# | @= | @: | @ | #= | #: | #/
+    var ID_PREFIX = /^(id=|id:|@id=|@#|@=|@:|@|#=|#:|#\/)/;
     if (el.jquery){
         return el;
     }

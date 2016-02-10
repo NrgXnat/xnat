@@ -79,24 +79,12 @@
 
 <div id="page_wrapper">
 
-    <table id="wrapper_table" class="non-interactive" height="500" style="width:100%;" cellspacing="0" border="0">
-        <tr height="120">
-            <td valign="top">
                 $navigation.setTemplate("/NoninteractiveTop.vm")
-            </td>
-        </tr>
-        <tr>
-            <td align="left" valign="top">
+
                 <div id="layout_content2" style="display:none;">Loading...</DIV>
                 <div id="layout_content">$screen_placeholder</DIV>
-            </td>
-        </tr>
-        <tr>
-            <td valign="bottom">
+
                 $navigation.setTemplate("/DefaultBottom.vm")
-            </td>
-        </tr>
-    </table>
 
 </div>
 <!-- /page_wrapper -->

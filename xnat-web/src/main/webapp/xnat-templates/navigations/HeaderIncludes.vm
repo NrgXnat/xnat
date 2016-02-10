@@ -15,8 +15,13 @@
 <meta http-equiv="expires" content="-1">
 <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
 
+<!-- load polyfills before ANY other JavaScript -->
+<script type="text/javascript" src="$content.getURI('scripts/polyfills.js')"></script>
+
+<!-- set global vars that are used often -->
 <script type="text/javascript">
 
+    var XNAT = {};
     var serverRoot = "$content.getURI('')";
     var csrfToken = "$!data.getSession().getAttribute("XNAT_CSRF")";
     var showReason = typeof $showReason != 'undefined' ? $showReason : null;
@@ -24,36 +29,25 @@
 
 </script>
 ## separate script tags so not everything breaks if showReason or requireReason blows up
-<script type="text/javascript">
 
-    // utility for getting URL query string value
-    function getParameterByName(name) {
-        name = name.replace(/[\[]/, "\\[").replace(/[\]]/, "\\]");
-        var regex = new RegExp("[\\?&]" + name + "=([^&#]*)"),
-            results = regex.exec(location.search);
-        return (results == null) ? "" : decodeURIComponent(results[1].replace(/\+/g, " "));
-    }
+<!-- XNAT global functions (no dependencies) -->
+<script type="text/javascript" src="$content.getURI('scripts/globals.js')"></script>
 
-    window.jsdebug = getParameterByName('jsdebug').toLowerCase();
-    window.js      = getParameterByName('js').toLowerCase();
-
-    // convert window.jsdebug to boolean
-    window.jsdebug = (window.jsdebug === 'true' || window.jsdebug === 'debug' || window.js === 'debug');
-
-    var jqScript = (function () {
-
-        var script = 'jquery-1.8.3';
-        var min = (window.jsdebug) ? '' : '.min';
-
-        return '<script type="text/javascript" src="' + serverRoot +
-                '/scripts/lib/jquery/' + script + min + '.js"><\/script>';
-
-    })();
-
-    document.write(jqScript);
-
+<!-- required libraries -->
+<script>
+    // loads minified versions by default
+    // add ?debug=true to the query string
+    // or #debug to the url hash to load
+    // the non-minified versions
+    writeScripts([
+        scriptUrl('lib/loadjs/loadjs', '.min'),
+        scriptUrl('lib/jquery/jquery', '.min'),
+        scriptUrl('lib/jquery/jquery-migrate-1.2.1', '.min')
+    ]);
 </script>
-<!-- document.write(jqScript); -->
+##<script type="text/javascript" src="$content.getURI('scripts/lib/loadjs/loadjs.js')"></script>
+##<script type="text/javascript" src="$content.getURI('scripts/lib/jquery/jquery.min.js')"></script>
+##<script type="text/javascript" src="$content.getURI('scripts/lib/jquery/jquery-migrate-1.2.1.min.js')"></script>
 <script type="text/javascript">
     // use 'jq' to avoid _possible_ conflicts with Velocity
     var jq = jQuery;
@@ -62,74 +56,72 @@
 <!-- jQuery plugins -->
 <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/lib/jquery-plugins/chosen/chosen.min.css?v=1.7.0a1')">
 <script type="text/javascript" src="$content.getURI('scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/lib/jquery-plugins/jquery.maskedinput.min.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/lib/jquery-plugins/jquery.spawn.js')"></script>
 
-<!-- XNAT global functions -->
-<script type="text/javascript" src="$content.getURI('scripts/polyfills.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/globals.js')"></script>
+<!-- XNAT utility functions -->
 <script type="text/javascript" src="$content.getURI('scripts/utils.js')"></script>
 
 <script type="text/javascript">
 
-    if (typeof XNAT == "undefined" || !XNAT) {
+    /*
+     * XNAT global namespace object, which will not be overwriten if
+     * already defined. Also define some other top level namespaces.
+     */
+    extend(XNAT, {
         /*
-         * XNAT global namespace object, which will not be overwriten if
-         * already defined. Also define some other top level namespaces.
+         * Parent namespace that templates can use to put their
+         * own namespace
          */
-        var XNAT = {
-            /*
-             * Parent namespace that templates can use to put their
-             * own namespace
-             */
-            app: {
-                displayNames: {
-                    singular: {
-                        project: "$displayManager.getSingularDisplayNameForProject()",
-                        subject: "$displayManager.getSingularDisplayNameForSubject()",
-                        imageSession: "$displayManager.getSingularDisplayNameForImageSession()",
-                        mrSession: "$displayManager.getSingularDisplayNameForMRSession()"
-                    },
-                    plural: {
-                        project: "$displayManager.getPluralDisplayNameForProject()",
-                        subject: "$displayManager.getPluralDisplayNameForSubject()",
-                        imageSession: "$displayManager.getPluralDisplayNameForImageSession()",
-                        mrSession: "$displayManager.getPluralDisplayNameForMRSession()"
-                    }
+        app: {
+            displayNames: {
+                singular: {
+                    project: "$displayManager.getSingularDisplayNameForProject()",
+                    subject: "$displayManager.getSingularDisplayNameForSubject()",
+                    imageSession: "$displayManager.getSingularDisplayNameForImageSession()",
+                    mrSession: "$displayManager.getSingularDisplayNameForMRSession()"
                 },
-                siteId: "$!turbineUtils.GetSystemName()"
+                plural: {
+                    project: "$displayManager.getPluralDisplayNameForProject()",
+                    subject: "$displayManager.getPluralDisplayNameForSubject()",
+                    imageSession: "$displayManager.getPluralDisplayNameForImageSession()",
+                    mrSession: "$displayManager.getPluralDisplayNameForMRSession()"
+                }
             },
-            images: {
-                grnChk: "$content.getURI("images/checkmarkGreen.gif")",
-                redChk: "$content.getURI("images/checkmarkRed.gif")"
+            siteId: "$!turbineUtils.GetSystemName()"
+        },
+        images: {
+            grnChk: "$content.getURI("images/checkmarkGreen.gif")",
+            redChk: "$content.getURI("images/checkmarkRed.gif")"
+        },
+        data: {
+            context: {
+                #set($projectName = $turbineUtils.getProjectDisplayID($om, $project))
+                projectName: "$!projectName",
+                projectID: "$!om.getProject()",
+                project: "$!om.getProject()",
+                xsiType: "$!om.getXSIType()",
+                #if($om)
+                    isSubject: $!om.getItem().instanceOf("xnat:subjectData"),
+                    isExperiment: $!om.getItem().instanceOf("xnat:experimentData"),
+                    isSubjectAssessor: $!om.getItem().instanceOf("xnat:subjectAssessorData"),
+                    isImageSession: $!om.getItem().instanceOf("xnat:imageSessionData"),
+                    isImageAssessor: $!om.getItem().instanceOf("xnat:imageAssessorData"),
+                #end
+            ##                        //projectID: #if ($project) #if ($project.getId()) "$!project.getId()" #else "$!project" #end #end ,
+            ##                        #if ($om.getSubjectId())
+            ##                            subjectID: "$!om.getSubjectId()",
+            ##                        #end
+            ##                        subjectLabel: "#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end",
+                subjectLabel: "#if($!subject.getIdentifier($project,true))$!subject.getIdentifier($project,true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subject.getId()#end",
+                subjectID: "$!subject.getId()",
+                label: "#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end",
+                ID: "$!om.getId()"
+            ##                    subjectLabel: "$!item.getStringProperty("xnat:subjectData/name")",
             },
-            data: {
-                context: {
-                    #set($projectName = $turbineUtils.getProjectDisplayID($om, $project))
-                    projectName: "$!projectName",
-                    projectID: "$!om.getProject()",
-                    project: "$!om.getProject()",
-                    xsiType: "$!om.getXSIType()",
-                    #if($om)
-                        isSubject: $!om.getItem().instanceOf("xnat:subjectData"),
-                        isExperiment: $!om.getItem().instanceOf("xnat:experimentData"),
-                        isSubjectAssessor: $!om.getItem().instanceOf("xnat:subjectAssessorData"),
-                        isImageSession: $!om.getItem().instanceOf("xnat:imageSessionData"),
-                        isImageAssessor: $!om.getItem().instanceOf("xnat:imageAssessorData"),
-                    #end
-##                        //projectID: #if ($project) #if ($project.getId()) "$!project.getId()" #else "$!project" #end #end ,
-##                        #if ($om.getSubjectId())
-##                            subjectID: "$!om.getSubjectId()",
-##                        #end
-##                        subjectLabel: "#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end",
-                    subjectLabel: "#if($!subject.getIdentifier($project,true))$!subject.getIdentifier($project,true)#elseif($subject.getLabel())$!subject.getLabel()#else$!subject.getId()#end",
-                    subjectID: "$!subject.getId()",
-                    label: "#if($!om.getIdentifier($project,true))$!om.getIdentifier($project,true)#elseif($om.getLabel())$!om.getLabel()#else$!om.getId()#end",
-                    ID: "$!om.getId()"
-##                    subjectLabel: "$!item.getStringProperty("xnat:subjectData/name")",
-                },
-                timestamp: jq.now() // timestamp for the page when it loads
-            }
-        };
-    }
+            timestamp: jq.now() // timestamp for the page when it loads
+        }
+    });
 
     if (XNAT.data.context.projectName === "") {
         #set ($projectName = $turbineUtils.getProjectName($om, $project))
@@ -249,7 +241,7 @@
     // The YUIDOM alias is used throughout XNAT
     var YUIDOM = YAHOO.util.Dom;
 
-    XNAT.dom = getObject(XNAT.dom);
+    XNAT.dom = getObject(XNAT.dom||{});
     XNAT.dom.addFormCSRF = function(__form){
         __form = isDefined(__form) ? $$(__form) : jq('form');
         __form.append('<input type="hidden" name="XNAT_CSRF" value="' + csrfToken + '">')
@@ -263,19 +255,13 @@
 
 </script>
 
-<!-- XNAT JLAPI scripts -->
-<script type="text/javascript" src="$content.getURI('scripts/xnat/url.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/xnat/xhr.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/xnat/ui/popup.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/xnat/ui/dialog.js')"></script>
-
 <!-- YUI css -->
 <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1')">
 
 <!-- xdat.css and xnat.css loaded last to override YUI styles -->
-<link rel="stylesheet" type="text/css" href="$content.getURI('style/xdat.css?v=1.7.0a1')">
-<link rel="stylesheet" type="text/css" href="$content.getURI('style/xnat.css?v=1.7.0a1')">
-<link rel="stylesheet" type="text/css" href="$content.getURI('style/icons.css?v=1.7.0a1')">
+<link rel="stylesheet" type="text/css" href="$content.getURI('style/app.css?v=1.7.0a1')">
+##<link rel="stylesheet" type="text/css" href="$content.getURI('style/xnat.css?v=1.7.0a1')">
+##<link rel="stylesheet" type="text/css" href="$content.getURI('style/icons.css?v=1.7.0a1')">
 
 <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/xmodal-v1/xmodal.css?v=1.7.0a1')">
 <script type="text/javascript" src="$content.getURI('scripts/xmodal-v1/xmodal.js')"></script>
@@ -288,9 +274,13 @@
 <link type="text/css" rel="stylesheet" href="$content.getURI('scripts/yui/build/calendar/assets/skins/sam/calendar.css?v=1.7.0a1')">
 ##<script type="text/javascript" src="$content.getURI('scripts/yui/build/calendar/calendar.js')"></script>
 <script type="text/javascript" src="$content.getURI('scripts/yui/build/calendar/calendar-min.js')"></script>
-
-<script type="text/javascript" src="$content.getURI('scripts/lib/jquery-plugins/jquery.maskedinput.min.js')"></script>
 <script type="text/javascript" src="$content.getURI('scripts/ezCalendar.js')"></script>
 
+<!-- XNAT JLAPI scripts -->
+<script type="text/javascript" src="$content.getURI('scripts/xnat/url.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/xnat/xhr.js')"></script>
+##<script type="text/javascript" src="$content.getURI('scripts/xnat/widget.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/xnat/ui/popup.js')"></script>
+<script type="text/javascript" src="$content.getURI('scripts/xnat/ui/dialog.js')"></script>
 
 #addGlobalCustomScreens("header")

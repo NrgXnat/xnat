@@ -10,113 +10,76 @@ $page.setVlinkColor($ui.vlink)
 <div class="alert">$data.message</div>
 #end
 
-<form name="form1" method="post" action="$link.setAction("AddProject")" ONSUBMIT="return validateProjectForm(this);">
+<form id="new-project-form" name="form1" method="post" action="$link.setAction("AddProject")" ONSUBMIT="return validateProjectForm(this);">
 
     #if($vr)
         <div class="error">Invalid parameters:<BR>$vr.toHTML()</div>
         <HR>
     #end
 
-    <TABLE width="100%">
-        <TR>
-            <TD>
+    <DIV class="edit_title">$page_title</DIV>
+
+    <DIV class="container">
+        <DIV class="withColor containerTitle" style="font-weight:700;">&nbsp;Step 1: Enter $displayManager.getSingularDisplayNameForProject().toLowerCase() details</DIV>
+        <DIV class="containerBody">
+            <DIV class="containerItem">
+                #set( $parentTemplate = 'add' )
+                #parse("/screens/xnat_projectData/edit/details.vm")
+            </DIV>
+        </DIV>
+    </DIV>
+
+    <br>
+
+    <div class="container">
+        <div class="withColor containerTitle">&nbsp;Step 2: Define $displayManager.getSingularDisplayNameForProject() Accessibility</div>
+        <div class="containerBody">
+            <div class="containerItem">
+                Select the accessibility of your $displayManager.getSingularDisplayNameForProject().toLowerCase().
+            </div>
+            <hr class="h20">
+            <div class="containerItem">
                 <table width="100%">
-                    <TR>
-                        <TD align="left" valign="middle">
-                            <DIV class="edit_title">$page_title</DIV>
-                        </TD>
-                    </TR>
-                </TABLE>
-            </TD>
-        </TR>
-
-        <TR>
-            <TD>
-                <DIV class="container" style="width:750px;float:left;margin:5px;">
-                    <DIV class="withColor containerTitle" style="font-weight:700;">&nbsp;Step 1: Enter $displayManager.getSingularDisplayNameForProject().toLowerCase() details</DIV>
-                    <DIV class="containerBody">
-                        <DIV class="containerItem">
-                            #set( $parentTemplate = 'add' )
-                                 #parse("/screens/xnat_projectData/edit/details.vm")
-                        </DIV>
-                    </DIV>
-                </DIV>
-
-            </TD>
-        </TR>
-        <TR>
-            <TD>
-
-                <div class="container" style="width:750px;float:left;margin:5px;">
-                    <div class="withColor containerTitle">&nbsp;Step 2: Define $displayManager.getSingularDisplayNameForProject() Accessibility</div>
-                    <div class="containerBody">
-                        <div class="containerItem">Select the accessibility of your $displayManager.getSingularDisplayNameForProject().toLowerCase().
-                            <br>
-                            <hr>
-                        </div>
-                        <div class="containerItem">
-                            <table width="100%">
+                    <tr>
+                        <td class="highlighted" valign="top">
+                            <table cellpadding="0" cellspacing="0">
                                 <tr>
-                                    <td class="highlighted" valign="top">
-                                        <table cellpadding="0" cellspacing="0">
-                                            <tr>
-                                                <td valign="top" style="padding:10px 20px 10px 10px;border-right:1px solid #ccc;">
-                                                    <label id="private_access_div" title="Only you and study members will be able to access study data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'private_access');">
-                                                        <input type="radio" id="private_access" name="accessibility" value="private" checked/> Private
-                                                    </label>
+                                    <td valign="top" style="padding:10px 20px 10px 10px;border-right:1px solid #ccc;">
+                                        <label id="private_access_div" title="Only you and study members will be able to access study data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'private_access');">
+                                            <input type="radio" id="private_access" name="accessibility" value="private" checked/> Private
+                                        </label>
 
-                                                    <label id="protected_access_div" title="All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'protected_access');">
-                                                        <input type="radio" id="protected_access" name="accessibility" value="protected"/> Protected
-                                                    </label>
+                                        <label id="protected_access_div" title="All users will be able to see your study title and description, but only collaborators you approve will be able to analyze and download data." style="display:block;white-space:nowrap;padding-bottom:5px;" onclick="checkAccessibilityRadioButton(this, 'protected_access');">
+                                            <input type="radio" id="protected_access" name="accessibility" value="protected"/> Protected
+                                        </label>
 
-                                                    <label id="public_access_div" title="All users will be able to access study data for analysis and download." style="display:block;white-space:nowrap;" onclick="checkAccessibilityRadioButton(this, 'public_access');">
-                                                        <input type="radio" id="public_access" name="accessibility" value="public"/> Public
-                                                    </label>
-                                                </td>
-                                                <td valign="top" style="padding:10px 160px 10px 20px;">
-                                                    <div id="balloon" style="border:none;">Only you and study members will be able to access study data.</div>
-                                                </td>
-                                            </tr>
-                                        </table>
+                                        <label id="public_access_div" title="All users will be able to access study data for analysis and download." style="display:block;white-space:nowrap;" onclick="checkAccessibilityRadioButton(this, 'public_access');">
+                                            <input type="radio" id="public_access" name="accessibility" value="public"/> Public
+                                        </label>
+                                    </td>
+                                    <td valign="top" style="padding:10px 160px 10px 20px;">
+                                        <div id="balloon" style="border:none;">Only you and study members will be able to access study data.</div>
                                     </td>
                                 </tr>
                             </table>
-                            <br/>
-                        </div>
-                    </div>
-                </div>
-            </TD>
-        </TR>
+                        </td>
+                    </tr>
+                </table>
+                <br/>
+            </div>
+        </div>
+    </div>
 
-        #xdatEditProps($item $edit_screen)
+    #xdatEditProps($item $edit_screen)
 
-        <TR>
-            <TH align="left">&nbsp;</TH>
-        </TR>
-        <TR>
-        <TR>
-            <td align="right" style="padding-right:10px;"><input type="submit" name="eventSubmit_doPerform" value="Submit"/></td>
-        </TR>
-    </TABLE>
+    <div class="submit-right">
+        <input class="btn1" type="submit" name="eventSubmit_doPerform" value="Create Project">
+        <div class="clear"></div>
+    </div>
 
 </form>
 
 <SCRIPT type="text/javascript">
-
-    // rendering this useless - 'validate_form()' seems to be a phantom function
-    function subOnEnter(e, inp) {
-        // get the event
-        var evt = e || window.event;
-        // pressed enter?
-        if (evt.keyCode == 13) {
-            // in your case, you want to validate, so:
-            //if(validate_form()) {
-            // submit the form (will not fire onsubmit, validation above)
-            //inp.form.submit();
-            // note we re using the passed inputs .form instead of a literal
-            //}
-        }
-    }
 
     function validateProjectForm(_form) {
 
@@ -134,27 +97,27 @@ $page.setVlinkColor($ui.vlink)
 
         var invalid_count = 0;
         if (projIDVal == '') {
-            xModalMessage('Validation', 'Please enter a ' + Project.toLowerCase() + ' abbreviation (ID).');
+            xmodal.message('Validation', 'Please enter a ' + Project.toLowerCase() + ' abbreviation (ID).');
             __projID.addClass('invalid');
             invalid_count++;
         }
         if (projRunningTitleVal == '') {
-            xModalMessage('Validation', 'Please enter a running title.');
+            xmodal.message('Validation', 'Please enter a running title.');
             __projRunningTitle.addClass('invalid');
             invalid_count++;
         }
         if (projRunningTitleVal.length > 24) {
-            xModalMessage('Validation', 'Please enter a running title of 24 characters or less.');
+            xmodal.message('Validation', 'Please enter a running title of 24 characters or less.');
             __projRunningTitle.addClass('invalid');
             invalid_count++;
         }
         if (projTitleVal == '') {
-            xModalMessage('Validation', 'Please enter a ' + Project.toLowerCase() + ' title.');
+            xmodal.message('Validation', 'Please enter a ' + Project.toLowerCase() + ' title.');
             __projTitle.addClass('invalid');
             invalid_count++;
         }
         if (projTitleVal.length > 199) {
-            xModalMessage('Validation', 'Please enter a ' + Project.toLowerCase() + ' title of 199 characters or less.');
+            xmodal.message('Validation', 'Please enter a ' + Project.toLowerCase() + ' title of 199 characters or less.');
             __projTitle.addClass('invalid');
             invalid_count++;
         }

@@ -7,9 +7,6 @@ $navigation.setTemplate("/bodyOpen.vm")
 
 <!-- path: xdat-templates/layouts/Index -->
 
-<table id="wrapper_table" cellpadding="0" cellspacing="0">
-    <tr>
-        <td valign="top">
 
             <table border="0" cellpadding="0" cellspacing="0">
                 <tr>
@@ -49,16 +46,9 @@ $navigation.setTemplate("/bodyOpen.vm")
                     <td align="left" valign="top">$navigation.setTemplate("SubMenu3.vm")</td>
                 </tr>
             </table>
-        </td>
-    </tr>
-    <tr>
-        <td>
 
             $navigation.setTemplate("/powered_by.vm")
 
-        </td>
-    </tr>
-</table>
 
 ## insert any template-specific code here that needs to be directly before closing </body> tag
 

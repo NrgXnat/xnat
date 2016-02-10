@@ -15,7 +15,7 @@ if (typeof jQuery == 'undefined') {
 (function() {
 
     var $ = jQuery;
-    var _xmodal = {}, $html, $body, $mask, $modal;
+    var _xmodal = {}, $html, $body, $mask, $modal, undefined;
 
 
     _xmodal.topZ = 10000;
@@ -850,7 +850,7 @@ if (typeof jQuery == 'undefined') {
                 modal.$modal.find('> .body').addClass('scroll');
             }
 
-            if ( isDefined(modal.overflow) ){
+            if ( isDefined(modal.overflow||undefined) ){
                 if ( isTrue(modal.overflow) ){
                     modal.overflow = 'visible'
                 }
@@ -865,15 +865,15 @@ if (typeof jQuery == 'undefined') {
                     find('> .inner').css('overflow', modal.overflow);
             }
 
-            if ( isDefined(modal.padding) ) {
+            if ( isDefined(modal.padding||undefined) ) {
                 modal.style = getObject(modal.style||{});
                 modal.style.padding = modal.padding + 'px';
             }
-            if ( isDefined(modal.style) ) {
+            if ( isDefined(modal.style||undefined) ) {
                 modal.css = getObject(modal.css||{});
                 $.extend(modal.css, modal.style);
             }
-            if ( isDefined(modal.css) ) {
+            if ( isDefined(modal.css||undefined) ) {
                 modal.$modal.find('> .body > .inner').css(modal.css);
             }
 

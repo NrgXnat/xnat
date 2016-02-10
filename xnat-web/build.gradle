@@ -22,7 +22,7 @@ version vXnat
 
 buildscript {
     repositories {
-        jcenter()
+        mavenLocal()
         maven {
             url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release'
             name 'XNAT Release Repository'
@@ -31,6 +31,7 @@ buildscript {
             url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot'
             name 'XNAT Snapshot Repository'
         }
+        jcenter()
     }
     dependencies {
         classpath "org.nrg.xnat.build:gradle-xnat-plugin:1.7.0-SNAPSHOT"
@@ -61,7 +62,7 @@ repositories {
     jcenter()
 }
 
-apply plugin: 'gradle-xnat-plugin'
+apply plugin: 'xnat'
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'war'
@@ -278,16 +279,16 @@ dependencies {
 
 cargo {
     containerId = 'tomcat7x'
-    port = propertyWithDefault('deployPort', 8080) as int
+    port = deployPort as int
 
     deployable {
-        context = propertyWithDefault('deployContext', '/')
+        context = deployContext
     }
 
     remote {
-        hostname = propertyWithDefault('deployHost', 'localhost')
-        username = propertyWithDefault('deployUser', 'deploy')
-        password = propertyWithDefault('deployPassword', 'deploy')
+        hostname = deployHost
+        username = deployUser
+        password = deployPassword
     }
 }
 
@@ -349,8 +350,4 @@ publishing {
             }
         }
     }
-}
-
-def propertyWithDefault(def String property, def defaultValue) {
-    hasProperty(property) ? eval(property) : defaultValue
 }

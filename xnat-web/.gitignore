@@ -4,3 +4,4 @@ build
 *.iml
 *.log
 src/generated
+gradle.properties

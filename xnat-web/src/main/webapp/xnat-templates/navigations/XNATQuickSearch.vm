@@ -29,19 +29,29 @@ function submitQuickSearch(){
     		   document.getElementById('quickSearchForm').submit();
 }
 
-#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-advanced-search","true")))
-    function advancedSearch(){
-    	window.location="$link.setPage("XDATScreen_search_wizard1.vm")";
-    }
-#end
 //-->
 </script>
 <!-- end search script -->
 
 <form id="quickSearchForm" method="post" action="$link.setAction("QuickSearchAction")">
     <input id="searchValue" name="searchValue" type="text" maxlength="40" size="25" value="$!field" />
-    <a id="search_btn" class="btn1" href="javascript:;" onClick="submitQuickSearch();">Search</a>
+    <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Search</button>
 #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-advanced-search","true")))
-    <a id="advanced_btn" class="btn2" href="javascript:;" onClick="advancedSearch();">Advanced</a>
+    <script>
+        function advancedSearch(){
+## maybe eventually this can come up in a dialog
+##		xmodal.iframe({
+##			url: '$link.setPage("XDATScreen_search_wizard1.vm")/popup/true',
+##			title: 'Advanced Search',
+##			width: 800,
+##			height: 500,
+##			footer: false,
+##		//                scroll: false,
+##			overflow: 'hidden'
+##		});
+            window.location.href="$link.setPage("XDATScreen_search_wizard1.vm")";
+        }
+    </script>
+    <button type="button" id="advanced_btn" class="btn2" onclick="advancedSearch();">Advanced</button>
 #end
 </form>

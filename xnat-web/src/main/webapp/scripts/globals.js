@@ -138,14 +138,21 @@ function isArray( arr ){
 function isEmptyArray( arr ){
     return isArray(arr) && arr.length === 0;
 }
-function isEmpty( x ){
+function isEmpty( x, args ){
+    if (isString(x)){
+        return x === '';
+    }
     if (isPlainObject(x)){
         return isEmptyObject(x);
     }
     if (isArray(x)){
         return isEmptyArray(x);
     }
-    return (x === '' || x === null || isUndefined(x) || !isFunction(x));
+    // does a function return an 'empty' value?
+    if (isFunction(x)){
+        return isEmpty(x.apply(null, [].concat(args)));
+    }
+    return (x === null || isUndefined(x) || !isFunction(x));
 }
 function isFunction( func ){
     return typeof func == 'function';
@@ -182,9 +189,11 @@ function extend(){
     if ( typeof target !== "object" && !isFunction(target) ) {
         target = {};
     }
-    // extend parent object if only one argument is passed
+    // Copy object if only one argument is passed.
+    // jQuery extends its own object, but since this
+    // isn't jQuery, 'this' is the global object (bad)
     if ( i === length ) {
-        target = this;
+        target = {};
         i--;
     }
     for ( ; i < length; i++ ) {
@@ -712,7 +721,7 @@ function setMin(min){
 function scriptUrl(url, min){
     var parts = url.split('|');
     url = parts[0].trim();
-    min = (min || parts[1] || '').trim();
+    min = (min || parts[1] || '').replace(/([!~\*])+/g,'').trim();
     return serverRoot + '/scripts/' + (url.replace(/\.js$/i,'')) + setMin(min) + '.js';
 }
 
@@ -756,19 +765,6 @@ function hasScript( url ){
     //console.log('count: ' + url + ' - ' + scriptLength);
     //return scriptLength;
     return getScriptElements().indexOf(url) > -1;
-}
-
-function scriptURL( url, min ){
-    url = url.replace(/\.js$/i,''); // tolerate '.js' suffix
-    if (min) {
-        url += min;
-    }
-    if (url){ // cannot be empty to add '.js'
-        url += '.js';
-    }
-    // return empty string if this <script> is already present
-    //if (hasScript(url)){ return '' }
-    return url;
 }
 
 // split params passed as a pipe-separated string
@@ -1044,6 +1040,32 @@ function loadScripts( scripts, parent_or_callback, callback ){
             loadScript(_script, _script.parent);
         }
     }
+}
+
+function cssUrl( url, min, query ){
+    var parts = url.split('|');
+    url = parts[0].trim();
+    min = (min || parts[1] || '').replace(/([!~\*])+/g,'').trim();
+    query = (query || parts[2] || '').trim();
+    if (query) {
+        query = '?' + query.replace(/^\?/,'');
+    }
+    return serverRoot +
+        '/' + (url.replace(/\.css$/i,'')) +
+        setMin(min) + '.css' + query;
+}
+
+function cssElement( href ){
+    var el = document.createElement('link');
+    el.rel = 'stylesheet';
+    el.type = 'text/css';
+    el.href = cssUrl(href);
+    return el;
+}
+
+// document.write(css)
+function writeCSS( href ){
+    document.write(cssElement(href).outerHTML);
 }
 
 function loadCSS( url, parent ){

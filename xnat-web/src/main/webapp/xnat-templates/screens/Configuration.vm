@@ -6,8 +6,8 @@
 #* @vtlvariable name="initialize" type="java.lang.Boolean" *#
 <!-- Start Configuration page, source file is plugin-resources/webapp/xnat-templates/screens/Configuration.vm -->
 <style type="text/css">
-    #configuration_tabs_module {  }
-    #configurationTabs { width: 732px !important; }
+    #configuration_tabs_module { width: 940px; }
+    #configurationTabs { width: 940px !important; }
     #configurationTabs.yui-navset.wrangled ul.yui-nav { height: 28px !important ; }
     #configurationTabs .flipper_box .flippers a.flipper { height: 26px ; }
 </style>

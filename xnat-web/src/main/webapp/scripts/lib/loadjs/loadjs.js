@@ -82,7 +82,8 @@
 
     s.onload = s.onerror = function(ev) {
       // remove script
-      s.parentNode.removeChild(s);
+      var p = s.parentNode;
+      if (p) p.removeChild(s);
 
       // de-reference script
       s = null;
@@ -187,6 +188,68 @@
    */
   loadjs.done = function done(bundleId) {
     publish(bundleId, []);
+  };
+
+
+  /**
+   * Load multiple scripts sequentially (in series).
+   * Shortcut for nested loadjs() calls.
+   * @param {string[]} scripts - Array of loadjs setup arrays
+   * @param {Function} [callback] - Callback function
+   */
+  loadjs.series = function(/* script1, [script2, etc...,] callback */){
+
+    var len = 0, scripts = [],
+        argLen = arguments.length,
+        lastArg = arguments[argLen-1],
+        callback = null;
+
+    // convert arguments to actual array
+    while (len < argLen){
+      scripts = scripts.concat([arguments[len]]);
+      len++;
+    }
+    // len should now equal scripts.length
+    if (typeof lastArg == 'function'){
+      callback = lastArg;
+    }
+    if (callback && argLen > 1) {
+      len = argLen - 1;
+    }
+
+    function doLoad(i){
+      if (i === len) return;
+      var script = scripts[i],
+          name = script[0],
+          url = script[1],
+          fn = script[2]||null, // optional individual callback for this script
+          next = i + 1;
+
+      if (script.length === 1){
+        url = name;
+      }
+      if (typeof script == 'string'){
+        name = url = script;
+      }
+      // execute callback after last item
+      if (next === len) {
+        loadjs(url, callback);
+      }
+      else {
+        loadjs(url, name);
+        loadjs.ready(name, function(){
+          doLoad(next);
+          // does this item have its own callback?
+          // var example = ['name', '/path/to/script.js', function(){ doStuffAfterThisScriptLoads() }];
+          if (fn && typeof fn == 'function'){
+            fn(name, url)
+          }
+        });
+      }
+
+    }
+    // set it off
+    doLoad(0);
   };
 
 

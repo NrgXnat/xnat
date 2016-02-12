@@ -15,116 +15,6 @@
 #end
 
 <script type="text/javascript" src="$content.getURI('scripts/lib/js.cookie.js')"></script>
-<!-- main_nav interactions -->
-<script type="text/javascript">
-
-    var cover_up_count = 0 ;
-
-    function coverApplet(jqObj){
-
-        cover_up_count++ ;
-
-        var cover_up_id = 'cover_up'+cover_up_count ;
-
-        var
-            jqObjPos = jqObj.offset(),
-            jqObjLeft = jqObjPos.left,
-            jqObjTop = jqObjPos.top,
-            jqObjMarginTop = jqObj.css('margin-top'),
-            jqObjWidth = jqObj.outerWidth()+4,
-            jqObjHeight = jqObj.outerHeight()+2
-        ;
-
-        jqObj.before('<iframe id="'+cover_up_id+'" class="applet_cover_up" src="about:blank" width="'+jqObjWidth+'" height="'+jqObjHeight+'"></iframe>');
-
-        jq('#'+cover_up_id).css({
-            display: 'block',
-            position: 'fixed',
-            width: jqObjWidth,
-            height: jqObjHeight,
-            marginTop: jqObjMarginTop,
-            left: jqObjLeft,
-            top: jqObjTop,
-            background: 'transparent',
-            border: 'none',
-            outline: 'none'
-        });
-
-    }
-
-    function unCoverApplets(jqObj){
-        jqObj.prev('iframe.applet_cover_up').detach();
-    }
-
-    jq(document).ready(function() {
-
-        var _body = jq('body');
-
-        function fadeInNav(jqObj){
-            jqObj.stop('clearQueue','gotoEnd');
-            jqObj.find(' > ul').fadeIn(80).addClass('open');
-        }
-
-        function fadeOutNav(jqObj){
-            jqObj.stop('clearQueue','gotoEnd');
-            jqObj.find(' > ul').fadeOut(100).removeClass('open');
-        }
-
-        // fancy fades on hover
-        jq('#main_nav > ul > li').hover(
-            function() {
-                fadeInNav(jq(this));
-                //jq('#main_nav li').removeClass('open');
-                if (_body.hasClass('applet')){
-                    coverApplet(jq(this).find(' > ul'));
-                }
-            },
-            function() {
-                fadeOutNav(jq(this));
-                if (_body.hasClass('applet')){
-                    unCoverApplets(jq(this).find(' > ul'));
-                }
-            }
-        );
-
-        // modifying widths of 2nd level menu
-        jq('#main_nav li li').hover(
-            function() {
-                var submenu_width = jq(this).outerWidth();
-                jq(this).find(' > ul').css({'left':submenu_width+1});
-                fadeInNav(jq(this));
-                if (_body.hasClass('applet')){
-                    coverApplet(jq(this).find(' > ul'));
-                }
-            },
-            function(){
-                fadeOutNav(jq(this));
-                if (_body.hasClass('applet')){
-                    unCoverApplets(jq(this).find(' > ul'));
-                }
-            }
-        );
-
-        // give menus with submenus a class of 'more'
-        jq('#main_nav li ul , #main_nav li li ul').closest('li').find(' > a').addClass('more');
-        jq('#main_nav li li ul').closest('li').addClass('more');
-        jq('#main_nav li li ul').addClass('subnav');
-
-        // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
-        jq('#logout_user').click(function(){
-            Cookies.set('WARNING_BAR','OPEN',{path:'/'});
-            Cookies.set('NOTIFICATION_MESSAGE','OPEN',{path: '/'});
-        });
-    }); // end (document).ready
-</script>
-<!-- end main_nav interactions -->
-
-
-## preloading background images for main_nav
-<div id="img_preload" style="position:fixed;left:-9999px;top:-9999px;">
-    <img src="$content.getURI('images/nav_bkgd.png')" alt="">
-    <img src="$content.getURI('images/nav_bkgd_hover.png')" alt="">
-</div>
 
 <style type="text/css">
     #attention_icon { float: left ; padding-top: 7px ; padding-left: 11px ; }
@@ -204,6 +94,135 @@
 </div>
 #end
 
+<div id="main_nav">
+
+    <ul class="nav">
+        #addGlobalCustomScreens("topBar")
+    </ul>
+
+    $navigation.setTemplate("XNATQuickSearch.vm")
+
+</div>
+<!-- /main_nav -->
+
+<!-- main_nav interactions -->
+<script type="text/javascript">
+
+    (function() {
+
+        // cache it
+        var main_nav$ = jq('#main_nav');
+
+//        function subnav(items){
+//            var lis = [];
+//            items.forEach(function(item){
+//                lis.push(['li', '<a href="' + item.href + '">' + item.label + '</a>']);
+//            });
+//            return spawn('li|class=more', [
+//                spawn('a', 'More...'),
+//                spawn('ul|class=subnav', lis)
+//            ]);
+//        }
+//
+//        // spawn a subnav under "New"
+//        main_nav$.find('[href="#new"]').next('ul').append(subnav([
+//            { href: '#!mr', label: 'MR Session'},
+//            { href: '#!pet', label: 'PET Session'},
+//            { href: '#!ct', label: 'CT Session'}
+//        ]))
+//
+//
+//        // spawn a subnav under "Upload"
+//        main_nav$.find('[href="#upload"]').next('ul').append(subnav([
+//            { href: '#!json', label: 'JSON'},
+//            { href: '#!text', label: 'Text'},
+//            { href: '#!html', label: 'HTML'}
+//        ]))
+
+        var body$ = jq('body');
+
+        var cover_up_count = 1;
+
+        function coverApplet(el$){
+            var cover_up_id = 'cover_up'+cover_up_count++;
+            var jqObjPos = el$.offset(),
+                jqObjLeft = jqObjPos.left,
+                jqObjTop = jqObjPos.top,
+                jqObjMarginTop = el$.css('margin-top'),
+                jqObjWidth = el$.outerWidth()+4,
+                jqObjHeight = el$.outerHeight()+2;
+
+            el$.before('<iframe id="'+cover_up_id+'" class="applet_cover_up" src="about:blank" width="'+jqObjWidth+'" height="'+jqObjHeight+'"></iframe>');
+
+            jq('#'+cover_up_id).css({
+                display: 'block',
+                position: 'fixed',
+                width: jqObjWidth,
+                height: jqObjHeight,
+                marginTop: jqObjMarginTop,
+                left: jqObjLeft,
+                top: jqObjTop,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none'
+            });
+        }
+
+        function unCoverApplets(el$){
+            el$.prev('iframe.applet_cover_up').detach();
+        }
+
+        function fadeInNav(el$){
+//            el$.stop('clearQueue','gotoEnd');
+            el$.find('> ul').show().addClass('open');
+        }
+
+        function fadeOutNav(el$){
+//            el$.stop('clearQueue','gotoEnd');
+            el$.find('> ul').hide().removeClass('open');
+        }
+
+        // give menus with submenus a class of 'more'
+        main_nav$.find('li ul, li li ul').closest('li').addClass('more');
+        main_nav$.find('li li ul').addClass('subnav');
+
+        // no fancy fades on hover
+        main_nav$.find('li.more').
+        on('mouseover',
+                function(){
+                    var li$ = $(this);
+                    fadeInNav(li$);
+                    //jq('#main_nav li').removeClass('open');
+                    li$.find('ul.subnav').each(function(){
+                        var sub$ = $(this);
+                        var offsetL = sub$.closest('ul').outerWidth();
+                        sub$.css({ 'left': offsetL + -25 })
+                    });
+                    if (body$.hasClass('applet')) {
+                        coverApplet(li$.find('> ul'));
+                    }
+                }
+        ).
+        on('mouseout',
+                function(){
+                    var li$ = $(this);
+                    fadeOutNav(li$);
+                    if (body$.hasClass('applet')) {
+                        unCoverApplets(li$.find('> ul'));
+                    }
+                }
+        );
+
+        // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
+        jq('#logout_user').click(function(){
+            Cookies.set('WARNING_BAR','OPEN',{path:'/'});
+            Cookies.set('NOTIFICATION_MESSAGE','OPEN',{path: '/'});
+        });
+
+    })();
+</script>
+<!-- end main_nav interactions -->
+
 <div id="header" class="main_header">
     #if($siteConfig.getProperty("siteWideAlertStatus","")=="2")
         <div id="headNotification" class="$siteConfig.getProperty("siteWideAlertType","") hidden" style="margin-bottom: 2em;">
@@ -223,33 +242,28 @@
         </script>
     #end
 
-    <a id="header_logo" href="$link.setPage("Index.vm")">
+    <a id="header_logo" href="$link.setPage("Index.vm")" style="display:none;">
         #parse("/screens/Logo.vm")
     </a>
 
-$navigation.setTemplate("XNATQuickSearch.vm")
-
-    <div id="main_nav">
-        <ul>
-            #addGlobalCustomScreens("topBar")
-        </ul>
-    </div><!-- /main_nav -->
 
 </div>  <!-- /header -->
 
 
 <script type="text/javascript">
 
-    jq(document).ready(function() {
+    (function() {
+
+        var header_logo$ = $('#header_logo');
 
         // adjust height of header if logo is taller than 65px
-        var hdr_logo_height = jq('#header_logo').height();
+        var hdr_logo_height = header_logo$.height();
         if (hdr_logo_height > 65) {
             jq('.main_header').height(hdr_logo_height + 10);
         }
 
         // adjust width of main nav if logo is wider than 175px
-        var hdr_logo_width = jq('#header_logo').width();
+        var hdr_logo_width = header_logo$.width();
         if (hdr_logo_width > 175) {
             jq('#main_nav').width(932 - hdr_logo_width - 20);
         }
@@ -259,7 +273,7 @@ $navigation.setTemplate("XNATQuickSearch.vm")
         var recent_proj_height = 67 ;
         //jq('#min_projects_list, #min_expt_list').height(recent_proj_height * 5).css({'min-width':349,'overflow-y':'scroll'});
 
-    });
+    })();
 
     logged_in = true ;
 

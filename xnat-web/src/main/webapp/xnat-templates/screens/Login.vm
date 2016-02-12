@@ -65,7 +65,7 @@ $page.setTitle("$siteId - Please Login")
             <p>&nbsp;</p>
             <p>Not what you want? <a href="$content.getURI('/app/template/Login.vm')"><strong>Default Log In Page</strong></a></p>
         </div>
-        <hr style="margin: 2em 0" />
+        <hr style="margin: 2em 0">
         <div id="login_box">
             <form name="form1" method="post" action="$content.getURI("/login")" class="friendlyForm" id="login_form">
                 #if($login_methods && $login_methods.size() == 0)
@@ -100,6 +100,8 @@ $page.setTitle("$siteId - Please Login")
         </div>
     </div>
 
+    <div class="clear"></div>
+
     <script>
         function showLogin() {
             jq('#register_box_container').addClass('hidden');
@@ -116,23 +118,21 @@ $page.setTitle("$siteId - Please Login")
 ## standard layout for login page
 
     <div id="login_welcome">
-        <div id="login_welcome">
-            #if($siteConfig.getProperty("siteDescriptionType","")=="Text")
-                <div id="siteDescription"></div>
-                <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.getProperty("siteDescriptionText","")</textarea>
-                <script>
-                    var mdtext = jq('#siteDescriptionMd').text();
-                    var markedText = marked(mdtext);
-                    jq('#siteDescription').html(markedText);
-                </script>
+        #if($siteConfig.getProperty("siteDescriptionType","")=="Text")
+            <div id="siteDescription"></div>
+            <textarea id="siteDescriptionMd" style="display: none;">$siteConfig.getProperty("siteDescriptionText","")</textarea>
+            <script>
+                var mdtext = jq('#siteDescriptionMd').text();
+                var markedText = marked(mdtext);
+                jq('#siteDescription').html(markedText);
+            </script>
+        #else
+            #if($turbineUtils.resourceExists($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm")))
+                #parse($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm"))
             #else
-                #if($turbineUtils.resourceExists($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm")))
-                    #parse($siteConfig.getProperty("siteDescriptionPage","/screens/site_description.vm"))
-                #else
-                    <p>Custom site description page not found!</p>
-                #end
+                <p>Custom site description page not found!</p>
             #end
-        </div>
+        #end
     </div>
 
     <div id="login_box">
@@ -160,16 +160,18 @@ $page.setTitle("$siteId - Please Login")
                 <input type="password" name="password" autocomplete="off"></p>
 
             <p class="form-submit">
-            <span id="register_forgot">
-                <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
-                <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
-            </span>
+                <span id="register_forgot">
+                    <a href="$link.setPage("Register.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Register</a>
+                    <a href="$link.setPage("ForgotLogin.vm")#if($turbineUtils.GetPassedParameter('par',$data))/par/$turbineUtils.GetPassedParameter('par',$data)#end">Forgot login or password?</a>
+                </span>
                 <input id="loginButton" type="submit" name="login" value="Login">
             </p>
 
             <input type="hidden" name="XNAT_CSRF" value="">
         </form>
     </div>
+
+    <div class="clear"></div>
 
     #end
 </div>

@@ -6,16 +6,11 @@ var XNAT = getObject(XNAT||{});
 
 (function(XNAT){
 
-    var url, xurl, xhr,
+    var url, xhr,
         root = this,
         undefined;
 
-    // these methods available in XNAT.url and XNAT.xurl...
-    // 'xurl' to prevent potential conflicts with local vars named 'url'
-    XNAT.url = XNAT.xurl =
-        xurl = url =
-            extend(getObject(XNAT.xurl||{}), getObject(XNAT.url||{}));
-
+    XNAT.url = url = getObject(XNAT.url||{});
     XNAT.xhr = xhr = getObject(XNAT.xhr||{});
 
     // urlencode query string params by default
@@ -23,6 +18,32 @@ var XNAT = getObject(XNAT||{});
 
     // don't cache AJAX requests
     xhr.cache = firstDefined(xhr.cache||undefined, false);
+
+    // fix potential duplicate url root prefixes
+    function fixRoot(root, url){
+        var rootParts, urlParts, newUrl;
+        // strips leading and trailing slashes
+        function trimSlashes(str){
+            return str.replace(/^\/+|\/+$/g,'');
+        }
+        root = trimSlashes(root||'');
+        url =  trimSlashes(url||'');
+        if (!root){ return '/' + url; }
+        rootParts = root.split('/');
+        urlParts  = url.split('/');
+        while (rootParts.shift() === urlParts.shift()){
+            // whittling away the arrays
+            newUrl = urlParts.join('/');
+        }
+        return '/' + (newUrl||url);
+    }
+
+    // make sure the serverRoot string (and only ONE serverRoot string)
+    // is at the beginning of a url
+    function rootUrl(url){
+        return fixRoot((window.serverRoot || XNAT.serverRoot || ''), url)
+    }
+    url.rootUrl = rootUrl;
 
     // better encodeURIComponent() that catches
     // these additional characters: !'()*
@@ -343,7 +364,7 @@ var XNAT = getObject(XNAT||{});
             }
         }
 
-        url = (window.serverRoot || XNAT.serverRoot || '') + '/' + url.replace(/^\/+/,'');
+        url = urlSetup(url);
 
         return XNAT.url.addQueryString(url, params);
 
@@ -358,10 +379,10 @@ var XNAT = getObject(XNAT||{});
 
     // makes sure we've got serverRoot
     // and a properly formed url
-    url.buildUrl = url.setup = function( base, parts, query, hash ){
+    function urlSetup( base, parts, query, hash ){
 
         var pathArray = [],
-            newUrl = (window.serverRoot || XNAT.serverRoot || '') + '/';
+            newUrl = '';
 
         if (arguments.length === 1 || isUndefined(parts)){
             parts = base;
@@ -401,9 +422,10 @@ var XNAT = getObject(XNAT||{});
         }
 
         // remove multiple slashes and remove '/' in front of '?'
-        return newUrl.replace(/\/+/g, '/').replace(/\/\?/g, '?');
+        return rootUrl(newUrl).replace(/\/\?/g, '?');
 
-    };
+    }
+    url.buildUrl = url.setup = urlSetup;
 
     // build url path from object, array, or argument sequence
     // ({ projects: 'foo', subject: 'bar' })
@@ -442,7 +464,7 @@ var XNAT = getObject(XNAT||{});
             if (arguments.length > 1){
                 parts = toArray(arguments);
             }
-            return XNAT.url.buildUrl(base, parts);
+            return urlSetup(base, parts);
         };
     });
     // the above object loop will output:
@@ -490,7 +512,7 @@ var XNAT = getObject(XNAT||{});
             XNAT.url.toQueryString(obj.query)
         ].concat(args); // pick up any extra args?
 
-        return XNAT.url.buildUrl(obj.base, urlParts);
+        return urlSetup(obj.base, urlParts);
 
     };
 

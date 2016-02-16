@@ -5,3 +5,4 @@ build
 *.log
 src/generated
 gradle.properties
+out/

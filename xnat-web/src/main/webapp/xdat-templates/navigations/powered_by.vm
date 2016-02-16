@@ -1,20 +1,26 @@
 
-<div id="xnat_power" style="">
+<div id="xnat_power">
     <a target="_blank" href="http://www.xnat.org/" style=""><img src="$content.getURI('images/xnat_power_small.png')"></a>
 </div>
 
-<script>
-    loadjs(XNAT.url.scriptUrl('xnat/event.js'), function(){
+<script type="text/javascript">
+
+    loadjs(scriptUrl('xnat/event.js'), function(){
+
         // shift-click the header or footer XNAT logo to ENABLE debug mode
         // alt-shift-click to DISABLE debug mode
         XNAT.event.click('#header_logo, #xnat_power > a')
-                .shift(function(e){
-                    window.location.hash = 'debug=on'
-                    window.location.reload();
-                })
-                .altShift(function(e){
-                    window.location.hash = 'debug=off'
-                    window.location.reload();
-                });
-    });
+            .shiftKey(function(e){
+                e.preventDefault();
+                window.location.hash = 'debug=on'
+                window.location.reload();
+            })
+            .altShift(function(e){
+                e.preventDefault();
+                window.location.hash = 'debug=off'
+                window.location.reload();
+            });
+
+    })
+
 </script>

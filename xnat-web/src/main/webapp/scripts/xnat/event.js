@@ -6,8 +6,6 @@ var XNAT = getObject(XNAT||{});
 
 (function(XNAT){
 
-    var undefined;
-
     XNAT.event = getObject(XNAT.event||{});
 
     ////////////////////////////////////////////////////////////
@@ -15,12 +13,14 @@ var XNAT = getObject(XNAT||{});
     // - makes easy binding of clicks with modifier keys
     ////////////////////////////////////////////////////////////
     // USAGE
-    // XNAT.event.click('div1', doSomething).alt(doSomethingElse);
-    // .preventDefault() is called on all actions
+    // XNAT.event.click('#div1', doSomething).alt(doSomethingElse);
+    // XNAT.event.click('#nav').shiftClick(shiftClickAction);
+    // NOTE: event.preventDefault() is only called on modified clicks
+    //       or links starting with '#'
     function Click(selector, fn){
         this.selector = selector;
-        this.$el = this.$element = $(selector);
-        this.el = this.element = this.$el[0];
+        this.el$ = this.element$ = $$(selector); // support XNAT selector syntax with $$
+        this.el = this.element = this.el$[0];
         this.clickAction = fn;
     }
 
@@ -36,6 +36,11 @@ var XNAT = getObject(XNAT||{});
         return this;
     };
 
+    Click.fn.metaShift = Click.fn.shiftMeta = function(fn){
+        this.metaShiftAction = fn;
+        return this;
+    };
+
     Click.fn.alt = Click.fn.opt = Click.fn.option = function(fn){
         this.altAction = fn;
         return this;
@@ -46,7 +51,7 @@ var XNAT = getObject(XNAT||{});
         return this;
     };
 
-    Click.fn.shift = function(fn){
+    Click.fn.shift = Click.fn.shiftKey = function(fn){
         this.shiftAction = fn;
         return this;
     };
@@ -62,56 +67,74 @@ var XNAT = getObject(XNAT||{});
         var click = new Click(selector, action);
 
         // just a single click event handler for all chained methods
-        click.$el.click(function(e){
+        click.el$.click(function(e){
 
-            e.preventDefault();
+            var action = 'clickAction';
 
+            // alt-shift click
             if (e.shiftKey && e.altKey){
-                try { click.altShiftAction.call(click.el, e) }
-                catch(e) { if (console && console.log) console.log(e) }
+                action = 'altShiftAction';
             }
-
+            // ctrl-shift click
             else if (e.shiftKey && e.ctrlKey) {
                 // prevent context menu on Macs?
-                click.$el.on('contextmenu', function(e){
+                click.el$.on('contextmenu', function(e){
                     e.preventDefault();
                 });
-                try { click.ctrlShiftAction.call(click.el, e) }
-                catch(e) { if (console && console.log) console.log(e) }
+                action = 'ctrlShiftAction';
             }
-
+            // shift-command/windows(meta) click
+            else if (e.shiftKey && e.metaKey) {
+                action = 'metaShiftAction';
+            }
+            // alt-click
             else if (e.altKey) {
-                try { click.altAction.call(click.el, e) }
-                catch(e) { if (console && console.log) console.log(e) }
+                action = 'altAction';
             }
-
+            // ctrl-click
             else if (e.ctrlKey) {
                 // prevent context menu on Macs?
-                click.$el.on('contextmenu', function(e){
+                click.el$.on('contextmenu', function(e){
                     e.preventDefault();
                 });
-                try { click.ctrlAction.call(click.el, e) }
-                catch(e) { if (console && console.log) console.log(e) }
+                action = 'ctrlAction';
             }
-
+            // shift-click
             else if (e.shiftKey) {
-                try { click.shiftAction.call(click.el, e) }
-                catch(e) { if (console && console.log) console.log(e) }
+                action = 'shiftAction';
             }
-
+            // command-click or windows(meta)-click
             else if (e.metaKey) {
-                try { click.metaAction.call(click.el, e) }
-                catch(e) { if (console && console.log) console.log(e) }
+                action = 'metaAction';
+            }
+            else {
+                // 'clickAction' is the default value
+                //action = 'clickAction';
             }
 
-            else {
-                try { click.clickAction.call(click.el, e) }
-                catch(e) { if (console && console.log) console.log(e) }
+            // only prevent default for standard click handler on links
+            // starting with '#' or elements with no 'href' attribute
+            // (always prevent default on click events with modifier keys)
+            if (action !== 'clickAction' && (!click.el.href || click.el.href.indexOf('#') === 0)){
+                e.preventDefault();
+            }
+
+            // just one try
+            try {
+                click[action].call(click.el, e);
+            }
+            catch(e) {
+                // fail silently
+                //if (console && console.log) console.log(e);
             }
 
         });
+
         return click;
     };
+    XNAT.click = XNAT.click$ =
+        XNAT.event.click$ = XNAT.event.click;
+    // add $ to hint we're using jQuery for events
     ////////////////////////////////////////////////////////////
 
 })(XNAT);

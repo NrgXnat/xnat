@@ -273,7 +273,7 @@ function sortObjects( objects, prop ){
 // 'child' must be DIRECT descendent of 'parent'
 function sortElements( _parent, _child ){
     //console.log('sorting...');
-    var $mylist = jqObj(_parent);
+    var $mylist = $$(_parent);
     var listitems = $mylist.children(_child).get();
     listitems.sort(function( _a, _b ) {
         var a = $(_a).attr('title').toUpperCase();
@@ -292,9 +292,23 @@ function $$( el, id_prefix ){
     // can't decide on a prefix for selection by id
     // use ONE of these:
     // id= | id: | @id= | @# | @= | @: | @ | #= | #: | #/
-    var ID_PREFIX = /^(id=|id:|@id=|@#|@=|@:|@|#=|#:|#\/)/;
-    if (el.jquery){
+    var ALL_PREFIX = /^!\*/, // $$('!*div.foo') --> return all 'div.foo' elements as an array
+        RAW_ID = /^!#/,      // $$('!#foo') --> return (one) element with id 'foo'
+        RAW_PREFIX = /^!/,   // $$('!div.foo') --> return FIRST 'div.foo' element
+        ID_PREFIX = /^(id=|id:|@id=|@#|@=|@:|@|#=|#:|#\/)/;
+    if (!el || el.jquery){
         return el;
+    }
+    if (el.search(ALL_PREFIX) === 0){
+        return document.querySelectorAll(el.replace(ALL_PREFIX, ''));
+    }
+    // pass empty string or null as the second argument
+    // to get the bare element by id (no jQuery)
+    if (id_prefix === '' || id_prefix === null || el.search(RAW_ID) === 0){
+        return document.getElementById(el.replace(RAW_ID,''));
+    }
+    if (el.search(RAW_PREFIX) === 0){
+        return document.querySelector(el.replace(RAW_PREFIX,''));
     }
     id_prefix = id_prefix || ID_PREFIX;
     if (el.search(id_prefix) === 0){
@@ -304,30 +318,8 @@ function $$( el, id_prefix ){
 }
 
 
-function jqById(id){
+function getById$(id){
     return $(document.getElementById(id));
-}
-
-
-// this will make sure we've got a jQuery object
-function jqObj(el){
-    if (!el) { return false }
-    var $el = el;
-    if (!$el.jquery){
-        $el = $(el);
-        // if there's not a matching DOM element
-        // then it's PROBABLY just an id string
-        if (!$el.length){
-            $el = $('#'+el);
-        }
-        // if there's STILL not a matching DOM element
-        // after trying to find an element with that ID,
-        // then set $el to null
-        if (!$el.length){
-            $el = null;
-        }
-    }
-    return $el;
 }
 
 

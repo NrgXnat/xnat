@@ -17,7 +17,7 @@
 
         var jqScript = (function () {
 
-            var script = 'jquery-1.8.3';
+            var script = 'jquery';
             var min = (window.jsdebug) ? '' : '.min';
 
             return '<script type="text/javascript" src="' + serverRoot +

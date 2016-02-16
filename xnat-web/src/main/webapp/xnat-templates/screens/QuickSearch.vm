@@ -15,6 +15,12 @@
 
 <script type="text/javascript">
 
+    // add 'xnat-home' class to <body> on home page
+    $('body').addClass('xnat-home');
+
+    // only show the header logo on the 'home' page
+    $('#header_logo').show();
+
     var frontTabs = new YAHOO.widget.TabView('front_search');
 
     frontTabs.addTab(new YAHOO.widget.Tab({

@@ -2,10 +2,10 @@
 	#set ($template = $data.getTemplateInfo())
 	$!template.setLayoutTemplate("ScreenOnly.vm")
 #end
-<table width="100%">
+<table>
 	<tr>
 		<td>
-            <table class="file-details padding-sm" width="100%" cellspacing="0">
+            <table class="file-details padding-sm" cellspacing="0">
             	<tr class="file-details-header">
             		<th align="left" width="">File</th>
             		<th align="center" width="100px">Size</th>
@@ -77,7 +77,7 @@
             imageModal.footer = false;
             imageModal.modal = false;
             imageModal.scroll = false;
-            imageModal.padding = 0;
+            imageModal.padding = '0';
             xmodal.open(imageModal);
         });
 

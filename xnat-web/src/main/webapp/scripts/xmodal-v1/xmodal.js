@@ -27,21 +27,37 @@ if (typeof jQuery == 'undefined') {
         };
     }
 
-    // this will make sure we've got a jQuery DOM object
-    function jqObj(el) {
-        if (!el) {
-            return false
+
+    // force a jQuery object and allow use of
+    // non-standard id names with special prefix:
+    // $$('@#weird:id/that.XNAT.will[create]').addClass('cray-cray');
+    function $$( el, id_prefix ){
+        // can't decide on a prefix for selection by id
+        // use ONE of these:
+        // id= | id: | @id= | @# | @= | @: | @ | #= | #: | #/
+        var ALL_PREFIX = /^\*!/, // $$('*!div.foo') --> return all 'div.foo' elements as an array
+            RAW_ID = /^#!/,      // $$('#!foo') --> return (one) element with id 'foo'
+            RAW_PREFIX = /^!/,   // $$('!div.foo') --> return FIRST 'div.foo' element
+            ID_PREFIX = /^(id=|id:|@id=|@#|@=|@:|@|#=|#:|#\/)/;
+        if (!el || el.jquery){
+            return el;
         }
-        var $el = el;
-        if (!$el.jquery) {
-            $el = $(el);
-            // if there's not a matching DOM element
-            // then it's PROBABLY just an id string
-            if (!$el.length) {
-                $el = $('#' + el);
-            }
+        if (el.search(ALL_PREFIX) === 0){
+            return document.querySelectorAll(el.replace(ALL_PREFIX, ''));
         }
-        return $el;
+        // pass empty string or null as the second argument
+        // to get the bare element by id (no jQuery)
+        if (id_prefix === '' || id_prefix === null || el.search(RAW_ID) === 0){
+            return document.getElementById(el.replace(RAW_ID,''));
+        }
+        if (el.search(RAW_PREFIX) === 0){
+            return document.querySelector(el.replace(RAW_PREFIX,''));
+        }
+        id_prefix = id_prefix || ID_PREFIX;
+        if (el.search(id_prefix) === 0){
+            return $(document.getElementById(el.replace(id_prefix,'')));
+        }
+        return $(el);
     }
 
 
@@ -311,7 +327,7 @@ if (typeof jQuery == 'undefined') {
             if ( !el || !opts ) { return } // need both args
             delim = delim || '|'; // delimiter between properties
             sep   = sep   || ':'; // separator between key:value
-            var $el = jqObj(el);
+            var $el = $$(el);
             var data = $el.data('xmodal-opts') || $el.data('xmodal-options');
             if (data){
                 var dataOpts = data.split(delim);
@@ -712,7 +728,7 @@ if (typeof jQuery == 'undefined') {
             this.template = false; // don't use a template by default (set a value if a condition below is met)
 
             if (_opts.template){
-                this.template = this.$template = _opts.template = jqObj(_opts.template);
+                this.template = this.$template = _opts.template = $$(_opts.template);
                 // there's a 'data-xmodal-opts' attribute on the
                 // template element, extract options from that
                 if (this.template.data('xmodal-opts') || this.template.data('xmodal-options')){
@@ -1067,7 +1083,7 @@ if (typeof jQuery == 'undefined') {
         //////////////////////////////////////////////////
         xmodal.closeAll = function( $modals, $not, _delete ){
 
-            $modals = jqObj($modals) || $(xmodal.dialog.open);
+            $modals = $$($modals) || $(xmodal.dialog.open);
             $modals = $modals.not($not);
 
             var timeout = 0;
@@ -1097,7 +1113,7 @@ if (typeof jQuery == 'undefined') {
         //////////////////////////////////////////////////
         xmodal.maximize = function($modal){
             if (!$modal) { return }
-            $modal = jqObj($modal);
+            $modal = $$($modal);
             $modal.toggleClass('maxxed');
         };
         //////////////////////////////////////////////////
@@ -1335,7 +1351,7 @@ if (typeof jQuery == 'undefined') {
             //var $top_loader = $loaders.last();
             //var id = _id || $top_loader.attr('id');
             //xmodal.loading.count--;
-            var $loader = (_id) ? jqObj(_id) : $('div.xmodal.loading.open.top');
+            var $loader = (_id) ? $$(_id) : $('div.xmodal.loading.open.top');
             xmodal.close($loader);
         };
         //

@@ -31,10 +31,10 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
             <table id="data-type-table" class="xnat-table clean sortable">
             <tr>
                 <th class="sort"><b>Element</b></th>
-                <th class="sort">
+                <th class="sort name-singular">
                     <span title="Term used to describe one instance of this data.">Singular</span>
                 </th>
-                <th class="sort">
+                <th class="sort name-plural">
                     <span title="Term used to describe more than one occurrence of this data.">Plural</span>
                 </th>
                 <th class="sort">
@@ -72,14 +72,14 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
                 <td>
                     <a class="data-type-link" target="_blank" href="$url">$!data_type.getProperty("element_name")</a>
                 </td>
-                <td>
+                <td class="name-singular">
                     <i class="hidden">$!data_type.getProperty("singular")</i>
                     <input type="text" value="$!data_type.getProperty("singular")"
                             id="xdat:security/element_security_set/element_security[$dt_count]/singular"
                             name="xdat:security/element_security_set/element_security[$dt_count]/singular"
                             size="25">
                 </td>
-                <td>
+                <td class="name-plural">
                     <i class="hidden">$!data_type.getProperty("plural")</i>
                     <input type="text" value="$!data_type.getProperty("plural")"
                             id="xdat:security/element_security_set/element_security[$dt_count]/plural"

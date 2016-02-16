@@ -4,7 +4,7 @@
  */
 
 if (typeof jQuery == 'undefined') {
-    throw  new Error('jQuery is required');
+    throw  new Error('jquery.spawn.js requires jQuery');
 }
 
 (function($, undefined){
@@ -20,7 +20,7 @@ if (typeof jQuery == 'undefined') {
     // returns first defined argument
     // useful for retrieving 'falsey' values
     function firstDefined() {
-        var undefined, i = -1;
+        var i = -1;
         while (++i < arguments.length) {
             if (arguments[i] !== undefined) {
                 return arguments[i];
@@ -36,10 +36,10 @@ if (typeof jQuery == 'undefined') {
     // var $div2 = $.spawn('div'), {}, {id:'div2'}, "Div2's HTML content")
     /**
      * Create a jQuery-wrapped DOM object
-     * @param tag - HTML tag
-     * @param opts - jQuery methods / child element(s) / HTML
-     * @param attr - native DOM attributes
-     * @param content - child element(s) / HTML
+     * @param {String} tag - HTML tag
+     * @param {Object} opts - jQuery methods / child element(s) / HTML
+     * @param {Object} attr - native DOM methods, properties, and attributes
+     * @param {String|Array|Object|Elements} content - child element(s) / HTML
      * @returns {object} - jQuery object
      */
     $.spawn = function(tag, opts, attr, content){
@@ -70,8 +70,11 @@ if (typeof jQuery == 'undefined') {
 
         // pass empty string or #text as
         // first argument to create fragment
-        if (tag === '' || tag === '#text'){
+        if (tag === '' || /^(#text|#html)/i.test(tag)){
             el = document.createDocumentFragment();
+            // the second argument MUST be
+            // text or HTML content
+            el.innerHTML = opts;
         }
         else {
             try {
@@ -97,8 +100,11 @@ if (typeof jQuery == 'undefined') {
             var quotes = /^('|")|('|")$/g;
             var key = att.split(sep)[0].trim();
             var val = (att.split(sep)[1]||'').trim().replace(quotes, '') || key;
+            // allow use of 'class', but (secretly) use 'className'
+            //if (key === 'class') { key = 'className' }
             // add each attribute/property directly to DOM element
-            el[key] = val;
+            //el[key] = val;
+            el.setAttribute(key, val);
         });
 
         $el = $(el);
@@ -150,6 +156,8 @@ if (typeof jQuery == 'undefined') {
 
         $.each(_opts, function(prop, val){
 
+            prop = prop.trim();
+
             // skip 'tag' property
             if (prop === 'tag') return;
 
@@ -184,9 +192,9 @@ if (typeof jQuery == 'undefined') {
                 $.each([].concat(val), function(i, child){
                     try {
                         // recursively append spawns as needed
-                        $el.append(child); // each child must be an 'appendable' item
+                        //$el.append(child); // each child must be an 'appendable' item
                         //$.spawn(child).appendTo($el);
-                        //$el.append($.spawn.apply(null, [].concat(child)));
+                        $el.append($.spawn.apply(null, [].concat(child)));
                     }
                     catch (e) {
                         if (console && console.log) console.log(e);

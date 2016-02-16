@@ -1,0 +1,137 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Spawn Samples</title>
+    <script src="../jquery/jquery.js"></script>
+    <script src="../jquery-plugins/jquery.spawn.js"></script>
+    <script src="spawn.js"></script>
+    <script>
+        // shortcuts
+        function byId(id){
+            return document.getElementById(id)
+        }
+    </script>
+</head>
+<body>
+
+<h1>Samples for spawn.js</h1>
+
+<h2>Spawn a simple &lt;table&gt; element:</h2>
+<div id="spawn-table-1"></div>
+
+<h2>Spawn a table from input data:</h2>
+<div id="spawn-table-2"></div>
+
+<h2>Spawn a table from input data and wrap in a jQuery object:</h2>
+<p>(click a table cell to trigger an 'onclick' event)</p>
+<div id="spawn-table-3"></div>
+
+<h2>Spawn elements with the jQuery Spawner <b>$.spawn()</b>:</h2>
+<p>The jQuery Spawner returns a jQuery-wrapped element.</p>
+<div id="jquery-spawn-div"></div>
+
+<script>
+    (function(){
+
+        function th(opts, content){
+            if (!content) {
+                content = opts;
+                opts = {};
+            }
+            return spawn('td', opts, content);
+        }
+
+        function td(opts, content){
+            if (!content) {
+                content = opts;
+                opts = {};
+            }
+            return spawn('td', opts, content);
+        }
+
+        function tr(opts, cells){
+            // cells is an array of table row data for <td> elements
+            if (!cells) {
+                cells = opts;
+                opts = {};
+            }
+            return spawn('tr', opts, cells.map(function(content){
+                return td(content);
+            }));
+//            var _row = spawn('tr', opts, cells.map(function(content){
+//                return td(content);
+//            }));
+//            cells.forEach(function(data){
+//                _row.appendChild(td(data));
+//            });
+//            return _row;
+        }
+
+        function table(opts, rows){
+            // rows is an array of arrays of table data
+            var rowsSample = [
+                ['a', 'b', 'c'],
+                ['x', 'y', 'z'],
+                [1, 2, 3]
+            ];
+            // -OR- an array of objects using the keys for <th> elements
+            // (also add a [data-key="key_name"] attribute)
+            var _table = spawn('table', opts);
+            if (rows) {
+                rows.forEach(function(row){
+                    _table.appendChild(tr(null, row));
+                });
+            }
+            return _table;
+        }
+
+        // append data to an existing table
+        // [data] array length must match
+        // number of columns
+        function tableAppend(table, data){
+            var table$   = $(table),
+                rowCount = table$.find('> tr').length,
+                i        = 0;
+            while (i < rowCount) {
+                table$.append(tr(data));
+                i++;
+            }
+        }
+
+        function trWithClass(classes, data){
+            return tr({ className: classes }, data);
+        }
+
+        byId('spawn-table-1').appendChild(spawn('table|id=table1', [
+            ['tr', [
+                td('Cell 1'),
+                td('Cell 2'),
+                td('Cell 3'),
+                td('Cell 4')
+            ]]
+        ]));
+
+        byId('spawn-table-2').appendChild(table({ id: 'table2' }, [
+            ['Cell 1a', 'Cell 2a', 'Cell 3a'],
+            ['Cell 1b', 'Cell 2b', 'Cell 3b']
+        ]));
+
+        $('#spawn-table-3').append($(table({ id: 'table2' }, [
+            ['Cell 1a', 'Cell 2a', 'Cell 3a'],
+            ['Cell 1b', 'Cell 2b', 'Cell 3b']
+        ])).css({color:'blue'}).on('click', 'td', function(e){
+            this.style.color = 'red';
+            alert(this.innerHTML);
+        }));
+
+        $('#jquery-spawn-div').append($.spawn('div|id=spawn1', [
+            ['', 'Foo'],
+            ['h1', 'Bar']
+        ]));
+
+    }())
+</script>
+
+</body>
+</html>

@@ -50,9 +50,9 @@ XNAT.app.projectSubjectSelector = function( proj_menu, subj_menu, submit_button,
 
 
     // cache the DOM elements
-    $proj_menu = jqObj(proj_menu);
-    $subj_menu = jqObj(subj_menu);
-    $submit    = jqObj(submit_button);
+    $proj_menu = $$(proj_menu);
+    $subj_menu = $$(subj_menu);
+    $submit    = $$(submit_button);
 
 
 

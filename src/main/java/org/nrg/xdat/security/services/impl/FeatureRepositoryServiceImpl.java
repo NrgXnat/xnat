@@ -2,6 +2,7 @@ package org.nrg.xdat.security.services.impl;
 
 import org.apache.commons.lang.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.entities.FeatureDefinition;
 import org.nrg.xdat.security.ElementAction;
@@ -16,10 +17,13 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.scheduling.annotation.Async;
+import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import java.util.*;
+import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 @Service
@@ -74,6 +78,9 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
                     }
                 }
             }
+        }
+        if (ElementSecurity.GetElementSecurities() != null && _contextService.hasApplicationContext()) {
+            updateNewSecureDefinitions();
         }
     }
 
@@ -143,47 +150,50 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
         }
     }
 
-    public void updateNewDefinitions() {
-        for (final String definitionKey : _newFeatures.keySet()) {
-            //after creating a new feature definition, if the feature is supposed to be related to an element action, it should be registered
-            final String actionName = _newFeatures.get(definitionKey);
-            try {
+    public void updateNewSecureDefinitions() {
+        try {
+            logger.debug("Element security data found, processing new feature definitions.");
+            for (final String definitionKey : _newFeatures.keySet()) {
+                //after creating a new feature definition, if the feature is supposed to be related to an element action, it should be registered
+                final String actionName = _newFeatures.get(definitionKey);
                 for (final ElementSecurity elementSecurity : ElementSecurity.GetElementSecurities().values()) {
                     for (final ElementAction elementAction : elementSecurity.getElementActions()) {
-                        try {
-                            if (StringUtils.equals(elementAction.getName(), actionName)) {
-                                if (!StringUtils.equals(elementAction.getSecureFeature(), definitionKey)) {
-                                    //need to register this action
-                                    elementAction.getItem().setProperty("secureFeature", definitionKey);
-                                    SaveItemHelper.authorizedSave(elementAction.getItem(), Users.getUser("admin"), true, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Configure new feature."));
+                        if (StringUtils.equals(elementAction.getName(), actionName)) {
+                            if (!StringUtils.equals(elementAction.getSecureFeature(), definitionKey)) {
+                                if (logger.isDebugEnabled()) {
+                                    logger.debug("Found new element action {}, setting secure feature to: {}", actionName, definitionKey);
                                 }
+                                //need to register this action
+                                elementAction.getItem().setProperty("secureFeature", definitionKey);
+                                SaveItemHelper.authorizedSave(elementAction.getItem(), Users.getUser("admin"), true, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Configure new feature."));
                             }
-                        } catch (Exception e) {
-                            logger.error("", e);
-                            //otherwise ignore failure
                         }
                     }
                 }
-            } catch (Exception e) {
-                logger.error("", e);
-                //otherwise ignore failure
             }
+        } catch (Exception e) {
+            logger.error("", e);
+            //otherwise ignore failure
         }
+        _newFeatures.clear();
     }
 
-    private static final Logger  logger                        = LoggerFactory.getLogger(FeatureRepositoryServiceImpl.class);
-    private static final String  ELEMENT_ACTION_NAME           = "element_action_name";
-    private static final String  ON_BY_DEFAULT                 = "OnByDefault";
-    private static final String  FEATURE_DEFINITION_PACKAGE    = "config.features";
-    private static final Pattern FEATURE_DEFINITION_PROPERTIES = Pattern.compile(".*-feature-definition\\.properties");
-    private static final String  NAME                          = "name";
-    private static final String  DESC                          = "description";
-    private static final String KEY = "key";
-    private static final String[] PROP_OBJECT_FIELDS = new String[]{NAME, DESC, KEY, ON_BY_DEFAULT, ELEMENT_ACTION_NAME};
-    private static final String PROP_OBJECT_IDENTIFIER = "org.nrg.Feature";
+    private static final Logger   logger                        = LoggerFactory.getLogger(FeatureRepositoryServiceImpl.class);
+    private static final String   ELEMENT_ACTION_NAME           = "element_action_name";
+    private static final String   ON_BY_DEFAULT                 = "OnByDefault";
+    private static final String   FEATURE_DEFINITION_PACKAGE    = "config.features";
+    private static final Pattern  FEATURE_DEFINITION_PROPERTIES = Pattern.compile(".*-feature-definition\\.properties");
+    private static final String   NAME                          = "name";
+    private static final String   DESC                          = "description";
+    private static final String   KEY                           = "key";
+    private static final String[] PROP_OBJECT_FIELDS            = new String[]{NAME, DESC, KEY, ON_BY_DEFAULT, ELEMENT_ACTION_NAME};
+    private static final String   PROP_OBJECT_IDENTIFIER        = "org.nrg.Feature";
 
     @Inject
     private FeatureDefinitionService _service;
+
+    @Inject
+    private ContextService _contextService;
 
     private final Map<String, String> _newFeatures = new HashMap<>();
 }

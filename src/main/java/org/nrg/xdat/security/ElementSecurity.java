@@ -28,7 +28,6 @@ import java.util.Scanner;
 
 import org.apache.log4j.Logger;
 import org.nrg.framework.services.ContextService;
-import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.om.XdatElementAccess;
@@ -116,23 +115,23 @@ public class ElementSecurity extends ItemWrapper{
 			synchronized(lock){
 				if (elements == null)
 				{
-					elements = new Hashtable<String,ElementSecurity>();
+					elements = new Hashtable<>();
 					ArrayList al = DisplaySearch.SearchForItems(SchemaElement.GetElement(XDAT_ELEMENT_SECURITY),new CriteriaCollection("AND"));
-					Iterator iter = al.iterator();
-					while (iter.hasNext())
-					{
-						ItemI item = (ItemI)iter.next();
-						ElementSecurity es = new ElementSecurity(item);
+					for (final Object anItem : al) {
+						ItemI           item = (ItemI) anItem;
+						ElementSecurity es   = new ElementSecurity(item);
 						es.getItem().internValues();
-						elements.put(es.getElementName(),es);
+						elements.put(es.getElementName(), es);
 					}
 				}
-				final ContextService contextService = XDAT.getContextService();
-				if (contextService != null) {
-					final FeatureRepositoryServiceI featureRepositoryService = contextService.getBean(FeatureRepositoryServiceI.class);
-					if (featureRepositoryService instanceof FeatureRepositoryServiceImpl) {
-						((FeatureRepositoryServiceImpl) featureRepositoryService).updateNewDefinitions();
+				final ContextService service = ContextService.getInstance();
+				if (service.hasApplicationContext()) {
+					final FeatureRepositoryServiceI featureRepoService = service.getBean(FeatureRepositoryServiceI.class);
+					if (featureRepoService != null && featureRepoService instanceof FeatureRepositoryServiceImpl) {
+						((FeatureRepositoryServiceImpl) featureRepoService).updateNewSecureDefinitions();
 					}
+				} else {
+					logger.warn("The context service instance does not have an application context: I need to check for new feature definitions but can't.");
 				}
 			}
 		}

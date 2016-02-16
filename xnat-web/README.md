@@ -2,7 +2,11 @@
 
 This is the XNAT Web application build.
 
-### First steps ###
+# Building #
+
+## Configuring ##
+
+### Gradle ###
 
 In order for the build to work at the moment (and to be able to import the Gradle project into an IDE), you need to set up some properties in a file named **gradle.properties**. This can be placed in your global properties file, which is located in the folder **.gradle** under your home folder, or in the same folder as the **build.gradle** file.
 
@@ -22,7 +26,13 @@ The repo properties are used when deploying build artifacts to the Maven reposit
 
 There are a lot of other useful properties you can set in **gradle.properties**, so it's worth spending a little time [reading about the various properties Gradle recognizes in this file](https://docs.gradle.org/current/userguide/build_environment.html).
 
-### Building ###
+### XNAT ###
+
+You also need to do a little configuring of the XNAT build. This is a temporary requirement until we've deprecated the **InstanceSettings.xml** configuration, but is required until we complete that task.
+
+Before building the XNAT web application, whether via Gradle or the IDE, modify **InstanceSettings.xml** to set the database properties, site URL, archive, cache, and prearchive paths, etc. If you change anything, e.g. move to a different database for some reason, you'll need to modify **InstanceSettings.xml** again and rebuild.
+
+## Building ##
 
 You can build with a simple Gradle command:
 
@@ -31,6 +41,12 @@ gradle clean war
 ```
 
 You may need to build the [XNAT Gradle plugin](https://bitbucket.org/xnatdev/gradle-xnat-plugin) first, although it should be available on the XNAT Maven repository.
+
+This will create your deployable web application in the location:
+
+```bash
+build/libs/xnat-web-1.7.0-SNAPSHOT.war
+```
 
 You can perform a build to your local Maven repository for development purposes like this:
 
@@ -46,7 +62,17 @@ gradle clean jar publishToMavenLocal publishMavenJavaPublicationToMavenRepositor
 
 For this last one, the values set for **repoUsername** and **repoPassword** must be valid credentials for pushing artifacts to the Maven server.
 
-### Deploying ###
+# Configuring #
+
+You must perform a couple of configuration steps in your run-time environment (e.g. your local development workstation, a Vagrant VM, etc.) in order for XNAT to run properly:
+
+* In your Tomcat start-up configuration, add **-Dxnat.home=<path>** where **<path>** is some writeable location. This is where XNAT will look for its configuration and logs folders, e.g. **${xnat.home}/config** and **${xnat.home}/logs**.
+* Copy **services.properties** into the **config** folder underneath the path you specified for **xnat.home**. For example, I set **xnat.home** to **~/xnat**. Under that I have the folder **config**, which contains **services.properties** (you don't have to create **logs**: log4j will create it if it doesn't exist).
+* Open **InstanceSettings.xml** and modify the settings in there to reflect your configuration. You must do this before the build. This is an annoying but temporary requirement.
+
+# Running XNAT #
+
+## From Gradle ##
 
 You can deploy the built war to a remote Tomcat using the Cargo plugin.
 
@@ -90,3 +116,11 @@ deployPassword=s3cret
 ```
 
 You can also specify these on the Gradle command line. Just take each setting and preface it with **-D**.
+
+## In the IDE ##
+
+You can run XNAT from within your IDE. You need to set the appropriate values for the VM to configure available heap and permgen space, as well as setting **xnat.home** appropriately. For example, in IntelliJ, I have the following line for the VM options in my local Tomcat debug configuration:
+
+```-
+Xms512m -Xmx1g -XX:MaxPermSize=256m -Dxnat.home=/Users/xxx/xnat
+```

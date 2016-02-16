@@ -112,14 +112,37 @@
 
     <repositories>
         <repository>
-            <id>org.nrg.maven.artifacts.snapshot</id>
-            <name>XNAT Snapshot Maven Repo</name>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
-        </repository>
-        <repository>
             <id>org.nrg.maven.artifacts.release</id>
             <name>XNAT Release Maven Repo</name>
             <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>false</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>org.nrg.maven.artifacts.snapshot</id>
+            <name>XNAT Snapshot Maven Repo</name>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>dcm4che</id>
+            <name>dcm4che Maven Repository</name>
+            <url>http://www.dcm4che.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
     </repositories>
 

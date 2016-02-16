@@ -183,6 +183,17 @@ dependencies {
     compile "dcm4che:dcm4che-iod:2.0.25"
     compile "dcm4che:dcm4che-net:2.0.25"
 
+    compile "org.springframework:spring-aop:${vSpring}"
+    compile "org.springframework:spring-beans:${vSpring}"
+    compile "org.springframework:spring-context-support:${vSpring}"
+    compile "org.springframework:spring-context:${vSpring}"
+    compile "org.springframework:spring-core:${vSpring}"
+    compile "org.springframework:spring-jdbc:${vSpring}"
+    compile "org.springframework:spring-jms:${vSpring}"
+    compile "org.springframework:spring-messaging:${vSpring}"
+    compile "org.springframework:spring-orm:${vSpring}"
+    compile "org.springframework:spring-oxm:${vSpring}"
+    compile "org.springframework:spring-tx:${vSpring}"
     compile "org.springframework:spring-web:${vSpring}"
     compile "org.springframework:spring-webmvc:${vSpring}"
 

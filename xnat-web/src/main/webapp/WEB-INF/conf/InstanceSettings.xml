@@ -1,22 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Tim Olsen (Washington University) -->
-<Instance_Settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="schemas/xdat/instance.xsd" site_url="http://xnat17dev.xnat.org" admin_email="jrherrick@wustl.edu" archive_root_path="/data/xnat17/archive" prearchive_path="/data/xnat17/prearchive" cache_path="/data/xnat17/cache" smtp_server="irony.wusm.wustl.edu" ftp_path="/data/xnat17/ftp" build_path="/data/xnat17/build" pipeline_path="/data/xnat17/pipeline" require_login="true" user_registration="false" enable_csrf_token="true">
+<Instance_Settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="schemas/xdat/instance.xsd"
+				   site_url="http://localhost:8080" admin_email="administrator@xnat.org" archive_root_path="/data/xnat/archive"
+				   prearchive_path="/data/xnat/prearchive" cache_path="/data/xnat/cache"
+				   smtp_server="irony.wusm.wustl.edu" ftp_path="/data/xnat/ftp" build_path="/data/xnat/build"
+				   pipeline_path="/data/xnat/pipeline" require_login="true" user_registration="false" enable_csrf_token="true">
 	<Databases>
-		<Database Type="POSTGRESQL" Id="xnat17" Driver="org.postgresql.Driver" Url="jdbc:postgresql://localhost/xnat17" User="xnat" Pass="xnat" MaxConnections="10"/>
+		<Database Type="POSTGRESQL" Id="xnat" Driver="org.postgresql.Driver" Url="jdbc:postgresql://localhost/xnat" User="xnat" Pass="xnat" MaxConnections="10"/>
 	</Databases>
 	<Models>
-		<Data_Model File_Name="security.xsd" File_Location="schemas/security" DB="xnat17"/>
-		<Data_Model File_Name="birnprov.xsd" File_Location="schemas/birn" DB="xnat17"/>
-		<Data_Model File_Name="xnat.xsd" File_Location="schemas/xnat" DB="xnat17"/>
-		<Data_Model File_Name="workflow.xsd" File_Location="schemas/pipeline" DB="xnat17"/>
-		<Data_Model File_Name="repository.xsd" File_Location="schemas/pipeline" DB="xnat17"/>
-		<Data_Model File_Name="project.xsd" File_Location="schemas/project" DB="xnat17"/>
-		<Data_Model File_Name="assessments.xsd" File_Location="schemas/assessments" DB="xnat17"/>
-		<Data_Model File_Name="catalog.xsd" File_Location="schemas/catalog" DB="xnat17"/>
-		<Data_Model File_Name="protocolValidation.xsd" File_Location="schemas/validation" DB="xnat17"/>
-		<Data_Model File_Name="screeningAssessment.xsd" File_Location="schemas/screening" DB="xnat17"/>
+		<Data_Model File_Name="security.xsd" File_Location="schemas/security" DB="xnat"/>
+		<Data_Model File_Name="birnprov.xsd" File_Location="schemas/birn" DB="xnat"/>
+		<Data_Model File_Name="xnat.xsd" File_Location="schemas/xnat" DB="xnat"/>
+		<Data_Model File_Name="workflow.xsd" File_Location="schemas/pipeline" DB="xnat"/>
+		<Data_Model File_Name="repository.xsd" File_Location="schemas/pipeline" DB="xnat"/>
+		<Data_Model File_Name="project.xsd" File_Location="schemas/project" DB="xnat"/>
+		<Data_Model File_Name="assessments.xsd" File_Location="schemas/assessments" DB="xnat"/>
+		<Data_Model File_Name="catalog.xsd" File_Location="schemas/catalog" DB="xnat"/>
+		<Data_Model File_Name="protocolValidation.xsd" File_Location="schemas/validation" DB="xnat"/>
+		<Data_Model File_Name="screeningAssessment.xsd" File_Location="schemas/screening" DB="xnat"/>
 
-<!--<Data_Model File_Name="ext.xsd" File_Location="schemas/ext" DB="xnat17"/>-->
+<!--<Data_Model File_Name="ext.xsd" File_Location="schemas/ext" DB="xnat"/>-->
 		<!-- Start modules schemas: Reserved for xnat_builder, don't modify anything between this line and the end modules line. -->
 		<!-- End modules schemas: Reserved for xnat_builder, don't modify anything between this line and the start modules line. -->
 	</Models>

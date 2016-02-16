@@ -27,6 +27,8 @@ import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.log4j.Logger;
+import org.nrg.framework.services.ContextService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.om.XdatElementAccess;
@@ -39,6 +41,8 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
+import org.nrg.xdat.security.services.impl.FeatureRepositoryServiceImpl;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
@@ -121,6 +125,13 @@ public class ElementSecurity extends ItemWrapper{
 						ElementSecurity es = new ElementSecurity(item);
 						es.getItem().internValues();
 						elements.put(es.getElementName(),es);
+					}
+				}
+				final ContextService contextService = XDAT.getContextService();
+				if (contextService != null) {
+					final FeatureRepositoryServiceI featureRepositoryService = contextService.getBean(FeatureRepositoryServiceI.class);
+					if (featureRepositoryService instanceof FeatureRepositoryServiceImpl) {
+						((FeatureRepositoryServiceImpl) featureRepositoryService).updateNewDefinitions();
 					}
 				}
 			}

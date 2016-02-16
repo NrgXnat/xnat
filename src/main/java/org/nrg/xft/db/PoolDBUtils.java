@@ -985,9 +985,13 @@ public class PoolDBUtils {
 			st.execute(query);
 		}
 		
-		public void execute(Collection<String> stmts) throws SQLException{
-			for(String s:stmts){
-				st.execute(s);
+		public void execute(Collection<String> statements) throws SQLException {
+			for (final String statement : statements) {
+				try {
+					st.execute(statement);
+				} catch (SQLException e) {
+					logger.error("An error occurred in the SQL statement: " + statement);
+				}
 			}
 		}
 		

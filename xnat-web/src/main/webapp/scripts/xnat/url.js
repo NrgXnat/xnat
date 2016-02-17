@@ -19,23 +19,28 @@ var XNAT = getObject(XNAT||{});
     // don't cache AJAX requests
     xhr.cache = firstDefined(xhr.cache||undefined, false);
 
+    // trim leading AND trailing slashes
+    function trimSlashes(str){
+        return str.replace(/^\/+|\/+$/g,'');
+    }
+
+    // chop off LEADING slashes
+    function chopSlashes(str){
+        return str.replace(/^\/+/,'');
+    }
+
     // fix potential duplicate url root prefixes
     function fixRoot(root, url){
-        var rootParts, urlParts, newUrl;
-        // strips leading and trailing slashes
-        function trimSlashes(str){
-            return str.replace(/^\/+|\/+$/g,'');
+        var rootRegExp;
+        // remove slashes from both sides of root
+        root = trimSlashes(root);
+        // make sure url has only ONE leading slash
+        url  = '/' + chopSlashes(url);
+        if (!root){
+            return url;
         }
-        root = trimSlashes(root||'');
-        url =  trimSlashes(url||'');
-        if (!root){ return '/' + url; }
-        rootParts = root.split('/');
-        urlParts  = url.split('/');
-        while (rootParts.shift() === urlParts.shift()){
-            // whittling away the arrays
-            newUrl = urlParts.join('/');
-        }
-        return '/' + (newUrl||url);
+        rootRegExp = new RegExp('^(\/' + root + ')+', 'i');
+        return url.replace(rootRegExp, '/' + root);
     }
 
     // make sure the serverRoot string (and only ONE serverRoot string)

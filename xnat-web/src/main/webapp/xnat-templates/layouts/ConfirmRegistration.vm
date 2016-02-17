@@ -19,13 +19,6 @@ $navigation.setTemplate("/bodyOpen.vm")
       <div id="layout_content">$screen_placeholder</DIV>
     </td>
   </tr>
-  <tr>
-    <td valign="bottom">
-
-        $navigation.setTemplate("/powered_by.vm")
-
-    </td>
-  </tr>
 </table>
 
 ## insert any template-specific code here that needs to be directly before closing </body> tag

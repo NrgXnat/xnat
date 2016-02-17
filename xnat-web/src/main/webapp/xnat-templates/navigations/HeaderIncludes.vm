@@ -39,12 +39,10 @@
     // add ?debug=true to the query string
     // or #debug to the url hash to load
     // the non-minified versions
-    writeCSS('scripts/lib/jquery-ui/jquery-ui-xnat.css|!|v=1.7.0a1');
     writeScripts([
         scriptUrl('lib/loadjs/loadjs'),
         scriptUrl('lib/jquery/jquery|.min'),
         scriptUrl('lib/jquery/jquery-migrate-1.2.1|.min'),
-        scriptUrl('lib/jquery-ui/jquery-ui|.min'),
     ]);
 </script>
 ##<script type="text/javascript" src="$content.getURI('scripts/lib/loadjs/loadjs.js')"></script>

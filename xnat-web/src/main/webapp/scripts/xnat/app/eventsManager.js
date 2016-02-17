@@ -72,7 +72,7 @@ $(function(){
                 xmodal.message('Error', 'An error occurred retrieving event handlers for this project: [' + status + '] ' + error);
             },
             complete: function(){
-                $('#accordion').accordion('refresh');
+                //$('#accordion').accordion('refresh');
             }
         });
     }

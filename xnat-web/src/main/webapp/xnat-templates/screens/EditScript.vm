@@ -47,7 +47,7 @@
     }
 </script>
 <div class="yui-skin-sam">
-<div id="tp_fm" style="display:none"></div>
+##<div id="tp_fm" style="display:none"></div>
 <table style="width:98%">
     <tr>
         <td valign="top" style="width:680px;">

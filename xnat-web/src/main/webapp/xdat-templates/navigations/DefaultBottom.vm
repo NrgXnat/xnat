@@ -6,7 +6,6 @@
             <a target="_blank" href="http://www.nbirn.net/" onmouseover="return true;">
                 <img src="$content.getURI("images/small_birn_logo.png")" border=0>
             </a>
-            &nbsp;$navigation.setTemplate("/powered_by.vm")
         </td>
     </tr>
 </table>

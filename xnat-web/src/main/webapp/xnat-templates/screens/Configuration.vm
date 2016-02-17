@@ -18,10 +18,7 @@
 </script>
 ##<script type="text/javascript" src="$content.getURI("scripts/tabWrangler/tabWrangler.js")"></script>
 <div class="yui-skin-sam">
-<div id="tp_fm" style="display:none"></div>
-<table style="width:98%">
-    <tr>
-        <td valign="top" style="width:680px;">
+##<div id="tp_fm" style="display:none"></div>
             <div class="edit_header1">Configuration</div><br/>
 
 #if($data.getSession().getAttribute("user").checkRole("Administrator"))
@@ -128,15 +125,7 @@
 
             </script>
             <!-- END TABS AND CONTENT DISPLAY: Taken from xnat_projectData_summary_tabs.vm -->
-        </td>
-    </tr>
-    <tr>
-        <td colspan="3">
 #else
-        </td>
-    </tr>
-    <tr>
-        <td colspan="3">
             <div id="congratsContainer" class="container" style="width:98%;margin:5px;background-color:#ff99cc;">
                 <div id="congratsBody" class="containerBody">
                     <div class="containerItem edit_header2" style="white-space:normal;line-height:18px;">Security Warning</div>
@@ -144,9 +133,6 @@
                 </div>
             </div>
 #end
-        </td>
-    </tr>
-</table>
     <script type="text/javascript">
         jq(window).load(function(){
             wrangleTabs('#configurationTabs');

@@ -1,13 +1,4 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-##<style>
-##.ygtvlabel{
-##  /* font-size:9px; */
-##}
-###search_tabs {
-##	font-size:12px;
-##	min-height: 300px;
-##}
-##</style>
 <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_stored_search.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_search_field.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/generated/xdat_criteria.js")"></script>
@@ -17,36 +8,20 @@
 <script type="text/javascript" src="$content.getURI("scripts/search/searchManager.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/search/dataTableSearch.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/search/dataTableStoredSearch.js")"></script>
-<div class="yui-skin-sam">
-    <table id="search_results_container" cellpadding="0" cellspacing="0">
-        <tr>
-            #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.show-left-bar","true")))
-                <td class="leftBar" align="left" valign="top">
-                    <div id="l_tv" style="width:160px;margin-right:10px;padding:10px;border:1px solid #d0d0d0"></div>
-                ##                       <div style="width:190px">&nbsp;</div>
-                </td>
-            #else
-                <div id="l_tv" style="display:none"></div>
-            #end
 
-            <td valign="top">
-                #if ($data.message)
-                    <div class="error">$data.message</div>
-                    <br/>
-                #end
-                <div id="layout_content2" style="display:none;">Loading...</div>
-                <div id="layout_content">
+<div id="l_tv" style="display:none"></div>
 
-                    <div id="search_tab_module">
-                        <div class="bd">
-                            <div id="search_tabs"></div>
-                        </div>
-                    </div>
-                </div>
-            </td>
-        </tr>
-    </table>
+#if ($data.message)
+<div class="error">$data.message</div>
+<br>
+#end
+
+<div id="search_tab_module">
+    <div class="bd">
+        <div id="search_tabs"></div>
+    </div>
 </div>
+
 #if($xss)
 <textarea id="xss" style="display:none">$xss</textarea>
 #end

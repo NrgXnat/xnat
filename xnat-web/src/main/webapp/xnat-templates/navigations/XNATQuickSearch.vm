@@ -33,25 +33,63 @@ function submitQuickSearch(){
 </script>
 <!-- end search script -->
 
+<style type="text/css">
+	#quickSearchForm .chosen-results {
+		max-height: 500px;
+	}
+	#quickSearchForm .chosen-results li {
+		padding-right: 20px;
+		white-space: nowrap;
+	}
+	#quickSearchForm .chosen-container .chosen-drop {
+		width: auto;
+		min-width: 180px;
+		max-width: 360px;
+	}
+    #quickSearchForm .chosen-container .chosen-drop .divider {
+        padding: 0;
+		overflow: hidden;
+	}
+</style>
+
 <form id="quickSearchForm" method="post" action="$link.setAction("QuickSearchAction")">
-    <input id="searchValue" name="searchValue" type="text" maxlength="40" size="25" value="$!field" />
-    <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Search</button>
+    <select id="stored-searches" data-placeholder="Stored Searches">
+		<option></option>
+		<optgroup>
+            <option value="$link.setPage("XDATScreen_search_wizard1.vm")">Advanced Search&hellip;</option>
+		</optgroup>
+##		<option disabled class="divider">&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;&mdash;</option>
+        <optgroup class="stored-search-list">
+			<option disabled>(no stored searches)</option>
+			<!-- stored searches will show up here -->
+		</optgroup>
+	</select>
+	<input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="$!field" />
+    <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Go</button>
 #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-advanced-search","true")))
-    <script>
-        function advancedSearch(){
-## maybe eventually this can come up in a dialog
-##		xmodal.iframe({
-##			url: '$link.setPage("XDATScreen_search_wizard1.vm")/popup/true',
-##			title: 'Advanced Search',
-##			width: 800,
-##			height: 500,
-##			footer: false,
-##		//                scroll: false,
-##			overflow: 'hidden'
-##		});
-            window.location.href="$link.setPage("XDATScreen_search_wizard1.vm")";
-        }
+
+	<script>
+		$('#searchValue').each(function(){
+			this.value = this.value || 'search';
+			$(this).focus(function(){
+				$(this).removeClass('clean');
+				if (!this.value || this.value === 'search'){
+					this.value = '';
+				}
+			})
+		});
+        $('#stored-searches').on('change', function(){
+            if (this.value){
+                window.location.href = this.value;
+            }
+        }).chosen({
+            width: '150px',
+            disable_search_threshold: 9,
+            inherit_select_classes: true,
+            placeholder_text_single: 'Stored Searches',
+            search_contains: true
+        });
     </script>
-    <button type="button" id="advanced_btn" class="btn2" onclick="advancedSearch();">Advanced</button>
+##    <button type="button" id="advanced_btn" class="btn2" onclick="advancedSearch();">Advanced</button>
 #end
 </form>

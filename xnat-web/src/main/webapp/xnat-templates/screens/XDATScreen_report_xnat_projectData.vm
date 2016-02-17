@@ -20,7 +20,7 @@
 ##	</STYLE>
 <DIV id="project-page" class="yui-skin-sam" style="position: relative;">
 
-    <div id="tp_fm" style="display:none"></div>
+##    <div id="tp_fm" style="display:none"></div>
     #addCustomScreens($om.getXSIType() "report/alerts")
     #addCustomScreens($om.getXSIType() "report/errors")
 

@@ -17,7 +17,7 @@ $page.setBgColor($ui.bgcolor)
 </div>
 
 
-<div id="header" class="main_header">
+<div id="header" class="main_header"><div class="pad">
 #if ($expired || $forgot)
         #parse("/screens/Logo.vm")
 #else
@@ -25,5 +25,5 @@ $page.setBgColor($ui.bgcolor)
         #parse("/screens/Logo.vm")
     </a>
 #end
-</div>
+</div></div>
 <!-- END NoninteractiveTop.vm -->

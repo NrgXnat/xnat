@@ -1,7 +1,7 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
 <!-- start: screens/xnat_subjectData_search.vm -->
 
-<div id="mr-advanced-search" class="advanced-search-fields">
+<div id="subject-advanced-search" class="advanced-search-fields">
 
     <a href="#!" style="position:absolute;right:0;top:0;font-size:12px;" class="link" onclick="XNAT.ui.popup('$link.setPage("SearchHelp.vm").addPathInfo("popup","true")','Help',500,600)">Help</a>
 

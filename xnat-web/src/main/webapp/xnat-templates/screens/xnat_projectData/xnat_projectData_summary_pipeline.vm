@@ -1,11 +1,6 @@
 <!-- Source file -->
 <script type="text/javascript" src="$content.getURI("scripts/yui/build/logger/logger-min.js")"></script>
-
-<link type="text/css" rel="stylesheet" href="$content.getURI("scripts/yui/build/fonts/fonts.css")">
-<!--<link type="text/css" rel="stylesheet" href="$content.getURI("scripts/yui/build/reset/reset.css")">-->
-
 <script type="text/javascript" src="$content.getURI("scripts/yui/build/animation/animation.js")"></script>
-
 <script type="text/javascript" src="$content.getURI("scripts/project/pipelineMgmt.js")"></script>
 
 <div id="waitPanel"></div>

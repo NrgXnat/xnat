@@ -47,9 +47,6 @@ $navigation.setTemplate("/bodyOpen.vm")
                 </tr>
             </table>
 
-            $navigation.setTemplate("/powered_by.vm")
-
-
 ## insert any template-specific code here that needs to be directly before closing </body> tag
 
 $navigation.setTemplate("/htmlClose.vm")

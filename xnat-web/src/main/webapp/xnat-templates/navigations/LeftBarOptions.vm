@@ -1,7 +1,3 @@
 #if($siteConfig.getProperty("showapplet") && $siteConfig.getProperty("showapplet").equals("true"))
-<tr>
-   <td align="center">
-     <INPUT type="button" style="line-height:11px;font-size:11px;" VALUE="Launch Uploader" ONCLICK="window.location='$content.getURI("/app/template/LaunchUploadApplet.vm")';"/>
-   </td>
- </tr>
+<INPUT type="button" style="line-height:11px;font-size:11px;" VALUE="Launch Uploader" ONCLICK="window.location='$content.getURI("/app/template/LaunchUploadApplet.vm")';"/>
  #end

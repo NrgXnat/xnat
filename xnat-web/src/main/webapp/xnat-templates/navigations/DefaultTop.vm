@@ -111,7 +111,7 @@
     (function() {
 
         // cache it
-        var main_nav$ = jq('#main_nav');
+        var main_nav$ = jq('#main_nav > ul');
 
 //        function subnav(items){
 //            var lis = [];
@@ -223,7 +223,8 @@
 </script>
 <!-- end main_nav interactions -->
 
-<div id="header" class="main_header">
+<div id="header" class="main_header"><div class="pad">
+
     #if($siteConfig.getProperty("siteWideAlertStatus","")=="2")
         <div id="headNotification" class="$siteConfig.getProperty("siteWideAlertType","") hidden" style="margin-bottom: 2em;">
             <span class="closeNotification"><img src="$content.getURI('images/close.gif')"></span>
@@ -246,8 +247,7 @@
         #parse("/screens/Logo.vm")
     </a>
 
-
-</div>  <!-- /header -->
+</div></div>  <!-- /header -->
 
 
 <script type="text/javascript">
@@ -323,4 +323,7 @@
 </script>
 
 <script src="$content.getURI("scripts/timeLeft.js")"></script>
+
+<div id="tp_fm"></div>
+
 <!-- END: xnat-templates/navigations/DefaultTop.vm -->

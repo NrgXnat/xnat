@@ -4,41 +4,55 @@
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="project" type="org.nrg.xdat.om.XnatProjectdata" *#
 ##<link rel="stylesheet" href="//code.jquery.com/ui/1.11.2/themes/smoothness/jquery-ui.css">
-<link rel="stylesheet" href="$content.getURI("scripts/lib/jquery-ui/jquery-ui-xnat.css")">
+##<link rel="stylesheet" href="$content.getURI("scripts/lib/jquery-ui-accordion/jquery-ui-xnat.css")">
 <style type="text/css">
-    
-    .ui-accordion {
-        font-family: Arial, Helvetica, sans-serif; 
+
+    #accordion {
+        /*display: none;*/
+        font-family: Arial, Helvetica, sans-serif;
         font-size: 13px;
         line-height: 17px;
     }
 
-    .ui-accordion .ui-accordion-header {
-        font-size: 13px; 
+    #accordion .active {
+        display: block;
+    }
+
+    #accordion h3 {
+        font-size: 13px;
         font-weight: bold;
         color: #222;
+        padding: 5px 10px;
+        border: 1px solid #d0d0d0;
     }
-    
-    .ui-accordion .ui-accordion-header-active {
-        background: #084FAB; 
-        color: #fff; 
+
+    #accordion h3:hover {
+        cursor: pointer;
     }
-    
-    .ui-accordion .ui-accordion-content { padding: 1em; }
-    
-    .ui-accordion .ui-widget-content a { color: #084FAB }
-    .ui-accordion .ui-widget-content a:hover { text-decoration: underline; }
-    
-    .ui-state-active .ui-icon {
-        background-image: url('$content.getURI("scripts/lib/jquery-ui/images/ui-icons_ffffff_256x240.png")');
+
+    #accordion h3.active {
+        background: #04519b;
+        color: #fff;
+    }
+
+    #accordion .content {
+        padding: 1em;
+        border: 1px solid #d0d0d0;
     }
 
 </style>
-<script type="text/javascript" src="$content.getURI("scripts/lib/jquery-ui/jquery-ui.min.js")"></script>
+##<script type="text/javascript">
+##    writeScripts([
+##        scriptUrl('lib/ace/ace.js'),
+##        scriptUrl('seriesImportFilter.js'),
+##        scriptUrl('settingsManager.js'),
+##        scriptUrl('xnat/app/eventsManager.js')
+##    ]);
+##</script>
+<script type="text/javascript" src="$content.getURI("scripts/lib/ace/ace.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/seriesImportFilter.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/settingsManager.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/xnat/app/eventsManager.js")"></script>
-<script type="text/javascript" src="$content.getURI("scripts/lib/ace/ace.js")"></script>
 
 <div id="addEventHandler" class="html-template">
     <table>
@@ -58,188 +72,243 @@
 </div>
 
 <div id="accordion">
-#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-quarantine","true")))
- <h3>Define Quarantine Settings</h3>
- <div>
- <table id="quarantine_table">
-  <tr>
-   <td colspan="2" class="highlighted" id="quarantine_container">
-#set($quar=$project.getArcSpecification().getQuarantineCode())
-## #if($quar=="")
-#if(!$quar)
-#set($quar=0)
-#end
-	 <!-- DIV style="font-weight:700;">&nbsp;Define Quarantine Settings</DIV -->
-       <TABLE cellpadding="5" cellspacing="0">
-            <TR><TD NOWRAP><input id="yes_quarantine" type="radio" name="quarantine" value="1" #if($!quar==1)CHECKED#end/> YES</TD><TD>All new experiments (and modified experiments) are placed into a quarantine state and must be specifically activated.</TD></TR>
-            <TR><TD NOWRAP><input id="no_quarantine"  type="radio" name="quarantine" value="0" #if($!quar==0)CHECKED#end /> NO</TD><TD>New and modified experiments will not be placed in Quarantine.</TD></TR>
-            <TR><TD COLSPAN="2"><input type="button" id="project_quarantine_save" value="Save" disabled></TD></TR>
-       </TABLE>
-  </td>
- </tr>
-</table>
-<script>
-window.quarantine=(new RadioSettingsManager(document.getElementById('quarantine_container'),{'URI':serverRoot+'/REST/projects/$project.getId()/quarantine_code/','radio_ids':['yes_quarantine','no_quarantine'],'current_value':'$quar','button':'project_quarantine_save'}));
-</script>
-</div>
-#end
-#if($turbineUtils.toBoolean($siteConfig.getProperty("project.allow-auto-archive","true")))
-<h3>Define Prearchive Settings</h3>
-<div>
-<table id="prearchive_table">
- <tr>
-  <td colspan="2" class="highlighted" id="prearchive_container">
-#set($prearc=$project.getArcSpecification().getPrearchiveCode())
-## #if($prearc=="")
-#if(!$prearc)
-#set($prearc=0)
-#end
-##	<DIV style="font-weight:700;">&nbsp;Define Prearchive Settings</DIV>
-       <TABLE cellpadding="5" cellspacing="0">
-            <TR><TD NOWRAP><input id="0_prearchive" type="radio" name="prearchive" value="0" #if($prearc==0)CHECKED#end/></TD><TD>All image data should be placed in a temporary location (prearchive) before being manually transferred into the permanent archive.</TD></TR>
-            <TR><TD NOWRAP><input id="4_prearchive"  type="radio" name="prearchive" value="4" #if($prearc==4)CHECKED#end /></TD><TD>All image data will be placed into the archive automatically, but anything matching existing files will be rejected.  Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD></TR>
-            <TR><TD NOWRAP><input id="5_prearchive"  type="radio" name="prearchive" value="5" #if($prearc==5)CHECKED#end /></TD><TD>All image data will be placed into the archive automatically and will overwrite existing files.  Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD></TR>
-            <TR><TD COLSPAN="2"><input type="button" id="project_prearchive_save" value="Save" disabled="disabled"/></TD></TR>
-       </TABLE>
-  </td>
- </tr>
-</table>
-<script>
-window.prearchive=(new RadioSettingsManager(document.getElementById('prearchive_container'),{'URI':serverRoot+'/REST/projects/$project.getId()/prearchive_code/','radio_ids':['0_prearchive','4_prearchive','5_prearchive'],'current_value':'$prearc','button':'project_prearchive_save'}));
-</script>
-</div>
-#end
-<h3>Anonymization Script</h3>
-<div>
-<table id="script_table">
-  <tr>
-    <td class="highlighted" id="script_container">
-##      <DIV style="font-weight:700;">Anonymization Script</DIV>
-      <TABLE>
-	<TR>
-    <TD><label for="enable_anon_script">Enable Script</label><input id="enable_anon_script" type="checkbox" name="enable_anon_script" value="true"/></TD>
-  </TR>
-	<TR><TD><textarea id="script_text_area" rows="20" cols="80" disabled="disabled"></textarea></TD></TR>
-	<TR><TD><input type="button" id="anon_script_save" value="Save" disabled="disabled"/></TD></TR>
-      </TABLE>      
-    </td>
-  </tr>
-</table>
-<script>
-  var sg = new scriptGet(document.getElementById('script_container'),
-            { 
-	       'getStatus' : serverRoot + '/data/config/edit/projects/$project.getId()/image/dicom/status?format=json',
-	       'putStatus' : serverRoot + '/data/config/edit/projects/$project.getId()/image/dicom/status?activate=',
-	       'getScript' : serverRoot + '/data/config/edit/projects/$project.getId()/image/dicom/script?format=json',
-	       'putScript' : serverRoot + '/data/config/edit/projects/$project.getId()/image/dicom/script?inbody=true',
-	       'project' : '$project.getId()',
-	       'enable_checkbox' : 'enable_anon_script',
-	       'script_text_area' : 'script_text_area',
-	       'save_button' : 'anon_script_save'
-	    });
-  sg.get();
-
-  var enableAnonScript = jq('#enable_anon_script');
-  var anonScript = jq('#script_text_area');
-  function toggleControlsOnAnonEnabled() {
-    var enabled = enableAnonScript.is(':checked');
-    anonScript.prop('disabled', !enabled);
-  }
-
-  function dirty() {
-    // Add check for class manager, since setting the initial value of the radio button
-    // will cause the dirty() function to be called, at which point the manager is null.
-    if (window.anonymizationManager && !window.anonymizationManager.wasDirty()) {
-      window.anonymizationManager.dirtyForm();
-    }
-    toggleControlsOnAnonEnabled();
-  }
-
-  anonScript.bind('input propertychange', dirty);
-  enableAnonScript.change(dirty);
-
-  function configurationAnonymizationTabChange(obj) {
-    if(obj.newValue.get("href")=="#anonymization") {
-      if(window.anonymizationManager==undefined) {
-        window.anonymizationManager = new SettingsTabManager('anonymization_mgmt_div', 'anonymization');
-      }
-      toggleControlsOnAnonEnabled();
-    }
-  }
-
-  function addAnonymizationMgmtMonitor(){
-    if(window.configurationTabView.get("activeTab").get("href")=="#anonymization") {
-      if(window.anonymizationManager==undefined) {
-        window.anonymizationManager = new SettingsTabManager('anonymization_mgmt_div', 'anonymization');
-      }
-    } else {
-      window.configurationTabView.subscribe("activeTabChange", configurationAnonymizationTabChange);
-    }
-  }
-
-  YAHOO.util.Event.onDOMReady(addAnonymizationMgmtMonitor);
-//  putConfigurationControls('anonymization', ['anonScript', 'enableAnonScript']);
-</script>
-</div>
-<h3>Series Import Filters</h3>
-<div>
-<table id="series_import_filter_table">
-    <tr>
-        <td colspan="2" class="highlighted" id="series_import_filter_container">
-            ## WHY IS THIS IN A TABLE? C'MON MAN, IT'S 2015
-            <table cellspacing="8">
+    #if($turbineUtils.toBoolean($siteConfig.getProperty("UI.allow-quarantine","true")))
+        <h3 class="active">Define Quarantine Settings</h3>
+        <div class="active">
+            <table id="quarantine_table">
                 <tr>
-                    <td>
-                        This is the series import filter applied to incoming and archiving DICOM resources for your
-                        project. This filter can also be supplemented by the site-wide series import filter.
+                    <td colspan="2" class="highlighted" id="quarantine_container">
+                        #set($quar=$project.getArcSpecification().getQuarantineCode())
+                    ## #if($quar=="")
+                        #if(!$quar)
+                            #set($quar=0)
+                        #end
+                        <!-- DIV style="font-weight:700;">&nbsp;Define Quarantine Settings</DIV -->
+                        <TABLE cellpadding="5" cellspacing="0">
+                            <TR>
+                                <TD NOWRAP>
+                                    <input id="yes_quarantine" type="radio" name="quarantine" value="1" #if($!quar==1)CHECKED#end/> YES
+                                </TD>
+                                <TD>All new experiments (and modified experiments) are placed into a quarantine state and must be specifically activated.</TD>
+                            </TR>
+                            <TR>
+                                <TD NOWRAP>
+                                    <input id="no_quarantine" type="radio" name="quarantine" value="0" #if($!quar==0)CHECKED#end/> NO
+                                </TD>
+                                <TD>New and modified experiments will not be placed in Quarantine.</TD>
+                            </TR>
+                            <TR>
+                                <TD COLSPAN="2"><input type="button" id="project_quarantine_save" value="Save" disabled>
+                                </TD>
+                            </TR>
+                        </TABLE>
                     </td>
-                </tr>
-                <tr>
-                    <td><label for="enable_series_import_filter">Enable Filter</label><input type="checkbox" name="enable_series_import_filter" id="enable_series_import_filter" /></td>
-                </tr>
-                <tr>
-                    <td><label for="series_import_filter_mode_list">Mode</label>
-                        <select name="series_import_filter_mode_list" id="series_import_filter_mode_list" disabled placeholder="Enter white- or blacklisted series import filters separated by newlines, e.g. <b>localizer</b> for localizer series. Enter a modality-mapped series import filter as JSON.">
-                            <option value="whitelist">Whitelist</option>
-                            <option value="blacklist">Blacklist</option>
-                            <option value="modalityMap">Modality Map</option>
-                        </select>
-                    </td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="info">
-                            Creating a whitelist means that <i>only</i> DICOM series with a series description that matches one of
-                            series filter patterns will be considered by XNAT import tools such as the upload applet. Creating a
-                            blacklist means that all DICOM series will be considered <i>except</i> for series that have one of the
-                            specified series filter patterns. A modality map lets you specify boolean expressions in JavaScript that
-                            can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the
-                            destination session.
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td><textarea id="series_import_filter_text_area" rows="20" cols="80" disabled="disabled"></textarea></td>
-                </tr>
-                <tr>
-                    <td>
-                        <div class="info">
-                            The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
-                            <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are
-                            case-insensitive, i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
-                        </div>
-                    </td>
-                </tr>
-                <tr>
-                    <td><input type="button" id="series_import_filter_save" value="Save" disabled="disabled"/></td>
                 </tr>
             </table>
-        </td>
-    </tr>
-</table>
-<script>
-    var filtersGet = new seriesImportFiltersGet(
-            {
+            <script>
+                window.quarantine = (new RadioSettingsManager(document.getElementById('quarantine_container'), {
+                    'URI': serverRoot + '/REST/projects/$project.getId()/quarantine_code/',
+                    'radio_ids': ['yes_quarantine', 'no_quarantine'],
+                    'current_value': '$quar',
+                    'button': 'project_quarantine_save'
+                }));
+            </script>
+        </div>
+    #end
+    #if($turbineUtils.toBoolean($siteConfig.getProperty("project.allow-auto-archive","true")))
+        <h3>Define Prearchive Settings</h3>
+        <div>
+            <table id="prearchive_table">
+                <tr>
+                    <td colspan="2" class="highlighted" id="prearchive_container">
+                        #set($prearc=$project.getArcSpecification().getPrearchiveCode())
+                    ## #if($prearc=="")
+                        #if(!$prearc)
+                            #set($prearc=0)
+                        #end
+                    ##	<DIV style="font-weight:700;">&nbsp;Define Prearchive Settings</DIV>
+                        <TABLE cellpadding="5" cellspacing="0">
+                            <TR>
+                                <TD NOWRAP>
+                                    <input id="0_prearchive" type="radio" name="prearchive" value="0" #if($prearc==0)CHECKED#end/>
+                                </TD>
+                                <TD>All image data should be placed in a temporary location (prearchive) before being manually transferred into the permanent archive.</TD>
+                            </TR>
+                            <TR>
+                                <TD NOWRAP>
+                                    <input id="4_prearchive" type="radio" name="prearchive" value="4" #if($prearc==4)CHECKED#end/>
+                                </TD>
+                                <TD>All image data will be placed into the archive automatically, but anything matching existing files will be rejected. Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD>
+                            </TR>
+                            <TR>
+                                <TD NOWRAP>
+                                    <input id="5_prearchive" type="radio" name="prearchive" value="5" #if($prearc==5)CHECKED#end/>
+                                </TD>
+                                <TD>All image data will be placed into the archive automatically and will overwrite existing files. Data which doesn't match a pre-existing $displayManager.getSingularDisplayNameForProject().toLowerCase() will be placed in an 'Unassigned' $displayManager.getSingularDisplayNameForProject().toLowerCase().</TD>
+                            </TR>
+                            <TR>
+                                <TD COLSPAN="2">
+                                    <input type="button" id="project_prearchive_save" value="Save" disabled="disabled"/>
+                                </TD>
+                            </TR>
+                        </TABLE>
+                    </td>
+                </tr>
+            </table>
+            <script>
+                window.prearchive = (new RadioSettingsManager(document.getElementById('prearchive_container'), {
+                    'URI': serverRoot + '/REST/projects/$project.getId()/prearchive_code/',
+                    'radio_ids': ['0_prearchive', '4_prearchive', '5_prearchive'],
+                    'current_value': '$prearc',
+                    'button': 'project_prearchive_save'
+                }));
+            </script>
+        </div>
+    #end
+    <h3>Anonymization Script</h3>
+    <div>
+        <table id="script_table">
+            <tr>
+                <td class="highlighted" id="script_container">
+                ##      <DIV style="font-weight:700;">Anonymization Script</DIV>
+                    <TABLE>
+                        <TR>
+                            <TD>
+                                <label for="enable_anon_script">Enable Script</label><input id="enable_anon_script" type="checkbox" name="enable_anon_script" value="true"/>
+                            </TD>
+                        </TR>
+                        <TR>
+                            <TD><textarea id="script_text_area" rows="20" cols="80" disabled="disabled"></textarea></TD>
+                        </TR>
+                        <TR>
+                            <TD><input type="button" id="anon_script_save" value="Save" disabled="disabled"/></TD>
+                        </TR>
+                    </TABLE>
+                </td>
+            </tr>
+        </table>
+        <script>
+            var sg = new scriptGet(document.getElementById('script_container'),
+                    {
+                        'getStatus': serverRoot + '/data/config/edit/projects/$project.getId()/image/dicom/status?format=json',
+                        'putStatus': serverRoot + '/data/config/edit/projects/$project.getId()/image/dicom/status?activate=',
+                        'getScript': serverRoot + '/data/config/edit/projects/$project.getId()/image/dicom/script?format=json',
+                        'putScript': serverRoot + '/data/config/edit/projects/$project.getId()/image/dicom/script?inbody=true',
+                        'project': '$project.getId()',
+                        'enable_checkbox': 'enable_anon_script',
+                        'script_text_area': 'script_text_area',
+                        'save_button': 'anon_script_save'
+                    });
+            sg.get();
+
+            var enableAnonScript = jq('#enable_anon_script');
+            var anonScript = jq('#script_text_area');
+            function toggleControlsOnAnonEnabled(){
+                var enabled = enableAnonScript.is(':checked');
+                anonScript.prop('disabled', !enabled);
+            }
+
+            function dirty(){
+                // Add check for class manager, since setting the initial value of the radio button
+                // will cause the dirty() function to be called, at which point the manager is null.
+                if (window.anonymizationManager && !window.anonymizationManager.wasDirty()) {
+                    window.anonymizationManager.dirtyForm();
+                }
+                toggleControlsOnAnonEnabled();
+            }
+
+            anonScript.bind('input propertychange', dirty);
+            enableAnonScript.change(dirty);
+
+            function configurationAnonymizationTabChange(obj){
+                if (obj.newValue.get("href") == "#anonymization") {
+                    if (window.anonymizationManager == undefined) {
+                        window.anonymizationManager = new SettingsTabManager('anonymization_mgmt_div', 'anonymization');
+                    }
+                    toggleControlsOnAnonEnabled();
+                }
+            }
+
+            function addAnonymizationMgmtMonitor(){
+                if (window.configurationTabView.get("activeTab").get("href") == "#anonymization") {
+                    if (window.anonymizationManager == undefined) {
+                        window.anonymizationManager = new SettingsTabManager('anonymization_mgmt_div', 'anonymization');
+                    }
+                }
+                else {
+                    window.configurationTabView.subscribe("activeTabChange", configurationAnonymizationTabChange);
+                }
+            }
+
+            YAHOO.util.Event.onDOMReady(addAnonymizationMgmtMonitor);
+            //  putConfigurationControls('anonymization', ['anonScript', 'enableAnonScript']);
+        </script>
+    </div>
+    <h3>Series Import Filters</h3>
+    <div>
+        <table id="series_import_filter_table">
+            <tr>
+                <td colspan="2" class="highlighted" id="series_import_filter_container">
+                ## WHY IS THIS IN A TABLE? C'MON MAN, IT'S 2015
+                    <table cellspacing="8">
+                        <tr>
+                            <td>
+                                This is the series import filter applied to incoming and archiving DICOM resources for your
+                                project. This filter can also be supplemented by the site-wide series import filter.
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <label for="enable_series_import_filter">Enable Filter</label><input type="checkbox" name="enable_series_import_filter" id="enable_series_import_filter"/>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><label for="series_import_filter_mode_list">Mode</label>
+                                <select name="series_import_filter_mode_list" id="series_import_filter_mode_list" disabled placeholder="Enter white- or blacklisted series import filters separated by newlines, e.g. <b>localizer</b> for localizer series. Enter a modality-mapped series import filter as JSON.">
+                                    <option value="whitelist">Whitelist</option>
+                                    <option value="blacklist">Blacklist</option>
+                                    <option value="modalityMap">Modality Map</option>
+                                </select>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="info">
+                                    Creating a whitelist means that
+                                    <i>only</i> DICOM series with a series description that matches one of
+                                    series filter patterns will be considered by XNAT import tools such as the upload applet. Creating a
+                                    blacklist means that all DICOM series will be considered
+                                    <i>except</i> for series that have one of the
+                                    specified series filter patterns. A modality map lets you specify boolean expressions in JavaScript that
+                                    can use DICOM header values from incoming DICOM objects to decide the appropriate modality for the
+                                    destination session.
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <textarea id="series_import_filter_text_area" rows="20" cols="80" disabled="disabled"></textarea>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td>
+                                <div class="info">
+                                    The series filters can be written as exact string matches, but also can be regular expressions. The regular expressions are evaluated using the
+                                    <a href="http://docs.oracle.com/javase/tutorial/essential/regex/" target="_blank">Java regular expression syntax</a>. These expressions are
+                                    case-insensitive, i.e. the string "SAG LOCALIZER" will also match "Sag Localizer".
+                                </div>
+                            </td>
+                        </tr>
+                        <tr>
+                            <td><input type="button" id="series_import_filter_save" value="Save" disabled="disabled"/>
+                            </td>
+                        </tr>
+                    </table>
+                </td>
+            </tr>
+        </table>
+        <script>
+            var filtersGet = new seriesImportFiltersGet({
                 'container': document.getElementById('series_import_filter_container'),
                 'project': '$project.getId()',
                 'enable_checkbox': 'enable_series_import_filter',
@@ -247,43 +316,49 @@ window.prearchive=(new RadioSettingsManager(document.getElementById('prearchive_
                 'filters_text_area': 'series_import_filter_text_area',
                 'save_button': 'series_import_filter_save'
             });
-    filtersGet.get();
-</script>
-</div>
-#if($turbineUtils.toBoolean($siteConfig.getProperty("enableProjectAppletScript", "false")))
-<h3>Applet Configuration Script</h3>
-<div>
-  <table id="applet_script_table">
-  <tr>
-    <td colspan="2" class="highlighted" id="applet_script_container">
-##      <DIV>Applet Configuration Script</DIV>
-      <TABLE>
-          <tr>
-              <td><label for="enable_applet_script">Enable Applet Script</label></td>
-              <td><input type="checkbox" name="enable_applet_script" id="enable_applet_script" /></td>
-          </tr>
-	<TR><TD></TD><TD><textarea id="applet_script_text_area" rows="20" cols="80"></textarea></TD></TR>
-	<TR><TD COLSPAN="2"><input type="button" id="applet_script_save" value="Save" disabled="disabled"/></TD></TR>
-      </TABLE>      
-    </td>
-  </tr>
-</table>
-<script>
-  var sgApplet = new scriptGet(document.getElementById('applet_script_container'),
-            { 
-	       'getStatus' : serverRoot + '/data/projects/$project.getId()/config/applet/settings?format=json',
-	       'putStatus' : serverRoot + '/data/projects/$project.getId()/config/applet/settings?status=',
-	       'getScript' : serverRoot + '/data/projects/$project.getId()/config/applet/settings?format=json',
-	       'putScript' : serverRoot + '/data/projects/$project.getId()/config/applet/settings?inbody=true',
-	       'project' : '$project.getId()',
-	       'enable_checkbox' : 'enable_applet_script',
-	       'script_text_area' : 'applet_script_text_area',
-	       'save_button' : 'applet_script_save'
-	    });
-  sgApplet.get();
-</script>
-</div>
-#end
+            filtersGet.get();
+        </script>
+    </div>
+    #if($turbineUtils.toBoolean($siteConfig.getProperty("enableProjectAppletScript", "false")))
+        <h3>Applet Configuration Script</h3>
+        <div>
+            <table id="applet_script_table">
+                <tr>
+                    <td colspan="2" class="highlighted" id="applet_script_container">
+                    ##      <DIV>Applet Configuration Script</DIV>
+                        <TABLE>
+                            <tr>
+                                <td><label for="enable_applet_script">Enable Applet Script</label></td>
+                                <td><input type="checkbox" name="enable_applet_script" id="enable_applet_script"/></td>
+                            </tr>
+                            <TR>
+                                <TD></TD>
+                                <TD><textarea id="applet_script_text_area" rows="20" cols="80"></textarea></TD>
+                            </TR>
+                            <TR>
+                                <TD COLSPAN="2">
+                                    <input type="button" id="applet_script_save" value="Save" disabled="disabled"/></TD>
+                            </TR>
+                        </TABLE>
+                    </td>
+                </tr>
+            </table>
+            <script>
+                var sgApplet = new scriptGet(document.getElementById('applet_script_container'),
+                        {
+                            'getStatus': serverRoot + '/data/projects/$project.getId()/config/applet/settings?format=json',
+                            'putStatus': serverRoot + '/data/projects/$project.getId()/config/applet/settings?status=',
+                            'getScript': serverRoot + '/data/projects/$project.getId()/config/applet/settings?format=json',
+                            'putScript': serverRoot + '/data/projects/$project.getId()/config/applet/settings?inbody=true',
+                            'project': '$project.getId()',
+                            'enable_checkbox': 'enable_applet_script',
+                            'script_text_area': 'applet_script_text_area',
+                            'save_button': 'applet_script_save'
+                        });
+                sgApplet.get();
+            </script>
+        </div>
+    #end
 
     <h3>Event Handlers</h3>
     <div id="events_list" style="min-height:120px;">
@@ -315,8 +390,28 @@ window.prearchive=(new RadioSettingsManager(document.getElementById('prearchive_
     </div>
 
     #addCustomScreens($project.getXSIType() "report/manage_tab")
+
 </div><!-- /#accordion -->
 
-<script type="text/javascript">
-    jq('#accordion').accordion({heightStyle:'content'});
+<script>
+
+    $.fn.superSimpleAccordion = function(){
+        var container = $(this).show();
+        var h3s = container.find('h3');
+        var divs = h3s.next('div');
+        divs.addClass('content').hide();
+        container.find('.active').show();
+        h3s.on('click', function(){
+            var content = $(this).next('div');
+            if (content.is(':hidden')) {
+                h3s.removeClass('active');
+                $(this).addClass('active');
+                divs.removeClass('active').slideUp();
+                content.addClass('active').slideDown();
+            }
+        });
+    };
+
+    $('#accordion').superSimpleAccordion();
+
 </script>

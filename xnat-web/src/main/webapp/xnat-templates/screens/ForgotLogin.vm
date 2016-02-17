@@ -9,7 +9,7 @@ $page.setTitle("$siteId - Register")
 ##        <div class="$siteConfig.getProperty("siteWideAlertType","")" style="margin-bottom: 2em;"><strong>$siteConfig.getProperty("siteWideAlertMessage","")</strong></div>
 ##    #end
 
-    <div id="register_box_container" style="margin-right: 60px;">
+    <div id="register_box_container">
         <div id="register_box">
             <form name="form2" method="post" action="$link.setAction("XDATForgotLogin")" class="friendlyForm" id="register_form">
                 <p>Did you forget your username? Enter your email address and the matching username will be emailed to you.</p>

@@ -705,7 +705,7 @@ div.warning {
     border-width: 1px;
     color: #444;
     font-size: 12px;
-    margin: 0 20px 10px;
+    /*margin: 0 20px 10px;*/
     padding: 10px 10px 10px 32px;
     position: relative;
 }
@@ -1067,15 +1067,16 @@ select[multiple] {
 /* page layout styles */
 #page_wrapper {
     width: 1160px;
+    min-height: 660px;
     margin: 0 auto;
     padding: 0;
     background: #fff;
 }
 
 #layout_content {
-    width: 1120px;
-    margin: 0 auto;
-    padding-top: 10px;
+    /*width: 1120px;*/
+    /*margin: 0 20px;*/
+    padding: 0 20px 20px;
     z-index: 0;
     font-size: 13px;
     line-height: 17px;
@@ -1165,8 +1166,15 @@ select[multiple] {
     line-height: 1.1;
     padding: 0;
     width: 400px;
+}
+
+#login_box {
     float: right;
     margin-right: 20px;
+}
+
+#register_box {
+    float: none;
 }
 
 #login_box div.message,
@@ -1185,7 +1193,17 @@ select[multiple] {
     display: inline-block;
     position: relative;
     vertical-align: top;
-    width: 400px;
+    /*width: 400px;*/
+}
+
+#login_box_container {
+    float: right;
+    margin-right: 20px;
+}
+
+#register_box_container {
+    float: left;
+    margin-left: 20px;
 }
 
 /*#login_container {*/
@@ -1290,11 +1308,15 @@ span.sep {
 
 #header {
     position: relative;
-    width: 1120px;
+    /*width: 1120px;*/
     /*min-height: 60px;*/
-    margin: 0 auto 10px;
+    /*margin: 0 auto;*/
     background: #fff;
     z-index: 2;
+}
+
+#header > .pad {
+    margin: 20px;
 }
 
 #header_logo {
@@ -1302,7 +1324,6 @@ span.sep {
     max-width: 240px;
     max-height: 120px;
     position: relative;
-    top: 10px;
 }
 
 #header_logo img {
@@ -1319,13 +1340,20 @@ span.sep {
 }
 
 #searchValue {
+    width: 140px;
     height: 15px;
-    margin-right: 3px;
+    margin: 0 3px;
     padding: 4px 8px;
     border: 1px solid #ccc;
     -webkit-border-radius: 4px;
     -moz-border-radius: 4px;
     border-radius: 4px;
+    font-weight: bold;
+}
+
+#searchValue.clean {
+    color: #a0a0a0;
+    font-weight: normal;
 }
 
 /* .ie #searchValue { position: relative ; top: 1px ; } */
@@ -1406,9 +1434,9 @@ span.sep {
 #xnat_power {
     width: 1160px;
     border-top: 1px solid #ccc;
-    bottom: -70px;
-    height: 70px;
+    /*height: 70px;*/
     margin: 0 auto;
+    padding: 10px 0;
     position: relative;
     text-align: right;
 }
@@ -1520,9 +1548,7 @@ div.edit_title {
     font-size: 20px;
     font-weight: normal;
     line-height: 20px;
-    padding-bottom: 2px;
-    /*margin-bottom: 5px ;*/
-    margin-left: 2px;
+    padding: 2px 2px 0;
     min-width: 470px;
 }
 
@@ -1563,10 +1589,6 @@ td.highlighted {
     outline: none;
 }
 
-#layout_content {
-/* */
-}
-
 body.popup #layout_content {
     margin: 0;
     padding: 0;
@@ -1592,10 +1614,6 @@ body.xmodal-popup #xnat_power {
     display: none ;
 }
 
-/*
-#layout_content, #layout_content .yui-content { width: 700px ; }
-#layout_content .yui-nav { width: 714px ; }
-*/
 div.containerTitle.withColor {
     font-weight: bold;
     background: #04519b;
@@ -1662,27 +1680,28 @@ div.containerTitle.withColor {
     overflow: hidden;
 }
 
-#main_nav li {
+#main_nav > ul li {
     float: left;
     display: block;
     position: relative;
 }
 
-#main_nav ul {
+#main_nav > ul,
+#main_nav > ul ul {
     margin: 0;
     padding: 0;
     list-style: none;
     /*background: #fff;*/
 }
 
-#main_nav ul a {
+#main_nav > ul a {
     display: block;
     text-decoration: none;
     vertical-align: middle;
     white-space: nowrap;
 }
 
-#main_nav ul a:hover {
+#main_nav > ul a:hover {
     cursor: pointer !important;
 }
 
@@ -1718,7 +1737,7 @@ div.containerTitle.withColor {
 }
 
 /* all subnav */
-#main_nav li ul {
+#main_nav > ul ul {
     display: none;
     position: absolute;
     left: 0;
@@ -1729,7 +1748,7 @@ div.containerTitle.withColor {
 }
 
 /* make sure all sub-nav menus are wide enough */
-#main_nav li li {
+#main_nav > ul li li {
     width: 100%;
 }
 
@@ -1737,7 +1756,7 @@ div.containerTitle.withColor {
     /*background: !* #D8ECFF *! !* #EDF5FF *! #e5f2ff right center no-repeat;*/
 /*}*/
 
-#main_nav li li a {
+#main_nav > ul li li a {
     padding: 0 30px 0 15px;
     line-height: 25px;
     font-size: 13px;
@@ -1748,7 +1767,7 @@ div.containerTitle.withColor {
     color: #222;
 }
 
-#main_nav li li a:hover {
+#main_nav > ul li li a:hover {
     background-color: #e5f2ff;
 }
 
@@ -1757,7 +1776,7 @@ div.containerTitle.withColor {
 }
 
 /* third-level menus */
-#main_nav li li ul {
+#main_nav > ul li li ul {
     display: none;
     top: 0;
     margin-left: -2px;
@@ -1792,8 +1811,8 @@ div.containerTitle.withColor {
 /* home page data */
 
 #home-data {
-    width: 1120px;
-    margin: 0 auto;
+    /*width: 1120px;*/
+    /*margin: 0 auto;*/
 }
 
 #projects-container {
@@ -2210,7 +2229,6 @@ span.close {
     top: 1px;
 }
 
-/* #layout_content form * { font-weight: normal !important ; } */
 #layout_content form * b {
     font-weight: bold !important;
 }
@@ -2220,7 +2238,6 @@ span.close {
     text-decoration: underline;
 }
 
-/* #expts_header .alts { float:right;position:relative;bottom:4px; } */
 #expts_container,
 .expts_container {
     display: inline-block;
@@ -2236,7 +2253,6 @@ span.close {
 #expts_link_legend #expts_header,
 .legend .header {
     display: inline-block;
-    /* float: left ; */
     min-width: 220px;
     padding-left: 5px;
     font-size: 15px;
@@ -3426,16 +3442,18 @@ hr.h20 {
 /***********************************************/
 @media screen and (max-width: 1200px) {
 
-    #page_wrapper {
+    #page_wrapper,
+    #xnat_power {
         width: 960px;
     }
 
-    #header,
-    #layout_content,
-    #home-data,
-    #xnat_power {
-        width: 920px;
-    }
+    /*#page_wrapper,*/
+    /*#header,*/
+    /*#layout_content,*/
+    /*#home-data,*/
+    /*#xnat_power {*/
+        /*width: 920px;*/
+    /*}*/
 
     #projects-container,
     #data-container {
@@ -3446,22 +3464,21 @@ hr.h20 {
         width: 640px;
     }
 
-    #search_tabs {
-        width: 914px;
+    #search_tabs,
+    .yui-navset.yui-navset-top.wrangled {
+        width: 920px !important;
     }
+
 
     #data-type-table .name-singular,
     #data-type-table .name-plural {
         display: none;
     }
 
-    .yui-navset.yui-navset-top.wrangled {
-        width: 914px !important;
-    }
 
     #search_tabs .xT_p,
     #search_tabs .xT_c {
-        width: 894px !important;
+        width: 900px !important;
     }
 
 }

@@ -522,9 +522,9 @@ function sizeFormat( size, round ){
 function randomID(prefix, seq) {
     window.autoIDcount = window.autoIDcount || 0;
     window.autoIDs     = window.autoIDs     || [];
-    var pre = (isDefined(prefix)) ? prefix : 'i' ;
-    var i = (isUndefined(seq) || isTrue(seq)) ? padNumber( ++window.autoIDcount, 4 ) : '';
-    var newID = pre + i + '-' + (Math.random() + 1).toString(36).substr(2,8);
+    var pre = (isDefined(prefix)) ? prefix : 'i-' ;
+    var i = (isUndefined(seq) || isTrue(seq)) ? padNumber( ++window.autoIDcount, 4 ) + '-' : '';
+    var newID = pre + i + (Math.random() + 1).toString(36).substr(2,8);
     window.autoIDs.push(newID);
     window.randomIDcount = window.autoIDcount;
     window.randomIDs     = window.autoIDs;

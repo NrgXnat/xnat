@@ -28,7 +28,10 @@ function SavePopupForm(_search,_div,_config){
 			this.searchDOM=handler.root;
 		
 			var popupDIV = document.createElement("DIV");
-			popupDIV.id="all_users_popup";
+
+			var popup$ = $(popupDIV);
+
+			popupDIV.id = randomID('dlg_', false);
 			var popupHD = document.createElement("DIV");
 			popupHD.className="hd";
 			popupDIV.appendChild(popupHD);
@@ -75,13 +78,13 @@ function SavePopupForm(_search,_div,_config){
 	        this.savePopupDialog.saver=this;
 			
 			var handleSubmit = function() {
-				var _id = document.getElementById("save_id").value;
-			    var _briefDesc = document.getElementById("save_brief").value;
-			    var _desc = document.getElementById("save_desc").value;	
+				var _id = popup$.find('.save_id')[0].value;
+			    var _briefDesc = popup$.find('.save_brief')[0].value;
+			    var _desc = popup$.find('.save_desc')[0].value;
 			    var preventComments=false;
 			    
 			    if(_id==""){
-                    xModalMessage('Search Validation', "Please specify an ID for this search.");
+                    xmodal.message('Search Validation', "Please specify an ID for this search.");
 			    	return;
 			    }else{
 			    	if(this.saver.searchDOM.getId()==null || this.saver.searchDOM.getId()=="")
@@ -98,7 +101,7 @@ function SavePopupForm(_search,_div,_config){
 			    if(_briefDesc!=""){
 			    	this.saver.searchDOM.setBriefDescription(_briefDesc);
 			    }else{
-                    xModalMessage('Search Validation', "Please specify a brief description for this search.");
+                    xmodal.message('Search Validation', "Please specify a brief description for this search.");
 			    	return;
 			    }
 			    
@@ -183,6 +186,7 @@ function SavePopupForm(_search,_div,_config){
 					input.disabled=true;
 				}
 			}
+			input.className="save_brief";
 			input.name="save_brief";
 			input.size="42";
             input.maxLength="100";
@@ -196,6 +200,7 @@ function SavePopupForm(_search,_div,_config){
 			var input = document.createElement("INPUT");
 			input.type="hidden";
 			input.id="save_id";
+			input.className="save_id";
 			input.name="save_id";
 			if(this.searchDOM.getId() && !this.searchDOM.getId().startsWith("@")){
 				input.value=this.searchDOM.getId();
@@ -231,6 +236,7 @@ function SavePopupForm(_search,_div,_config){
 			td.border="0";
 			var input = document.createElement("textarea");
 			input.id="save_desc";
+			input.className="save_desc";
 			input.name="save_desc";
 			input.rows="10";
 			input.cols="31";
@@ -250,7 +256,7 @@ function SavePopupForm(_search,_div,_config){
 	
 	this.saveFailure=function(o){
 		if(o.status==403){
-            xModalMessage('Search Validation', "Your account does not have permission to save modifications of this search.");
+            xmodal.message('Search Validation', "Your account does not have permission to save modifications of this search.");
 			this.savePopupDialog.saveMsgTab.innerHTML="<DIV style='color:red'>Error. Invalid permissions.</DIV>";	
 		}else{
 			this.savePopupDialog.saveMsgTab.innerHTML="<DIV style='color:red'>Error " + o.status + ". Failed to save search.</DIV>";	

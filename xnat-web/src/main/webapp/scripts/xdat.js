@@ -375,6 +375,7 @@ function concealContent(message){
         layout2.className="message"; // "message" class presents more 'friendly' display of status
         layout2.innerHTML=message;
         layout2.style.display="block";
+		layout2.style.margin = '20px';
     }
     var layout1 = document.getElementById("layout_content");
     if (layout1) {

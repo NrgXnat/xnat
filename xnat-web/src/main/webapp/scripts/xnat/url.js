@@ -39,7 +39,7 @@ var XNAT = getObject(XNAT||{});
         if (!root){
             return url;
         }
-        rootRegExp = new RegExp('^(\/' + root + ')+', 'i');
+        rootRegExp = new RegExp('^(\/' + root + ')*', 'i');
         return url.replace(rootRegExp, '/' + root);
     }
 

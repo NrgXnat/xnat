@@ -13,6 +13,7 @@ import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.services.FeatureDefinitionService;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -79,8 +80,12 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
                 }
             }
         }
-        if (ElementSecurity.GetElementSecurities() != null && _contextService.hasApplicationContext()) {
-            updateNewSecureDefinitions();
+        try {
+            if (ElementSecurity.GetElementSecurities() != null && _contextService.hasApplicationContext()) {
+                updateNewSecureDefinitions();
+            }
+        } catch (ElementNotFoundException ignore) {
+            // No worries...
         }
     }
 

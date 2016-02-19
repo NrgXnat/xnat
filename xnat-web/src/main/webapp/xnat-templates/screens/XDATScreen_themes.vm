@@ -1,0 +1,112 @@
+<!-- Begin XDATScreen_themes.vm -->
+<style>
+    .bold{
+        font-weight: bold;
+    }
+</style>
+<div style="margin-left: 20px;">
+	<h2><span id="titleAppName"></span> Theme Management</h2>
+    <div id="currentThemeDiv">
+        <span class="label bold">Current theme: </span>
+        <span id="currentTheme">None</span>
+    </div>
+    <br>
+    <div id="selectThemeDiv">
+        <span class="label bold">Select an existing theme: </span>
+        <select id="themeSelection" name="theme" style="width: 270px;"></select>&nbsp;
+        <button id="submitThemeButton" onclick="setTheme();">Set Theme</button>&nbsp;
+        <button id="removeThemeButton" onclick="removeTheme();">Remove Theme</button>
+    </div>
+	<br>
+    <form id="uploadThemeForm" method="POST" class="optOutOfXnatDefaultFormValidation">
+        <span class="label bold">Upload a theme package: </span>
+        <input type="file" id="themeFileUpload" name="themeFileUpload" multiple style="width: 270px;"/>&nbsp;
+        <button type="submit" id="submitThemeUploadButton">Upload</button>
+    </form>
+</div>
+
+<script>
+    var themeUrl = "$content.getURI('/data/theme')";
+    var q = '?', a = '&';
+    var csrf = 'XNAT_CSRF='+window.csrfToken;
+	$('#titleAppName').text(XNAT.app.siteId);
+    var currentTheme = $('#currentTheme');
+    var themeSelector = $('#themeSelection');
+    var uploadForm = document.getElementById('uploadThemeForm');
+    var themeUploader = document.getElementById('themeFileUpload');
+    var themeUploadSubmit = document.getElementById('submitThemeUploadButton');
+    var selectedTheme = null;
+	function populateThemes(themeToSelect){
+        $.get(themeUrl+q+csrf, null, function (data){
+            themeSelector.empty();
+            $(data.themeOptions).each(function(i, opt) {
+                var selected = '', selectedTheme = null;
+                if(data.theme == opt.value){
+                    selectedTheme = data.theme;
+                    selected = ' selected="selected"';
+                    currentTheme.text(selectedTheme?selectedTheme:'None');
+                }
+                themeSelector.append('<option value="'+opt.value+'"'+selected+'>'+opt.label+'</option>');
+            });
+            if(themeToSelect && typeof themeToSelect === 'string'){
+                themeSelector.val(themeToSelect);
+            }
+        }, 'json');
+	}
+    function setTheme(){
+        xmodal.confirm({
+            content: 'Theme selection appearances may not fully take effect until users log out, clear their browser cache and log back in.'+
+                     '<br><br>Are you sure you wish to change the global theme?',
+            action: function(){
+                $.put(themeUrl+q+'theme='+encodeURI(themeSelector.val())+a+csrf, null, populateThemes);
+            }
+        });
+    }
+	function removeTheme(){
+		xmodal.confirm({
+			content: 'Are you sure you wish to delete the selected theme?',
+			action: function(){
+                $.delete(themeUrl+q+'theme='+encodeURI(themeSelector.val())+a+csrf, null, populateThemes);
+			}
+		});
+	}
+
+    /*** Theme Package Upload Functions ***/
+    uploadForm.action = themeUrl+q+csrf;
+    uploadForm.onsubmit = function(event) {
+        event.preventDefault();
+        $(themeUploadSubmit).text('Uploading...');
+        $(themeUploadSubmit).attr('disabled', 'disabled');
+        var files = themeUploader.files;
+        var formData = new FormData();
+        var uploaded = false;
+        for (var i = 0; i < files.length; i++) {
+            var file = files[i];
+            if (!file.type.match('zip.*')) {
+                continue;
+            }
+            formData.append('themes[]', file, file.name);
+            var xhr = new XMLHttpRequest();
+            xhr.open('POST', uploadForm.action, true);
+            xhr.onload = function () {
+                if (xhr.status !== 200) {
+                    xmodal.message('Upload Error', xhr.responseText);
+                }
+                var uploadedTheme = xhr.responseText;
+                $(themeUploadSubmit).text('Upload');
+                $(themeUploadSubmit).removeAttr('disabled');
+                populateThemes(uploadedTheme);
+            };
+            xhr.send(formData);
+            uploaded = true;
+        }
+        if(!uploaded){
+            xmodal.message('Nothing Uploaded', 'No valid theme package files were selected for upload.');
+            $(themeUploadSubmit).text('Upload');
+            $(themeUploadSubmit).removeAttr('disabled');
+        }
+    }
+	$(populateThemes);  // ...called once DOM is fully loaded "ready"
+</script>
+
+<!-- End XDATScreen_themes.vm -->

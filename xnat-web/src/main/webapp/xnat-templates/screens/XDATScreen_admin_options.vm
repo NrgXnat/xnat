@@ -53,6 +53,8 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 
         <a href="$link.setPage("XDATScreen_add_xnat_projectData.vm")">Create $displayManager.getSingularDisplayNameForProject()</a>
 
+        <a href="$link.setPage("XDATScreen_themes.vm")">Manage Themes</a>
+
         #addGlobalCustomScreens("admin/options")
 
     </div>

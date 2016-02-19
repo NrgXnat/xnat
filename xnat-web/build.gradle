@@ -290,19 +290,19 @@ dependencies {
 }
 
 cargo {
-    def blankProperty = "xxx"
-    def blankPort = 0
+    // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command line in
+    // the form -PdeployPort=8080 -PdeployContext=/ -PdeployHost=localhost -PdeployUser=deploy -PdeployPassword=deploy
     containerId = 'tomcat7x'
-    port = hasProperty('deployPort') ? getProperty('deployPort') as int : blankPort
+    port = propertyWithDefault('deployPort', 8080) as int
 
     deployable {
-        context = hasProperty('deployContext') ? getProperty('deployContext') : blankProperty
+        context = propertyWithDefault('deployContext', '/')
     }
 
     remote {
-        hostname = hasProperty('deployHost') ? getProperty('deployHost') : blankProperty
-        username = hasProperty('deployUser') ? getProperty('deployUser') : blankProperty
-        password = hasProperty('deployPassword') ? getProperty('deployPassword') : blankProperty
+        hostname = propertyWithDefault('deployHost', 'localhost')
+        username = propertyWithDefault('deployUser', 'deploy')
+        password = propertyWithDefault('deployPassword', 'deploy')
     }
 }
 
@@ -341,9 +341,9 @@ publishing {
         maven {
             credentials {
                 // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
-                // line in the form -DrepoUsername=foo -DrepoPassword=bar.
-                username hasProperty('repoUsername') ? getProperty('repoUsername') : blankProperty
-                password hasProperty('repoPassword') ? getProperty('repoPassword') : blankProperty
+                // line in the form -PrepoUsername=foo -PrepoPassword=bar.
+                username propertyWithDefault('repoUsername', 'username')
+                password propertyWithDefault('repoPassword', 'password')
             }
             if (project.version.endsWith('-SNAPSHOT')) {
                 url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
@@ -355,8 +355,8 @@ publishing {
             credentials {
                 // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
                 // line in the form -DrepoUsername=foo -DrepoPassword=bar.
-                username hasProperty('repoUsername') ? getProperty('repoUsername') : blankProperty
-                password hasProperty('repoPassword') ? getProperty('repoPassword') : blankProperty
+                username propertyWithDefault('repoUsername', 'username')
+                password propertyWithDefault('repoPassword', 'password')
             }
             if (project.version.endsWith('-SNAPSHOT')) {
                 url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
@@ -365,4 +365,8 @@ publishing {
             }
         }
     }
+}
+
+def propertyWithDefault(def String property, def Object value) {
+    hasProperty(property) ? getProperty(property) : value
 }

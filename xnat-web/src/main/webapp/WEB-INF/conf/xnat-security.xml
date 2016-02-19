@@ -87,6 +87,10 @@
         <security:custom-filter position="CONCURRENT_SESSION_FILTER" ref="concurrencyFilter" />
         <security:custom-filter position="LOGOUT_FILTER" ref="logoutFilter" />
         <security:session-management session-authentication-strategy-ref="sas"/>
+        <security:headers>
+            <security:frame-options policy="SAMEORIGIN" />
+            <security:hsts disabled="true"/>
+        </security:headers>
     </security:http>
 
     <bean class="org.nrg.xnat.security.FilterSecurityInterceptorBeanPostProcessor">

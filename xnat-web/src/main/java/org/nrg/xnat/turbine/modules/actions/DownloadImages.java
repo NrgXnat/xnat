@@ -10,21 +10,8 @@
  */
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.io.File;
-import java.io.FileOutputStream;
-import java.io.OutputStream;
-import java.io.OutputStreamWriter;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-import java.util.zip.ZipOutputStream;
-
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServletResponse;
-
+import edu.sdsc.grid.io.GeneralFile;
+import org.apache.commons.lang.RandomStringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -39,16 +26,24 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
+import org.nrg.xft.db.DBAction;
+import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
-import org.nrg.xnat.servlet.ArchiveServlet;
 import org.nrg.xnat.srb.XNATDirectory;
 
-import edu.sdsc.grid.io.GeneralFile;
+import javax.servlet.ServletOutputStream;
+import javax.servlet.http.HttpServletResponse;
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.util.*;
+import java.util.zip.ZipOutputStream;
 
 /**
  * @author timo
@@ -166,7 +161,7 @@ public class DownloadImages extends SecureAction {
                                 
                                 String relative = f.getAbsolutePath();
                                 
-                                Object file_id = ArchiveServlet.cacheFileLink(url + identifier, relative, mr.getDBName(), user.getLogin());
+                                Object file_id = cacheFileLink(url + identifier, relative, mr.getDBName(), user.getLogin());
                                 
                                 entry.setUri(uri + file_id);
                                 
@@ -444,5 +439,48 @@ public class DownloadImages extends SecureAction {
         System.out.println("END DownloadImages.java " + (System.currentTimeMillis()-startTime) + "ms");
 		    
     }
+
+    public static boolean ARCHIVE_PATH_CHECKED = false;
+
+    public static Boolean CreatedArchivePathCache(String dbName, String login) throws Exception {
+        if (!ARCHIVE_PATH_CHECKED) {
+            String query = "SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('xs_archive_path_cache');";
+            String exists = (String) PoolDBUtils.ReturnStatisticQuery(query, "relname", dbName, login);
+
+            if (exists != null) {
+                ARCHIVE_PATH_CHECKED = true;
+            } else {
+                query = "CREATE TABLE xs_archive_path_cache" +
+                        "\n(" +
+                        "\n  id serial," +
+                        "\n  create_date timestamp DEFAULT now()," +
+                        "\n  username VARCHAR(255)," +
+                        "\n  url text," +
+                        "\n  _token VARCHAR(255)," +
+                        "\n  absolute_path text" +
+                        "\n) " +
+                        "\nWITH OIDS;";
+
+                PoolDBUtils.ExecuteNonSelectQuery(query, dbName, login);
+
+                ARCHIVE_PATH_CHECKED = true;
+            }
+        }
+        return true;
+    }
+
+    public static Object cacheFileLink(String url, String absolutePath, String dbName, String login) throws Exception {
+        CreatedArchivePathCache(dbName, login);
+        Object o = RandomStringUtils.randomAlphanumeric(64);
+        Object exists = PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xs_archive_path_cache WHERE _token='" + o + "';", "id", dbName, login);
+        while (exists != null) {
+            o = RandomStringUtils.randomAlphanumeric(64);
+            exists = PoolDBUtils.ReturnStatisticQuery("SELECT id FROM xs_archive_path_cache WHERE _token='" + o + "';", "id", dbName, login);
+        }
+        String query = "INSERT INTO xs_archive_path_cache (username,url,_token,absolute_path) VALUES ('" + login + "'," + DBAction.ValueParser(url, "string", true) + ",'" + o + "'," + DBAction.ValueParser(absolutePath, "string", true) + ");";
+        PoolDBUtils.ExecuteNonSelectQuery(query, dbName, login);
+        return o;
+    }
+
 
 }

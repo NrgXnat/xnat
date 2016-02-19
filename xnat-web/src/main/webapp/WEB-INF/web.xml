@@ -1,326 +1,54 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
-  ~ D:/Development/XNAT/1.6/xnat_builder_1_6dev/plugin-resources/originals/application-web.xml
   ~ XNAT http://www.xnat.org
-  ~ Copyright (c) 2014, Washington University School of Medicine
+  ~ Copyright (c) 2016, Washington University School of Medicine
   ~ All Rights Reserved
   ~
   ~ Released under the Simplified BSD.
-  ~
-  ~ Last modified 2/7/14 12:19 PM
   -->
-<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd" version="3.0">
-  <!-- ======================================================================== -->
-  <!--                                                                          -->
-  <!-- Uncomment the following block if you want to use the Session Service     -->
-  <!--                                                                          -->
-  <!-- ======================================================================== -->
-  <!--
-  	<listener>
-    	<listener-class>org.apache.turbine.services.session.SessionListener</listener-class>
-  	</listener>
-	-->
-  <!-- HttpSessionEventPublisher enables session counting for the concurrent session filter, XnatSessionEventPublisher requires the contextAttribute parameter -->
-  <context-param>
-    <param-name>contextAttribute</param-name>
-    <param-value>org.springframework.web.servlet.FrameworkServlet.CONTEXT.spring-mvc</param-value>
-  </context-param>
-  <context-param>
-    <param-name>org.restlet.component</param-name>
-    <param-value>org.nrg.xnat.restlet.XNATComponent</param-value>
-  </context-param>
-  <!--
-    	 This setting will be automatically configured according to xdat.url in build.properties.
-    	 You can still set it manually if desired (not here - do it in xnat/projects/xnat/src/web-conf/web-projectMerge.xml).
-    -->
-  <context-param>
-    <param-name>org.restlet.autoWire</param-name>
-    <param-value>false</param-value>
-  </context-param>
-  <filter>
-    <filter-name>springSecurityFilterChain</filter-name>
-    <filter-class>org.springframework.web.filter.DelegatingFilterProxy</filter-class>
-    <init-param>
-      <param-name>contextAttribute</param-name>
-      <param-value>org.springframework.web.servlet.FrameworkServlet.CONTEXT.spring-mvc</param-value>
-    </init-param>
-  </filter>
-  <filter>
-    <filter-name>updateExpirationCookie</filter-name>
-    <filter-class>org.nrg.xnat.restlet.util.UpdateExpirationCookie</filter-class>
-  </filter>
-  <filter-mapping>
-    <filter-name>springSecurityFilterChain</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
-  <filter-mapping>
-    <filter-name>updateExpirationCookie</filter-name>
-    <url-pattern>/*</url-pattern>
-  </filter-mapping>
-  <listener>
-    <listener-class>org.nrg.xnat.security.XnatSessionEventPublisher</listener-class>
-  </listener>
-  <listener>
-    <listener-class>org.apache.axis.transport.http.AxisHTTPSessionListener</listener-class>
-  </listener>
-  <servlet>
-    <servlet-name>xnat17</servlet-name>
-    <servlet-class>org.apache.turbine.Turbine</servlet-class>
-    <init-param>
-      <param-name>properties</param-name>
-      <param-value>WEB-INF/conf/TurbineResources.properties</param-value>
-    </init-param>
-    <load-on-startup>1</load-on-startup>
-  </servlet>
-  <!-- BEGIN XNAT CUSTOMIZATIONS -->
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR Spring Framework -->
-  <!-- ======================================================================== -->
-  <servlet>
-    <servlet-name>spring-mvc</servlet-name>
-    <servlet-class>org.springframework.web.servlet.DispatcherServlet</servlet-class>
-    <init-param>
-      <param-name>contextConfigLocation</param-name>
-      <param-value>/WEB-INF/conf/root-spring-config.xml</param-value>
-    </init-param>
-    <load-on-startup>1</load-on-startup>
-  </servlet>
-  <servlet>
-    <servlet-name>xdat</servlet-name>
-    <servlet-class>org.nrg.xdat.servlet.XDATServlet</servlet-class>
-    <load-on-startup>1</load-on-startup>
-  </servlet>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR RESTServlet -->
-  <!-- ======================================================================== -->
-  <servlet>
-    <servlet-name>RestletServlet</servlet-name>
-    <servlet-class>org.nrg.xnat.restlet.servlet.XNATRestletServlet</servlet-class>
-    <load-on-startup>2</load-on-startup>
-  </servlet>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR ArchiveServlet -->
-  <!-- ======================================================================== -->
-  <servlet>
-    <servlet-name>ArchiveServlet</servlet-name>
-    <servlet-class>org.nrg.xnat.servlet.ArchiveServlet</servlet-class>
-    <load-on-startup>2</load-on-startup>
-  </servlet>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR Ajax -->
-  <!-- ======================================================================== -->
-  <servlet>
-    <servlet-name>XDATAjaxServlet</servlet-name>
-    <servlet-class>org.nrg.xdat.servlet.XDATAjaxServlet</servlet-class>
-  </servlet>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR Apache Axis -->
-  <!-- ======================================================================== -->
-  <servlet>
-    <servlet-name>AxisServlet</servlet-name>
-    <servlet-class>org.apache.axis.transport.http.AxisServlet</servlet-class>
-  </servlet>
-  <servlet>
-    <servlet-name>AdminServlet</servlet-name>
-    <servlet-class>org.apache.axis.transport.http.AdminServlet</servlet-class>
-    <load-on-startup>100</load-on-startup>
-  </servlet>
-  <servlet>
-    <servlet-name>SOAPMonitorService</servlet-name>
-    <servlet-class>org.apache.axis.monitor.SOAPMonitorService</servlet-class>
-    <init-param>
-      <param-name>SOAPMonitorPort</param-name>
-      <param-value>5001</param-value>
-    </init-param>
-    <load-on-startup>100</load-on-startup>
-  </servlet>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR Image Viewer -->
-  <!-- ======================================================================== -->
-  <servlet>
-    <servlet-name>PopulateServlet</servlet-name>
-    <servlet-class>org.nrg.plexiViewer.Servlet.PopulateServlet</servlet-class>
-  </servlet>
-  <servlet>
-    <servlet-name>ImageDistributorServlet</servlet-name>
-    <servlet-class>org.nrg.plexiViewer.Servlet.ImageDistributorServlet</servlet-class>
-  </servlet>
-  <servlet>
-    <servlet-name>ImageLoaderServlet</servlet-name>
-    <servlet-class>org.nrg.plexiViewer.Servlet.ImageLoaderServlet</servlet-class>
-  </servlet>
-  <servlet>
-    <servlet-name>MontageImageLoaderServlet</servlet-name>
-    <servlet-class>org.nrg.plexiViewer.Servlet.MontageImageLoaderServlet</servlet-class>
-  </servlet>
-  <servlet>
-    <servlet-name>GetRecFileContents</servlet-name>
-    <servlet-class>org.nrg.plexiViewer.Servlet.GetRecFileContents</servlet-class>
-  </servlet>
-  <servlet>
-    <servlet-name>getAsegRegionVolumes</servlet-name>
-    <servlet-class>org.nrg.plexiViewer.Servlet.getAsegRegionVolumes</servlet-class>
-  </servlet>
-  <servlet>
-    <servlet-name>PublisherServlet</servlet-name>
-    <servlet-class>org.nrg.plexiViewer.Servlet.PublisherServlet</servlet-class>
-  </servlet>
-  <servlet-mapping>
-    <servlet-name>spring-mvc</servlet-name>
-    <url-pattern>/admin/*</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>spring-mvc</servlet-name>
-    <url-pattern>/xapi/*</url-pattern>
-  </servlet-mapping>
-  <!-- END XNAT CUSTOMIZATIONS -->
-  <servlet-mapping>
-    <servlet-name>xnat17</servlet-name>
-    <url-pattern>/app/*</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>xdat</servlet-name>
-    <url-pattern>/xdat/*</url-pattern>
-  </servlet-mapping>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR RESTServlet  -->
-  <!-- ======================================================================== -->
-  <servlet-mapping>
-    <servlet-name>RestletServlet</servlet-name>
-    <url-pattern>/REST/*</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>RestletServlet</servlet-name>
-    <url-pattern>/data/*</url-pattern>
-  </servlet-mapping>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR Ajax -->
-  <!-- ======================================================================== -->
-  <servlet-mapping>
-    <servlet-name>XDATAjaxServlet</servlet-name>
-    <url-pattern>/ajax/*</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>XDATAjaxServlet</servlet-name>
-    <url-pattern>/servlet/XDATAjaxServlet</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>XDATAjaxServlet</servlet-name>
-    <url-pattern>/servlet/AjaxServlet</url-pattern>
-  </servlet-mapping>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR Apache Axis -->
-  <!-- ======================================================================== -->
-  <servlet-mapping>
-    <servlet-name>AdminServlet</servlet-name>
-    <url-pattern>/servlet/AdminServlet</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>AxisServlet</servlet-name>
-    <url-pattern>/servlet/AxisServlet</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>AxisServlet</servlet-name>
-    <url-pattern>*.jws</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>AxisServlet</servlet-name>
-    <url-pattern>/services/*</url-pattern>
-  </servlet-mapping>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR Image Viewer -->
-  <!-- ======================================================================== -->
-  <servlet-mapping>
-    <servlet-name>SOAPMonitorService</servlet-name>
-    <url-pattern>/SOAPMonitor</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>PopulateServlet</servlet-name>
-    <url-pattern>/servlet/PopulateServlet</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>ImageDistributorServlet</servlet-name>
-    <url-pattern>/servlet/ImageDistributorServlet</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>ImageLoaderServlet</servlet-name>
-    <url-pattern>/servlet/ImageLoaderServlet</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>MontageImageLoaderServlet</servlet-name>
-    <url-pattern>/servlet/MontageImageLoaderServlet</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>GetRecFileContents</servlet-name>
-    <url-pattern>/servlet/GetRecFileContents</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>getAsegRegionVolumes</servlet-name>
-    <url-pattern>/servlet/getAsegRegionVolumes</url-pattern>
-  </servlet-mapping>
-  <servlet-mapping>
-    <servlet-name>PublisherServlet</servlet-name>
-    <url-pattern>/servlet/PublisherServlet</url-pattern>
-  </servlet-mapping>
-  <!-- ======================================================================== -->
-  <!-- INSERTED FOR ArchiveServlet -->
-  <!-- ======================================================================== -->
-  <servlet-mapping>
-    <servlet-name>ArchiveServlet</servlet-name>
-    <url-pattern>/archive/*</url-pattern>
-  </servlet-mapping>
-  <session-config>
-    <!-- Default to 15 minute session timeouts -->
-    <session-timeout>15</session-timeout>
-  </session-config>
-  <mime-mapping>
-    <extension>wsdl</extension>
-    <mime-type>text/xml</mime-type>
-  </mime-mapping>
-  <mime-mapping>
-    <extension>xsd</extension>
-    <mime-type>text/xml</mime-type>
-  </mime-mapping>
-  <!-- ======================================================================== -->
-  <!--                                                                          -->
-  <!-- Redirect the home page of the application to the turbine servlet         -->
-  <!--                                                                          -->
-  <!-- ======================================================================== -->
-  <welcome-file-list>
-    <welcome-file>index.jsp</welcome-file>
-    <welcome-file>app</welcome-file>
-  </welcome-file-list>
-  <!-- ======================================================================== -->
-  <!--                                                                          -->
-  <!-- Mapping HTTP error codes and exceptions to custom error pages to make    -->
-  <!-- the display a bit more pleasant and preserve system confidentiality.     -->
-  <!--                                                                          -->
-  <!-- ======================================================================== -->
-  <error-page>
-    <exception-type>java.lang.Throwable</exception-type>
-    <location>/app/template/Error.vm</location>
-  </error-page>
-  <!-- ======================================================================== -->
-  <!--                                                                          -->
-  <!-- Make sure that templates, resources and logs are not available through   -->
-  <!-- the servlet container. Remove security constraints or add an authen-     -->
-  <!-- tication role if you need access to these paths.                         -->
-  <!--                                                                          -->
-  <!-- ======================================================================== -->
-  <security-constraint>
-    <web-resource-collection>
-      <web-resource-name>templates</web-resource-name>
-      <url-pattern>/templates/*</url-pattern>
-    </web-resource-collection>
-    <web-resource-collection>
-      <web-resource-name>logs</web-resource-name>
-      <url-pattern>/logs/*</url-pattern>
-    </web-resource-collection>
-    <web-resource-collection>
-      <web-resource-name>resources</web-resource-name>
-      <url-pattern>/resources/*</url-pattern>
-    </web-resource-collection>
-    <auth-constraint />
-  </security-constraint>
+<web-app xmlns="http://java.sun.com/xml/ns/javaee" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+         xsi:schemaLocation="http://java.sun.com/xml/ns/javaee http://java.sun.com/xml/ns/javaee/web-app_3_0.xsd"
+         version="3.0">
+    <!-- ======================================================================== -->
+    <!--                                                                          -->
+    <!-- Redirect the home page of the application to the turbine servlet         -->
+    <!--                                                                          -->
+    <!-- ======================================================================== -->
+    <welcome-file-list>
+        <welcome-file>index.jsp</welcome-file>
+        <welcome-file>app</welcome-file>
+    </welcome-file-list>
+    <!-- ======================================================================== -->
+    <!--                                                                          -->
+    <!-- Mapping HTTP error codes and exceptions to custom error pages to make    -->
+    <!-- the display a bit more pleasant and preserve system confidentiality.     -->
+    <!--                                                                          -->
+    <!-- ======================================================================== -->
+    <error-page>
+        <exception-type>java.lang.Throwable</exception-type>
+        <location>/app/template/Error.vm</location>
+    </error-page>
+    <!-- ======================================================================== -->
+    <!--                                                                          -->
+    <!-- Make sure that templates, resources and logs are not available through   -->
+    <!-- the servlet container. Remove security constraints or add an authen-     -->
+    <!-- tication role if you need access to these paths.                         -->
+    <!--                                                                          -->
+    <!-- ======================================================================== -->
+    <security-constraint>
+        <web-resource-collection>
+            <web-resource-name>templates</web-resource-name>
+            <url-pattern>/templates/*</url-pattern>
+        </web-resource-collection>
+        <web-resource-collection>
+            <web-resource-name>logs</web-resource-name>
+            <url-pattern>/logs/*</url-pattern>
+        </web-resource-collection>
+        <web-resource-collection>
+            <web-resource-name>resources</web-resource-name>
+            <url-pattern>/resources/*</url-pattern>
+        </web-resource-collection>
+        <auth-constraint/>
+    </security-constraint>
 </web-app>
 

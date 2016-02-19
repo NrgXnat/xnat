@@ -16,14 +16,15 @@ import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import javax.servlet.ServletContextEvent;
 import javax.servlet.ServletContextListener;
+import javax.servlet.http.HttpSession;
 import javax.servlet.http.HttpSessionEvent;
 import javax.servlet.http.HttpSessionListener;
 import javax.sql.DataSource;
 
-import org.apache.commons.logging.Log;
-import org.apache.commons.logging.LogFactory;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.security.web.session.HttpSessionCreatedEvent;
@@ -32,12 +33,8 @@ import org.springframework.web.context.support.WebApplicationContextUtils;
 
 
 public class XnatSessionEventPublisher implements HttpSessionListener, ServletContextListener{
-    //~ Static fields/initializers =====================================================================================
-
     private String contextAttribute = null;
-
-    private static final String LOGGER_NAME = XnatSessionEventPublisher.class.getName();
-    //~ Methods ========================================================================================================
+    private static final Logger _log = LoggerFactory.getLogger(XnatSessionEventPublisher.class);
 
     ApplicationContext getContext(ServletContext servletContext) {
         return WebApplicationContextUtils.getWebApplicationContext(servletContext,contextAttribute);  // contextAttribute in xnat's case will always be "org.springframework.web.servlet.FrameworkServlet.CONTEXT.spring-mvc");
@@ -50,16 +47,18 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
      * @param event HttpSessionEvent passed in by the container
      */
     public void sessionCreated(HttpSessionEvent event) {
-        HttpSessionCreatedEvent e = new HttpSessionCreatedEvent(event.getSession());
-        Log log = LogFactory.getLog(LOGGER_NAME);
+        HttpSession             session = event.getSession();
+        HttpSessionCreatedEvent e       = new HttpSessionCreatedEvent(session);
 
-        if (log.isDebugEnabled()) {
-            log.debug("Publishing event: " + e);
+        if (_log.isDebugEnabled()) {
+            _log.debug("Publishing event: " + e);
         }
-        
-        event.getSession().setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-        
-        getContext(event.getSession().getServletContext()).publishEvent(e);
+
+        // TODO: This should be wired to a database setting so that the admin can change the session timeout value.
+        session.setMaxInactiveInterval(900);
+        session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
+
+        getContext(session.getServletContext()).publishEvent(e);
     }
 
     /**
@@ -73,8 +72,6 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
     	String sessionId = event.getSession().getId();
         
     	
-    	Log log = LogFactory.getLog(LOGGER_NAME);
-        
       	java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
      	try {
 
@@ -90,8 +87,8 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
       		//remember, anonymous gets a session, too. Those won't be in the table. Fail silently.
       	}
         HttpSessionDestroyedEvent e = new HttpSessionDestroyedEvent(event.getSession());
-        if (log.isDebugEnabled()) {
-            log.debug("Publishing event: " + e);
+        if (_log.isDebugEnabled()) {
+            _log.debug("Publishing event: " + e);
         }
         getContext(event.getSession().getServletContext()).publishEvent(e);
     }

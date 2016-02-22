@@ -1,5 +1,4 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Tim Olsen (Washington University) -->
 <Instance_Settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="schemas/xdat/instance.xsd"
 				   site_url="http://localhost:8080" admin_email="administrator@xnat.org" archive_root_path="/data/xnat/archive"
 				   prearchive_path="/data/xnat/prearchive" cache_path="/data/xnat/cache"
@@ -19,9 +18,5 @@
 		<Data_Model File_Name="catalog.xsd" File_Location="schemas/catalog" DB="xnat"/>
 		<Data_Model File_Name="protocolValidation.xsd" File_Location="schemas/validation" DB="xnat"/>
 		<Data_Model File_Name="screeningAssessment.xsd" File_Location="schemas/screening" DB="xnat"/>
-
-<!--<Data_Model File_Name="ext.xsd" File_Location="schemas/ext" DB="xnat"/>-->
-		<!-- Start modules schemas: Reserved for xnat_builder, don't modify anything between this line and the end modules line. -->
-		<!-- End modules schemas: Reserved for xnat_builder, don't modify anything between this line and the start modules line. -->
 	</Models>
 </Instance_Settings>

@@ -49,7 +49,7 @@ public class SchedulerConfig {
         clearExpiredAliasTokens.call();
     }
 
-    @Scheduled(fixedRateString = "${services.rebuilder.repeat:60000}")
+    @Scheduled(fixedRateString = "${services.rebuilder.repeat:60000}", initialDelay = 60000)
     public void rebuildSessionXmls() {
         _log.debug("Now running the session rebuild process.");
         final SessionXMLRebuilder sessionXMLRebuilder = new SessionXMLRebuilder(_provider, _interval, _jmsTemplate);

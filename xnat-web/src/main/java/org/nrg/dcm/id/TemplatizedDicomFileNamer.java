@@ -50,7 +50,6 @@ public class TemplatizedDicomFileNamer implements DicomFileNamer {
             _log.debug("Initializing the templatized DICOM file namer with the template: " + naming);
         }
         _naming = hasExtension(naming) ? naming : naming + SUFFIX;
-        _template = initializeTemplate();
         _variables = initializeVariables();
         _hashes = initializeHashes();
         validate();
@@ -88,7 +87,7 @@ public class TemplatizedDicomFileNamer implements DicomFileNamer {
         }
         StringWriter writer = new StringWriter();
         try {
-            _template.merge(context, writer);
+            getTemplate().merge(context, writer);
         } catch (Exception exception) {
             throw new RuntimeException("Error trying to resolve naming template", exception);
         }
@@ -103,7 +102,7 @@ public class TemplatizedDicomFileNamer implements DicomFileNamer {
      */
     private String calculateHashString(final List<String> variables, final Map<String,String> values) {
         final int hash = Lists.transform(variables, Functions.forMap(values)).hashCode();
-        return Long.toString(hash & 0xffffffffl, 36);
+        return Long.toString(hash & 0xffffffffL, 36);
     }
 
     /**
@@ -126,16 +125,20 @@ public class TemplatizedDicomFileNamer implements DicomFileNamer {
      * @return The initialized Velocity template.
      * @throws Exception
      */
-    private Template initializeTemplate() throws Exception {
-        RuntimeServices runtimeServices = RuntimeSingleton.getRuntimeServices();
-        runtimeServices.init();
-        StringReader reader = new StringReader(_naming);
-        SimpleNode node = runtimeServices.parse(reader, "naming");
-        Template template = new Template();
-        template.setRuntimeServices(runtimeServices);
-        template.setData(node);
-        template.initDocument();
-        return template;
+    private Template getTemplate() throws Exception {
+        synchronized (_naming) {
+            if (_template == null) {
+                RuntimeServices runtimeServices = RuntimeSingleton.getRuntimeServices();
+                runtimeServices.init();
+                StringReader reader   = new StringReader(_naming);
+                SimpleNode   node     = runtimeServices.parse(reader, "naming");
+                Template     template = new Template();
+                template.setRuntimeServices(runtimeServices);
+                template.setData(node);
+                template.initDocument();
+            }
+        }
+        return _template;
     }
 
     /**
@@ -194,7 +197,8 @@ public class TemplatizedDicomFileNamer implements DicomFileNamer {
     }
 
     private final String _naming;
-    private final Template _template;
     private final Set<String> _variables;
     private final Map<String, List<String>> _hashes;
+
+    private Template _template;
 }

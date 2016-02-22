@@ -227,6 +227,10 @@ public class PersistentWorkflowUtils {
 	}
 
 	public static void save(PersistentWorkflowI wrk, EventMetaI c,boolean overrideSecurity) throws Exception{
+		save(wrk,c,false,true);
+	}
+
+	public static void save(PersistentWorkflowI wrk, EventMetaI c,boolean overrideSecurity,boolean triggerEvent) throws Exception{
 		if(StringUtils.isEmpty(wrk.getId())){
 			logger.error("Error saving audit trail entry for workflow item",new Exception());
 			//set this to a value that is save-able... to prevent unnecessary failures.
@@ -234,7 +238,7 @@ public class PersistentWorkflowUtils {
 		}
 		if(!wrk.getDataType().equals("wrk:workflowData")){//prevent recursive events (events of events)
 			wrk.save((c==null)?null:c.getUser(), overrideSecurity, false, c);
-			wrk.postSave();
+			wrk.postSave(triggerEvent);
 		}
 	}
 

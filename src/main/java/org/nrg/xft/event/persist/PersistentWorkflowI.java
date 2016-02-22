@@ -201,4 +201,6 @@ public interface PersistentWorkflowI {
 	public abstract boolean save(UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception;
 
 	public void postSave() throws Exception;
+	
+	public void postSave(boolean triggerEvent) throws Exception;
 }

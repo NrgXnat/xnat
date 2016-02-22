@@ -23,6 +23,11 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
 
     @Override
     public ScriptOutput run(final Map<String, Object> properties) {
+    	return run(properties, true);
+    }
+    
+    @Override
+    public ScriptOutput run(final Map<String, Object> properties, boolean exceptionOnError) {
         final String scriptId = (String) properties.get(ScriptProperty.ScriptId.key());
         if (_log.isDebugEnabled()) {
             _log.debug("Running script {} with engine ", scriptId, getEngine().getClass().getName());
@@ -32,15 +37,21 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
         for (final String key : properties.keySet()) {
             bindings.put(key, properties.get(key));
         }
+        
+        if (_console == null) {
+             _console = new StringWriter();
+        }
+        if (_errorConsole == null) {
+            _errorConsole = new StringWriter();
+        }
+
+        ScriptContext context = new SimpleScriptContext();
+         
+        context.setWriter(_console);
+        context.setErrorWriter(_errorConsole);
+        context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
 
         try {
-            if (_console == null) {
-                _console = new StringWriter();
-            }
-
-            ScriptContext context = new SimpleScriptContext();
-            context.setWriter(_console);
-            context.setBindings(bindings, ScriptContext.ENGINE_SCOPE);
 
             final CompiledScript script = getScript(properties);
             final Object result = script.eval(context);
@@ -54,12 +65,27 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
                 }
             }
             _console.flush();
-            return new ScriptOutput(result, _console.toString());
+            _errorConsole.flush();
+            return new ScriptOutput(result, _console.toString(), _errorConsole.toString(), ScriptOutput.Status.SUCCESS);
+            
         } catch (Throwable e) {
+        	
             final String message = "Found an error while running a " + properties.get(ScriptProperty.Language.key()) + " " + properties.get(ScriptProperty.LanguageVersion.key()) + " script with ID " + scriptId;
             _log.error(message, e);
-            throw new RuntimeException(message, e);
+            if (exceptionOnError) {
+   	          	throw new RuntimeException(message, e);
+           	} else {
+            	try {	
+       	           	_console.flush();
+     	          	_errorConsole.flush();
+       	           	return new ScriptOutput(e, _console.toString(), _errorConsole.toString(), ScriptOutput.Status.ERROR);
+           	    } catch (Exception e2) {
+       	          	throw new RuntimeException(message, e);
+           	    }
+           	}
+            
         }
+        
     }
 
     @Override
@@ -71,6 +97,17 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
     @Override
     public void setConsole(final Writer console) {
         _console = console;
+    }
+
+    @Override
+    @JsonIgnore
+    public Writer getErrorConsole() {
+        return _errorConsole;
+    }
+
+    @Override
+    public void setErrorConsole(final Writer errorConsole) {
+        _errorConsole = errorConsole;
     }
 
     @Override
@@ -116,4 +153,5 @@ public abstract class AbstractScriptRunner implements ScriptRunner {
     private Map<String, CompiledScript> _scripts = new HashMap<>();
     private Map<String, Integer> _sources = new HashMap<>();
     private Writer _console;
+    private Writer _errorConsole;
 }

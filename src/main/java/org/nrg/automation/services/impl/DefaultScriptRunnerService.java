@@ -386,7 +386,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public ScriptOutput runScript(final Script script) throws NrgServiceException {
-        return runScript(script, null, new HashMap<String, Object>());
+        return runScript(script, null, new HashMap<String, Object>(), true);
     }
 
     /**
@@ -402,7 +402,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public ScriptOutput runScript(final Script script, final Map<String, Object> parameters) throws NrgServiceException {
-        return runScript(script, null, parameters);
+        return runScript(script, null, parameters, true);
     }
 
     /**
@@ -418,7 +418,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public ScriptOutput runScript(final Script script, final ScriptTrigger trigger) throws NrgServiceException {
-        return runScript(script, trigger, null);
+        return runScript(script, trigger, null, true);
     }
 
     /**
@@ -435,6 +435,12 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException {
+        return runScript(script, trigger, parameters, true);
+    	
+    }
+    
+    @Override
+    public ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters, boolean exceptionOnError) throws NrgServiceException {
         if (!hasRunner(script.getLanguage())) {
             throw new NrgServiceRuntimeException(NrgServiceError.UnknownScriptRunner, "There is no script runner that supports " + script.getLanguage() + ".");
         }
@@ -461,7 +467,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
             }
         }
         try {
-            final ScriptOutput results = runner.run(parameters);
+            final ScriptOutput results = runner.run(parameters, exceptionOnError);
             if (_log.isDebugEnabled()) {
                 _log.debug("Got the following results from running " + formatScriptAndParameters(script, parameters));
                 if (results.getResults() == null) {

@@ -261,6 +261,21 @@ public interface ScriptRunnerService extends NrgService {
     ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException;
 
     /**
+     * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
+     * from the trigger parameter, as well as the submitted parameters, into the script execution environment. You can
+     * get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String)} methods.
+     *
+     * @param script     The script to run.
+     * @param trigger    The associated trigger for the script execution.
+     * @param parameters The parameters to pass to the script.
+     * @param exceptionOnError Throw exception on script error.
+     *
+     * @return The results of the script execution.
+     */
+    ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters, boolean exceptionOnError) throws NrgServiceException;
+
+    /**
      * Set the system's {@link ScriptRunner script runners} to the submitted collection.
      *
      * @param runners The {@link ScriptRunner script runners} to be added to the system.

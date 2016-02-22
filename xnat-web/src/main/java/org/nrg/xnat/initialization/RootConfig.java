@@ -1,4 +1,4 @@
-package org.nrg.xnat.configuration;
+package org.nrg.xnat.initialization;
 
 import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
@@ -25,6 +25,7 @@ import java.util.List;
         "org.nrg.xft.daos",
         "org.nrg.xft.services", "org.nrg.xapi.configuration",
         "org.nrg.xnat.helpers.merge",
+        "org.nrg.xnat.configuration",
         "org.nrg.xnat.services",
         "org.nrg.prefs.repositories",
         "org.nrg.prefs.services.impl.hibernate",

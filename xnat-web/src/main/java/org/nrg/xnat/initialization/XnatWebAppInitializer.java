@@ -1,11 +1,10 @@
-package org.nrg.xnat.configuration;
+package org.nrg.xnat.initialization;
 
 import org.apache.axis.transport.http.AdminServlet;
 import org.apache.axis.transport.http.AxisHTTPSessionListener;
 import org.apache.axis.transport.http.AxisServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
-import org.apache.turbine.util.TurbineConfig;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
@@ -13,16 +12,16 @@ import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
-import javax.servlet.Servlet;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletException;
-import javax.servlet.ServletRegistration;
+import javax.servlet.*;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Enumeration;
+import java.util.List;
 
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
     @Override
     public void onStartup(final ServletContext context) throws ServletException {
-        context.setInitParameter("contextAttribute", "org.springframework.web.servlet.FrameworkServlet.CONTEXT.spring-mvc");
         context.setInitParameter("org.restlet.component", "org.nrg.xnat.restlet.XNATComponent");
 
         // If the context path is not empty (meaning this isn't the root application), then we'll get true: Restlet will
@@ -39,7 +38,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         context.addListener(XnatSessionEventPublisher.class);
         context.addListener(AxisHTTPSessionListener.class);
 
-        Turbine.setTurbineServletConfig(new TurbineConfig("turbine", "WEB-INF/conf/TurbineResources.properties"));
+        Turbine.setTurbineServletConfig(new XnatTurbineConfig(context));
 
         _context = context;
 
@@ -49,45 +48,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         addServlet(XDATAjaxServlet.class, 3, "/ajax/*", "/servlet/XDATAjaxServlet", "/servlet/AjaxServlet");
         addServlet(AxisServlet.class, 4, "/servlet/AxisServlet", "*.jws", "/services/*");
         addServlet(AdminServlet.class, 5, "/servlet/AdminServlet");
-
-        // TODO: Don't know how to do these things through the servlet context.
-        /*
-          <welcome-file-list>
-            <welcome-file>index.jsp</welcome-file>
-            <welcome-file>app</welcome-file>
-          </welcome-file-list>
-          <!-- ======================================================================== -->
-          <!--                                                                          -->
-          <!-- Mapping HTTP error codes and exceptions to custom error pages to make    -->
-          <!-- the display a bit more pleasant and preserve system confidentiality.     -->
-          <!--                                                                          -->
-          <!-- ======================================================================== -->
-          <error-page>
-            <exception-type>java.lang.Throwable</exception-type>
-            <location>/app/template/Error.vm</location>
-          </error-page>
-          <!-- ======================================================================== -->
-          <!--                                                                          -->
-          <!-- Make sure that templates, resources and logs are not available through   -->
-          <!-- the servlet container. Remove security constraints or add an authen-     -->
-          <!-- tication role if you need access to these paths.                         -->
-          <!--                                                                          -->
-          <!-- ======================================================================== -->
-          // Might need to do these through Spring Security configuration:
-          // http://stackoverflow.com/questions/19297796/how-to-programmatically-setup-a-security-constraint-in-servlets-3-x
-          // Or move them into WEB-INF a la Spring views. Note that logs is already removed.
-          <security-constraint>
-            <web-resource-collection>
-              <web-resource-name>templates</web-resource-name>
-              <url-pattern>/templates/*</url-pattern>
-            </web-resource-collection>
-            <web-resource-collection>
-              <web-resource-name>resources</web-resource-name>
-              <url-pattern>/resources/*</url-pattern>
-            </web-resource-collection>
-            <auth-constraint />
-          </security-constraint>
-        */
     }
 
     @Override
@@ -110,6 +70,39 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         final ServletRegistration.Dynamic registration  = _context.addServlet(name, clazz);
         registration.setLoadOnStartup(loadOnStartup);
         registration.addMapping(mappings);
+    }
+
+    private static class XnatTurbineConfig implements ServletConfig {
+        public XnatTurbineConfig(final ServletContext context) {
+            _context = context;
+        }
+
+        @Override
+        public String getServletName() {
+            return "Turbine";
+        }
+
+        @Override
+        public ServletContext getServletContext() {
+            return _context;
+        }
+
+        @Override
+        public String getInitParameter(final String s) {
+            if (s.equals("properties")) {
+                return "WEB-INF/conf/TurbineResources.properties";
+            }
+            return null;
+        }
+
+        @Override
+        public Enumeration<String> getInitParameterNames() {
+            final List<String> parameters = new ArrayList<>();
+            parameters.add("properties");
+            return Collections.enumeration(parameters);
+        }
+
+        private ServletContext _context;
     }
 
     private ServletContext _context;

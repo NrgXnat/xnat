@@ -10,17 +10,6 @@
  */
 package org.nrg.xnat.security;
 
-import java.util.UUID;
-
-import javax.inject.Inject;
-import javax.servlet.ServletContext;
-import javax.servlet.ServletContextEvent;
-import javax.servlet.ServletContextListener;
-import javax.servlet.http.HttpSession;
-import javax.servlet.http.HttpSessionEvent;
-import javax.servlet.http.HttpSessionListener;
-import javax.sql.DataSource;
-
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.slf4j.Logger;
@@ -31,15 +20,20 @@ import org.springframework.security.web.session.HttpSessionCreatedEvent;
 import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.web.context.support.WebApplicationContextUtils;
 
+import javax.inject.Inject;
+import javax.servlet.ServletContext;
+import javax.servlet.ServletContextEvent;
+import javax.servlet.ServletContextListener;
+import javax.servlet.http.HttpSession;
+import javax.servlet.http.HttpSessionEvent;
+import javax.servlet.http.HttpSessionListener;
+import java.sql.Timestamp;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.TimeZone;
+import java.util.UUID;
 
-public class XnatSessionEventPublisher implements HttpSessionListener, ServletContextListener{
-    private String contextAttribute = null;
-    private static final Logger _log = LoggerFactory.getLogger(XnatSessionEventPublisher.class);
-
-    ApplicationContext getContext(ServletContext servletContext) {
-        return WebApplicationContextUtils.getWebApplicationContext(servletContext,contextAttribute);  // contextAttribute in xnat's case will always be "org.springframework.web.servlet.FrameworkServlet.CONTEXT.spring-mvc");
-    }
-
+public class XnatSessionEventPublisher implements HttpSessionListener, ServletContextListener {
     /**
      * Handles the HttpSessionEvent by publishing a {@link HttpSessionCreatedEvent} to the application
      * appContext.
@@ -67,25 +61,22 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
      *
      * @param event The HttpSessionEvent pass in by the container
      */
-    public void sessionDestroyed(HttpSessionEvent event) {
-    	
-    	String sessionId = event.getSession().getId();
-        
-    	
-      	java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();
-     	try {
+    public void sessionDestroyed(final HttpSessionEvent event) {
+        final String sessionId = event.getSession().getId();
+        final Date   today     = Calendar.getInstance(TimeZone.getDefault()).getTime();
 
-        	UserI user = (UserI) event.getSession().getAttribute(SecureResource.USER_ATTRIBUTE);
-        	if(user != null){
-	        	String userId = user.getID().toString();	     		
-	     		JdbcTemplate template = new JdbcTemplate(_dataSource);
-		      	java.sql.Timestamp stamp = new java.sql.Timestamp(today.getTime());
-		      	//sessionId's aren't guaranteed to be unique forever. But, the likelihood of sessionId and userId not forming a unique combo with a null logout_date is slim.
-				template.execute("UPDATE xdat_user_login SET logout_date='" + stamp +"' WHERE logout_date is null and session_id='" + sessionId + "' and user_xdat_user_id='" + userId + "';");
-        	}
-      	} catch (Exception e){
-      		//remember, anonymous gets a session, too. Those won't be in the table. Fail silently.
-      	}
+        try {
+            final UserI user = (UserI) event.getSession().getAttribute(SecureResource.USER_ATTRIBUTE);
+            if (user != null) {
+                final String    userId = user.getID().toString();
+                final Timestamp stamp  = new Timestamp(today.getTime());
+                //sessionId's aren't guaranteed to be unique forever. But, the likelihood of sessionId and userId not forming a unique combo with a null logout_date is slim.
+                //noinspection SqlDialectInspection,SqlNoDataSourceInspection,SqlResolve
+                _template.execute("UPDATE xdat_user_login SET logout_date='" + stamp + "' WHERE logout_date is null and session_id='" + sessionId + "' and user_xdat_user_id='" + userId + "';");
+            }
+        } catch (Exception e) {
+            //remember, anonymous gets a session, too. Those won't be in the table. Fail silently.
+        }
         HttpSessionDestroyedEvent e = new HttpSessionDestroyedEvent(event.getSession());
         if (_log.isDebugEnabled()) {
             _log.debug("Publishing event: " + e);
@@ -93,17 +84,28 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         getContext(event.getSession().getServletContext()).publishEvent(e);
     }
 
-	@Override
-	public void contextDestroyed(ServletContextEvent arg0) {
-		//nothing to do here.
+    @Override
+    public void contextDestroyed(final ServletContextEvent event) {
+        if (_log.isDebugEnabled()) {
+            final ServletContext context   = event.getServletContext();
+            _log.debug("Context destroyed: {}", context.getContextPath());
+        }
     }
 
-	@Override
-	public void contextInitialized(ServletContextEvent event) {
-		ServletContext ctx=event.getServletContext();
-		contextAttribute=ctx.getInitParameter("contextAttribute");
-	}
+    @Override
+    public void contextInitialized(final ServletContextEvent event) {
+        if (_log.isDebugEnabled()) {
+            final ServletContext context   = event.getServletContext();
+            _log.debug("Context initialized: {}", context.getContextPath());
+        }
+    }
+
+    private ApplicationContext getContext(ServletContext servletContext) {
+        return WebApplicationContextUtils.findWebApplicationContext(servletContext);  // contextAttribute in xnat's case will always be "org.springframework.web.servlet.FrameworkServlet.CONTEXT.spring-mvc");
+    }
+
+    private static final Logger _log = LoggerFactory.getLogger(XnatSessionEventPublisher.class);
 
     @Inject
-    private DataSource _dataSource;
+    private JdbcTemplate _template;
 }

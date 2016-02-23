@@ -29,6 +29,7 @@ import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
+import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
 /**
  * @author Tim
@@ -41,7 +42,10 @@ public class ModifyPassword extends SecureAction {
 	{
 		//TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
 		//parameter specifying elementAliass and elementNames
-		
+		if(data.getSession().getAttribute("forgot")!=null &&((Boolean)data.getSession().getAttribute("forgot"))){
+            context.put("forgot", true);
+        }
+
 		UserI user=TurbineUtils.getUser(data);
 		if(user==null){
 			error(new Exception("User 'null' cannot change password."), data);
@@ -56,10 +60,7 @@ public class ModifyPassword extends SecureAction {
 			found= Users.createUser(TurbineUtils.GetDataParameterHash(data));
 		} catch (UserFieldMappingException e1) {
             data.addMessage(e1.getMessage());
-            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
-            {
-                data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
-            }
+            redirect(data,false);
             return;
 		}
 		
@@ -74,28 +75,26 @@ public class ModifyPassword extends SecureAction {
 		
 		if(existing==null){
 			data.addMessage("Unable to identify user for password modification.");
-            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
-            {
-                data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
-            }
+            redirect(data,false);
             return;
 		}
 		
 		String newPassword=data.getParameters().getString("xdat:user.primary_password"); // the object in found will have run the password through escape character encoding, potentially altering it
 		String oldPassword=existing.getPassword();
-		
+        String currentPassword = data.getParameters().getString("current_password");
+
+		if((oldPassword==null || currentPassword==null || !oldPassword.equals(  (new ShaPasswordEncoder(256)).encodePassword(currentPassword, existing.getSalt())  )) && data.getSession().getAttribute("forgot")==null){
+            //User correctly entered their old password or they forgot their old password
+            data.setMessage("Incorrect current password. Password unchanged.");
+            redirect(data,false);
+            return;
+        }
 		existing.setPassword(newPassword);
 		
 		ValidationResultsI vr =Users.validate(existing);
         
 		if(!vr.isValid()){
-			TurbineUtils.SetEditItem(found,data);
-            context.put("vr",vr);
-            if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)) !=null)
-            {
-                data.setScreenTemplate(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("edit_screen",data)));
-            }
-            return;
+            redirect(data,false);
 		}
 		
 		UserI authenticatedUser=TurbineUtils.getUser(data);
@@ -109,17 +108,15 @@ public class ModifyPassword extends SecureAction {
 					XdatUserAuth auth = XDAT.getXdatUserAuthService().getUserByNameAndAuth(existing.getUsername(), XdatUserAuthService.LOCALDB, "");
 					auth.setPasswordUpdated(new java.util.Date());
 					XDAT.getXdatUserAuthService().update(auth);
-					
-					data.getSession().setAttribute("expired",new Boolean(false));
 				}else{
 					data.setMessage(validator.getMessage());
-					data.setScreenTemplate("XDATScreen_MyXNAT.vm");
+                    redirect(data,false);
 					return;
 				}
 				
 			}else{
 			    data.setMessage("Password unchanged.");
-			    data.setScreenTemplate("Index.vm");
+                redirect(data,false);
 			    return;
 			}
 			
@@ -129,7 +126,7 @@ public class ModifyPassword extends SecureAction {
 		} catch (PasswordComplexityException e){
 
 			data.setMessage( e.getMessage());
-			data.setScreenTemplate("XDATScreen_MyXNAT.vm");
+			redirect(data,false);
 			return;
 
 		} catch (Exception e) {
@@ -144,8 +141,40 @@ public class ModifyPassword extends SecureAction {
 		    ElementSecurity.refresh();
 		}
 		data.setMessage("Password changed.");
-		data.setScreenTemplate("Index.vm");
+        redirect(data, true);
 
 	}
+
+    private void redirect(RunData data, boolean changed){
+        if(changed) {
+            Boolean expired = (Boolean) data.getSession().getAttribute("expired");
+            Boolean forgot = (Boolean) data.getSession().getAttribute("forgot");
+            String loginTemplate = org.apache.turbine.Turbine.getConfiguration().getString("template.login");
+            String homepageTemplate = org.apache.turbine.Turbine.getConfiguration().getString("template.homepage");
+            if ((forgot != null && forgot)) {
+                //User forgot their password. They must log in again.
+                if (StringUtils.isNotEmpty(loginTemplate)) {
+                    // We're running in a templating solution
+                    data.setScreenTemplate(loginTemplate);
+                } else {
+                    data.setScreen(org.apache.turbine.Turbine.getConfiguration().getString("screen.login"));
+                }
+            }else if ((expired != null && expired)) {
+                //They just updated expired password.
+                data.getSession().setAttribute("expired",new Boolean(false));//New password is not expired
+                if (StringUtils.isNotEmpty(homepageTemplate)) {
+                    // We're running in a templating solution
+                    data.setScreenTemplate(homepageTemplate);
+                } else {
+                    data.setScreen(org.apache.turbine.Turbine.getConfiguration().getString("screen.homepage"));
+                }
+            } else {
+                data.setScreenTemplate("XDATScreen_UpdateUser.vm");
+            }
+        }
+        else{
+            data.setScreenTemplate("XDATScreen_UpdateUser.vm");
+        }
+    }
 
 }

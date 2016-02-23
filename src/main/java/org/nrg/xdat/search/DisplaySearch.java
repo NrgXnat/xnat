@@ -391,7 +391,7 @@ public class DisplaySearch implements TableSearchI {
                     DisplayField df2 = DisplayField.getDisplayFieldForUnknownPath(s);
 
                     if (df2 != null) {
-                        for (final Object[] o : df.getSchemaFields()) {
+                        for (final Object[] o : df2.getSchemaFields()) {
                             String f = (String) o[0];
                             qo.addField(f);
                         }

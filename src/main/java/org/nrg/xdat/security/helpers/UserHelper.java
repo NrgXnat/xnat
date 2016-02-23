@@ -1,15 +1,14 @@
 package org.nrg.xdat.security.helpers;
 
-import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.services.SearchHelperServiceI;
 import org.nrg.xdat.security.services.UserHelperServiceI;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.servlet.http.HttpServletRequest;
 import java.io.IOException;
 import java.util.List;
 
@@ -102,6 +101,11 @@ public class UserHelper {
             }
         }
         return _userHelper;
+    }
+
+    public static void setUserHelper(HttpServletRequest request, UserI user){
+        Users.clearCache(user);
+        request.getSession().setAttribute("userHelper", UserHelper.getUserHelperService(user));
     }
 
     private static final Logger logger = LoggerFactory.getLogger(UserHelper.class);

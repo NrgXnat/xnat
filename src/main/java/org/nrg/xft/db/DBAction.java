@@ -3034,6 +3034,11 @@ public class DBAction {
         DeleteItem(history, login, cache);
     }
 
+    //Added for backward compatibility - MR
+    public static void DeleteItem(XFTItem item, UserI user, EventMetaI c) throws SQLException,Exception{
+    	DeleteItem(item, user, c, false);
+    }
+    
     private static void DeleteItem(XFTItem item, String login, DBItemCache cache) throws Exception {
         String query = "DELETE FROM ";
         GenericWrapperElement element = item.getGenericSchemaElement();

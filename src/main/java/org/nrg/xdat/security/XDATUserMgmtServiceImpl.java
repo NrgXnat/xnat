@@ -1,8 +1,6 @@
 package org.nrg.xdat.security;
 
-import java.util.List;
-import java.util.Map;
-
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
@@ -12,11 +10,7 @@ import org.nrg.xdat.security.Authenticator.Credentials;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.UserManagementServiceI;
-import org.nrg.xdat.security.user.exceptions.PasswordAuthenticationException;
-import org.nrg.xdat.security.user.exceptions.PasswordComplexityException;
-import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
-import org.nrg.xdat.security.user.exceptions.UserInitException;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.security.user.exceptions.*;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xft.ItemI;
@@ -31,7 +25,8 @@ import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
-import com.google.common.collect.Lists;
+import java.util.List;
+import java.util.Map;
 
 public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
     static Logger logger = Logger.getLogger(XDATUserMgmtServiceImpl.class);
@@ -129,7 +124,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		Object id;
 		UserI existing;
     	try {
-			if(user.getID()==null){
+			if(user.getID()!=null){
 				id=user.getID();
 				existing=Users.getUser(user.getID());
 			}else{
@@ -152,9 +147,10 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
                 if (userId!=null) {
                 	wrk.setId(user.getID().toString());
                 }
-	    	}else{
-                throw new Exception("Couldn't find a user for the indicated login: " + user.getLogin());
-            }
+                else{
+                    throw new Exception("Couldn't find a user for the indicated login: " + user.getLogin());
+                }
+	    	}
 	    	
 			PersistentWorkflowUtils.complete(wrk,wrk.buildEvent());
 		} catch (Exception e) {
@@ -183,9 +179,15 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 		        	if(validator.isValid(tempPass, null)){
 		        		//this is set to null instead of authenticatedUser because new users should be able to use any password even those that have recently been used by other users.
-                        String salt = Users.createNewSalt();
-		        		user.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
-                        user.setSalt(salt);
+                        String salt = user.getSalt();
+                        if(salt==null){
+                            salt = Users.createNewSalt();
+                            user.setSalt(salt);
+                        }
+                        if(user.getPassword()==null || user.getPassword().length()!=64) {
+                            user.setPassword(new ShaPasswordEncoder(256).encodePassword(tempPass, salt));
+                        }
+
 		        	} else {
 		        		throw new PasswordComplexityException(validator.getMessage());
 		        	}

@@ -11,20 +11,8 @@
 
 
 package org.nrg.xdat.turbine.modules.actions;
-import java.io.IOException;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.io.UnsupportedEncodingException;
-import java.util.UUID;
-import java.net.URLEncoder;
-
-import javax.servlet.http.Cookie;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
 import nl.bitwalker.useragentutils.Browser;
 import nl.bitwalker.useragentutils.BrowserType;
-
 import org.apache.log4j.Logger;
 import org.apache.turbine.modules.actions.VelocitySecureAction;
 import org.apache.turbine.services.velocity.TurbineVelocity;
@@ -45,6 +33,15 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
+
+import javax.servlet.http.Cookie;
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
+import java.util.Enumeration;
+import java.util.UUID;
 
 /**
  * @author Tim

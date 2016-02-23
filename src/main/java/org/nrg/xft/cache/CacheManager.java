@@ -1,14 +1,13 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xft.cache;
 
-import org.nrg.xft.event.Event;
-import org.nrg.xft.event.EventListener;
-import org.nrg.xft.event.EventManager;
+import org.nrg.xft.event.XftItemEvent;
 
 import java.util.Hashtable;
 import java.util.Map;
 
-public class CacheManager implements EventListener {
+public class CacheManager {
+	
 	private Map<String,Map<Object,Object>> cache=new Hashtable<String,Map<Object,Object>>();
 	
 	private static CacheManager cm=null;
@@ -16,7 +15,6 @@ public class CacheManager implements EventListener {
 	public synchronized static CacheManager GetInstance(){
 		if(cm==null){
 			CacheManager temp=new CacheManager();
-			EventManager.AddListener(temp);
 			cm=temp;
 		}
 		
@@ -65,18 +63,19 @@ public class CacheManager implements EventListener {
 		return items.remove(id);
 	}
 	
-	public void handleEvent(Event e) throws Exception {
+	public void handleXftItemEvent(XftItemEvent e) throws Exception {
+		
 		if(e.getXsiType()==null)return;
 		
 		Map<Object,Object> items=cache.get(e.getXsiType());
 		
 		if(items==null)return;//if null, then we aren't listening to this type yet.
 		
-		if((e.getAction().equals(Event.CREATE))){
+		if((e.getAction().equals(XftItemEvent.CREATE))){
 			if(e.getId()!=null && e.getItem()!=null){
 				items.put(e.getId(),e.getItem());
 			}	
-		}else if((e.getAction().equals(Event.UPDATE))){
+		}else if((e.getAction().equals(XftItemEvent.UPDATE))){
 			if(e.getId()!=null && e.getItem()!=null){
 				items.put(e.getId(),e.getItem());
 			}else if(e.getId()!=null){
@@ -84,7 +83,7 @@ public class CacheManager implements EventListener {
 			}else{
 				items.clear();
 			}
-		}else if((e.getAction().equals(Event.DELETE))){
+		}else if((e.getAction().equals(XftItemEvent.DELETE))){
 			if(e.getId()!=null){
 				items.remove(e.getId());
 			}else{
@@ -92,4 +91,5 @@ public class CacheManager implements EventListener {
 			}
 		}
 	}
+	
 }

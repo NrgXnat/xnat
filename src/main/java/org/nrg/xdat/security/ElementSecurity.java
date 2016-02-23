@@ -27,6 +27,7 @@ import java.util.Map;
 import java.util.Scanner;
 
 import org.apache.log4j.Logger;
+import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.om.XdatElementAccess;
@@ -39,6 +40,8 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
+import org.nrg.xdat.security.services.impl.FeatureRepositoryServiceImpl;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
@@ -50,10 +53,10 @@ import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.ViewManager;
-import org.nrg.xft.event.Event;
-import org.nrg.xft.event.EventManager;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
+import org.nrg.xft.event.ReactorEventUtils;
+import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
@@ -112,16 +115,23 @@ public class ElementSecurity extends ItemWrapper{
 			synchronized(lock){
 				if (elements == null)
 				{
-					elements = new Hashtable<String,ElementSecurity>();
+					elements = new Hashtable<>();
 					ArrayList al = DisplaySearch.SearchForItems(SchemaElement.GetElement(XDAT_ELEMENT_SECURITY),new CriteriaCollection("AND"));
-					Iterator iter = al.iterator();
-					while (iter.hasNext())
-					{
-						ItemI item = (ItemI)iter.next();
-						ElementSecurity es = new ElementSecurity(item);
+					for (final Object anItem : al) {
+						ItemI           item = (ItemI) anItem;
+						ElementSecurity es   = new ElementSecurity(item);
 						es.getItem().internValues();
-						elements.put(es.getElementName(),es);
+						elements.put(es.getElementName(), es);
 					}
+				}
+				final ContextService service = ContextService.getInstance();
+				if (service.hasApplicationContext()) {
+					final FeatureRepositoryServiceI featureRepoService = service.getBean(FeatureRepositoryServiceI.class);
+					if (featureRepoService != null && featureRepoService instanceof FeatureRepositoryServiceImpl) {
+						((FeatureRepositoryServiceImpl) featureRepoService).updateNewSecureDefinitions();
+					}
+				} else {
+					logger.warn("The context service instance does not have an application context: I need to check for new feature definitions but can't.");
 				}
 			}
 		}
@@ -1557,7 +1567,7 @@ public class ElementSecurity extends ItemWrapper{
 		}
         
         try {
-			EventManager.Trigger(Groups.getGroupDatatype(),Event.UPDATE);
+			ReactorEventUtils.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),XftItemEvent.UPDATE));
 		} catch (Exception e1) {
             logger.error("",e1);
 		}

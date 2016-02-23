@@ -598,11 +598,15 @@ public class XDAT implements Initializable,Configurable{
     }
 
     public static void sendJmsRequest(final Object request) {
+        sendJmsRequest(XDAT.getContextService().getBean(JmsTemplate.class), request);
+	}
+
+    public static void sendJmsRequest(final JmsTemplate jmsTemplate, final Object request) {
         final String simpleName = request.getClass().getSimpleName();
         final String queue = simpleName.substring(0, 1).toLowerCase() + simpleName.substring(1);
         final Destination destination = XDAT.getContextService().getBean(queue, Destination.class);
-        XDAT.getContextService().getBean(JmsTemplate.class).convertAndSend(destination, request);
-}
+        jmsTemplate.convertAndSend(destination, request);
+	}
 
     private static synchronized org.nrg.config.entities.Configuration createDefaultWhitelist(UserI user) throws ConfigServiceException {
         String username = user.getUsername();

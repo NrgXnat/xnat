@@ -476,6 +476,22 @@ public class Permissions {
         return coll;
     }
 
+    /**
+     * Checks the security settings of the data type to see if the user can perform this query.
+     * To check if users have been specifically allowed to see any objects of that type, use canReadAny.
+     *
+     * @param user
+     * @param elementName
+     * @return
+     */
+    public static boolean canQuery(final UserI user, final String elementName) {
+        try {
+            Authorizer.getInstance().authorizeRead(GenericWrapperElement.GetElement(elementName), user);
+            return true;
+        } catch (Exception e) {
+            return false;
+        }
+    }
 
     /**
      * Checks the security settings of the data type and the user's permissions to see if the user can access any items of this type.

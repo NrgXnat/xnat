@@ -146,7 +146,7 @@ public final class TemporaryTokenStore {
 	}
 	
 	public static String emailBody (String token) {
-		return "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "app/template/ChangePassword.vm?token=" + token + "\n This link will expire in 24 hours.";
+		return "Please click this link to reset your password: " + TurbineUtils.GetFullServerPath() + "app/template/XDATScreen_UpdateUser.vm?token=" + token + "\n This link will expire in 24 hours.";
 	}
 	
  	public static void addTokenAndEmail(final String login, final String subject) throws Exception {

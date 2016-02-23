@@ -14,8 +14,6 @@ package org.nrg.xdat.servlet;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.BooleanUtils;
-import org.apache.commons.lang.StringUtils;
-import org.apache.commons.lang.math.NumberUtils;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
@@ -28,32 +26,33 @@ import org.nrg.xft.generators.SQLUpdateGenerator;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.utils.FileUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.ResourcePatternResolver;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
 import javax.servlet.http.HttpServlet;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FilenameFilter;
+import java.io.*;
 import java.nio.file.Paths;
 import java.sql.SQLException;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Properties;
+import java.util.*;
 import java.util.logging.Handler;
 import java.util.logging.LogManager;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 /**
  * @author Tim
  */
 @SuppressWarnings("serial")
 public class XDATServlet extends HttpServlet {
-    private final static Logger logger = LoggerFactory.getLogger(XDATServlet.class);
+    private static final Logger logger = LoggerFactory.getLogger(XDATServlet.class);
+    private static final Pattern SQL_PATTERN = Pattern.compile("^.*(\\d\\d\\d).sql$");
+
     // TODO: Added in to support CustomClasspathResourceLoader on 1.6.5 migration, needs to be removed and refactored.
     public static String WEBAPP_ROOT;
 
@@ -239,7 +238,7 @@ public class XDATServlet extends HttpServlet {
                 transaction.execute(runAfter);
 
                 if (conf != null) {
-                    final List<String> initScripts = getInitScripts(conf);
+                    final List<String> initScripts = getInitScripts();
                     if (initScripts.size() > 0) {
                         transaction.execute(initScripts);
                     }
@@ -282,62 +281,61 @@ public class XDATServlet extends HttpServlet {
         }
 
         /**
-         * returns a list of sql statements pulled from .sql files in WEB-INF/conf/default-sql/*.sql.
-         * <p/>
-         * These files should initialize the server, its settings and the users.
+         * Returns a list of sql statements pulled from SQL files stored under META-INF/xnat. The files are filtered and
+         * sorted by the {@link #filterAndSortInitSqlResources(Resource[])} method. These files should initialize the
+         * server, its settings and the users.
          *
-         * @param conf The folder containing the SQL scripts.
          * @return A list of SQL statements initialized from the SQL scripts.
          */
-        public List<String> getInitScripts(String conf) {
-            File sql_conf = new File(conf);
-            final List<String> statements = Lists.newArrayList();
+        private List<String> getInitScripts() {
+            final List<String> statements = new ArrayList<>();
+            try {
+                final ResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
+                final List<Resource> filtered = filterAndSortInitSqlResources(resolver.getResources("classpath*:META-INF/xnat/**/init_*.sql"));
 
-            //look for files in the WEB-INF/conf/default-sql/*.sql
-            if (sql_conf.exists()) {
-                System.out.println("===========================");
-                System.out.println("Populating default user list");
-                System.out.println("===========================");
-                File[] custom_sql = sql_conf.listFiles(new FilenameFilter() {
-                    @Override
-                    public boolean accept(File arg0, String arg1) {
-                        return (arg1.endsWith(".sql"));
-                    }
-                });
-
-                //files can be sorted by adding _ (integer) to the end of the file name. file_1.sql is run before file_2.sql
-                Arrays.sort(custom_sql, new Comparator<File>() {
-                    @Override
-                    public int compare(File arg0, File arg1) {
-                        return findIndex(arg0) - findIndex(arg1);
-                    }
-
-                    private int findIndex(File f) {
-                        if (f.getName().contains("_")) {
-                            final String index = f.getName().substring(f.getName().lastIndexOf("_") + 1, f.getName().indexOf(".sql"));
-                            return NumberUtils.toInt(index, 0);
-                        } else {
-                            return 0;
-                        }
-                    }
-                });
-
-                if (custom_sql.length > 0) {
-                    for (File sql : custom_sql) {
-                        try {
-                            for (final String stmt : FileUtils.FileLinesToArrayList(sql)) {
-                                if (!StringUtils.isWhitespace(stmt)) {
-                                    statements.add((stmt.contains(";")) ? stmt : stmt + ";");
-                                }
-                            }
-                        } catch (Exception e) {
-                            logger.error("", e);
+                for (final Resource resource : filtered) {
+                    try (final BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()), 1024)) {
+                        String statement;
+                        while ((statement = reader.readLine()) != null) {
+                            statements.add(statement + (statement.endsWith(";") ? '\n' : ";\n"));
                         }
                     }
                 }
+            } catch (IOException e) {
+                throw new RuntimeException("An error occurred trying to locate XNAT module definitions.");
             }
             return statements;
         }
+    }
+
+    /**
+     * Tests each resource to see if the name matches the pattern for SQL initialization resources, init_XXX_NNN.sql,
+     * where XXX is some string to indicate the purpose of the initialization and NNN is a three-digit ordinal value
+     * indicating the script's place in the initialization order.
+     *
+     * Once the resources have been filtered and any non-compliant resources have been removed and logged, the list is
+     * sorted based on the resources' ordinal values.
+     *
+     * @param resources    The array of resources to be sorted and filtered.
+     * @return The list of resources after sorting and filtering.
+     */
+    private List<Resource> filterAndSortInitSqlResources(final Resource[] resources) {
+        final List<Resource> filtered = new ArrayList<>();
+        for (final Resource resource : resources) {
+            final Matcher matcher = SQL_PATTERN.matcher(resource.getFilename());
+            if (matcher.find()) {
+                filtered.add(resource);
+            }
+        }
+        Collections.sort(filtered, new Comparator<Resource>() {
+            @Override
+            public int compare(final Resource resource1, final Resource resource2) {
+                final String ordered1 = SQL_PATTERN.matcher(resource1.getFilename()).group(1);
+                final String ordered2 = SQL_PATTERN.matcher(resource2.getFilename()).group(1);
+                return ordered1.compareTo(ordered2);
+            }
+        });
+        return filtered;
     }
 
     private void replaceLogging() {

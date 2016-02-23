@@ -11,7 +11,7 @@ import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.services.FeatureServiceI;
 import org.nrg.xdat.services.GroupFeatureService;
-import org.nrg.xft.event.ReactorEventUtils;
+import org.nrg.xft.event.XftEventService;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.security.UserI;
 import org.springframework.stereotype.Service;
@@ -48,7 +48,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                ReactorEventUtils.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }
@@ -65,7 +65,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                ReactorEventUtils.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }
@@ -81,7 +81,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
         try {
             //group objects are cached by an old caching implementation which listened for events
-            ReactorEventUtils.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+        	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
         } catch (Exception e1) {
             logger.error("", e1);
         }
@@ -204,7 +204,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                ReactorEventUtils.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }
@@ -225,7 +225,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                ReactorEventUtils.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }
@@ -249,7 +249,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
 
             try {
                 //group objects are cached by an old caching implementation which listened for events
-                ReactorEventUtils.triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
+            	XftEventService.getService().triggerEvent(new XftItemEvent(XdatUsergroup.SCHEMA_ELEMENT_NAME, group.getId(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }

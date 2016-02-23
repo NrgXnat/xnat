@@ -29,6 +29,7 @@ import org.springframework.beans.BeansException;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 
+import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import java.io.IOException;
 import java.util.HashMap;
@@ -52,6 +53,17 @@ public class DicomSCPManager implements ApplicationContextAware {
         _context = context;
     }
 
+    @PreDestroy
+    public void shutdown() {
+        _log.debug("Handling pre-destroy actions, shutting down DICOM SCP receivers.");
+        stopDicomSCPs();
+    }
+
+    /**
+     * Sets the preferences for the DICOM SCP manager.
+     * @param preferences    The preferences to set.
+     */
+    @SuppressWarnings("unused")
     public void setPreferences(final DicomSCPPreferences preferences) {
         _preferences = preferences;
         for (final DicomSCPInstance instance : preferences.getDicomSCPInstances()) {

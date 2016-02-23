@@ -48,8 +48,6 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
             _log.debug("Publishing event: " + e);
         }
 
-        // TODO: This should be wired to a database setting so that the admin can change the session timeout value.
-        session.setMaxInactiveInterval(900);
         session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
         getContext(session.getServletContext()).publishEvent(e);

@@ -5,18 +5,17 @@ import org.apache.axis.transport.http.AxisHTTPSessionListener;
 import org.apache.axis.transport.http.AxisServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
+import org.nrg.dcm.DicomSCPManager;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
+import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.*;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.List;
+import java.util.*;
 
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
 
@@ -33,6 +32,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         super.onStartup(context);
 
         // Now initialize everything else.
+        context.addFilter("springSecurityFilterChain", DelegatingFilterProxy.class).addMappingForUrlPatterns(null, false, "/*");
         context.addFilter("updateExpirationCookie", UpdateExpirationCookie.class);
 
         context.addListener(XnatSessionEventPublisher.class);

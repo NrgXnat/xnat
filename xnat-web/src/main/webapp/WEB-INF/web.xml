@@ -20,6 +20,15 @@
     </welcome-file-list>
     <!-- ======================================================================== -->
     <!--                                                                          -->
+    <!-- Set the session configuration settings, which is basically just the      -->
+    <!-- session timeout value specified in minutes.                              -->
+    <!--                                                                          -->
+    <!-- ======================================================================== -->
+    <session-config>
+        <session-timeout>15</session-timeout>
+    </session-config>
+    <!-- ======================================================================== -->
+    <!--                                                                          -->
     <!-- Mapping HTTP error codes and exceptions to custom error pages to make    -->
     <!-- the display a bit more pleasant and preserve system confidentiality.     -->
     <!--                                                                          -->

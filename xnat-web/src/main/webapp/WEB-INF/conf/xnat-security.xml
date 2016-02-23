@@ -16,8 +16,6 @@
 
     <context:annotation-config />
 
-    <context:component-scan base-package="org.nrg.xnat.security.controllers"/>
-
     <util:list id="decisionVoters">
         <ref bean="roleVoter"/>
         <ref bean="authenticatedVoter"/>
@@ -129,7 +127,6 @@
         </property>
         <property name="adminUrls">
             <list>
-                <value>/monitoring*</value>
                 <value>/app/template/AdminSummary.vm*</value>
                 <value>/app/template/Configuration.vm*</value>
                 <value>/app/template/XDATScreen_EditScript.vm/user/Test*</value>
@@ -146,6 +143,7 @@
                 <value>/app/template/XDATScreen_manage_news.vm*</value>
                 <value>/app/template/XDATScreen_manage_pipeline.vm*</value>
                 <value>/app/template/XDATScreen_roles.vm*</value>
+                <value>/monitoring*</value>
             </list>
         </property>
     </bean>

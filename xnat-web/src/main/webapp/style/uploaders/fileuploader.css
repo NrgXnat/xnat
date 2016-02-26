@@ -1,0 +1,127 @@
+.abu-uploader { position:relative; width: 100%; height:435px;}
+
+div.abu-button-disabled {
+    background:#CCCCCC; pointer-events:none 
+}
+
+div.abu-xnat-interactivity-area {
+    display:block; /* or inline-block */
+    width: 100%; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
+    background:#fff; border-bottom:1px solid #fff;color:#000;
+}
+div.abu-xnat-interactivity-area-contents {
+    display:inline; padding: 7px 0; text-align:right; margin-left:10px; margin-right:10px; float:right; width: 100%;    
+}
+div.abu-xnat-interactivity-area-sub {
+    display:inline; text-align:right; margin-left:10px; margin-right:10px; margin-top:0px; margin-bottom:5px; float:right; width: 100%;    
+}
+
+.abu-done-button {
+    display:block; /* or inline-block */
+    width: 105px; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
+    background:#084FAB; border-bottom:1px solid #ddd;color:#fff; 
+}
+.abu-done-button-hover {background:#0B6BE8;}
+.abu-done-button-focus {outline:1px dotted black;}
+
+.abu-process-button {
+    display:block; /* or inline-block */
+    width: 105px; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
+    background:#084FAB; border-bottom:1px solid #ddd;color:#fff; 
+}
+.abu-process-button-hover {background:#0B6BE8;}
+.abu-process-button-focus {outline:1px dotted black;}
+
+.abu-upload-button {
+    display:block; /* or inline-block */
+    width: 105px; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
+    background:#084FAB; border-bottom:1px solid #ddd;color:#fff;
+}
+.abu-upload-button-hover {background:#0B6BE8;}
+.abu-upload-button-focus {outline:1px dotted black;}
+
+.abu-upload-drop-area {
+    position:absolute; top:0; left:0; width:100%; height:100%; min-height: 70px; z-index:2;
+    background:/*#0C77FF*/#0B6BE8; color:#FFFFFF; text-align:center; display:none; 
+}
+.abu-upload-drop-area span {
+    display:block; position:absolute; top: 50%; width:100%; margin-top:-8px; font-size:16px;
+}
+.abu-upload-drop-area-active {background:#084FAB; color#FFFFFF; display:inline-block; }
+
+.abu-files-processing {
+	background:#FFF url('../../images/loading.gif') 50% center no-repeat; opacity: 0.8; 
+	color:#339933; width:100%; height:100%; text-align:center; position:absolute;font-weight:bold; font-size:16px; z-index:999; display:none; float:left;
+}
+
+.abu-button-input {
+	position: absolute; right: 0px; top: 0px; font-family: Arial; font-size: 118px; margin: 0px; padding: 0px; cursor: pointer; opacity: 0;
+}
+
+.abu-list-area {position:relative;float:left;width:auto;overflow:auto;height:auto;width:100%}
+ad
+
+.abu-upload-list {margin:15px 35px; padding:0; list-style:disc;}
+.abu-upload-list li { margin:0; padding:0; line-height:15px; font-size:12px; }
+.abu-upload-file, .abu-upload-spinner, .abu-upload-size, .abu-upload-uploading-text, .abu-upload-cancel, .abu-upload-failed-text, .abu-indeterminate-text, .abu-upload-complete-text, .abu-upload-duplicate-text {
+    margin-right: 7px;
+}
+
+.abu-upload-file {}
+.abu-upload-spinner {display:inline-block; background: url("../../images/loading.gif"); width:15px; height:15px; vertical-align:text-bottom;}
+.abu-upload-size,.abu-upload-cancel {font-size:11px;}
+
+.abu-upload-failed-text {display:none;}
+.abu-upload-uploading-text {display:none;}
+.abu-upload-indeterminate-text {display:none;}
+.abu-upload-complete-text {display:none;}
+.abu-upload-duplicate-text {display:none;}
+.abu-upload-fail  {display:inline;color:#880000}
+.abu-upload-fail.abu-upload-failed-text {display:inline;color:#880000}
+.abu-upload-indeterminate .abu-upload-indeterminate-text {display:inline;}
+.abu-upload-uploading {display:inline;}
+.abu-upload-uploading.abu-upload-uploading-text {display:inline;}
+.abu-upload-complete {display:inline;color:#008800}
+.abu-upload-complete.abu-upload-complete-text {display:inline;color:#008800}
+.abu-upload-duplicate {display:inline;color:#008800}
+.abu-upload-duplicate.abu-upload-duplicate-text {display:inline;color:#008800}
+
+.abu-uploader-instructions-sel {margin-bottom:0px; margin-right:10px; display:inline: width:100%; float:right; background-color:#CCCCCC; border-color:#084FAB; color:#084FAB; border-style:solid; border-width:1px; border-color:#084FAB; font-size:14px; font-weight: bold; padding:2px; }
+.abu-uploader-instructions {margin-bottom:10px; display:inline}
+
+.abu-return-floatmessage {position:absolute;z-index:10001;width:auto;cursor:pointer;background-color:#FFFFCC; }
+.abu-return-message {width:auto;cursor:pointer;background-color:#FFFFCC; }
+
+.abu-options-div { position: relative; float: left; }
+.abu-options-cb {
+    display:block; /* or inline-block */
+    width: auto; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
+}
+
+.abu-progress { position:relative; display:inline-block; width:250px; height:15px; border: 1px solid #ddd; padding: 0px; border-radius: 0px; margin-left: 10px; }
+.abu-bar { background-color: #0854AB; opacity:0.40; width:0%; height:15px; border-radius: 0px; display: inline-block }
+.abu-percent { position:absolute; display:inline-block; top:0px; left:48%; line-height: 15px; }
+.abu-status { position:relative; display:none; }
+
+.opaque {
+	opacity:0.5;
+        -ms-filter:"progid:DXImageTransform.Microsoft.Alpha(Opacity=50)";
+        filter: alpha(opacity=50);
+   }
+.modal {
+        background-color: white;
+        height: 100%;
+        min-height: 100%;
+        margin-left: -50%; 
+        padding: 20px;
+        position: fixed; top: 60px; left: 50%;
+        width: 100%;
+        z-index: 1001;
+}
+.hidden { display: none !important; }
+
+.underline {text-decoration: underline; }
+
+.passParamText { margin-left: 30px; margin-right: 10px; }
+
+.interactivityAreaSpan { margin-left: 15px; margin-right: 10px; }

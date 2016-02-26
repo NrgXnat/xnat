@@ -25,12 +25,14 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.helpers.ZipEntryFileWriterWrapper;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 
+@ImporterHandler(handler = "DICOM-zip", allowCallsWithoutFiles = false)
 public final class DicomZipImporter extends ImporterHandlerA {
     private final InputStream in;
     private final Object listenerControl;

@@ -15,7 +15,9 @@ import org.apache.commons.lang.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.status.StatusList;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xnat.helpers.file.StoredFile;
@@ -25,6 +27,8 @@ import org.nrg.xnat.helpers.transactions.PersistentStatusQueueManagerI;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.helpers.uri.UriParserUtils.UriParser;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.actions.importer.ImporterNotFoundException;
 import org.nrg.xnat.restlet.resources.SecureResource;
@@ -41,13 +45,18 @@ import org.restlet.util.Template;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import com.google.common.collect.Lists;
+
 import java.io.File;
+import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 public class Importer extends SecureResource {
 	private static final String CRLF = "\r\n";
@@ -63,6 +72,33 @@ public class Importer extends SecureResource {
 		this.getVariants().add(new Variant(MediaType.TEXT_HTML));
 		this.getVariants().add(new Variant(MediaType.TEXT_XML));
 		this.getVariants().add(new Variant(MediaType.TEXT_PLAIN));
+	}
+	
+	private static final List<String> HANDLERS_ALLOWING_CALLS_WITHOUT_FILES = Lists.newArrayList(); 
+	private static final List<String> HANDLERS_PREFERRING_PARTIAL_URI_WRAP = Lists.newArrayList(); 
+	static {
+        final ImporterHandlerPackages packages = XDAT.getContextService().getBean("importerHandlerPackages",ImporterHandlerPackages.class);
+        for (final String pkg : packages) {
+			try {
+				final List<Class<?>> classesForPackage = Reflection.getClassesForPackage(pkg);
+				for (final Class<?> clazz : classesForPackage) {
+                    if (ImporterHandlerA.class.isAssignableFrom(clazz)) {
+                        if (!clazz.isAnnotationPresent(ImporterHandler.class)) {
+                       		continue;
+                       	}
+                       	ImporterHandler anno = clazz.getAnnotation(ImporterHandler.class);
+                        if (anno!=null && anno.allowCallsWithoutFiles()) {
+                        	HANDLERS_ALLOWING_CALLS_WITHOUT_FILES.add(anno.handler());
+                        }
+                        if (anno!=null && anno.callPartialUriWrap()) {
+                        	HANDLERS_PREFERRING_PARTIAL_URI_WRAP.add(anno.handler());
+                        }
+                    }
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
+        }
 	}
 
 	@Override
@@ -151,54 +187,51 @@ public class Importer extends SecureResource {
 				}
 			}
 			
-			if(fw.size()==0 && handler != null && !handler.equals(ImporterHandlerA.BLANK_PREARCHIVE_ENTRY))
-			{
+			if(fw.size()==0 && handler != null && !HANDLERS_ALLOWING_CALLS_WITHOUT_FILES.contains(handler)) {
+				
 				this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Unable to identify upload format.");
 				return;
-			}
-			else if (handler != null && fw.size() == 0) {
-				if (!handler.equals(ImporterHandlerA.BLANK_PREARCHIVE_ENTRY)) {
-					throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "For a POST request with no file, the \"" + ImporterHandlerA.IMPORT_HANDLER_ATTR + "\" parameter can only be \"" + ImporterHandlerA.BLANK_PREARCHIVE_ENTRY + "\".", new IllegalArgumentException());
+				
+			} else if (handler != null && fw.size() == 0) {
+				
+				try {				
+					importer = ImporterHandlerA.buildImporter(handler, 
+															  listenerControl, 
+															  user, 
+															  null, // FileWriterWrapperI is null because no files should have been uploaded. 
+															  params);
 				}
-				else {
-					try {				
-						importer = ImporterHandlerA.buildImporter(handler, 
-																  listenerControl, 
-																  user, 
-																  null, // FileWriterWrapperI is null because no files should have been uploaded. 
-																  params);
-					}
-					catch (Exception e) {
-						logger.error("",e);
-						throw new ServerException(e.getMessage(),e);
-					}
-					
-					if(httpSessionListener){
-						if(StringUtils.isEmpty(listenerControl)){
-							getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"'" + XNATRestConstants.TRANSACTION_RECORD_ID+ "' is required when requesting '" + HTTP_SESSION_LISTENER + "'.");
-							return;
-						}
-						final StatusList sq = new StatusList();
-						importer.addStatusListener(sq);
-
-						storeStatusList(listenerControl, sq);
-					}
-
-					response= importer.call();
-								
-					if(entity!=null && APPLICATION_XMIRC.equals(entity.getMediaType())){
-						returnString("OK", Status.SUCCESS_OK);
+				catch (Exception e) {
+					logger.error("",e);
+					throw new ServerException(e.getMessage(),e);
+				}
+				
+				if(httpSessionListener){
+					if(StringUtils.isEmpty(listenerControl)){
+						getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"'" + XNATRestConstants.TRANSACTION_RECORD_ID+ "' is required when requesting '" + HTTP_SESSION_LISTENER + "'.");
 						return;
 					}
-					
-					returnDefaultRepresentation();
+					final StatusList sq = new StatusList();
+					importer.addStatusListener(sq);
+
+					storeStatusList(listenerControl, sq);
+				}
+
+				response= importer.call();
+							
+				if(entity!=null && APPLICATION_XMIRC.equals(entity.getMediaType())){
+					returnString("OK", Status.SUCCESS_OK);
 					return;
 				}
-			}
-
-			if(fw.size()>1){
+				
+				returnDefaultRepresentation();
+				return;
+				
+			} else if (fw.size()>1){
+				
 				this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Importer is limited to one uploaded resource at a time.");
 				return;
+				
 			}
 
 			if(handler==null && entity!=null){
@@ -330,16 +363,17 @@ public class Importer extends SecureResource {
 		@Override
 		public Representation represent(Variant variant) throws ResourceException {
 			final MediaType mt=overrideVariant(variant);
+			final boolean wrapURI = (handler==null || HANDLERS_PREFERRING_PARTIAL_URI_WRAP.contains(handler));
 			if(mt.equals(MediaType.TEXT_HTML)){
 				return buildHTMLresponse(response);
 			}else if(mt.equals(MediaType.TEXT_PLAIN)){
-				if(response!=null&& response.size()==1){
-					return new StringRepresentation(wrapPartialDataURI(response.get(0)), MediaType.TEXT_PLAIN);
+				if(response!=null && response.size()==1){
+					return new StringRepresentation((wrapURI) ? wrapPartialDataURI(response.get(0)) : response.get(0), MediaType.TEXT_PLAIN);
 				}else{
-					return new StringRepresentation(convertListURItoString(response), MediaType.TEXT_PLAIN);
+					return new StringRepresentation(convertListToString(response,wrapURI), MediaType.TEXT_PLAIN);
 				}
 			}else{
-				return new StringRepresentation(convertListURItoString(response), MediaType.TEXT_URI_LIST);
+				return new StringRepresentation(convertListToString(response, wrapURI), MediaType.TEXT_URI_LIST);
 			}
 		}
 
@@ -437,10 +471,10 @@ public class Importer extends SecureResource {
 		}
 	}
 
-	public String convertListURItoString(final List<String> response){
-		StringBuffer sb = new StringBuffer();
+	public String convertListToString(final List<String> response, boolean wrapPartialDataURI){
+		final StringBuffer sb = new StringBuffer();
 		for(final String s:response){
-			sb.append(wrapPartialDataURI(s)).append(CRLF);
+			sb.append((wrapPartialDataURI) ? wrapPartialDataURI(s) : s).append(CRLF);
 		}
 
 		return sb.toString();

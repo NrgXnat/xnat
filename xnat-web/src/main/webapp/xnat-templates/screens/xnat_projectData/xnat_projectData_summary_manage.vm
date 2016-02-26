@@ -369,14 +369,13 @@
             <th>Event</th>
             <th>Script ID</th>
             <th>Description</th>
-            <th></th>
             </thead>
             <tbody>
             ## content populated with XNAT.app.eventsManager.initEventsTable()
             </tbody>
         </table>
         <br>
-        <button type="button" id="add_event_handler" class="btn1" style="font-size:12px;">Add Event Handler</button>
+        <button type="button" id="manage_event_handlers" class="btn1" style="font-size:12px;">Manage Event Handlers</button>
         <div class="alert" style="margin:15px 0;max-width:696px;min-width:400px;">
             Automation is an emerging feature in the XNAT server platform. It allows you to create scripts in a number
             of scripting languages that can be triggered by system events. You should use it only if you or your team

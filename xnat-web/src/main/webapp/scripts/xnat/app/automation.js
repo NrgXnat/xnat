@@ -219,7 +219,7 @@ XNAT.app.automation = {};
             data.event_label = data.event_id;
         }
         xhr.put({
-            url: eventsURL('', '', false),
+            url: eventsURL('', '?XNAT_CSRF=' + window.csrfToken, false),
             //url: eventsURL(),
             data: data,
             success: function(){
@@ -343,7 +343,7 @@ XNAT.app.automation = {};
     }
 
     automation.deleteEvent = function(id, label){
-        var _url =  eventsURL('', '?cascade=true', false);
+        var _url =  eventsURL('', '?XNAT_CSRF=' + window.csrfToken + '&cascade=true', false);
         xmodal.confirm({
             title: 'Delete?',
             content: 'Are you sure you want to delete the Event' +

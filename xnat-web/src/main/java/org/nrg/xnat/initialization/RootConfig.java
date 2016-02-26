@@ -7,6 +7,8 @@ import org.nrg.xdat.security.HistoricPasswordValidator;
 import org.nrg.xdat.security.PasswordValidatorChain;
 import org.nrg.xdat.security.RegExpValidator;
 import org.nrg.xnat.utils.XnatUserProvider;
+import org.nrg.xnat.restlet.XnatRestletExtensions;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -15,6 +17,7 @@ import org.springframework.context.annotation.ImportResource;
 
 import java.util.Arrays;
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.List;
 
 @Configuration
@@ -75,6 +78,16 @@ public class RootConfig {
     @Bean
     public XnatUserProvider receivedFileUserProvider(@Value("${services.dicom.scp.receivedfileuser:admin}") final String receivedFileUser) {
         return new XnatUserProvider(receivedFileUser);
+    }
+
+    @Bean
+    public XnatRestletExtensions xnatRestletExtensions() {
+		return new XnatRestletExtensions(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.extensions"})));
+    }
+
+    @Bean
+    public ImporterHandlerPackages importerHandlerPackages() {
+		return new ImporterHandlerPackages(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.actions","org.nrg.xnat.archive"})));
     }
 
     @Bean

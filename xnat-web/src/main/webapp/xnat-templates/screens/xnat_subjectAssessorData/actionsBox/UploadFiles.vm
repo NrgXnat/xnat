@@ -1,0 +1,19 @@
+#if($om.canEdit($user))
+ <li id="abu_adl_files_li" class="yuimenuitem">
+    <!--<a id="abu_adl_files_a" class="abuLink uploadLink" style="display:block" href="" onclick="return false;" data-type="$om.getXSIType()" data-uri="$content.getURI("/data/experiments/$om.getId()")">Upload Additional Files</a>-->
+    <a id="abu_adl_files_a" class="abuLink uploadLink" style="display:block" href="" onclick="return false;" data-type="$om.getXSIType()" data-uri="$content.getURI("/data/experiments/$om.getId()")">Upload Additional Files</a>
+ </li>
+ <script type="text/javascript" src="$content.getURI("scripts/uploaders/AutomationBasedUploader.js")"></script>
+ <script type="text/javascript" src="$content.getURI("scripts/uploaders/fileuploader.js")"></script>
+ <script type="text/javascript" src="$content.getURI("scripts/lib/jquery-plugins/jquery.form.js")"></script>
+ <link type="text/css" rel="stylesheet" href="$content.getURI("style/uploaders/fileuploader.css")">
+#### Link to the former custom uploader
+## <li id="cru_adl_files_li" class="yuimenuitem">
+##    <a id="cru_adl_files_a" class="yuimenuitemlabel uploadLink" style="display:none" href="" onclick="return false;" data-type="$om.getXSIType()" data-uri="$content.getURI("/data/experiments/$om.getId()")">Upload Files (Custom)</A>
+##   </li>
+##    <script type="text/javascript" src="$content.getURI("scripts/uploaders/ConfiguredResourceUploader.js")"></script>
+##    <script>
+##		XNAT.app.crConfigs.project='$!om.getProject()';
+##    </script>
+#####
+#end

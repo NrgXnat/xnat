@@ -10,33 +10,34 @@
  */
 package org.nrg.xnat.restlet.actions.importer;
 
-import java.lang.reflect.Constructor;
-import java.lang.reflect.InvocationTargetException;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.concurrent.Callable;
-
 import org.apache.commons.lang.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.dcm.DicomFileNamer;
 import org.nrg.framework.services.ContextService;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.status.StatusProducer;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.archive.DicomZipImporter;
 import org.nrg.xnat.archive.GradualDicomImporter;
-import org.nrg.xnat.restlet.actions.PrearcBlankSession;
-import org.nrg.xnat.restlet.actions.SessionImporter;
-import org.nrg.xnat.restlet.actions.XarImporter;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 
-@SuppressWarnings({ "rawtypes", "unchecked" })
+import java.io.IOException;
+import java.lang.reflect.Constructor;
+import java.lang.reflect.InvocationTargetException;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.Callable;
+
+@SuppressWarnings({ "rawtypes", "unchecked", "deprecation" })
 public abstract class ImporterHandlerA  extends StatusProducer implements Callable<List<String>>{
 
 
@@ -64,19 +65,38 @@ public abstract class ImporterHandlerA  extends StatusProducer implements Callab
     private static final String CLASS_NAME = "className";
     private static final String[] PROP_OBJECT_FIELDS = new String[]{CLASS_NAME};
     static{
+    	//First, find importers by property file (if it exists)
         //EXAMPLE PROPERTIES FILE 
         //org.nrg.import.handler=NIFTI
-        //org.nrg.import.handler.impl.NIFTI.className=org.nrg.import.handler.CustomNiftiImporter
+        //org.nrg.import.handler.impl.NIFTI.className=org.nrg.import.handler.CustomNiftiImporter:w
         try {
             IMPORTERS.putAll((new PropertiesHelper<ImporterHandlerA>()).buildClassesFromProps(IMPORTER_PROPERTIES, PROP_OBJECT_IDENTIFIER, PROP_OBJECT_FIELDS, CLASS_NAME));
 
-            if(!IMPORTERS.containsKey(SESSION_IMPORTER))IMPORTERS.put(SESSION_IMPORTER, SessionImporter.class);
-            if(!IMPORTERS.containsKey(XAR_IMPORTER))IMPORTERS.put(XAR_IMPORTER, XarImporter.class);
-            if(!IMPORTERS.containsKey(GRADUAL_DICOM_IMPORTER))IMPORTERS.put(GRADUAL_DICOM_IMPORTER, GradualDicomImporter.class);
-            if(!IMPORTERS.containsKey(DICOM_ZIP_IMPORTER))IMPORTERS.put(DICOM_ZIP_IMPORTER, DicomZipImporter.class);
-	    if(!IMPORTERS.containsKey(BLANK_PREARCHIVE_ENTRY))IMPORTERS.put(BLANK_PREARCHIVE_ENTRY, PrearcBlankSession.class);
         } catch (Exception e) {
             logger.error("",e);
+        }
+        //Second, find importers by annotation
+        final ImporterHandlerPackages packages = XDAT.getContextService().getBean("importerHandlerPackages",ImporterHandlerPackages.class);
+        for (final String pkg : packages) {
+			try {
+				final List<Class<?>> classesForPackage = Reflection.getClassesForPackage(pkg);
+				for (final Class<?> clazz : classesForPackage) {
+                    if (ImporterHandlerA.class.isAssignableFrom(clazz)) {
+                        if (!clazz.isAnnotationPresent(ImporterHandler.class)) {
+                       		continue;
+                       	}
+                       	ImporterHandler anno = clazz.getAnnotation(ImporterHandler.class);
+                        if (anno!=null && !IMPORTERS.containsKey(anno.handler())) {
+                        	if (logger.isDebugEnabled()) {
+                        		logger.debug("Found ImporterHandler: " + clazz.getName());
+                        	}
+                           	IMPORTERS.put(anno.handler(),(Class<? extends ImporterHandlerA>)clazz);
+                        }
+                    }
+				}
+			} catch (Exception e) {
+				throw new RuntimeException(e);
+			}
         }
     }
 

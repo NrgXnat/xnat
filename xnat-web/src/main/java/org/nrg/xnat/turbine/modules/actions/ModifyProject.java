@@ -27,7 +27,7 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.event.EventMetaI;
-import org.nrg.xft.event.ReactorEventUtils;
+import org.nrg.xft.event.XftEventService;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -130,7 +130,7 @@ public class ModifyProject extends SecureAction {
 
             WorkflowUtils.complete(wrk, c);
             Users.clearCache(user);
-            ReactorEventUtils.triggerEvent(new XftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, postSave.getId(), XftItemEvent.UPDATE));
+            XftEventService.getService().triggerEvent(new XftItemEvent(XnatProjectdata.SCHEMA_ELEMENT_NAME, postSave.getId(), XftItemEvent.UPDATE));
         } catch (SecurityException e) {
             logger.error("Security exception triggered by user '" + user.getLogin() + "': " + e.getMessage(), e);
             handleException(data, project.getItem(), e, TurbineUtils.EDIT_ITEM);

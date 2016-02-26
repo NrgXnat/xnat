@@ -1,5 +1,5 @@
 /*
- * org.nrg.xnat.restlet.XnatRestletExtensionList
+ * org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages
  *
  * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
@@ -10,15 +10,15 @@
  * Last modified 1/19/16 3:49 PM
  */
 
-package org.nrg.xnat.restlet;
+package org.nrg.xnat.restlet.actions.importer;
 
 import java.util.HashSet;
 import java.util.Set;
 
-public class XnatRestletExtensions extends HashSet<String> {
-    public XnatRestletExtensions(Set<String> packages) {
-       super();
-       this.setPackages(packages);
+public class ImporterHandlerPackages extends HashSet<String> {
+    public ImporterHandlerPackages(Set<String> packages) {
+    	super();
+        this.setPackages(packages);
     }
     public void setPackages(Set<String> packages) {
         clear();

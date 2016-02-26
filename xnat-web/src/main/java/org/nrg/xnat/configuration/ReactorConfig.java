@@ -11,7 +11,7 @@ import reactor.bus.EventBus;
  * The Class ReactorConfig.
  */
 @Configuration
-@ComponentScan({"org.nrg.xnat.event.listeners, org.nrg.xft.event.listeners"})
+@ComponentScan({"org.nrg.xnat.event.listeners, org.nrg.xft.event, org.nrg.xft.event.listeners"})
 public class ReactorConfig {
 
     /**

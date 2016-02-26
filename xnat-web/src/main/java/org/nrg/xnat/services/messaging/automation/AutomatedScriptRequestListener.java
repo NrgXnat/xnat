@@ -1,5 +1,6 @@
 package org.nrg.xnat.services.messaging.automation;
 
+import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.turbine.utils.AdminUtils;

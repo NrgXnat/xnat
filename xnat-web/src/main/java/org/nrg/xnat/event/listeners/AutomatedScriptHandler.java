@@ -48,6 +48,7 @@ public class AutomatedScriptHandler extends WorkflowStatusEventHandlerAbst imple
     
     /** The Constant logger. */
     private static final Logger logger = LoggerFactory.getLogger(AutomatedScriptHandler.class);
+	@Inject ScriptRunnerService _service;
 	
 	/**
 	 * Instantiates a new automated script handler.
@@ -113,8 +114,7 @@ public class AutomatedScriptHandler extends WorkflowStatusEventHandlerAbst imple
      * @return the scripts
      */
     private List<Script> getScripts(final String projectId, String event) {
-    	final ScriptRunnerService _service = XDAT.getContextService().getBean(ScriptRunnerService.class);
-    	
+
         final List<Script> scripts = Lists.newArrayList();
 
         //project level scripts

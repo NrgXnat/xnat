@@ -38,6 +38,7 @@ import org.nrg.xnat.helpers.prearchive.SessionException;
 import org.nrg.xnat.helpers.uri.URIManager;
 import org.nrg.xnat.helpers.uri.UriParserUtils;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.RequestUtil;
@@ -45,6 +46,7 @@ import org.nrg.xnat.turbine.utils.XNATSessionPopulater;
 import org.restlet.data.Status;
 import org.xml.sax.SAXException;
 
+@ImporterHandler(handler = "SI", allowCallsWithoutFiles = false)
 public class SessionImporter extends ImporterHandlerA implements Callable<List<String>> {
 
 	static Logger logger = Logger.getLogger(SessionImporter.class);

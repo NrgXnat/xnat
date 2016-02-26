@@ -45,12 +45,14 @@ import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.xml.sax.SAXException;
 
+@ImporterHandler(handler = "XAR", allowCallsWithoutFiles = false)
 public class XarImporter extends ImporterHandlerA implements Callable<List<String>> {
 
 	static final String[] zipExtensions={".zip",".jar",".rar",".ear",".gar",".xar"};

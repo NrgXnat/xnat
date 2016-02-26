@@ -20,13 +20,18 @@ $(function(){
         $no_events_defined = $('#no_events_defined'),
         $no_event_handlers = $('#no_event_handlers'),
         $add_event_handler = $('#add_event_handler'),
+        $manage_event_handlers = $('#manage_event_handlers'),
         handlersRendered = false,
         hasEvents = false;
 
-    function initEventsTable(){
+    function initEventsTable(doEdit){
+
+        if (doEdit) {
+            var events_manage_table = $('#events_manage_table');
+        }
 
         // hide stuff
-        $events_table.hide();
+        $((doEdit) ? events_manage_table : $events_table).hide();
         $no_event_handlers.hide();
 
         // Now get all the data and stick it in the table.
@@ -49,14 +54,20 @@ $(function(){
                             '<td class="event-id">' + _event_id + '</td>' +
                             '<td class="script-id">' + eventHandler.scriptId + '</td>' +
                             '<td class="description">' + eventHandler.description + '</td>' +
-                            '<td style="text-align: center;">' +
-                            '<a href="javascript:" class="delete-handler" ' +
-                            'data-handler="' + eventHandler.triggerId + '" title="Delete handler for event ' + _event_id + '">delete</a>' +
-                            '</td>' +
+                            ((doEdit) ?
+                                '<td style="text-align: center;">' +
+                                '<a href="javascript:" class="delete-handler" ' +
+                                'data-handler="' + eventHandler.triggerId + '" title="Delete handler for event ' + _event_id + '">delete</a>' +
+                                '</td>' + 
+                                '<td style="text-align: center;">' +
+                                '<a href="javascript:" class="configure-uploader-handler" ' +
+                                'data-handler="' + eventHandler.event + '" title="Delete handler for event ' + _event_id + '">configure uploader</a>' +
+                                '</td>' 
+                            : '') +
                             '</tr>';
                     });
-                    $events_table.find('tbody').html(eventRows);
-                    $events_table.show();
+                    $((doEdit) ? events_manage_table : $events_table).find('tbody').html(eventRows);
+                    $((doEdit) ? events_manage_table : $events_table).show();
                 }
                 else {
                     if (!hasEvents) {
@@ -125,7 +136,7 @@ $(function(){
                 // render the events table stuff after the
                 // request to get the events
                 if (!handlersRendered){
-                    initEventsTable();
+                    initEventsTable(false);
                 }
             }
         });
@@ -179,14 +190,19 @@ $(function(){
         }
 
         xhr.put({
-            url: XNAT.url.restUrl('/data/projects/' + window.projectScope + '/automation/handlers', null, false),
+            url: XNAT.url.restUrl('/data/projects/' + window.projectScope + '/automation/handlers?XNAT_CSRF=' + window.csrfToken, null, false),
             data: data,
             dataType: "json",
             success: function(){
                 xmodal.message('Success', 'Your event handler was successfully added.', 'OK', { 
                         action: function(){
-                            initEventsTable();
-                            xmodal.closeAll();
+                            initEventsTable(false);
+                            if ($("#events_manage_table").length>0) {
+                                initEventsTable(true);
+                            }
+                            xmodal.closeAll($(xmodal.dialog.open),$('#xmodal-manage-events'));
+                            // Trigger automation uploader to reload handlers
+                            XNAT.app.abu.getAutomationHandlers();
                         }  
                     }
                 );
@@ -194,12 +210,61 @@ $(function(){
             error: function( request, status, error ){
                 xmodal.message('Error', 'An error occurred: [' + status + '] ' + error, 'Close', {
                     action: function(){
-                        xmodal.closeAll()
+                        xmodal.closeAll($(xmodal.dialog.open),$('#xmodal-manage-events'));
                     }
                 });
             }
         });
     }
+
+ 
+    function manageEventHandlers(){
+
+			var manageModalOpts = {
+				width: 840,  
+				height: 480,  
+				id: 'xmodal-manage-events',  
+				title: "Manage Event Handlers",
+				content: "<div id='manageModalDiv'></div>",
+                buttons: {
+                    close: { 
+                        label: 'Done',
+                        isDefault: true
+                    },
+                    addEvents: { 
+                        label: 'Add Event Handler',
+                        action: function( obj ){
+                            addEventHandler();
+                        }
+                    }
+                }
+			};
+			xModalOpenNew(manageModalOpts);
+			$('#manageModalDiv').html(
+               '<p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>' +
+                '<p id="no_event_handlers" style="display:none;padding:20px;">There are no event handlers currently configured for this project.</p>' +
+                '<table id="events_manage_table" class="xnat-table" style="display:table;width:100%">' +
+                    '<thead>' +
+                    '<th>Event</th>' +
+                    '<th>Script ID</th>' +
+                    '<th>Description</th>' +
+                    '<th></th>' +
+                    '<th></th>' +
+                    '</thead>' +
+                    '<tbody>' +
+                    '</tbody>' +
+                '</table>' 
+           ); 
+           initEventsTable(true);
+           $("#events_manage_table").on('click', 'a.delete-handler', function(){
+               deleteEventHandler($(this).data('handler'))
+           });
+           $("#events_manage_table").on('click', 'a.configure-uploader-handler', function(){
+               XNAT.app.abu.configureUploaderForEventHandler($(this).data('handler'),'prj')
+           });
+
+    }
+
 
     function addEventHandler(){
 
@@ -235,7 +300,7 @@ $(function(){
     }
 
     function doDeleteTrigger( triggerId ){
-        var url = XNAT.url.restUrl('/data/automation/triggers/' + triggerId);
+        var url = XNAT.url.restUrl('/data/automation/triggers/' + triggerId + "?XNAT_CSRF=" + window.csrfToken);
         if (window.jsdebug) console.log(url);
         jQuery.ajax({
             type: 'DELETE',
@@ -283,6 +348,6 @@ $(function(){
     });
 
     // *javascript* event handler for adding an XNAT event handler (got it?)
-    $add_event_handler.on('click', addEventHandler);
+    $manage_event_handlers.on('click', manageEventHandlers);
 
 });

@@ -32,6 +32,7 @@ import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.presentation.ChangeSummaryBuilderA;
+import org.nrg.xnat.restlet.files.utils.RestFileUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -558,10 +559,7 @@ public class CatalogUtils {
                 filename = filename.substring(index + 1);
             }
 
-            String compression_method = ".zip";
-            if (filename.contains(".")) {
-                compression_method = filename.substring(filename.lastIndexOf("."));
-            }
+            String compression_method = (filename.contains(".")) ? filename.substring(filename.lastIndexOf(".")) : "";
 
             if (extract && (compression_method.equalsIgnoreCase(".tar") || compression_method.equalsIgnoreCase(".gz") || compression_method.equalsIgnoreCase(".zip") || compression_method.equalsIgnoreCase(".zar"))) {
                 if (logger.isDebugEnabled()) {
@@ -652,6 +650,12 @@ public class CatalogUtils {
                         }
 
                     } else {
+           				// Uploading directories via linux (and likely Mac) will not fail due to "Everything is a file".  In such cases we wind 
+           				// up with a "file" generated.  Check for these "files".  Remove them, and thrown an exception.
+           				// Windows uploads of directories should fail before hitting this class.
+                    	if (RestFileUtils.isFileRepresentationOfDirectory(saveTo) && saveTo.delete()) {
+                    		throw new Exception("Upload of directories/folders is not supported.  The uploaded file appears to have been a directory.");
+                    	}
                         if (logger.isDebugEnabled()) {
                             logger.debug("Updating catalog entry for file " + saveTo.getAbsolutePath());
                         }

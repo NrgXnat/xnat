@@ -36,7 +36,6 @@ import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.SecurityValues;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.XdatStoredSearch;
-import org.nrg.xdat.security.helpers.Features;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -1301,7 +1300,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
             }
 
             try {
-                ReactorEventUtils.triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), XftItemEvent.UPDATE));
+            	XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), XftItemEvent.UPDATE));
             } catch (Exception e1) {
                 logger.error("", e1);
             }

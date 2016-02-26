@@ -24,6 +24,9 @@ XNAT.app.pResources={
 		var temp_html="<div class='colA'><div class='info simple'>What resource are you requiring?</div>" +
 				"<div class='row'><div class='rowTitle' for='pResource.name'>Title</div> <input class='pResourceField' required='true' data-required-msg='<b>Title</b> field is required.' data-prop-name='name' type='text' id='pResource.name' value='' placeholder='Natural Language Title'/></div>" +
 				"<div class='row'><div class='rowTitle' for='pResource.desc'>Description (optional)</div> <textarea class='pResourceField' data-prop-name='description' id='pResource.desc' placeholder='' /></div>" +
+				"<div class='row script-select-row'><div class='rowTitle'>Script to run</div> <select id='pScriptSelect'>" + 
+				'<option value="">NONE</option>' +
+				"</select></div>" +
 				"</div>";
 		temp_html+="<div class='colB'><div class='info simple'>Where will it be stored?</div>";
 		if(level=="proj"){
@@ -77,6 +80,24 @@ XNAT.app.pResources={
 		$("#pResource_form").html(temp_html);
 		$("#pResource_form").show();
 		$("#pResource_exist").height(430-$("#pResource_form").height());
+		var automationScriptsAjax = $.ajax({
+			type : "GET",
+			url:serverRoot+"/data/automation/scripts?format=json&XNAT_CSRF=" + window.csrfToken,
+			cache: false,
+			async: true,
+			context: this,
+			dataType: 'json'
+		});
+		automationScriptsAjax.done( function( data, textStatus, jqXHR ) {
+			if (typeof data.ResultSet !== "undefined" && typeof data.ResultSet.Result !== "undefined") {
+				XNAT.app.pResources.scripts = data.ResultSet.Result;
+				for (var i=0;i<XNAT.app.pResources.scripts.length;i++) {
+					$("#pScriptSelect").append('<option value="' + XNAT.app.pResources.scripts[i]["Script ID"] +
+					 '">' + XNAT.app.pResources.scripts[i]["Script ID"] + '</option>'); 
+				}
+			}
+		});
+
 	},
 	add:function(){		
 		var valid=true;
@@ -128,8 +149,102 @@ XNAT.app.pResources={
 		
 		if(valid){
 			this.configs.push(props);
-
 			this.save();
+			var scriptToRun = $("#pScriptSelect").find(":selected").text();
+			for (var i=0;i<XNAT.app.pResources.scripts.length;i++) {
+				if (scriptToRun == XNAT.app.pResources.scripts[i]["Script ID"]) {
+					var eventData = { event: ("Uploaded " + props.name),
+					      			scriptId: scriptToRun,
+					      			description: "Run " + scriptToRun + " upon " + props.name + " upload." };
+					var eventHandlerAjax = $.ajax({
+						type : "PUT",
+						url:serverRoot+"/data/projects/" + this.id + "/automation/handlers?XNAT_CSRF=" + window.csrfToken,
+						cache: false,
+						async: true,
+						context: this,
+						data: JSON.stringify(eventData),
+						contentType: "application/json; charset=utf-8"
+					});
+					eventHandlerAjax.done( function( data, textStatus, jqXHR ) {
+						console.log("NOTE:  Event handler added for " + props.name + " upload");
+						// Configure uploader
+						var getUploadConfigAjax = $.ajax({
+							type : "GET",
+							url:serverRoot+"/data/projects/" + this.id + "/config/automation_uploader/configuration?contents=true&XNAT_CSRF=" + window.csrfToken,
+							cache: false,
+							async: true,
+							context: this,
+							dataType: 'json'
+						});
+						getUploadConfigAjax.done( function( data, textStatus, jqXHR ) {
+							if (typeof(data)!=undefined && $.isArray(data) && data.length>0) {
+								var uploaderConfig = data; 
+								var alreadyConfig = false;
+								var NEW_HANDLER = "Uploaded " + props.name;
+								var thisConfig;
+								var dataPos;
+								for (j=0; j<uploaderConfig.length; j++) {
+									var currConfig = uploaderConfig[j];
+									if (currConfig.event==NEW_HANDLER && currConfig.scope=="prj") {
+										thisConfig = currConfig;
+										dataPos = j;
+										// NOTE:  We expect that the uploader configuration will have been created when the handler was
+										// created, so we'll modify it.
+										alreadyConfig = true;
+									}
+								}
+								var newHandlerObj = {
+									event:NEW_HANDLER,
+									eventScope:"prj",
+									launchFromResourceUploads:true,
+									launchFromCacheUploads:false,
+									launchWithoutUploads:false,
+									contexts:[props.type],
+									resourceConfigs:[props.name]
+								};
+								var hasGlobalUploaderConfig = (typeof XNAT.app.abu.uploaderConfig !== 'undefined' && XNAT.app.abu.uploaderConfig.constructor === Array);
+								if (alreadyConfig) {
+									thisConfig = newHandlerObj;
+									uploaderConfig[dataPos]=thisConfig;
+									if (hasGlobalUploaderConfig) {
+										for (var i=0;i<XNAT.app.abu.uploaderConfig.length;i++) {
+											if (XNAT.app.abu.uploaderConfig[i].eventScope ==" prj" && XNAT.app.abu.uploaderConfig[i].event==NEW_HANDLER) {
+												XNAT.app.abu.uploaderConfig[i]=newHandlerObj;
+											}
+										}
+									}
+								} else {
+									uploaderConfig.push(newHandlerObj);
+									if (hasGlobalUploaderConfig) {
+										XNAT.app.abu.uploaderConfig.push(newHandlerObj);
+									}
+								}
+								// Configure uploader
+								var putUploadConfigAjax = $.ajax({
+									type : "PUT",
+									url:serverRoot+"/data/projects/" + this.id + "/config/automation_uploader/configuration?inbody=true&XNAT_CSRF=" + window.csrfToken,
+									cache: false,
+									async: true,
+									context: this,
+									data: JSON.stringify(uploaderConfig),
+									contentType: "application/text; charset=utf-8"
+								});
+								putUploadConfigAjax.done( function( data, textStatus, jqXHR ) {
+									// Do nothing for now.
+								});
+								putUploadConfigAjax.fail( function( data, textStatus, jqXHR ) {
+        	 							xModalMessage("ERROR","The event handler to launch the automation script for this resource configuration " + 
+											"could not be added.  It must be added manually.");
+								});
+							}
+						});
+					});
+					eventHandlerAjax.fail( function( data, textStatus, jqXHR ) {
+						console.log("ERROR:  Event handler could not be added for " + props.name + " upload");
+					});
+					break;
+				}
+			}
 		}
 	},
 	save:function(){
@@ -140,6 +255,8 @@ XNAT.app.pResources={
         	{
         		closeModalPanel('saveResource');
         		XNAT.app.pResources.load();
+	                // Trigger automation uploader to reload handlers
+			XNAT.app.abu.loadResourceConfigs(); 
         	},
         	 failure: function(){
         	 	closeModalPanel('saveResource');
@@ -167,9 +284,28 @@ XNAT.app.pResources={
 			
 			this.configs=YAHOO.lang.JSON.parse(script);
 		}
-	    this.render();
+		//
+		// Load event handlers for finding event handlers linked to this project resource
+		//
+		var automationHandlerAjax = $.ajax({
+			type : "GET",
+			url:serverRoot+"/data/projects/" + this.id +  "/automation/handlers?format=json&XNAT_CSRF=" + window.csrfToken,
+			cache: false,
+			async: true,
+			context: this,
+			dataType: 'json'
+		});
+		automationHandlerAjax.done( function( data, textStatus, jqXHR ) {
+			if (typeof data.ResultSet !== "undefined" && typeof data.ResultSet.Result !== "undefined") {
+				this.eventHandlers = data.ResultSet.Result;
+			}
+	    		this.render(this.eventHandlers);
+		});
+		automationHandlerAjax.fail( function( data, textStatus, jqXHR ) {
+	    		this.render();
+		});
 	},
-	render:function(){
+	render:function(eventHandlers){
 		//identify columns
 		if(this.configs!=undefined && this.configs.length>0){
 			var tmpHtml="<dl class='header'><dl><dd class='col1'>&nbsp;</dd><dd class='colL col2'>Type</dd><dd class='colM col3'>Name</dd><dd class='colM col4'>Label</dd><dd class='colL col5'>Sub-directory</dd><dd class='colM col6'>Overwrite?</dd><dd class='colS col7'>Options</dd></dl></dl>	";
@@ -189,10 +325,18 @@ XNAT.app.pResources={
 				}
 				tmpHtml+="</dd>";
 				if(v1.description){
-					tmpHtml+="<dd class='colX'><b>Description:</b> "+v1.description +"</dd></dl>";
-				}else{
-					tmpHtml+="</dl>";
+					tmpHtml+="<dd class='colX'><b>Description:</b> "+v1.description +"</dd>";
 				}
+				if (typeof eventHandlers !== "undefined") {
+					for (var j=0;j<eventHandlers.length;j++) {
+						if (("Uploaded " + v1.name) == eventHandlers[j].event) {
+							tmpHtml+="<dd class='colX'><b>Script to run upon upload completion:</b> "+ eventHandlers[j].scriptId +"</dd>";
+							break;
+			
+						}
+					} 
+				}
+				tmpHtml+="</dl>";
 			});
 		}else{
 			var tmpHtml="<div style='color:grey;font-style:italic;'>None</div>";

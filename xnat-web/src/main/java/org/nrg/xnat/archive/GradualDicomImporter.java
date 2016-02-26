@@ -48,6 +48,7 @@ import org.nrg.xnat.helpers.prearchive.PrearcDatabase.Either;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils.SessionFileLockException;
 import org.nrg.xnat.helpers.prearchive.SessionData;
 import org.nrg.xnat.helpers.uri.URIManager;
+import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
@@ -63,6 +64,7 @@ import java.util.concurrent.Callable;
 
 @SuppressWarnings("ThrowFromFinallyBlock")
 @Service
+@ImporterHandler(handler = "DICOM-zip", allowCallsWithoutFiles = false)
 public class GradualDicomImporter extends ImporterHandlerA {
     public static final String SENDER_AE_TITLE_PARAM = "Sender-AE-Title";
     public static final String SENDER_ID_PARAM = "Sender-ID";

@@ -361,17 +361,15 @@ public class XNATApplication extends Application {
     }
 
     /**
-     * This method walks the <b>org.nrg.xnat.restlet.extensions</b> package, as well as any packages defined in
-     * {@link XnatRestletExtensions} beans and attempts to find extensions for the
+     * This method walks the packages defined in * {@link XnatRestletExtensions} beans 
+     * (see org.nrg.xnat.configuration.RootConfig) and attempts to find extensions for the
      * set of available REST services.
-     *
      * @param router The URL router for the restlet servlet.
      * @return A list of classes that should be attached unprotected, i.e. publicly accessible.
      */
     @SuppressWarnings("unchecked")
     private List<Class<? extends Resource>> addExtensionRoutes(Router router) {
         Set<String> packages = new HashSet<>();
-        packages.add("org.nrg.xnat.restlet.extensions");
         final Map<String, XnatRestletExtensions> pkgLists = XDAT.getContextService().getBeansOfType(XnatRestletExtensions.class);
         for (XnatRestletExtensions pkgList : pkgLists.values()) {
             packages.addAll(pkgList);

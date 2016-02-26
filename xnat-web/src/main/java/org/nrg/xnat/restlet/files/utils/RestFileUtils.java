@@ -13,6 +13,10 @@ package org.nrg.xnat.restlet.files.utils;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xdat.om.*;
 
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
 import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
@@ -154,6 +158,35 @@ public class RestFileUtils {
 		}
 		
 		return session_ids;
+	}
+	
+	// Uploading directories via linux (and likely Mac) will not fail due to "Everything is a file".  This is an initial
+	// implementation of a check of files to see if they might be uploaded "directories".  These file representations directories
+	// seem to be of a specific size and basically full of zero bytes.  It's possible this check could/should be improved over time.
+	public static boolean isFileRepresentationOfDirectory(File fl) {
+		final long len = fl.length();
+		// Is this the best check?
+		if (len < 1024 || (len < (128*1024) && len%1024 == 0)) {
+			try {
+				final FileInputStream fis = new FileInputStream(fl);
+				byte[] b = new byte[1024];
+				while (fis.read(b)!=-1) {
+					for (int i=0; i<b.length; i++) {
+						if (b[i] != 0) {
+							fis.close();
+							return false;
+						}
+					}
+				}
+				fis.close();
+				return true;
+			} catch (FileNotFoundException e) {
+				return false;
+			} catch (IOException e) {
+				return false;
+			}
+		}
+		return false;
 	}
 
 }

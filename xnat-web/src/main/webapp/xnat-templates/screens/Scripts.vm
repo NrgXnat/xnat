@@ -27,7 +27,7 @@
 
 <div class="yui-skin-sam">
 
-##    <div id="tp_fm" style="display:none"></div>
+    <div id="tp_fm" style="display:none"></div>
 
     #if($data.getSession().getAttribute("user").checkRole("Administrator"))
 
@@ -43,6 +43,7 @@
         </style>
 
         <script type="text/javascript" src="$content.getURI("scripts/xnat/app/siteEventsManager.js")"></script>
+        <script type="text/javascript" src="$content.getURI("scripts/uploaders/AutomationBasedUploader.js")"></script>
 
         <div id="addEventHandler" class="html-template">
             <table>
@@ -125,7 +126,6 @@
                                 <th>Event</th>
                                 <th>Script ID</th>
                                 <th>Description</th>
-                                <th></th>
                                 </thead>
                                 <tbody>
                                 ## content populated with XNAT.app.eventsManager.initEventsTable()
@@ -133,7 +133,7 @@
                             </table>
                             <br>
                             <b style="padding:0 8px;">Create a site-wide Event Handler: </b>
-                            <button type="button" id="add_event_handler" class="btn1" style="font-size:12px;" title="add an event handler">Add Event Handler</button>
+                            <button type="button" id="manage_event_handlers" class="btn1" style="font-size:12px;" title="manage event handlers">Manage Event Handlers</button>
                         </div>
 
 

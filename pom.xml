@@ -1429,9 +1429,9 @@
             </snapshots>
         </repository>
         <repository>
-            <id>dcm4che</id>
-            <name>dcm4che Maven Repository</name>
-            <url>http://www.dcm4che.org/maven2</url>
+            <id>org.nrg.maven.artifacts.remote</id>
+            <name>XNAT Snapshot Maven Repo</name>
+            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/remote-repos</url>
             <releases>
                 <enabled>true</enabled>
             </releases>

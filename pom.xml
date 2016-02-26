@@ -1430,7 +1430,7 @@
         </repository>
         <repository>
             <id>org.nrg.maven.artifacts.remote</id>
-            <name>XNAT Snapshot Maven Repo</name>
+            <name>XNAT Remote Maven Repo</name>
             <url>http://nrgxnat.artifactoryonline.com/nrgxnat/remote-repos</url>
             <releases>
                 <enabled>true</enabled>

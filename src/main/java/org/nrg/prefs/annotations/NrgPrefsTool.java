@@ -76,7 +76,7 @@ public @interface NrgPrefsTool {
      * Indicates the property to be called to set the {@link NrgPreferences} object indicated by this annotation's
      * {@link #preferencesClass()} attribute. The property must take a single parameter of type {@link NrgPreferences}. If a
      * value isn't specified for this attribute, the default property is <strong>preferences</strong> (i.e. the
-     * preferences object is set via the <strong>setPreferencesClass(NrgPreferences)</strong> method).
+     * preferences object is set via the <strong>setPreferences(NrgPreferences)</strong> method).
      *
      * @return The property to use to set the {@link NrgPreferences} object for the tool instance.
      */

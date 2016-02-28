@@ -1,0 +1,6 @@
+<?xml version='1.0' encoding='utf-8'?>
+<Context antiResourceLocking="true">
+    <Loader className="org.apache.catalina.loader.VirtualWebappLoader" searchVirtualFirst="true" virtualClasspath="${xnat.home}/plugins/*.jar"/>
+    <JarScanner scanAllDirectories="true" />
+    <Parameter name="xnatHome" value="${xnat.home}"/>
+</Context>

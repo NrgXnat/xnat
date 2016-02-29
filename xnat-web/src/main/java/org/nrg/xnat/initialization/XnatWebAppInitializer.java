@@ -5,16 +5,22 @@ import org.apache.axis.transport.http.AxisHTTPSessionListener;
 import org.apache.axis.transport.http.AxisServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
-import org.nrg.dcm.DicomSCPManager;
+import org.nrg.framework.processors.XnatModuleBean;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
+import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
 import javax.servlet.*;
+import java.io.IOException;
 import java.util.*;
 
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
@@ -57,12 +63,35 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        return new Class<?>[] { RootConfig.class };
+        final List<Class<?>> configClasses = new ArrayList<>();
+        configClasses.add(RootConfig.class);
+        configClasses.addAll(getModuleConfigs());
+        return configClasses.toArray(new Class[configClasses.size()]);
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
         return new Class<?>[0];
+    }
+
+    private List<Class<?>> getModuleConfigs() {
+        final List<Class<?>> moduleConfigs = new ArrayList<>();
+        try {
+            final PathMatchingResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
+            final Resource[]                          resources = resolver.getResources("classpath*:META-INF/xnat/**/*-module.properties");
+            for (final Resource resource : resources) {
+                final Properties     properties   = PropertiesLoaderUtils.loadProperties(resource);
+                final XnatModuleBean module       = new XnatModuleBean(properties);
+                final Class<?>       moduleConfig = module.getConfigClass();
+                moduleConfigs.add(moduleConfig);
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("An error occurred trying to locate XNAT module definitions.");
+        } catch (ClassNotFoundException e) {
+            _log.error("Did not find a class specified in a module definition.", e);
+        }
+
+        return moduleConfigs;
     }
 
     private void addServlet(final Class<? extends Servlet> clazz, final int loadOnStartup, final String... mappings) {
@@ -105,5 +134,6 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         private ServletContext _context;
     }
 
+    private static final Logger _log = LoggerFactory.getLogger(XnatWebAppInitializer.class);
     private ServletContext _context;
 }

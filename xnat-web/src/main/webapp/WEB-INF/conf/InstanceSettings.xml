@@ -1,18 +1,26 @@
 <?xml version="1.0" encoding="UTF-8"?>
-<Instance_Settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:noNamespaceSchemaLocation="schemas/xdat/instance.xsd" site_url="http://xnatweb.dev" admin_email="hodgem@wustl.edu" archive_root_path="/data/xnatweb/archive" prearchive_path="/data/xnatweb/prearchive" cache_path="/data/xnatweb/cache" smtp_server="irony.wusm.wustl.edu" ftp_path="/data/xnatweb/ftp" build_path="/data/xnatweb/build" pipeline_path="/data/xnatweb/pipeline" require_login="true" user_registration="false" enable_csrf_token="true">
-	<Databases>
-		<Database Type="POSTGRESQL" Id="xnatweb" Driver="org.postgresql.Driver" Url="jdbc:postgresql://localhost/xnatweb" User="xnat" Pass="xnat" MaxConnections="10"/>
-	</Databases>
-	<Models>
-		<Data_Model File_Name="security.xsd" File_Location="schemas/security" DB="xnatweb"/>
-		<Data_Model File_Name="birnprov.xsd" File_Location="schemas/birn" DB="xnatweb"/>
-		<Data_Model File_Name="xnat.xsd" File_Location="schemas/xnat" DB="xnatweb"/>
-		<Data_Model File_Name="workflow.xsd" File_Location="schemas/pipeline" DB="xnatweb"/>
-		<Data_Model File_Name="repository.xsd" File_Location="schemas/pipeline" DB="xnatweb"/>
-		<Data_Model File_Name="project.xsd" File_Location="schemas/project" DB="xnatweb"/>
-		<Data_Model File_Name="assessments.xsd" File_Location="schemas/assessments" DB="xnatweb"/>
-		<Data_Model File_Name="catalog.xsd" File_Location="schemas/catalog" DB="xnatweb"/>
-		<Data_Model File_Name="protocolValidation.xsd" File_Location="schemas/validation" DB="xnatweb"/>
-		<Data_Model File_Name="screeningAssessment.xsd" File_Location="schemas/screening" DB="xnatweb"/>
-	</Models>
+<Instance_Settings xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+                   xsi:noNamespaceSchemaLocation="schemas/xdat/instance.xsd"
+                   site_url="http://localhost:8080" admin_email="administrator@xnat.org"
+                   archive_root_path="/data/xnat/archive"
+                   prearchive_path="/data/xnat/prearchive" cache_path="/data/xnat/cache"
+                   smtp_server="mail.server" ftp_path="/data/xnat/ftp" build_path="/data/xnat/build"
+                   pipeline_path="/data/xnat/pipeline" require_login="true" user_registration="false"
+                   enable_csrf_token="true">
+    <Databases>
+        <Database Type="POSTGRESQL" Id="xnat" Driver="org.postgresql.Driver" Url="jdbc:postgresql://localhost/xnat"
+                  User="xnat" Pass="xnat" MaxConnections="10"/>
+    </Databases>
+    <Models>
+        <Data_Model File_Name="security.xsd" File_Location="schemas/security" DB="xnat"/>
+        <Data_Model File_Name="birnprov.xsd" File_Location="schemas/birn" DB="xnat"/>
+        <Data_Model File_Name="xnat.xsd" File_Location="schemas/xnat" DB="xnat"/>
+        <Data_Model File_Name="workflow.xsd" File_Location="schemas/pipeline" DB="xnat"/>
+        <Data_Model File_Name="repository.xsd" File_Location="schemas/pipeline" DB="xnat"/>
+        <Data_Model File_Name="project.xsd" File_Location="schemas/project" DB="xnat"/>
+        <Data_Model File_Name="assessments.xsd" File_Location="schemas/assessments" DB="xnat"/>
+        <Data_Model File_Name="catalog.xsd" File_Location="schemas/catalog" DB="xnat"/>
+        <Data_Model File_Name="protocolValidation.xsd" File_Location="schemas/validation" DB="xnat"/>
+        <Data_Model File_Name="screeningAssessment.xsd" File_Location="schemas/screening" DB="xnat"/>
+    </Models>
 </Instance_Settings>

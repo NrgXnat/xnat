@@ -42,8 +42,10 @@ public class Tool extends AbstractHibernateEntity {
      * @param toolId           The ID of the tool instance.
      * @param toolName         The name of the tool instance.
      * @param toolDescription  The description of the tool instance.
+     * @param toolPreferences  The default preference names and values for this tool.
      * @param strict           Whether the available preferences for this tool are limited to the specified list.
      * @param preferencesClass The preferences class for this tool.
+     * @param resolverId       The ID of the entity resolver to use for this tool.
      */
     public Tool(final String toolId, final String toolName, final String toolDescription, final Map<String, String> toolPreferences, final boolean strict, final String preferencesClass, final String resolverId) {
         if (_log.isDebugEnabled()) {

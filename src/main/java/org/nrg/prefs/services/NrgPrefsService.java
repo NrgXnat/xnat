@@ -35,9 +35,9 @@ public interface NrgPrefsService extends NrgService {
      * @param toolName            The readable tool name.
      * @param description         The readable description of the tool.
      * @param defaults            The default properties and values for the tool.
-     *
      * @param strict              Whether the tool is set to "strict", i.e. only pre-defined preferences can be set.
      * @param preferencesClass    The preferences class to set for the tool.
+     * @param resolverId          The ID of the entity resolver to use for this tool.
      * @return The object representing the persisted tool definition.
      */
     // TODO: Here the defaults are in a String, String map. The valueType attribute can indicate another type, but currently we only handle strings. This needs to be handled later with ValueDuple.
@@ -59,7 +59,10 @@ public interface NrgPrefsService extends NrgService {
      * Gets the preference for the indicated tool and entity.
      * @param toolId        The unique tool ID.
      * @param preference    The preference name.
+     * @param scope         The scope of the object identified by the entityId parameter.
+     * @param entityId      The ID of the particular object associated with the preference.
      * @return The {@link Preference preference} for the corresponding tool and entity.
+     * @throws UnknownToolId When the system can't find a tool with the indicated ID.
      */
     Preference getPreference(final String toolId, final String preference, final Scope scope, final String entityId) throws UnknownToolId;
 
@@ -83,6 +86,7 @@ public interface NrgPrefsService extends NrgService {
      * @param scope         The scope of the object identified by the entityId parameter.
      * @param entityId      The ID of the particular object associated with the preference.
      * @return The string value for the indicated preference.
+     * @throws UnknownToolId When the system can't find a tool with the indicated ID.
      */
     String getPreferenceValue(final String toolId, final String preference, final Scope scope, final String entityId) throws UnknownToolId;
 
@@ -94,6 +98,8 @@ public interface NrgPrefsService extends NrgService {
      * @param toolId        The unique tool ID.
      * @param preference    The preference name.
      * @param value         The value to set for the preference.
+     * @throws UnknownToolId When the system can't find a tool with the indicated ID.
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void setPreferenceValue(final String toolId, final String preference, final String value) throws UnknownToolId, InvalidPreferenceName;
 
@@ -105,6 +111,8 @@ public interface NrgPrefsService extends NrgService {
      * @param scope         The scope of the object identified by the entityId parameter.
      * @param entityId      The ID of the particular object associated with the preference.
      * @param value         The value to set for the preference.
+     * @throws UnknownToolId When the system can't find a tool with the indicated ID.
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void setPreferenceValue(final String toolId, final String preference, final Scope scope, final String entityId, final String value) throws UnknownToolId, InvalidPreferenceName;
 
@@ -114,6 +122,7 @@ public interface NrgPrefsService extends NrgService {
      * #deletePreference(String, String, Scope, String)} form of this method instead.
      * @param toolId        The unique tool ID.
      * @param preference    The preference name.
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void deletePreference(final String toolId, final String preference) throws InvalidPreferenceName;
 
@@ -123,6 +132,7 @@ public interface NrgPrefsService extends NrgService {
      * @param preference    The preference name.
      * @param scope         The scope of the object identified by the entityId parameter.
      * @param entityId      The ID of the particular object associated with the preference.
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void deletePreference(final String toolId, final String preference, final Scope scope, final String entityId) throws InvalidPreferenceName;
 
@@ -143,6 +153,7 @@ public interface NrgPrefsService extends NrgService {
      * @param toolId    The unique tool ID.
      * @return A list of all of the property names for the indicated tool.
      */
+    @SuppressWarnings("unused")
     Set<String> getToolPropertyNames(final String toolId);
 
     /**

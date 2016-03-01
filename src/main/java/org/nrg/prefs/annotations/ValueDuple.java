@@ -1,10 +1,11 @@
 package org.nrg.prefs.annotations;
 
 /**
- * The value duple provides a way to transport a value in a standard serialized format&em;that is, a string&em;along
+ * The value duple provides a way to transport a value in a standard serialized format&mdash;that is, a string&mdash;along
  * with its representative type. The duple is just a container and has no clue how to convert the string value into an
  * object of the indicated type. This is something that the system using the duple has to figure out.
  */
+@SuppressWarnings("unused")
 public class ValueDuple {
     /**
      * Creates a new duple with the submitted value and the default value type of string.

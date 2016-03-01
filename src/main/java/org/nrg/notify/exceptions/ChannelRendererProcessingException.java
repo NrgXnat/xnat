@@ -1,17 +1,15 @@
-/**
+/*
  * ChannelRendererProcessingException
- * (C) 2011 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.notify.entities.Definition;
 
+@SuppressWarnings("unused")
 public class ChannelRendererProcessingException extends NrgNotificationException {
 
     /**
@@ -19,35 +17,38 @@ public class ChannelRendererProcessingException extends NrgNotificationException
      * property to {@link NrgServiceError#ChannelRendererProcessingError}.
      */
     public ChannelRendererProcessingException() {
-        super();
-        setServiceError(NrgServiceError.ChannelRendererProcessingError);
+        super(NrgServiceError.ChannelRendererProcessingError);
     }
 
     /**
      * Message constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#ChannelRendererProcessingError}.
+     *
+     * @param message The message to set for this exception.
      */
-    public ChannelRendererProcessingException(String message) {
-        super(message);
-        setServiceError(NrgServiceError.ChannelRendererProcessingError);
+    public ChannelRendererProcessingException(final String message) {
+        super(NrgServiceError.ChannelRendererProcessingError, message);
     }
 
     /**
      * Wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#ChannelRendererProcessingError}.
+     *
+     * @param cause The cause to set for this exception.
      */
-    public ChannelRendererProcessingException(Throwable cause) {
-        super(cause);
-        setServiceError(NrgServiceError.ChannelRendererProcessingError);
+    public ChannelRendererProcessingException(final Throwable cause) {
+        super(NrgServiceError.ChannelRendererProcessingError, cause);
     }
 
     /**
      * Message and wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#ChannelRendererProcessingError}.
+     *
+     * @param message The message to set for this exception.
+     * @param cause   The cause to set for this exception.
      */
-    public ChannelRendererProcessingException(String message, Throwable cause) {
-        super(message, cause);
-        setServiceError(NrgServiceError.ChannelRendererProcessingError);
+    public ChannelRendererProcessingException(final String message, final Throwable cause) {
+        super(NrgServiceError.ChannelRendererProcessingError, message, cause);
     }
 
     private static final long serialVersionUID = -7767438484747548702L;

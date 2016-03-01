@@ -45,8 +45,6 @@ import static org.junit.Assert.*;
  * unresolvable later once the session has expired. Maintaining the Transactional layer at the test method level allows
  * these data members to be properly resolved without having to resort to eager fetches or collection initialization
  * (e.g. calling {@link Hibernate#initialize(Object)}).
- * 
- * @author Rick Herrick <rick.herrick@wustl.edu>
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration

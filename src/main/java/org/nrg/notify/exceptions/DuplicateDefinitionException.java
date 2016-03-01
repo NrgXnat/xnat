@@ -1,17 +1,15 @@
-/**
+/*
  * DuplicateDefinitionException
- * (C) 2011 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.notify.entities.Definition;
 
+@SuppressWarnings("unused")
 public class DuplicateDefinitionException extends NrgNotificationException {
 
     /**
@@ -19,35 +17,38 @@ public class DuplicateDefinitionException extends NrgNotificationException {
      * property to {@link NrgServiceError#DuplicateDefinition}.
      */
     public DuplicateDefinitionException() {
-        super();
-        setServiceError(NrgServiceError.DuplicateDefinition);
+        super(NrgServiceError.DuplicateDefinition);
     }
 
     /**
      * Message constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#DuplicateDefinition}.
+     *
+     * @param message    The message to set for this exception.
      */
-    public DuplicateDefinitionException(String message) {
-        super(message);
-        setServiceError(NrgServiceError.DuplicateDefinition);
+    public DuplicateDefinitionException(final String message) {
+        super(NrgServiceError.DuplicateDefinition, message);
     }
 
     /**
      * Wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#DuplicateDefinition}.
+     *
+     * @param cause    The cause to set for this exception.
      */
-    public DuplicateDefinitionException(Throwable cause) {
-        super(cause);
-        setServiceError(NrgServiceError.DuplicateDefinition);
+    public DuplicateDefinitionException(final Throwable cause) {
+        super(NrgServiceError.DuplicateDefinition, cause);
     }
 
     /**
      * Message and wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#DuplicateDefinition}.
+     *
+     * @param message    The message to set for this exception.
+     * @param cause    The cause to set for this exception.
      */
-    public DuplicateDefinitionException(String message, Throwable cause) {
-        super(message, cause);
-        setServiceError(NrgServiceError.DuplicateDefinition);
+    public DuplicateDefinitionException(final String message, final Throwable cause) {
+        super(NrgServiceError.DuplicateDefinition, message, cause);
     }
 
     private static final long serialVersionUID = -7767438484747548702L;

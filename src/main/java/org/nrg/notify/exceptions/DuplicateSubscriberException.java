@@ -1,52 +1,54 @@
-/**
+/*
  * DuplicateSubscriberException
- * (C) 2011 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;
 
+@SuppressWarnings("unused")
 public class DuplicateSubscriberException extends NrgNotificationException {
 
     /**
      * Default constructor. This sets the {@link #getServiceError() service error}
-     * property to {@link NrgServiceError#DuplicateSubscriber}.
+     * property to {@link NrgServiceError#NoMatchingCategory}.
      */
     public DuplicateSubscriberException() {
-        super();
-        setServiceError(NrgServiceError.DuplicateSubscriber);
+        super(NrgServiceError.NoMatchingCategory);
     }
 
     /**
      * Message constructor. This sets the {@link #getServiceError() service error}
-     * property to {@link NrgServiceError#DuplicateSubscriber}.
+     * property to {@link NrgServiceError#NoMatchingCategory}.
+     *
+     * @param message The message to set for this exception.
      */
     public DuplicateSubscriberException(String message) {
-        super(message);
-        setServiceError(NrgServiceError.DuplicateSubscriber);
+        super(NrgServiceError.NoMatchingCategory);
     }
 
     /**
      * Wrapper constructor. This sets the {@link #getServiceError() service error}
-     * property to {@link NrgServiceError#DuplicateSubscriber}.
+     * property to {@link NrgServiceError#NoMatchingCategory}.
+     *
+     * @param cause The cause to set for this exception.
      */
     public DuplicateSubscriberException(Throwable cause) {
-        super(cause);
-        setServiceError(NrgServiceError.DuplicateSubscriber);
+        super(NrgServiceError.NoMatchingCategory, cause);
     }
 
     /**
      * Message and wrapper constructor. This sets the {@link #getServiceError() service error}
-     * property to {@link NrgServiceError#DuplicateSubscriber}.
+     * property to {@link NrgServiceError#NoMatchingCategory}.
+     *
+     * @param message The message to set for this exception.
+     * @param cause   The cause to set for this exception.
      */
     public DuplicateSubscriberException(String message, Throwable cause) {
-        super(message, cause);
-        setServiceError(NrgServiceError.DuplicateSubscriber);
+        super(NrgServiceError.NoMatchingCategory, message, cause);
     }
 
     private static final long serialVersionUID = 7919811547807306543L;

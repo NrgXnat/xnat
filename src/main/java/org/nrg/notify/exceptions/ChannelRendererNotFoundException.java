@@ -1,17 +1,15 @@
-/**
+/*
  * ChannelRendererNotFoundException
- * (C) 2011 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.notify.entities.Definition;
 
+@SuppressWarnings("unused")
 public class ChannelRendererNotFoundException extends NrgNotificationException {
 
     /**
@@ -19,35 +17,38 @@ public class ChannelRendererNotFoundException extends NrgNotificationException {
      * property to {@link NrgServiceError#ChannelRendererNotFound}.
      */
     public ChannelRendererNotFoundException() {
-        super();
-        setServiceError(NrgServiceError.ChannelRendererNotFound);
+        super(NrgServiceError.ChannelRendererNotFound);
     }
 
     /**
      * Message constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#ChannelRendererNotFound}.
+     *
+     * @param message    The message to set for this exception.
      */
-    public ChannelRendererNotFoundException(String message) {
-        super(message);
-        setServiceError(NrgServiceError.ChannelRendererNotFound);
+    public ChannelRendererNotFoundException(final String message) {
+        super(NrgServiceError.ChannelRendererNotFound, message);
     }
 
     /**
      * Wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#ChannelRendererNotFound}.
+     *
+     * @param cause    The cause to set for this exception.
      */
-    public ChannelRendererNotFoundException(Throwable cause) {
-        super(cause);
-        setServiceError(NrgServiceError.ChannelRendererNotFound);
+    public ChannelRendererNotFoundException(final Throwable cause) {
+        super(NrgServiceError.ChannelRendererNotFound, cause);
     }
 
     /**
      * Message and wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#ChannelRendererNotFound}.
+     *
+     * @param message    The message to set for this exception.
+     * @param cause    The cause to set for this exception.
      */
-    public ChannelRendererNotFoundException(String message, Throwable cause) {
-        super(message, cause);
-        setServiceError(NrgServiceError.ChannelRendererNotFound);
+    public ChannelRendererNotFoundException(final String message, final Throwable cause) {
+        super(NrgServiceError.ChannelRendererNotFound, message, cause);
     }
 
     private static final long serialVersionUID = -7767438484747548702L;

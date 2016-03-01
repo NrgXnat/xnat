@@ -1,53 +1,54 @@
-/**
+/*
  * InvalidChannelRendererException
- * (C) 2011 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on Aug 29, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.notify.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;
-import org.nrg.notify.entities.Definition;
 
+@SuppressWarnings("unused")
 public class InvalidChannelRendererException extends NrgNotificationException {
 
     /**
      * Default constructor. This sets the {@link #getServiceError() service error}
-     * property to {@link NrgServiceError#InvalidChannelRenderer}.
+     * property to {@link NrgServiceError#NoMatchingCategory}.
      */
     public InvalidChannelRendererException() {
-        super();
-        setServiceError(NrgServiceError.InvalidChannelRenderer);
+        super(NrgServiceError.NoMatchingCategory);
     }
 
     /**
      * Message constructor. This sets the {@link #getServiceError() service error}
-     * property to {@link NrgServiceError#InvalidChannelRenderer}.
+     * property to {@link NrgServiceError#NoMatchingCategory}.
+     *
+     * @param message The message to set for this exception.
      */
     public InvalidChannelRendererException(String message) {
-        super(message);
-        setServiceError(NrgServiceError.InvalidChannelRenderer);
+        super(NrgServiceError.NoMatchingCategory);
     }
 
     /**
      * Wrapper constructor. This sets the {@link #getServiceError() service error}
-     * property to {@link NrgServiceError#InvalidChannelRenderer}.
+     * property to {@link NrgServiceError#NoMatchingCategory}.
+     *
+     * @param cause The cause to set for this exception.
      */
     public InvalidChannelRendererException(Throwable cause) {
-        super(cause);
-        setServiceError(NrgServiceError.InvalidChannelRenderer);
+        super(NrgServiceError.NoMatchingCategory, cause);
     }
 
     /**
      * Message and wrapper constructor. This sets the {@link #getServiceError() service error}
-     * property to {@link NrgServiceError#InvalidChannelRenderer}.
+     * property to {@link NrgServiceError#NoMatchingCategory}.
+     *
+     * @param message The message to set for this exception.
+     * @param cause   The cause to set for this exception.
      */
     public InvalidChannelRendererException(String message, Throwable cause) {
-        super(message, cause);
-        setServiceError(NrgServiceError.InvalidChannelRenderer);
+        super(NrgServiceError.NoMatchingCategory, message, cause);
     }
 
     private static final long serialVersionUID = -7767438484747548702L;

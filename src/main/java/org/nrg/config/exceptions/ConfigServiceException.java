@@ -1,16 +1,15 @@
 /*
  * org.nrg.config.exceptions.ConfigServiceException
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 8/26/13 6:15 PM
  */
 package org.nrg.config.exceptions;
 
 import org.nrg.config.entities.Configuration;
+import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 
 import java.util.ArrayList;
@@ -20,42 +19,45 @@ public class ConfigServiceException extends NrgServiceException {
 	
 	static final long serialVersionUID = 6690308402621986012L;
 	
-	public final List<Configuration> _scripts;
+	public final List<Configuration> _scripts = new ArrayList<>();
 
 	public ConfigServiceException() {
-        _scripts = new ArrayList<>();
+        //
     }
 	
-	public ConfigServiceException(String message) {
+	public ConfigServiceException(final String message) {
 		super(message);
-        _scripts = new ArrayList<>();
     }
 
-	public ConfigServiceException(Throwable cause) {
+	public ConfigServiceException(final Throwable cause) {
 		super(cause);
-        _scripts = new ArrayList<>();
     }
 
-	public ConfigServiceException(String message, Throwable cause){
+	public ConfigServiceException(final String message, final Throwable cause){
 		super(message, cause);
-        _scripts = new ArrayList<>();
     }
 
-	public ConfigServiceException(String message, List<Configuration> ss) {
+	public ConfigServiceException(final String message, final List<Configuration> scripts) {
 		super(message);
-        _scripts = new ArrayList<>();
-        this._scripts.addAll(ss);
+        _scripts.addAll(scripts);
 	}
 
-	public ConfigServiceException(Throwable cause, List<Configuration> ss) {
+	public ConfigServiceException(final Throwable cause, final List<Configuration> scripts) {
 		super(cause);
-        _scripts = new ArrayList<>();
-        this._scripts.addAll(ss);
+        _scripts.addAll(scripts);
 	}
 
-	public ConfigServiceException(String message, Throwable cause, List<Configuration> ss) {
+	public ConfigServiceException(final String message, final Throwable cause, final List<Configuration> scripts) {
 		super(message, cause);
-        _scripts = new ArrayList<>();
-        this._scripts.addAll(ss);
+        _scripts.addAll(scripts);
+	}
+
+	public ConfigServiceException(final NrgServiceError error, final String message, final Throwable cause) {
+		super(error, message, cause);
+	}
+
+	public ConfigServiceException(final NrgServiceError error, final String message, final Throwable cause, final List<Configuration> scripts) {
+		super(error, message, cause);
+		_scripts.addAll(scripts);
 	}
 }

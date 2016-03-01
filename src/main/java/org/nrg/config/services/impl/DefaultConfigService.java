@@ -51,7 +51,7 @@ public class DefaultConfigService extends AbstractHibernateEntityService<Configu
     public static final boolean DEFAULT_VERSIONING = true;
 
     @Override
-    public void afterPropertiesSet() throws Exception {
+    public void afterPropertiesSet() {
         super.afterPropertiesSet();
 
         _jdbcTemplate = new JdbcTemplate(_dataSource);

@@ -13,7 +13,6 @@ public class SiteConfigurationException extends ConfigServiceException {
      */
     public SiteConfigurationException(String message) {
         super(message);
-        setServiceError(NrgServiceError.Default);
     }
 
     /**
@@ -22,7 +21,6 @@ public class SiteConfigurationException extends ConfigServiceException {
      */
     public SiteConfigurationException(String message, Throwable cause) {
         super(message, cause);
-        setServiceError(NrgServiceError.ConfigurationError);
     }
 
     /**
@@ -30,7 +28,6 @@ public class SiteConfigurationException extends ConfigServiceException {
      * property to the submitted {@link NrgServiceError} value.
      */
     public SiteConfigurationException(NrgServiceError error, String message, Throwable cause) {
-        super(message, cause);
-        setServiceError(error);
+        super(error, message, cause);
     }
 }

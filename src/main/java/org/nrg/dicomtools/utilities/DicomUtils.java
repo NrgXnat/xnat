@@ -11,7 +11,7 @@ import java.util.regex.Pattern;
 
 public class DicomUtils {
     /**
-     * This tries to convert a DICOM header ID&em;either a DICOM tag or attribute&em;into an integer value that can be
+     * This tries to convert a DICOM header ID&mdash;either a DICOM tag or attribute&mdash;into an integer value that can be
      * used with the dcm4che DicomObject classes various get methods. DICOM tags can be in the format "(xxxx,yyyy)" or
      * "xxxx,yyyy" (i.e. with or without bounding parentheses). DICOM attributes must be in the same form as they are
      * represented as field names in the dcm4che Tag class.
@@ -29,7 +29,7 @@ public class DicomUtils {
     }
 
     /**
-     * Gets the DICOM attribute name&em;e.g. SeriesDescription, Modality, or StudyInstanceUID&em;for the indicated tag.
+     * Gets the DICOM attribute name&mdash;e.g. SeriesDescription, Modality, or StudyInstanceUID&mdash;for the indicated tag.
      * Note that this requires the integer value for the tag. You can get the DICOM attribute for a DICOM tag by calling
      * the {@link #getDicomAttribute(String)} version of this method.
      * @param tag    The DICOM tag for which you want to retrieve the DICOM attribute name.

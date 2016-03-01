@@ -32,8 +32,6 @@ import java.util.*;
 /**
  * This class provides a convenient encapsulation of mail message functionality that
  * can be used with NRG {@link MailService} implementations.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
  */
 @SuppressWarnings("unused")
 public class MailMessage {

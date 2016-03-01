@@ -37,9 +37,6 @@ import java.util.Map.Entry;
  * Provides relatively implementation-independent mail service to allow access
  * to Spring application context mail service without requiring context
  * initialization outside of Spring classes.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu>
-
  */
 @SuppressWarnings("unused")
 public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {

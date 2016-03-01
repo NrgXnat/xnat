@@ -1,52 +1,91 @@
-/**
+/*
  * NrgMailException
- * (C) 2011 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on Sep 12, 2011 by Rick Herrick <rick.herrick@wustl.edu>
  */
 package org.nrg.mail.exceptions;
 
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 
+@SuppressWarnings("unused")
 public class NrgMailException extends NrgServiceException {
     /**
      * Default constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#GenericMailError}.
      */
+    @SuppressWarnings("unused")
     public NrgMailException() {
-        super();
-        setServiceError(NrgServiceError.GenericMailError);
+        super(NrgServiceError.GenericMailError);
     }
 
     /**
      * Message constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#GenericMailError}.
+     * @param message    The message to set for this exception.
      */
-    public NrgMailException(String message) {
-        super(message);
-        setServiceError(NrgServiceError.GenericMailError);
+    public NrgMailException(final String message) {
+        super(NrgServiceError.GenericMailError, message);
     }
 
     /**
      * Wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#GenericMailError}.
+     * @param cause    The cause to set for this exception.
      */
-    public NrgMailException(Throwable cause) {
-        super(cause);
-        setServiceError(NrgServiceError.GenericMailError);
+    public NrgMailException(final Throwable cause) {
+        super(NrgServiceError.GenericMailError, cause);
     }
 
     /**
      * Message and wrapper constructor. This sets the {@link #getServiceError() service error}
      * property to {@link NrgServiceError#GenericMailError}.
+     * @param message    The message to set for this exception.
+     * @param cause    The cause to set for this exception.
      */
-    public NrgMailException(String message, Throwable cause) {
-        super(message, cause);
-        setServiceError(NrgServiceError.GenericMailError);
+    public NrgMailException(final String message, final Throwable cause) {
+        super(NrgServiceError.GenericMailError, message, cause);
+    }
+
+    /**
+     * Mail exception with a specific error.
+     * @param error    The error to set for this exception.
+     */
+    protected NrgMailException(final NrgServiceError error) {
+        super(error);
+    }
+
+    /**
+     * Message constructor. This sets the {@link #getServiceError() service error}
+     * property to {@link NrgServiceError#GenericMailError}.
+     * @param error    The error to set for this exception.
+     * @param message    The message to set for this exception.
+     */
+    protected NrgMailException(final NrgServiceError error, final String message) {
+        super(error, message);
+    }
+
+    /**
+     * Wrapper constructor. This sets the {@link #getServiceError() service error}
+     * property to {@link NrgServiceError#GenericMailError}.
+     * @param error    The error to set for this exception.
+     * @param cause    The cause to set for this exception.
+     */
+    protected NrgMailException(final NrgServiceError error, final Throwable cause) {
+        super(error, cause);
+    }
+
+    /**
+     * Message and wrapper constructor. This sets the {@link #getServiceError() service error}
+     * property to {@link NrgServiceError#GenericMailError}.
+     * @param error    The error to set for this exception.
+     * @param message    The message to set for this exception.
+     * @param cause    The cause to set for this exception.
+     */
+    protected NrgMailException(final NrgServiceError error, final String message, final Throwable cause) {
+        super(error, message, cause);
     }
 
     private static final long serialVersionUID = 485915249241211527L;

@@ -6,8 +6,6 @@ import org.springframework.stereotype.Repository;
 
 /**
  * ScriptRepository class.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu> on 9/25/2014.
  */
 @Repository
 public class ScriptRepository extends AbstractHibernateDAO<Script> {

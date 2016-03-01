@@ -14,8 +14,6 @@ import javax.inject.Inject;
 
 /**
  * HibernateScriptService class.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu> on 9/25/2014.
  */
 @SuppressWarnings("JpaQlInspection")
 @Service
@@ -24,14 +22,13 @@ public class HibernateScriptService extends AbstractHibernateEntityService<Scrip
      * A convenience test for the existence of a script with the indicated script ID.
      *
      * @param scriptId The ID of the script to test for.
-     *
      * @return <b>true</b> if a script with the indicated ID exists, <b>false</b> otherwise.
      */
     @Override
     @Transactional
     public boolean hasScript(final String scriptId) {
         final Session session = _sessionFactory.getCurrentSession();
-        final Query query = session.createQuery("select count(*) from Script where scriptId = :scriptId and enabled = true").setString("scriptId", scriptId);
+        final Query   query   = session.createQuery("select count(*) from Script where scriptId = :scriptId and enabled = true").setString("scriptId", scriptId);
         return ((Long) query.uniqueResult()) > 0;
     }
 
@@ -40,7 +37,6 @@ public class HibernateScriptService extends AbstractHibernateEntityService<Scrip
      *
      * @param scriptId The {@link org.nrg.automation.entities.Script#getScriptId() script ID} of the script to
      *                 retrieve.
-     *
      * @return The script with the indicated scriptId, if it exists, <b>null</b> otherwise.
      */
     @Override

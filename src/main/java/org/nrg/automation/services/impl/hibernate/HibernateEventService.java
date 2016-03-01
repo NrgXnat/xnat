@@ -22,8 +22,6 @@ import java.util.List;
  * The event service class provides the event ID and label mapping used by the automation system. On initialization,
  * this can be pre-populated with a query stored in the string bean in the application context. This query should return
  * two columns, both strings, named "event_label" and "event_id".
- *
- * @author Rick Herrick <rick.herrick@wustl.edu> on 7/24/2015.
  */
 @SuppressWarnings({"JpaQlInspection", "SqlDialectInspection"})
 @Service

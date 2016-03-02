@@ -14,7 +14,11 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.identifier.IDGeneratorI;
 import org.nrg.xft.utils.StringUtils;
+import org.nrg.xnat.daos.HostInfoDAO;
+import org.nrg.xnat.services.impl.hibernate.HibernateHostInfoService;
 
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,6 +28,7 @@ public class IDGenerator implements IDGeneratorI {
 	Integer digits=null;
 	String code=null;
 	private static String site_id=null;
+	private static String hostInfo=null;
 	
 	private static String getSiteID(){
 		if(site_id==null){
@@ -37,6 +42,13 @@ public class IDGenerator implements IDGeneratorI {
 		return site_id;
 	}
 	
+	private static String getHostInfo(){
+		if (hostInfo==null || hostInfo.isEmpty()) {
+			hostInfo =  HibernateHostInfoService.getService().getHostNumber();
+		}
+		return hostInfo;
+	}
+	
 	private static List<String> claimedIDs=new ArrayList<String>();
 	
 	private static final Object lock=new Object();
@@ -44,6 +56,11 @@ public class IDGenerator implements IDGeneratorI {
 	public String generateIdentifier() throws Exception{
 		synchronized (lock){
 			String site= IDGenerator.getSiteID();
+			String hostInfo = IDGenerator.getHostInfo();
+			// Let's keep the usual ID for the main server and append the host information for shadow/secondary servers
+			if (Integer.valueOf(hostInfo)>1) {
+				site+=hostInfo;
+			}
 			
 			if(code!=null){
 				site +="_"+code;

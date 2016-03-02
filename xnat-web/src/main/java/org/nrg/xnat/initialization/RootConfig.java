@@ -24,6 +24,8 @@ import java.util.List;
 @ComponentScan({"org.nrg.framework.datacache.impl.hibernate",
                 "org.nrg.framework.services.impl",
                 "org.nrg.xdat.daos",
+                "org.nrg.xnat.daos",
+                "org.nrg.xnat.services.impl.hibernate",
                 "org.nrg.xdat.services",
                 "org.nrg.xft.daos",
                 "org.nrg.xft.services",
@@ -37,7 +39,8 @@ import java.util.List;
 @ImportResource({"WEB-INF/conf/xnat-security.xml", "WEB-INF/conf/orm-config.xml", "WEB-INF/conf/mq-context.xml"})
 public class RootConfig {
 
-    public static final List<String> DEFAULT_ENTITY_PACKAGES = Arrays.asList("org.nrg.framework.datacache", "org.nrg.xft.entities", "org.nrg.xdat.entities", "org.nrg.prefs.entities", "org.nrg.config.entities");
+    public static final List<String> DEFAULT_ENTITY_PACKAGES = Arrays.asList("org.nrg.framework.datacache", "org.nrg.xft.entities", "org.nrg.xdat.entities",
+    																			"org.nrg.xnat.entities", "org.nrg.prefs.entities", "org.nrg.config.entities");
 
     @Bean
     public String siteId() {

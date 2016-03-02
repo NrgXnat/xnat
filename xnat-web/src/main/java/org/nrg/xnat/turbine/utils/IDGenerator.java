@@ -1,12 +1,12 @@
 /*
  * org.nrg.xnat.turbine.utils.IDGenerator
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
  *
- * Last modified 7/10/13 9:04 PM
+ * Last modified 3/2/16 3:04 PM
  */
 package org.nrg.xnat.turbine.utils;
 
@@ -14,34 +14,37 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.identifier.IDGeneratorI;
 import org.nrg.xft.utils.StringUtils;
-import org.nrg.xnat.daos.HostInfoDAO;
 import org.nrg.xnat.services.impl.hibernate.HibernateHostInfoService;
 
-import java.net.InetAddress;
-import java.net.UnknownHostException;
 import java.util.ArrayList;
 import java.util.List;
 
+// TODO: Auto-generated Javadoc
+/**
+ * The Class IDGenerator.
+ */
 public class IDGenerator implements IDGeneratorI {
+	
+	/** The column. */
 	String column=null;
+	
+	/** The table name. */
 	String tableName=null;
+	
+	/** The digits. */
 	Integer digits=null;
+	
+	/** The code. */
 	String code=null;
-	private static String site_id=null;
+	
+	/** The host info. */
 	private static String hostInfo=null;
 	
-	private static String getSiteID(){
-		if(site_id==null){
-			site_id = XFT.GetSiteID();
-			site_id = StringUtils.ReplaceStr(site_id, " ", "");
-			site_id = StringUtils.ReplaceStr(site_id, "-", "_");
-			site_id = StringUtils.ReplaceStr(site_id, "\"", "");
-			site_id = StringUtils.ReplaceStr(site_id, "'", "");
-			site_id = StringUtils.ReplaceStr(site_id, "^", "");
-		}
-		return site_id;
-	}
-	
+	/**
+	 * Gets the host info.
+	 *
+	 * @return the host info
+	 */
 	private static String getHostInfo(){
 		if (hostInfo==null || hostInfo.isEmpty()) {
 			hostInfo =  HibernateHostInfoService.getService().getHostNumber();
@@ -49,13 +52,18 @@ public class IDGenerator implements IDGeneratorI {
 		return hostInfo;
 	}
 	
+	/** The claimed i ds. */
 	private static List<String> claimedIDs=new ArrayList<String>();
 	
+	/** The Constant lock. */
 	private static final Object lock=new Object();
 	
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.identifier.IDGeneratorI#generateIdentifier()
+	 */
 	public String generateIdentifier() throws Exception{
 		synchronized (lock){
-			String site= IDGenerator.getSiteID();
+			String site= getSiteID();
 			String hostInfo = IDGenerator.getHostInfo();
 			// Let's keep the usual ID for the main server and append the host information for shadow/secondary servers
 			if (Integer.valueOf(hostInfo)>1) {
@@ -100,36 +108,76 @@ public class IDGenerator implements IDGeneratorI {
 		}
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.identifier.IDGeneratorI#getColumn()
+	 */
 	public String getColumn() {
 		return column;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.identifier.IDGeneratorI#getDigits()
+	 */
 	public Integer getDigits() {
 		return digits;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.identifier.IDGeneratorI#getTable()
+	 */
 	public String getTable() {
 		return tableName;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.identifier.IDGeneratorI#setColumn(java.lang.String)
+	 */
 	public void setColumn(String s) {
 		this.column=s;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.identifier.IDGeneratorI#setDigits(java.lang.Integer)
+	 */
 	public void setDigits(Integer i) {
 		this.digits=i;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.identifier.IDGeneratorI#setTable(java.lang.String)
+	 */
 	public void setTable(String s) {
 		this.tableName=s;
 	}
 
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.identifier.IDGeneratorI#getCode()
+	 */
 	public String getCode() {
 		return code;
 	}
 
+	/* (non-Javadoc)
+	 * @see org.nrg.xft.identifier.IDGeneratorI#setCode(java.lang.String)
+	 */
 	public void setCode(String s) {
 		this.code=s;
 	}
+	
+	/**
+	 * Gets the site id.
+	 *
+	 * @return the site id
+	 */
+	private String getSiteID(){
+		String site_id = XFT.GetSiteID();
+		site_id = StringUtils.ReplaceStr(site_id, " ", "");
+		site_id = StringUtils.ReplaceStr(site_id, "-", "_");
+		site_id = StringUtils.ReplaceStr(site_id, "\"", "");
+		site_id = StringUtils.ReplaceStr(site_id, "'", "");
+		site_id = StringUtils.ReplaceStr(site_id, "^", "");
+		return site_id;
+	}
+	
 }

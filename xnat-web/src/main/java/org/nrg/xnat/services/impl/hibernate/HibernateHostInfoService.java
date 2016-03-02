@@ -1,3 +1,6 @@
+/*
+ * 
+ */
 package org.nrg.xnat.services.impl.hibernate;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
@@ -7,15 +10,27 @@ import org.nrg.xnat.entities.HostInfo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+/**
+ * The Class HibernateHostInfoService.
+ */
 @Service
 public class HibernateHostInfoService extends AbstractHibernateEntityService<HostInfo, HostInfoDAO> {
 
+	/** The _instance. */
 	private static HibernateHostInfoService _instance;
 	
+	/**
+	 * Instantiates a new hibernate host info service.
+	 */
 	public HibernateHostInfoService() {
 		_instance = this;
 	}
 	
+	/**
+	 * Gets the service.
+	 *
+	 * @return the service
+	 */
 	public static HibernateHostInfoService getService() {
 	    if (_instance == null) {
 	    	_instance = XDAT.getContextService().getBean(HibernateHostInfoService.class);
@@ -23,11 +38,22 @@ public class HibernateHostInfoService extends AbstractHibernateEntityService<Hos
 	    return _instance;
 	}
 	
+    /**
+     * Gets the host number.
+     *
+     * @return the host number
+     */
     @Transactional
     public String getHostNumber() {
         return getDao().getHostNumber();
     }
 
+    /**
+     * Gets the host number.
+     *
+     * @param hostName the host name
+     * @return the host number
+     */
     @Transactional
     public String getHostNumber(String hostName) {
         return getDao().getHostNumber(hostName);

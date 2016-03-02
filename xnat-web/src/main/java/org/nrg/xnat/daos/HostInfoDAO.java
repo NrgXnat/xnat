@@ -13,6 +13,13 @@ import org.springframework.transaction.annotation.Transactional;
 @Repository
 public class HostInfoDAO extends AbstractHibernateDAO<HostInfo> {
 	 
+	/**
+	 * Gets the host number.
+	 *
+	 * @param hostName the host name
+	 * @param setValue the set value
+	 * @return the host number
+	 */
 	@Transactional
 	public String getHostNumber(String hostName, boolean setValue) {
 		Criteria criteria = getCriteriaForType();

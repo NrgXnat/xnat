@@ -149,7 +149,7 @@ var XNAT = getObject(XNAT||{});
         else if (isString(query) && query.charAt(0) === '?'){
             // make sure a pesky url hash doesn't sneak in there
             query = query.split('#')[0];
-            qsArray = query.split('?')[1].split('&');
+            qsArray = (query.split('?')[1]||'').split('&');
         }
 
         // add qsArray to qsOutput
@@ -276,7 +276,7 @@ var XNAT = getObject(XNAT||{});
     // return the value of a query string parameter,
     // either from a provided url string or the current
     // page's location if only 1 argument is passed
-    url.getQueryStringValue = url.getParam = function(url, parameter){
+    url.getQueryStringValue = url.getParamValue = function(url, parameter){
         if (arguments.length === 1){
             parameter = url;
             url = window.location.href;
@@ -369,9 +369,7 @@ var XNAT = getObject(XNAT||{});
             }
         }
 
-        url = urlSetup(url);
-
-        return XNAT.url.addQueryString(url, params);
+        return urlSetup(url, '', params);
 
     };
 
@@ -409,7 +407,7 @@ var XNAT = getObject(XNAT||{});
         }
         else {
             // 'parts' must be array, object, or string
-            return newUrl;
+            //return newUrl;
         }
 
         if (base && isString(base)){
@@ -427,7 +425,7 @@ var XNAT = getObject(XNAT||{});
         }
 
         // remove multiple slashes and remove '/' in front of '?'
-        return rootUrl(newUrl).replace(/\/\?/g, '?');
+        return rootUrl(newUrl).replace(/\/+\?/g, '?');
 
     }
     url.buildUrl = url.setup = urlSetup;

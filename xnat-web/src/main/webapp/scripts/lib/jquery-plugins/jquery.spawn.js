@@ -36,11 +36,11 @@ if (typeof jQuery == 'undefined') {
     // var $div2 = $.spawn('div'), {}, {id:'div2'}, "Div2's HTML content")
     /**
      * Create a jQuery-wrapped DOM object
-     * @param {String} tag - HTML tag
-     * @param {Object} opts - jQuery methods / child element(s) / HTML
-     * @param {Object} attr - native DOM methods, properties, and attributes
-     * @param {String|Array|Object|Elements} content - child element(s) / HTML
-     * @returns {object} - jQuery object
+     * @param tag {String} HTML tag name
+     * @param [opts] {Object|String} jQuery methods / child element(s) / HTML
+     * @param [attr] {Object} native DOM methods, properties, and attributes
+     * @param [content] {String|Array|Object|Element} child element(s) / HTML
+     * @returns {*|HTMLElement}
      */
     $.spawn = function(tag, opts, attr, content){
 
@@ -61,6 +61,11 @@ if (typeof jQuery == 'undefined') {
         if ($.isPlainObject(tag)) {
             opts = tag;
             tag = firstDefined(opts.tag||undefined, '');
+        }
+
+        // 'tag' could be an array of child content in recursive spawns
+        if ($.isArray(tag)){
+            _opts.children = tag;
         }
 
         // trim outer white space and remove any trailing semicolons or commas
@@ -94,7 +99,7 @@ if (typeof jQuery == 'undefined') {
 
         attrs = (parts[1]||'').split(/;|,/) || []; // allow ';' or ',' for attribute delimeter
 
-        attrs.forEach(function(att){
+        $.each(attrs, function(i, att){
             if (!att) return;
             var sep = /:|=/; // allow ':' or '=' for key/value separator
             var quotes = /^('|")|('|")$/g;
@@ -113,17 +118,22 @@ if (typeof jQuery == 'undefined') {
             if ($.isPlainObject(attr)){
                 // pull out the 'prop' properties
                 if (attr.prop){
-                    $el.prop(attr.prop);
+                    $el.prop.apply($el, [].concat(attr.prop));
                     delete attr.prop;
                 }
+                $.each(attr, function(name, prop){
+                    el[name] = prop;
+                });
             }
-            try {
-                // could be an object map of multiple attributes
-                // or could be an array for a single attribute - ['name','foo']
-                $el.attr.apply($el, [].concat(attr));
-            }
-            catch(e){
-                if (console && console.log) console.log(e);
+            else {
+                try {
+                    // could be an object map of multiple attributes
+                    // or could be an array for a single attribute - ['name','foo']
+                    $el.attr.apply($el, [].concat(attr));
+                }
+                catch(e){
+                    if (console && console.log) console.log(e);
+                }
             }
         }
 
@@ -134,23 +144,31 @@ if (typeof jQuery == 'undefined') {
         opts = opts || {};
 
         // just append an HTML string, jQuery object, element, or fragment
-        if (typeof opts == 'string' || opts.jquery || isElement(opts) || isFragment(opts)){
-            return $el.append(opts);
+        if (typeof opts == 'string' || typeof opts == 'function' || opts.jquery || isElement(opts) || isFragment(opts)){
+            content = opts;
+            //return $el.append(opts);
         }
-
         // if 'opts' is an array, they
         // will be child elements
-        if ($.isArray(opts)) {
+        else if ($.isArray(opts)) {
             _opts.children = opts;
         }
-
         // otherwise it's a config object
-        if ($.isPlainObject(opts)) {
+        else if ($.isPlainObject(opts)) {
             _opts = $.extend(true, {}, opts);
         }
 
         // a fourth argument can contain additional content
         if (content){
+            if (typeof content == 'function'){
+                try {
+                    content = content();
+                }
+                catch(e){
+                    if (console && console.log) console.log(e);
+                    content = [];
+                }
+            }
             _opts.content = [].concat(_opts.content||[], content);
         }
 
@@ -179,7 +197,7 @@ if (typeof jQuery == 'undefined') {
             // to the new element
             // (without jQuery)
             if (/^(element|el)$/.test(prop)){
-                $.each(val, function(name, value){
+                $.each([].concat(val), function(name, value){
                     el[name] = value;
                 });
                 return;
@@ -189,7 +207,11 @@ if (typeof jQuery == 'undefined') {
             // an array of elements
             // to be spawned
             if (/^(children|content|contents)$/.test(prop)) {
-                $.each([].concat(val), function(i, child){
+                val = [].concat(val);
+                if (val.length === 1){
+                    return $el.append(val);
+                }
+                $.each(val, function(i, child){
                     try {
                         // recursively append spawns as needed
                         //$el.append(child); // each child must be an 'appendable' item
@@ -235,5 +257,80 @@ if (typeof jQuery == 'undefined') {
         return $el;
 
     };
+
+    /**
+     * Leaner and faster jQuery element spawner
+     * @param tag {String|Object} tag name or jQuery object
+     * @param [$opts] {Object|String} jQuery options or 'appendable' content
+     * @param [opts] {Object|String} element options or 'appendable' content
+     * @param [content] {String|Element} 'appendable' content
+     * @returns {*|HTMLElement}
+     */
+    $.spawn.element = function(tag, $opts, opts, content){
+
+        var el, $el, argLen = arguments.length;
+
+        if (argLen === 0){
+            return $(document.createDocumentFragment());
+        }
+
+        // 'tag' arg is required but can be either
+        // a string for the tag name or a jQuery object
+        el = tag.jquery ? tag[0] : document.createElement(tag);
+        $el = $(el);
+
+        if (argLen === 1){
+            return $el;
+        }
+        else if (argLen === 2){
+            if (/(string|number)/.test(typeof $opts)){
+                el.innerHTML += $opts+'';
+                return $el;
+            }
+        }
+        else if (argLen === 3){
+            if (/(string|number)/.test(typeof opts)){
+                el.innerHTML += opts+'';
+                content = null;
+                opts = null;
+            }
+        }
+
+        if (content){
+            $el.append([].concat(content));
+        }
+
+        if (opts){
+            forOwn(opts, function(prop, val){
+                el[prop] = val;
+            });
+        }
+
+        if ($opts){
+            forOwn($opts, function(prop, val){
+                $el[prop].apply($el, [].concat(val));
+            });
+            //forOwn($opts||{}, function(prop, val){
+            //    $el[prop] = val;
+            //});
+        }
+
+        return $el;
+
+    };
+
+    $.spawn.trial = $.spawn.time = function(tag, count){
+        tag = tag || 'div';
+        count = count || 1000;
+        var i = -1,
+            time = Date.now(),
+            frag$ = $.spawn();
+        while (++i < count){
+            frag$.append($.spawn.apply(null, [].concat(tag)));
+        }
+        console.log('time: ' + ((Date.now() - time) / 1000 ) + 's');
+        return frag$;
+    };
+
 
 })(jQuery);

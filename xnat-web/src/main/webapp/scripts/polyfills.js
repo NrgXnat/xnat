@@ -2,6 +2,29 @@
  * Polyfills for older browsers (IE8).
  */
 
+// Shortcut for element.appendChild()
+Element.prototype.append = Element.prototype.appendChild;
+
+// Add an element as a first child of another element
+Element.prototype.prepend = function(childNode){
+    if (this.firstChild) {
+        this.insertBefore(childNode, this.firstChild);
+    }
+    else {
+        this.appendChild(childNode);
+    }
+};
+
+// Source: https://github.com/Alhadis/Snippets/blob/master/js/polyfills/IE8-child-elements.js
+if(!("lastElementChild" in document.documentElement)){
+    Object.defineProperty(Element.prototype, "lastElementChild", {
+        get: function(){
+            for(var nodes = this.children, n, i = nodes.length - 1; i >= 0; --i)
+                if(n = nodes[i], 1 === n.nodeType) return n;
+            return null;
+        }
+    });
+}
 
 // String.trim() polyfill (IE8)
 if (!String.prototype.trim) {

@@ -290,16 +290,19 @@ function forEach( arr, fn ){
 // of an object's own properties
 // works like jQuery's $.each()
 // but only for objects
+// returns array of property names
 function forOwn( obj, fn ){
-    var _key;
-    if (!isObject(obj)) { return }
-    if (isFunction(fn)) {
-        for ( _key in obj ){
-            if (obj.hasOwnProperty(_key)) {
-                fn(_key, obj[_key]);
-            }
+    var keys = [],
+        key;
+    if (!isPlainObject(obj)) { return }
+    for (key in obj) {
+        if (obj.hasOwnProperty(key)) {
+            keys.push(key);
+            if (!isFunction(fn)) continue;
+            fn(key, obj[key]);
         }
     }
+    return keys;
 }
 
 // convert array-like object or arguments to a real array
@@ -307,11 +310,11 @@ function forOwn( obj, fn ){
 function toArray(arr) {
     var i = -1,
         len = arr.length,
-        _args = new Array(len);
+        newArray = new Array(len);
     while (++i < len) {
-        _args[i] = arr[i];
+        newArray[i] = arr[i];
     }
-    return _args;
+    return newArray;
 }
 
 // check if 'item' is in 'arr' array
@@ -595,20 +598,24 @@ function encodeURIComponentAll(str) {
 }
 
 function setElementData(element, name, val){
-    if (document.head && document.head.dataset){
+    if (document.head && document.head.dataset) {
+        name = toCamelCase(name);
         element.dataset[name] = val;
     }
     else {
-        element.setAttribute('data-'+name, val);
+        name = toDashed(name);
+        element.setAttribute('data-' + name, val);
     }
 }
 
 function getElementData(element, name){
-    if (document.head && document.head.dataset){
-        return element.dataset[name];
+    if (document.head && document.head.dataset) {
+        name = toCamelCase(name);
+        return realValue(element.dataset[name]);
     }
     else {
-        return element.getAttribute('data-'+name);
+        name = toDashed(name);
+        return realValue(element.getAttribute('data-' + name));
     }
 }
 
@@ -620,6 +627,8 @@ function getElementData(element, name){
 // a string used in [data-] attributes
 function realValue(val, bool){
     var undefined;
+    // only evaluate strings
+    if (!isString(val)) return val;
     if (bool){
         if (val === '0'){
             return false;
@@ -845,37 +854,37 @@ function insertScript( url, min, name ){
 }
 
 // insertScripts([{url:'/scripts/app/script',name:'app.script',min:'-min'}]);
-function insertScripts( /* scripts (multiple args or array) */ ){
-    var i = -1, scripts;
-    if (isString(arguments[0]) || arguments.length > 1){
-        scripts = toArray(arguments);
-    }
-    else {
-        scripts = arguments[0];
-    }
-    while (++i < scripts.length){
-        if (scripts[i]){ // skip null values
-            insertScript(scripts[i]);
-        }
-    }
-}
-insertScripts.configArraySample = [
-    // string with pipe separating params (spaces ok)
-    // (script url) | (optional min string) | (optional script name)
-    '/scripts/app/foo.js | .min | foo',
-    // or use an object with param properties
-    {
-        url: '/scripts/app/script', // REQUIRED
-        min: '-min', // optional
-        name: 'app.script' // optional
-    },
-    {
-        // 'src' property name works also
-        src: '/scripts/app/utils',
-        min: '.min',
-        name: 'app.utils'
-    }
-];
+//function insertScripts( /* scripts (multiple args or array) */ ){
+//    var i = -1, scripts;
+//    if (isString(arguments[0]) || arguments.length > 1){
+//        scripts = toArray(arguments);
+//    }
+//    else {
+//        scripts = arguments[0];
+//    }
+//    while (++i < scripts.length){
+//        if (scripts[i]){ // skip null values
+//            insertScript(scripts[i]);
+//        }
+//    }
+//}
+//insertScripts.configArraySample = [
+//    // string with pipe separating params (spaces ok)
+//    // (script url) | (optional min string) | (optional script name)
+//    '/scripts/app/foo.js | .min | foo',
+//    // or use an object with param properties
+//    {
+//        url: '/scripts/app/script', // REQUIRED
+//        min: '-min', // optional
+//        name: 'app.script' // optional
+//    },
+//    {
+//        // 'src' property name works also
+//        src: '/scripts/app/utils',
+//        min: '.min',
+//        name: 'app.utils'
+//    }
+//];
 
 // returns new <script> DOM ELEMENT
 function scriptElement( src, title, body ){

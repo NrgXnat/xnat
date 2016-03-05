@@ -3,6 +3,64 @@
  * depend on jQuery. (load AFTER jQuery)
  */
 
+/**
+ * Test function timing after iterating [count] number of times
+ * @param fn {Function} REQUIRED - function we're testing
+ * @param [args] {Array} ([]) - arguments to pass to [fn]
+ * @param [count] {Number} (1000) - number of iterations
+ * @param [context] (null) - context for [this]
+ * @param [undefined] {undefined}
+ * @returns {Object|*}
+ */
+function speedTest(fn, args, count, context, undefined){
+
+    var i = -1,
+        result = null,
+        returned = [],
+        start = Date.now(),
+        elapsed;
+
+    if (fn == undefined){
+        return 'Test function is undefined.';
+    }
+
+    function timing(time){
+        var out = {};
+        out.num = out.ms = (Date.now() - time);
+        out.milliseconds = out.ms+'ms';
+        out.sec = (out.ms/1000);
+        out.seconds = (out.sec + 's');
+        return out;
+    }
+
+    count   = count   || 1000;
+    context = context || null;
+
+    // collect any results
+    while(++i < count){
+        try {
+            result = fn.apply(context, [].concat(args||[]));
+        }
+        catch(e){
+            result = e;
+            break;
+        }
+        returned.push(result);
+    }
+
+    if (!returned.length){
+        return result;
+    }
+
+    elapsed = timing(start);
+    elapsed.returned = returned;
+
+    console.log(elapsed.seconds);
+
+    return elapsed;
+
+}
+
 
 // return REST url with common parts pre-defined
 // restUrl('/data/projects', ['format=json'])

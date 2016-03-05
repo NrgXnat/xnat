@@ -3,9 +3,17 @@
 <head>
     <meta charset="UTF-8">
     <title>Spawn Samples</title>
+    <style>
+        .block { display: block; }
+        .margin20 { margin: 20px; }
+        .pad20 { padding: 20px; }
+    </style>
     <script src="../jquery/jquery.js"></script>
     <script src="../jquery-plugins/jquery.spawn.js"></script>
     <script src="spawn.js"></script>
+    <!-- the 'lite' script overrides the 'lite' method in spawn.js -->
+    <script src="../jquery-plugins/jquery.spawn.alt.js"></script>
+    <script src="../../utils.js"></script>
     <script>
         // shortcuts
         function byId(id){
@@ -17,6 +25,9 @@
 
 <h1>Samples for spawn.js</h1>
 
+<h2>spawn.plus() example</h2>
+<div id="spawn-lite"></div>
+
 <h2>Spawn a simple &lt;table&gt; element:</h2>
 <div id="spawn-table-1"></div>
 
@@ -27,19 +38,43 @@
 <p>(click a table cell to trigger an 'onclick' event)</p>
 <div id="spawn-table-3"></div>
 
-<h2>Spawn elements with the jQuery Spawner <b>$.spawn()</b>:</h2>
+<h2>Spawn elements with the jQuery Spawner <b>$.spawn.lite()</b>:</h2>
 <p>The jQuery Spawner returns a jQuery-wrapped element.</p>
+<p><i>(here's a grab bag of $.spawn()ed elements)</i></p>
 <div id="jquery-spawn-div"></div>
 
+<!-- output
+
+<div id="spawn1">
+    <h1 title="TITLE!" style="padding: 10px; background: rgb(224, 224, 224);">Bar</h1>
+    Foo.
+    <br>
+    <input>
+    <br>
+    <label class="pad20 block">
+        <input type="checkbox" checked="checked">CHECKBOX
+    </label>
+    <br class="clear">
+    <button title="Blah" style="font-size: 20px;">Foo!</button>
+    <hr style="border: 1px solid red;">
+    <ul>
+        <li class="foo"><i>FOO!!!</i></li>
+        <li class="bar"><b>BAR!!!</b></li>
+    </ul>
+</div>
+
+
+-->
+
 <script>
-    (function(){
+    (function($){
 
         function th(opts, content){
             if (!content) {
                 content = opts;
                 opts = {};
             }
-            return spawn('td', opts, content);
+            return spawn.plus('td', opts, content);
         }
 
         function td(opts, content){
@@ -47,7 +82,7 @@
                 content = opts;
                 opts = {};
             }
-            return spawn('td', opts, content);
+            return spawn.plus('td', opts, content);
         }
 
         function tr(opts, cells){
@@ -56,7 +91,7 @@
                 cells = opts;
                 opts = {};
             }
-            return spawn('tr', opts, cells.map(function(content){
+            return spawn.plus('tr', opts, cells.map(function(content){
                 return td(content);
             }));
 //            var _row = spawn('tr', opts, cells.map(function(content){
@@ -75,9 +110,11 @@
                 ['x', 'y', 'z'],
                 [1, 2, 3]
             ];
+
+            opts.className = 'foo';
             // -OR- an array of objects using the keys for <th> elements
             // (also add a [data-key="key_name"] attribute)
-            var _table = spawn('table', opts);
+            var _table = spawn.plus('table', opts);
             if (rows) {
                 rows.forEach(function(row){
                     _table.appendChild(tr(null, row));
@@ -103,7 +140,43 @@
             return tr({ className: classes }, data);
         }
 
-        byId('spawn-table-1').appendChild(spawn('table|id=table1', [
+        function div(opts){
+            return spawn.plus('div', opts)
+        }
+
+        window.spawnLite = function(){
+            var _spawnLite = byId('spawn-lite');
+            _spawnLite.innerHTML = '';
+            _spawnLite.appendChild(spawn.plus('div', {
+                innerHTML: 'Foo ',
+                title: '(foo)',
+                onclick: function(){
+                    alert(this.title)
+                },
+                append: document.createElement('hr'),
+                fn: [
+                    {appendChild: spawn.plus('b', 'Bar!')},
+                    {appendChild: spawn.plus('br')},
+                    {appendChild: spawn.plus('i', 'Baz.')}
+                ]
+            }));
+            return _spawnLite;
+        };
+
+        window.spawnLite();
+
+        byId('spawn-table-1').appendChild(spawn.plus('table', {
+            id: 'table1',
+            fn: {
+                // use 'appendChild' to add elements LAST
+                appendChild: spawn.plus('tr', [
+                    ['td', 'Bonus 1'],
+                    ['td', 'Bonus 2'],
+                    ['td', 'Bonus 3'],
+                    ['td', 'Bonus 4']
+                ])
+            }
+        }, [
             ['tr', [
                 td('Cell 1'),
                 td('Cell 2'),
@@ -125,12 +198,68 @@
             alert(this.innerHTML);
         }));
 
-        $('#jquery-spawn-div').append($.spawn('div|id=spawn1', [
-            ['', 'Foo'],
-            ['h1', 'Bar']
+        // $.spawn('div', {jQuery}, {Element}, 'children/text/html');
+
+        $('#jquery-spawn-div').append($.spawn.lite('div|id=spawn1', {
+            on: {
+                // bind 'click' event to <h1> elements
+                click: ['h1', function(){
+                    alert(this.innerHTML)
+                }]
+            }
+        }, null, [
+            ['h1|title=TITLE!', {
+                html: 'BAR',
+                css: {
+                    padding: '20px',
+                    background: '#f0f0f0'
+                }
+            }, {
+                onclick: function(){
+                    alert(this.title)
+                }
+            }],
+            'Foo. ',
+            ['br'],
+            ['input', null, {
+                value: 'abc',
+                //prop: ['disabled', 'true'],
+                onblur: function(){
+                    this.value = !this.value ? 'abc' : this.value;
+                },
+                onfocus: function(){
+                    this.value = '';
+                }
+            }],
+            ['br'],
+            ['label|class=pad20 block', null, [
+                ['input|type=checkbox;checked'],
+                'CHECKBOX'
+            ]],
+            ['br|class=clear'],
+            ['button', {
+                css: ['font-size', '20px'],
+                html: 'Foo! ',
+                on: {
+                    click: function(){
+                        alert(this.innerHTML);
+                    },
+                    mouseover: function(){
+                        console.log(this.title)
+                    }
+                }
+            }, {
+                data: { foo: 'bar' },
+                title: 'Blah'
+            }],
+            ['hr', {css:['border','1px solid red']}],
+            ['ul', null, [
+                ['li|class=foo', null, '<i>FOO!!!</i>'],
+                ['li|class=bar', null, '<b>BAR!!!</b>']
+            ]]
         ]));
 
-    }())
+    })(jQuery)
 </script>
 
 </body>

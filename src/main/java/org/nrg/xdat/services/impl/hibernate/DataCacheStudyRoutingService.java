@@ -30,7 +30,7 @@ public class DataCacheStudyRoutingService implements StudyRoutingService {
 
     /**
      * Creates a new routing configuration for the indicated attributes.
-     * <p/>
+     *
      * <b>Note:</b> Once a routing configuration has been created for a particular study instance UID, further calls to
      * any of the <b>assign()</b> methods will not change that existing routing configuration. In that case, the return
      * value will be <b>false</b>. To change an existing routing configuration, use the {@link #update(String,
@@ -50,7 +50,7 @@ public class DataCacheStudyRoutingService implements StudyRoutingService {
 
     /**
      * Creates a new routing configuration for the indicated attributes.
-     * <p/>
+     *
      * <b>Note:</b> Once a routing configuration has been created for a particular study instance UID, further calls to
      * any of the <b>assign()</b> methods will not change that existing routing configuration. In that case, the return
      * value will be <b>false</b>. To change an existing routing configuration, use the {@link #update(String,
@@ -71,7 +71,7 @@ public class DataCacheStudyRoutingService implements StudyRoutingService {
 
     /**
      * Creates a new routing configuration for the indicated attributes.
-     * <p/>
+     *
      * <b>Note:</b> Once a routing configuration has been created for a particular study instance UID, further calls to
      * any of the <b>assign()</b> methods will not change that existing routing configuration. In that case, the return
      * value will be <b>false</b>. To change an existing routing configuration, use the {@link #update(String,
@@ -132,7 +132,7 @@ public class DataCacheStudyRoutingService implements StudyRoutingService {
      * Updates the configuration for the indicated study instance UID. Only the attributes specified in the submitted
      * configuration will be updated; all other existing attributes will remain the same (i.e. they will not be cleared
      * or deleted). To clear an existing attribute, submit the attribute key with a null value.
-     * <p/>
+     *
      * <b>Note:</b> This method will not create a new routing configuration if one has not already been created for the
      * submitted study instance UID. In that case, the return value will be <b>false</b>. To create a new routing
      * configuration, use the {@link #assign(String, String, String)}, {@link #assign(String, String, String, String)},

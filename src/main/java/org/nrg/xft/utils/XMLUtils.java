@@ -24,9 +24,10 @@ import java.io.StringWriter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
-import org.apache.log4j.Logger;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -34,12 +35,12 @@ import org.xml.sax.InputSource;
 
 public  class XMLUtils
 {	
-	static org.apache.log4j.Logger logger = Logger.getLogger(XMLUtils.class);
+	private static final Logger logger = LoggerFactory.getLogger(XMLUtils.class);
 	
 	/*********************************************************
-	 * Saves a DOM Document to the specfied file.
+	 * Saves a DOM Document to the specified file.
 	 * @param doc XML DOM Document
-	 * @param _outputName FILE PATH & NAME
+	 * @param _outputName File path and name
 	 * @throws Exception
 	 */
 	

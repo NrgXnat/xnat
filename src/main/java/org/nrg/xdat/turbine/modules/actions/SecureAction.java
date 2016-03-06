@@ -234,38 +234,11 @@ public abstract class SecureAction extends VelocitySecureAction
             if(isAuthorized){
             	return isCsrfTokenOk(data);
             } else {
-            	return isAuthorized;
+            	return false;
             }
         }else{
-            boolean isAuthorized = true;
-            UserI user = TurbineUtils.getUser(data);
-            if (user ==null)
-            {
-                if (!allowGuestAccess())isAuthorized=false;
-
-                HttpSession session = data.getSession();
-                session.removeAttribute("loggedin");
-                
-                UserI guest=Users.getGuest();
-                if (guest!=null)
-                        {
-                    TurbineUtils.setUser(data,guest);
-                    session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
-
-                    String Destination = data.getTemplateInfo().getScreenTemplate();
-                    data.getParameters().add("nextPage", Destination);
-                    if (!data.getAction().equalsIgnoreCase(""))
-                        data.getParameters().add("nextAction",data.getAction());
-                    else 
-                        data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login")); 
-                    //System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n"); 
-                    
-                }
-            }else{
-                if (!allowGuestAccess() && user.getLogin().equals("guest")){
-                    isAuthorized=false;
-                }
-            }
+            UserI user           = TurbineUtils.getUser(data);
+            boolean isAuthorized = TurbineUtils.isAuthorized(data, user, allowGuestAccess());
 
             data.getParameters().add("new_session", "TRUE");
             AccessLogger.LogActionAccess(data);
@@ -277,13 +250,8 @@ public abstract class SecureAction extends VelocitySecureAction
                     data.getParameters().add("nextAction",data.getAction());
                 else 
                     data.getParameters().add("nextAction",org.apache.turbine.Turbine.getConfiguration().getString("action.login")); 
-                //System.out.println("nextPage::" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextPage",data)) + "::nextAction" + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("nextAction",data)) + "\n"); 
             }
-            if(isAuthorized){
-            	return isCsrfTokenOk(data);
-            } else {
-            	return isAuthorized;
-            }
+            return isAuthorized && isCsrfTokenOk(data);
         }
     }
 
@@ -291,7 +259,6 @@ public abstract class SecureAction extends VelocitySecureAction
         return true;
     }
 
-	
 	public static EventUtils.TYPE getEventType(RunData data){
 		final String id=(String)TurbineUtils.GetPassedParameter(EventUtils.EVENT_TYPE, data);
 		if(id!=null){

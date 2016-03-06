@@ -103,13 +103,11 @@ public class DisplaySearch implements TableSearchI {
 
     /**
      * @param presenter The presenter.
+     * @param login     The login to use.
      * @return The table resulting from the query.
+     * @throws Exception When an error occurs.
      */
     public XFTTableI execute(PresentationA presenter, String login) throws Exception {
-//		if (user == null)
-//		{
-//			throw new IllegalAccessException("Search requires a logged-in user account.");
-//		}
         lastPresenter = presenter;
 
         query = this.getSQLQuery(presenter);

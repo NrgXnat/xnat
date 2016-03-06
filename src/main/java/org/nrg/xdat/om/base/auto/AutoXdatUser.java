@@ -14,6 +14,7 @@ package org.nrg.xdat.om.base.auto;
 import java.util.ArrayList;
 import java.util.Hashtable;
 
+import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XdatElementAccess;
 import org.nrg.xdat.om.XdatRoleType;
 import org.nrg.xdat.om.XdatUser;
@@ -54,6 +55,9 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 		super(properties,user);
 	}
 
+	/**
+	 * {@inheritDoc}
+     */
 	public String getSchemaElementName(){
 		return "xdat:user";
 	}
@@ -63,7 +67,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private String _Login=null;
 
 	/**
-	 * @return Returns the login.
+	 * {@inheritDoc}
 	 */
 	public String getLogin(){
 		try{
@@ -77,8 +81,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for login.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setLogin(String v){
 		try{
@@ -92,7 +95,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private String _Firstname=null;
 
 	/**
-	 * @return Returns the firstname.
+	 * {@inheritDoc}
 	 */
 	public String getFirstname(){
 		try{
@@ -106,8 +109,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for firstname.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setFirstname(String v){
 		try{
@@ -121,7 +123,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private String _Lastname=null;
 
 	/**
-	 * @return Returns the lastname.
+	 * {@inheritDoc}
 	 */
 	public String getLastname(){
 		try{
@@ -135,8 +137,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for lastname.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setLastname(String v){
 		try{
@@ -150,7 +151,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private String _Email=null;
 
 	/**
-	 * @return Returns the email.
+	 * {@inheritDoc}
 	 */
 	public String getEmail(){
 		try{
@@ -164,8 +165,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for email.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setEmail(String v){
 		try{
@@ -179,7 +179,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private String _PrimaryPassword=null;
 
 	/**
-	 * @return Returns the primary_password.
+	 * {@inheritDoc}
 	 */
 	public String getPrimaryPassword(){
 		try{
@@ -193,8 +193,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for primary_password.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setPrimaryPassword(String v){
 		try{
@@ -208,7 +207,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private Boolean _PrimaryPassword_encrypt=null;
 
 	/**
-	 * @return Returns the primary_password/encrypt.
+	 * {@inheritDoc}
 	 */
 	public Boolean getPrimaryPassword_encrypt() {
 		try{
@@ -222,8 +221,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for primary_password/encrypt.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setPrimaryPassword_encrypt(Object v){
 		try{
@@ -231,14 +229,14 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 		_PrimaryPassword_encrypt=null;
 		} catch (Exception e1) {logger.error(e1);}
 	}
-	 private ArrayList<org.nrg.xdat.om.XdatElementAccess> _ElementAccess =null;
+	 private ArrayList<XdatElementAccess> _ElementAccess =null;
 
     //FIELD
 
     private String _Salt=null;
 
     /**
-     * @return Returns the salt.
+     * {@inheritDoc}
      */
     public String getSalt(){
         try{
@@ -252,8 +250,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
     }
 
     /**
-     * Sets the value for salt.
-     * @param v Value to Set.
+     * {@inheritDoc}
      */
     public void setSalt(String v){
         try{
@@ -263,10 +260,9 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
     }
 
 	/**
-	 * element_access
-	 * @return Returns an ArrayList of org.nrg.xdat.om.XdatElementAccess
+	 * {@inheritDoc}
 	 */
-	public ArrayList<org.nrg.xdat.om.XdatElementAccess> getElementAccess() {
+	public ArrayList<XdatElementAccess> getElementAccess() {
 		try{
 			if (_ElementAccess==null){
 				_ElementAccess=org.nrg.xdat.base.BaseElement.WrapItems(getChildItems("element_access"));
@@ -274,12 +270,11 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 			}else {
 				return _ElementAccess;
 			}
-		} catch (Exception e1) {return new ArrayList<org.nrg.xdat.om.XdatElementAccess>();}
+		} catch (Exception e1) {return new ArrayList<>();}
 	}
 
 	/**
-	 * Sets the value for element_access.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setElementAccess(ItemI v) throws Exception{
 		_ElementAccess =null;
@@ -297,6 +292,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	 * Removes the element_access of the given index.
 	 * @param index Index of child to remove.
 	 */
+    @SuppressWarnings("unused")
 	public void removeElementAccess(int index) throws java.lang.IndexOutOfBoundsException {
 		_ElementAccess =null;
 		try{
@@ -306,8 +302,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	 private ArrayList<org.nrg.xdat.om.XdatRoleType> _AssignedRoles_assignedRole =null;
 
 	/**
-	 * assigned_roles/assigned_role
-	 * @return Returns an ArrayList of org.nrg.xdat.om.XdatRoleType
+	 * {@inheritDoc}
 	 */
 	public ArrayList<org.nrg.xdat.om.XdatRoleType> getAssignedRoles_assignedRole() {
 		try{
@@ -317,12 +312,11 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 			}else {
 				return _AssignedRoles_assignedRole;
 			}
-		} catch (Exception e1) {return new ArrayList<org.nrg.xdat.om.XdatRoleType>();}
+		} catch (Exception e1) {return new ArrayList<>();}
 	}
 
 	/**
-	 * Sets the value for assigned_roles/assigned_role.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setAssignedRoles_assignedRole(ItemI v) throws Exception{
 		_AssignedRoles_assignedRole =null;
@@ -340,6 +334,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	 * Removes the assigned_roles/assigned_role of the given index.
 	 * @param index Index of child to remove.
 	 */
+    @SuppressWarnings("unused")
 	public void removeAssignedRoles_assignedRole(int index) throws java.lang.IndexOutOfBoundsException {
 		_AssignedRoles_assignedRole =null;
 		try{
@@ -352,7 +347,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private String _QuarantinePath=null;
 
 	/**
-	 * @return Returns the quarantine_path.
+	 * {@inheritDoc}
 	 */
 	public String getQuarantinePath(){
 		try{
@@ -366,8 +361,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for quarantine_path.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setQuarantinePath(String v){
 		try{
@@ -389,14 +383,16 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 			}else {
 				return _Groups_groupid;
 			}
-		} catch (Exception e1) {return new ArrayList<org.nrg.xdat.om.XdatUserGroupid>();}
+		} catch (Exception e1) {return new ArrayList<>();}
 	}
 
 	/**
 	 * Sets the value for groups/groupID.
 	 * @param v Value to Set.
+     * @throws Exception When an error occurs.
 	 */
-	public void setGroups_groupid(ItemI v) throws Exception{
+    @SuppressWarnings("unused")
+    public void setGroups_groupid(ItemI v) throws Exception{
 		_Groups_groupid =null;
 		try{
 			if (v instanceof XFTItem)
@@ -412,7 +408,8 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	 * Removes the groups/groupID of the given index.
 	 * @param index Index of child to remove.
 	 */
-	public void removeGroups_groupid(int index) throws java.lang.IndexOutOfBoundsException {
+    @SuppressWarnings("unused")
+    public void removeGroups_groupid(int index) throws java.lang.IndexOutOfBoundsException {
 		_Groups_groupid =null;
 		try{
 			getItem().removeChild(SCHEMA_ELEMENT_NAME + "/groups/groupID",index);
@@ -424,7 +421,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private Boolean _Enabled=null;
 
 	/**
-	 * @return Returns the enabled.
+	 * {@inheritDoc}
 	 */
 	public Boolean getEnabled() {
 		try{
@@ -438,8 +435,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for enabled.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setEnabled(Object v){
 		try{
@@ -453,7 +449,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private Boolean _Verified=null;
 
 	/**
-	 * @return Returns the verified.
+	 * {@inheritDoc}
 	 */
 	public Boolean getVerified() {
 		try{
@@ -467,8 +463,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for verified.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setVerified(Object v){
 		try{
@@ -482,7 +477,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	private Integer _XdatUserId=null;
 
 	/**
-	 * @return Returns the xdat_user_id.
+	 * {@inheritDoc}
 	 */
 	public Integer getXdatUserId() {
 		try{
@@ -496,8 +491,7 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 	}
 
 	/**
-	 * Sets the value for xdat_user_id.
-	 * @param v Value to Set.
+	 * {@inheritDoc}
 	 */
 	public void setXdatUserId(Integer v){
 		try{
@@ -506,11 +500,11 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 		} catch (Exception e1) {logger.error(e1);}
 	}
 
-	public static ArrayList<org.nrg.xdat.om.XdatUser> getAllXdatUsers(org.nrg.xft.security.UserI user,boolean preLoad)
+	public static ArrayList<XdatUser> getAllXdatUsers(org.nrg.xft.security.UserI user,boolean preLoad)
 	{
-		ArrayList<org.nrg.xdat.om.XdatUser> al = new ArrayList<org.nrg.xdat.om.XdatUser>();
+		ArrayList<XdatUser> al = new ArrayList<>();
 
-		try{
+        try{
 			org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetAllItems(SCHEMA_ELEMENT_NAME,user,preLoad);
 			al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems());
 		} catch (Exception e) {
@@ -521,9 +515,9 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 		return al;
 	}
 
-	public static ArrayList<org.nrg.xdat.om.XdatUser> getXdatUsersByField(String xmlPath, Object value, org.nrg.xft.security.UserI user,boolean preLoad)
+	public static ArrayList<XdatUser> getXdatUsersByField(String xmlPath, Object value, org.nrg.xft.security.UserI user,boolean preLoad)
 	{
-		ArrayList<org.nrg.xdat.om.XdatUser> al = new ArrayList<org.nrg.xdat.om.XdatUser>();
+		ArrayList<XdatUser> al = new ArrayList<>();
 		try {
 			org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems(xmlPath,value,user,preLoad);
 			al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems());
@@ -535,9 +529,10 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 		return al;
 	}
 
-	public static ArrayList<org.nrg.xdat.om.XdatUser> getXdatUsersByField(org.nrg.xft.search.CriteriaCollection criteria, org.nrg.xft.security.UserI user,boolean preLoad)
+    @SuppressWarnings("unused")
+    public static ArrayList<XdatUser> getXdatUsersByField(org.nrg.xft.search.CriteriaCollection criteria, org.nrg.xft.security.UserI user,boolean preLoad)
 	{
-		ArrayList<org.nrg.xdat.om.XdatUser> al = new ArrayList<org.nrg.xdat.om.XdatUser>();
+		ArrayList<XdatUser> al = new ArrayList<>();
 		try {
 			org.nrg.xft.collections.ItemCollection items = org.nrg.xft.search.ItemSearch.GetItems(criteria,user,preLoad);
 			al = org.nrg.xdat.base.BaseElement.WrapItems(items.getItems());
@@ -583,54 +578,48 @@ public abstract class AutoXdatUser extends org.nrg.xdat.base.BaseElement impleme
 
 	public static ArrayList wrapItems(ArrayList items)
 	{
-		ArrayList al = new ArrayList();
-		al = org.nrg.xdat.base.BaseElement.WrapItems(items);
-		al.trimToSize();
-		return al;
+		return BaseElement.WrapItems(items);
 	}
 
-	public static ArrayList wrapItems(org.nrg.xft.collections.ItemCollection items)
-	{
-		return wrapItems(items.getItems());
-	}
-public ArrayList<ResourceFile> getFileResources(String rootPath, boolean preventLoop){
-	ArrayList<ResourceFile> _return = new ArrayList<ResourceFile>();
-	 boolean localLoop = preventLoop;
-	        localLoop = preventLoop;
-	
-	        //element_access
-	        for(XdatElementAccess childElementAccess : this.getElementAccess()){
-	            for(ResourceFile rf: childElementAccess.getFileResources(rootPath, localLoop)) {
-	                 rf.setXpath("element_access[" + childElementAccess.getItem().getPKString() + "]/" + rf.getXpath());
-	                 rf.setXdatPath("element_access/" + childElementAccess.getItem().getPKString() + "/" + rf.getXpath());
-	                 _return.add(rf);
-	            }
-	        }
-	
-	        localLoop = preventLoop;
-	
-	        //assigned_roles/assigned_role
-	        for(XdatRoleType childAssignedRoles_assignedRole : this.getAssignedRoles_assignedRole()){
-	            for(ResourceFile rf: childAssignedRoles_assignedRole.getFileResources(rootPath, localLoop)) {
-	                 rf.setXpath("assigned_roles/assigned_role[" + childAssignedRoles_assignedRole.getItem().getPKString() + "]/" + rf.getXpath());
-	                 rf.setXdatPath("assigned_roles/assigned_role/" + childAssignedRoles_assignedRole.getItem().getPKString() + "/" + rf.getXpath());
-	                 _return.add(rf);
-	            }
-	        }
-	
-	        localLoop = preventLoop;
-	
-	        //groups/groupID
-	        for(XdatUserGroupid childGroups_groupid : this.getGroups_groupid()){
-	            for(ResourceFile rf: childGroups_groupid.getFileResources(rootPath, localLoop)) {
-	                 rf.setXpath("groups/groupID[" + childGroups_groupid.getItem().getPKString() + "]/" + rf.getXpath());
-	                 rf.setXdatPath("groups/groupID/" + childGroups_groupid.getItem().getPKString() + "/" + rf.getXpath());
-	                 _return.add(rf);
-	            }
-	        }
-	
-	        localLoop = preventLoop;
-	
-	return _return;
-}
+    public static ArrayList wrapItems(org.nrg.xft.collections.ItemCollection items) {
+        return wrapItems(items.getItems());
+    }
+
+    public ArrayList<ResourceFile> getFileResources(String rootPath, boolean preventLoop) {
+        ArrayList<ResourceFile> _return   = new ArrayList<>();
+        boolean                 localLoop = preventLoop;
+
+        //element_access
+        for (XdatElementAccess childElementAccess : this.getElementAccess()) {
+            for (ResourceFile rf : childElementAccess.getFileResources(rootPath, localLoop)) {
+                rf.setXpath("element_access[" + childElementAccess.getItem().getPKString() + "]/" + rf.getXpath());
+                rf.setXdatPath("element_access/" + childElementAccess.getItem().getPKString() + "/" + rf.getXpath());
+                _return.add(rf);
+            }
+        }
+
+        localLoop = preventLoop;
+
+        //assigned_roles/assigned_role
+        for (XdatRoleType childAssignedRoles_assignedRole : this.getAssignedRoles_assignedRole()) {
+            for (ResourceFile rf : childAssignedRoles_assignedRole.getFileResources(rootPath, localLoop)) {
+                rf.setXpath("assigned_roles/assigned_role[" + childAssignedRoles_assignedRole.getItem().getPKString() + "]/" + rf.getXpath());
+                rf.setXdatPath("assigned_roles/assigned_role/" + childAssignedRoles_assignedRole.getItem().getPKString() + "/" + rf.getXpath());
+                _return.add(rf);
+            }
+        }
+
+        localLoop = preventLoop;
+
+        //groups/groupID
+        for (XdatUserGroupid childGroups_groupid : this.getGroups_groupid()) {
+            for (ResourceFile rf : childGroups_groupid.getFileResources(rootPath, localLoop)) {
+                rf.setXpath("groups/groupID[" + childGroups_groupid.getItem().getPKString() + "]/" + rf.getXpath());
+                rf.setXdatPath("groups/groupID/" + childGroups_groupid.getItem().getPKString() + "/" + rf.getXpath());
+                _return.add(rf);
+            }
+        }
+
+        return _return;
+    }
 }

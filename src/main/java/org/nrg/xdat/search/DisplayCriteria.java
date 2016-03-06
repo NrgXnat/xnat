@@ -246,7 +246,7 @@ public class DisplayCriteria implements SQLClause {
      *
      * @param value     The value to set.
      * @param hackCheck Whether the value should be run through the {@link PoolDBUtils#HackCheck(String)} test.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     public void setValue(Object value, boolean hackCheck) throws Exception {
         if (value instanceof String) {

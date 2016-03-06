@@ -1,14 +1,11 @@
-/**
+/*
  * AliasToken
- * (C) 2012 Washington University School of Medicine
+ * (C) 2016 Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD License
- *
- * Created on 4/17/12 by rherri01
  */
 package org.nrg.xdat.entities;
-
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.StringUtils;
@@ -38,6 +35,7 @@ public class AliasToken extends AbstractHibernateEntity {
 
     /**
      * The alias is the primary reference to the token instance.
+     *
      * @return The alias for this authentication token.
      */
     @Column(unique = true, nullable = false)
@@ -47,7 +45,8 @@ public class AliasToken extends AbstractHibernateEntity {
 
     /**
      * Sets the alias for the token. This should not be called after the token has been created.
-     * @param alias    The alias to set for the token.
+     *
+     * @param alias The alias to set for the token.
      */
     public void setAlias(final String alias) {
         _alias = alias;
@@ -55,6 +54,7 @@ public class AliasToken extends AbstractHibernateEntity {
 
     /**
      * Gets the token secret.
+     *
      * @return A value representing the token secret.
      */
     public long getSecret() {
@@ -63,7 +63,8 @@ public class AliasToken extends AbstractHibernateEntity {
 
     /**
      * Sets the token secret.
-     * @param secret    A value representing the token secret.
+     *
+     * @param secret A value representing the token secret.
      */
     public void setSecret(final long secret) {
         _secret = secret;
@@ -72,6 +73,7 @@ public class AliasToken extends AbstractHibernateEntity {
     /**
      * Indicates whether this token is for a single use (e.g. change or reset password) or
      * repeated use.
+     *
      * @return Whether this token is for a single use.
      */
     public boolean isSingleUse() {
@@ -80,7 +82,8 @@ public class AliasToken extends AbstractHibernateEntity {
 
     /**
      * Sets whether this token is for a single use only.
-     * @param singleUse    Whether the token is for a single use.
+     *
+     * @param singleUse Whether the token is for a single use.
      */
     public void setSingleUse(final boolean singleUse) {
         _isSingleUse = singleUse;
@@ -88,6 +91,7 @@ public class AliasToken extends AbstractHibernateEntity {
 
     /**
      * The username of the XDAT user account for whom the token was issued.
+     *
      * @return The username of the XDAT user account for whom the token was issued.
      */
     public String getXdatUserId() {
@@ -96,7 +100,8 @@ public class AliasToken extends AbstractHibernateEntity {
 
     /**
      * Sets the username of the XDAT user account for whom the token was issued.
-     * @param xdatUserId    The username of the XDAT user account for whom the token was issued.
+     *
+     * @param xdatUserId The username of the XDAT user account for whom the token was issued.
      */
     public void setXdatUserId(String xdatUserId) {
         _xdatUserId = xdatUserId;
@@ -105,6 +110,7 @@ public class AliasToken extends AbstractHibernateEntity {
     /**
      * Returns a list of the IP addresses and address ranges from which requests using this
      * authentication token can originate.
+     *
      * @return A list of the valid originating IP addresses and address ranges.
      */
     @ElementCollection(fetch = FetchType.EAGER)
@@ -116,14 +122,17 @@ public class AliasToken extends AbstractHibernateEntity {
     /**
      * Sets the list of the IP addresses and address ranges from which requests using this
      * authentication token can originate.
+     *
+     * @param validIPAddresses The list of valid IP addresses that can use this alias token to authenticate.
      */
-    public void setValidIPAddresses(Set<String> validIPAddresses) {
+    public void setValidIPAddresses(final Set<String> validIPAddresses) {
         _validIPAddresses = validIPAddresses;
     }
 
     /**
      * Tests whether the specified address matches one of the specified IP addresses.
-     * @param address    The address to test.
+     *
+     * @param address The address to test.
      * @return <b>true</b> if the submitted address matches one of the plain IPs or subnet masks, <b>false</b> otherwise.
      */
     @Transient
@@ -176,7 +185,7 @@ public class AliasToken extends AbstractHibernateEntity {
      * Note that this provides no indication as to whether candidate string is an actual alias
      * or is still a valid alias in the system.
      *
-     * @param candidate    The string to test for format compatibility.
+     * @param candidate The string to test for format compatibility.
      * @return <b>true</b> if the string matches the alias format, <b>false</b> otherwise.
      */
     public static boolean isAliasFormat(String candidate) {
@@ -196,17 +205,17 @@ public class AliasToken extends AbstractHibernateEntity {
             } else if (Patterns.IP_MASK.matcher(address).matches()) {
                 _validSubnets.add(new SubnetUtils(address).getInfo());
             } else {
-                _log.warn("Found specified IP address that doesn't match patterns for IP or IP subnet mask: "+ address);
+                _log.warn("Found specified IP address that doesn't match patterns for IP or IP subnet mask: " + address);
             }
         }
     }
 
     private static final Log _log = LogFactory.getLog(AliasToken.class);
-    private String _alias;
-    private long _secret;
-    private boolean _isSingleUse;
-    private String _xdatUserId;
-    private Set<String> _validIPAddresses;
-    private List<String> _validPlainIPAddresses;
+    private String                       _alias;
+    private long                         _secret;
+    private boolean                      _isSingleUse;
+    private String                       _xdatUserId;
+    private Set<String>                  _validIPAddresses;
+    private List<String>                 _validPlainIPAddresses;
     private List<SubnetUtils.SubnetInfo> _validSubnets;
 }

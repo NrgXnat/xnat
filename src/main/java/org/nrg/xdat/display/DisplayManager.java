@@ -876,7 +876,8 @@ public class DisplayManager {
     }
 
     /**
-     * @return
+     * Gets the arc definitions for the system.
+     * @return A map of the available arc definitions, stored by their IDs.
      */
     public Map<String, ArcDefinition> getArcDefinitions() {
         return new HashMap<>(arcDefinitions);
@@ -1009,21 +1010,41 @@ public class DisplayManager {
     /**
      * xnat:imageSessionData is not an instantiable data type, and it seems silly to make it so just to reference the
      * singular/plural display names, so we'll just use a site config property for this one.
+     * @return The display name for the data type.
+     * @throws ConfigServiceException When the name can't be located.
      */
     public String getSingularDisplayNameForImageSession() throws ConfigServiceException {
         return org.apache.commons.lang.StringUtils.defaultIfEmpty(
                 XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.singular"), "Session");
     }
 
+    /**
+     * xnat:imageSessionData is not an instantiable data type, and it seems silly to make it so just to reference the
+     * singular/plural display names, so we'll just use a site config property for this one.
+     * @return The display name for the data type.
+     * @throws ConfigServiceException When the name can't be located.
+     */
     public String getPluralDisplayNameForImageSession() throws ConfigServiceException {
         return org.apache.commons.lang.StringUtils.defaultIfEmpty(
                 XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.plural"), "Sessions");
     }
 
+    /**
+     * xnat:imageSessionData is not an instantiable data type, and it seems silly to make it so just to reference the
+     * singular/plural display names, so we'll just use a site config property for this one.
+     * @return The display name for the data type.
+     * @throws ConfigServiceException When the name can't be located.
+     */
     public String getSingularDisplayNameForMRSession() {
         return getSingularDisplayNameForElement("xnat:mrSessionData");
     }
 
+    /**
+     * xnat:imageSessionData is not an instantiable data type, and it seems silly to make it so just to reference the
+     * singular/plural display names, so we'll just use a site config property for this one.
+     * @return The display name for the data type.
+     * @throws ConfigServiceException When the name can't be located.
+     */
     public String getPluralDisplayNameForMRSession() {
         return getPluralDisplayNameForElement("xnat:mrSessionData");
     }

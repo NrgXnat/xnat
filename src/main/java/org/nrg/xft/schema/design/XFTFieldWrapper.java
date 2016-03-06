@@ -82,8 +82,8 @@ public abstract class XFTFieldWrapper implements Identifier{
 	}
 
 	/**
-	 * If maxOccurs is unbounded or > 1
-	 * @return
+	 * If maxOccurs is unbounded or &gt; 1
+	 * @return If multiple instances of this field are allowed.
 	 */
 	public boolean isMultiple()
 	{
@@ -91,10 +91,10 @@ public abstract class XFTFieldWrapper implements Identifier{
 		if (s.equalsIgnoreCase("unbounded"))
 		{
 			return true;
-		}else if (s != "") 
+		}else if (org.apache.commons.lang3.StringUtils.isNotBlank(s))
 		{
 			try {
-				int i = Integer.valueOf(s).intValue();
+				int i = Integer.valueOf(s);
 				if (i>1)
 				{
 					return true;

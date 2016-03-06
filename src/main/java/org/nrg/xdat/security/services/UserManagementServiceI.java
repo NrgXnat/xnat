@@ -19,7 +19,7 @@ import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.security.core.userdetails.UserDetails;
 
 /**
- * @author Tim Olsen <tim@deck5consulting.com>
+ * @author Tim Olsen &lt;tim@deck5consulting.com&gt;
  *
  * Interface used to manage particular implementations of user management.
  */

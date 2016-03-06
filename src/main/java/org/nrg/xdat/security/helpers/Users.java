@@ -43,12 +43,12 @@ public class Users {
 
     /**
      * Returns the currently configured user management service
-     * <p/>
+     *
      * You can customize the implementation returned by adding a new implementation to the org.nrg.xdat.security.user.custom package (or a diffently configured package).
-     * <p/>
+     *
      * You can change the default implementation returned via the security.userManagementService.default configuration parameter
      *
-     * @return
+     * @return The service.
      */
     public static UserManagementServiceI getUserManagementService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
@@ -100,7 +100,7 @@ public class Users {
 
     /**
      * Return a freshly created user object populated with the passed parameters.
-     * <p/>
+     *
      * Object may or may not already exist in the database.
      *
      * @return

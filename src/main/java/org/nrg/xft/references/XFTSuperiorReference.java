@@ -23,7 +23,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.utils.StringUtils;
 public class XFTSuperiorReference implements org.nrg.xft.references.XFTReferenceI {
 	/**
-	 * value used for specifier field to say the relation was defined in the superior element (as a max occurs > 1).
+	 * value used for specifier field to say the relation was defined in the superior element (as a max occurs &gt; 1).
 	 */
 	public static final int SUPERIOR = 1;// value used for specifier field to say the relation was defined in the superior element (as a max occurs > 1).
 	

@@ -32,7 +32,6 @@ public class XFTMetaElement {
 	 * Populates teh javaName, sqlName, code and full XML Name from the XFTElement.  If allowDBAccess
 	 * is true, then the elements ID is selected from the db.
 	 * @param e
-	 * @param allowDBAccess
 	 */
 	public XFTMetaElement(XFTElement e)
 	{

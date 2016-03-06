@@ -346,7 +346,7 @@ public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferen
         return unique;
     }
     /**
-     * @param uniqueComposite The uniqueComposite to set.
+     * @param unique The unique composite to set.
      */
     public void setUnique(boolean unique) {
         this.unique = unique;

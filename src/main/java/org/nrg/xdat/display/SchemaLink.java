@@ -1,84 +1,96 @@
 /*
  * org.nrg.xdat.display.SchemaLink
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/1/13 9:13 AM
  */
 package org.nrg.xdat.display;
 
 /**
  * @author Tim
  */
-public class SchemaLink extends ViewLink{
-	private String rootElement = "";
-	private String element = "";
-	private String type = "";
-	private String alias = "";
-	
-	public SchemaLink(String root)
-	{
-		rootElement = root;
-	}
-	
-	/**
-	 * @return
-	 */
-	public String getElement() {
-		return element;
-	}
+public class SchemaLink extends ViewLink {
+    private String rootElement = "";
+    private String element     = "";
+    private String type        = "";
+    private String alias       = "";
 
-	/**
-	 * @return
-	 */
-	public String getType() {
-		return type;
-	}
+    public SchemaLink(final String root) {
+        rootElement = root;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setElement(String string) {
-		element = string;
-	}
+    /**
+     * Gets the element.
+     *
+     * @return The element.
+     */
+    public String getElement() {
+        return element;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setType(String string) {
-		type = string;
-	}
+    /**
+     * Sets the element.
+     *
+     * @param element The element to set.
+     */
+    public void setElement(final String element) {
+        this.element = element;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getAlias() {
-		return alias;
-	}
+    /**
+     * Gets the type.
+     *
+     * @return The type.
+     */
+    public String getType() {
+        return type;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setAlias(String string) {
-		alias = string;
-	}
+    /**
+     * Sets the type.
+     *
+     * @param type The type to set.
+     */
+    public void setType(final String type) {
+        this.type = type;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getRootElement() {
-		return rootElement;
-	}
+    /**
+     * Gets the alias.
+     *
+     * @return The alias.
+     */
+    public String getAlias() {
+        return alias;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setRootElement(String string) {
-		rootElement = string;
-	}
+    /**
+     * Sets the alias.
+     *
+     * @param alias The alias to set.
+     */
+    public void setAlias(final String alias) {
+        this.alias = alias;
+    }
 
+    /**
+     * Gets the root element name.
+     *
+     * @return The root element name.
+     */
+    public String getRootElement() {
+        return rootElement;
+    }
+
+    /**
+     * Sets the root element name.
+     *
+     * @param element The name of the root element.
+     */
+    public void setRootElement(final String element) {
+        rootElement = element;
+    }
 }
 

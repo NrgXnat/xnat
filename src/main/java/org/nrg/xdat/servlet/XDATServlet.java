@@ -187,9 +187,8 @@ public class XDATServlet extends HttpServlet {
     }
 
     /**
-     * When updating the database, the function and views are always recreated.  The tables are only created if necessary.
-     * <p/>
-     * The statements to create the tables are passed in via the addStatements method.
+     * When updating the database, the function and views are always recreated.  The tables are only created if
+     * necessary. The statements to create the tables are passed in via the addStatements method.
      */
     public class DatabaseUpdater extends Thread {
         final String conf;

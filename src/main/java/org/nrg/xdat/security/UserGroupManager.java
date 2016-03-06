@@ -496,10 +496,10 @@ public class UserGroupManager implements UserGroupServiceI{
 
 
 	@Override
-	public void deleteGroup(UserGroupI g, UserI user, EventMetaI ci) {
+	public void deleteGroup(UserGroupI group, UserI user, EventMetaI ci) {
       //DELETE user.groupId
         CriteriaCollection col = new CriteriaCollection("AND");
-        col.addClause(XdatUserGroupid.SCHEMA_ELEMENT_NAME +".groupid"," = ", g.getId());
+        col.addClause(XdatUserGroupid.SCHEMA_ELEMENT_NAME +".groupid", " = ", group.getId());
 
         for (final XdatUserGroupid gId : XdatUserGroupid.getXdatUserGroupidsByField(col, user, false)) {
             try {
@@ -510,7 +510,7 @@ public class UserGroupManager implements UserGroupServiceI{
         }
         
         try {
-        	XdatUsergroup tmp=XdatUsergroup.getXdatUsergroupsByXdatUsergroupId(g.getPK(), user, false);
+        	XdatUsergroup tmp=XdatUsergroup.getXdatUsergroupsByXdatUsergroupId(group.getPK(), user, false);
 
             assert tmp != null;
             SaveItemHelper.authorizedDelete(tmp.getItem(), user,ci);
@@ -521,7 +521,7 @@ public class UserGroupManager implements UserGroupServiceI{
 
 
         try {
-        	XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),g.getId(),XftItemEvent.DELETE));
+        	XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), group.getId(), XftItemEvent.DELETE));
 		} catch (Exception e1) {
             logger.error("",e1);
 		}

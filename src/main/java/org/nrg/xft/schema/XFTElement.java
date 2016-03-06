@@ -924,8 +924,8 @@ public class XFTElement extends XFTNode{
 	/**
 	 * @param displayIdentifiers The displayIdentifiers to set.
 	 */
-	public void setDisplayIdentifiers(List<String> di) {
-		this.displayIdentifiers = di;
+	public void setDisplayIdentifiers(List<String> displayIdentifiers) {
+		this.displayIdentifiers = displayIdentifiers;
 	}
 
 	public XFTElement clone(XFTElement e,boolean history)

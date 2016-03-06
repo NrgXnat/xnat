@@ -54,12 +54,14 @@ public class ValidationResults implements ValidationResultsI{
 	
 	/**
 	 * Adds error message to collection of results.
-	 * @param field
-	 * @param message
+     * @param field           The field with the error.
+     * @param briefMessage    A short display message.
+     * @param xmlPath         The XML path of the field.
+     * @param e               The element with the error result.
 	 */
 	public void addResult(XFTFieldWrapper field,String briefMessage,String xmlPath,GenericWrapperElement e)
 	{
-	    String s = "";
+	    String s;
 	    if (e != null && field != null)
 	    {
 		    s = "The content of element '" + e.getFullXMLName() + "' is not complete. '{\"" + e.getSchemaTargetNamespaceURI() + "\":" + field.getXPATH() +  "}' " + briefMessage;
@@ -74,8 +76,10 @@ public class ValidationResults implements ValidationResultsI{
 	
 	/**
 	 * Adds error message to collection of results.
-	 * @param field
-	 * @param message
+	 * @param field           The field with the error.
+	 * @param briefMessage    A short display message.
+	 * @param xmlPath         The XML path of the field.
+     * @param fullMessage     The full message.
 	 */
 	public void addResult(XFTFieldWrapper field,String briefMessage,String xmlPath,String fullMessage)
 	{

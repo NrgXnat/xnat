@@ -8,9 +8,8 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.om;
+
 import java.util.ArrayList;
 
 import org.nrg.xft.ItemI;
@@ -21,50 +20,52 @@ import org.nrg.xft.ItemI;
  */
 public interface XdatUsergroupI {
 
-	public String getSchemaElementName();
+	String getSchemaElementName();
 
 	/**
 	 * element_access
 	 * @return Returns an ArrayList of org.nrg.xdat.om.XdatElementAccessI
 	 */
-	public ArrayList getElementAccess();
+	ArrayList getElementAccess();
 
 	/**
 	 * Sets the value for element_access.
 	 * @param v Value to Set.
+	 * @throws Exception When an error occurs.
 	 */
-	public void setElementAccess(ItemI v) throws Exception;
+	void setElementAccess(ItemI v) throws Exception;
 
 	/**
 	 * @return Returns the ID.
 	 */
-	public String getId();
+	String getId();
 
 	/**
 	 * Sets the value for ID.
 	 * @param v Value to Set.
 	 */
-	public void setId(String v);
+	void setId(String v);
 
 	/**
 	 * @return Returns the displayName.
 	 */
-	public String getDisplayname();
+	String getDisplayname();
 
 	/**
 	 * Sets the value for displayName.
 	 * @param v Value to Set.
 	 */
-	public void setDisplayname(String v);
+	void setDisplayname(String v);
 
 	/**
 	 * @return Returns the xdat_userGroup_id.
 	 */
-	public Integer getXdatUsergroupId();
+	Integer getXdatUsergroupId();
 
 	/**
 	 * Sets the value for xdat_userGroup_id.
 	 * @param v Value to Set.
 	 */
-	public void setXdatUsergroupId(Integer v);
+    @SuppressWarnings("unused")
+	void setXdatUsergroupId(Integer v);
 }

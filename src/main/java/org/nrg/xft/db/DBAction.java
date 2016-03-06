@@ -67,8 +67,8 @@ public class DBAction {
 
     /**
      * This method is used to insert/update an item into the database.
-     * <p/>
-     * <BR><BR>First, if the item has an extended field, then the extended field is populated with
+     *
+     * First, if the item has an extended field, then the extended field is populated with
      * the extension name.  Next, it stores the single-reference items.  The pk values of those items
      * are then copied into this item as foreign-keys.  If this item is a single column item then its pk
      * is set manually using the nextVal().  If the item has its primary key, then a select is performed
@@ -153,8 +153,8 @@ public class DBAction {
 
     /**
      * This method is used to insert/update an item into the database.
-     * <p/>
-     * <BR><BR>First, if the item has an extended field, then the extended field is populated with
+     *
+     * First, if the item has an extended field, then the extended field is populated with
      * the extension name.  Next, it stores the single-reference items.  The pk values of those items
      * are then copied into this item as foreign-keys.  If this item is a single column item then its pk
      * is set manually using the nextVal().  If the item has its primary key, then a select is performed
@@ -182,8 +182,8 @@ public class DBAction {
 
     /**
      * This method is used to insert/update an item into the database.
-     * <p/>
-     * <BR><BR>First, if the item has an extended field, then the extended field is populated with
+     *
+     * First, if the item has an extended field, then the extended field is populated with
      * the extension name.  Next, it stores the single-reference items.  The pk values of those items
      * are then copied into this item as foreign-keys.  If this item is a single column item then its pk
      * is set manually using the nextVal().  If the item has its primary key, then a select is performed
@@ -210,8 +210,8 @@ public class DBAction {
 
     /**
      * This method is used to insert/update an item into the database.
-     * <p/>
-     * <BR><BR>First, if the item has an extended field, then the extended field is populated with
+     *
+     * First, if the item has an extended field, then the extended field is populated with
      * the extension name.  Next, it stores the single-reference items.  The pk values of those items
      * are then copied into this item as foreign-keys.  If this item is a single column item then its pk
      * is set manually using the nextVal().  If the item has its primary key, then a select is performed

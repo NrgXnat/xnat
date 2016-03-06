@@ -1,15 +1,11 @@
 /*
  * org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
 import java.io.BufferedOutputStream;
@@ -28,7 +24,6 @@ import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -40,15 +35,18 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.XMLUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.DOMException;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
+
 public class XMLWriter {
-	static org.apache.log4j.Logger logger = Logger.getLogger(XMLWriter.class);
-	private DocumentBuilderFactory factory = null;
-	private DocumentBuilder newbuilder = null;
-	private Document doc = null;
+	private static final Logger                 logger     = LoggerFactory.getLogger(XMLWriter.class);
+	private              DocumentBuilderFactory factory    = null;
+	private              DocumentBuilder        newbuilder = null;
+	private              Document               doc        = null;
 	/**
 	 * Object used to generate a new XML DOM Document
 	 */
@@ -64,7 +62,7 @@ public class XMLWriter {
 
 	/**
 	 * Returns a new XML DOM Document
-	 * @return
+	 * @return Returns the document.
 	 */
 	public Document getDocument()
 	{
@@ -99,16 +97,29 @@ public class XMLWriter {
 	 * Translates the XFTItems in the ArrayList into a XML DOM Documents and writes them to files
 	 * in the destinationDir using the XFTItem's proper name and its pk value to determine the
 	 * file name.
-	 * @param al
-	 * @param destinationDir
-	 * @param extendItems
-	 * @throws org.nrg.xft.exception.XFTInitException
-	 * @throws org.nrg.xft.exception.ElementNotFoundException
-	 * @throws Exception
+	 * @param al                The list of items to write to files.
+	 * @param destinationDir    The destination folder for the files
+	 * @param limited           This parameter is ignored.
+	 * @param prettyPrint       Indicates whether the XML should be "pretty printed".
+	 * @throws Exception When something goes wrong.
+     * @deprecated Use {@link #StoreXFTItemListToXMLFile(ArrayList, String, boolean)} instead.
 	 */
-	public static int StoreXFTItemListToXMLFile(ArrayList al,String destinationDir,boolean limited,boolean pp) throws org.nrg.xft.exception.XFTInitException,org.nrg.xft.exception.ElementNotFoundException,Exception
-	{
-	    int i = 2;
+    @Deprecated
+    public static int StoreXFTItemListToXMLFile(ArrayList al, String destinationDir, @SuppressWarnings("UnusedParameters") boolean limited, boolean prettyPrint) throws Exception {
+        return StoreXFTItemListToXMLFile(al, destinationDir, prettyPrint);
+    }
+
+    /**
+     * Translates the XFTItems in the ArrayList into a XML DOM Documents and writes them to files
+     * in the destinationDir using the XFTItem's proper name and its pk value to determine the
+     * file name.
+     * @param al                The list of items to write to files.
+     * @param destinationDir    The destination folder for the files
+     * @param prettyPrint       Indicates whether the XML should be "pretty printed".
+     * @throws Exception When something goes wrong.
+     */
+    public static int StoreXFTItemListToXMLFile(ArrayList al, String destinationDir, boolean prettyPrint) throws Exception {
+        int i = 2;
 		Iterator iter = al.iterator();
 		while (iter.hasNext())
 		{
@@ -154,7 +165,7 @@ public class XMLWriter {
 
 //				Document doc = ItemToDOM(item,true,limited);
 //				XMLUtils.DOMToFile(doc,destinationDir + finalName);
-			if (pp)
+			if (prettyPrint)
         	{
         	    File f2= new File(destinationDir + finalName);
         	     XMLUtils.PrettyPrintDOM(f2);

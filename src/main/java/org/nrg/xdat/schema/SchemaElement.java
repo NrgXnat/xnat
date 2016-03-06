@@ -63,11 +63,13 @@ public class SchemaElement implements SchemaElementI {
 		return element.getFormattedName();
 	}
 
+	@SuppressWarnings("unused")
 	public String getSQLSingleViewName()
 	{
 	    return element.getSingleViewName();
 	}
 
+	@SuppressWarnings("unused")
 	public String getSQLMultiViewName()
 	{
 	    return element.getMultiViewName();
@@ -85,10 +87,11 @@ public class SchemaElement implements SchemaElementI {
 
 	public DisplayField getDisplayField(String id) throws DisplayFieldCollection.DisplayFieldNotFoundException
 	{
-		return (DisplayField)this.getDisplay().getDisplayFieldWException(id);
+		return getDisplay().getDisplayFieldWException(id);
 	}
 
-	public boolean hasDisplayField(String id)
+    @SuppressWarnings("unused")
+    public boolean hasDisplayField(String id)
 	{
 		try {
 			this.getDisplay().getDisplayFieldWException(id);
@@ -108,7 +111,8 @@ public class SchemaElement implements SchemaElementI {
 		return element.getDbName();
 	}
 
-	public boolean isInSecure() throws Exception
+    @SuppressWarnings("unused")
+    public boolean isInSecure() throws Exception
 	{
 		return ElementSecurity.IsInSecureElement(getFullXMLName());
 	}
@@ -156,26 +160,18 @@ public class SchemaElement implements SchemaElementI {
         return getElementSecurity().getPluralDescription();
     }
 
-	public boolean hasDisplayValueOption()
-	{
-		ElementDisplay ed = getDisplay();
-		if (ed ==null)
-		{
-		    return false;
-		}else{
-		    DisplayField idField = ed.getDisplayField(ed.getValueField());
-			DisplayField displayField = ed.getDisplayField(ed.getDisplayField());
-			if (idField != null && displayField != null)
-			{
-			    return true;
-			}else{
-			    return false;
-			}
-		}
-	}
+    public boolean hasDisplayValueOption() {
+        ElementDisplay ed = getDisplay();
+        if (ed == null) {
+            return false;
+        }
+        DisplayField idField      = ed.getDisplayField(ed.getValueField());
+        DisplayField displayField = ed.getDisplayField(ed.getDisplayField());
+        return idField != null && displayField != null;
+    }
 
 	/**
-	 * @return
+	 * @return The available arcs.
 	 */
 	public Hashtable getArcs() {
 		if (arcs == null)
@@ -193,7 +189,7 @@ public class SchemaElement implements SchemaElementI {
 	}
 
 	/**
-	 * @return
+	 * @return The display.
 	 */
 	public ElementDisplay getDisplay() {
 		if (display == null)
@@ -205,13 +201,7 @@ public class SchemaElement implements SchemaElementI {
 
 	public boolean hasDisplay()
 	{
-		if (getDisplay()==null)
-		{
-			return false;
-		}else
-		{
-			return true;
-		}
+		return getDisplay() != null;
 	}
 	
 	public DisplayField getSQLQueryField(String id, String header, boolean visible, boolean searchable, String dataType, String sqlColName, String subQuery, String schemaField, String schemaQueryField){
@@ -239,17 +229,17 @@ public class SchemaElement implements SchemaElementI {
 		return df;
 	}
 
-	public DisplayField createDisplayFieldForXMLPath(String s) throws XFTInitException,ElementNotFoundException,Exception
+	public DisplayField createDisplayFieldForXMLPath(String s) throws Exception
 	{
-		DisplayField temp = null;
 		ElementDisplay ed = this.getDisplay();
 		GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(s);
+		assert f != null;
 		if (f.isReference())
 		{
 		 	if (! f.isMultiple())
 		 	{
 		 		GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-		 		GenericWrapperField pk = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
+		 		GenericWrapperField pk = foreign.getAllPrimaryKeys().get(0);
 		 		
 		 		DisplayField df = new DisplayField(this.getDisplay());
 				df.setId(DisplaySearch.cleanColumnName(s).toUpperCase());
@@ -290,35 +280,31 @@ public class SchemaElement implements SchemaElementI {
 	                logger.error(df.getParentDisplay().getElementName() + "." + df.getId());
 					logger.error("",e);
 				}
-			}else{
-				
 			}
 		}
 		return null;
 	}
 
 	/**
-	 * @param s
-	 * @return
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
-	 * @throws Exception
+	 * @param xmlPath    The XML path of the field to retrieve.
+	 * @return The requested display field.
+     * @throws Exception When an error occurs.
 	 */
-	public DisplayField getDisplayFieldForXMLPath(String s) throws XFTInitException,ElementNotFoundException,Exception
+	public DisplayField getDisplayFieldForXMLPath(String xmlPath) throws Exception
 	{
 		DisplayField temp = null;
 		ElementDisplay ed = this.getDisplay();
-		GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(s);
+		GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(xmlPath);
 		if(f==null){
-			throw new FieldNotFoundException(s);
+			throw new FieldNotFoundException(xmlPath);
 		}
 		if (f.isReference())
 		{
 		 	if (! f.isMultiple())
 		 	{
 		 		GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-		 		GenericWrapperField pk = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
-		 		s += XFT.PATH_SEPERATOR+ pk.getName();
+		 		GenericWrapperField pk = foreign.getAllPrimaryKeys().get(0);
+		 		xmlPath += XFT.PATH_SEPERATOR+ pk.getName();
 		 	}
 		}
 		String localName=f.getXMLPathString(f.getParentElement().getFullXMLName());
@@ -326,13 +312,13 @@ public class SchemaElement implements SchemaElementI {
 		while (dfs.hasNext())
 		{
 			DisplayField df = (DisplayField)dfs.next();
-			if(df.generatedFor.equalsIgnoreCase(s)){
+			if(df.generatedFor.equalsIgnoreCase(xmlPath)){
 				temp=df;
 				break;
 			}else if (df.getElements().size() == 1 && df.getContent().size()==0)
 			{
-				DisplayFieldElement dfe = (DisplayFieldElement)df.getElements().get(0);
-				if (dfe.getSchemaElementName().equalsIgnoreCase(s)
+				DisplayFieldElement dfe = df.getElements().get(0);
+				if (dfe.getSchemaElementName().equalsIgnoreCase(xmlPath)
 						|| dfe.getSchemaElementName().equals(localName))
 				{
 					temp=df;
@@ -342,7 +328,7 @@ public class SchemaElement implements SchemaElementI {
 		}
 		
 		if(temp==null){
-			temp = this.createDisplayFieldForXMLPath(s);
+			temp = this.createDisplayFieldForXMLPath(xmlPath);
 		}
 		return temp;
 	}
@@ -352,81 +338,11 @@ public class SchemaElement implements SchemaElementI {
 		try {
 			GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(xmlPath);
 			return new SchemaField(f);
-		} catch (XFTInitException e) {
-			e.printStackTrace();
-			throw new FieldNotFoundException(xmlPath);
-		} catch (ElementNotFoundException e) {
-			e.printStackTrace();
-			throw new FieldNotFoundException(xmlPath);
 		} catch (Exception e) {
 			e.printStackTrace();
 			throw new FieldNotFoundException(xmlPath);
 		}
 	}
-//
-//	public ArrayList getSchemaFields()
-//	{
-//		ArrayList al = new ArrayList();
-//		Iterator iter = this.element.getAllFields(false,false).iterator();
-//		while (iter.hasNext())
-//		{
-//			GenericWrapperField f = (GenericWrapperField)iter.next();
-//			SchemaField sf = new SchemaField(f);
-//			al.add(sf);
-//		}
-//		al.trimToSize();
-//		return al;
-//	}
-//
-//	public ArrayList getSchemaFieldsInstances()
-//	{
-//		ArrayList al = new ArrayList();
-//		Iterator iter = this.element.getMetaFields().getIterator();
-//		while (iter.hasNext())
-//		{
-//			MetaField mf = (MetaField)iter.next();
-//			SchemaFieldInstance esf = new SchemaFieldInstance(mf,false);
-//			 al.add(esf);
-//		}
-//
-//
-//		al.trimToSize();
-//		return al;
-//	}
-//
-//	public ArrayList getSchemaFieldsInstances(ItemI item)
-//	{
-//		ArrayList al = getSchemaFieldsInstances();
-//		Iterator iter = al.iterator();
-//		while (iter.hasNext())
-//		{
-//			SchemaFieldInstance esf = (SchemaFieldInstance)iter.next();
-//			try {
-//				if (esf.isReference())
-//				{
-//					Object o = item.getProperty(esf.getName());
-//					if (o != null)
-//					{
-//						esf.setValue(o);
-//					}
-//				}else{
-//					Object o = item.getProperty(esf.getName());
-//					if (o != null)
-//					{
-//						esf.setValue(o);
-//					}
-//				}
-//			} catch (XFTInitException e) {
-//				logger.error("",e);
-//			} catch (ElementNotFoundException e) {
-//				logger.error("",e);
-//			} catch (FieldNotFoundException e) {
-//				logger.error("",e);
-//			}
-//		}
-//		return al;
-//	}
-
 	public Hashtable getDistinctIdentifierValues(String login)
 	{
 		Hashtable hash = new Hashtable();
@@ -441,7 +357,7 @@ public class SchemaElement implements SchemaElementI {
 
 	/**
 	 * returns SchemaFields in an ArrayList
-	 * @return
+	 * @return The primary keys for all schema fields.
 	 */
 	public ArrayList getAllPrimaryKeys()
 	{
@@ -453,22 +369,21 @@ public class SchemaElement implements SchemaElementI {
 	{
 		ArrayList al = new ArrayList();
 
-		Iterator iter = old.iterator();
-		while (iter.hasNext())
-		{
-			GenericWrapperField gwf = (GenericWrapperField)iter.next();
+		for (final Object anOld : old) {
+			GenericWrapperField gwf = (GenericWrapperField) anOld;
+			//noinspection unchecked
 			al.add(new SchemaField(gwf));
 		}
-
-		al.trimToSize();
 		return al;
 	}
 
+	@SuppressWarnings("unused")
 	public static ArrayList GetUniqueValuesForField(String xmlPath) throws Exception
 	{
 	    return GenericWrapperElement.GetUniqueValuesForField(xmlPath);
 	}
 
+	@SuppressWarnings("unused")
 	public static ArrayList GetPossibleFieldValues(String xmlPath) throws Exception
 	{
 	    return GenericWrapperElement.GetPossibleValues(xmlPath);
@@ -479,24 +394,20 @@ public class SchemaElement implements SchemaElementI {
 	    String psf = null;
 	    int dotCount = 100;
 
-	    List al = getDefinedFields(true);
+	    List<String> al = getDefinedFields(true);
 	    if (al.size()>0)
 	    {
-		    Iterator iter = al.iterator();
-		    while (iter.hasNext())
-		    {
-		        String s = (String)iter.next();
-		        int count = StringUtils.CountStringOccurrences(s,String.valueOf(XFT.PATH_SEPERATOR));
-		        if (count==0)
-		        {
-		            return this.getFullXMLName() + "/" + s;
-		        }else{
-		            if (count < dotCount)
-		            {
-		                psf = s;
-		            }
-		        }
-		    }
+			for (final Object anAl : al) {
+				String s     = (String) anAl;
+				int    count = StringUtils.CountStringOccurrences(s, String.valueOf(XFT.PATH_SEPERATOR));
+				if (count == 0) {
+					return this.getFullXMLName() + "/" + s;
+				} else {
+					if (count < dotCount) {
+						psf = s;
+					}
+				}
+			}
 		    return this.getFullXMLName() + "/" + psf;
 	    }else{
 	        return null;
@@ -511,7 +422,7 @@ public class SchemaElement implements SchemaElementI {
 	
 	public List<String> buildDefinedFields()
 	{
-		final List<String> _alldefinedfields =new ArrayList<String>();
+		final List<String> _alldefinedfields = new ArrayList<>();
 	    for (final String s:getDefinedFields(false))
 	    {
 	        _alldefinedfields.add((this.getFullXMLName() + "/" + s).intern());
@@ -530,7 +441,7 @@ public class SchemaElement implements SchemaElementI {
 	
 	//Refactored 06/06/11 TO. Old code was returning directly from map.put (which returns the preexisting object).  Bad, bad, bad.
 	private static class DefinedFieldManager{
-		private Map<String,List<String>> map=new Hashtable<String,List<String>>();
+		private Map<String,List<String>> map= new Hashtable<>();
 		
 		public synchronized List<String> getDefinedFields(final SchemaElement se){
 			final String xsiType=se.getFullXMLName();
@@ -543,13 +454,14 @@ public class SchemaElement implements SchemaElementI {
 
 	
 	/**
-	 * @param onlyDisplayValueOption
-	 * @return
+	 * @param onlyDisplayValueOption    Indicates whether only the value should be displayed.
+	 * @return A list of the fields defined for the schema element.
 	 */
 	//TODO: this method (and class) needs some refactoring.
+	@SuppressWarnings("unchecked")
 	private List<String> getDefinedFields(boolean onlyDisplayValueOption)
 	{
-		List<String> al = new ArrayList<String>();
+		List<String> al = new ArrayList<>();
 	    try {
             GenericWrapperElement gwe = this.getGenericXFTElement();
             ArrayList fields = ViewManager.GetFieldNames(gwe,ViewManager.QUARANTINE,true,true);
@@ -620,16 +532,13 @@ public class SchemaElement implements SchemaElementI {
             {
                 String s = (String)iter.next();
                 boolean ignoreBool = false;
-                Iterator ignoreIter = ignore.iterator();
-                while (ignoreIter.hasNext())
-                {
-                    String ignoreString = (String)ignoreIter.next();
-                    if (s.startsWith(ignoreString))
-                    {
-                        ignoreBool = true;
-                        break;
-                    }
-                }
+				for (final Object anIgnore : ignore) {
+					String ignoreString = (String) anIgnore;
+					if (s.startsWith(ignoreString)) {
+						ignoreBool = true;
+						break;
+					}
+				}
 
                 if (!ignoreBool)
                 {
@@ -644,14 +553,10 @@ public class SchemaElement implements SchemaElementI {
                     }
                 }
             }
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
+        } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
             logger.error("",e);
         }
-        return al;
+		return al;
 	}
 
     /**
@@ -695,12 +600,7 @@ public class SchemaElement implements SchemaElementI {
 
 	public boolean isRootElement()
 	{
-	    if (XFTManager.GetRootElementsHash().containsKey(this.getFullXMLName()))
-	    {
-	        return true;
-	    }else{
-	        return false;
-	    }
+		return XFTManager.GetRootElementsHash().containsKey(this.getFullXMLName());
 	}
 	
 	public boolean instanceOf(String s){

@@ -19,11 +19,10 @@ import java.util.Arrays;
 public class PasswordField {
 
   /**
-   *@param input stream to be used (e.g. System.in)
-   *@param prompt The prompt to display to the user.
-   *@return The password as entered by the user.
+   * @param in input stream to be used (e.g. System.in)
+   * @param prompt The prompt to display to the user.
+   * @return The password as entered by the user.
    */
-
    public static final char[] getPassword(InputStream in, String prompt) throws IOException {
       MaskingThread maskingthread = new MaskingThread(prompt);
       Thread thread = new Thread(maskingthread);

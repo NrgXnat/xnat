@@ -714,14 +714,15 @@ public class SAXWriter {
     /**
      * @return Returns the allowSchemaLocation.
      */
+    @SuppressWarnings("unused")
     public boolean isAllowSchemaLocation() {
         return allowSchemaLocation;
     }
     /**
      * @param allowSchemaLocation The allowSchemaLocation to set.
      */
-    public void setAllowSchemaLocation(boolean _allowSchemaLocation) {
-        this.allowSchemaLocation = _allowSchemaLocation;
+    public void setAllowSchemaLocation(boolean allowSchemaLocation) {
+        this.allowSchemaLocation = allowSchemaLocation;
     }
     /**
      * @return Returns the limited.

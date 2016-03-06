@@ -2,69 +2,68 @@ package org.nrg.xdat.security;
 
 import java.util.List;
 
-import org.nrg.xft.ItemWrapper;
-
 public interface PermissionSetI {
 
-	/**
-	 * @return
-	 */
-	public abstract String getSchemaElementName();
-
-	/**
-	 * @param access
-	 * @param row
-	 * @return
-	 * @throws ItemWrapper.FieldEmptyException
-	 * @throws Exception
-	 */
-	public abstract boolean canAccess(String access, SecurityValues row) throws ItemWrapper.FieldEmptyException,Exception;
-
-	/**
-	 * @return
-	 */
-	public abstract boolean canReadAny();
-
-	/**
-	 * @return
-	 */
-	public abstract boolean canCreateAny();
-
-	/**
-	 * @return
-	 */
-	public abstract boolean canEditAny();
-	
-	/**
-	 * @return
-	 */
-	public boolean isActive();
-	
-	/**
-	 * @return
-	 */
-	public String getMethod();
-	
-	/**
-     * @return the permCriteria
-     */
-    public List<PermissionCriteriaI> getAllCriteria();
-	
-	/**
-     * @return the permCriteria
-     */
-    public List<PermissionCriteriaI> getPermCriteria();
-    
     /**
-     * @return the permSet
+     * @return The schema element name.
      */
-    public List<PermissionSetI> getPermSets();
-    
+    String getSchemaElementName();
+
     /**
-     * @param fieldName
-     * @param value
-     * @return
-     * @throws Exception
+     * @param access The thing to access.
+     * @param row    The security values.
+     * @return Whether the element can be accessed.
+     * @throws Exception When something goes wrong.
      */
-    public PermissionCriteriaI getMatchingPermissions(String fieldName, Object value) throws Exception;
+    boolean canAccess(String access, SecurityValues row) throws Exception;
+
+    /**
+     * @return Whether anyone can read the element.
+     */
+    boolean canReadAny();
+
+    /**
+     * @return Whether anyone can create the element.
+     */
+    boolean canCreateAny();
+
+    /**
+     * @return Whether anyone can edit the element.
+     */
+    boolean canEditAny();
+
+    /**
+     * @return Whether the element is active.
+     */
+    boolean isActive();
+
+    /**
+     * @return What method the element supports.
+     */
+    String getMethod();
+
+    /**
+     * @return The permission criteria for the element.
+     */
+    List<PermissionCriteriaI> getAllCriteria();
+
+    /**
+     * @return The permission criteria for the element.
+     */
+    List<PermissionCriteriaI> getPermCriteria();
+
+    /**
+     * @return The permission sets for the element.
+     */
+    List<PermissionSetI> getPermSets();
+
+    /**
+     * Gets the permission criteria that matches the submitted values.
+     *
+     * @param fieldName The field name to test.
+     * @param value     The value to test.
+     * @return The matching permission criteria, if it exists.
+     * @throws Exception When something goes wrong.
+     */
+    PermissionCriteriaI getMatchingPermissions(String fieldName, Object value) throws Exception;
 }

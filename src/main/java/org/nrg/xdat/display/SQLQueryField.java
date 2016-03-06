@@ -13,19 +13,21 @@
 package org.nrg.xdat.display;
 
 import java.util.ArrayList;
+import java.util.List;
 
 public class SQLQueryField extends DisplayField {
-    private String subQuery = "";
-    private Object value = "";
-    ArrayList<QueryMappingColumn> mappingColumns = new ArrayList<QueryMappingColumn>();
+    private String                   subQuery       = "";
+    private Object                   value          = "";
+    private List<QueryMappingColumn> mappingColumns = new ArrayList<>();
+
     /**
-     * @param ed
+     * @param ed The element display to set for the SQL query field.
      */
     public SQLQueryField(ElementDisplay ed) {
         super(ed);
     }
-    
-    
+
+
     /**
      * @return the value
      */
@@ -56,36 +58,38 @@ public class SQLQueryField extends DisplayField {
         this.subQuery = subQuery;
     }
 
-    public void addMappingColumn(QueryMappingColumn mc){
+    @SuppressWarnings("unused")
+    public void addMappingColumn(QueryMappingColumn mc) {
         this.mappingColumns.add(mc);
     }
 
-    public void addMappingColumn(String schemaField, String queryField){
+    public void addMappingColumn(String schemaField, String queryField) {
         this.mappingColumns.add(new QueryMappingColumn(schemaField, queryField));
     }
 
     /**
      * @return the mappingColumns
      */
-    public ArrayList<QueryMappingColumn> getMappingColumns() {
+    public List<QueryMappingColumn> getMappingColumns() {
         return mappingColumns;
     }
 
     /**
      * @param mappingColumns the mappingColumns to set
      */
+    @SuppressWarnings("unused")
     public void setMappingColumns(ArrayList<QueryMappingColumn> mappingColumns) {
         this.mappingColumns = mappingColumns;
     }
-    
-    
-    public class QueryMappingColumn{
-        private String schemaField="";
-        private String queryField="";
-        
-        public QueryMappingColumn(String s,String q){
-            schemaField=s;
-            queryField=q;
+
+
+    public class QueryMappingColumn {
+        private String schemaField = "";
+        private String queryField  = "";
+
+        public QueryMappingColumn(String s, String q) {
+            schemaField = s;
+            queryField = q;
         }
 
         /**

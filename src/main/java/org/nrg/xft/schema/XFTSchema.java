@@ -12,13 +12,8 @@
 
 package org.nrg.xft.schema;
 import java.io.File;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
+import java.util.*;
 
-import org.apache.log4j.Logger;
 import org.nrg.xft.db.DBConfig;
 import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
@@ -32,35 +27,35 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.XMLUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
 public class XFTSchema {
-	static org.apache.log4j.Logger logger = Logger.getLogger(XFTSchema.class);
-	private XFTWebAppSchema webAppSchema = null;
-	private Hashtable elementsByName = new Hashtable();
-	private Hashtable elementsByCode = new Hashtable();
-	private Hashtable elementsByJavaName = new Hashtable();
-	private Hashtable elementsBySQLName = new Hashtable();
+	private static final Logger          logger             = LoggerFactory.getLogger(XFTSchema.class);
+	private              XFTWebAppSchema webAppSchema       = null;
+	private              Hashtable       elementsByName     = new Hashtable();
+	private              Hashtable       elementsByCode     = new Hashtable();
+	private              Hashtable       elementsByJavaName = new Hashtable();
+	private              Hashtable       elementsBySQLName  = new Hashtable();
 	
 	protected static ArrayList tempElements = new ArrayList();
 	//private Hashtable refConnections = null;
 	
 	//private Hashtable imports = new Hashtable();
 	
-	private Hashtable uRIToAbbr = new Hashtable();
-	private Hashtable abbrToURI = new Hashtable();
+	private final Map<String, String> uRIToAbbr = new HashMap<>();
+	private final Map<String, String> abbrToURI = new HashMap<>();
 	
 	private XFTDataModel dataModel = null;
 	
 	private String targetNamespaceURI = "";
 	private String targetPrefix = "";
 	private String xmlns = "xs";
-    
-    private boolean nullXMLNSPrefix = false;
-	
+
 	private DBConfig config = null;
 	
 	/**
@@ -86,7 +81,7 @@ public class XFTSchema {
 			if (attribute.getNodeValue().equalsIgnoreCase("http://www.w3.org/2001/XMLSchema"))
 			{
 				String attName= attribute.getNodeName();
-				if (attName.indexOf(":") != -1)
+				if (attName.contains(":"))
 				{
 					attName = attName.substring(attName.indexOf(":")+1);
 				}
@@ -110,14 +105,15 @@ public class XFTSchema {
 		try {
 			if (! targetNamespaceURI.equalsIgnoreCase(""))
 			{
-				targetPrefix = (String)uRIToAbbr.get(targetNamespaceURI);
+				targetPrefix = uRIToAbbr.get(targetNamespaceURI);
 				if (targetPrefix == null)
 					targetPrefix="";
 				XFTMetaManager.AddURIToPrefixMapping(targetNamespaceURI,targetPrefix);
 			}
 		} catch (RuntimeException e) {
-		    RuntimeException e1 = new RuntimeException("Error processing node:" + targetNamespaceURI + " " + targetPrefix + "\n" + e.getMessage());
-			throw e1;
+			final String message = "Error processing node:" + targetNamespaceURI + " " + targetPrefix + "\n" + e.getMessage();
+			logger.error(message, e);
+			throw new RuntimeException(message);
 		}
 		
 
@@ -132,47 +128,40 @@ public class XFTSchema {
 				NodeWrapper.AddNode(NodeUtils.GetNodeName(element),null,this);
 			}
 		}
-		
-		Iterator includeNodes = NodeUtils.GetLevelNNodes(rootElement,getXMLNS() + ":include",1).iterator();
-		while (includeNodes.hasNext())
-		{
-			Node n = (Node)includeNodes.next();
-			String schemaLocal = NodeUtils.GetAttributeValue(n,"schemaLocation","");
-			String tempDir = null;
-			if (schemaLocal.indexOf(File.separator) == -1)
-			{
-				if (dir.endsWith(File.separator))
-				{
-					tempDir =dir + schemaLocal;
-				}else{
-					tempDir =dir + File.separator + schemaLocal;	
-				}
-			}else
-			{
-				tempDir = schemaLocal;
-			}
-			File f = new File(tempDir);
-			if (f.exists())
-			{
-				String fileName = StringUtils.GetFileName(tempDir);
-				if (XFTManager.GetDataModels().get(fileName) == null)
-				{
-					XFTDataModel model = new XFTDataModel();
-					model.setFileName(fileName);
-					model.setFileLocation(StringUtils.GetDirName(tempDir));
-					model.setDb(this.getDataModel().getDb());
 
-					XFTManager.GetDataModels().put(model.getFileName(),model);
-					try {
-						model.setSchema();
-					} catch (XFTInitException e) {
-						e.printStackTrace();
-					} catch (ElementNotFoundException e) {
-						e.printStackTrace();
-					}
-				}
-			}
-		}		
+        for (final Object object : NodeUtils.GetLevelNNodes(rootElement, getXMLNS() + ":include", 1)) {
+            final Node n = (Node) object;
+            String schemaLocal = NodeUtils.GetAttributeValue(n, "schemaLocation", "");
+            String tempDir;
+            if (!schemaLocal.contains(File.separator)) {
+                if (dir.endsWith(File.separator)) {
+                    tempDir = dir + schemaLocal;
+                } else {
+                    tempDir = dir + File.separator + schemaLocal;
+                }
+            } else {
+                tempDir = schemaLocal;
+            }
+            File f = new File(tempDir);
+            if (f.exists()) {
+                String fileName = StringUtils.GetFileName(tempDir);
+                if (XFTManager.GetDataModels().get(fileName) == null) {
+                    XFTDataModel model = new XFTDataModel();
+                    model.setFileName(fileName);
+                    model.setFileLocation(StringUtils.GetDirName(tempDir));
+                    model.setDb(this.getDataModel().getDb());
+
+                    XFTManager.GetDataModels().put(model.getFileName(), model);
+                    try {
+                        model.setSchema();
+                    } catch (XFTInitException e) {
+                        logger.error("An error occurred initializing XFT", e);
+                    } catch (ElementNotFoundException e) {
+                        logger.error("An element could not be found", e);
+                    }
+                }
+            }
+        }
 		
 		int counter = 1;
 		logger.debug("Loading Schema '" + data.getFileName() +"' FROM '" + dir + "'...");		
@@ -181,11 +170,10 @@ public class XFTSchema {
 		{
 			tempElements = new ArrayList();
 			Node element = elements.item(i);
-			NamedNodeMap nnm = element.getAttributes();
-			
-			if (NodeUtils.NodeHasName(element))
+
+            if (NodeUtils.NodeHasName(element))
 			{
-				if (element.getNodeName().indexOf("element") != -1)
+				if (element.getNodeName().contains("element"))
 				{					
 					if (NodeUtils.NodeHasComplexContent(element,this.getXMLNS()))
 					{
@@ -212,7 +200,7 @@ public class XFTSchema {
 								Node refType = NodeWrapper.FindNode(elementType,this);
 								if (refType==null)
 								{
-									if (elementType != null && elementType.indexOf(":")!=-1)
+									if (elementType.contains(":"))
 									{
 										String prefix = elementType.substring(0,elementType.indexOf(":"));
 										if (this.getXMLNS().equalsIgnoreCase(prefix))
@@ -223,10 +211,14 @@ public class XFTSchema {
 											NodeWrapper.AddNode(NodeUtils.GetNodeName(element),xe.getName(),this);
 											XFTManager.AddRootElement(this.targetPrefix + ":" + xe.getName(),this.targetPrefix + ":" + NodeUtils.GetNodeName(element));
 										}else{
-											throw new RuntimeException("Unknown reference: " + elementName + " (" + elementType + ")");
+                                            final String message = "Unknown reference: " + elementName + " (" + elementType + ")";
+                                            logger.error(message);
+                                            throw new RuntimeException(message);
 										}
 									}else{
-										throw new RuntimeException("Unknown reference: " + elementName + " (" + elementType + ")");
+                                        final String message = "Unknown reference: " + elementName + " (" + elementType + ")";
+                                        logger.error(message);
+                                        throw new RuntimeException(message);
 									}
 								}else{
 									try {
@@ -240,76 +232,28 @@ public class XFTSchema {
 											XFTManager.AddRootElement(elementType,this.targetPrefix + ":" + NodeUtils.GetNodeName(element));
 										}
 									} catch (RuntimeException e) {
-									    RuntimeException e1 = new RuntimeException("Error processing node:" + targetNamespaceURI + " " + targetPrefix + "\n" + e.getMessage());
-										throw e1;
+                                        final String message = "Error processing node:" + targetNamespaceURI + " " + targetPrefix + "\n" + e.getMessage();
+                                        logger.error(message);
+                                        throw new RuntimeException(message);
 									}
 								}
 							}							
-						}else{
-//							String elementName = NodeUtils.GetAttributeValue(element,"name","");
-//							String elementType = NodeUtils.GetAttributeValue(element,"type","");
-////							NO ELEMENT CREATED	
-//							if (elementType.equalsIgnoreCase(""))
-//							{
-//								Node n = NodeUtils.GetLevel2Child(element,"xs:restriction");
-//								if (n!= null)
-//								{
-//									elementType = NodeUtils.GetAttributeValue(n,"base","");
-//								}
-//							}
-//							if ((elementName != "") && (elementType != ""))
-//							{
-//								Node refType = NodeWrapper.FindNode(elementType,this);
-//								if (refType==null)
-//								{
-//									if (elementType != null && elementType.indexOf(":")!=-1)
-//									{
-//										String prefix = elementType.substring(0,elementType.indexOf(":"));
-//										if (this.getXMLNS().equalsIgnoreCase(prefix))
-//										{
-//											XFTElement xe = new XFTElement(element,this.getXMLNS(),this);
-//											xe.setSequence(counter++);
-//											addElement(xe);
-//											NodeWrapper.AddNode(NodeUtils.GetNodeName(element),xe.getName(),this);
-//										}else{
-//											throw new RuntimeException("Unknown reference: " + elementName + " (" + elementType + ")");
-//										}
-//									}else{
-//										throw new RuntimeException("Unknown reference: " + elementName + " (" + elementType + ")");
-//									}
-//								}else{
-//									try {
-//										if (XFTField.IsRefOnly(refType,this.getXMLNS(),this))
-//										{	
-//											XFTReferenceManager.AddProperName(elementName,XFTField.GetRefName(refType,this.getXMLNS(),this));
-//										}else
-//										{	
-//											XFTReferenceManager.AddProperName(elementName,elementType);
-//										}
-//									} catch (RuntimeException e) {
-//										RuntimeException e1 = new RuntimeException("Error processing node:" + NodeUtils.GetNodeName(refType) + " (" + elementName + "," + elementType + ")");
-//										e1.setStackTrace(e.getStackTrace());
-//										throw e1;
-//									}
-//								}
-//							}
 						}
-						
 					}
-				}else if (element.getNodeName().indexOf("group") != -1)
+				}else if (element.getNodeName().contains("group"))
 				{
 					XFTElement xe = new XFTElement(element,this.getXMLNS(),this);
 					xe.setSequence(counter++);
 
 					addElement(xe);
 					NodeWrapper.AddNode(NodeUtils.GetNodeName(element),xe.getName(),this);
-				}else if (element.getNodeName().indexOf("attributeGroup") != -1)
+				}else if (element.getNodeName().contains("attributeGroup"))
 				{
 					XFTElement xe = new XFTElement(element,this.getXMLNS(),this);
 					xe.setSequence(counter++);
 					addElement(xe);
 					NodeWrapper.AddNode(NodeUtils.GetNodeName(element),xe.getName(),this);
-				}else if (element.getNodeName().indexOf("complexType") != -1)
+				}else if (element.getNodeName().contains("complexType"))
 				{
 					if (! XFTField.IsRefOnly(element,this.getXMLNS(),this))
 					{
@@ -331,12 +275,11 @@ public class XFTSchema {
 			
 			if (tempElements.size() > 0)
 			{
-				for(int j=0;j<tempElements.size();j++)
-				{
-					XFTElement xe = (XFTElement)tempElements.get(j);
-					xe.setSequence(counter++);
-					addElement(xe);
-				}
+                for (Object tempElement : tempElements) {
+                    XFTElement xe = (XFTElement) tempElement;
+                    xe.setSequence(counter++);
+                    addElement(xe);
+                }
 			}
 		}
 		
@@ -345,8 +288,7 @@ public class XFTSchema {
 	
 	public boolean isRootSingleElement(Node element) 
 	{
-		boolean temp = false;
-		String elementName = NodeUtils.GetAttributeValue(element,"name","");
+        String elementName = NodeUtils.GetAttributeValue(element,"name","");
 		String elementType = NodeUtils.GetAttributeValue(element,"type","");
 //		NO ELEMENT CREATED	
 		if (elementType.equalsIgnoreCase(""))
@@ -359,12 +301,7 @@ public class XFTSchema {
 			    Node extension = NodeUtils.GetLevel3Child(element,this.getXMLNS()+":extension");
 			    
 			    try {
-                    if (NodeUtils.ExtensionHasAddOns(extension))
-                    {
-                        return false;
-                    }else{
-                        return true;
-                    }
+                    return !NodeUtils.ExtensionHasAddOns(extension);
                 } catch (RuntimeException e) {
                     throw new RuntimeException("XNAT Schema Load Error in element '" + elementName + "'");
                 }
@@ -386,7 +323,7 @@ public class XFTSchema {
 				elementType = NodeUtils.GetAttributeValue(n,"base","");
 			}
 		}
-		if ((elementType != ""))
+		if (elementType != null && !elementType.equals(""))
 		{
 			return elementType;
 		}else{
@@ -395,8 +332,8 @@ public class XFTSchema {
 			{
 				elementType = this.getXMLNS() + ":simpleType";
 			}
-			
-			if ((elementType != ""))
+
+            if (elementType != null && !elementType.equals(""))
 			{
 				return elementType;
 			}else{
@@ -412,7 +349,7 @@ public class XFTSchema {
 	}
 	
 	/**
-	 * @return
+	 * @return The database configuration.
 	 */
 	private DBConfig getDBConfig()
 	{
@@ -424,7 +361,7 @@ public class XFTSchema {
 	}
 
 	/**
-	 * @return
+	 * @return The database type.
 	 */
 	public String getDbType() {
 		if (getDBConfig()!= null)
@@ -437,14 +374,14 @@ public class XFTSchema {
 
 	/**
 	 * key=XFTElement.getLocalXMLName(),value=XFTElement
-	 * @return
+	 * @return The available elements by name.
 	 */
 	public Hashtable getElementsByName() {
 		return elementsByName;
 	}
 
 	/**
-	 * @param xe
+	 * @param xe The element to add.
 	 */
 	public void addElement(XFTElement xe)
 	{
@@ -455,15 +392,17 @@ public class XFTSchema {
 		}
 		
 		elementsByName.put(xe.getName().toLowerCase(),xe);
-		if (xe.getCode() != "")
-			elementsByCode.put(xe.getCode(),xe);
+        if (xe.getCode() != null && !xe.getCode().equals("")) {
+            elementsByCode.put(xe.getCode(), xe);
+        }
 		
 		boolean addedJavaName = false;
 		if (xe.getWebAppElement() != null)
 		{
-			if (xe.getWebAppElement().getJavaName() != "")
+            final String javaName = xe.getWebAppElement().getJavaName();
+            if (javaName != null && !javaName.equals(""))
 			{
-				elementsByJavaName.put(xe.getWebAppElement().getJavaName().toLowerCase(),xe);
+				elementsByJavaName.put(javaName.toLowerCase(),xe);
 				addedJavaName = true;
 			}
 		}
@@ -472,9 +411,10 @@ public class XFTSchema {
 		{
 			if (xe.getSqlElement() != null)
 			{
-				if (xe.getSqlElement().getName() != "")
+                final String name = xe.getSqlElement().getName();
+                if (name != null && !name.equals(""))
 				{
-					elementsByJavaName.put(StringUtils.FormatStringToClassName(xe.getSqlElement().getName()).toLowerCase(),xe);
+					elementsByJavaName.put(StringUtils.FormatStringToClassName(name).toLowerCase(),xe);
 					addedJavaName = true;
 				}
 			}
@@ -501,7 +441,8 @@ public class XFTSchema {
 			{
 				if (xe.getWebAppElement() != null)
 				{
-					if (xe.getWebAppElement().getJavaName() != "")
+                    final String javaName = xe.getWebAppElement().getJavaName();
+                    if (javaName != null && !javaName.equals(""))
 					{
 						elementsBySQLName.put(xe.getWebAppElement().getJavaName().toLowerCase(),xe);
 						addedSQLName = true;
@@ -518,7 +459,7 @@ public class XFTSchema {
 	}
 	
 	/**
-	 * @return
+	 * @return Elements arranged by code.
 	 */
 	protected Hashtable getElementsByCode() {
 		return elementsByCode;
@@ -550,15 +491,14 @@ public class XFTSchema {
 	public Node toXML(Document doc)
 	{
 		Node main = doc.createElement("schema");
-		if (getDbType() != "")
-			main.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"dbType",this.getDbType()));
+		if (getDbType() != null && !getDbType().equals("")) {
+            main.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "dbType", this.getDbType()));
+        }
 		main.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"prefix",this.getTargetNamespacePrefix()));
 		main.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"uri",this.getTargetNamespaceURI()));
-		Iterator i = this.getSortedElements().iterator();
-		while (i.hasNext())
-		{
-			main.appendChild(((XFTElement)i.next()).toXML(doc));
-		}
+        for (final Object o : this.getSortedElements()) {
+            main.appendChild(((XFTElement) o).toXML(doc));
+        }
 		return main;
 	}
 	
@@ -575,22 +515,22 @@ public class XFTSchema {
 
 	
 	/**
-	 * @return
+	 * @return The schema.
 	 */
 	public XFTWebAppSchema getWebAppSchema() {
 		return webAppSchema;
 	}
 
 	/**
-	 * @param schema
+	 * @param schema The schema.
 	 */
 	public void setWebAppSchema(XFTWebAppSchema schema) {
 		webAppSchema = schema;
 	}
 
 	/**
-	 * @param xef
-	 * @return
+	 * @param xef The factory.
+	 * @return The elements.
 	 */
 	protected ArrayList getWrappedElementsByName(XFTFactoryI xef)
 	{
@@ -598,8 +538,8 @@ public class XFTSchema {
 	}
 	
 	/**
-	 * @param xef
-	 * @return
+	 * @param xef The factory.
+	 * @return The elements.
 	 */
 	protected ArrayList getWrappedElementsByCode(XFTFactoryI xef)
 	{
@@ -607,9 +547,9 @@ public class XFTSchema {
 	}
 	
 	/**
-	 * @param xef
-	 * @param type
-	 * @return
+	 * @param xef     The factory.
+	 * @param type    The type to retrieve.
+	 * @return The elements.
 	 */
 	protected XFTElementWrapper getWrappedElementByCode(XFTFactoryI xef,String type)
 	{
@@ -618,9 +558,9 @@ public class XFTSchema {
 	}
 	
 	/**
-	 * @param xef
-	 * @param name
-	 * @return
+	 * @param xef     The factory.
+	 * @param name    The name.
+	 * @return The element.
 	 */
 	protected XFTElementWrapper getWrappedElementByName(XFTFactoryI xef,String name)
 	{
@@ -629,9 +569,9 @@ public class XFTSchema {
 	}
 	
 	/**
-	 * @param xef
-	 * @param name
-	 * @return
+	 * @param xef     The factory.
+	 * @param name    The name.
+	 * @return The element.
 	 */
 	protected XFTElementWrapper getWrappedElementBySQLName(XFTFactoryI xef,String name)
 	{
@@ -640,9 +580,9 @@ public class XFTSchema {
 	}
 
 	/**
-	 * @param xef
-	 * @param o
-	 * @return
+	 * @param xef    The factory.
+	 * @param o      The object.
+	 * @return The element.
 	 */
 	protected XFTElementWrapper getWrappedElementByObject(XFTFactoryI xef,Object o)
 	{
@@ -652,9 +592,9 @@ public class XFTSchema {
 	}
 
 	/**
-	 * @param xef
-	 * @param name
-	 * @return
+	 * @param xef     The factory.
+	 * @param name    The name.
+	 * @return The element.
 	 */
 	protected XFTElementWrapper getWrappedElementByJavaName(XFTFactoryI xef,String name)
 	{
@@ -689,7 +629,7 @@ public class XFTSchema {
 	}
 
 	/**
-	 * @param xef
+	 * @param xef    The factory.
 	 * @return ArrayList of XFTElementWrappers
 	 */
 	public ArrayList getWrappedElementsSorted(XFTFactoryI xef)
@@ -701,7 +641,7 @@ public class XFTSchema {
 	}
 	
 	/**
-	 * @return
+	 * @return The elements.
 	 */
 	protected Hashtable getElementsByJavaName() {
 		return elementsByJavaName;
@@ -728,7 +668,7 @@ public class XFTSchema {
 //	}
 
 	/**
-	 * @return
+	 * @return The elements.
 	 */
 	protected Hashtable getElementsBySQLName() {
 		return elementsBySQLName;
@@ -747,15 +687,13 @@ public class XFTSchema {
 				sb.append(((XFTDataModel)XFTManager.GetDataModels().get(enumer.nextElement())).getSchema().toString());
 			}
 			FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir() + "schema.txt");
-		} catch (org.nrg.xft.exception.XFTInitException e) {
-			logger.error("",e);
 		} catch (Exception e) {
 			logger.error("",e);
 		}
 	}
 
 	/**
-	 * @return
+	 * @return The XML namespace.
 	 */
 	public String getXMLNS() {
 		return xmlns;
@@ -763,77 +701,67 @@ public class XFTSchema {
 	
 
 	/**
-	 * @param string
+	 * @param string    The namespace to set.
 	 */
 	public void setXMLNS(String string) {
 		xmlns = string;
 	}
 
 	/**
-	 * @return
+	 * @return The data model.
 	 */
 	public XFTDataModel getDataModel() {
 		return dataModel;
 	}
 
 	/**
-	 * @param string
+	 * @param data    The data model to set.
 	 */
 	public void setDataModel(XFTDataModel data) {
 		dataModel = data;
 	}
 
 	/**
-	 * @return
+	 * @return The target namespace prefix.
 	 */
 	public String getTargetNamespacePrefix() {
 		return targetPrefix;
 	}
 
 	/**
-	 * @return
+	 * @return The target namespace URI.
 	 */
 	public String getTargetNamespaceURI() {
 		return targetNamespaceURI;
 	}
 	
 	/**
-	 * @param prefix
-	 * @return
+	 * @param prefix    The prefix to search for.
+	 * @return The URI for the indicated prefix.
 	 */
 	public String getURIForPrefix(String prefix)
 	{
-		return (String)this.abbrToURI.get(prefix);
+		return this.abbrToURI.get(prefix);
 	}
 	
 	/**
-	 * @param prefix
-	 * @return
+	 * @param uri    The URI to retrieve.
+	 * @return The prefix for the URI.
 	 */
-	public String getPrefixForURI(String uri)
+	@SuppressWarnings("unused")
+    public String getPrefixForURI(String uri)
 	{
-		return (String)this.uRIToAbbr.get(uri);
+		return this.uRIToAbbr.get(uri);
 	}
-	
-	
+
 	/**
 	 * Gets an XMLType with this schema's XMLNS prefix and the specified type.
-	 * @param type
-	 * @return
+	 * @param type    The type to retrieve.
+	 * @return The requested {@link XMLType type}.
 	 */
 	public XMLType getBasicDataType(String type)
 	{
 		return new XMLType(this.getXMLNS() + ":" + type,this);
-	}
-	
-	public String getJavaPackageName()
-	{
-	    String packageName = this.getDataModel().getPackageName();
-	    if (packageName == null || packageName.equals(""))
-	    {
-	        packageName = "org.nrg." + this.targetPrefix.toLowerCase() + ".om";
-	    }
-	    return packageName;
 	}
 }
 

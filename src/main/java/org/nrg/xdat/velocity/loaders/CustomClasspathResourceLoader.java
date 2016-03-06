@@ -26,19 +26,20 @@ import java.net.URL;
 import java.util.*;
 
 /**
- * @author Tim Olsen <tim@deck5consulting.com>
- *         <p/>
- *         This custom implementation of the Velocity ResourceLoader will manage the loading of VM files from the file system OR the classpath.
- *         <p/>
- *         This allows VMs to be loaded from within JAR files but is still backwards compatible with the old file system structure.  Also, the loading enforces
- *         the templates/xnat-templates/xdat-templates/base-templates hierarchy.
+ * @author Tim Olsen &lt;tim@deck5consulting.com&gt;
+ * This custom implementation of the Velocity ResourceLoader will manage the loading of VM files from the file system
+ * OR the classpath. This allows VMs to be loaded from within JAR files but is still backwards compatible with the old
+ * file system structure.  Also, the loading enforces the templates/xnat-templates/xdat-templates/base-templates
+ * hierarchy.
  */
-// MIGRATE: This will probably fail because it's not properly loading the resources from the web app.
 public class CustomClasspathResourceLoader extends ResourceLoader {
     private static final Logger logger = LoggerFactory.getLogger(CustomClasspathResourceLoader.class);
 
     public static final String META_INF_RESOURCES = "META-INF/resources/";
 
+    /**
+     * {@inheritDoc}
+     */
     @SuppressWarnings("unchecked")
     @Override
     public void init(ExtendedProperties arg0) {
@@ -50,10 +51,8 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
     private static final List<String> paths = Arrays.asList("templates", "module-templates", "xnat-templates", "xdat-templates", "base-templates");
     private static Map<String, String> templatePaths = Collections.synchronizedMap(new HashMap<String, String>());
 
-    /* (non-Javadoc)
-     * @see org.apache.velocity.runtime.resource.loader.ResourceLoader#getResourceStream(java.lang.String)
-     *
-     * Expected paths are like:
+    /**
+     * {@inheritDoc}
      */
     @Override
     public InputStream getResourceStream(String name) throws ResourceNotFoundException {
@@ -124,11 +123,11 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
             if (result != null) {
                 return result;
             }
-        } catch (Exception fnfe) {
+        } catch (Exception e) {
             /*
              *  log and convert to a general Velocity ResourceNotFoundException
              */
-            throw new ResourceNotFoundException(fnfe.getMessage());
+            throw new ResourceNotFoundException(e.getMessage());
         }
 
         throw new ResourceNotFoundException(String.format("CustomClasspathResourceLoader: cannot find resource %s", name));
@@ -136,7 +135,7 @@ public class CustomClasspathResourceLoader extends ResourceLoader {
 
     /**
      * Looks for matching resource at the give possible path.  If its found, it caches the path and returns an InputStream.
-     * <p/>
+     *
      * Returns null if no match is found.
      *
      * @param name     The name of the resource to find.

@@ -7,12 +7,13 @@ import java.io.IOException;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.turbine.modules.screens.RawScreen;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 
 
-public abstract class PdfScreen extends
-SecureReport
+@SuppressWarnings("unused")
+public abstract class PdfScreen extends SecureReport
 {
    /**
     * Set the content type to Pdf. (see RawScreen)
@@ -23,24 +24,20 @@ SecureReport
     public String getContentType(RunData data)
     {
         return "application/pdf";
-    };
+    }
 
     /**
     * Classes that implement this ADT must override this to build the pdf file.
     *
     * @param data RunData
-    * @return ByteArrayOutputStream
-    * @exception Exception, any old exception.
+    * @return ByteArrayOutputStream* @exception Exception When something goes wrong.
     */
-    protected abstract ByteArrayOutputStream buildPdf (RunData data) throws
-Exception;
+    protected abstract ByteArrayOutputStream buildPdf (RunData data) throws Exception;
 
     /**
-    * Overrides & finalizes doOutput in RawScreen to serve the output stream
-created in buildPDF.
+    * Overrides and finalizes {@link RawScreen#doOutput(RunData)}to serve the output stream created in buildPDF.
     *
     * @param data RunData
-    * @exception Exception, any old generic exception.
     */
     public final void finalProcessing(RunData data, Context context)
     {

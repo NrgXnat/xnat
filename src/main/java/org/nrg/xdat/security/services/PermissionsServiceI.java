@@ -31,7 +31,7 @@ public interface PermissionsServiceI {
      * @param user        The user for which to retrieve permissions.
      * @param rootElement The root element on which you want to retrieve permissions for the indicated user.
      * @return The {@link CriteriaCollection collection of criteria} for the user on the indicated root element.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement rootElement) throws Exception;
 
@@ -41,72 +41,72 @@ public interface PermissionsServiceI {
      * @param user        The user for which to retrieve permissions.
      * @param rootElement The root element on which you want to retrieve permissions for the indicated user.
      * @return The {@link CriteriaCollection collection of criteria} for the user on the indicated root element.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     CriteriaCollection getCriteriaForXFTRead(UserI user, SchemaElementI rootElement) throws Exception;
 
     /**
      * Can the user create an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canCreate(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user        The user for which to retrieve permissions.
      * @param rootElement The root element on which you want to retrieve permissions for the indicated user.
      * @param values      The security values for the current context.
      * @return True if the user can create the element, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canCreate(UserI user, SchemaElementI rootElement, SecurityValues values) throws Exception;
 
     /**
      * Can the user read an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canRead(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user        The user for which to retrieve permissions.
      * @param rootElement The root element on which you want to retrieve permissions for the indicated user.
      * @param values      The security values for the current context.
      * @return True if the user can read the element, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canRead(UserI user, SchemaElementI rootElement, SecurityValues values) throws Exception;
 
     /**
      * Can the user edit an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canEdit(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user        The user for which to retrieve permissions.
      * @param rootElement The root element on which you want to retrieve permissions for the indicated user.
      * @param values      The security values for the current context.
      * @return True if the user can edit the element, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canEdit(UserI user, SchemaElementI rootElement, SecurityValues values) throws Exception;
 
     /**
      * Can the user activate an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canActivate(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user        The user for which to retrieve permissions.
      * @param rootElement The root element on which you want to retrieve permissions for the indicated user.
      * @param values      The security values for the current context.
      * @return True if the user can activate the element, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canActivate(UserI user, SchemaElementI rootElement, SecurityValues values) throws Exception;
 
     /**
      * Can the user delete an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canDelete(user, String, Object) for each row in the SecurityValues object.
      *
      * @param user        The user for which to retrieve permissions.
      * @param rootElement The root element on which you want to retrieve permissions for the indicated user.
      * @param values      The security values for the current context.
      * @return True if the user can delete the element, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canDelete(UserI user, SchemaElementI rootElement, SecurityValues values) throws Exception;
 
@@ -116,7 +116,7 @@ public interface PermissionsServiceI {
      * @param user The user for which to retrieve permissions.
      * @param item The item on which you want to retrieve permissions for the indicated user.
      * @return True if the user can read the item, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canRead(UserI user, ItemI item) throws Exception;
 
@@ -126,7 +126,7 @@ public interface PermissionsServiceI {
      * @param user The user for which to retrieve permissions.
      * @param item The item on which you want to retrieve permissions for the indicated user.
      * @return True if the user can edit the item, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canEdit(UserI user, ItemI item) throws Exception;
 
@@ -136,7 +136,7 @@ public interface PermissionsServiceI {
      * @param user The user for which to retrieve permissions.
      * @param item The item on which you want to retrieve permissions for the indicated user.
      * @return True if the user can create the item, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canCreate(UserI user, ItemI item) throws Exception;
 
@@ -146,7 +146,7 @@ public interface PermissionsServiceI {
      * @param user The user for which to retrieve permissions.
      * @param item The item on which you want to retrieve permissions for the indicated user.
      * @return True if the user can activate the item, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canActivate(UserI user, ItemI item) throws Exception;
 
@@ -156,8 +156,7 @@ public interface PermissionsServiceI {
      * @param user The user for which to retrieve permissions.
      * @param item The item on which you want to retrieve permissions for the indicated user.
      * @return True if the user can delete the item, false otherwise.
-     * @throws InvalidItemException
-     * @throws Exception
+     * @throws Exception When something goes wrong.
      */
     boolean canDelete(UserI user, ItemI item) throws Exception;
 
@@ -190,7 +189,7 @@ public interface PermissionsServiceI {
      * @param value   The value.
      * @param action  The action.
      * @return True if the user can perform the specified action for the XML path and value, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean can(UserI user, String xmlPath, Object value, String action) throws Exception;
 
@@ -201,8 +200,7 @@ public interface PermissionsServiceI {
      * @param item   The item on which you want to retrieve permissions for the indicated user.
      * @param action The action.
      * @return True if the user can perform the specified action for the item, false otherwise.
-     * @throws InvalidItemException
-     * @throws Exception
+     * @throws Exception When something goes wrong.
      */
     boolean can(UserI user, ItemI item, String action) throws Exception;
 
@@ -213,7 +211,7 @@ public interface PermissionsServiceI {
      * @param xmlPath The XML path.
      * @param value   The value.
      * @return True if the user can perform the specified action for the XML path and value, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canRead(UserI user, String xmlPath, Object value) throws Exception;
 
@@ -224,7 +222,7 @@ public interface PermissionsServiceI {
      * @param xmlPath The XML path.
      * @param value   The value.
      * @return True if the user can edit for the XML path and value, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canEdit(UserI user, String xmlPath, Object value) throws Exception;
 
@@ -235,7 +233,7 @@ public interface PermissionsServiceI {
      * @param xmlPath The XML path.
      * @param value   The value.
      * @return True if the user can create for the XML path and value, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canCreate(UserI user, String xmlPath, Object value) throws Exception;
 
@@ -246,7 +244,7 @@ public interface PermissionsServiceI {
      * @param xmlPath The XML path.
      * @param value   The value.
      * @return True if the user can activate for the XML path and value, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canActivate(UserI user, String xmlPath, Object value) throws Exception;
 
@@ -257,7 +255,7 @@ public interface PermissionsServiceI {
      * @param xmlPath The XML path.
      * @param value   The value.
      * @return True if the user can delete for the XML path and value, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean canDelete(UserI user, String xmlPath, Object value) throws Exception;
 
@@ -268,8 +266,7 @@ public interface PermissionsServiceI {
      * @param item    The item on which you want to retrieve permissions for the indicated user.
      * @param descend Whether the create/update should affect descendants.
      * @return True if the user can perform the specified action for the item, false otherwise.
-     * @throws InvalidItemException
-     * @throws Exception
+     * @throws Exception When something goes wrong.
      */
     String canStoreItem(UserI user, ItemI item, boolean descend) throws Exception;
 
@@ -279,8 +276,8 @@ public interface PermissionsServiceI {
      * @param user The user for which to retrieve permissions.
      * @param item The item on which you want to retrieve permissions for the indicated user.
      * @return The secured item.
-     * @throws IllegalAccessException
-     * @throws MetaDataException
+     * @throws IllegalAccessException When the user can't access the item.
+     * @throws MetaDataException When there's an error in the item metadata.
      */
     ItemI secureItem(UserI user, ItemI item) throws IllegalAccessException, MetaDataException;
 
@@ -332,7 +329,7 @@ public interface PermissionsServiceI {
      * @param authenticatedUser The authenticated user.
      * @param ci                Associated event metadata.
      * @return True if the accessibility was set for entity, false otherwise.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     boolean setDefaultAccessibility(String tag, String accessibility, boolean forceInit, final UserI authenticatedUser, EventMetaI ci) throws Exception;
 
@@ -362,7 +359,7 @@ public interface PermissionsServiceI {
      * @param criteria          The permission criteria.
      * @param meta              The event meta.
      * @param authenticatedUser The authenticated user.
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
     void setPermissionsForGroup(UserGroupI group, List<PermissionCriteriaI> criteria, EventMetaI meta, UserI authenticatedUser) throws Exception;
 

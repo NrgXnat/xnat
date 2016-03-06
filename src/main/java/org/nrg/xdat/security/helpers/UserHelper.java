@@ -14,11 +14,10 @@ import java.util.List;
 
 public class UserHelper {
     /**
-     * Returns the currently configured permissions service
-     * <p/>
-     * You can customize the implementation returned by adding a new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured package).
-     * <p/>
-     * You can change the default implementation returned via the security.userManagementService.default configuration parameter
+     * Returns the currently configured permissions service. You can customize the implementation returned by adding a
+     * new implementation to the org.nrg.xdat.security.user.custom package (or a differently configured package). You
+     * can change the default implementation returned via the security.userManagementService.default configuration
+     * parameter.
      *
      * @return An instance of the {@link SearchHelperServiceI search helper service}.
      */

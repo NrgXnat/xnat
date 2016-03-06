@@ -150,6 +150,7 @@ public class DisplayField implements Identifier, SequentialObject {
      *
      * @param organizer The query organizer from which to build the SQL content.
      * @return The SQL content of the display field based on the query organizer.
+     * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
      */
     public String getSQLContent(QueryOrganizerI organizer) throws FieldNotFoundException {
         String content = getSqlContent();

@@ -44,13 +44,13 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 /**
  * @author Tim
- *
  */
 public abstract class SecureScreen extends VelocitySecureScreen {
 	public final static Logger logger = LoggerFactory.getLogger(SecureScreen.class);
     private static Pattern _pattern = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
     List<String> _whitelistedIPs;
 
+    @SuppressWarnings("unused")
     public String getReason(RunData data){
     	return (String)TurbineUtils.GetPassedParameter(EventUtils.EVENT_REASON, data);
     }
@@ -96,11 +96,11 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     }
 
 	/**
-     * This method overrides the method in VelocitySecureScreen to
-     * perform a security check first and store the popup status in the context.
+     * This method overrides the method in {@link VelocitySecureScreen#doBuildTemplate(RunData)} to perform a security
+     * check first and store the popup status in the context.
      *
      * @param data Turbine information.
-     * @throws Exception, a generic exception.
+     * @throws Exception When something goes wrong.
      */
 	protected void doBuildTemplate(RunData data)
             throws Exception {
@@ -117,8 +117,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
                 
                 if(sessionRegistry != null){
-                    List<String> uniqueIPs = new ArrayList<String>();
-                    List<String> sessionIds = new ArrayList<String>();
+                    List<String> uniqueIPs = new ArrayList<>();
+                    List<String> sessionIds = new ArrayList<>();
                     for (SessionInformation session : sessionRegistry.getAllSessions(TurbineUtils.getUser(data), false)) {
                         sessionIds.add(session.getSessionId());
                     }
@@ -176,11 +176,11 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 }
             }
             
-        } catch (RuntimeException e) {
-            logger.error("",e);
-            data.setScreenTemplate("Error.vm");
         } catch (ConfigServiceException e) {
             logger.error("An error occurred accessing the configuration service", e);
+            data.setScreenTemplate("Error.vm");
+        } catch (RuntimeException e) {
+            logger.error("",e);
             data.setScreenTemplate("Error.vm");
         }
 	}
@@ -199,7 +199,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 	 *
 	 * @param data Turbine information.
 	 * @return True if the user is authorized to access the screen.
-     * @throws Exception, a generic exception.
+     * @throws Exception When something goes wrong.
 	 */
     protected boolean isAuthorized(RunData data) throws Exception {
         if (XFT.GetRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
@@ -301,10 +301,12 @@ public abstract class SecureScreen extends VelocitySecureScreen {
         return true;
     }
 
+    @SuppressWarnings("unused")
     protected void setDefaultTabs(String... defaultTabs) {
         _defaultTabs = Arrays.asList(defaultTabs);
     }
 
+    @SuppressWarnings("unused")
     protected void cacheTabs(Context context, String subfolder) throws FileNotFoundException {
         List<Properties> tabs = findTabs(subfolder);
         if (tabs != null && tabs.size() > 0) {
@@ -313,7 +315,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     }
 
     protected List<Properties> findTabs(String subfolder) throws FileNotFoundException {
-        List<Properties> tabs = new ArrayList<Properties>();
+        List<Properties> tabs = new ArrayList<>();
         File tabsFolder = XDAT.getScreenTemplatesSubfolder(subfolder);
         if (tabsFolder!=null && tabsFolder.exists()) {
             File[] files = tabsFolder.listFiles(new FilenameFilter() {
@@ -339,8 +341,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     
     public static void addProps(File file,List<Properties> screens, List<String> _defaultScreens, final String path) throws FileNotFoundException{
         if(file.exists()){
-        	InputStream stm=null;;
-        	try {
+        	InputStream stm=null;
+            try {
 				stm=FileUtils.openInputStream(file);
 				addProps(file.getName(),stm,screens,_defaultScreens,path);
 			} catch (IOException e) {
@@ -374,13 +376,12 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             boolean include = true;
 
             if(file!=null){
-                Scanner scanner = new Scanner(file);
-                try {
+                try (final Scanner scanner = new Scanner(file)) {
                     while (scanner.hasNextLine()) {
-                        String line = scanner.nextLine();
+                        String  line    = scanner.nextLine();
                         Matcher matcher = _pattern.matcher(line);
                         if (matcher.matches()) {
-                            String key = matcher.group(1);
+                            String key   = matcher.group(1);
                             String value = matcher.group(2);
                             if (key.equalsIgnoreCase("ignore") && value.equalsIgnoreCase("true")) {
                                 if (logger.isDebugEnabled()) {
@@ -395,9 +396,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                             }
                         }
                     }
-                } finally {
-                        scanner.close();
-                    }
+                }
 
                 if (include) {
                 	screens.add(metadata);

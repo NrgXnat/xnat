@@ -8,9 +8,8 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.om;
+
 import org.nrg.xft.ItemI;
 
 /**
@@ -19,61 +18,75 @@ import org.nrg.xft.ItemI;
  */
 public interface XdatUserLoginI {
 
-	public String getSchemaElementName();
+	/**
+	 * Gets the schema element name.
+	 * @return The schema element name
+     */
+	String getSchemaElementName();
 
 	/**
 	 * @return Returns the login_date.
 	 */
-	public Object getLoginDate();
+    @SuppressWarnings("unused")
+    Object getLoginDate();
 
 	/**
 	 * Sets the value for login_date.
 	 * @param v Value to Set.
 	 */
-	public void setLoginDate(Object v);
+    @SuppressWarnings("unused")
+    void setLoginDate(Object v);
 
 	/**
 	 * @return Returns the ip_address.
 	 */
-	public String getIpAddress();
+    @SuppressWarnings("unused")
+    String getIpAddress();
 
 	/**
 	 * Sets the value for ip_address.
 	 * @param v Value to Set.
 	 */
-	public void setIpAddress(String v);
+    @SuppressWarnings("unused")
+    void setIpAddress(String v);
 
 	/**
 	 * user
-	 * @return org.nrg.xdat.om.XdatUserI
+	 * @return XdatUserI
 	 */
-	public org.nrg.xdat.om.XdatUserI getuserProperty();
+	XdatUserI getuserProperty();
 
 	/**
 	 * Sets the value for user.
 	 * @param v Value to Set.
+     * @throws Exception When an error occurs.
 	 */
-	public void setuserProperty(ItemI v) throws Exception;
+    @SuppressWarnings("unused")
+    void setuserProperty(ItemI v) throws Exception;
 
 	/**
 	 * @return Returns the xdat:user_login/user_xdat_user_id.
 	 */
-	public Integer getuserPropertyFK();
+    @SuppressWarnings("unused")
+    Integer getuserPropertyFK();
 
 	/**
 	 * Sets the value for xdat:user_login/user_xdat_user_id.
 	 * @param v Value to Set.
 	 */
-	public void setuserPropertyFK(Integer v);
+    @SuppressWarnings("unused")
+    void setuserPropertyFK(Integer v);
 
 	/**
 	 * @return Returns the xdat_user_login_id.
 	 */
-	public Integer getXdatUserLoginId();
+    @SuppressWarnings("unused")
+    Integer getXdatUserLoginId();
 
 	/**
 	 * Sets the value for xdat_user_login_id.
 	 * @param v Value to Set.
 	 */
-	public void setXdatUserLoginId(Integer v);
+    @SuppressWarnings("unused")
+    void setXdatUserLoginId(Integer v);
 }

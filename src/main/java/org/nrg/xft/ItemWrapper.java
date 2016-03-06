@@ -171,9 +171,9 @@ public abstract class ItemWrapper implements ItemI {
      *
      * @param xmlPath The XML path to the property to query.
      * @return A list of the child items.
-     * @throws XFTInitException
-     * @throws ElementNotFoundException
-     * @throws FieldNotFoundException
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
+     * @throws FieldNotFoundException When a specified field isn't found on the object.
      */
     public ArrayList getChildItems(String xmlPath) throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
         return item.getChildItems(xmlPath);
@@ -184,9 +184,9 @@ public abstract class ItemWrapper implements ItemI {
      *
      * @param xmlPath The XML path to the property to query.
      * @return A {@link ItemCollection collection} of the child items.
-     * @throws XFTInitException
-     * @throws ElementNotFoundException
-     * @throws FieldNotFoundException
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
+     * @throws FieldNotFoundException When a specified field isn't found on the object.
      */
     public ItemCollection getChildItemCollection(String xmlPath) throws Exception {
         return new ItemCollection(item.getChildItems(xmlPath));
@@ -364,6 +364,7 @@ public abstract class ItemWrapper implements ItemI {
      * Override this method to customize logic performed before this item is saved.
      * WARNING: Data may not exist in the database yet.
      * WARNING: This may not be a complete copy of the data which is contained in the database.
+     * @throws Exception When an error occurs.
      */
     public void preSave() throws Exception {
 
@@ -372,6 +373,7 @@ public abstract class ItemWrapper implements ItemI {
     /**
      * Override this method to customize logic performed after this item is saved.
      * WARNING: This may not be a complete copy of the data which is contained in the database.
+     * @throws Exception When an error occurs.
      */
     public void postSave() throws Exception {
 
@@ -449,8 +451,8 @@ public abstract class ItemWrapper implements ItemI {
      *
      * @param xmlPath The XML path to the property to query.
      * @return The value of the indicated property.
-     * @throws FieldNotFoundException
-     * @throws ElementNotFoundException
+     * @throws FieldNotFoundException When a specified field isn't found on the object.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
      */
     public Integer getIntegerProperty(String xmlPath) throws FieldNotFoundException, ElementNotFoundException {
         Object o;
@@ -474,8 +476,8 @@ public abstract class ItemWrapper implements ItemI {
      * @param xmlPath The XML path to the property to query.
      * @return The value of the indicated property as a float if found. Otherwise a {@link FieldNotFoundException} is
      * thrown.
-     * @throws FieldNotFoundException
-     * @throws ElementNotFoundException
+     * @throws FieldNotFoundException When a specified field isn't found on the object.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
      */
     @SuppressWarnings("unused")
     public Float getFloatProperty(String xmlPath) throws FieldNotFoundException, ElementNotFoundException {
@@ -504,8 +506,8 @@ public abstract class ItemWrapper implements ItemI {
      *
      * @param xmlPath The XML path to the property to query.
      * @return The value of the indicated property.
-     * @throws FieldNotFoundException
-     * @throws ElementNotFoundException
+     * @throws FieldNotFoundException When a specified field isn't found on the object.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
      */
     public Double getDoubleProperty(String xmlPath) throws FieldNotFoundException, ElementNotFoundException {
         Object o;
@@ -554,9 +556,9 @@ public abstract class ItemWrapper implements ItemI {
      * @param id   The name of the property.
      * @param find The object to test against.
      * @return True if the object has the indicated property matching the find object, false otherwise.
-     * @throws XFTInitException
-     * @throws ElementNotFoundException
-     * @throws FieldNotFoundException
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
+     * @throws FieldNotFoundException When a specified field isn't found on the object.
      */
     public boolean hasProperty(String id, Object find) throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
         return this.getItem().hasProperty(id, find);
@@ -566,7 +568,7 @@ public abstract class ItemWrapper implements ItemI {
      * Gets a fully joined XML representation of this object.
      *
      * @return The XML representation of this object as a Document object.
-     * @throws Exception
+     * @throws Exception When an error occurs.
      */
     public Document toJoinedXML() throws Exception {
         return getItem().toJoinedXML();
@@ -610,9 +612,9 @@ public abstract class ItemWrapper implements ItemI {
      *
      * @param name The name of the property.
      * @return The value set for the property or null if no value is set.
-     * @throws XFTInitException
-     * @throws ElementNotFoundException
-     * @throws FieldNotFoundException
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
+     * @throws FieldNotFoundException When a specified field isn't found on the object.
      */
     public Date getDateProperty(String name) throws XFTInitException, ElementNotFoundException, FieldNotFoundException, ParseException {
         return this.getItem().getDateProperty(name);

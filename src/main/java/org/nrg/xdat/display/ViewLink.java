@@ -1,51 +1,55 @@
 /*
  * org.nrg.xdat.display.ViewLink
  * XNAT http://www.xnat.org
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * Released under the Simplified BSD.
- *
- * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xdat.display;
 
 /**
  * @author Tim
- *
  */
 public class ViewLink {
-	private Mapping mapping = null;
-	private String alias = "";
-	/**
-	 * @return
-	 */
-	public Mapping getMapping() {
-		return mapping;
-	}
+    private Mapping mapping = null;
+    private String  alias   = "";
 
-	/**
-	 * @param mapping
-	 */
-	public void setMapping(Mapping mapping) {
-		this.mapping = mapping;
-	}
+    /**
+     * Gets the view link mapping.
+     *
+     * @return The view link mapping.
+     */
+    public Mapping getMapping() {
+        return mapping;
+    }
 
-	/**
-	 * @return
-	 */
-	public String getAlias() {
-		return alias;
-	}
+    /**
+     * Sets the view link mapping.
+     *
+     * @param mapping The mapping to set.
+     */
+    public void setMapping(final Mapping mapping) {
+        this.mapping = mapping;
+    }
 
-	/**
-	 * @param string
-	 */
-	public void setAlias(String string) {
-		alias = string;
-	}
+    /**
+     * Gets the view link alias.
+     *
+     * @return The view link alias.
+     */
+    public String getAlias() {
+        return alias;
+    }
+
+    /**
+     * Sets the view link alias.
+     *
+     * @param alias The view link alias to set.
+     */
+    public void setAlias(final String alias) {
+        this.alias = alias;
+    }
 
 }
 

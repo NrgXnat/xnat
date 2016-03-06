@@ -8,8 +8,6 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xft.search;
 
 import java.util.ArrayList;
@@ -121,8 +119,8 @@ public class QueryOrganizer implements QueryOrganizerI{
     }
 
     /**
-     * @param xmlPath
-     * @throws ElementNotFoundException
+     * @param xmlPath    The XML path to add.
+     * @throws ElementNotFoundException If the indicated element isn't found.
      */
     public void addField(String xmlPath) throws ElementNotFoundException
     {
@@ -146,6 +144,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         }else{
             SchemaElementI foreign = StringUtils.GetRootElement(xmlPath);
 
+            assert foreign != null;
             ArrayList al = (ArrayList)externalFields.get(foreign.getFullXMLName());
 
             if (al == null)
@@ -174,9 +173,9 @@ public class QueryOrganizer implements QueryOrganizerI{
     }
 
     /**
-     * @param elementName
-     * @return
-     * @throws ElementNotFoundException
+     * @param elementName    The element name to retrieve.
+     * @return The indicated filter field.
+     * @throws ElementNotFoundException If the indicated element isn't found.
      */
     public String getFilterField(String elementName) throws ElementNotFoundException
     {
@@ -189,40 +188,40 @@ public class QueryOrganizer implements QueryOrganizerI{
     }
 
     /**
-     * @param xmlPath
-     * @return
+     * @param xmlPath    The XML path to retrieve SQL for.
+     * @return The SQL for the requested XML path.
+     * @throws FieldNotFoundException If the field indicated by xmlPath isn't found.
      */
-    public String getTableAndFieldSQL(String xmlPath) throws FieldNotFoundException
-    {
-            String[] layers = GenericWrapperElement.TranslateXMLPathToTables(xmlPath);
-            String s = layers[1];
-            String tableName = s.substring(s.lastIndexOf(".")+1);
-            if (tableAliases.get(tableName)!=null)
-            {
-                tableName = (String)tableAliases.get(tableName);
-            }else
-            {
-                String tableNamePath = layers[0];
-                if (tables.get(tableNamePath) != null)
-                {
-                    tableName = (String)tables.get(tableNamePath);
-                }
+    public String getTableAndFieldSQL(String xmlPath) throws FieldNotFoundException {
+        String[] layers = GenericWrapperElement.TranslateXMLPathToTables(xmlPath);
+        assert layers != null;
+        String s         = layers[1];
+        String tableName = s.substring(s.lastIndexOf(".") + 1);
+        if (tableAliases.get(tableName) != null) {
+            tableName = (String) tableAliases.get(tableName);
+        } else {
+            String tableNamePath = layers[0];
+            if (tables.get(tableNamePath) != null) {
+                tableName = (String) tables.get(tableNamePath);
             }
+        }
 
-            return tableName+ "." + layers[2];
+        return tableName + "." + layers[2];
     }
 
     /**
-     * @param tableAlias
-     * @param xmlPath
-     * @return
+     * @param tableAlias    The alias for the table.
+     * @param xmlPath       The XML path to retrieve SQL for.
+     * @return The SQL for the requested XML path.
+     * @throws FieldNotFoundException If the field indicated by xmlPath isn't found.
      */
     public static String GetTableAndFieldSQL(String tableAlias, String xmlPath) throws FieldNotFoundException
     {
         String[] layers = GenericWrapperElement.TranslateXMLPathToTables(xmlPath);
 	    
-        String tableName = null;
-        if (layers[1].indexOf(".")!=-1){
+        String tableName;
+        assert layers != null;
+        if (layers[1].contains(".")){
             tableName= layers[1].substring(layers[1].lastIndexOf(".") + 1);
         }else{
             tableName = layers[1];
@@ -232,9 +231,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         try {
             SchemaElement se = SchemaElement.GetElement(rootElement);
             viewColumnName = ViewManager.GetViewColumnName(se.getGenericXFTElement(),xmlPath,ViewManager.ACTIVE,true,true);
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
+        } catch (XFTInitException | ElementNotFoundException e) {
             logger.error("",e);
         }
         return tableAlias + "." + StringUtils.CreateAlias(tableName,viewColumnName);
@@ -243,7 +240,8 @@ public class QueryOrganizer implements QueryOrganizerI{
     /**
      * Builds query which gets all necessary fields from the db for the generation of the Display Fields
      * (Secured).
-     * @return
+     * @return The join query.
+     * @throws Exception When an error occurs.
      */
     public String buildJoin() throws Exception
     {
@@ -274,10 +272,8 @@ public class QueryOrganizer implements QueryOrganizerI{
             
             QueryOrganizer qo = new QueryOrganizer(foreign,null,ViewManager.ALL);
 
-            Iterator eFieldIter = al.iterator();
-            while(eFieldIter.hasNext())
-            {
-                String eXmlPath = (String)eFieldIter.next();
+            for (final Object anAl : al) {
+                String eXmlPath = (String) anAl;
                 qo.addField(eXmlPath);
             }
             
@@ -288,12 +284,10 @@ public class QueryOrganizer implements QueryOrganizerI{
 				{
 				    joins.append(getArcJoin(arcDefine,qo,foreign));
                     tables.put(k,foreign.getSQLName());
-                    
-                    eFieldIter = al.iterator();
-                    while(eFieldIter.hasNext())
-                    {
-                        String eXmlPath = (String)eFieldIter.next();
-                        this.externalFieldAliases.put(eXmlPath.toLowerCase(),qo.translateXMLPath(eXmlPath,foreign.getSQLName()));
+
+                    for (final Object anAl : al) {
+                        String eXmlPath = (String) anAl;
+                        this.externalFieldAliases.put(eXmlPath.toLowerCase(), qo.translateXMLPath(eXmlPath, foreign.getSQLName()));
                     }
                     continue;
 				}
@@ -307,8 +301,8 @@ public class QueryOrganizer implements QueryOrganizerI{
                     String xmlPath = connection[1];
 
                     logger.info("JOINING: " + localSyntax + " to " + xmlPath);
-                    SchemaFieldI gwf = null;
-                    SchemaElementI extension=null;
+                    SchemaFieldI gwf;
+                    SchemaElementI extension;
                     if (localSyntax.indexOf(XFT.PATH_SEPERATOR)==-1)
                     {
                         extension = rootElement;
@@ -326,8 +320,8 @@ public class QueryOrganizer implements QueryOrganizerI{
 
 
                         //BUILD CONNECTION FROM FOREIGN TO EXTENSION
-                        String query = qo.buildQuery();
-            			StringBuffer sb = new StringBuffer();
+                        String        query = qo.buildQuery();
+            			StringBuilder sb    = new StringBuilder();
             			sb.append(" LEFT JOIN (").append(query);
             			sb.append(") AS ").append(foreign.getSQLName()).append(" ON ");
 
@@ -348,11 +342,9 @@ public class QueryOrganizer implements QueryOrganizerI{
                         }
             			joins.append(sb.toString());
 
-            			eFieldIter = al.iterator();
-                        while(eFieldIter.hasNext())
-                        {
-                            String eXmlPath = (String)eFieldIter.next();
-                            this.externalFieldAliases.put(eXmlPath.toLowerCase(),qo.translateXMLPath(eXmlPath,foreign.getSQLName()));
+                        for (final Object anAl : al) {
+                            String eXmlPath = (String) anAl;
+                            this.externalFieldAliases.put(eXmlPath.toLowerCase(), qo.translateXMLPath(eXmlPath, foreign.getSQLName()));
                         }
                     }else{
                         gwf = SchemaElement.GetSchemaField(localSyntax);
@@ -382,12 +374,12 @@ public class QueryOrganizer implements QueryOrganizerI{
                             mappingQO.addField(pKey.getXMLPathString(rootElement.getFullXMLName()));
                         }
 
-            			StringBuffer sb = new StringBuffer();
+            			StringBuilder sb = new StringBuilder();
 
             			//BUILD MAPPING TABLE
                         String mappingQuery = mappingQO.buildQuery();
                         sb.append(" LEFT JOIN (").append(mappingQuery);
-            			sb.append(") AS ").append("map_" + foreign.getSQLName()).append(" ON ");
+            			sb.append(") AS ").append("map_").append(foreign.getSQLName()).append(" ON ");
             			pKeys = rootElement.getAllPrimaryKeys().iterator();
             			int pkCount=0;
             			while (pKeys.hasNext())
@@ -429,11 +421,9 @@ public class QueryOrganizer implements QueryOrganizerI{
             			joins.append(sb.toString());
 
             			//SET EXTERNAL COLUMN ALIASES
-            			eFieldIter = al.iterator();
-                        while(eFieldIter.hasNext())
-                        {
-                            String eXmlPath = (String)eFieldIter.next();
-                            this.externalFieldAliases.put(eXmlPath.toLowerCase(),qo.translateXMLPath(eXmlPath,foreign.getSQLName()));
+                        for (final Object anAl : al) {
+                            String eXmlPath = (String) anAl;
+                            this.externalFieldAliases.put(eXmlPath.toLowerCase(), qo.translateXMLPath(eXmlPath, foreign.getSQLName()));
                         }
                     }
                 }else{
@@ -445,9 +435,9 @@ public class QueryOrganizer implements QueryOrganizerI{
         return joins.toString();
     }
 
-    public String buildQuery() throws IllegalAccessException,Exception
+    public String buildQuery() throws Exception
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
        // SQLClause securityClause = null;
 		if (user != null)
@@ -455,30 +445,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 		    SQLClause coll = Permissions.getCriteriaForXFTRead(user,rootElement);
 			if (coll != null)
 			{
-			    if (coll.numClauses() > 0)
-			    {
-//			        securityClause = coll;
-//			        Iterator criteriaIter = coll.getSchemaFields().iterator();
-//					while (criteriaIter.hasNext())
-//					{
-//                        Object[] o = (Object[])criteriaIter.next();
-//                        String s = (String)o[0];
-//                        SchemaFieldI f = (SchemaFieldI) o[1];
-//                        if (f==null)
-//                            f=GenericWrapperElement.GetFieldForXMLPath(s);
-//		                String fieldName = s.substring(s.lastIndexOf("/") + 1);
-//		                if (!f.getId().equalsIgnoreCase(fieldName))
-//		                {
-//		                    if (f.isReference())
-//		                    {
-//		                        GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-//		                        GenericWrapperField sf = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
-//		                        s = sf.getXMLPathString(s);
-//		                    }
-//		                }
-//					    addField(s);
-//					}
-			    }else{
+			    if (coll.numClauses() == 0) {
 			        throw new IllegalAccessException("No defined read privileges for " + rootElement.getFullXMLName());
 			    }
 			}
@@ -486,7 +453,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 
 
         String join = buildJoin();
-        fieldAliases = new Hashtable<String,String>();
+        fieldAliases = new Hashtable<>();
         sb.append("SELECT ");
         Iterator fieldIter = getAllFields().iterator();
         int counter=0;
@@ -503,8 +470,9 @@ public class QueryOrganizer implements QueryOrganizerI{
                 if (rootElement.getFullXMLName().equalsIgnoreCase(se.getFullXMLName()))
                 {
                     String[] layers = GenericWrapperElement.TranslateXMLPathToTables(s);
-                    String tableName = layers[1].substring(layers[1].lastIndexOf(".")+1);
-                    String colName = layers[2];
+                    assert layers != null;
+                    String tableName = layers[1].substring(layers[1].lastIndexOf(".") + 1);
+                    String colName   = layers[2];
 
                     String viewColName = ViewManager.GetViewColumnName(se,s,ViewManager.ACTIVE,true,true);
 
@@ -513,7 +481,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     {
                         tableName = (String)tableAliases.get(tableName);
                     }
-                    String alias = "";
+                    String alias;
                     if (viewColName==null)
                     {
                         alias = StringUtils.CreateAlias(tableName,colName);
@@ -545,8 +513,9 @@ public class QueryOrganizer implements QueryOrganizerI{
                     }
                 }else{
                     String[] layers = GenericWrapperElement.TranslateXMLPathToTables(s);
-                    String tableName = layers[1].substring(layers[1].lastIndexOf(".")+1);
-                    String colName = layers[2];
+                    assert layers != null;
+                    String tableName = layers[1].substring(layers[1].lastIndexOf(".") + 1);
+                    String colName   = layers[2];
 
                     String viewColName = ViewManager.GetViewColumnName(se,s,ViewManager.ACTIVE,true,true);
 
@@ -555,7 +524,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     {
                         tableName = (String)tableAliases.get(tableName);
                     }
-                    String alias = "";
+                    String alias;
                     if (viewColName!=null)
                     {
                         alias = StringUtils.CreateAlias(tableName,viewColName);
@@ -571,9 +540,9 @@ public class QueryOrganizer implements QueryOrganizerI{
                         selected.add(tableNameLC + "_" + colNameLC);
 	                    if (counter++==0)
 	                    {
-	                        sb.append(se.getSQLName()).append(".").append(tableName + "_" + colName).append(" AS ").append(alias);
+	                        sb.append(se.getSQLName()).append(".").append(tableName).append("_").append(colName).append(" AS ").append(alias);
 	                    }else{
-	                        sb.append(", ").append(se.getSQLName()).append(".").append(tableName + "_" + colName).append(" AS ").append(alias);
+	                        sb.append(", ").append(se.getSQLName()).append(".").append(tableName).append("_").append(colName).append(" AS ").append(alias);
 	                    }
 
 	                    fieldAliases.put(lowerCase,alias);
@@ -589,29 +558,21 @@ public class QueryOrganizer implements QueryOrganizerI{
             }
         }
 
-        Iterator eFields = this.getExternalFieldXMLPaths().iterator();
-        while (eFields.hasNext())
-        {
-            String s = (String)eFields.next();
-            String sLC=s.toLowerCase();
+        for (final Object o : this.getExternalFieldXMLPaths()) {
+            String s   = (String) o;
+            String sLC = s.toLowerCase();
 
-            String alias = (String)this.externalFieldAliases.get(sLC);
-            String localAlias=alias.substring(alias.indexOf(".")+1);
+            String alias      = (String) this.externalFieldAliases.get(sLC);
+            String localAlias = alias.substring(alias.indexOf(".") + 1);
 
             sb.append(", ").append(alias).append(" AS ").append(localAlias);
 
-            fieldAliases.put(sLC,localAlias);
+            fieldAliases.put(sLC, localAlias);
         }
 
         sb.append(join);
 
-//        if (securityClause!=null)
-//        {
-//            return "SELECT * FROM (" + sb.toString() + ") SEARCH WHERE " +securityClause.getSQLClause(this);
-//        }else{
-            String select = sb.toString();
-    		return select;
-//        }
+        return sb.toString();
     }
 
     public ArrayList getAllFields()
@@ -642,7 +603,7 @@ public class QueryOrganizer implements QueryOrganizerI{
     }
 
     protected String getRootQuery(GenericWrapperElement e,String sql_name,String level)throws IllegalAccessException{
-        QueryOrganizer securityQO = null;
+        QueryOrganizer securityQO;
         SQLClause coll = null;
 
         try {
@@ -700,22 +661,20 @@ public class QueryOrganizer implements QueryOrganizerI{
                     }
 
                     securityQO = new QueryOrganizer(rootElement,null,ViewManager.ALL);
-                    Iterator criteriaIter = coll.getSchemaFields().iterator();
-                    while (criteriaIter.hasNext())
-                    {
-                        Object[] o = (Object[])criteriaIter.next();
-                        String s = (String)o[0];
+                    for (final Object o1 : coll.getSchemaFields()) {
+                        Object[]     o = (Object[]) o1;
+                        String       s = (String) o[0];
                         SchemaFieldI f = (SchemaFieldI) o[1];
-                        if (f==null)
-                            f=GenericWrapperElement.GetFieldForXMLPath(s);
+                        if (f == null) {
+                            f = GenericWrapperElement.GetFieldForXMLPath(s);
+                        }
                         String fieldName = s.substring(s.lastIndexOf("/") + 1);
+                        assert f != null;
                         String id = f.getId();
-                        if (!id.equalsIgnoreCase(fieldName))
-                        {
-                            if (f.isReference())
-                            {
-                                GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-                                GenericWrapperField sf = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
+                        if (!id.equalsIgnoreCase(fieldName)) {
+                            if (f.isReference()) {
+                                GenericWrapperElement foreign = (GenericWrapperElement) f.getReferenceElement();
+                                GenericWrapperField   sf      = foreign.getAllPrimaryKeys().get(0);
                                 s = sf.getXMLPathString(s);
                             }
                         }
@@ -780,12 +739,6 @@ public class QueryOrganizer implements QueryOrganizerI{
         } catch (IllegalAccessException e1) {
             logger.error("",e1);
             throw e1;
-        } catch (XFTInitException e1) {
-            logger.error("",e1);
-        } catch (ElementNotFoundException e1) {
-            logger.error("",e1);
-        } catch (FieldNotFoundException e1) {
-            logger.error("",e1);
         } catch (Exception e1) {
             logger.error("",e1);
         }
@@ -798,7 +751,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 	    String tableString = layers[0];
 	    if (tables.get(tableString)==null)
 	    {
-		    if (tableString.indexOf(".")==-1)
+		    if (!tableString.contains("."))
 		    {
 		        String elementName = tableString.substring(tableString.lastIndexOf("]")+1);
 		        if (rootElement.getFullXMLName().equalsIgnoreCase(elementName))
@@ -816,11 +769,11 @@ public class QueryOrganizer implements QueryOrganizerI{
 
                     String [] layers1 = new String[4];
                     layers1[0]= subString;
-                    if (layers[1].indexOf(".")>-1)
+                    if (layers[1].contains("."))
                     {
                         layers1[1]= layers[1].substring(0,layers[1].lastIndexOf("."));
                     }
-                    if (layers[3].indexOf(".")==-1)
+                    if (!layers[3].contains("."))
                     {
                         layers1[3] = "";
                     }else{
@@ -836,9 +789,9 @@ public class QueryOrganizer implements QueryOrganizerI{
                         rootTable = (String)tableAliases.get(rootTable);
                     }
 
-                    String rootElementName = null;
+                    String rootElementName;
 
-                    if (subString.indexOf("]")==-1)
+                    if (!subString.contains("]"))
                     {
                         rootElementName = subString;
                     }else{
@@ -848,9 +801,9 @@ public class QueryOrganizer implements QueryOrganizerI{
                     GenericWrapperElement rootElement = getGenericWrapperElement(rootElementName);
 
                     String foreignFieldName=null;
-                    String foreignElementName = null;
+                    String foreignElementName;
 
-                    if (joinTable.indexOf("]")==-1)
+                    if (!joinTable.contains("]"))
                     {
                         foreignElementName = joinTable;
                     }else{
@@ -864,14 +817,14 @@ public class QueryOrganizer implements QueryOrganizerI{
                     joins.append(" ").append(join);
                     if (tableAliases.get(foreignAlias)!=null)
                     {
-                        tables.put(tableString,(String)tableAliases.get(foreignAlias));
+                        tables.put(tableString, tableAliases.get(foreignAlias));
                     }else{
                         tables.put(tableString,foreignAlias);
                     }
 		    }
 	    }else{
 	        String tableAlias = layers[1];
-	        if (tableAlias.indexOf(".")!=-1)
+	        if (tableAlias.contains("."))
 	        {
 	            tableAlias = tableAlias.substring(tableAlias.lastIndexOf(".") + 1);
 	        }
@@ -884,10 +837,11 @@ public class QueryOrganizer implements QueryOrganizerI{
 
     /**
      * Returns String []{0:SQL JOIN CLAUSE,1:FOREIGN ALIAS}
-     * @param root
-     * @param foreign
-     * @param rootAlias
-     * @return
+     * @param root         The root element.
+     * @param foreign      The foreign element.
+     * @param rootAlias    The alias to use for the root element.
+     * @return The join clause generated from the parameters.
+     * @throws Exception When an error occurs.
      */
     private String getJoinClause(GenericWrapperElement root, GenericWrapperElement foreign, String rootAlias,String foreignAlias, String[] layer, String relativeFieldRef) throws Exception
     {
@@ -895,14 +849,14 @@ public class QueryOrganizer implements QueryOrganizerI{
     		tableAliases.put(foreignAlias,"table"+ tableAliases.size());
         foreignAlias = (String)tableAliases.get(foreignAlias);
 
-        String last = null;
-        if (layer[3].indexOf(".")==-1)
+        String last;
+        if (!layer[3].contains("."))
         {
             last = layer[3];
         }else{
             last = layer[3].substring(layer[3].lastIndexOf(".") + 1);
         }
-        GenericWrapperField f=null;
+        GenericWrapperField f;
         if (relativeFieldRef==null)
         {
             if(last.endsWith("EXT"))
@@ -995,6 +949,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                     j += rootAlias + "." + spec.getForeignCol();
                     j+= "=" + foreignAlias + "." + spec.getLocalCol();
                 }
+                counter++;
             }
         }
         return j;
@@ -1002,7 +957,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 
     private GenericWrapperElement getGenericWrapperElement(String s) throws Exception
     {
-        if (s.indexOf(".")!=-1)
+        if (s.contains("."))
         {
             s= s.substring(s.lastIndexOf(".")+1);
         }
@@ -1046,6 +1001,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         this.user = user;
     }
 
+    @SuppressWarnings("unused")
     public Hashtable<String,String> getFieldAliass()
     {
         return fieldAliases;
@@ -1091,20 +1047,17 @@ public class QueryOrganizer implements QueryOrganizerI{
                 //          org.nrg.xft.XFT.LogCurrentTime("translateXMLPath::2");
                 GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(xmlPath);
                 String fieldName = xmlPath.substring(xmlPath.lastIndexOf("/") + 1);
+                assert f != null;
                 String id = f.getId();
                 if (!id.equalsIgnoreCase(fieldName))
                 {
                     if (f.isReference())
                     {
                         GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-                        GenericWrapperField sf = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
+                        GenericWrapperField sf = foreign.getAllPrimaryKeys().get(0);
                         xmlPath = sf.getXMLPathString(xmlPath);
                     }
                 }
-            } catch (FieldNotFoundException e) {
-                logger.error("",e);
-            } catch (ElementNotFoundException e) {
-                logger.error("",e);
             } catch (Exception e) {
                 logger.error("",e);
             }
@@ -1117,9 +1070,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                 //           org.nrg.xft.XFT.LogCurrentTime("translateXMLPath::4");
                 return temp;
             }
-        } catch (XFTInitException e1) {
-            logger.error("",e1);
-        } catch (ElementNotFoundException e1) {
+        } catch (XFTInitException | ElementNotFoundException e1) {
             logger.error("",e1);
         }
 
@@ -1151,19 +1102,16 @@ public class QueryOrganizer implements QueryOrganizerI{
             try {
                 GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(xmlPath);
                 String fieldName = xmlPath.substring(xmlPath.lastIndexOf("/") + 1);
+                assert f != null;
                 if (!f.getId().equalsIgnoreCase(fieldName))
                 {
                     if (f.isReference())
                     {
                         GenericWrapperElement foreign = (GenericWrapperElement)f.getReferenceElement();
-                        GenericWrapperField sf = (GenericWrapperField)foreign.getAllPrimaryKeys().get(0);
+                        GenericWrapperField sf = foreign.getAllPrimaryKeys().get(0);
                         xmlPath = sf.getXMLPathString(xmlPath);
                     }
                 }
-            } catch (FieldNotFoundException e) {
-                logger.error("",e);
-            } catch (ElementNotFoundException e) {
-                logger.error("",e);
             } catch (Exception e) {
                 logger.error("",e);
             }
@@ -1210,13 +1158,11 @@ public class QueryOrganizer implements QueryOrganizerI{
 
     public String toString()
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(this.getRootElement().getFullXMLName()).append("\n");
 
-        Iterator iter =this.getAllFields().iterator();
-        while (iter.hasNext())
-        {
-            String s = (String)iter.next();
+        for (final Object o : this.getAllFields()) {
+            String s = (String) o;
             sb.append(s).append("\n");
         }
         return sb.toString();
@@ -1239,7 +1185,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 
     public String getArcJoin(ArcDefinition arcDefine,QueryOrganizerI qo,SchemaElement foreign) throws Exception
     {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (arcDefine.getBridgeElement().equalsIgnoreCase(rootElement.getFullXMLName()))
 		{
 			Arc foreignArc = (Arc)foreign.getArcs().get(arcDefine.getName());
@@ -1250,7 +1196,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 			foreign.getDisplay().getDisplayField(foreignField);
 
 			DisplayField df = (new SchemaElement(rootElement.getGenericXFTElement())).getDisplayField(rootField);
-			DisplayFieldElement dfe =(DisplayFieldElement)df.getElements().get(0);
+			DisplayFieldElement dfe = df.getElements().get(0);
 			String localFieldElement = dfe.getSchemaElementName();
 
 			if (StringUtils.GetRootElementName(localFieldElement).equalsIgnoreCase(getRootElement().getFullXMLName()))
@@ -1263,7 +1209,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 				String localCol = getTableAndFieldSQL(dfe.getSchemaElementName());
 
 				DisplayField df2 = foreign.getDisplayField(foreignField);
-				DisplayFieldElement dfe2 =(DisplayFieldElement)df2.getElements().get(0);
+				DisplayFieldElement dfe2 = df2.getElements().get(0);
 
 				String foreignFieldElement = dfe2.getSchemaElementName();
 
@@ -1285,7 +1231,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 					foreignMap.addField(foreignFieldElement);
 
 					Iterator pks = foreign.getAllPrimaryKeys().iterator();
-	    			int pkCount=0;
+	    			int pkCount;
 	                while (pks.hasNext())
 	                {
 	                    SchemaFieldI sf = (SchemaFieldI)pks.next();
@@ -1341,7 +1287,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 				localMap.addField(localFieldElement);
 
 				Iterator pks = rootElement.getAllPrimaryKeys().iterator();
-    			int pkCount=0;
+    			int pkCount;
                 while (pks.hasNext())
                 {
                     SchemaFieldI sf = (SchemaFieldI)pks.next();
@@ -1350,7 +1296,8 @@ public class QueryOrganizer implements QueryOrganizerI{
                 }
 
 				String localMapQuery = localMap.buildQuery();
-				String localMapName = "map_" + rootElement.getSQLName() + "_" + middle.getSQLName();
+                assert middle != null;
+                String localMapName = "map_" + rootElement.getSQLName() + "_" + middle.getSQLName();
 				sb.append(" LEFT JOIN (").append(localMapQuery);
 				sb.append(") AS ").append(localMapName).append(" ON ");
 
@@ -1375,7 +1322,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 				String localCol = localMap.translateXMLPath(localFieldElement,localMapName);
 
 				DisplayField df2 = foreign.getDisplayField(foreignField);
-				DisplayFieldElement dfe2 =(DisplayFieldElement)df2.getElements().get(0);
+				DisplayFieldElement dfe2 = df2.getElements().get(0);
 
 				String foreignFieldElement = dfe2.getSchemaElementName();
 
@@ -1396,8 +1343,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 					foreignMap.addField(foreignFieldElement);
 
 					pks = foreign.getAllPrimaryKeys().iterator();
-	    			pkCount=0;
-	                while (pks.hasNext())
+                    while (pks.hasNext())
 	                {
 	                    SchemaFieldI sf = (SchemaFieldI)pks.next();
 	                    foreignMap.addField(sf.getXMLPathString(foreign.getFullXMLName()));
@@ -1454,7 +1400,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 			String rootField = (String)rootArc.getCommonFields().get(arcDefine.getEqualsField());
 
 			DisplayField df = (new SchemaElement(rootElement.getGenericXFTElement())).getDisplayField(rootField);
-			DisplayFieldElement dfe =(DisplayFieldElement)df.getElements().get(0);
+			DisplayFieldElement dfe = df.getElements().get(0);
 			String localFieldElement = dfe.getSchemaElementName();
 
 			if (StringUtils.GetRootElementName(localFieldElement).equalsIgnoreCase(getRootElement().getFullXMLName()))
@@ -1467,7 +1413,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 				String localCol = getTableAndFieldSQL(dfe.getSchemaElementName());
 
 				DisplayField df2 = foreign.getDisplayField(foreignField);
-				DisplayFieldElement dfe2 =(DisplayFieldElement)df2.getElements().get(0);
+				DisplayFieldElement dfe2 = df2.getElements().get(0);
 
 				String foreignFieldElement = dfe2.getSchemaElementName();
 
@@ -1488,7 +1434,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 					foreignMap.addField(foreignFieldElement);
 
 					Iterator pks = foreign.getAllPrimaryKeys().iterator();
-	    			int pkCount=0;
+	    			int pkCount;
 	                while (pks.hasNext())
 	                {
 	                    SchemaFieldI sf = (SchemaFieldI)pks.next();
@@ -1544,7 +1490,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 			    localMap.addField(localFieldElement);
 
 				Iterator pks = rootElement.getAllPrimaryKeys().iterator();
-    			int pkCount=0;
+    			int pkCount;
                 while (pks.hasNext())
                 {
                     SchemaFieldI sf = (SchemaFieldI)pks.next();
@@ -1553,7 +1499,8 @@ public class QueryOrganizer implements QueryOrganizerI{
                 }
 
 				String localMapQuery = localMap.buildQuery();
-				String localMapName = "map_" + rootElement.getSQLName() + "_" + middle.getSQLName();
+                assert middle != null;
+                String localMapName = "map_" + rootElement.getSQLName() + "_" + middle.getSQLName();
 				sb.append(" LEFT JOIN (").append(localMapQuery);
 				sb.append(") AS ").append(localMapName).append(" ON ");
 
@@ -1578,7 +1525,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 				String localCol = localMap.translateXMLPath(localFieldElement,localMapName);
 
 				DisplayField df2 = foreign.getDisplayField(foreignField);
-				DisplayFieldElement dfe2 =(DisplayFieldElement)df2.getElements().get(0);
+				DisplayFieldElement dfe2 = df2.getElements().get(0);
 
 				String foreignFieldElement = dfe2.getSchemaElementName();
 
@@ -1599,8 +1546,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 					foreignMap.addField(foreignFieldElement);
 
 					pks = foreign.getAllPrimaryKeys().iterator();
-	    			pkCount=0;
-	                while (pks.hasNext())
+                    while (pks.hasNext())
 	                {
 	                    SchemaFieldI sf = (SchemaFieldI)pks.next();
 	                    foreignMap.addField(sf.getXMLPathString(foreign.getFullXMLName()));

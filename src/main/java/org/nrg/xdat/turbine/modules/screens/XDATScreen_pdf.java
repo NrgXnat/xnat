@@ -41,133 +41,130 @@ import org.w3c.dom.Document;
 
 /**
  * @author Tim
- *
  */
+@SuppressWarnings("unused")
 public class XDATScreen_pdf extends SecureScreen {
     XFTItem item = null;
+
     /**
      * Set the content type to Pdf. (see RawScreen)
      *
      * @param data Turbine information.
      * @return content type.
      */
-     public String getContentType(RunData data)
-     {
-         return "application/pdf";
-     }
+    public String getContentType(RunData data) {
+        return "application/pdf";
+    }
 
-     /**
-     * Overrides & finalizes doOutput in RawScreen to serve the output stream
- created in buildPDF.
+    /**
+     * Overrides and finalizes doOutput in RawScreen to serve the output stream created in buildPDF.
      *
-     * @param data RunData
-     * @exception Exception, any old generic exception.
+     * @param data       RunData
+     * @param context    The context.
      */
-     public final void finalProcessing(RunData data, Context context)
-     {
-         try {
-             ByteArrayOutputStream baos = buildPdf(data);
-             if (baos != null)
-             {
-                 HttpServletResponse response = data.getResponse();
-                 //We have to set the size to workaround a bug in IE (see com.lowagie iText FAQ)
-                 data.getResponse().setContentLength(baos.size());
-                 data.getResponse().setContentType(getContentType(data));
-                 ServletOutputStream out = response.getOutputStream();
-                 baos.writeTo(out);
-                 out.close();
+    public final void finalProcessing(RunData data, Context context) {
+        try {
+            ByteArrayOutputStream outputStream = buildPdf(data);
+            if (outputStream != null) {
+                HttpServletResponse response = data.getResponse();
+                //We have to set the size to workaround a bug in IE (see com.lowagie iText FAQ)
+                data.getResponse().setContentLength(outputStream.size());
+                data.getResponse().setContentType(getContentType(data));
+                ServletOutputStream out = response.getOutputStream();
+                outputStream.writeTo(out);
+                out.close();
 
-             }
-             else
-             {
-                 throw new Exception("output stream from buildPDF is null");
-             }
-         } catch (IOException e) {
-             logger.error("",e);
-             try {
-                 doRedirect(data,"/screens/Index.vm");
-             } catch (Exception e1) {
-                 logger.error("",e1);
-             }
-         } catch (Exception e) {
-             logger.error("",e);
-         }
-     }
+            } else {
+                throw new Exception("output stream from buildPDF is null");
+            }
+        } catch (IOException e) {
+            logger.error("", e);
+            try {
+                doRedirect(data, "/screens/Index.vm");
+            } catch (Exception e1) {
+                logger.error("", e1);
+            }
+        } catch (Exception e) {
+            logger.error("", e);
+        }
+    }
+
     /* (non-Javadoc)
      * @see org.nrg.xdat.turbine.modules.screens.PdfScreen#buildPdf(org.apache.turbine.util.RunData)
      */
-    protected ByteArrayOutputStream buildPdf(RunData data) throws Exception{
+    protected ByteArrayOutputStream buildPdf(RunData data) throws Exception {
 
-		ByteArrayOutputStream out = new ByteArrayOutputStream();
-
-
-    		try{
-    			if(XFT.VERBOSE)System.out.println("PDF: " +item.getXSIType() + " ID: " + item.getStringProperty("ID") );
-    		} catch (Exception e){
-    			e.printStackTrace();
-    		}
-
-    		ItemI om = BaseElement.GetGeneratedItem(item);
-    		// Marshal the person object 
-    		//XMLUtils.BeanToXMLFile(expt,"xml\\pdfMrObject.xml",FileUtils.GetInstance(FileUtils.GetCNDAPropertiesFileLocation()).getConfDir() + "castor" + File.separator + "MRpdf-castor-mapping.xml");
-    		Document doc = om.toJoinedXML();
-    		//XMLUtils.DOMToFile(doc,org.nrg.xdat.XDATTool.GetSettingsDirectory() + "work" + File.separator + "generated.xml");
-        		//Setup FOP
-        		Driver driver = new Driver();
-        		
-        		//INSERTED BY TIM 1/23 PER WEBSITE http://xml.apache.org/fop/embedding.html
-    			Logger logger = new ConsoleLogger(ConsoleLogger.LEVEL_INFO);
-    			MessageHandler.setScreenLogger(logger);
-    			driver.setLogger(logger);
-        		
-        		driver.setRenderer(Driver.RENDER_PDF);
-
-        		//Setup a buffer to obtain the content length
-        		driver.setOutputStream(out);
-
-       	      //Setup Transformer
-        		File f = new File(Turbine.getRealPath("pdf" + File.separator + ((XFTItem)item).getGenericSchemaElement().getFormattedName() + "_fo.xsl"));
-        		if(XFT.VERBOSE)System.out.println("Using " + f.getAbsolutePath());
-        		Source xsltSrc = new StreamSource(f);
-        		javax.xml.transform.TransformerFactory tFactory = javax.xml.transform.TransformerFactory.newInstance(); 
-        		Transformer transformer = tFactory.newTransformer(xsltSrc);
-     
-        		//Make sure the XSL transformation's result is piped through to FOP
-        		Result res = new SAXResult(driver.getContentHandler());
-        		//Result res = new StreamResult(out);
-
-        		//Start the transformation and rendering process
-        		transformer.transform(new DOMSource(doc), res);
+        ByteArrayOutputStream out = new ByteArrayOutputStream();
 
 
-		return out;
+        try {
+            if (XFT.VERBOSE) {
+                System.out.println("PDF: " + item.getXSIType() + " ID: " + item.getStringProperty("ID"));
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        ItemI om = BaseElement.GetGeneratedItem(item);
+        // Marshal the person object
+        Document doc = om.toJoinedXML();
+        //Setup FOP
+        Driver driver = new Driver();
+
+        //INSERTED BY TIM 1/23 PER WEBSITE http://xml.apache.org/fop/embedding.html
+        Logger logger = new ConsoleLogger(ConsoleLogger.LEVEL_INFO);
+        MessageHandler.setScreenLogger(logger);
+        driver.setLogger(logger);
+
+        driver.setRenderer(Driver.RENDER_PDF);
+
+        //Setup a buffer to obtain the content length
+        driver.setOutputStream(out);
+
+        //Setup Transformer
+        File f = new File(Turbine.getRealPath("pdf" + File.separator + item.getGenericSchemaElement().getFormattedName() + "_fo.xsl"));
+        if (XFT.VERBOSE) {
+            System.out.println("Using " + f.getAbsolutePath());
+        }
+        Source                                 xsltSrc     = new StreamSource(f);
+        javax.xml.transform.TransformerFactory tFactory    = javax.xml.transform.TransformerFactory.newInstance();
+        Transformer                            transformer = tFactory.newTransformer(xsltSrc);
+
+        //Make sure the XSL transformation's result is piped through to FOP
+        Result res = new SAXResult(driver.getContentHandler());
+        //Result res = new StreamResult(out);
+
+        //Start the transformation and rendering process
+        transformer.transform(new DOMSource(doc), res);
+
+
+        return out;
     }
 
-    public void doBuildTemplate(RunData data, Context context)
-	{
+    public void doBuildTemplate(RunData data, Context context) {
         try {
-            item = (XFTItem)TurbineUtils.GetItemBySearch(data);
-        } catch (Exception e1) {}
-        
-		if (item == null)
-		{
-			data.setMessage("Error: No item found.");
-			TurbineUtils.OutputPassedParameters(data,context,this.getClass().getName());
-		}else{
-			try {
-			    context.put("item",item);
-			    context.put("user",TurbineUtils.getUser(data));
-			    
-            	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
-            	context.put("search_element",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));
-            	context.put("search_field",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)));
-            	context.put("search_value",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)));
-			    
-				finalProcessing(data,context);
-			} catch (Exception e) {
-				data.setMessage(e.toString());
-			}
-		}
-		
-	}
+            item = TurbineUtils.GetItemBySearch(data);
+        } catch (Exception ignored) {
+        }
+
+        if (item == null) {
+            data.setMessage("Error: No item found.");
+            TurbineUtils.OutputPassedParameters(data, context, this.getClass().getName());
+        } else {
+            try {
+                context.put("item", item);
+                context.put("user", TurbineUtils.getUser(data));
+
+                context.put("element", org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
+                context.put("search_element", TurbineUtils.GetPassedParameter("search_element", data));
+                context.put("search_field", TurbineUtils.GetPassedParameter("search_field", data));
+                context.put("search_value", TurbineUtils.GetPassedParameter("search_value", data));
+
+                finalProcessing(data, context);
+            } catch (Exception e) {
+                data.setMessage(e.toString());
+            }
+        }
+
+    }
 }

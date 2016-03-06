@@ -132,15 +132,12 @@ public class XFTTool {
 	/**
 	 * Returns a table with the results of an SQL select based on the elements which 
 	 * match the SearchCriteria in the supplied ArrayList.
-	 * @param element
-	 * @param values (ArrayList of SearchCriteria)
-	 * @return
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
-	 * @throws java.sql.SQLException
-	 * @throws DBPoolException
+	 * @param elementName    The element name to search on.
+	 * @param values         The values to search on.
+	 * @return The table of search results.
+     * @throws Exception When something goes wrong.
 	 */
-	public static XFTTable Search(String elementName,CriteriaCollection values) throws XFTInitException,ElementNotFoundException, java.sql.SQLException,DBPoolException,FieldNotFoundException,Exception
+	public static XFTTable Search(String elementName,CriteriaCollection values) throws Exception
 	{
 		GenericWrapperElement element = GenericWrapperElement.GetElement(elementName);
 		TableSearch search = new TableSearch();
@@ -210,10 +207,13 @@ public class XFTTool {
 	
 	/**
 	 * Saves this item and all of its children (refs) to the database, and returns the updated xml.
-	 * @param doc
-	 * @return
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
+	 * @param f                   The file to retrieve.
+     * @param user                The user.
+     * @param quarantine          Whether the data object should be quarantined.
+     * @param allowItemRemoval    Whether the item can be removed.
+	 * @return The document.
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
 	 */
 	public static Document StoreXMLToDB(File f, UserI user,Boolean quarantine,boolean allowItemRemoval) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,Exception
 	{
@@ -243,10 +243,12 @@ public class XFTTool {
 	/**
 	 * Accesses the supplied XML File, and saves the included item and all of its children (refs)
 	 * to the database, and returns the updated xml.
-	 * @param doc
-	 * @return
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
+	 * @param location            The location of the file.
+	 * @param user                The user.
+	 * @param quarantine          Whether the data object should be quarantined.
+	 * @param allowItemRemoval    Whether the item can be removed.
+	 * @throws XFTInitException When an error occurs in XFT.
+	 * @throws ElementNotFoundException When a specified element isn't found on the object.
 	 */
 	public static void StoreXMLFileToDB(String location, UserI user, Boolean quarantine, boolean allowItemRemoval) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,ValidationException,Exception
 	{

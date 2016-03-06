@@ -84,710 +84,630 @@ import com.google.common.collect.Lists;
 
 /**
  * @author Tim
- *
  */
 @SuppressWarnings("serial")
-public class ElementSecurity extends ItemWrapper{
-	private static final String XDAT_ELEMENT_SECURITY = "xdat:element_security";
-	static Logger logger = Logger.getLogger(ElementSecurity.class);
-    public static final String SCHEMA_ELEMENT_NAME=XDAT_ELEMENT_SECURITY;
-	public static Hashtable<String,ElementSecurity> elements = null;
-	public static Hashtable elementDistinctIds = new Hashtable(); //Hashtable of Hashtables /level 1 key=elementName /level2 key=fieldName (or default if ref)/Level 3 key= pk value ,value=display name
-	
-	private String elementName = null;
-	private ArrayList<String> primarySecurityFields = new ArrayList<String>();
-	private ArrayList<ElementAction> elementActions = new ArrayList<ElementAction>();
-	private ArrayList<XdatElementSecurityListingAction> listingActions = new ArrayList<XdatElementSecurityListingAction>();
-	
-	private static Object lock=new Object();
-	
-	public ElementSecurity(){}
-	
-	
-	/**
-	 * @return
-	 * @throws Exception
-	 */
-	public static Hashtable<String,ElementSecurity> GetElementSecurities() throws Exception
-	{
-		if (elements == null)
-		{
-			synchronized(lock){
-				if (elements == null)
-				{
-					elements = new Hashtable<>();
-					ArrayList al = DisplaySearch.SearchForItems(SchemaElement.GetElement(XDAT_ELEMENT_SECURITY),new CriteriaCollection("AND"));
-					for (final Object anItem : al) {
-						ItemI           item = (ItemI) anItem;
-						ElementSecurity es   = new ElementSecurity(item);
-						es.getItem().internValues();
-						elements.put(es.getElementName(), es);
-					}
-				}
-				final ContextService service = ContextService.getInstance();
-				if (service.hasApplicationContext()) {
-					final FeatureRepositoryServiceI featureRepoService = service.getBean(FeatureRepositoryServiceI.class);
-					if (featureRepoService != null && featureRepoService instanceof FeatureRepositoryServiceImpl) {
-						((FeatureRepositoryServiceImpl) featureRepoService).updateNewSecureDefinitions();
-					}
-				} else {
-					logger.warn("The context service instance does not have an application context: I need to check for new feature definitions but can't.");
-				}
-			}
-		}
-		return elements;
-	}
-	
-	/**
-	 * Reviews the classpath for additional data model definitions.  If those definitions 
-	 * contain references to new data types (that haven't been registerd already), they 
-	 * will be registered now.
-	 * 
-	 * @return
-	 * @throws Exception
-	 */
-	public static boolean registerNewTypes() throws Exception{
-		Map<String,ElementSecurity> elements=(Map<String,ElementSecurity>)GetElementSecurities().clone();
-				
-		boolean _new=false;
-		for(DataModelDefinition def:XFTManager.discoverDataModelDefs()){
-			for(String s:def.getSecuredElements()){
-				
-				if((!StringUtils.IsEmpty(s)) && elements.get(s)==null){
-					if(GenericWrapperElement.GetFieldForXMLPath(s+"/project")!=null){
-						ElementSecurity es=ElementSecurity.newElementSecurity(s);
-						es.initExistingPermissions("admin");
-						_new=true;
-					}
-				}
-			}
-		}
-		
-		ElementSecurity.refresh();
-		
-		return _new;
-	}
-	
-	public String toString()
-	{
-	    try {
+public class ElementSecurity extends ItemWrapper {
+    private static final String                             XDAT_ELEMENT_SECURITY = "xdat:element_security";
+    static               Logger                             logger                = Logger.getLogger(ElementSecurity.class);
+    public static final  String                             SCHEMA_ELEMENT_NAME   = XDAT_ELEMENT_SECURITY;
+    public static        Hashtable<String, ElementSecurity> elements              = null;
+    public static        Hashtable                          elementDistinctIds    = new Hashtable(); //Hashtable of Hashtables /level 1 key=elementName /level2 key=fieldName (or default if ref)/Level 3 key= pk value ,value=display name
+
+    private String                                      elementName           = null;
+    private ArrayList<String>                           primarySecurityFields = new ArrayList<String>();
+    private ArrayList<ElementAction>                    elementActions        = new ArrayList<ElementAction>();
+    private ArrayList<XdatElementSecurityListingAction> listingActions        = new ArrayList<XdatElementSecurityListingAction>();
+
+    private static Object lock = new Object();
+
+    public ElementSecurity() {
+    }
+
+    /**
+     * @return
+     * @throws Exception When something goes wrong.
+     */
+    public static Hashtable<String, ElementSecurity> GetElementSecurities() throws Exception {
+        if (elements == null) {
+            synchronized (lock) {
+                if (elements == null) {
+                    elements = new Hashtable<>();
+                    ArrayList al = DisplaySearch.SearchForItems(SchemaElement.GetElement(XDAT_ELEMENT_SECURITY), new CriteriaCollection("AND"));
+                    for (final Object anItem : al) {
+                        ItemI           item = (ItemI) anItem;
+                        ElementSecurity es   = new ElementSecurity(item);
+                        es.getItem().internValues();
+                        elements.put(es.getElementName(), es);
+                    }
+                }
+                final ContextService service = ContextService.getInstance();
+                if (service.hasApplicationContext()) {
+                    final FeatureRepositoryServiceI featureRepoService = service.getBean(FeatureRepositoryServiceI.class);
+                    if (featureRepoService != null && featureRepoService instanceof FeatureRepositoryServiceImpl) {
+                        ((FeatureRepositoryServiceImpl) featureRepoService).updateNewSecureDefinitions();
+                    }
+                } else {
+                    logger.warn("The context service instance does not have an application context: I need to check for new feature definitions but can't.");
+                }
+            }
+        }
+        return elements;
+    }
+
+    /**
+     * Reviews the classpath for additional data model definitions.  If those definitions
+     * contain references to new data types (that haven't been registerd already), they
+     * will be registered now.
+     *
+     * @return
+     * @throws Exception When something goes wrong.
+     */
+    public static boolean registerNewTypes() throws Exception {
+        Map<String, ElementSecurity> elements = (Map<String, ElementSecurity>) GetElementSecurities().clone();
+
+        boolean _new = false;
+        for (DataModelDefinition def : XFTManager.discoverDataModelDefs()) {
+            for (String s : def.getSecuredElements()) {
+
+                if ((!StringUtils.IsEmpty(s)) && elements.get(s) == null) {
+                    if (GenericWrapperElement.GetFieldForXMLPath(s + "/project") != null) {
+                        ElementSecurity es = ElementSecurity.newElementSecurity(s);
+                        es.initExistingPermissions("admin");
+                        _new = true;
+                    }
+                }
+            }
+        }
+
+        ElementSecurity.refresh();
+
+        return _new;
+    }
+
+    public String toString() {
+        try {
             return this.getElementName();
         } catch (XFTInitException e) {
-            logger.error("",e);
+            logger.error("", e);
         } catch (ElementNotFoundException e) {
-            logger.error("",e);
+            logger.error("", e);
         } catch (FieldNotFoundException e) {
-            logger.error("",e);
+            logger.error("", e);
         }
         return null;
-	}
-	
-	public String getSchemaElementName()
-	{
-	    return SCHEMA_ELEMENT_NAME;
-	}
-	
-	/**
-	 * 
-	 */
-	public static void refresh()
-	{
+    }
 
-		synchronized(lock){
-		    elements = null;
-		    elementDistinctIds = new Hashtable();
-	//	    XdatStoredSearch.RefreshPreLoadedSearches();
-	//	    UserCache.Clear();
-	//        UserGroupManager.Refresh();
-	//        guestPermissions= new Hashtable();
-	//        guestLoaded=false;
-		    
-			CacheManager.GetInstance().clearAll();
-		}
-	}
-	
-	/**
-	 * @param elementName
-	 * @return
-	 * @throws Exception
-	 */
-	public static ElementSecurity GetElementSecurity(String elementName) throws Exception
-	{
-		return (ElementSecurity)GetElementSecurities().get(elementName);
-	}
-	
-	public static ElementSecurity newElementSecurity(String elementName) throws Exception{
-		if(GetElementSecurity(elementName)!=null){
-			return GetElementSecurity(elementName);
-		}
-		
-		UserI user = Users.getUser("admin");
-		
-		XFTItem es= XFTItem.NewItem("xdat:element_security", user);
-		es.setProperty("element_name", elementName);
-		es.setProperty("secondary_password","0");
-		es.setProperty("secure_ip","0");
-		es.setProperty("secure","1");
-		es.setProperty("browse","1");
-		es.setProperty("sequence","2");
-		es.setProperty("quarantine","0");
-		es.setProperty("pre_load","0");
-		es.setProperty("searchable","1");
-		es.setProperty("secure_read","1");
-		es.setProperty("secure_edit","1");
-		es.setProperty("secure_create","1");
-		es.setProperty("secure_delete","1");
-		es.setProperty("accessible","1");
-		
-		es.setProperty("xdat:element_security/primary_security_fields/primary_security_field[0]/primary_security_field", elementName+"/sharing/share/project");
-		es.setProperty("xdat:element_security/primary_security_fields/primary_security_field[1]/primary_security_field", elementName+"/project");
-		
-		addElementAction(es,0,"xml","View XML","2","View","NULL"); 
-		addElementAction(es,1,"edit","Edit","0","NULL","edit"); 
-		addElementAction(es,2,"xml_file","Download XML","7","Download","NULL"); 
-		addElementAction(es,3,"email_report","Email","8","NULL","NULL");
-		
-		SaveItemHelper.authorizedSave(es, user, false, false, EventUtils.ADMIN_EVENT(user));
-		
-		ElementSecurity.refresh();
-		return ElementSecurity.GetElementSecurity(elementName);
-	}
-	
-	private static void addElementAction(XFTItem es,int index,String action_name, String displayName, String sequence, String grouping,String access)
-	{
-		try {
-			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/element_action_name",action_name);
-			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/display_name",displayName);
-			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/sequence",sequence);
-			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/grouping",grouping);
-			es.setProperty("xdat:element_security/element_actions/element_action["+index +"]/secureAccess",access);
-		} catch (Exception e) {
-			logger.error("",e);
-		}
-	}
-	
-	/**
-	 * @return
-	 * @throws Exception
-	 */
-	public static ArrayList<ElementSecurity> GetInSecureElements() throws Exception
-	{
-		ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
-		Collection<ElementSecurity> ess= GetElementSecurities().values();
-		for (ElementSecurity es:ess)
-		{
-			if (! es.isSecure())
-			{
-				al.add(es);
-			}
-		}
-		al.trimToSize();
-		return al;
-	}
-	
-	/**
-	 * @param elementName
-	 * @return
-	 */
-	public static boolean HasDefinedElementSecurity(String elementName)
-	{
-	    try {
-            if (GetElementSecurity(elementName)!=null)
-            {
-                return true;
-            }else{
-                return false;
-            }
-        } catch (Exception e) {
-            logger.error("",e);
-            return true;
+    public String getSchemaElementName() {
+        return SCHEMA_ELEMENT_NAME;
+    }
+
+    /**
+     *
+     */
+    public static void refresh() {
+
+        synchronized (lock) {
+            elements = null;
+            elementDistinctIds = new Hashtable();
+            //	    XdatStoredSearch.RefreshPreLoadedSearches();
+            //	    UserCache.Clear();
+            //        UserGroupManager.Refresh();
+            //        guestPermissions= new Hashtable();
+            //        guestLoaded=false;
+
+            CacheManager.GetInstance().clearAll();
         }
-	}
-	
-	/**
-	 * @return
-	 * @throws Exception
-	 */
-	public static ArrayList<ElementSecurity> GetSecureElements() throws Exception
-	{
-		final ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
-		
-		final Collection<ElementSecurity> ess= GetElementSecurities().values();
-		for (ElementSecurity es:ess)
-		{
-			if (es.isSecure())
-			{
-				al.add(es);
-			}
-		}
-		
-		al.trimToSize();
-		
-		return al;
-	}
-	
-	public static ArrayList<String> GetSecurityElements() throws Exception
-	{
-	    ArrayList<String> se = new ArrayList<String>();
-	    Iterator iter = GetSecureElements().iterator();
-		while (iter.hasNext())
-		{
-			ElementSecurity es = (ElementSecurity)iter.next();
-			Iterator iter2 = es.getPrimarySecurityFields().iterator();
-			while (iter2.hasNext())
-			{
-			    String psf = (String)iter2.next();
-			    GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(psf);
-			    if (f.isReference())
-			    {
-			        if (! se.contains(f.getReferenceElementName().getFullForeignType()))
-			            se.add(f.getReferenceElementName().getFullForeignType());
-			    }else{
-//			        if (! se.contains(f.getParentElement().getFullXMLName()))
-//			            se.add(f.getParentElement().getFullXMLName());
-			    }
-			}
-		}
-		se.trimToSize();
-		return se;
-	}
-	
-	public static ArrayList<ElementSecurity> GetQuarantinedElements() throws Exception
-	{
-	    ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
-	    try {
-	    	Collection<ElementSecurity> ess= GetElementSecurities().values();
-			for (ElementSecurity es:ess)
-			{
-                if (es.getBooleanProperty(ViewManager.QUARANTINE) !=null)
-                {
-                    al.add(es);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("",e);
-        }
-        
-        return al;
-	}
-	
-	public static ArrayList<ElementSecurity> GetPreLoadElements() throws Exception
-	{
-	    ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
-	    try {
-	    	Collection<ElementSecurity> ess= GetElementSecurities().values();
-			for (ElementSecurity es:ess)
-			{
-                if (es.getBooleanProperty("pre_load") !=null)
-                {
-                    al.add(es);
-                }
-            }
-        } catch (Exception e) {
-            logger.error("",e);
-        }
-        
-        return al;
-	}
-	
-	/**
-	 * @param elementName
-	 * @return
-	 * @throws Exception
-	 */
-	public static boolean IsSecureElement(String elementName) throws Exception
-	{
-		Iterator iter = GetSecureElements().iterator();
-		while (iter.hasNext())
-		{
-			ElementSecurity es = (ElementSecurity)iter.next();
-			if (es.getElementName().equalsIgnoreCase(elementName))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-    
+    }
+
     /**
      * @param elementName
      * @return
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
-    public static boolean IsSecureElement(String elementName,String action) throws Exception
-    {
+    public static ElementSecurity GetElementSecurity(String elementName) throws Exception {
+        return (ElementSecurity) GetElementSecurities().get(elementName);
+    }
+
+    public static ElementSecurity newElementSecurity(String elementName) throws Exception {
+        if (GetElementSecurity(elementName) != null) {
+            return GetElementSecurity(elementName);
+        }
+
+        UserI user = Users.getUser("admin");
+
+        XFTItem es = XFTItem.NewItem("xdat:element_security", user);
+        es.setProperty("element_name", elementName);
+        es.setProperty("secondary_password", "0");
+        es.setProperty("secure_ip", "0");
+        es.setProperty("secure", "1");
+        es.setProperty("browse", "1");
+        es.setProperty("sequence", "2");
+        es.setProperty("quarantine", "0");
+        es.setProperty("pre_load", "0");
+        es.setProperty("searchable", "1");
+        es.setProperty("secure_read", "1");
+        es.setProperty("secure_edit", "1");
+        es.setProperty("secure_create", "1");
+        es.setProperty("secure_delete", "1");
+        es.setProperty("accessible", "1");
+
+        es.setProperty("xdat:element_security/primary_security_fields/primary_security_field[0]/primary_security_field", elementName + "/sharing/share/project");
+        es.setProperty("xdat:element_security/primary_security_fields/primary_security_field[1]/primary_security_field", elementName + "/project");
+
+        addElementAction(es, 0, "xml", "View XML", "2", "View", "NULL");
+        addElementAction(es, 1, "edit", "Edit", "0", "NULL", "edit");
+        addElementAction(es, 2, "xml_file", "Download XML", "7", "Download", "NULL");
+        addElementAction(es, 3, "email_report", "Email", "8", "NULL", "NULL");
+
+        SaveItemHelper.authorizedSave(es, user, false, false, EventUtils.ADMIN_EVENT(user));
+
+        ElementSecurity.refresh();
+        return ElementSecurity.GetElementSecurity(elementName);
+    }
+
+    private static void addElementAction(XFTItem es, int index, String action_name, String displayName, String sequence, String grouping, String access) {
+        try {
+            es.setProperty("xdat:element_security/element_actions/element_action[" + index + "]/element_action_name", action_name);
+            es.setProperty("xdat:element_security/element_actions/element_action[" + index + "]/display_name", displayName);
+            es.setProperty("xdat:element_security/element_actions/element_action[" + index + "]/sequence", sequence);
+            es.setProperty("xdat:element_security/element_actions/element_action[" + index + "]/grouping", grouping);
+            es.setProperty("xdat:element_security/element_actions/element_action[" + index + "]/secureAccess", access);
+        } catch (Exception e) {
+            logger.error("", e);
+        }
+    }
+
+    /**
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public static ArrayList<ElementSecurity> GetInSecureElements() throws Exception {
+        ArrayList<ElementSecurity>  al  = new ArrayList<ElementSecurity>();
+        Collection<ElementSecurity> ess = GetElementSecurities().values();
+        for (ElementSecurity es : ess) {
+            if (!es.isSecure()) {
+                al.add(es);
+            }
+        }
+        al.trimToSize();
+        return al;
+    }
+
+    /**
+     * @param elementName
+     * @return
+     */
+    public static boolean HasDefinedElementSecurity(String elementName) {
+        try {
+            if (GetElementSecurity(elementName) != null) {
+                return true;
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            logger.error("", e);
+            return true;
+        }
+    }
+
+    /**
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public static ArrayList<ElementSecurity> GetSecureElements() throws Exception {
+        final ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
+
+        final Collection<ElementSecurity> ess = GetElementSecurities().values();
+        for (ElementSecurity es : ess) {
+            if (es.isSecure()) {
+                al.add(es);
+            }
+        }
+
+        al.trimToSize();
+
+        return al;
+    }
+
+    public static ArrayList<String> GetSecurityElements() throws Exception {
+        ArrayList<String> se   = new ArrayList<String>();
+        Iterator          iter = GetSecureElements().iterator();
+        while (iter.hasNext()) {
+            ElementSecurity es    = (ElementSecurity) iter.next();
+            Iterator        iter2 = es.getPrimarySecurityFields().iterator();
+            while (iter2.hasNext()) {
+                String              psf = (String) iter2.next();
+                GenericWrapperField f   = GenericWrapperElement.GetFieldForXMLPath(psf);
+                if (f.isReference()) {
+                    if (!se.contains(f.getReferenceElementName().getFullForeignType())) {
+                        se.add(f.getReferenceElementName().getFullForeignType());
+                    }
+                } else {
+//			        if (! se.contains(f.getParentElement().getFullXMLName()))
+//			            se.add(f.getParentElement().getFullXMLName());
+                }
+            }
+        }
+        se.trimToSize();
+        return se;
+    }
+
+    public static ArrayList<ElementSecurity> GetQuarantinedElements() throws Exception {
+        ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
+        try {
+            Collection<ElementSecurity> ess = GetElementSecurities().values();
+            for (ElementSecurity es : ess) {
+                if (es.getBooleanProperty(ViewManager.QUARANTINE) != null) {
+                    al.add(es);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("", e);
+        }
+
+        return al;
+    }
+
+    public static ArrayList<ElementSecurity> GetPreLoadElements() throws Exception {
+        ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
+        try {
+            Collection<ElementSecurity> ess = GetElementSecurities().values();
+            for (ElementSecurity es : ess) {
+                if (es.getBooleanProperty("pre_load") != null) {
+                    al.add(es);
+                }
+            }
+        } catch (Exception e) {
+            logger.error("", e);
+        }
+
+        return al;
+    }
+
+    /**
+     * @param elementName
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public static boolean IsSecureElement(String elementName) throws Exception {
         Iterator iter = GetSecureElements().iterator();
-        while (iter.hasNext())
-        {
-            ElementSecurity es = (ElementSecurity)iter.next();
-            if (es.getElementName().equalsIgnoreCase(elementName))
-            {
+        while (iter.hasNext()) {
+            ElementSecurity es = (ElementSecurity) iter.next();
+            if (es.getElementName().equalsIgnoreCase(elementName)) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    /**
+     * @param elementName
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public static boolean IsSecureElement(String elementName, String action) throws Exception {
+        Iterator iter = GetSecureElements().iterator();
+        while (iter.hasNext()) {
+            ElementSecurity es = (ElementSecurity) iter.next();
+            if (es.getElementName().equalsIgnoreCase(elementName)) {
                 return es.isSecure(action);
             }
         }
         return false;
     }
-	
-	/**
-	 * @param elementName
-	 * @return
-	 * @throws Exception
-	 */
-	public static boolean IsInSecureElement(String elementName) throws Exception
-	{
-		Iterator iter = GetInSecureElements().iterator();
-		while (iter.hasNext())
-		{
-			ElementSecurity es = (ElementSecurity)iter.next();
-			if (es.getElementName().equalsIgnoreCase(elementName))
-			{
-				return true;
-			}
-		}
-		return false;
-	}
-	
-	public static ArrayList<ElementSecurity> GetBrowseableElements() throws Exception
-	{
-		ArrayList<ElementSecurity> al = new ArrayList<ElementSecurity>();
-		Collection<ElementSecurity> ess= GetElementSecurities().values();
-		for (ElementSecurity es:ess)
-		{
-			if (es.isBrowseable())
-			{
-				al.add(es);
-			}
-		}
-		
-		return al;
-	}
-	
-	/**
-	 * @param elementName
-	 * @return
-	 * @throws Exception
-	 */
-	public static boolean IsBrowseableElement(String elementName) throws Exception
-	{
-	    ElementSecurity es = (ElementSecurity) GetElementSecurity(elementName);
-	    if (es!=null)
-			return es.isBrowseable();
-		else 
-		    return false;
-	}
-    
+
     /**
      * @param elementName
      * @return
-     * @throws Exception
+     * @throws Exception When something goes wrong. 
      */
-    public static boolean IsSearchable(String elementName) throws Exception
-    {
-        ElementSecurity es = (ElementSecurity) GetElementSecurity(elementName);
-        
-	    if (es!=null)
-			return es.isSearchable();
-		else 
-		    return false;
+    public static boolean IsInSecureElement(String elementName) throws Exception {
+        Iterator iter = GetInSecureElements().iterator();
+        while (iter.hasNext()) {
+            ElementSecurity es = (ElementSecurity) iter.next();
+            if (es.getElementName().equalsIgnoreCase(elementName)) {
+                return true;
+            }
+        }
+        return false;
     }
-	
-	/**
-	 * @param elementName
-	 * @return
-	 * @throws Exception
-	 */
-	public static boolean HasPrimarySecurityFields(String elementName) throws Exception
-	{
-	    ElementSecurity es = (ElementSecurity) GetElementSecurity(elementName);
-		if (es.getPrimarySecurityFields().size()>0)
-		{
-		    return true;
-		}else{
-		    return false;
-		}
-	}
-	
-	/**
-	 * @param i
-	 */
-	public ElementSecurity(ItemI i)
-	{
-		this.setItem(i);
-		try {
-			this.elementName = getElementName();
 
-			Iterator psfs = getChildItems(org.nrg.xft.XFT.PREFIX + ":element_security.primary_security_fields.primary_security_field").iterator();
-			while (psfs.hasNext())
-			{
-				ItemI child = (ItemI)psfs.next();
-				String s = (String) child.getProperty("primary_security_field");
-				if (s != null)
-				{
-					this.addPrimarySecurityField(s);
-				}
-			}
-			
-			Iterator eas = getChildItemCollection(org.nrg.xft.XFT.PREFIX + ":element_security.element_actions.element_action").getItems("xdat:element_action_type.sequence").iterator();
-			while (eas.hasNext())
-			{
-				ItemI child = (ItemI)eas.next();
-				ElementAction ea = new ElementAction(child);
-				ea.getItem().internValues();
-				this.addElementAction(ea);
-			}
-			
-			eas = getChildItemCollection(org.nrg.xft.XFT.PREFIX + ":element_security.listing_actions.listing_action").getItems("xdat:element_security_listing_action.sequence").iterator();
-			while (eas.hasNext())
-			{
-				ItemI child = (ItemI)eas.next();
-				XdatElementSecurityListingAction ea = new XdatElementSecurityListingAction(child);
-				ea.getItem().internValues();
-				this.addListingAction(ea);
-			}
-		} catch (XFTInitException e) {
-			logger.error("",e);
-		} catch (ElementNotFoundException e) {
-			logger.error("",e);
-		} catch (FieldNotFoundException e) {
-			logger.error("",e);
-		} catch (Exception e) {
-			logger.error("",e);
-		}
-		
-	}
-	
-	/**
-	 * @return
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
-	 * @throws FieldNotFoundException
-	 */
-	public String getElementName()throws XFTInitException,ElementNotFoundException,FieldNotFoundException
-	{
-		try {
-			return (String)getProperty("element_name");
-		} catch (FieldEmptyException e) {
-			logger.error("",e);
-			return null;
-		}
-	}
-	
-	/**
-	 * @return
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
-	 * @throws FieldNotFoundException
-	 */
-	public Integer getSequence()throws XFTInitException,ElementNotFoundException,FieldNotFoundException
-	{
-		try {
-			return (Integer)getProperty("sequence");
-		} catch (FieldEmptyException e) {
-			logger.error("",e);
-			return null;
-		}
-	}
-	
-	/**
-	 * @return
-	 * @throws Exception
-	 */
-	public SchemaElement getSchemaElement() throws Exception
-	{
-		return SchemaElement.GetElement(getElementName());
-	}
-	
-	/**
-	 * @return
-	 */
-	public boolean isSecure()
-	{
-		try {
-			Integer s = (Integer)getProperty("secure");
-			if (s != null)
-			{
-				if (s.intValue()==1)
-				{
-					return true;
-				}else
-				{
-					return false;
-				}
-			}else{
-				return false;
-			}
-		} catch (Exception e) {
-			return false;
-		}
-	}
-    
+    public static ArrayList<ElementSecurity> GetBrowseableElements() throws Exception {
+        ArrayList<ElementSecurity>  al  = new ArrayList<ElementSecurity>();
+        Collection<ElementSecurity> ess = GetElementSecurities().values();
+        for (ElementSecurity es : ess) {
+            if (es.isBrowseable()) {
+                al.add(es);
+            }
+        }
+
+        return al;
+    }
+
+    /**
+     * @param elementName
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public static boolean IsBrowseableElement(String elementName) throws Exception {
+        ElementSecurity es = (ElementSecurity) GetElementSecurity(elementName);
+        if (es != null) {
+            return es.isBrowseable();
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @param elementName
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public static boolean IsSearchable(String elementName) throws Exception {
+        ElementSecurity es = (ElementSecurity) GetElementSecurity(elementName);
+
+        if (es != null) {
+            return es.isSearchable();
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @param elementName
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public static boolean HasPrimarySecurityFields(String elementName) throws Exception {
+        ElementSecurity es = (ElementSecurity) GetElementSecurity(elementName);
+        if (es.getPrimarySecurityFields().size() > 0) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @param i The item for which to create the security element.
+     */
+    public ElementSecurity(ItemI i) {
+        this.setItem(i);
+        try {
+            this.elementName = getElementName();
+
+            Iterator psfs = getChildItems(org.nrg.xft.XFT.PREFIX + ":element_security.primary_security_fields.primary_security_field").iterator();
+            while (psfs.hasNext()) {
+                ItemI  child = (ItemI) psfs.next();
+                String s     = (String) child.getProperty("primary_security_field");
+                if (s != null) {
+                    this.addPrimarySecurityField(s);
+                }
+            }
+
+            Iterator eas = getChildItemCollection(org.nrg.xft.XFT.PREFIX + ":element_security.element_actions.element_action").getItems("xdat:element_action_type.sequence").iterator();
+            while (eas.hasNext()) {
+                ItemI         child = (ItemI) eas.next();
+                ElementAction ea    = new ElementAction(child);
+                ea.getItem().internValues();
+                this.addElementAction(ea);
+            }
+
+            eas = getChildItemCollection(org.nrg.xft.XFT.PREFIX + ":element_security.listing_actions.listing_action").getItems("xdat:element_security_listing_action.sequence").iterator();
+            while (eas.hasNext()) {
+                ItemI                            child = (ItemI) eas.next();
+                XdatElementSecurityListingAction ea    = new XdatElementSecurityListingAction(child);
+                ea.getItem().internValues();
+                this.addListingAction(ea);
+            }
+        } catch (XFTInitException e) {
+            logger.error("", e);
+        } catch (ElementNotFoundException e) {
+            logger.error("", e);
+        } catch (FieldNotFoundException e) {
+            logger.error("", e);
+        } catch (Exception e) {
+            logger.error("", e);
+        }
+
+    }
+
+    /**
+     * @return
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
+     * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
+     */
+    public String getElementName() throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
+        try {
+            return (String) getProperty("element_name");
+        } catch (FieldEmptyException e) {
+            logger.error("", e);
+            return null;
+        }
+    }
+
+    /**
+     * @return
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
+     * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
+     */
+    public Integer getSequence() throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
+        try {
+            return (Integer) getProperty("sequence");
+        } catch (FieldEmptyException e) {
+            logger.error("", e);
+            return null;
+        }
+    }
+
+    /**
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public SchemaElement getSchemaElement() throws Exception {
+        return SchemaElement.GetElement(getElementName());
+    }
+
     /**
      * @return
      */
-    public boolean isSecure(String action)
-    {        
-        if (this.isSecure()){
-            String name = "secure_"+action;
+    public boolean isSecure() {
+        try {
+            Integer s = (Integer) getProperty("secure");
+            if (s != null) {
+                if (s.intValue() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * @return
+     */
+    public boolean isSecure(String action) {
+        if (this.isSecure()) {
+            String name = "secure_" + action;
             try {
-                Integer s = (Integer)getProperty(name);
-                if (s != null)
-                {
-                    if (s.intValue()==1)
-                    {
+                Integer s = (Integer) getProperty(name);
+                if (s != null) {
+                    if (s.intValue() == 1) {
                         return true;
-                    }else
-                    {
+                    } else {
                         return false;
                     }
-                }else{
+                } else {
                     return true;
                 }
             } catch (Exception e) {
                 return true;
             }
-        }else{
+        } else {
             return false;
         }
     }
-    
-    /**
-     * @return
-     */
-    public boolean isSecureRead()
-    {
-        try {
-            Integer s = (Integer)getProperty("secure_read");
-            if (s != null)
-            {
-                if (s.intValue()==1)
-                {
-                    return true;
-                }else
-                {
-                    return false;
-                }
-            }else{
-                return true;
-            }
-        } catch (Exception e) {
-            return true;
-        }
-    }
-    
-    /**
-     * @return
-     */
-    public boolean isSecureEdit()
-    {
-        try {
-            Integer s = (Integer)getProperty("secure_edit");
-            if (s != null)
-            {
-                if (s.intValue()==1)
-                {
-                    return true;
-                }else
-                {
-                    return false;
-                }
-            }else{
-                return true;
-            }
-        } catch (Exception e) {
-            return true;
-        }
-    }
-    
-    /**
-     * @return
-     */
-    public boolean isSecureCreate()
-    {
-        try {
-            Integer s = (Integer)getProperty("secure_create");
-            if (s != null)
-            {
-                if (s.intValue()==1)
-                {
-                    return true;
-                }else
-                {
-                    return false;
-                }
-            }else{
-                return true;
-            }
-        } catch (Exception e) {
-            return true;
-        }
-    }
-    
-    /**
-     * @return
-     */
-    public boolean isSecureDelete()
-    {
-        try {
-            Integer s = (Integer)getProperty("secure_delete");
-            if (s != null)
-            {
-                if (s.intValue()==1)
-                {
-                    return true;
-                }else
-                {
-                    return false;
-                }
-            }else{
-                return true;
-            }
-        } catch (Exception e) {
-            return true;
-        }
-    }
-	
-	/**
-	 * @return
-	 */
-	public boolean isBrowseable()
-	{
-		try {
-			Integer s = (Integer)getProperty("browse");
-			if (s != null)
-			{
-				if (s.intValue()==1)
-				{
-					return true;
-				}else
-				{
-					return false;
-				}
-			}else{
-				return false;
-			}
-		} catch (Exception e) {
-			return false;
-		}
-	}
-	
 
     /**
      * @return
      */
-    public boolean isSearchable()
-    {
+    public boolean isSecureRead() {
         try {
-            Integer s = (Integer)getProperty("searchable");
-            if (s != null)
-            {
-                if (s.intValue()==1)
-                {
+            Integer s = (Integer) getProperty("secure_read");
+            if (s != null) {
+                if (s.intValue() == 1) {
                     return true;
-                }else
-                {
+                } else {
                     return false;
                 }
-            }else{
+            } else {
+                return true;
+            }
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
+     * @return
+     */
+    public boolean isSecureEdit() {
+        try {
+            Integer s = (Integer) getProperty("secure_edit");
+            if (s != null) {
+                if (s.intValue() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return true;
+            }
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
+     * @return
+     */
+    public boolean isSecureCreate() {
+        try {
+            Integer s = (Integer) getProperty("secure_create");
+            if (s != null) {
+                if (s.intValue() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return true;
+            }
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
+     * @return
+     */
+    public boolean isSecureDelete() {
+        try {
+            Integer s = (Integer) getProperty("secure_delete");
+            if (s != null) {
+                if (s.intValue() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return true;
+            }
+        } catch (Exception e) {
+            return true;
+        }
+    }
+
+    /**
+     * @return
+     */
+    public boolean isBrowseable() {
+        try {
+            Integer s = (Integer) getProperty("browse");
+            if (s != null) {
+                if (s.intValue() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+
+    /**
+     * @return
+     */
+    public boolean isSearchable() {
+        try {
+            Integer s = (Integer) getProperty("searchable");
+            if (s != null) {
+                if (s.intValue() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
                 return false;
             }
         } catch (Exception e) {
@@ -795,399 +715,367 @@ public class ElementSecurity extends ItemWrapper{
             return false;
         }
     }
-    
-	/**
-	 * @return
-	 */
-	public boolean isSecurePassword()
-	{
-		try {
-			Integer s = (Integer)getProperty("secure_password");
-			if (s != null)
-			{
-				if (s.intValue()==1)
-				{
-					return true;
-				}else
-				{
-					return false;
-				}
-			}else{
-				return false;
-			}
-		} catch (Exception e) {
-			return false;
-		}
-	}
-	
-	/**
-	 * @return
-	 */
-	public boolean isSecureIP()
-	{
-		try {
-			Integer s = (Integer)getProperty("secure_ip");
-			if (s != null)
-			{
-				if (s.intValue()==1)
-				{
-					return true;
-				}else
-				{
-					return false;
-				}
-			}else{
-				return false;
-			}
-		} catch (Exception e) {
-			return false;
-		}
-	}
-	
-	/**
-	 * @param s
-	 */
-	public void addPrimarySecurityField(String s)
-	{
-		primarySecurityFields.add(s);
-	}
-	
-	/**
-	 * @return
-	 */
-	public ArrayList<String> getPrimarySecurityFields()
-	{
-		return primarySecurityFields;
-	}
-	
-	/**
-	 * @return
-	 */
-	public ArrayList<ElementAction> getElementActions()
-	{
-		return elementActions;
-	}
-	
-	public class ElementActionGroup{
-		public String group="";
-		public ArrayList<ElementAction> actions=new ArrayList<ElementAction>();
-		
-		public String getGroup(){
-			return group;
-		}
-		
-		public ArrayList<ElementAction> getActions(){
-			return actions;
-		}
-	}
-	
-	public ArrayList<ElementActionGroup> getElementActionsByGroupings(){
-		ArrayList<ElementActionGroup> al = new ArrayList<ElementActionGroup>();
-		
-		for(ElementAction ea: this.elementActions){
-			if(ea.getGrouping()!=null && !ea.getGrouping().equals("")){
-				boolean matched=false;
-				for(ElementActionGroup eag : al){
-					if(eag.group.equals(ea.getGrouping())){
-						eag.actions.add(ea);
-						matched=true;
-					}
-				}
-				
-				if(!matched){
-					ElementActionGroup eag = new ElementActionGroup();
-					eag.group=ea.getGrouping();
-					eag.actions.add(ea);
-					al.add(eag);
-				}
-			}else{
-				ElementActionGroup eag = new ElementActionGroup();
-				eag.actions.add(ea);
-				al.add(eag);
-			}
-		}
-		
-		return al;
-	}
-	
-	/**
-	 * @param ea
-	 */
-	public void addElementAction(ElementAction ea)
-	{
-		elementActions.add(ea);
-	}
-	
-	/**
-	 * @return
-	 */
-	public ArrayList<XdatElementSecurityListingAction> getListingActions()
-	{
-		return listingActions;
-	}
-	
-	String laJSON=null;
-	public String getListingActionsJSON(){
-	    if(laJSON==null){
-                StringBuffer sb=new StringBuffer("[");
-                int c=0;
-                for(XdatElementSecurityListingAction la: this.listingActions){
-            	    if(c++>0)sb.append(",");
-                    sb.append("{");
-            	    sb.append("action:\"").append(la.getElementActionName()).append("\"");
-            	    sb.append(",display:\"").append(la.getDisplayName()).append("\"");
-        	    if(la.getPopup()!=null)
-        	    	sb.append(",popup:\"").append(la.getPopup()).append("\"");
-            	    if(la.getSequence()!=null)
-         	    	sb.append(",sequence:").append(la.getSequence()).append("");
-            	    if(la.getImage()!=null)
-         	    	sb.append(",image:\"").append(la.getImage()).append("\"");
-            	    if(la.getParameterstring()!=null)
-         	    	sb.append(",params:\"").append(la.getParameterstring()).append("\"");
-            	    
-         	    sb.append("}");
+
+    /**
+     * @return
+     */
+    public boolean isSecurePassword() {
+        try {
+            Integer s = (Integer) getProperty("secure_password");
+            if (s != null) {
+                if (s.intValue() == 1) {
+                    return true;
+                } else {
+                    return false;
                 }
-                sb.append("]");
-                laJSON= sb.toString();
-	    }
-	    return laJSON;
-	}
-	
-	/**
-	 * @param ea
-	 */
-	public void addListingAction(org.nrg.xdat.om.XdatElementSecurityListingAction ea)
-	{
-		listingActions.add(ea);
-		laJSON=null;
-	}
-	
-	public List<PermissionItem> getPermissionItemsForTag(String tag) throws XFTInitException, ElementNotFoundException, FieldNotFoundException{
-		List<PermissionItem> tempItems = Lists.newArrayList();
-        
-        for (String fieldName:getPrimarySecurityFields())
-        {
-            if (! fieldName.startsWith(this.getElementName()))
-            {
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * @return
+     */
+    public boolean isSecureIP() {
+        try {
+            Integer s = (Integer) getProperty("secure_ip");
+            if (s != null) {
+                if (s.intValue() == 1) {
+                    return true;
+                } else {
+                    return false;
+                }
+            } else {
+                return false;
+            }
+        } catch (Exception e) {
+            return false;
+        }
+    }
+
+    /**
+     * @param s
+     */
+    public void addPrimarySecurityField(String s) {
+        primarySecurityFields.add(s);
+    }
+
+    /**
+     * @return
+     */
+    public ArrayList<String> getPrimarySecurityFields() {
+        return primarySecurityFields;
+    }
+
+    /**
+     * @return
+     */
+    public ArrayList<ElementAction> getElementActions() {
+        return elementActions;
+    }
+
+    public class ElementActionGroup {
+        public String                   group   = "";
+        public ArrayList<ElementAction> actions = new ArrayList<ElementAction>();
+
+        public String getGroup() {
+            return group;
+        }
+
+        public ArrayList<ElementAction> getActions() {
+            return actions;
+        }
+    }
+
+    public ArrayList<ElementActionGroup> getElementActionsByGroupings() {
+        ArrayList<ElementActionGroup> al = new ArrayList<ElementActionGroup>();
+
+        for (ElementAction ea : this.elementActions) {
+            if (ea.getGrouping() != null && !ea.getGrouping().equals("")) {
+                boolean matched = false;
+                for (ElementActionGroup eag : al) {
+                    if (eag.group.equals(ea.getGrouping())) {
+                        eag.actions.add(ea);
+                        matched = true;
+                    }
+                }
+
+                if (!matched) {
+                    ElementActionGroup eag = new ElementActionGroup();
+                    eag.group = ea.getGrouping();
+                    eag.actions.add(ea);
+                    al.add(eag);
+                }
+            } else {
+                ElementActionGroup eag = new ElementActionGroup();
+                eag.actions.add(ea);
+                al.add(eag);
+            }
+        }
+
+        return al;
+    }
+
+    /**
+     * @param ea
+     */
+    public void addElementAction(ElementAction ea) {
+        elementActions.add(ea);
+    }
+
+    /**
+     * @return
+     */
+    public ArrayList<XdatElementSecurityListingAction> getListingActions() {
+        return listingActions;
+    }
+
+    String laJSON = null;
+
+    public String getListingActionsJSON() {
+        if (laJSON == null) {
+            StringBuffer sb = new StringBuffer("[");
+            int          c  = 0;
+            for (XdatElementSecurityListingAction la : this.listingActions) {
+                if (c++ > 0) {
+                    sb.append(",");
+                }
+                sb.append("{");
+                sb.append("action:\"").append(la.getElementActionName()).append("\"");
+                sb.append(",display:\"").append(la.getDisplayName()).append("\"");
+                if (la.getPopup() != null) {
+                    sb.append(",popup:\"").append(la.getPopup()).append("\"");
+                }
+                if (la.getSequence() != null) {
+                    sb.append(",sequence:").append(la.getSequence()).append("");
+                }
+                if (la.getImage() != null) {
+                    sb.append(",image:\"").append(la.getImage()).append("\"");
+                }
+                if (la.getParameterstring() != null) {
+                    sb.append(",params:\"").append(la.getParameterstring()).append("\"");
+                }
+
+                sb.append("}");
+            }
+            sb.append("]");
+            laJSON = sb.toString();
+        }
+        return laJSON;
+    }
+
+    /**
+     * @param ea
+     */
+    public void addListingAction(org.nrg.xdat.om.XdatElementSecurityListingAction ea) {
+        listingActions.add(ea);
+        laJSON = null;
+    }
+
+    public List<PermissionItem> getPermissionItemsForTag(String tag) throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
+        List<PermissionItem> tempItems = Lists.newArrayList();
+
+        for (String fieldName : getPrimarySecurityFields()) {
+            if (!fieldName.startsWith(this.getElementName())) {
                 fieldName = this.getElementName() + XFT.PATH_SEPERATOR + fieldName;
             }
-            
+
             PermissionItem pi = new PermissionItem();
             pi.setFullFieldName(fieldName);
             pi.setDisplayName(tag);
             pi.setValue(tag);
             tempItems.add(pi);
         }
-        
-        Collections.sort(tempItems,PermissionItem.GetComparator());
+
+        Collections.sort(tempItems, PermissionItem.GetComparator());
         return tempItems;
-	}
-    
+    }
+
     private ArrayList permissionItems = null;
-	/**
-	 * @return
-	 * @throws Exception
-	 */
-	public List<PermissionItem> getPermissionItems(String login) throws Exception
-	{
-        if (permissionItems==null){
+
+    /**
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public List<PermissionItem> getPermissionItems(String login) throws Exception {
+        if (permissionItems == null) {
             permissionItems = new ArrayList();
-            
-            for (String fieldName:getPrimarySecurityFields())
-            {
-                if (! fieldName.startsWith(this.getElementName()))
-                {
+
+            for (String fieldName : getPrimarySecurityFields()) {
+                if (!fieldName.startsWith(this.getElementName())) {
                     fieldName = this.getElementName() + XFT.PATH_SEPERATOR + fieldName;
                 }
                 final GenericWrapperField field = GenericWrapperElement.GetFieldForXMLPath(fieldName);
-                
+
                 Hashtable hash = null;
-                if (field.isReference())
-                {
+                if (field.isReference()) {
                     SchemaElementI se = SchemaElement.GetElement(field.getReferenceElementName().getFullForeignType());
-                    hash = GetDistinctIdValuesFor(se.getFullXMLName(),"default",login);
-                }else{
-                    hash = GetDistinctIdValuesFor(field.getParentElement().getFullXMLName(),fieldName,login);
+                    hash = GetDistinctIdValuesFor(se.getFullXMLName(), "default", login);
+                } else {
+                    hash = GetDistinctIdValuesFor(field.getParentElement().getFullXMLName(), fieldName, login);
                 }
-                
+
                 Enumeration enumer = hash.keys();
-                while (enumer.hasMoreElements())
-                {
-                    Object id = enumer.nextElement();
-                    String display = (String)hash.get(id);
-                    PermissionItem pi = new PermissionItem();
+                while (enumer.hasMoreElements()) {
+                    Object         id      = enumer.nextElement();
+                    String         display = (String) hash.get(id);
+                    PermissionItem pi      = new PermissionItem();
                     pi.setFullFieldName(fieldName);
                     pi.setDisplayName(display);
                     pi.setValue(id);
                     permissionItems.add(pi);
                 }
             }
-            
+
             permissionItems.trimToSize();
-            Collections.sort(permissionItems,PermissionItem.GetComparator());
+            Collections.sort(permissionItems, PermissionItem.GetComparator());
         }
-		return permissionItems;
-	}
-	
-	/**
-	 * @return
-	 * @throws Exception
-	 */
-	public boolean hasDisplayValueOption() throws Exception
-	{
-	    SchemaElement se = SchemaElement.GetElement(elementName);
-		ElementDisplay ed = se.getDisplay();
-	    DisplayField idField = ed.getDisplayField(ed.getValueField());
-		DisplayField displayField = ed.getDisplayField(ed.getDisplayField());
-		if (idField != null && displayField != null)
-		{
-		    return true;
-		}else{
-		    return false;
-		}
-	}
-	
-	/**
-	 * @param elementName
-	 * @param fieldName
-	 * @return
-	 * @throws Exception
-	 */
-	public static  Hashtable GetDistinctIdValuesFor(String elementName, String fieldName, String login) throws Exception
-	{
-		//Hashtable hash1 = (Hashtable)elementDistinctIds.get(elementName); REMOVED TO PREVENT CACHING
-		Hashtable<String,Hashtable<String,String>> hash1 = new Hashtable<String,Hashtable<String,String>>();
-		SchemaElement se = SchemaElement.GetElement(elementName);
-		ElementDisplay ed = se.getDisplay();
+        return permissionItems;
+    }
+
+    /**
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public boolean hasDisplayValueOption() throws Exception {
+        SchemaElement  se           = SchemaElement.GetElement(elementName);
+        ElementDisplay ed           = se.getDisplay();
+        DisplayField   idField      = ed.getDisplayField(ed.getValueField());
+        DisplayField   displayField = ed.getDisplayField(ed.getDisplayField());
+        if (idField != null && displayField != null) {
+            return true;
+        } else {
+            return false;
+        }
+    }
+
+    /**
+     * @param elementName
+     * @param fieldName
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public static Hashtable GetDistinctIdValuesFor(String elementName, String fieldName, String login) throws Exception {
+        //Hashtable hash1 = (Hashtable)elementDistinctIds.get(elementName); REMOVED TO PREVENT CACHING
+        Hashtable<String, Hashtable<String, String>> hash1 = new Hashtable<String, Hashtable<String, String>>();
+        SchemaElement                                se    = SchemaElement.GetElement(elementName);
+        ElementDisplay                               ed    = se.getDisplay();
 //		if (hash1 == null)
 //		{
 //			hash1 = new Hashtable();
 //			elementDistinctIds.put(elementName,hash1);
 //		}
-		
-		Hashtable hash2 = (Hashtable)hash1.get(fieldName);
-		if (hash2 == null)
-		{
-			if (fieldName.equalsIgnoreCase("default"))
-			{
-				Hashtable newHash = new Hashtable();
-				boolean hasDefinedIdValuePair = false;
-				if (ed != null)
-				{
-					DisplayField idField = ed.getDisplayField(ed.getValueField());
-					DisplayField displayField = ed.getDisplayField(ed.getDisplayField());
-					if (idField != null && displayField != null)
-					{
-					    hasDefinedIdValuePair = true;
-						String query = "SELECT DISTINCT ON (" + idField.getId() + ") " + idField.getId() + "," + displayField.getId() + " FROM " + se.getDisplayTable() ;
-						XFTTable table = TableSearch.Execute(query,se.getDbName(),login);
-						table.resetRowCursor();
-						while (table.hasMoreRows())
-						{
-							Object[] row = table.nextRow();
-							newHash.put(row[0].toString(),row[1].toString());
-						}
-						hash1.put(fieldName,newHash);
-						hash2 = newHash;
-					}
-				}
-				   
-				if (!hasDefinedIdValuePair)
-				{
-					Iterator iter = se.getAllPrimaryKeys().iterator();
-					
-					String query = "SELECT DISTINCT ON (";
-					String cols = "";
-						
-					int counter=0;
-					while(iter.hasNext())
-					{
-						SchemaField sf = (SchemaField)iter.next();
-						if (counter==0)
-						{
-							cols += sf.getSQLName();
-						}else{
-							cols += ", " + sf.getSQLName();
-						}
-					}
-					
-					query += cols + ") " + cols + " FROM " + se.getSQLName();
-					
-					XFTTable table = TableSearch.Execute(query,se.getDbName(),login);
-					table.resetRowCursor();
-					while (table.hasMoreRows())
-					{
-						Object[] row = table.nextRow();
-						newHash.put(row[0].toString(),row[0].toString());
-					}
-					hash1.put(fieldName,newHash);
-					hash2 = newHash;
-				}
-				
-			}else{
-				Hashtable newHash = new Hashtable();
-				
-					GenericWrapperField f = GenericWrapperElement.GetFieldForXMLPath(fieldName);
-					ArrayList al = f.getPossibleValues();
-					if (al.size() > 0)
-					{
-					    Iterator pvs = al.iterator();
-					    while(pvs.hasNext())
-					    {
-					        String s = (String)pvs.next();
-							newHash.put(s,s);
-						}
-						hash1.put(fieldName,newHash);
-						hash2 = newHash;
-						
-					}else{
-                        if (f.getBaseElement()==null || f.getBaseElement()==""){
-                            GenericWrapperElement parent = f.getParentElement().getGenericXFTElement();
-                            String xmlPath = null;
-                            if (se.getGenericXFTElement().instanceOf(parent.getFullXMLName()))
-                            {
-                                xmlPath = f.getXMLPathString(se.getFullXMLName());
-                            }else{
-                                xmlPath = f.getXMLPathString(parent.getFullXMLName());
-                            }
-                            QueryOrganizer qo = new QueryOrganizer(se.getFullXMLName(),null,ViewManager.ALL);
-                            qo.addField(xmlPath);
-                            String query = qo.buildQuery();
-                            String col = qo.translateXMLPath(xmlPath);
-                            query = "SELECT DISTINCT " + col + " FROM (" + query +") SEARCH";
-                            XFTTable table = TableSearch.Execute(query,se.getDbName(),login);
-                            
-                            table.resetRowCursor();
-                            while (table.hasMoreRows())
-                            {
-                                Object[] row = table.nextRow();
-                                if (row[0]!=null)
-                                {
-                                    newHash.put(row[0].toString(),row[0].toString());
-                                }
-                            }
-                            hash1.put(fieldName,newHash);
-                            hash2 = newHash;
-                        }else{
-                            String foreignTable = f.getBaseElement();
-                            GenericWrapperElement foreign = GenericWrapperElement.GetElement(foreignTable);
-                            String foreignCol= f.getBaseCol();
-                            String query = "SELECT DISTINCT " + foreignCol + " FROM " + foreign.getSQLName();
-                            XFTTable table = TableSearch.Execute(query,se.getDbName(),login);
-                            
-                            table.resetRowCursor();
-                            while (table.hasMoreRows())
-                            {
-                                Object[] row = table.nextRow();
-                                if (row[0]!=null)
-                                {
-                                    newHash.put(row[0].toString(),row[0].toString());
-                                }
-                            }
-                            hash1.put(fieldName,newHash);
-                            hash2 = newHash;
+
+        Hashtable hash2 = (Hashtable) hash1.get(fieldName);
+        if (hash2 == null) {
+            if (fieldName.equalsIgnoreCase("default")) {
+                Hashtable newHash               = new Hashtable();
+                boolean   hasDefinedIdValuePair = false;
+                if (ed != null) {
+                    DisplayField idField      = ed.getDisplayField(ed.getValueField());
+                    DisplayField displayField = ed.getDisplayField(ed.getDisplayField());
+                    if (idField != null && displayField != null) {
+                        hasDefinedIdValuePair = true;
+                        String   query = "SELECT DISTINCT ON (" + idField.getId() + ") " + idField.getId() + "," + displayField.getId() + " FROM " + se.getDisplayTable();
+                        XFTTable table = TableSearch.Execute(query, se.getDbName(), login);
+                        table.resetRowCursor();
+                        while (table.hasMoreRows()) {
+                            Object[] row = table.nextRow();
+                            newHash.put(row[0].toString(), row[1].toString());
                         }
-					}
+                        hash1.put(fieldName, newHash);
+                        hash2 = newHash;
+                    }
+                }
+
+                if (!hasDefinedIdValuePair) {
+                    Iterator iter = se.getAllPrimaryKeys().iterator();
+
+                    String query = "SELECT DISTINCT ON (";
+                    String cols  = "";
+
+                    int counter = 0;
+                    while (iter.hasNext()) {
+                        SchemaField sf = (SchemaField) iter.next();
+                        if (counter == 0) {
+                            cols += sf.getSQLName();
+                        } else {
+                            cols += ", " + sf.getSQLName();
+                        }
+                    }
+
+                    query += cols + ") " + cols + " FROM " + se.getSQLName();
+
+                    XFTTable table = TableSearch.Execute(query, se.getDbName(), login);
+                    table.resetRowCursor();
+                    while (table.hasMoreRows()) {
+                        Object[] row = table.nextRow();
+                        newHash.put(row[0].toString(), row[0].toString());
+                    }
+                    hash1.put(fieldName, newHash);
+                    hash2 = newHash;
+                }
+
+            } else {
+                Hashtable newHash = new Hashtable();
+
+                GenericWrapperField f  = GenericWrapperElement.GetFieldForXMLPath(fieldName);
+                ArrayList           al = f.getPossibleValues();
+                if (al.size() > 0) {
+                    Iterator pvs = al.iterator();
+                    while (pvs.hasNext()) {
+                        String s = (String) pvs.next();
+                        newHash.put(s, s);
+                    }
+                    hash1.put(fieldName, newHash);
+                    hash2 = newHash;
+
+                } else {
+                    if (f.getBaseElement() == null || f.getBaseElement() == "") {
+                        GenericWrapperElement parent  = f.getParentElement().getGenericXFTElement();
+                        String                xmlPath = null;
+                        if (se.getGenericXFTElement().instanceOf(parent.getFullXMLName())) {
+                            xmlPath = f.getXMLPathString(se.getFullXMLName());
+                        } else {
+                            xmlPath = f.getXMLPathString(parent.getFullXMLName());
+                        }
+                        QueryOrganizer qo = new QueryOrganizer(se.getFullXMLName(), null, ViewManager.ALL);
+                        qo.addField(xmlPath);
+                        String query = qo.buildQuery();
+                        String col   = qo.translateXMLPath(xmlPath);
+                        query = "SELECT DISTINCT " + col + " FROM (" + query + ") SEARCH";
+                        XFTTable table = TableSearch.Execute(query, se.getDbName(), login);
+
+                        table.resetRowCursor();
+                        while (table.hasMoreRows()) {
+                            Object[] row = table.nextRow();
+                            if (row[0] != null) {
+                                newHash.put(row[0].toString(), row[0].toString());
+                            }
+                        }
+                        hash1.put(fieldName, newHash);
+                        hash2 = newHash;
+                    } else {
+                        String                foreignTable = f.getBaseElement();
+                        GenericWrapperElement foreign      = GenericWrapperElement.GetElement(foreignTable);
+                        String                foreignCol   = f.getBaseCol();
+                        String                query        = "SELECT DISTINCT " + foreignCol + " FROM " + foreign.getSQLName();
+                        XFTTable              table        = TableSearch.Execute(query, se.getDbName(), login);
+
+                        table.resetRowCursor();
+                        while (table.hasMoreRows()) {
+                            Object[] row = table.nextRow();
+                            if (row[0] != null) {
+                                newHash.put(row[0].toString(), row[0].toString());
+                            }
+                        }
+                        hash1.put(fieldName, newHash);
+                        hash2 = newHash;
+                    }
+                }
 //				}else{
 //					Hashtable newHash = new Hashtable();
 //					String query = "SELECT DISTINCT " + df.getId() + " FROM " + se.getDisplayTable();
@@ -1201,382 +1089,350 @@ public class ElementSecurity extends ItemWrapper{
 //					hash1.put(fieldName,newHash);
 //					hash2 = newHash;
 //				}
-			}
-		}
-		return hash2;
+            }
+        }
+        return hash2;
 
-	}
-	
-	/**
-	 * @param item
-	 * @return
-	 * @throws Exception
-	 */
-	public static SecurityValues GetSecurityValues(ItemI item) throws InvalidItemException,Exception
-	{
-	    ElementSecurity es = ElementSecurity.GetElementSecurity(item.getXSIType());
-	    if (es == null)
-	    {
-	        return null;
-	    }else{
-	        return es.getSecurityValues(item);
-	    }
-	}
-	
-	/**
-	 * @param item
-	 * @return
-	 * @throws FieldNotFoundException
-	 */
-	public SecurityValues getSecurityValues(ItemI item) throws FieldNotFoundException, InvalidItemException
-	{
-	    SecurityValues sv = new SecurityValues();
-	    
-	    try {
-            if (item.getXSIType().equalsIgnoreCase(this.getElementName()))
-            {
+    }
+
+    /**
+     * @param item
+     * @return
+     * @throws Exception When something goes wrong. 
+     */
+    public static SecurityValues GetSecurityValues(ItemI item) throws InvalidItemException, Exception {
+        ElementSecurity es = ElementSecurity.GetElementSecurity(item.getXSIType());
+        if (es == null) {
+            return null;
+        } else {
+            return es.getSecurityValues(item);
+        }
+    }
+
+    /**
+     * @param item
+     * @return
+     * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
+     */
+    public SecurityValues getSecurityValues(ItemI item) throws FieldNotFoundException, InvalidItemException {
+        SecurityValues sv = new SecurityValues();
+
+        try {
+            if (item.getXSIType().equalsIgnoreCase(this.getElementName())) {
                 Iterator psfs = this.getPrimarySecurityFields().iterator();
-                while (psfs.hasNext())
-                {
-                    String s = (String)psfs.next();
-                    
-                    Object temp = item.getItem().getProperty(s,true,null);
-                    
-                    if (temp ==null)
-                    {
+                while (psfs.hasNext()) {
+                    String s = (String) psfs.next();
+
+                    Object temp = item.getItem().getProperty(s, true, null);
+
+                    if (temp == null) {
                         GenericWrapperField f = null;
                         try {
                             f = GenericWrapperElement.GetFieldForXMLPath(s);
-                            if (f!=null)
-                            {
-                                if (f.isReference()){
+                            if (f != null) {
+                                if (f.isReference()) {
                                     XFTReferenceI ref = f.getXFTReference();
-                                    if (!ref.isManyToMany())
-                                    {
-                                        XFTSuperiorReference sup = (XFTSuperiorReference)ref;
-                                        Iterator iter = sup.getKeyRelations().iterator();
-                                        while (iter.hasNext())
-                                        {
-                                            XFTRelationSpecification spec = (XFTRelationSpecification)iter.next();
-                                            String newXMLPath = s.substring(0,s.lastIndexOf(XFT.PATH_SEPERATOR)+1) + spec.getLocalCol();
-                                            temp= item.getProperty(newXMLPath);
-                                                if (temp !=null)
-                                                {
-                                                    break;
-                                                }else{
-                                                    XFTItem dbVersion = item.getCurrentDBVersion(false);
-                                                    if (dbVersion != null)
-                                                    {
-                                                    	temp= dbVersion.getProperty(newXMLPath);
-                                                        if (temp !=null)
-                                                        {
-                                                            break;
-                                                        }
-                                                    }else{
-                                                        throw new InvalidItemException(item);
+                                    if (!ref.isManyToMany()) {
+                                        XFTSuperiorReference sup  = (XFTSuperiorReference) ref;
+                                        Iterator             iter = sup.getKeyRelations().iterator();
+                                        while (iter.hasNext()) {
+                                            XFTRelationSpecification spec       = (XFTRelationSpecification) iter.next();
+                                            String                   newXMLPath = s.substring(0, s.lastIndexOf(XFT.PATH_SEPERATOR) + 1) + spec.getLocalCol();
+                                            temp = item.getProperty(newXMLPath);
+                                            if (temp != null) {
+                                                break;
+                                            } else {
+                                                XFTItem dbVersion = item.getCurrentDBVersion(false);
+                                                if (dbVersion != null) {
+                                                    temp = dbVersion.getProperty(newXMLPath);
+                                                    if (temp != null) {
+                                                        break;
                                                     }
+                                                } else {
+                                                    throw new InvalidItemException(item);
                                                 }
+                                            }
                                         }
                                     }
                                 }
                             }
                         } catch (XFTInitException e) {
-                            logger.error("",e);
+                            logger.error("", e);
                         } catch (ElementNotFoundException e) {
-                            logger.error("",e);
+                            logger.error("", e);
                         } catch (FieldNotFoundException e) {
-                            logger.error("",e);
-                        } 
-                    }
-                    
-                    if (temp !=null)
-                    {
-                        if (!(temp instanceof ArrayList))
-                        {
-                        	ArrayList al = new ArrayList();
-                        	al.add(temp);
-                        	temp = al;
+                            logger.error("", e);
                         }
-                        
-                        String valueString = "";
-                        Iterator values = ((ArrayList)temp).iterator();
-                        while (values.hasNext())
-                        {
-                        	Object o = values.next();
+                    }
 
-                            if (o instanceof XFTItem)
-                            {	
-                                XFTItem sub = (XFTItem)o;
-                                if (sub.hasProperties())
-                                {
+                    if (temp != null) {
+                        if (!(temp instanceof ArrayList)) {
+                            ArrayList al = new ArrayList();
+                            al.add(temp);
+                            temp = al;
+                        }
+
+                        String   valueString = "";
+                        Iterator values      = ((ArrayList) temp).iterator();
+                        while (values.hasNext()) {
+                            Object o = values.next();
+
+                            if (o instanceof XFTItem) {
+                                XFTItem sub = (XFTItem) o;
+                                if (sub.hasProperties()) {
                                     o = sub.getPK();
-                                    
-                                    if (o==null && sub.getGenericSchemaElement().hasUniqueIdentifiers())
-                                    {
+
+                                    if (o == null && sub.getGenericSchemaElement().hasUniqueIdentifiers()) {
                                         try {
-                                            ItemCollection items =sub.getUniqueMatches(true);
-                                            if (items.size()>0)
-                                            {
-                                                XFTItem match = (XFTItem)items.first();
-                                                ArrayList al= sub.getPkNames();
-                                                Iterator iter = al.iterator();
-                                                while(iter.hasNext())
-                                                {
-                                                    String key = (String)iter.next();
-                                                    
-                                                    sub.setProperty(key,match.getProperty(key));
+                                            ItemCollection items = sub.getUniqueMatches(true);
+                                            if (items.size() > 0) {
+                                                XFTItem   match = (XFTItem) items.first();
+                                                ArrayList al    = sub.getPkNames();
+                                                Iterator  iter  = al.iterator();
+                                                while (iter.hasNext()) {
+                                                    String key = (String) iter.next();
+
+                                                    sub.setProperty(key, match.getProperty(key));
                                                 }
-                                                
+
                                                 o = sub.getPK();
                                             }
                                         } catch (DBPoolException e1) {
-                                            logger.error("",e1);
+                                            logger.error("", e1);
                                         } catch (SQLException e1) {
-                                            logger.error("",e1);
+                                            logger.error("", e1);
                                         } catch (Exception e1) {
-                                            logger.error("",e1);
+                                            logger.error("", e1);
                                         }
                                     }
-                                    
-                                    if (o == null)
-                                    {
-                                    	if(XFT.VERBOSE)System.out.println("\nUnknown value in " + s);
+
+                                    if (o == null) {
+                                        if (XFT.VERBOSE) {
+                                            System.out.println("\nUnknown value in " + s);
+                                        }
                                         logger.error("\nUnknown value in " + s);
-                                        if(XFT.VERBOSE)System.out.println(sub.toXML_String(false));
+                                        if (XFT.VERBOSE) {
+                                            System.out.println(sub.toXML_String(false));
+                                        }
                                         logger.error(sub.toXML_String(false));
-                                        if(XFT.VERBOSE)System.out.println("This field is a pre-defined security field and must match a pre-defined value.");
+                                        if (XFT.VERBOSE) {
+                                            System.out.println("This field is a pre-defined security field and must match a pre-defined value.");
+                                        }
                                         logger.error("This field is a pre-defined security field and must match a pre-defined value.");
-                                        if(XFT.VERBOSE)System.out.println("This value is not currently in the database.");
+                                        if (XFT.VERBOSE) {
+                                            System.out.println("This value is not currently in the database.");
+                                        }
                                         logger.error("This value is not currently in the database.");
                                     }
                                 }
                             }
-                            
-                            if (o!=null && org.apache.commons.lang.StringUtils.isNotEmpty(o.toString()))
-                            {
-                            	if(valueString=="")
-                            	{
-                            		valueString=o.toString();
-                            	}else{
-                            		valueString +="," + o.toString();
-                            	}
+
+                            if (o != null && org.apache.commons.lang.StringUtils.isNotEmpty(o.toString())) {
+                                if (valueString == "") {
+                                    valueString = o.toString();
+                                } else {
+                                    valueString += "," + o.toString();
+                                }
                             }
                         }
-                        if (valueString!="")
-                        {
-                            sv.getHash().put(s,valueString);
+                        if (valueString != "") {
+                            sv.getHash().put(s, valueString);
                         }
                     }
                 }
             }
         } catch (XFTInitException e) {
-            logger.error("",e);
+            logger.error("", e);
         } catch (ElementNotFoundException e) {
-            logger.error("",e);
+            logger.error("", e);
         } catch (FieldNotFoundException e) {
-            logger.error("",e);
+            logger.error("", e);
         }
-	    
-	    return sv;
-	}
-	
-	/**
-	 * @return
-	 */
-	public static ArrayList GetAbsentElements()
-	{
+
+        return sv;
+    }
+
+    /**
+     * @return The absent elements.
+     */
+    public static ArrayList GetAbsentElements() {
         try {
-            ArrayList al = new ArrayList();
-            Iterator schemas = XFTManager.GetSchemas().iterator();
-    		while (schemas.hasNext())
-    		{
-    			XFTSchema s = (XFTSchema)schemas.next();
-    			Iterator elements = s.getSortedElements().iterator();
-    			while (elements.hasNext())
-    			{
-    				XFTElement e = (XFTElement)elements.next();
-    				if (e.getAddin().equalsIgnoreCase(""))
-    				{
-        				if (! ElementSecurity.HasDefinedElementSecurity(e.getType().getFullLocalType()))
-        				{
-        				    String proper =  XFTReferenceManager.GetProperName(e.getType().getFullLocalType());
-        				    if (proper!=null)
-        				    {
-        				        al.add(e.getType().getFullLocalType());
-        				    }
-        				} 
-    				}
-    			}
-    		}
-          
+            ArrayList al      = new ArrayList();
+            Iterator  schemas = XFTManager.GetSchemas().iterator();
+            while (schemas.hasNext()) {
+                XFTSchema s        = (XFTSchema) schemas.next();
+                Iterator  elements = s.getSortedElements().iterator();
+                while (elements.hasNext()) {
+                    XFTElement e = (XFTElement) elements.next();
+                    if (e.getAddin().equalsIgnoreCase("")) {
+                        if (!ElementSecurity.HasDefinedElementSecurity(e.getType().getFullLocalType())) {
+                            String proper = XFTReferenceManager.GetProperName(e.getType().getFullLocalType());
+                            if (proper != null) {
+                                al.add(e.getType().getFullLocalType());
+                            }
+                        }
+                    }
+                }
+            }
+
             return al;
         } catch (Exception e) {
-            logger.error("",e);
+            logger.error("", e);
         }
         return null;
-	}
-	
+    }
 
-	
-	/**
-	 * @return A sorted List of Strings
-	 * @throws Exception
-	 */
-	public static ArrayList GetElementNames() throws Exception
-	{
-		ArrayList<String> al = new ArrayList<String>();
-		Collection<ElementSecurity> ess= GetElementSecurities().values();
-		for (ElementSecurity es:ess){
-			al.add(es.getElementName());
-		}
-		al.trimToSize();
-		Collections.sort(al);
-		return al;
-	}
 
-	/**
-	 * @return A sorted List of Strings
-	 * @throws Exception
-	 */
-	public static ArrayList GetNonXDATElementNames() throws Exception
-	{
-		ArrayList<String> al = new ArrayList<String>();
-		Collection<ElementSecurity> ess= GetElementSecurities().values();
-		for (ElementSecurity es:ess){
-			if (!es.getElementName().startsWith("xdat")){
-				al.add(es.getElementName());
-			}
-		}
-		al.trimToSize();
-		Collections.sort(al);
-		return al;
-	}
-	
-	public static String GetFinalSecurityField(String s)
-	{
-	    GenericWrapperField f = null;
+    /**
+     * @return A sorted List of Strings
+     * @throws Exception When something goes wrong. 
+     */
+    public static ArrayList GetElementNames() throws Exception {
+        ArrayList<String>           al  = new ArrayList<String>();
+        Collection<ElementSecurity> ess = GetElementSecurities().values();
+        for (ElementSecurity es : ess) {
+            al.add(es.getElementName());
+        }
+        al.trimToSize();
+        Collections.sort(al);
+        return al;
+    }
+
+    /**
+     * @return A sorted List of Strings
+     * @throws Exception When something goes wrong. 
+     */
+    public static ArrayList GetNonXDATElementNames() throws Exception {
+        ArrayList<String>           al  = new ArrayList<String>();
+        Collection<ElementSecurity> ess = GetElementSecurities().values();
+        for (ElementSecurity es : ess) {
+            if (!es.getElementName().startsWith("xdat")) {
+                al.add(es.getElementName());
+            }
+        }
+        al.trimToSize();
+        Collections.sort(al);
+        return al;
+    }
+
+    public static String GetFinalSecurityField(String s) {
+        GenericWrapperField f = null;
         try {
             f = GenericWrapperElement.GetFieldForXMLPath(s);
-            if (f!=null)
-            {
-                if (f.isReference()){
+            if (f != null) {
+                if (f.isReference()) {
                     XFTReferenceI ref = f.getXFTReference();
-                    if (!ref.isManyToMany())
-                    {
-                        XFTSuperiorReference sup = (XFTSuperiorReference)ref;
-                        Iterator iter = sup.getKeyRelations().iterator();
-                        while (iter.hasNext())
-                        {
-                            XFTRelationSpecification spec = (XFTRelationSpecification)iter.next();
-                            s = s.substring(0,s.lastIndexOf(XFT.PATH_SEPERATOR)+1) + spec.getLocalCol();
+                    if (!ref.isManyToMany()) {
+                        XFTSuperiorReference sup  = (XFTSuperiorReference) ref;
+                        Iterator             iter = sup.getKeyRelations().iterator();
+                        while (iter.hasNext()) {
+                            XFTRelationSpecification spec = (XFTRelationSpecification) iter.next();
+                            s = s.substring(0, s.lastIndexOf(XFT.PATH_SEPERATOR) + 1) + spec.getLocalCol();
                             break;
                         }
                     }
                 }
             }
         } catch (XFTInitException e) {
-            logger.error("",e);
+            logger.error("", e);
         } catch (ElementNotFoundException e) {
-            logger.error("",e);
+            logger.error("", e);
         } catch (FieldNotFoundException e) {
-            logger.error("",e);
-        } 
-        
+            logger.error("", e);
+        }
+
         return s;
-	}
-	
-	public String getSecurityFields()
-	{
-	    if (this.primarySecurityFields.size()== 0){
-	        return "";
-	    }else if (this.primarySecurityFields.size()==1){
-	        return this.primarySecurityFields.get(0).toString();
-	    }else{
-	        String s = "";
-	        Iterator iter = this.primarySecurityFields.iterator();
-	        while (iter.hasNext())
-	        {
-	            s += " " + (String)iter.next();
-	        }
-	        return s;
-	    }
-	}
-        
-    List<String> fields=null;
-    
-    public boolean hasField(String field){
-    	if(fields==null){
+    }
+
+    public String getSecurityFields() {
+        if (this.primarySecurityFields.size() == 0) {
+            return "";
+        } else if (this.primarySecurityFields.size() == 1) {
+            return this.primarySecurityFields.get(0).toString();
+        } else {
+            String   s    = "";
+            Iterator iter = this.primarySecurityFields.iterator();
+            while (iter.hasNext()) {
+                s += " " + (String) iter.next();
+            }
+            return s;
+        }
+    }
+
+    List<String> fields = null;
+
+    public boolean hasField(String field) {
+        if (fields == null) {
             try {
                 fields = this.getSchemaElement().getAllDefinedFields();
             } catch (Exception e) {
-                logger.error("",e);
+                logger.error("", e);
                 return false;
             }
-    	}
+        }
         return fields.contains(field);
     }
-    
-    public void initPSF(String field,EventMetaI meta){
+
+    public void initPSF(String field, EventMetaI meta) {
         try {
-            String query = "SELECT primary_security_field FROM xdat_primary_security_field WHERE primary_security_field = '" + field + "';";
-            XFTTable t = XFTTable.Execute(query, this.getDBName(), null);
-            if (t.size()==0){
+            String   query = "SELECT primary_security_field FROM xdat_primary_security_field WHERE primary_security_field = '" + field + "';";
+            XFTTable t     = XFTTable.Execute(query, this.getDBName(), null);
+            if (t.size() == 0) {
                 XdatPrimarySecurityField psf = new XdatPrimarySecurityField(this.getUser());
                 psf.setPrimarySecurityField(field);
-                psf.setProperty("xdat:primary_security_field/primary_security_fields_primary_element_name",this.getElementName());
-                SaveItemHelper.authorizedSave(psf,this.getUser(), true, true,meta);
+                psf.setProperty("xdat:primary_security_field/primary_security_fields_primary_element_name", this.getElementName());
+                SaveItemHelper.authorizedSave(psf, this.getUser(), true, true, meta);
             }
         } catch (Exception e) {
-            logger.error("",e);
+            logger.error("", e);
         }
     }
-    
+
     //method added to facilitate the adding of permissions once you've created a new data type.  It loads a vm to build the requisite SQL.
-    public void initExistingPermissions(String userName){
-    	InputStream is=null;
-    	try {            
-        	is = CustomClasspathResourceLoader.getInputStream("/screens/new_dataType_permissions.vm");
-            if (is!=null)
-            {
-            	final List<String> stmts = Lists.newArrayList();
-            	final Scanner scanner= new Scanner(is).useDelimiter(";");
-            	while(scanner.hasNext()){
-            		String query = scanner.next();
-            		if(StringUtils.HasContent(query)){
-            			stmts.add(query.replace("$!element_name", this.getElementName()).replace("$element_name", this.getElementName()));
-            		}
-            	}
+    public void initExistingPermissions(String userName) {
+        InputStream is = null;
+        try {
+            is = CustomClasspathResourceLoader.getInputStream("/screens/new_dataType_permissions.vm");
+            if (is != null) {
+                final List<String> stmts   = Lists.newArrayList();
+                final Scanner      scanner = new Scanner(is).useDelimiter(";");
+                while (scanner.hasNext()) {
+                    String query = scanner.next();
+                    if (StringUtils.HasContent(query)) {
+                        stmts.add(query.replace("$!element_name", this.getElementName()).replace("$element_name", this.getElementName()));
+                    }
+                }
                 PoolDBUtils.ExecuteBatch(stmts, this.getDBName(), userName);
             }
         } catch (Exception e) {
-        }finally{
-        	try {
-				if(is!=null){
-					is.close();
-				}
-			} catch (IOException e) {
-			}
+        } finally {
+            try {
+                if (is != null) {
+                    is.close();
+                }
+            } catch (IOException e) {
+            }
         }
-        
+
         try {
-			DBAction.InsertMetaDatas(XdatElementAccess.SCHEMA_ELEMENT_NAME);
-			DBAction.InsertMetaDatas(XdatFieldMappingSet.SCHEMA_ELEMENT_NAME);
-			DBAction.InsertMetaDatas(XdatFieldMapping.SCHEMA_ELEMENT_NAME);
-		} catch (Exception e2) {
-            logger.error("",e2);
-		}
-        
+            DBAction.InsertMetaDatas(XdatElementAccess.SCHEMA_ELEMENT_NAME);
+            DBAction.InsertMetaDatas(XdatFieldMappingSet.SCHEMA_ELEMENT_NAME);
+            DBAction.InsertMetaDatas(XdatFieldMapping.SCHEMA_ELEMENT_NAME);
+        } catch (Exception e2) {
+            logger.error("", e2);
+        }
+
         try {
-        	XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(),XftItemEvent.UPDATE));
-		} catch (Exception e1) {
-            logger.error("",e1);
-		}
-		
-		try {
-			PoolDBUtils.ClearCache(this.getDBName(), userName, Groups.getGroupDatatype());
-		} catch (Exception e) {
-            logger.error("",e);
-		}
+            XftEventService.getService().triggerEvent(new XftItemEvent(Groups.getGroupDatatype(), XftItemEvent.UPDATE));
+        } catch (Exception e1) {
+            logger.error("", e1);
+        }
+
+        try {
+            PoolDBUtils.ClearCache(this.getDBName(), userName, Groups.getGroupDatatype());
+        } catch (Exception e) {
+            logger.error("", e);
+        }
     }
 //    
 //    public static Hashtable<String,Hashtable<String,GuestPermission>> guestPermissions = new Hashtable<String,Hashtable<String,GuestPermission>>();
@@ -1788,53 +1644,48 @@ public class ElementSecurity extends ItemWrapper{
 //        }
 //        
 //    }
-    
 
-        
-    public Comparator getComparator()
-    {
+
+    public Comparator getComparator() {
         return new ESComparator();
     }
 
-    public class ESComparator implements Comparator{
-        public ESComparator()
-        {
+    public class ESComparator implements Comparator {
+        public ESComparator() {
         }
+
         public int compare(Object o1, Object o2) {
             try {
-                ElementSecurity  value1 = (ElementSecurity)(o1);
-                ElementSecurity value2 = (ElementSecurity)(o2);
-                
-                if (value1 == null){
-                    if (value2 == null)
-                    {
+                ElementSecurity value1 = (ElementSecurity) (o1);
+                ElementSecurity value2 = (ElementSecurity) (o2);
+
+                if (value1 == null) {
+                    if (value2 == null) {
                         return 0;
-                    }else{
+                    } else {
                         return -1;
                     }
                 }
-                if (value2== null)
-                {
+                if (value2 == null) {
                     return 1;
                 }
-                
-                if (((Comparable)value1.getElementName()).equals((Comparable)value2.getElementName()))
-                {
-                    return ((Comparable)value1.getElementName()).compareTo((Comparable)value2.getElementName());
-                }else{
-                    Comparable i1 = (Comparable)value1.getElementName();
-                    Comparable i2 = (Comparable)value2.getElementName();
-                    int _return = i1.compareTo(i2);
+
+                if (((Comparable) value1.getElementName()).equals((Comparable) value2.getElementName())) {
+                    return ((Comparable) value1.getElementName()).compareTo((Comparable) value2.getElementName());
+                } else {
+                    Comparable i1      = (Comparable) value1.getElementName();
+                    Comparable i2      = (Comparable) value2.getElementName();
+                    int        _return = i1.compareTo(i2);
                     return _return;
                 }
             } catch (XFTInitException e) {
-                logger.error("",e);
+                logger.error("", e);
                 return 0;
             } catch (ElementNotFoundException e) {
-                logger.error("",e);
+                logger.error("", e);
                 return 0;
             } catch (FieldNotFoundException e) {
-                logger.error("",e);
+                logger.error("", e);
                 return 0;
             }
         }
@@ -1843,256 +1694,289 @@ public class ElementSecurity extends ItemWrapper{
 
     //FIELD
 
-    private Boolean _Accessible=null;
+    private Boolean _Accessible = null;
 
     public Boolean getAccessible() {
-        try{
-            if (_Accessible==null){
-                _Accessible=getBooleanProperty("accessible",true);
+        try {
+            if (_Accessible == null) {
+                _Accessible = getBooleanProperty("accessible", true);
                 return _Accessible;
-            }else {
+            } else {
                 return _Accessible;
             }
-        } catch (Exception e1) {logger.error(e1);return null;}
+        } catch (Exception e1) {
+            logger.error(e1);
+            return null;
+        }
     }
 
 
     //FIELD
 
-    private String _Usage=null;
+    private String _Usage = null;
 
     /**
      * @return Returns the element_name.
      */
-    public String getUsage(){
-        try{
-            if (_Usage==null){
-                _Usage=getStringProperty("usage");
+    public String getUsage() {
+        try {
+            if (_Usage == null) {
+                _Usage = getStringProperty("usage");
                 return _Usage;
-            }else {
+            } else {
                 return _Usage;
             }
-        } catch (Exception e1) {logger.error(e1);return null;}
+        } catch (Exception e1) {
+            logger.error(e1);
+            return null;
+        }
     }
 
     /**
      * Sets the value for element_name.
+     *
      * @param v Value to Set.
      */
-    public void setUsage(String v){
-        try{
-        setProperty(SCHEMA_ELEMENT_NAME + "/usage",v);
-        _Usage=null;
-        } catch (Exception e1) {logger.error(e1);}
-    }
-    
-    public boolean matchesUsageEntry(String id){
-        String usage= getUsage();
-        
-        if (usage!=null){
-            return StringUtils.CommaDelimitedStringToArrayList(usage,true).contains(id);
+    public void setUsage(String v) {
+        try {
+            setProperty(SCHEMA_ELEMENT_NAME + "/usage", v);
+            _Usage = null;
+        } catch (Exception e1) {
+            logger.error(e1);
         }
-        
+    }
+
+    public boolean matchesUsageEntry(String id) {
+        String usage = getUsage();
+
+        if (usage != null) {
+            return StringUtils.CommaDelimitedStringToArrayList(usage, true).contains(id);
+        }
+
         return false;
     }
 
     //FIELD
 
-    private String _Singular=null;
+    private String _Singular = null;
 
     /**
      * @return Returns the element_name.
      */
-    public String getSingular(){
-        try{
-            if (_Singular==null){
-                _Singular=getStringProperty("singular");
+    public String getSingular() {
+        try {
+            if (_Singular == null) {
+                _Singular = getStringProperty("singular");
                 return _Singular;
-            }else {
+            } else {
                 return _Singular;
             }
-        } catch (Exception e1) {logger.error(e1);return null;}
+        } catch (Exception e1) {
+            logger.error(e1);
+            return null;
+        }
     }
 
     /**
      * Sets the value for element_name.
+     *
      * @param v Value to Set.
      */
-    public void setSingular(String v){
-        try{
-        setProperty(SCHEMA_ELEMENT_NAME + "/singular",v);
-        _Singular=null;
-        } catch (Exception e1) {logger.error(e1);}
+    public void setSingular(String v) {
+        try {
+            setProperty(SCHEMA_ELEMENT_NAME + "/singular", v);
+            _Singular = null;
+        } catch (Exception e1) {
+            logger.error(e1);
+        }
     }
 
     //FIELD
 
-    private String _Plural=null;
+    private String _Plural = null;
 
     /**
      * @return Returns the element_name.
      */
-    public String getPlural(){
-        try{
-            if (_Plural==null){
-                _Plural=getStringProperty("plural");
+    public String getPlural() {
+        try {
+            if (_Plural == null) {
+                _Plural = getStringProperty("plural");
                 return _Plural;
-            }else {
+            } else {
                 return _Plural;
             }
-        } catch (Exception e1) {logger.error(e1);return null;}
+        } catch (Exception e1) {
+            logger.error(e1);
+            return null;
+        }
     }
 
     /**
      * Sets the value for element_name.
+     *
      * @param v Value to Set.
      */
-    public void setPlural(String v){
-        try{
-        setProperty(SCHEMA_ELEMENT_NAME + "/plural",v);
-        _Plural=null;
-        } catch (Exception e1) {logger.error(e1);}
+    public void setPlural(String v) {
+        try {
+            setProperty(SCHEMA_ELEMENT_NAME + "/plural", v);
+            _Plural = null;
+        } catch (Exception e1) {
+            logger.error(e1);
+        }
     }
 
     //FIELD
 
-    private String _Code=null;
+    private String _Code = null;
 
     /**
      * @return Returns the element_name.
      */
-    public String getCode(){
-        try{
-            if (_Code==null){
-                _Code=getStringProperty("code");
+    public String getCode() {
+        try {
+            if (_Code == null) {
+                _Code = getStringProperty("code");
                 return _Code;
-            }else {
+            } else {
                 return _Code;
             }
-        } catch (Exception e1) {logger.error(e1);return null;}
+        } catch (Exception e1) {
+            logger.error(e1);
+            return null;
+        }
     }
 
     /**
      * Sets the value for element_name.
+     *
      * @param v Value to Set.
      */
-    public void setCode(String v){
-        try{
-        setProperty(SCHEMA_ELEMENT_NAME + "/code",v);
-        _Code=null;
-        } catch (Exception e1) {logger.error(e1);}
+    public void setCode(String v) {
+        try {
+            setProperty(SCHEMA_ELEMENT_NAME + "/code", v);
+            _Code = null;
+        } catch (Exception e1) {
+            logger.error(e1);
+        }
     }
 
     //FIELD
 
-    private String _Category=null;
+    private String _Category = null;
 
     /**
      * @return Returns the element_name.
      */
-    public String getCategory(){
-        try{
-            if (_Category==null){
-                _Category=getStringProperty("category");
+    public String getCategory() {
+        try {
+            if (_Category == null) {
+                _Category = getStringProperty("category");
                 return _Category;
-            }else {
+            } else {
                 return _Category;
             }
-        } catch (Exception e1) {logger.error(e1);return null;}
+        } catch (Exception e1) {
+            logger.error(e1);
+            return null;
+        }
     }
 
     /**
      * Sets the value for element_name.
+     *
      * @param v Value to Set.
      */
-    public void setCategory(String v){
-        try{
-        setProperty(SCHEMA_ELEMENT_NAME + "/category",v);
-        _Category=null;
-        } catch (Exception e1) {logger.error(e1);}
+    public void setCategory(String v) {
+        try {
+            setProperty(SCHEMA_ELEMENT_NAME + "/category", v);
+            _Category = null;
+        } catch (Exception e1) {
+            logger.error(e1);
+        }
     }
-    
-    public String getSingularDescription(){
-        if (getSingular()==null){
+
+    public String getSingularDescription() {
+        if (getSingular() == null) {
             try {
                 return getSchemaElement().getDisplay().getDescription();
             } catch (Throwable e) {
-                logger.error("",e);
+                logger.error("", e);
                 try {
                     return this.getElementName();
                 } catch (XFTInitException e1) {
-                    logger.error("",e1);
+                    logger.error("", e1);
                 } catch (ElementNotFoundException e1) {
-                    logger.error("",e1);
+                    logger.error("", e1);
                 } catch (FieldNotFoundException e1) {
-                    logger.error("",e1);
+                    logger.error("", e1);
                 }
             }
-        }else{
+        } else {
             return getSingular();
         }
-        
-        return null;
-    }
-    
-    public String getPluralDescription(){
-        if (getPlural()==null){
-            try {
-                return getSchemaElement().getDisplay().getDescription();
-            } catch (Throwable e) {
-                logger.error("",e);
-                try {
-                    return this.getElementName();
-                } catch (XFTInitException e1) {
-                    logger.error("",e1);
-                } catch (ElementNotFoundException e1) {
-                    logger.error("",e1);
-                } catch (FieldNotFoundException e1) {
-                    logger.error("",e1);
-                }
-            }
-        }else{
-            return getPlural();
-        }
-        
+
         return null;
     }
 
-    
-    public static String GetSingularDescription(String elementName){
-        try {
-            ElementSecurity es=GetElementSecurities().get(elementName);
-            return (es!=null && !StringUtils.IsEmpty(es.getSingularDescription()))?es.getSingularDescription():GenericWrapperElement.GetElement(elementName).getProperName();
-        } catch (Exception e) {
-            logger.error("",e);
+    public String getPluralDescription() {
+        if (getPlural() == null) {
+            try {
+                return getSchemaElement().getDisplay().getDescription();
+            } catch (Throwable e) {
+                logger.error("", e);
+                try {
+                    return this.getElementName();
+                } catch (XFTInitException e1) {
+                    logger.error("", e1);
+                } catch (ElementNotFoundException e1) {
+                    logger.error("", e1);
+                } catch (FieldNotFoundException e1) {
+                    logger.error("", e1);
+                }
+            }
+        } else {
+            return getPlural();
         }
-        
+
+        return null;
+    }
+
+
+    public static String GetSingularDescription(String elementName) {
+        try {
+            ElementSecurity es = GetElementSecurities().get(elementName);
+            return (es != null && !StringUtils.IsEmpty(es.getSingularDescription())) ? es.getSingularDescription() : GenericWrapperElement.GetElement(elementName).getProperName();
+        } catch (Exception e) {
+            logger.error("", e);
+        }
+
         return elementName;
     }
-    
-    public static String GetPluralDescription(String elementName){
+
+    public static String GetPluralDescription(String elementName) {
         try {
-            ElementSecurity es=GetElementSecurities().get(elementName);
-            if (es!=null){
+            ElementSecurity es = GetElementSecurities().get(elementName);
+            if (es != null) {
                 return es.getPluralDescription();
             }
         } catch (Exception e) {
-            logger.error("",e);
+            logger.error("", e);
         }
-        
+
         return elementName;
     }
-    
-    public static String GetCode(String elementName){
+
+    public static String GetCode(String elementName) {
         try {
-            ElementSecurity es=GetElementSecurities().get(elementName);
-            if (es!=null){
+            ElementSecurity es = GetElementSecurities().get(elementName);
+            if (es != null) {
                 return es.getCode();
             }
         } catch (Exception e) {
-            logger.error("",e);
+            logger.error("", e);
         }
-        
+
         return elementName;
     }
 }

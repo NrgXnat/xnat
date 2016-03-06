@@ -11,8 +11,6 @@
 package org.nrg.xft;
 import org.apache.commons.collections.Predicate;
 import org.apache.log4j.Logger;
-import org.apache.velocity.VelocityContext;
-import org.apache.velocity.app.Velocity;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -49,7 +47,9 @@ import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.search.*;
 import org.nrg.xft.search.ItemSearch.IdentifierResults;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.*;
+import org.nrg.xft.utils.DateUtils;
+import org.nrg.xft.utils.SaveItemHelper;
+import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
@@ -82,7 +82,6 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	private static final String META_STATUS = "meta/status";
 	private static final Logger logger = Logger.getLogger(XFTItem.class);
 	private static Hashtable PRE_FORMATTED_ITEMS = new Hashtable();
-	public static Comparator COMPARATOR= null;
 	public final static String EXTENDED_FIELD_NAME = "extension";
 	public final static String EXTENDED_ITEM = "extension_item";
 
@@ -122,24 +121,23 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	public XFTItem(){}
 
 	/**
-	 * @param e
+	 * @param e The element to use as a base for the new item.
 	 */
 	private XFTItem(GenericWrapperElement e) {
 		this.setElement(e);
 	}
 
 	/**
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
+	 * @throws XFTInitException When an error occurs in XFT.
+	 * @throws ElementNotFoundException When a specified element isn't found on the object.
 	 */
-	public void assignDefaultValues() throws XFTInitException,ElementNotFoundException
-	{
+	public void assignDefaultValues() throws ElementNotFoundException, XFTInitException {
 		for (final Object[] fieldInfo: this.getPossibleFieldNames())
 		{
 			final GenericWrapperField f = (GenericWrapperField)fieldInfo[3];
 			if (! f.getDefaultValue().equalsIgnoreCase(""))
 			{
-				if (getProps().get((String)fieldInfo[0]) == null)
+				if (getProps().get(fieldInfo[0]) == null)
 				{
 					setField((String)fieldInfo[0],f.getDefaultValue());
 				}
@@ -148,8 +146,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @return
+	 * @return A new empty item object.
 	 */
+	@SuppressWarnings("unused")
 	public static XFTItem NewEmptyItem(UserI user)
 	{
 	    XFTItem item = new XFTItem();
@@ -917,7 +916,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 								this.setChild(field,((XFTItem)items.get(0)).populateRefItems(),true);
 								temp.setParent(this);
 							}
-						} catch (org.nrg.xft.exception.XFTInitException e) {
+						} catch (XFTInitException e) {
 							e.printStackTrace();
 						} catch (Exception e) {
 							e.printStackTrace();
@@ -935,7 +934,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * Populates Child items.
 	 * @return
 	 */
-	public ItemI populateChildItems(ArrayList parents, boolean rePopulateRefs) throws org.nrg.xft.exception.XFTInitException
+	public ItemI populateChildItems(ArrayList parents, boolean rePopulateRefs) throws XFTInitException
 	{
 		try {
 			Iterator iter = getGenericSchemaElement().getAllFieldsWAddIns(false,true).iterator();
@@ -1237,14 +1236,11 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * If this item, or any of its subItems can be extended to a higher type, then the extension is performed.
-	 * @param parents
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
-	 * @throws DBPoolException
-	 * @throws java.sql.SQLException
-	 * @throws Exception
+	 * @param history    The history.
+	 * @param allowMultiples    Whether multiple subitems should be allowed.
+     * @throws Exception When an error occurs.
 	 */
-	private void extendSubItems(ItemTrackingCollection history, boolean allowMultiples) throws XFTInitException,ElementNotFoundException,DBPoolException,java.sql.SQLException,Exception
+	private void extendSubItems(ItemTrackingCollection history, boolean allowMultiples) throws Exception
 	{
 		history.AddItem(this);
 		Iterator iter = this.getGenericSchemaElement().getReferenceFields(true).iterator();
@@ -1441,7 +1437,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * Returns the sql names of the pk fields for this item.
 	 * @return ArrayList of strings
 	 */
-	public ArrayList<String> getPkNames() throws org.nrg.xft.exception.XFTInitException
+	public ArrayList<String> getPkNames() throws XFTInitException
 	{
 		if (keyNames == null)
 		{
@@ -1463,11 +1459,12 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @param xmlPath
-	 * @return
-	 * @throws org.nrg.xft.exception.XFTInitException
+     * Checks whether a field is a primary key.
+	 * @param xmlPath The field to check.
+	 * @return Returns true if the field is a primary key, false otherwise.
+	 * @throws XFTInitException
 	 */
-	public boolean isPKField(String xmlPath) throws org.nrg.xft.exception.XFTInitException
+	public boolean isPKField(String xmlPath) throws XFTInitException
 	{
 		xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
 	    boolean b= false;
@@ -1540,7 +1537,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * Returns the sql names of the pk fields for this item.
 	 * @return ArrayList of strings
 	 */
-	public Map<GenericWrapperField,Object> getPkValuesWTypes() throws org.nrg.xft.exception.XFTInitException
+	public Map<GenericWrapperField,Object> getPkValuesWTypes() throws XFTInitException
 	{
 		final Hashtable<GenericWrapperField,Object> hash = new Hashtable<GenericWrapperField,Object>();
 
@@ -1587,7 +1584,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * ArrayList of SearchCriteria of primaryKeyName/value pairs
 	 * @return
 	 */
-	public CriteriaCollection getPkSearch(boolean withChildren) throws org.nrg.xft.exception.XFTInitException,ElementNotFoundException
+	public CriteriaCollection getPkSearch(boolean withChildren) throws XFTInitException,ElementNotFoundException
 	{
 	    if (getGenericSchemaElement().isExtension())
         {
@@ -1640,7 +1637,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * ArrayList of SearchCriteria of uniqueField/value pairs
 	 * @return
 	 */
-	public CriteriaCollection getUniqueSearch() throws org.nrg.xft.exception.XFTInitException,ElementNotFoundException,Exception
+	public CriteriaCollection getUniqueSearch() throws XFTInitException,ElementNotFoundException,Exception
 	{
 		CriteriaCollection search = new CriteriaCollection("OR");
 		Iterator iter = this.getGenericSchemaElement().getUniqueFields().iterator();
@@ -1760,20 +1757,20 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
     /**
      * @return
-     * @throws org.nrg.xft.exception.XFTInitException
+     * @throws XFTInitException
      * @throws ElementNotFoundException
      */
-    public boolean hasUniques() throws org.nrg.xft.exception.XFTInitException,ElementNotFoundException
+    public boolean hasUniques() throws XFTInitException,ElementNotFoundException
     {
         return hasUniques(false);
     }
 
 	/**
 	 * @return
-	 * @throws org.nrg.xft.exception.XFTInitException
+	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public boolean hasUniques(boolean checkExtensions) throws org.nrg.xft.exception.XFTInitException,ElementNotFoundException
+	public boolean hasUniques(boolean checkExtensions) throws XFTInitException,ElementNotFoundException
 	{
 		if (this.getGenericSchemaElement().hasUniques())
 		{
@@ -1881,7 +1878,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		{
 			try {
 				element = GenericWrapperElement.GetElement(this.getXSIType());
-			} catch (org.nrg.xft.exception.XFTInitException e) {
+			} catch (XFTInitException e) {
 				logger.error("",e);
 			}
 		}
@@ -1970,7 +1967,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * @param ignorePK true to ignore primary keys in comparison
 	 * @return
 	 */
-	public boolean equals(XFTItem item2, boolean ignorePK) throws org.nrg.xft.exception.XFTInitException
+	public boolean equals(XFTItem item2, boolean ignorePK) throws XFTInitException
 	{
 		boolean eq = true;
 
@@ -2276,7 +2273,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 * ArrayList of SearchCriteria of primaryKeyName/value pairs
 	 * @return
 	 */
-	public ItemSearch getFieldsMatchSearch(boolean includeParent) throws org.nrg.xft.exception.XFTInitException,ElementNotFoundException,Exception
+	public ItemSearch getFieldsMatchSearch(boolean includeParent) throws XFTInitException,ElementNotFoundException,Exception
 	{
 	    if (includeParent)
 	    {
@@ -2629,8 +2626,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	/**
 	 * Adds the provided item (value) as a child of this item.  The replace variable governs whether or
 	 * not a previously existing matching element will be replaced... or reconciled.
-	 * @param sqlName
-	 * @param value
+	 * @param field    The field to set.
+	 * @param value    The item to set.
+     * @param replace  Whether the item should be replaced if it already exists.
 	 * @throws ElementNotFoundException
 	 * @throws XFTInitException
 	 * @throws FieldNotFoundException
@@ -2912,12 +2910,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Returns true if all pk values in the two items match.
-	 * @param item1
-	 * @param item2
-	 * @return
-	 * @throws ElementNotFoundException
-	 * @throws XFTInitException
-	 * @throws InvalidReference
+	 * @param newI     The first object.
+	 * @param oldI     The second object.
+	 * @return Returns true if they match.
+     * @throws Exception When an error occurs.
 	 */
 	public static boolean CompareItemsByPKs(XFTItem newI,XFTItem oldI) throws Exception
 	{
@@ -2925,12 +2921,12 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     }
 
 	/**
-	 * @param newI
-	 * @param oldI
-	 * @param allowNewNull
-	 * @return
-	 * @throws ElementNotFoundException
-	 * @throws XFTInitException
+	 * @param newI            The first object.
+	 * @param oldI            The second object.
+	 * @param allowNewNull    Whether new nulls are allowed.
+     * @param checkExtensions Whether extension should be checked.
+	 * @return Returns true if they match.
+     * @throws Exception When an error occurs.
 	 */
 	public static boolean CompareItemsByPKs(XFTItem newI,XFTItem oldI,boolean allowNewNull,boolean checkExtensions) throws Exception
 	{
@@ -2938,24 +2934,23 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         return checker.isEqualTo(newI, oldI);
 	}
     /**
-     * @param newI
-     * @param oldI
-     * @param allowNewNull
-     * @return
-     * @throws ElementNotFoundException
-     * @throws XFTInitException
+     * @param newI            The first object.
+     * @param oldI            The second object.
+     * @return Returns true if they match.
+     * @throws Exception When an error occurs.
      */
+    @SuppressWarnings("unused")
     public static boolean CompareItemsByUniques(XFTItem newI,XFTItem oldI) throws Exception
     {
         return CompareItemsByUniques(newI, oldI, false);
     }
+
     /**
-     * @param newI
-     * @param oldI
-     * @param allowNewNull
-     * @return
-     * @throws ElementNotFoundException
-     * @throws XFTInitException
+     * @param newI            The first object.
+     * @param oldI            The second object.
+     * @param checkExtensions Whether extension should be checked.
+     * @return Returns true if they match.
+     * @throws Exception When an error occurs.
      */
     public static boolean CompareItemsByUniques(XFTItem newI,XFTItem oldI,boolean checkExtensions) throws Exception
     {
@@ -2964,10 +2959,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
     }
     
-
 	/**
 	 * Returns the parent XFTItem
-	 * @return
+	 * @return The parent item.
 	 */
 	public ItemI getParent() {
 		return parent;
@@ -2975,16 +2969,16 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Sets the parent XFTItem
-	 * @param item
+	 * @param item    The parent item.
 	 */
 	public void setParent(ItemI item) {
-		parent = (ItemI)item;
+		parent = item;
 	}
 
 	/**
 	 * If the corresponding element is extended by another element.
-	 * @return
-	 * @throws ElementNotFoundException
+	 * @return Returns true if it's extended.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
 	 */
 	private boolean isExtended() throws ElementNotFoundException
 	{
@@ -3301,7 +3295,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 	
 	/**
-	 * Copies an XFTItem and its children.  All XNAT-generated fields (pk,fk, & meta-data) are ignored.  If you need an exact copy use clone().
+	 * Copies an XFTItem and its children.  All XNAT-generated fields (pk,fk, and meta-data) are ignored.  If you need an exact copy use clone().
 	 * @return
 	 */
 	public XFTItem copy() {
@@ -3378,16 +3372,17 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    return PopulateItemFromFlatString(s, user, false);
 	}
 
-
-	/**
-	 * If any fields in this Object array have matching header values, then those fields are put into
-	 * the XFTItem. The method is recursively called on all of its sub items.
-	 * @param row
-	 * @param headers
-	 * @param name
-	 * @return
-	 */
-    public static XFTItem PopulateItemsFromQueryOrganizer(QueryOrganizer qo, GenericWrapperElement e, ArrayList parents, Hashtable row) throws ElementNotFoundException, XFTInitException, FieldNotFoundException, Exception {
+    /**
+     * If any fields in this Object array have matching header values, then those fields are put into
+     * the XFTItem. The method is recursively called on all of its sub items.
+     * @param qo         The query organizer.
+     * @param e          The element.
+     * @param parents    The parents.
+     * @param row        The row.
+     * @return The populated item.
+     * @throws Exception When an error occurs.
+     */
+    public static XFTItem PopulateItemsFromQueryOrganizer(QueryOrganizer qo, GenericWrapperElement e, ArrayList parents, Hashtable row) throws Exception {
         XFTItem item = XFTItem.NewItem(e, qo.getUser());
             if (!parents.contains(e.getFullXMLName())) {
                 //org.nrg.xft.XFT.LogCurrentTime("POPULATE ITEM FROM HASH::1  (" + name + ")");
@@ -3755,8 +3750,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
     /**
-     * @param f
-     * @return
+     * @param f    The field to return.
+     * @return Returns the property.
      */
     public Object getProperty(GenericWrapperField f)
     {
@@ -3764,19 +3759,22 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     }
 
     /**
-     * @param f
-     * @return
+     * @param f    The field to return.
+     * @param allowMultipleReturns    Whether multiple returns should be allowed.
+     * @return Returns the property.
      */
-    public Object getProperty(GenericWrapperField f, boolean allowMulitpleReturns)
+    public Object getProperty(GenericWrapperField f, boolean allowMultipleReturns)
     {
-        return getProperty(f,allowMulitpleReturns,this.getUser());
+        return getProperty(f,allowMultipleReturns,this.getUser());
     }
 
 	/**
-	 * @param f
-	 * @return
+     * @param f    The field to return.
+     * @param allowMultipleReturns    Whether multiple returns should be allowed.
+     * @param user                    The user requesting the property.
+     * @return Returns the property.
 	 */
-	public Object getProperty(GenericWrapperField f, boolean allowMulitpleReturns,UserI user)
+	public Object getProperty(GenericWrapperField f, boolean allowMultipleReturns, @SuppressWarnings("UnusedParameters") UserI user)
 	{
 	    if (f.getXMLType() !=null && f.getXMLType().getLocalType().equalsIgnoreCase("string"))
 	    {
@@ -3800,18 +3798,18 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	            return null;
 	        }
 	    }else{
-			return getField(f.getId(),allowMulitpleReturns);
+			return getField(f.getId(),allowMultipleReturns);
 	    }
 	}
 
 	/**
 	 * Whether this item has the specified property
-	 * @param xmlPath
+	 * @param xmlPath The field to check.
 	 * @param find value to find
-	 * @return
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
-	 * @throws FieldNotFoundException
+	 * @return Whether the property exists.
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
+     * @throws FieldNotFoundException When a specified field isn't found on the object.
 	 */
 	private boolean hasXMLProperty(String xmlPath, Object find) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
@@ -5937,14 +5935,15 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	/**
 	 * Set status 'quarantine', 'active', or 'locked'
-	 * @param user
-	 * @throws Exception
+	 * @param user    The user setting the status.
+     * @param status  The status to set.
+     * @throws Exception When an error occurs.
 	 */
 	public void setStatus(UserI user,String status) throws Exception{
 		String query = "SELECT " + GenericWrapperUtils.ACT_FUNCTION + this.getGenericSchemaElement().getFormattedName() + "(";
 	    ArrayList keys = element.getAllPrimaryKeys();
         Iterator keyIter = keys.iterator();
-        String pk = null;
+        String pk;
         while (keyIter.hasNext())
         {
             GenericWrapperField sf = (GenericWrapperField)keyIter.next();
@@ -6117,8 +6116,8 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	}
 
 	/**
-	 * @param refField
-	 * @param user
+	 * @param refField    The field to check for IDs.
+	 * @param user        The user requesting the IDs.
 	 * @return ArrayList of Hashtable
 	 */
 	public ArrayList getChildItemIds(GenericWrapperField refField,UserI user)
@@ -6427,10 +6426,13 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 
 	/**
-	 * @param child
-	 * @param user
+     * @param xmlPath The XML path to remove.
+	 * @param child   The child item to remove.
+	 * @param user    The user removing the child.
+     * @param c       Event metadata.
+     * @throws Exception When an error occurs.
 	 */
-	public void removeChildFromDB(String xmlPath,XFTItem child,UserI user,EventMetaI c) throws SQLException,Exception
+	public void removeChildFromDB(String xmlPath,XFTItem child,UserI user,EventMetaI c) throws Exception
 	{
 	    DBAction.RemoveItemReference(this,xmlPath,child,user,c);
 		SaveItemHelper.unauthorizedRemoveChild(this,xmlPath,child,user,c);
@@ -6474,6 +6476,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         return validationResults;
     }
 
+    @SuppressWarnings("unused")
     public Date getActivationDate()
     {
         if (this.getMeta() != null)
@@ -6703,23 +6706,16 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     }
 
     /**
-     * @param preLoaded The preLoaded to set.
+     * @param loading The loading to set.
      */
-    public void setLoading(boolean l) {
-        this.loading = l;
+    public void setLoading(boolean loading) {
+        this.loading = loading;
 
         try {
-            Iterator iter = getChildItems().iterator();
-            while (iter.hasNext())
-            {
-            	XFTItem child = (XFTItem)iter.next();
-            	child.setLoading(l);
+            for (final Object child : getChildItems()) {
+                ((XFTItem) child).setLoading(loading);
             }
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
+        } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
             logger.error("",e);
         }
     }
@@ -6736,17 +6732,10 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         this.preLoaded = preLoaded;
 
         try {
-            Iterator iter = getChildItems().iterator();
-            while (iter.hasNext())
-            {
-            	XFTItem child = (XFTItem)iter.next();
-            	child.setPreLoaded(preLoaded);
+            for (final Object child : getChildItems()) {
+                ((XFTItem) child).setPreLoaded(preLoaded);
             }
-        } catch (XFTInitException e) {
-            logger.error("",e);
-        } catch (ElementNotFoundException e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
+        } catch (XFTInitException | ElementNotFoundException | FieldNotFoundException e) {
             logger.error("",e);
         }
     }
@@ -6771,6 +6760,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     /**
      * @param pauseDBAccess The pauseDBAccess to set.
      */
+    @SuppressWarnings("unused")
     public void setPauseDBAccess(boolean pauseDBAccess) {
         this.pauseDBAccess = pauseDBAccess;
     }
@@ -6814,31 +6804,6 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	public String output(String templateName)
 	{
         return this.toXML_String();
-// MIGRATE: I think this is basically deprecated. For example, there is no "src/templates/text" folder to look in.
-//	    try {
-//            VelocityUtils.init();
-//
-//            if(templateName==null)templateName=this.getGenericSchemaElement().getFormattedName() +"_text.vm";
-//
-//            String path = XFTManager.GetInstance().getSourceDir() + "src/templates/text/"+ templateName;
-//            File f = new File(path);
-//            if (f.exists())
-//            {
-//                VelocityContext context = new VelocityContext();
-//                context.put("item",this);
-//                StringWriter sw = new StringWriter();
-//
-//                Velocity.evaluate(context,sw,"text",FileUtils.GetContents(f));
-//
-//                return sw.toString();
-//            }else{
-//                logger.info("No Velocity TEXT vm found for " + this.getGenericSchemaElement().getFullXMLName() +" at " + path);
-//                return this.toXML_String();
-//            }
-//        } catch (Exception e) {
-//            logger.error("",e);
-//            return this.toXML_String();
-//        }
 	}
 
 	public String output()
@@ -6854,12 +6819,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	public boolean canBeRootWithBase()
 	{
 	    try {
-            if (this.getGenericSchemaElement().canBeRootWithBase())
-            {
-                return true;
-            }else{
-                return false;
-            }
+            return this.getGenericSchemaElement().canBeRootWithBase();
         } catch (ElementNotFoundException e) {
             return false;
         }
@@ -6872,8 +6832,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	public static final String SPECIAL_CHAR3 = "*END_ITEM*";
 
 	public String writeToFlatString(int count) throws IOException {
-        String s = new String();
-        s+="Item:(" + count + "(";
+        String s = "Item:(" + count + "(";
         s+=this.getXSIType();
         s+=")(";
         Enumeration enumer = props.keys();
@@ -7337,25 +7296,21 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                 writer.setLocation(schemaDir);
             }
             writer.write(this);
-        } catch (TransformerConfigurationException e) {
-            logger.error("",e);
-        } catch (TransformerFactoryConfigurationError e) {
-            logger.error("",e);
-        } catch (FieldNotFoundException e) {
+        } catch (TransformerConfigurationException | TransformerFactoryConfigurationError | FieldNotFoundException e) {
             logger.error("",e);
         }
     }
 
 
     /**
-	 * @deprcated Use {@link #getChildrenOfTypeWithPaths(String,boolean)} instead
+	 * @deprecated Use {@link #getChildrenOfTypeWithPaths(String,boolean)} instead
 	 */
 	public List<XFTItem> getChildrenOfType(String xsiType){
 		return getChildrenOfType(xsiType, true);
 	}
 
 	public List<XFTItem> getChildrenOfType(String xsiType, boolean preventLoop){
-		List<XFTItem> _return = new ArrayList<XFTItem>();
+		List<XFTItem> _return = new ArrayList<>();
         try {
             ArrayList<GenericWrapperField> fields = this.getGenericSchemaElement().getReferenceFields(true);
 
@@ -7423,14 +7378,14 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 
     /**
-	 * @deprcated Use {@link #getChildrenOfTypeWithPaths(String,boolean)} instead
+	 * @deprecated Use {@link #getChildrenOfTypeWithPaths(String,boolean)} instead
 	 */
 	public Hashtable<String,XFTItem> getChildrenOfTypeWithPaths(String xsiType){
 		return getChildrenOfTypeWithPaths(xsiType, true);
     }
 
 	public Hashtable<String,XFTItem> getChildrenOfTypeWithPaths(String xsiType, boolean preventLoop){
-        Hashtable<String,XFTItem> _return = new Hashtable<String,XFTItem>();
+        Hashtable<String,XFTItem> _return = new Hashtable<>();
         try {
             ArrayList<GenericWrapperField> fields = this.getGenericSchemaElement().getReferenceFields(true);
 

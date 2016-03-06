@@ -1,27 +1,38 @@
 package org.nrg.xdat.security.helpers;
 
 public interface FeatureDefinitionI {
-	
-	/**
-	 * What is the key which identifies this feature
-	 * @return
-	 */
-	public String getKey();
-	
-	/**
-	 * What is the human readable name of this feature
-	 * @return
-	 */
-	public String getName();
-	
-	/**
-	 * What is the description of this feature for human readability?
-	 * @return
-	 */
-	public String getDescription();
-	
-	public boolean isBanned();
+    /**
+     * What is the key which identifies this feature
+     *
+     * @return The feature key.
+     */
+    String getKey();
 
+    /**
+     * What is the human readable name of this feature
+     *
+     * @return The feature name.
+     */
+    String getName();
 
-	public boolean isOnByDefault();
+    /**
+     * What is the description of this feature for human readability?
+     *
+     * @return The feature description.
+     */
+    String getDescription();
+
+    /**
+     * Indicates whether this feature is banned on this server.
+     *
+     * @return Returns true if the feature is banned, false otherwise.
+     */
+    boolean isBanned();
+
+    /**
+     * Indicates whether this feature is on by default.
+     *
+     * @return Returns true if the feature is on by default, false otherwise.
+     */
+    boolean isOnByDefault();
 }

@@ -70,11 +70,10 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     }
 
     /**
-     * @param xmlPath
-     * @throws ElementNotFoundException
+     * @param xmlPath    The XML path of the field to add.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
      */
-    public void addField(String xmlPath) throws ElementNotFoundException
-    {
+    public void addField(String xmlPath) throws ElementNotFoundException {
         if (xmlPath.startsWith("VIEW_"))
         {
             xmlPath = xmlPath.substring(5);
@@ -84,7 +83,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
             xmlPath = xmlPath.substring(9);
             addSubquery(xmlPath);
         }else{
-        	xmlPath = org.nrg.xft.utils.StringUtils.StandardizeXMLPath(xmlPath);
+        	xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
             String root = StringUtils.GetRootElementName(xmlPath);
             if (rootElement.getFullXMLName().equalsIgnoreCase(root))
             {
@@ -96,8 +95,6 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                             fieldAliases.put(xmlPath.toLowerCase(),temp);
                         }
                     } catch (XFTInitException e) {
-                        logger.error("",e);
-                    } catch (ElementNotFoundException e) {
                         logger.error("",e);
                     }
             }else{
@@ -119,16 +116,14 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     }
                 } catch (XFTInitException e) {
                     logger.error("",e);
-                } catch (ElementNotFoundException e) {
-                    logger.error("",e);
                 }
             }
         }
     }
 
     /**
-     * @param xmlPath
-     * @throws ElementNotFoundException
+     * @param xmlPath    The XML path of the subquery to add.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
      */
     public void addSubquery(String xmlPath) throws ElementNotFoundException
     {
@@ -153,8 +148,8 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     }
 
     /**
-     * @param xmlPath
-     * @throws ElementNotFoundException
+     * @param xmlPath    The XML path of the view to add.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
      */
     public void addView(String xmlPath) throws ElementNotFoundException
     {
@@ -180,8 +175,8 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     }
 
     /**
-     * @param viewName
-     * @throws Exception
+     * @param viewName    The view name to join.
+     * @exception Exception When something goes wrong.
      */
     public void addSubqueryToJoin(String viewName) throws Exception
     {
@@ -246,8 +241,8 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     }
 
     /**
-     * @param viewName
-     * @throws Exception
+     * @param viewName    The view name to join.
+     * @exception Exception When something goes wrong.
      */
     public void addViewToJoin(String viewName) throws Exception
     {
@@ -431,7 +426,8 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     /**
      * Builds query which gets all necessary fields from the db for the generation of the Display Fields
      * (Secured).
-     * @return
+     * @return The join query.
+     * @exception Exception When something goes wrong.
      */
     public String buildJoin() throws Exception
     {
@@ -758,8 +754,9 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 
     /**
      * Is there a direct connection between the two elements?
-     * @param foreignElement
-     * @return
+     * @param rootElementName    The root element name.
+     * @param foreignElementName The foreign element name.
+     * @return The connection type between the two elements.
      */
     public static boolean CanConnect(String rootElementName,String foreignElementName)
     {
@@ -807,8 +804,9 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 
     /**
      * 'schemaelement','arc','connection','multi-leveled'
-     * @param foreignElement
-     * @return
+     * @param rootElementName    The root element name.
+     * @param foreignElementName The foreign element name.
+     * @return The connection type between the two elements.
      */
     public static String GetConnectionType(String rootElementName,String foreignElementName)
     {
@@ -1130,8 +1128,9 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
      * The big mamba jamba.
      * This method will build the SQL query that can be executed on the database to retrieve the requested data.
      * @param distinct : should a distinct clause be added to the root of the query
-     * @return
-     * @throws Exception
+     * @return The resulting query.
+     * @exception Exception When something goes wrong.
+
      */
     public String buildQuery(boolean distinct) throws Exception
     {

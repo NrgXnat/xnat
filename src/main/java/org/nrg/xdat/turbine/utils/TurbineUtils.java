@@ -32,6 +32,7 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatStoredSearch;
 import org.nrg.xdat.security.helpers.UserHelper;
+import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.ItemI;
@@ -53,6 +54,7 @@ import org.xml.sax.InputSource;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+import javax.servlet.http.HttpSession;
 import java.io.*;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
@@ -340,7 +342,7 @@ public class TurbineUtils {
 
 
     /**
-     * Returns server & context as specified in the Turbine object model (taken from the first login url).
+     * Returns server and context as specified in the Turbine object model (taken from the first login url).
      *
      * @return The full server path.
      */
@@ -357,7 +359,7 @@ public class TurbineUtils {
     }
 
     /**
-     * Returns server & context as specified in user request object.
+     * Returns server and context as specified in user request object.
      *
      * @param data The run data for the context.
      * @return The relative server path.
@@ -379,7 +381,7 @@ public class TurbineUtils {
     }
 
     /**
-     * Returns server & context as specified in user request object.
+     * Returns server and context as specified in user request object.
      *
      * @param req Servlet request
      * @return The full server path.
@@ -841,6 +843,7 @@ public class TurbineUtils {
         return default_date_format;
     }
 
+    @SuppressWarnings("unused")
     public String formatDateTime(Date d) {
         synchronized (getDateTimeFormatter()) {
             return getDateTimeFormatter().format(d);
@@ -1104,27 +1107,7 @@ public class TurbineUtils {
                     }
                 }
 
-                Collections.sort(screens, new Comparator<Properties>() {
-                    @Override
-                    public int compare(Properties arg0, Properties arg1) {
-                        if (arg0.containsKey("Sequence") && arg1.containsKey("Sequence")) {
-                            try {
-                                Integer sequence1 = Integer.parseInt(arg0.getProperty("Sequence"));
-                                Integer sequence2 = Integer.parseInt(arg1.getProperty("Sequence"));
-                                return sequence1.compareTo(sequence2);
-                            } catch (NumberFormatException e) {
-                                logger.error("Illegal sequence format.", e);
-                                return 0;
-                            }
-                        } else if (arg0.containsKey("Sequence")) {
-                            return -1;
-                        } else if (arg1.containsKey("Sequence")) {
-                            return 1;
-                        } else {
-                            return 0;
-                        }
-                    }
-                });
+                Collections.sort(screens, PROPERTIES_COMPARATOR);
 
                 cachedVMS.put(subFolder, screens);
             }
@@ -1171,27 +1154,7 @@ public class TurbineUtils {
                 mergePropsNoOverwrite(props, getTemplates(p.getSQLName() + "/" + subFolder), "fileName");
             }
 
-            Collections.sort(props, new Comparator<Properties>() {
-                @Override
-                public int compare(Properties arg0, Properties arg1) {
-                    if (arg0.containsKey("Sequence") && arg1.containsKey("Sequence")) {
-                        try {
-                            Integer sequence1 = Integer.parseInt(arg0.getProperty("Sequence"));
-                            Integer sequence2 = Integer.parseInt(arg1.getProperty("Sequence"));
-                            return sequence1.compareTo(sequence2);
-                        } catch (NumberFormatException e) {
-                            logger.error("Illegal sequence format.", e);
-                            return 0;
-                        }
-                    } else if (arg0.containsKey("Sequence")) {
-                        return -1;
-                    } else if (arg1.containsKey("Sequence")) {
-                        return 1;
-                    } else {
-                        return 0;
-                    }
-                }
-            });
+            Collections.sort(props, PROPERTIES_COMPARATOR);
         } catch (XFTInitException | ElementNotFoundException e) {
             logger.error("", e);
         }
@@ -1235,6 +1198,7 @@ public class TurbineUtils {
         return formatDate(new Date(d), pattern);
     }
 
+    @SuppressWarnings("unused")
     public String formatNumber(Object o, int roundTo) {
         final NumberFormat formatter = java.text.NumberFormat.getInstance();
         if (o == null) {
@@ -1277,7 +1241,7 @@ public class TurbineUtils {
 
     /**
      * If a value is placed into a form field via JavaScript, it must be unescaped first,
-     * otherwise the value will be XML-encoded, and it will be double-encoded on re-tranmission to the server.
+     * otherwise the value will be XML-encoded, and it will be double-encoded on re-transmission to the server.
      * (e.g. "&quot;" will become "&amp;quot;").
      * This is not necessary for form fields populated via HTML, as the browser will automatically decode the entities.
      *
@@ -1344,5 +1308,51 @@ public class TurbineUtils {
         return String.format("%s; filename=\"%s\";", isAttachment ? "attachment" : "inline", filename);
     }
 
+    public static boolean isAuthorized(final RunData data, final UserI user, final boolean allowGuestAccess) throws Exception {
+        if (user ==null) {
+            HttpSession session = data.getSession();
+            session.removeAttribute("loggedin");
+
+            UserI guest= Users.getGuest();
+            if (guest!=null) {
+                TurbineUtils.setUser(data, guest);
+                session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
+
+                String Destination = data.getTemplateInfo().getScreenTemplate();
+                data.getParameters().add("nextPage", Destination);
+                if (!data.getAction().equalsIgnoreCase("")) {
+                    data.getParameters().add("nextAction", data.getAction());
+                } else {
+                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+                }
+            }
+            return allowGuestAccess;
+        } else {
+            return !(!allowGuestAccess && user.getLogin().equals("guest"));
+        }
+    }
+
     private static final String CONTENT_DISPOSITION = "Content-Disposition";
+
+    private static final Comparator<Properties> PROPERTIES_COMPARATOR = new Comparator<Properties>() {
+        @Override
+        public int compare(Properties arg0, Properties arg1) {
+            if (arg0.containsKey("Sequence") && arg1.containsKey("Sequence")) {
+                try {
+                    Integer sequence1 = Integer.parseInt(arg0.getProperty("Sequence"));
+                    Integer sequence2 = Integer.parseInt(arg1.getProperty("Sequence"));
+                    return sequence1.compareTo(sequence2);
+                } catch (NumberFormatException e) {
+                    logger.error("Illegal sequence format.", e);
+                    return 0;
+                }
+            } else if (arg0.containsKey("Sequence")) {
+                return -1;
+            } else if (arg1.containsKey("Sequence")) {
+                return 1;
+            } else {
+                return 0;
+            }
+        }
+    };
 }

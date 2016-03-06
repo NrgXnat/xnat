@@ -89,11 +89,10 @@ public class CSVScreen extends RawScreen {
     }
 
     /**
-     * Overrides & finalizes doOutput in RawScreen to serve the output stream
-     * created in buildPDF.
+     * Overrides and finalizes {@link RawScreen#doOutput(RunData)} to serve the output stream.
      *
      * @param data RunData
-     * @throws Exception, any old generic exception.
+     * @throws Exception When something goes wrong.
      */
     @SuppressWarnings("deprecation")
     protected final void doOutput(RunData data) throws Exception {

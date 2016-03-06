@@ -12,6 +12,7 @@ import org.nrg.xdat.security.services.PermissionsServiceI;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.exception.InvalidItemException;
+import org.nrg.xft.exception.MetaDataException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
@@ -32,12 +33,12 @@ public class Permissions {
 
     /**
      * Returns the currently configured permissions service
-     * <p/>
+     * 
      * You can customize the implementation returned by adding a new implementation to the org.nrg.xdat.security.user.custom package (or a diffently configured package).
-     * <p/>
+     * 
      * You can change the default implementation returned via the security.userManagementService.default configuration parameter
      *
-     * @return
+     * @return The permissions service.
      */
     public static PermissionsServiceI getPermissionsService() {
         // MIGRATION: All of these services need to switch from having the implementation in the prefs service to autowiring from the context.
@@ -61,13 +62,7 @@ public class Permissions {
                         }
                     }
                 }
-            } catch (ClassNotFoundException e) {
-                logger.error("", e);
-            } catch (InstantiationException e) {
-                logger.error("", e);
-            } catch (IllegalAccessException e) {
-                logger.error("", e);
-            } catch (IOException e) {
+            } catch (ClassNotFoundException | InstantiationException | IOException | IllegalAccessException e) {
                 logger.error("", e);
             }
 
@@ -76,11 +71,7 @@ public class Permissions {
                 try {
                     String className = XDAT.safeSiteConfigProperty("security.permissionsService.default", "org.nrg.xdat.security.PermissionsServiceImpl");
                     singleton = (PermissionsServiceI) Class.forName(className).newInstance();
-                } catch (ClassNotFoundException e) {
-                    logger.error("", e);
-                } catch (InstantiationException e) {
-                    logger.error("", e);
-                } catch (IllegalAccessException e) {
+                } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                     logger.error("", e);
                 }
             }
@@ -91,23 +82,22 @@ public class Permissions {
     /**
      * Get current XDAT criteria objects for current permission settings.  The XDAT criteria are used within the search engine to build long ugly WHERE clauses which limit the users access.  We'll want to refactor this if it isn't rewritten.
      *
-     * @param user
-     * @param rootElement
-     * @return
-     * @throws IllegalAccessException
-     * @throws Exception
+     * @param user           The user.
+     * @param rootElement    The root element.
+     * @return The requested criteria collection.
+     * @throws Exception When something goes wrong.
      */
-    public static CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement rootElement) throws IllegalAccessException, Exception {
+    public static CriteriaCollection getCriteriaForXDATRead(UserI user, SchemaElement rootElement) throws Exception {
         return getPermissionsService().getCriteriaForXDATRead(user, rootElement);
     }
 
     /**
      * Get current XFT criteria used when querying XFT items out of the database.
      *
-     * @param user
-     * @param rootElement
-     * @return
-     * @throws Exception
+     * @param user           The user.
+     * @param rootElement    The root element.
+     * @return The requested criteria collection.
+     * @throws Exception When something goes wrong.
      */
     public static CriteriaCollection getCriteriaForXFTRead(UserI user, SchemaElementI rootElement) throws Exception {
         return getPermissionsService().getCriteriaForXFTRead(user, rootElement);
@@ -115,29 +105,30 @@ public class Permissions {
 
     /**
      * Can the user create an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canCreate(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user
-     * @param root
-     * @param values
-     * @return
-     * @throws Exception
+     * @param user      The user.
+     * @param root      The root element.
+     * @param values    The security values.
+     * @return Whether the user can create an element of the indicated type.
+     * @throws Exception When something goes wrong.
      */
+    @SuppressWarnings("unused")
     public static boolean canCreate(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
         return getPermissionsService().canCreate(user, root, values);
     }
 
     /**
      * Can the user read an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canRead(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user
-     * @param root
-     * @param values
-     * @return
-     * @throws Exception
+     * @param user      The user.
+     * @param root      The root element.
+     * @param values    The security values.
+     * @return Whether the user can read an element of the indicated type.
+     * @throws Exception When something goes wrong.
      */
     public static boolean canRead(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
         return getPermissionsService().canRead(user, root, values);
@@ -145,45 +136,48 @@ public class Permissions {
 
     /**
      * Can the user edit an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canEdit(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user
-     * @param root
-     * @param values
-     * @return
-     * @throws Exception
+     * @param user      The user.
+     * @param root      The root element.
+     * @param values    The security values.
+     * @return Whether the user can edit an element of the indicated type.
+     * @throws Exception When something goes wrong.
      */
+    @SuppressWarnings("unused")
     public static boolean canEdit(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
         return getPermissionsService().canEdit(user, root, values);
     }
 
     /**
      * Can the user activate an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canActivate(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user
-     * @param root
-     * @param values
-     * @return
-     * @throws Exception
+     * @param user      The user.
+     * @param root      The root element.
+     * @param values    The security values.
+     * @return Whether the user can activate an element of the indicated type.
+     * @throws Exception When something goes wrong.
      */
+    @SuppressWarnings("unused")
     public static boolean canActivate(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
         return getPermissionsService().canActivate(user, root, values);
     }
 
     /**
      * Can the user delete an element based on a collection of key/value pairs {@link SecurityValues}.
-     * <p/>
+     * 
      * This is similar to running canDelete(user, String, Object) for each row in the SecurityValues object.
      *
-     * @param user
-     * @param root
-     * @param values
-     * @return
-     * @throws Exception
+     * @param user      The user.
+     * @param root      The root element.
+     * @param values    The security values.
+     * @return Whether the user can delete an element of the indicated type.
+     * @throws Exception When something goes wrong.
      */
+    @SuppressWarnings("unused")
     public static boolean canDelete(UserI user, SchemaElementI root, SecurityValues values) throws Exception {
         return getPermissionsService().canDelete(user, root, values);
     }
@@ -191,26 +185,25 @@ public class Permissions {
     /**
      * Can the user do the specified action for the item
      *
-     * @param user
-     * @param item
-     * @param action
-     * @return
-     * @throws InvalidItemException
-     * @throws Exception
+     * @param user      The user to test.
+     * @param item      The item to test.
+     * @param action    The action to be performed.
+     * @return Whether the user can perform the specified action on the item.
+     * @throws Exception When something goes wrong.
      */
-    public static boolean can(UserI user, ItemI item, String action) throws InvalidItemException, Exception {
+    public static boolean can(UserI user, ItemI item, String action) throws Exception {
         return getPermissionsService().can(user, item, action);
     }
 
     /**
      * Can the user do the specified action for the String/Object pair
      *
-     * @param user
-     * @param xmlPath
-     * @param value
-     * @param action
-     * @return
-     * @throws Exception
+     * @param user       The user.
+     * @param xmlPath    The XML path to the attribute.
+     * @param value      The value to test.
+     * @param action     The action to be performed.
+     * @return Whether the user can perform the specified action.
+     * @throws Exception When something goes wrong.
      */
     public static boolean can(UserI user, String xmlPath, Object value, String action) throws Exception {
         return getPermissionsService().can(user, xmlPath, value, action);
@@ -219,92 +212,86 @@ public class Permissions {
     /**
      * Can the user read the specified item
      *
-     * @param user
-     * @param item
-     * @return
-     * @throws InvalidItemException
-     * @throws Exception
+     * @param user    The user.
+     * @param item    The item.
+     * @return Whether the user can read the specified item.
+     * @throws Exception When something goes wrong.
      */
-    public static boolean canRead(UserI user, ItemI item) throws InvalidItemException, Exception {
+    public static boolean canRead(UserI user, ItemI item) throws Exception {
         return getPermissionsService().canRead(user, item);
     }
 
     /**
      * Can the user edit the specified item
      *
-     * @param user
-     * @param item
-     * @return
-     * @throws InvalidItemException
-     * @throws Exception
+     * @param user    The user.
+     * @param item    The item.
+     * @return Whether the user can edit the specified item.
+     * @throws Exception When something goes wrong.
      */
-    public static boolean canEdit(UserI user, ItemI item) throws InvalidItemException, Exception {
+    public static boolean canEdit(UserI user, ItemI item) throws Exception {
         return getPermissionsService().canEdit(user, item);
     }
 
     /**
      * Can the user create the specified item
      *
-     * @param user
-     * @param item
-     * @return
-     * @throws InvalidItemException
-     * @throws Exception
+     * @param user    The user.
+     * @param item    The item.
+     * @return Whether the user can create the specified item.
+     * @throws Exception When something goes wrong.
      */
-    public static boolean canCreate(UserI user, ItemI item) throws InvalidItemException, Exception {
+    public static boolean canCreate(UserI user, ItemI item) throws Exception {
         return getPermissionsService().canCreate(user, item);
     }
 
     /**
      * Can the user activate the specified item
      *
-     * @param user
-     * @param item
-     * @return
-     * @throws InvalidItemException
-     * @throws Exception
+     * @param user    The user.
+     * @param item    The item.
+     * @return Whether the user can activate the specified item.
+     * @throws Exception When something goes wrong.
      */
-    public static boolean canActivate(UserI user, ItemI item) throws InvalidItemException, Exception {
+    public static boolean canActivate(UserI user, ItemI item) throws Exception {
         return getPermissionsService().canActivate(user, item);
     }
 
     /**
      * Can the user delete the specified item
      *
-     * @param user
-     * @param item
-     * @return
-     * @throws InvalidItemException
-     * @throws Exception
+     * @param user    The user.
+     * @param item    The item.
+     * @return Whether the user can delete the specified item.
+     * @throws Exception When something goes wrong.
      */
-    public static boolean canDelete(UserI user, ItemI item) throws InvalidItemException, Exception {
+    public static boolean canDelete(UserI user, ItemI item) throws Exception {
         return getPermissionsService().canDelete(user, item);
     }
 
     /**
-     * Can the user create/update this item and potentially all of its descendents
+     * Can the user create/update this item and potentially all of its descendants
      *
-     * @param user
-     * @param item
-     * @param descend
-     * @return
-     * @throws InvalidItemException
-     * @throws Exception
+     * @param user       The user.
+     * @param item       The item.
+     * @param descend    Whether the descendants should be tested.
+     * @return Whether the user can store the item.
+     * @throws Exception When something goes wrong.
      */
-    public static String canStoreItem(UserI user, ItemI item, boolean descend) throws InvalidItemException, Exception {
+    public static String canStoreItem(UserI user, ItemI item, boolean descend) throws Exception {
         return getPermissionsService().canStoreItem(user, item, descend);
     }
 
     /**
      * Review the passed item and remove any child items that this user doesn't have access to.
      *
-     * @param user
-     * @param item
-     * @return
+     * @param user    The user.
+     * @param item    The item.
+     * @return The cleared item.
      * @throws IllegalAccessException
-     * @throws org.nrg.xft.exception.MetaDataException
+     * @throws MetaDataException
      */
-    public static ItemI secureItem(UserI user, ItemI item) throws IllegalAccessException, org.nrg.xft.exception.MetaDataException {
+    public static ItemI secureItem(UserI user, ItemI item) throws IllegalAccessException, MetaDataException {
         return getPermissionsService().secureItem(user, item);
     }
 
@@ -604,14 +591,13 @@ public class Permissions {
 
     /**
      * Adds/modifies specified permissions for this group.  However, nothing is saved to the database.
-     * <p/>
+     * 
      * Call Groups.save() to save the modifications.
      *
      * @param group
      * @param criteria
      * @param meta
      * @param authenticatedUser
-     * @return
      * @throws Exception
      */
     public static void setPermissionsForGroup(UserGroupI group, List<PermissionCriteriaI> criteria, EventMetaI meta, UserI authenticatedUser) throws Exception {

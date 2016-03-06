@@ -128,9 +128,9 @@ public class Groups {
 
     /**
      * Add this group for the specified user (locally).   This will not update the database.  It will add the user to this group in local memory.
-     * <p/>
+     *
      * Sometimes, a user group is associated with a user, before the user group is physically created in the database.  This method can be used to do that.
-     * <p/>
+     *
      * To specifically add the user to the group permanently, use the AddUserToGroup method
      *
      * @param user       The user on which to search.
@@ -190,11 +190,11 @@ public class Groups {
      *
      * @param id                : String ID to use for the group ID
      * @param displayName       The display name for the group.
-     * @param create            : true if members should be able to create the data types in the List<ElementSecurity> ess, else false
-     * @param read              : true if members should be able to read the data types in the List<ElementSecurity> ess, else false
-     * @param delete            : true if members should be able to delete the data types in the List<ElementSecurity> ess, else false
-     * @param edit              : true if members should be able to edit the data types in the List<ElementSecurity> ess, else false
-     * @param activate          : true if members should be able to activate the data types in the List<ElementSecurity> ess, else false
+     * @param create            : true if members should be able to create the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param read              : true if members should be able to read the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param delete            : true if members should be able to delete the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param edit              : true if members should be able to edit the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param activate          : true if members should be able to activate the data types in the List&lt;ElementSecurity&gt; ess, else false
      * @param activateChanges   : Should the permissions be activated upon creation (or wait for approval later)
      * @param ess               : List of data types that this group should have permissions for
      * @param authenticatedUser The user creating the group.
@@ -211,11 +211,11 @@ public class Groups {
      *
      * @param id                : String ID to use for the group ID
      * @param displayName       The display name for the group.
-     * @param create            : true if members should be able to create the data types in the List<ElementSecurity> ess, else false
-     * @param read              : true if members should be able to read the data types in the List<ElementSecurity> ess, else false
-     * @param delete            : true if members should be able to delete the data types in the List<ElementSecurity> ess, else false
-     * @param edit              : true if members should be able to edit the data types in the List<ElementSecurity> ess, else false
-     * @param activate          : true if members should be able to activate the data types in the List<ElementSecurity> ess, else false
+     * @param create            : true if members should be able to create the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param read              : true if members should be able to read the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param delete            : true if members should be able to delete the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param edit              : true if members should be able to edit the data types in the List&lt;ElementSecurity&gt; ess, else false
+     * @param activate          : true if members should be able to activate the data types in the List&lt;ElementSecurity&gt; ess, else false
      * @param activateChanges   : Should the permissions be activated upon creation (or wait for approval later)
      * @param ess               : List of data types that this group should have permissions for
      * @param authenticatedUser The user creating the group.
@@ -252,7 +252,7 @@ public class Groups {
 
     /**
      * The data type or classification identifier used to identify the group data type.
-     * <p/>
+     *
      * This will be used in workflow events that are created to track modifications to user groups.
      *
      * @return The data type for user group objects.

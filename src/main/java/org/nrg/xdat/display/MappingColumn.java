@@ -11,6 +11,8 @@
 package org.nrg.xdat.display;
 
 import org.nrg.xft.db.ViewManager;
+import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.utils.StringUtils;
 
@@ -32,9 +34,11 @@ public class MappingColumn {
 
     /**
      * @return The field element SQL.
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
      */
     @SuppressWarnings("unused")
-    public String getFieldElementFullSQL() throws Exception {
+    public String getFieldElementFullSQL() throws XFTInitException, ElementNotFoundException {
         if (fieldElementFullSQL == null) {
             String rootElement = StringUtils.GetRootElementName(fieldElementXMLPath);
             GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);

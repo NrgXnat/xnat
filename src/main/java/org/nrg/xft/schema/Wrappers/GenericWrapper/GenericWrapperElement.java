@@ -251,9 +251,6 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * <BR>1: type
 	 * <BR>2: xmlOnly ('true'|'false')
 	 * <BR>3: GenericWrapperField
-	 * @see org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement#getPossibleFieldNames()
-	 * @see org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement#getSelectGrandFields()
-	 * @see org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement#getSelectGrandFieldsArrayList()
 	 * @return ArrayList of Object[4]
 	 */
 	public synchronized ArrayList<Object[]> getAllFieldNames()
@@ -1665,12 +1662,11 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	
 	/**
 	 * Parses XML Dot Syntax to find field's select-grand name.
-	 * @param s
-	 * @return Object[2] 0:grand sql name 1:GenericWrapperField
-	 * @throws ElementNotFoundException
-	 * @throws XFTInitException
-	 * @throws FieldNotFoundException
-	 * @throws Exception
+     * @param fieldXMLPath    The XML path to translate.
+     * @return The translated XML path values.
+     * @throws XFTInitException When an error occurs in XFT.
+     * @throws ElementNotFoundException When a specified element isn't found on the object.
+     * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
 	 */
 	public Object[] getTableAndFieldGrandSQLForXMLPath(String fieldXMLPath)throws ElementNotFoundException,XFTInitException,FieldNotFoundException 
 	{
@@ -1684,31 +1680,29 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 	/**
 	 * Parses XML Dot Syntax to find field's select-grand name.
-	 * @param s
-	 * @param header
-	 * @param tableName
-	 * @return Object[2] 0:grand sql name 1:GenericWrapperField
-	 * @throws ElementNotFoundException
-	 * @throws XFTInitException
-	 * @throws FieldNotFoundException
-	 * @throws Exception
+	 * @param path                The XML path to translate.
+	 * @param header    	      The header.
+	 * @param correctedXMLPath    The corrected XML path.
+	 * @return The translated XML path values.
+	 * @throws XFTInitException When an error occurs in XFT.
+	 * @throws ElementNotFoundException When a specified element isn't found on the object.
+	 * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
 	 */
-	public Object[] getTableAndFieldGrandSQLForXMLPath(String s,String header,String correctedXMLPath)
-		throws ElementNotFoundException,XFTInitException,FieldNotFoundException 
+	public Object[] getTableAndFieldGrandSQLForXMLPath(String path, String header, String correctedXMLPath) throws ElementNotFoundException,XFTInitException,FieldNotFoundException
 	{
 //		if (tableName == null || tableName.equalsIgnoreCase("")) {
 //			tableName = getSQLName();
 //		}
-	    s = StringUtils.StandardizeXMLPath(s);
+	    path = StringUtils.StandardizeXMLPath(path);
 	    if (correctedXMLPath==null || correctedXMLPath.equalsIgnoreCase(""))
 	    {
 	        correctedXMLPath = this.getFullXMLName();
 	    }
 		GenericWrapperField lastField = null;
-		while (s.indexOf(XFT.PATH_SEPERATOR) != -1) {
-			String last = s;
-			String current = s.substring(0, s.indexOf(XFT.PATH_SEPERATOR));
-			s = s.substring(s.indexOf(XFT.PATH_SEPERATOR) + 1);
+		while (path.indexOf(XFT.PATH_SEPERATOR) != -1) {
+			String last = path;
+			String current = path.substring(0, path.indexOf(XFT.PATH_SEPERATOR));
+			path = path.substring(path.indexOf(XFT.PATH_SEPERATOR) + 1);
  
             String expectedXSIType = null;
                 if (XFTItem.EndsWithFilter(current))
@@ -1731,7 +1725,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                             child = GenericWrapperElement.GetElement(expectedXSIType);
                         }
 						return child.getTableAndFieldGrandSQLForXMLPath(
-								s,
+								path,
 								header + StringUtils.MinCharsAbbr(lastField.getSQLName()) + "_",
 								correctedXMLPath + XFT.PATH_SEPERATOR + current);
 					}
@@ -1756,7 +1750,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 							(GenericWrapperElement) lastField
 								.getReferenceElement();
 						return child.getTableAndFieldGrandSQLForXMLPath(
-									s,
+									path,
 									header + StringUtils.MinCharsAbbr(lastField.getSQLName()) + "_",
 									correctedXMLPath + XFT.PATH_SEPERATOR + current);
 					}
@@ -1779,38 +1773,38 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 		if (lastField == null) {
 			try {
-				lastField = getDirectField(s);
+				lastField = getDirectField(path);
 			} catch (FieldNotFoundException e) {
 				if (isExtension()) {
 					GenericWrapperElement extendedE =
 						GenericWrapperElement.GetElement(getExtensionType());
 					return extendedE.getTableAndFieldGrandSQLForXMLPath(
-							s,
+							path,
 							header + StringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
 							correctedXMLPath + XFT.PATH_SEPERATOR + getExtensionFieldName());
 					
 				}
-				throw new FieldNotFoundException(s + ":" + correctedXMLPath + ":" + this.getFullXMLName());
+				throw new FieldNotFoundException(path + ":" + correctedXMLPath + ":" + this.getFullXMLName());
 			}
 			if (lastField == null) {
-				throw new FieldNotFoundException(s);
+				throw new FieldNotFoundException(path);
 			}
 		}else{
 			try {
-				lastField = lastField.getDirectField(s);
+				lastField = lastField.getDirectField(path);
 			} catch (FieldNotFoundException e) {
 				if (isExtension()) {
 					GenericWrapperElement extendedE =
 						GenericWrapperElement.GetElement(getExtensionType());
 					return extendedE.getTableAndFieldGrandSQLForXMLPath(
-								s,
+								path,
 								header + StringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
 								correctedXMLPath + XFT.PATH_SEPERATOR + getExtensionFieldName());
 				}
-				throw new FieldNotFoundException(s);
+				throw new FieldNotFoundException(path);
 			}
 			if (lastField == null) {
-				throw new FieldNotFoundException(s);
+				throw new FieldNotFoundException(path);
 			}
 		}
 
@@ -1826,7 +1820,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					+ StringUtils.RegCharsAbbr(this.getSQLName())
 					+ "_"
 					+ lastField.getSQLName();
-		_return[2]= correctedXMLPath + XFT.PATH_SEPERATOR + s;
+		_return[2]= correctedXMLPath + XFT.PATH_SEPERATOR + path;
 		_return[1] = lastField;
 		return _return;
 	}
@@ -2403,20 +2397,20 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
     
 	/**
 	 * Parses XML Dot Syntax to find field
-	 * @param s
-	 * @return 
-	 * @throws XFTInitException
-	 * @throws ElementNotFoundException
-	 * @throws Exception
+	 * @param path    The XML path to translate.
+	 * @return The translated XML path values.
+	 * @throws XFTInitException When an error occurs in XFT.
+	 * @throws ElementNotFoundException When a specified element isn't found on the object.
+	 * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
 	 */
-	public static GenericWrapperField GetFieldForXMLPath(String s) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
+	public static GenericWrapperField GetFieldForXMLPath(String path) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
-	    s= StringUtils.StandardizeXMLPath(s);
-            String rootElement = s.substring(0,s.indexOf(XFT.PATH_SEPERATOR));
-            s = s.substring(s.indexOf(XFT.PATH_SEPERATOR) + 1);
+	    path= StringUtils.StandardizeXMLPath(path);
+            String rootElement = path.substring(0,path.indexOf(XFT.PATH_SEPERATOR));
+            path = path.substring(path.indexOf(XFT.PATH_SEPERATOR) + 1);
             GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
             try {
-                Object [] fieldInfo = root.getTableAndFieldGrandSQLForXMLPath(s);
+                Object [] fieldInfo = root.getTableAndFieldGrandSQLForXMLPath(path);
                 if (fieldInfo != null)
                 {
 				return (GenericWrapperField) fieldInfo[1];
@@ -2424,7 +2418,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                     return null;
                 }
             } catch (FieldNotFoundException e) {
-                e.FIELD=s;
+                e.FIELD=path;
                 throw e;
             }
 	}
@@ -2607,27 +2601,27 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 * 
 	 * It's hard to understate the importance of this ugly mess of code.  Its at the heart of XFT's search engine, which is at the heart of XFT.
 	 * The functionality really isn't that complicated, but the frankenstein mess of modifications over the years has turned it into a rabbit hole of complicated code.  Enter at your own risk, and leave a trail of breadcrumbs to get back out.
-	 * This would be signficantly refactored in the next round of search engine improvements, if it ends up happening.
+	 * This would be significantly refactored in the next round of search engine improvements, if it ends up happening.
 	 * 
 	 * This is used to see how elements are connected to eachother and build a connection strategy between database tables.  
 	 * 
-	 * @param s
-	 * @return
-	 * @throws Exception
+	 * @param path    The XML path to translate.
+	 * @return The translated XML path values.
+	 * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
 	 */
-	public static String[] TranslateXMLPathToTables(String s) throws FieldNotFoundException
+	public static String[] TranslateXMLPathToTables(String path) throws FieldNotFoundException
 	{
 	    try {
-	        s = StringUtils.StandardizeXMLPath(s);
-	        if (XMLPATH_TABLES_CACHE.get(s)==null || (!ENABLE_XPATH_TABLE_CACHING))
+	        path = StringUtils.StandardizeXMLPath(path);
+	        if (XMLPATH_TABLES_CACHE.get(path)==null || (!ENABLE_XPATH_TABLE_CACHING))
 	        {
-	            String rootElement = StringUtils.GetRootElementName(s);
+	            String rootElement = StringUtils.GetRootElementName(path);
 	            GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
-	            String fieldXMLPath = s.substring(s.indexOf(XFT.PATH_SEPERATOR) + 1);
+	            String fieldXMLPath = path.substring(path.indexOf(XFT.PATH_SEPERATOR) + 1);
 	            String[] tables = root.translateXMLPathToTables(fieldXMLPath);
 	            if (tables != null)
 	            {
-	                XMLPATH_TABLES_CACHE.put(s,tables);
+	                XMLPATH_TABLES_CACHE.put(path,tables);
 	            }
 	        }
         } catch (XFTInitException e) {
@@ -2637,9 +2631,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
             logger.error("",e);
             return null;            
         } catch (FieldNotFoundException e) {
-            throw new FieldNotFoundException(s);       
+            throw new FieldNotFoundException(path);
         }
-        return (String[])XMLPATH_TABLES_CACHE.get(s);
+        return (String[])XMLPATH_TABLES_CACHE.get(path);
 	}
 
 	public static String GetCompactXMLPath(String s)
@@ -2846,17 +2840,19 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 *  2:field's SQL name
 	 *  3:string of field names.
 	 * }
-	 * @param s
-	 * @return
-	 * @throws Exception
+	 * @param path    The XML path to translate.
+	 * @return The translated XML path values.
+	 * @throws XFTInitException When an error occurs in XFT.
+	 * @throws ElementNotFoundException When a specified element isn't found on the object.
+	 * @throws FieldNotFoundException When one of the requested fields can't be found in the data object.
 	 */
-	public String[] translateXMLPathToTables(String s) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
+	public String[] translateXMLPathToTables(String path) throws XFTInitException, ElementNotFoundException,FieldNotFoundException
     {
 		GenericWrapperField lastField = null;
-		while (s.indexOf(XFT.PATH_SEPERATOR) != -1) {
-			String last = s;
-			String current = s.substring(0, s.indexOf(XFT.PATH_SEPERATOR));
-			s = s.substring(s.indexOf(XFT.PATH_SEPERATOR) + 1);
+		while (path.indexOf(XFT.PATH_SEPERATOR) != -1) {
+			String last = path;
+			String current = path.substring(0, path.indexOf(XFT.PATH_SEPERATOR));
+			path = path.substring(path.indexOf(XFT.PATH_SEPERATOR) + 1);
 
 			//last was a field
 			if (lastField == null) {
@@ -2875,7 +2871,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						GenericWrapperElement child =
 							(GenericWrapperElement) lastField
 								.getReferenceElement();
-						String[] layer = child.translateXMLPathToTables(s);
+						String[] layer = child.translateXMLPathToTables(path);
 						layer[0] = this.getFullXMLName() + "." + "[" + lastField.getWrapped().getFullName() +"]" + layer[0];
 						if (lastField.getName().equalsIgnoreCase(this.getExtensionFieldName()))
 						{
@@ -2911,7 +2907,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					if(expectedXSIType!=null){
 						GenericWrapperElement extendedE =
 							GenericWrapperElement.GetElement(expectedXSIType);
-						String[] layer = extendedE.translateXMLPathToTables(s);
+						String[] layer = extendedE.translateXMLPathToTables(path);
 						//xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender
 						GenericWrapperElement child =
 							(GenericWrapperElement) lastField
@@ -2946,7 +2942,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 							(GenericWrapperElement) lastField
 								.getReferenceElement();
 						//xnat:subjectData/experiments/experiment[@xsi:type=xnat:ctSessionData]/date
-						String[] layer = child.translateXMLPathToTables(s);
+						String[] layer = child.translateXMLPathToTables(path);
 						layer[0] = this.getFullXMLName() + "." + "[" + lastField.getWrapped().getFullName() +"]" + layer[0];
 						if (lastField.getName().equalsIgnoreCase(this.getExtensionFieldName()))
 						{
@@ -2981,7 +2977,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					if(expectedXSIType!=null){
 						GenericWrapperElement extendedE =
 							GenericWrapperElement.GetElement(expectedXSIType);
-						String[] layer = extendedE.translateXMLPathToTables(s);
+						String[] layer = extendedE.translateXMLPathToTables(path);
 						GenericWrapperElement child =
 							(GenericWrapperElement) lastField
 								.getReferenceElement();
@@ -3003,23 +2999,23 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 
 		if (lastField == null) {
 			String expectedXSIType = null;
-            if (XFTItem.EndsWithFilter(s))
+            if (XFTItem.EndsWithFilter(path))
             {
-                Map map = XFTItem.GetFilterOptions(s);
+                Map map = XFTItem.GetFilterOptions(path);
                 if (map.get("@xsi:type")!=null){
                     expectedXSIType = (String)map.get("@xsi:type");
                 }
-                s = XFTItem.CleanFilter(s);
+                path = XFTItem.CleanFilter(path);
             }
 			try {
-				lastField = getDirectField(s);
+				lastField = getDirectField(path);
 			} catch (FieldNotFoundException e) {
 			    
 				if (isExtension()) {
 					GenericWrapperElement extendedE =
 						GenericWrapperElement.GetElement(getExtensionType());
 					try {
-                        String[] layer = extendedE.translateXMLPathToTables(s);
+                        String[] layer = extendedE.translateXMLPathToTables(path);
                         layer[0] = this.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
 						layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_");
                         if (layer[3]==null)
@@ -3037,7 +3033,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					GenericWrapperElement extendedE =
 						GenericWrapperElement.GetElement(expectedXSIType);
 					try {
-                        String[] layer = extendedE.translateXMLPathToTables(s);
+                        String[] layer = extendedE.translateXMLPathToTables(path);
 						GenericWrapperElement child =(GenericWrapperElement) lastField.getReferenceElement();
                         layer[0] = this.getFullXMLName() + "." + "[" + lastField.getWrapped().getFullName() +"]" +child.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
 						layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_" + "."+ child.getName().toLowerCase() + "_EXT_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],child.getName().toLowerCase() + "_EXT_"));
@@ -3058,7 +3054,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 				{
 				    Object[] al = (Object[])iter.next();
 				    String tempName = (String) al[0];
-				    if (tempName.equalsIgnoreCase(s))
+				    if (tempName.equalsIgnoreCase(path))
 				    {
 				        XFTDataField data =
 							XFTDataField.GetEmptyKey(
@@ -3074,29 +3070,29 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 				}
 				
 				if (lastField == null) {
-					throw new FieldNotFoundException(s);
+					throw new FieldNotFoundException(path);
 				}
 			}
 			if (lastField == null) {
-				throw new FieldNotFoundException(s);
+				throw new FieldNotFoundException(path);
 			}
 		}else{
 			String expectedXSIType = null;
-            if (XFTItem.EndsWithFilter(s))
+            if (XFTItem.EndsWithFilter(path))
             {
-                Map map = XFTItem.GetFilterOptions(s);
+                Map map = XFTItem.GetFilterOptions(path);
                 if (map.get("@xsi:type")!=null){
                     expectedXSIType = (String)map.get("@xsi:type");
                 }
-                s = XFTItem.CleanFilter(s);
+                path = XFTItem.CleanFilter(path);
             }
 			try {
-				lastField = lastField.getDirectField(s);
+				lastField = lastField.getDirectField(path);
 			} catch (FieldNotFoundException e) {
 				if (isExtension()) {
 					GenericWrapperElement extendedE =
 						GenericWrapperElement.GetElement(getExtensionType());
-					String[] layer = extendedE.translateXMLPathToTables(s);
+					String[] layer = extendedE.translateXMLPathToTables(path);
 					layer[0] = this.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
 					layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_");
 					if (layer[3]==null)
@@ -3110,7 +3106,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 				if (expectedXSIType!=null) {
 					GenericWrapperElement extendedE =
 						GenericWrapperElement.GetElement(getExtensionType());
-					String[] layer = extendedE.translateXMLPathToTables(s);
+					String[] layer = extendedE.translateXMLPathToTables(path);
 					layer[0] = this.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
 					layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_");
 					if (layer[3]==null)
@@ -3121,10 +3117,10 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					}
 					return layer;
 				}
-				throw new FieldNotFoundException(s);
+				throw new FieldNotFoundException(path);
 			}
 			if (lastField == null) {
-				throw new FieldNotFoundException(s);
+				throw new FieldNotFoundException(path);
 			}
 		}
 
@@ -3984,9 +3980,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	    }
 	}
 	
-	/**\
-	 * Object[][SQLName,SQLType,&N,GenericWrapperField]
-	 * @return
+	/**
+	 * Gets the SQL keys.
+	 * @return An array of arrays containing the SQL keys.
 	 */
 	public Object[][] getSQLKeys()
 	{

@@ -312,6 +312,7 @@ public class ElementDisplay extends DisplayFieldCollection {
     /**
      * ArrayList of ArrayLists of DisplayFields
      *
+     * @param cols    The number of columns (i.e. size of internal lists) to use when breaking the fields up.
      * @return A list of lists of display fields for the indicated columns.
      */
     @SuppressWarnings("unchecked")

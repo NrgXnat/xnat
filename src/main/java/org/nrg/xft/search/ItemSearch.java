@@ -457,7 +457,7 @@ public class ItemSearch implements SearchI {
 	 * Add a search criteria
 	 * @param xmlPath ex. xnat:mrSessionData.scanner
 	 * @param value SCANNER_NAME
-	 * @param comparison (=, >, <, >=, <=, IS, IS NOT)
+	 * @param comparison (=, &gt;, &lt;, &gt;=, &lt;=, IS, IS NOT)
 	 * @throws Exception
 	 */
 	public void addCriteria(String xmlPath, Object value, String comparison)throws Exception

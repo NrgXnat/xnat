@@ -8,8 +8,6 @@
  *
  * Last modified 7/1/13 9:13 AM
  */
-
-
 package org.nrg.xft.schema.design;
 
 import java.util.ArrayList;
@@ -18,37 +16,40 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 
 /**
  * @author Tim
- *
  */
 public interface SchemaElementI {
 
-	public abstract String getSQLName();
+	String getSQLName();
 
-	public abstract String getFormattedName();
+	String getFormattedName();
 
-    public abstract String getFullXMLName();
+    String getFullXMLName();
 
-    public abstract String getDbName();
+    String getDbName();
 
-    public abstract GenericWrapperElement getGenericXFTElement();
-
-   // public abstract ArrayList getSchemaFields();
+    GenericWrapperElement getGenericXFTElement();
 
     /**
      * returns SchemaFields in an ArrayList
-     * @return
+     * @return A list of the primary keys for all of the schema fields.
      */
-    public abstract ArrayList getAllPrimaryKeys();
+    ArrayList getAllPrimaryKeys();
 
     /**
      * @return Returns the preLoad.
      */
-    public abstract boolean isPreLoad();
+    boolean isPreLoad();
 
     /**
      * @param preLoad The preLoad to set.
      */
-    public abstract void setPreLoad(boolean preLoad);
-    
-    public SchemaElementI getOtherElement(String s);
+    void setPreLoad(boolean preLoad);
+
+    /**
+     * Gets another element indicated by the submitted ID.
+     * @param s    The ID of the element to retrieve.
+     * @return The indicated element if it exists.
+     */
+    @SuppressWarnings("unused")
+    SchemaElementI getOtherElement(String s);
 }

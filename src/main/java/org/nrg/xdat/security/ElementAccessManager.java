@@ -78,7 +78,7 @@ public class ElementAccessManager {
 	}
 
 	/**
-	 * @return
+	 * @return Gets the element name.
 	 */
 	public String getElement() {
 		return elementName;

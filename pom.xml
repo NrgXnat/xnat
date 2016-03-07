@@ -107,22 +107,22 @@
         <dcm4che.version>2.0.25</dcm4che.version>
         <dom4j.version>1.6.1</dom4j.version>
         <ecs.version>1.4.2</ecs.version>
-        <ehcache.version>2.6.6</ehcache.version>
+        <ehcache.version>2.6.11</ehcache.version>
         <fastmd5.version>2.7.1</fastmd5.version>
         <fest-swing.version>1.2.1</fest-swing.version>
         <fop.version>0.20.5-rc3-alpha</fop.version>
-        <groovy.version>2.3.7</groovy.version>
-        <guava.version>18.0</guava.version>
-        <h2.version>1.3.173</h2.version>
+        <groovy.version>2.4.6</groovy.version>
+        <guava.version>19.0</guava.version>
+        <h2.version>1.4.191</h2.version>
 
         <!-- Eventually upgrade to these versions. Staying with more moderate version in xnat_builder_1_7dev -->
         <!-- hibernate.version>5.0.3.Final</hibernate.version>
         <hibernate-commons.version>5.0.0.Final</hibernate-commons.version>
         <hibernate-validator.version>5.2.2.Final</hibernate-validator.version -->
-        <hibernate-commons.version>4.0.4.Final</hibernate-commons.version>
+        <hibernate-commons.version>4.0.5.Final</hibernate-commons.version>
         <hibernate-jpa-2.1.version>1.0.0.Final</hibernate-jpa-2.1.version>
-        <hibernate-validator.version>4.3.1.Final</hibernate-validator.version>
-        <hibernate.version>4.3.1.Final</hibernate.version>
+        <hibernate-validator.version>4.3.2.Final</hibernate-validator.version>
+        <hibernate.version>4.3.11.Final</hibernate.version>
         <httpcomponents-client.version>4.5.1</httpcomponents-client.version>
         <imagej.version>1.50e</imagej.version>
         <itext.version>1.1.4</itext.version>
@@ -152,14 +152,14 @@
         <mockito.version>1.8.5</mockito.version>
         <nifti_io.version>1.0</nifti_io.version>
         <org.apache.regexp.version>1.5.0</org.apache.regexp.version>
-        <org.postgresql.version>9.4-1205-jdbc42</org.postgresql.version>
+        <org.postgresql.version>9.4.1208.jre7</org.postgresql.version>
         <quartz.version>2.2.1</quartz.version>
         <reflections.version>0.9.10</reflections.version>
         <restlet.version>1.1.10</restlet.version>
         <saxon.version>9.1.0.8</saxon.version>
         <servlet-api.version>3.1.0</servlet-api.version>
         <slf4j.version>1.7.7</slf4j.version>
-        <spring-framework.version>4.2.3.RELEASE</spring-framework.version>
+        <spring-framework.version>4.2.4.RELEASE</spring-framework.version>
         <spring-ldap.version>2.0.4</spring-ldap.version>
         <spring-security.version>4.0.3.RELEASE</spring-security.version>
         <springockito.version>1.0.5</springockito.version>
@@ -187,6 +187,7 @@
         <webstart-maven-plugin.version>1.0-beta-6</webstart-maven-plugin.version>
         <maven-surefire-plugin.version>2.18.1</maven-surefire-plugin.version>
         <maven-dependency-plugin.version>2.10</maven-dependency-plugin.version>
+        <maven-shade-plugin.version>2.4.3</maven-shade-plugin.version>
         <maven-jar-plugin.version>2.6</maven-jar-plugin.version>
         <maven-jarsigner-plugin.version>1.4</maven-jarsigner-plugin.version>
     </properties>
@@ -530,6 +531,11 @@
             <dependency>
                 <groupId>org.hibernate</groupId>
                 <artifactId>hibernate-core</artifactId>
+                <version>${hibernate.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>org.hibernate</groupId>
+                <artifactId>hibernate-envers</artifactId>
                 <version>${hibernate.version}</version>
             </dependency>
             <dependency>
@@ -1320,6 +1326,26 @@
                 </plugin>
                 <plugin>
                     <groupId>org.apache.maven.plugins</groupId>
+                    <artifactId>maven-shade-plugin</artifactId>
+                    <version>${maven-shade-plugin.version}</version>
+                    <configuration>
+                        <transformers>
+                            <transformer implementation="org.apache.maven.plugins.shade.resource.ManifestResourceTransformer">
+                                <mainClass>org.sonatype.haven.HavenCli</mainClass>
+                            </transformer>
+                        </transformers>
+                    </configuration>
+                    <executions>
+                        <execution>
+                            <phase>package</phase>
+                            <goals>
+                                <goal>shade</goal>
+                            </goals>
+                        </execution>
+                    </executions>
+                </plugin>
+                <plugin>
+                    <groupId>org.apache.maven.plugins</groupId>
                     <artifactId>maven-jar-plugin</artifactId>
                     <version>${maven-jar-plugin.version}</version>
                     <configuration>
@@ -1407,31 +1433,53 @@
 
     <repositories>
         <repository>
-            <id>org.nrg.maven.artifacts.release</id>
-            <name>XNAT Release Maven Repo</name>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release</url>
+            <id>org.nrg.xnat.maven.libraries.release</id>
+            <name>XNAT Maven Release Libraries</name>
+            <url>https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release</url>
             <releases>
                 <enabled>true</enabled>
-            </releases>
-            <snapshots>
-                <enabled>false</enabled>
-            </snapshots>
-        </repository>
-        <repository>
-            <id>org.nrg.maven.artifacts.snapshot</id>
-            <name>XNAT Snapshot Maven Repo</name>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
-            <releases>
-                <enabled>false</enabled>
             </releases>
             <snapshots>
                 <enabled>true</enabled>
             </snapshots>
         </repository>
         <repository>
-            <id>org.nrg.maven.artifacts.remote</id>
-            <name>XNAT Remote Maven Repo</name>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/remote-repos</url>
+            <id>org.nrg.xnat.maven.libraries.snapshot</id>
+            <name>XNAT Maven Snapshot Libraries</name>
+            <url>https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>jcenter</id>
+            <name>jcenter</name>
+            <url>http://jcenter.bintray.com</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>dcm4che</id>
+            <name>dcm4che</name>
+            <url>http://www.dcm4che.org/maven2</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
+        <repository>
+            <id>restlet</id>
+            <name>restlet</name>
+            <url>http://maven.restlet.org</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -1440,19 +1488,6 @@
             </snapshots>
         </repository>
     </repositories>
-
-    <pluginRepositories>
-        <pluginRepository>
-            <id>org.nrg.maven.plugins.snapshot</id>
-            <name>XNAT Snapshot Maven Plugin Repo</name>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/plugins-snapshot</url>
-        </pluginRepository>
-        <pluginRepository>
-            <id>org.nrg.maven.plugins.release</id>
-            <name>XNAT Release Maven Plugin Repo</name>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/plugins-release</url>
-        </pluginRepository>
-    </pluginRepositories>
 
     <distributionManagement>
         <repository>

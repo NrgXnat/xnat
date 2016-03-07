@@ -1,4 +1,4 @@
-package org.nrg.xapi.model;
+package org.nrg.xapi.model.users;
 
 import java.util.Date;
 import java.util.*;

@@ -2,10 +2,6 @@ package org.nrg.xapi.configuration;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
-import org.springframework.context.ApplicationContext;
-import org.springframework.context.ApplicationContextAware;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
@@ -17,11 +13,26 @@ import org.springframework.web.servlet.config.annotation.ResourceHandlerRegistry
 import org.springframework.web.servlet.config.annotation.WebMvcConfigurerAdapter;
 import org.springframework.web.servlet.view.InternalResourceViewResolver;
 import org.springframework.web.servlet.view.JstlView;
+import springfox.documentation.builders.PathSelectors;
+import springfox.documentation.builders.RequestHandlerSelectors;
+import springfox.documentation.service.ApiInfo;
+import springfox.documentation.spi.DocumentationType;
+import springfox.documentation.spring.web.plugins.Docket;
+import springfox.documentation.swagger2.annotations.EnableSwagger2;
 
 @Configuration
 @EnableWebMvc
+@EnableSwagger2
 @ComponentScan("org.nrg.xapi.rest")
-public class WebConfig extends WebMvcConfigurerAdapter implements ApplicationContextAware, InitializingBean {
+public class WebConfig extends WebMvcConfigurerAdapter {
+    @Override
+    public void addResourceHandlers(ResourceHandlerRegistry registry) {
+        registry.addResourceHandler("**/swagger-ui.html")
+                .addResourceLocations("classpath:/META-INF/resources/");
+        registry.addResourceHandler("/webjars/**")
+                .addResourceLocations("classpath:/META-INF/resources/webjars/");
+    }
+
     @Bean
     public ViewResolver viewResolver() {
         return new InternalResourceViewResolver() {{
@@ -33,31 +44,32 @@ public class WebConfig extends WebMvcConfigurerAdapter implements ApplicationCon
 
     @Bean
     public MessageSource messageSource() {
-        ResourceBundleMessageSource messageSource = new ResourceBundleMessageSource();
-        messageSource.setBasename("messages");
-        return messageSource;
+        return new ResourceBundleMessageSource() {{
+            setBasename("messages");
+        }};
     }
 
-    // Added to support Swagger requirements.
-    @Override
-    public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("swagger-ui.html")
-                .addResourceLocations("classpath:/META-INF/resources/");
-
-        registry.addResourceHandler("/webjars/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/");
+    @Bean
+    public Docket api() {
+        _log.debug("Initializing the Swagger Docket object");
+        return new Docket(DocumentationType.SWAGGER_2)
+                .select()
+                .apis(RequestHandlerSelectors.basePackage("org.nrg.xapi.rest"))
+                .paths(PathSelectors.any())
+                .build()
+                .apiInfo(apiInfo());
     }
 
-    @Override
-    public void setApplicationContext(final ApplicationContext context) throws BeansException {
-        _context = context;
-    }
-
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        _log.debug(_context.getApplicationName());
+    private ApiInfo apiInfo() {
+        return new ApiInfo(
+                "XNAT REST API",
+                "The XNAT REST API (XAPI) functions provide remote programmatic access to XNAT internal functions.",
+                "1.7.0",
+                "http://www.xnat.org",
+                "info@xnat.org",
+                "Simplified 2-Clause BSD",
+                "API license URL");
     }
 
     private static final Logger _log = LoggerFactory.getLogger(WebConfig.class);
-    private ApplicationContext _context;
 }

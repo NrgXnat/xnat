@@ -10,6 +10,10 @@
  */
 package org.nrg.xnat.restlet.util;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.springframework.web.filter.GenericFilterBean;
+
 import javax.servlet.*;
 import javax.servlet.http.Cookie;
 import javax.servlet.http.HttpServletRequest;
@@ -17,27 +21,27 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
 import java.util.Date;
 
-public class UpdateExpirationCookie implements Filter {
-	public static String name = "SESSION_EXPIRATION_TIME";
-	
+public class UpdateExpirationCookie extends GenericFilterBean {
 
-	@Override
-	public void destroy() {}
-	@Override
-	public void doFilter(ServletRequest req, 
-						   ServletResponse resp,
-						   FilterChain chain) throws IOException, ServletException {
-		HttpServletRequest hq = (HttpServletRequest) req;
-		HttpServletResponse hr = (HttpServletResponse) resp;
-		int sessionIdleTime = hq.getSession().getMaxInactiveInterval();
+    public static String name = "SESSION_EXPIRATION_TIME";
 
-		Cookie c=new Cookie(name, ""+(new Date()).getTime()+","+((sessionIdleTime *1000))); 
-		c.setPath("/");
-		hr.addCookie(c);
-		
-		chain.doFilter(req,resp);
-	}
-	
-	@Override
-	public void init(FilterConfig fg) throws ServletException {}
+    @Override
+    public void doFilter(final ServletRequest req, final ServletResponse resp, final FilterChain chain) throws IOException, ServletException {
+        final HttpServletRequest  hq              = (HttpServletRequest) req;
+        final HttpServletResponse hr              = (HttpServletResponse) resp;
+        final int                 sessionIdleTime = hq.getSession().getMaxInactiveInterval();
+
+        final Cookie c = new Cookie(name, "" + (new Date()).getTime() + "," + ((sessionIdleTime * 1000)));
+        c.setPath("/");
+        hr.addCookie(c);
+
+        chain.doFilter(req, resp);
+    }
+
+    @Override
+    protected void initFilterBean() throws ServletException {
+        _log.debug("Initializing the UpdateExpirationCookie filter bean.");
+    }
+
+    private static final Logger _log = LoggerFactory.getLogger(UpdateExpirationCookie.class);
 }

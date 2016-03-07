@@ -39,7 +39,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
         // Now initialize everything else.
         context.addFilter("springSecurityFilterChain", DelegatingFilterProxy.class).addMappingForUrlPatterns(null, false, "/*");
-        context.addFilter("updateExpirationCookie", UpdateExpirationCookie.class);
+        context.addFilter("updateExpirationCookie", UpdateExpirationCookie.class).addMappingForUrlPatterns(null, false, "/*");
 
         context.addListener(XnatSessionEventPublisher.class);
         context.addListener(AxisHTTPSessionListener.class);

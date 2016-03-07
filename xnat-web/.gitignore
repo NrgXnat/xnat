@@ -6,3 +6,4 @@ src/generated
 gradle.properties
 /out
 /build
+InstanceSettings.xml

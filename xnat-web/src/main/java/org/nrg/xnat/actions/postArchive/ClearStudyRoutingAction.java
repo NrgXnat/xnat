@@ -11,8 +11,6 @@ import org.nrg.xnat.archive.PrearcSessionArchiver;
 
 /**
  * ClearStudyRoutingAction class.
- *
- * @author Rick Herrick <rick.herrick@wustl.edu> on 10/28/2014.
  */
 @SuppressWarnings("unused")
 public class ClearStudyRoutingAction implements PrearcSessionArchiver.PostArchiveAction {

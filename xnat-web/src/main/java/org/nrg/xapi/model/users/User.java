@@ -1,4 +1,4 @@
-package org.nrg.xapi.model;
+package org.nrg.xapi.model.users;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonProperty;
@@ -24,10 +24,10 @@ public class User {
     public User(final UserI user) {
         _id = user.getID();
         _username = user.getUsername();
-        _firstname = user.getFirstname();
-        _lastname = user.getLastname();
+        _firstName = user.getFirstname();
+        _lastName = user.getLastname();
         _email = user.getEmail();
-        _isAdmin = (user instanceof XDATUser ? ((XDATUser) user).isSiteAdmin() : false);
+        _isAdmin = (user instanceof XDATUser && ((XDATUser) user).isSiteAdmin());
         _dbName = "";
         _password = "";
         _salt = "";
@@ -69,26 +69,28 @@ public class User {
      * The user's first name.
      **/
     @ApiModelProperty(value = "The user's first name.")
-    @JsonProperty("firstname")
-    public String getFirstname() {
-        return _firstname;
+    @JsonProperty("firstName")
+    public String getFirstName() {
+        return _firstName;
     }
 
-    public void setFirstname(String firstname) {
-        _firstname = firstname;
+    @SuppressWarnings("unused")
+    public void setFirstName(String firstName) {
+        _firstName = firstName;
     }
 
     /**
      * The user's last name.
      **/
     @ApiModelProperty(value = "The user's last name.")
-    @JsonProperty("lastname")
-    public String getLastname() {
-        return _lastname;
+    @JsonProperty("lastName")
+    public String getLastName() {
+        return _lastName;
     }
 
-    public void setLastname(String lastname) {
-        _lastname = lastname;
+    @SuppressWarnings("unused")
+    public void setLastName(String lastName) {
+        _lastName = lastName;
     }
 
     /**
@@ -126,6 +128,7 @@ public class User {
         return _dbName;
     }
 
+    @SuppressWarnings("unused")
     public void setDbName(String dbName) {
         _dbName = dbName;
     }
@@ -152,6 +155,7 @@ public class User {
         return _salt;
     }
 
+    @SuppressWarnings("unused")
     public void setSalt(String salt) {
         _salt = salt;
     }
@@ -178,22 +182,23 @@ public class User {
         return _authorization;
     }
 
+    @SuppressWarnings("unused")
     public void setAuthorization(UserAuth authorization) {
         _authorization = authorization;
     }
 
     @JsonIgnore
-    public String getFullname() {
-        return String.format("%s %s", getFirstname(), getLastname());
+    public String getFullName() {
+        return String.format("%s %s", getFirstName(), getLastName());
     }
 
     @JsonIgnore
-    public XdatUser getXDATUser(final UserI requestor) {
+    public XdatUser getXDATUser(final UserI requester) {
         final XdatUser user;
         if (StringUtils.isNotBlank(_username)) {
-            user = XDATUser.getXdatUsersByLogin(_username, requestor, true);
+            user = XDATUser.getXdatUsersByLogin(_username, requester, true);
         } else if (_id != null) {
-            user = AutoXdatUser.getXdatUsersByXdatUserId(_id, requestor, true);
+            user = AutoXdatUser.getXdatUsersByXdatUserId(_id, requester, true);
         } else {
             user = null;
         }
@@ -202,8 +207,8 @@ public class User {
         }
         final XDATUser newUser = new XDATUser();
         newUser.setLogin(_username);
-        newUser.setFirstname(_firstname);
-        newUser.setLastname(_lastname);
+        newUser.setFirstname(_firstName);
+        newUser.setLastname(_lastName);
         newUser.setEmail(_email);
         newUser.setPrimaryPassword(_password);
         newUser.setSalt(_salt);
@@ -212,28 +217,26 @@ public class User {
 
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("class User {\n");
 
-        sb.append("  id: ").append(_id).append("\n");
-        sb.append("  username: ").append(_username).append("\n");
-        sb.append("  firstname: ").append(_firstname).append("\n");
-        sb.append("  lastname: ").append(_lastname).append("\n");
-        sb.append("  email: ").append(_email).append("\n");
-        sb.append("  dbName: ").append(_dbName).append("\n");
-        sb.append("  password: ").append(_password).append("\n");
-        sb.append("  salt: ").append(_salt).append("\n");
-        sb.append("  lastModified: ").append(_lastModified).append("\n");
-        sb.append("  authorization: ").append(_authorization).append("\n");
-        sb.append("}\n");
-        return sb.toString();
+        return "class User {\n" +
+               "  id: " + _id + "\n" +
+               "  username: " + _username + "\n" +
+               "  firstName: " + _firstName + "\n" +
+               "  lastName: " + _lastName + "\n" +
+               "  email: " + _email + "\n" +
+               "  dbName: " + _dbName + "\n" +
+               "  password: " + _password + "\n" +
+               "  salt: " + _salt + "\n" +
+               "  lastModified: " + _lastModified + "\n" +
+               "  authorization: " + _authorization + "\n" +
+               "}\n";
     }
 
-    private Integer _id = null;
-    private String _username = null;
-    private String _firstname = null;
-    private String _lastname = null;
-    private String _email = null;
+    private Integer _id        = null;
+    private String  _username  = null;
+    private String  _firstName = null;
+    private String  _lastName  = null;
+    private String  _email     = null;
     private boolean _isAdmin;
     private String _dbName = null;
     private String _password = null;

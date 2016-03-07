@@ -1,8 +1,9 @@
-package org.nrg.xapi.rest;
+package org.nrg.xapi.rest.users;
 
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.xapi.model.User;
+import org.nrg.xapi.model.users.User;
+import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
@@ -22,7 +23,7 @@ import java.util.List;
 
 @Api(description = "The XNAT POC User Management API")
 @RestController
-@RequestMapping(value = "/api/users")
+@RequestMapping(value = "/users")
 public class UsersApi {
     private static final Logger _log = LoggerFactory.getLogger(UsersApi.class);
 
@@ -74,11 +75,11 @@ public class UsersApi {
         if (user == null) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-        if ((StringUtils.isNotBlank(model.getFirstname())) && (StringUtils.equals(model.getFirstname(), user.getFirstname()))) {
-            user.setFirstname(model.getFirstname());
+        if ((StringUtils.isNotBlank(model.getFirstName())) && (StringUtils.equals(model.getFirstName(), user.getFirstname()))) {
+            user.setFirstname(model.getFirstName());
         }
-        if ((StringUtils.isNotBlank(model.getLastname())) && (StringUtils.equals(model.getLastname(), user.getLastname()))) {
-            user.setLastname(model.getLastname());
+        if ((StringUtils.isNotBlank(model.getLastName())) && (StringUtils.equals(model.getLastName(), user.getLastname()))) {
+            user.setLastname(model.getLastName());
         }
         if ((StringUtils.isNotBlank(model.getEmail())) && (StringUtils.equals(model.getEmail(), user.getEmail()))) {
             user.setEmail(model.getEmail());

@@ -3,55 +3,58 @@ package org.nrg.xapi.model;
 import io.swagger.annotations.*;
 import com.fasterxml.jackson.annotation.JsonProperty;
 
-@ApiModel(description = "")
-public class Error  {
-  
-  private Integer code = null;
-  private String message = null;
-  private String fields = null;
+@ApiModel(value = "XAPI Error", description = "Provides the description of an error that occurred within the XAPI functions.")
+public class Error {
+    private Integer code    = null;
+    private String  message = null;
+    private String  fields  = null;
 
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  @JsonProperty("code")
-  public Integer getCode() {
-    return code;
-  }
-  public void setCode(Integer code) {
-    this.code = code;
-  }
+    /**
+     * The code for the error. The meaning of the code is dependent on the context.
+     * @return The error code.
+     */
+    @ApiModelProperty(name = "Error Code", value = "The code for the error.", dataType = "java.lang.Integer", notes = "The meaning of this error code is dependent on the function where the error occurred.")
+    @JsonProperty("code")
+    public Integer getCode() {
+        return code;
+    }
 
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  @JsonProperty("message")
-  public String getMessage() {
-    return message;
-  }
-  public void setMessage(String message) {
-    this.message = message;
-  }
+    public void setCode(Integer code) {
+        this.code = code;
+    }
 
-  /**
-   **/
-  @ApiModelProperty(value = "")
-  @JsonProperty("fields")
-  public String getFields() {
-    return fields;
-  }
-  public void setFields(String fields) {
-    this.fields = fields;
-  }
+    /**
+     * A message associated with the error.
+     */
+    @ApiModelProperty(name = "Error Message", value = "A message indicating what the error was.", dataType = "java.lang.String")
+    @JsonProperty("message")
+    public String getMessage() {
+        return message;
+    }
 
-  @Override
-  public String toString()  {
-    StringBuilder sb = new StringBuilder();
-    sb.append("class Error {\n");
-    
-    sb.append("  code: ").append(code).append("\n");
-    sb.append("  message: ").append(message).append("\n");
-    sb.append("  fields: ").append(fields).append("\n");
-    sb.append("}\n");
-    return sb.toString();
-  }
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    /**
+     * Indicates the fields of the data object that caused the error.
+     */
+    @ApiModelProperty(name = "Error Fields", value = "Indicates the fields of the data object that caused the error.", dataType = "java.lang.String")
+    @JsonProperty("fields")
+    public String getFields() {
+        return fields;
+    }
+
+    public void setFields(String fields) {
+        this.fields = fields;
+    }
+
+    @Override
+    public String toString() {
+        return "class Error {\n" +
+               "  code: " + code + "\n" +
+               "  message: " + message + "\n" +
+               "  fields: " + fields + "\n" +
+               "}\n";
+    }
 }

@@ -8,13 +8,13 @@ def vEhcache = '2.6.11'
 def vJackson = '2.6.5'
 def vPostgreSQL = '9.4.1207'
 def vServletApi = '3.1.0'
-def vTomcat = '7.0.67'
+def vTomcat = '7.0.68'
 def vCargo = '1.4.18'
 def vSlf4j = '1.7.15'
 def vLog4j = '1.2.17'
 def vJunit = '4.12'
 def vSaxon = '9.1.0.8'
-def vGroovy = '2.4.5'
+def vGroovy = '2.4.6'
 def vJython = '2.7.0'
 
 group 'org.nrg.xnat'
@@ -24,11 +24,11 @@ buildscript {
     repositories {
         mavenLocal()
         maven {
-            url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release'
+            url 'https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release'
             name 'XNAT Release Repository'
         }
         maven {
-            url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot'
+            url 'https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot'
             name 'XNAT Snapshot Repository'
         }
         jcenter()
@@ -43,15 +43,15 @@ buildscript {
 repositories {
     mavenLocal()
     maven {
-        url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release'
+        url 'https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release'
         name 'XNAT Release Repository'
     }
     maven {
-        url 'http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot'
+        url 'https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot'
         name 'XNAT Snapshot Repository'
     }
     maven {
-        url 'http://nrgxnat.artifactoryonline.com/nrgxnat/ext-release'
+        url 'https://nrgxnat.artifactoryonline.com/nrgxnat/ext-release'
         name 'XNAT External Release Repository'
     }
     maven {
@@ -347,9 +347,9 @@ publishing {
                 password propertyWithDefault('repoPassword', 'password')
             }
             if (project.version.endsWith('-SNAPSHOT')) {
-                url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
+                url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
             } else {
-                url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local"
+                url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local"
             }
         }
         ivy {
@@ -360,9 +360,9 @@ publishing {
                 password propertyWithDefault('repoPassword', 'password')
             }
             if (project.version.endsWith('-SNAPSHOT')) {
-                url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
+                url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
             } else {
-                url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local"
+                url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local"
             }
         }
     }

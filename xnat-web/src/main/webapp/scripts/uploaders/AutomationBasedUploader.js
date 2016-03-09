@@ -856,7 +856,11 @@ XNAT.app.abu.continueProcessing=function() {
 		processAjax.done( function( data, textStatus, jqXHR ) {
 			$(".abu-upload-list").css('display','none');
 			$(".abu-upload-list").html('');
-			$(".response_text").html(XNAT.app.abu.processReturnedText(data,true) + "<br><br>");
+			try {
+				$(".response_text").html(XNAT.app.abu.processReturnedText(data,true) + "<br><br>");
+			} catch(e) {
+				$(".response_text").html("<br><br><h3>Error processing output returned from the server.  Status unknown.</h3>");
+			}
 			$(".response_text").css('display','inline');
 			abu._fileUploader.processingComplete();
 			XNAT.app.abu.buildPath='';
@@ -872,7 +876,11 @@ XNAT.app.abu.continueProcessing=function() {
 		processAjax.fail( function( data, textStatus, jqXHR ) {
 			$(".abu-upload-list").css('display','none');
 			$(".abu-upload-list").html('');
-			$(".response_text").html("<h3>ERROR:  Processing not successful:</h3><h3>Server Response:  " + data.statusText +  " (StatusCode=" + data.status + ")</h3>  " + data.responseText);
+			try {
+				$(".response_text").html("<h3>ERROR:  Processing not successful:</h3><h3>Server Response:  " + data.statusText +  " (StatusCode=" + data.status + ")</h3>  " + data.responseText);
+			} catch(e) {
+				$(".response_text").html("<br><br><h3>Error processing output returned from the server.  Status unknown.</h3>");
+			}
 			$(".response_text").css('display','inline');
 			abu._fileUploader.processingComplete();
 			XNAT.app.abu.buildPath='';
@@ -894,7 +902,7 @@ XNAT.app.abu.continueProcessing=function() {
 
 }
 XNAT.app.abu.processReturnedText = function(ins,returnToBr){
-	return ins.replace(/[\r\n]+/g,((returnToBr) ? "<br>" : '')).replace(/\/$/,'');
+	return ins.replace(/[\r\n]+/g,((returnToBr) ? "<br>" : '')).replace(/\/$/,'').replace(/<\/?script>/,"script");
 }
 
 XNAT.app.abu.removeUploaderConfiguration=function(configEvent,scope) {

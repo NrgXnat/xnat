@@ -1,21 +1,11 @@
 package org.nrg.prefs.tools.strict;
 
-import org.nrg.prefs.annotations.NrgPrefValue;
-import org.nrg.prefs.annotations.NrgPrefsTool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-@NrgPrefsTool(toolId = "strict",
-        toolName = "Strict Prefs Tool",
-        description = "This tests the strict mode on adding preferences",
-        preferencesClass = StrictPrefsToolPreferences.class,
-        preferences = {@NrgPrefValue(name = "strictPrefA", defaultValue = "defaultA"), @NrgPrefValue(name = "strictPrefB", defaultValue = "defaultB")},
-        strict = true)
+@Component
 public class StrictPrefsTool {
-    @SuppressWarnings("unused")
-    public void setPreferences(final StrictPrefsToolPreferences preferences) {
-        _preferences = preferences;
-    }
-
     public String getStrictPrefA() {
         return _preferences.getStrictPrefA();
     }
@@ -40,5 +30,6 @@ public class StrictPrefsTool {
         _preferences.setStrictPrefC(strictPrefC);
     }
 
-    private StrictPrefsToolPreferences _preferences;
+    @Autowired
+    private StrictPrefsToolPreferencesBean _preferences;
 }

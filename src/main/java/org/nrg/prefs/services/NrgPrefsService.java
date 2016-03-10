@@ -14,6 +14,8 @@ package org.nrg.prefs.services;
 
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.services.NrgService;
+import org.nrg.prefs.annotations.NrgPreferencesBean;
+import org.nrg.prefs.beans.PreferencesBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -29,19 +31,24 @@ import java.util.Set;
  */
 public interface NrgPrefsService extends NrgService {
     /**
-     * Creates a {@link Tool tool} with the indicated default properties and optional values.
+     * Creates a {@link Tool tool} with the properties and values specified on the preferences bean and its related
+     * {@link NrgPreferencesBean NrgPreferencesBean annotation}.
      *
-     * @param toolId              The unique tool ID.
-     * @param toolName            The readable tool name.
-     * @param description         The readable description of the tool.
-     * @param defaults            The default properties and values for the tool.
-     * @param strict              Whether the tool is set to "strict", i.e. only pre-defined preferences can be set.
-     * @param preferencesClass    The preferences class to set for the tool.
-     * @param resolverId          The ID of the entity resolver to use for this tool.
+     * @param bean    The bean object.
      * @return The object representing the persisted tool definition.
      */
     // TODO: Here the defaults are in a String, String map. The valueType attribute can indicate another type, but currently we only handle strings. This needs to be handled later with ValueDuple.
-    Tool createTool(final String toolId, final String toolName, final String description, final Map<String, String> defaults, final boolean strict, final String preferencesClass, final String resolverId) throws InvalidPreferenceName;
+    Tool createTool(final PreferencesBean bean) throws InvalidPreferenceName;
+
+    /**
+     * Creates a {@link Tool tool} with the properties and values specified on the preferences bean class and its
+     * related {@link NrgPreferencesBean NrgPreferencesBean annotation}.
+     *
+     * @param bean    The bean class.
+     * @return The object representing the persisted tool definition.
+     */
+    // TODO: Here the defaults are in a String, String map. The valueType attribute can indicate another type, but currently we only handle strings. This needs to be handled later with ValueDuple.
+    Tool createTool(final Class<? extends PreferencesBean> bean) throws InvalidPreferenceName;
 
     /**
      * Gets the preference for the indicated tool. This retrieves the preference for the {@link Scope#Site site scope}.

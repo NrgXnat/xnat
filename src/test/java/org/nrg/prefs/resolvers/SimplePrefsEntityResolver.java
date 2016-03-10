@@ -1,4 +1,4 @@
-package org.nrg.prefs.preferences;
+package org.nrg.prefs.resolvers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.framework.constants.Scope;

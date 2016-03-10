@@ -10,7 +10,7 @@
  * Last modified 5/1/14 10:44 AM
  */
 
-package org.nrg.prefs.services;
+package org.nrg.prefs.tests;
 
 import org.junit.After;
 import org.junit.Before;
@@ -20,6 +20,9 @@ import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
+import org.nrg.prefs.services.NrgPrefsService;
+import org.nrg.prefs.services.PreferenceService;
+import org.nrg.prefs.services.ToolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.annotation.Rollback;
@@ -96,7 +99,7 @@ public class PreferenceServiceTests {
     private static final Logger _log = LoggerFactory.getLogger(PreferenceServiceTests.class);
 
     @Inject
-    private ToolService _toolService;
+    private ToolService       _toolService;
     @Inject
     private PreferenceService _prefService;
 }

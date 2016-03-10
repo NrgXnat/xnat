@@ -8,8 +8,15 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.scope.EntityResolver;
+import org.nrg.prefs.annotations.NrgPreference;
+import org.nrg.prefs.annotations.NrgPreferencesBean;
+import org.nrg.prefs.beans.PreferencesBean;
+import org.nrg.prefs.resolvers.PreferenceEntityResolver;
+import org.reflections.ReflectionUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -17,8 +24,14 @@ import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.Transient;
 import java.io.IOException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Modifier;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Set;
+import java.util.regex.Pattern;
+
+import static org.reflections.ReflectionUtils.withAnnotation;
 
 /**
  * Represents a tool or feature for the purposes of grouping {@link Preference preferences} into functional areas. The
@@ -36,6 +49,30 @@ public class Tool extends AbstractHibernateEntity {
         _log.debug("Creating default tool instance, no parameters passed to constructor.");
     }
 
+    public Tool(final PreferencesBean bean) {
+        this(bean.getClass());
+    }
+
+    public Tool(final Class<? extends PreferencesBean> beanClass) {
+        final NrgPreferencesBean annotation = beanClass.getAnnotation(NrgPreferencesBean.class);
+        if (annotation == null) {
+            // TODO: We might be able to use bean properties to extrapolate some of the info in the annotation and allow configuration that way as well.
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preferences bean class " + beanClass.getName() + " must be annotated with the NrgPreferencesBean annotation.");
+        }
+        setToolId(annotation.toolId());
+        setToolName(annotation.toolName());
+        setToolDescription(annotation.description());
+        setToolPreferences(getToolPreferencesFromBean(beanClass));
+
+        // TODO: This is an array because you can't set null for annotation default values, but you should never set multiple resolvers.
+        final Class<? extends PreferenceEntityResolver>[] resolvers = annotation.resolver();
+        if (resolvers.length > 1) {
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You should only set zero or one resolver for the NrgPreferencesBean annotation on the " + beanClass.getName() + ".");
+        } else if (resolvers.length == 1) {
+            setResolver(resolvers[0]);
+        }
+    }
+
     /**
      * Creates a tool instance with the specified ID, name, description, and default preference names and values.
      *
@@ -44,10 +81,9 @@ public class Tool extends AbstractHibernateEntity {
      * @param toolDescription  The description of the tool instance.
      * @param toolPreferences  The default preference names and values for this tool.
      * @param strict           Whether the available preferences for this tool are limited to the specified list.
-     * @param preferencesClass The preferences class for this tool.
-     * @param resolverId       The ID of the entity resolver to use for this tool.
+     * @param resolver         The class of the entity resolver to use for this tool.
      */
-    public Tool(final String toolId, final String toolName, final String toolDescription, final Map<String, String> toolPreferences, final boolean strict, final String preferencesClass, final String resolverId) {
+    public Tool(final String toolId, final String toolName, final String toolDescription, final Map<String, PreferenceInfo> toolPreferences, final boolean strict, final Class<? extends PreferenceEntityResolver> resolver) {
         if (_log.isDebugEnabled()) {
             _log.debug("Creating tool instance for ID [{}] {}: {}", toolId, toolName, toolDescription);
         }
@@ -56,12 +92,12 @@ public class Tool extends AbstractHibernateEntity {
         setToolDescription(toolDescription);
         setToolPreferences(toolPreferences);
         setStrict(strict);
-        setPreferencesClass(preferencesClass);
-        setResolverId(resolverId);
+        setResolver(resolver);
     }
 
     /**
      * Returns the ID of the tool instance.
+     *
      * @return The ID of the tool instance.
      */
     @Column(nullable = false, unique = true)
@@ -71,15 +107,20 @@ public class Tool extends AbstractHibernateEntity {
 
     /**
      * Sets the ID of the tool instance.
-     * @param toolId    The ID to set for the tool instance.
+     *
+     * @param toolId The ID to set for the tool instance.
      */
     public void setToolId(final String toolId) {
+        if (StringUtils.isBlank(toolId)) {
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You can't set a blank tool ID.");
+        }
         _toolId = toolId;
     }
 
     /**
      * Returns the name of the tool instance. The name is meant to be a readable label for the tool instance. Future
      * revisions of this API may use property keys instead to allow for localization.
+     *
      * @return The name of the tool instance.
      */
     @Column(nullable = false, unique = true)
@@ -90,15 +131,20 @@ public class Tool extends AbstractHibernateEntity {
     /**
      * Sets the name of the tool instance. The name is meant to be a readable label for the tool instance. Future
      * revisions of this API may use property keys instead to allow for localization.
-     * @param toolName    The name to set for the tool instance.
+     *
+     * @param toolName The name to set for the tool instance.
      */
     public void setToolName(final String toolName) {
+        if (StringUtils.isBlank(toolName)) {
+            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You can't set a blank tool name.");
+        }
         _toolName = toolName;
     }
 
     /**
      * Gets the description of the tool instance. The description is meant to be a readable summary of the purpose or
      * use of the tool instance. Future revisions of this API may use property keys instead to allow for localization.
+     *
      * @return The description of the tool instance.
      */
     public String getToolDescription() {
@@ -108,7 +154,8 @@ public class Tool extends AbstractHibernateEntity {
     /**
      * Sets the description of the tool instance. The description is meant to be a readable summary of the purpose or
      * use of the tool instance. Future revisions of this API may use property keys instead to allow for localization.
-     * @param toolDescription    The description of the tool instance.
+     *
+     * @param toolDescription The description of the tool instance.
      */
     public void setToolDescription(final String toolDescription) {
         _toolDescription = toolDescription;
@@ -128,45 +175,30 @@ public class Tool extends AbstractHibernateEntity {
      * Sets whether the set of preferences for the tool is strictly defined by the {@link #getToolPreferences()} list or
      * if ad-hoc preferences can be added. The default is false.
      *
-     * @param strict    Whether the preferences are limited to those defined by the {@link #getToolPreferences()} list.
+     * @param strict Whether the preferences are limited to those defined by the {@link #getToolPreferences()} list.
      */
     public void setStrict(final boolean strict) {
         _strict = strict;
     }
 
     /**
-     * Returns the preferences class for this tool.
+     * Returns the class of the preferred entity resolver for this tool. If this returns null, the default entity
+     * resolver for the system should be used.
      *
-     * @return The preferences class for this tool.
+     * @return The class of the preferred entity resolver for this tool.
      */
-    public String getPreferencesClass() {
-        return _preferencesClass;
+    public Class<? extends PreferenceEntityResolver> getResolver() {
+        return _resolver;
     }
 
     /**
-     * Sets the preferences class for this tool.
-     * @param preferencesClass    The preferences class for this tool.
-     */
-    public void setPreferencesClass(final String preferencesClass) {
-        _preferencesClass = preferencesClass;
-    }
-
-    /**
-     * Returns the ID of the preferred entity resolver for this tool.
+     * Sets the class of the preferred entity resolver for this tool. If this is set to null, the default entity
+     * resolver for the system should be used.
      *
-     * @return The ID of the preferred entity resolver for this tool.
+     * @param resolver    The class of the preferred entity resolver for this tool.
      */
-    public String getResolverId() {
-        return _resolverId;
-    }
-
-    /**
-     * Sets the ID of the preferred entity resolver for this tool.
-     *
-     * @param resolverId    The ID of the preferred entity resolver for this tool.
-     */
-    public void setResolverId(final String resolverId) {
-        _resolverId = resolverId;
+    public void setResolver(final Class<? extends PreferenceEntityResolver> resolver) {
+        _resolver = resolver;
     }
 
     /**
@@ -191,7 +223,7 @@ public class Tool extends AbstractHibernateEntity {
      * the preferences and default values with the tool definition in the database and shouldn't be used for most normal
      * purposes.
      *
-     * @param toolPreferences    The serialized map of tool preferences.
+     * @param toolPreferences The serialized map of tool preferences.
      */
     @JsonIgnore
     public void setSerializedToolPreferences(final String toolPreferences) {
@@ -201,7 +233,7 @@ public class Tool extends AbstractHibernateEntity {
             try {
                 // Oddly, you HAVE to create an object instance here. You'll get an error if you do this:
                 // _toolPreferences.putAll(_mapper.readValue(toolPreferences, MAP_TYPE_REFERENCE));
-                final Map<String, String> deserialized = _mapper.readValue(toolPreferences, MAP_TYPE_REFERENCE);
+                final Map<String, PreferenceInfo> deserialized = _mapper.readValue(toolPreferences, MAP_TYPE_REFERENCE);
                 _toolPreferences.putAll(deserialized);
             } catch (IOException e) {
                 _log.error("An error occurred trying to deserialize the preferences for the tool: " + getToolId(), e);
@@ -211,12 +243,12 @@ public class Tool extends AbstractHibernateEntity {
 
     @JsonProperty("toolPreferences")
     @Transient
-    public Map<String, String> getToolPreferences() {
+    public Map<String, PreferenceInfo> getToolPreferences() {
         return new HashMap<>(_toolPreferences);
     }
 
     @Transient
-    public void setToolPreferences(final Map<String, String> defaults) {
+    public void setToolPreferences(final Map<String, PreferenceInfo> defaults) {
         _toolPreferences.clear();
         if (defaults == null || defaults.size() == 0) {
             _serializedToolPreferences = null;
@@ -247,8 +279,8 @@ public class Tool extends AbstractHibernateEntity {
         final Tool tool = (Tool) o;
 
         return StringUtils.equals(_toolId, tool._toolId) &&
-                StringUtils.equals(_toolName, tool._toolName) &&
-                StringUtils.equals(_toolDescription, tool._toolDescription);
+               StringUtils.equals(_toolName, tool._toolName) &&
+               StringUtils.equals(_toolDescription, tool._toolDescription);
     }
 
     @Override
@@ -258,16 +290,50 @@ public class Tool extends AbstractHibernateEntity {
         result = 31 * result + _toolDescription.hashCode();
         return result;
     }
-    private static final Logger _log = LoggerFactory.getLogger(Tool.class);
-    private static final ObjectMapper _mapper = new ObjectMapper();
 
-    private static final TypeReference<HashMap<String, String>> MAP_TYPE_REFERENCE = new TypeReference<HashMap<String, String>>() {};
+    private Map<String, PreferenceInfo> getToolPreferencesFromBean(final Class<? extends PreferencesBean> beanClass) {
+        final Map<String, PreferenceInfo> preferences = new HashMap<>();
+        @SuppressWarnings("unchecked") final Set<Method> properties = ReflectionUtils.getAllMethods(beanClass, withAnnotation(NrgPreference.class));
+        for (final Method method : properties) {
+            if (isGetter(method)) {
+                final String   name         = propertize(method.getName(), "get");
+                final String   defaultValue = method.getAnnotation(NrgPreference.class).defaultValue();
+                final Class<?> type         = method.getReturnType();
+                preferences.put(name, new PreferenceInfo(name, defaultValue, type));
+            } else if (isSetter(method)) {
+                final String   name         = propertize(method.getName(), "set");
+                final String   defaultValue = method.getAnnotation(NrgPreference.class).defaultValue();
+                final Class<?> type         = method.getParameterTypes()[0];
+                preferences.put(name, new PreferenceInfo(name, defaultValue, type));
+            }
+        }
+        return preferences;
+    }
+
+    private String propertize(final String name, final String type) {
+        return StringUtils.uncapitalize(name.replace(type, ""));
+    }
+
+    private boolean isGetter(final Method method) {
+        return Modifier.isPublic(method.getModifiers()) && PATTERN_GETTER.matcher(method.getName()).matches() && method.getParameterTypes().length == 0;
+    }
+
+    private boolean isSetter(final Method method) {
+        return Modifier.isPublic(method.getModifiers()) && PATTERN_SETTER.matcher(method.getName()).matches() && method.getParameterTypes().length == 1;
+    }
+
+    private static final Logger       _log           = LoggerFactory.getLogger(Tool.class);
+    private static final ObjectMapper _mapper        = new ObjectMapper();
+    private static final Pattern      PATTERN_GETTER = Pattern.compile("^get[A-Z][A-z]+");
+    private static final Pattern      PATTERN_SETTER = Pattern.compile("^set[A-Z][A-z]+");
+
+    private static final TypeReference<HashMap<String, PreferenceInfo>> MAP_TYPE_REFERENCE = new TypeReference<HashMap<String, PreferenceInfo>>() {
+    };
     private String _toolId;
     private String _toolName;
     private String _toolDescription;
-    private final Map<String, String> _toolPreferences = new HashMap<>();
-    private boolean _strict;
-    private String _preferencesClass;
-    private String _resolverId;
-    private String _serializedToolPreferences;
+    private final Map<String, PreferenceInfo>         _toolPreferences = new HashMap<>();
+    private boolean                                   _strict;
+    private Class<? extends PreferenceEntityResolver> _resolver;
+    private String                                    _serializedToolPreferences;
 }

@@ -1,23 +1,23 @@
 /*
- * org.nrg.ddict.services.TestDataDictionaryServices
+ * org.nrg.prefs.tests.ToolServiceTests
  *
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * XNAT is an open-source project of the Neuroinformatics Research Group.
  * Released under the Simplified BSD.
- *
- * Last modified 5/1/14 10:44 AM
  */
-
-package org.nrg.prefs.services;
+package org.nrg.prefs.tests;
 
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.prefs.entities.PreferenceInfo;
 import org.nrg.prefs.entities.Tool;
+import org.nrg.prefs.services.NrgPrefsService;
+import org.nrg.prefs.services.ToolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.test.annotation.Rollback;
@@ -58,8 +58,8 @@ public class ToolServiceTests {
 
     @Test
     public void testSimpleTool() throws NrgServiceException {
-        final Map<String, String> prefs = new HashMap<>();
-        prefs.put("pref1", "value1");
+        final Map<String, PreferenceInfo> prefs = new HashMap<>();
+        prefs.put("pref1", new PreferenceInfo("pref1", "value1"));
         final Tool tool = _service.newEntity();
         tool.setToolId("tool1");
         tool.setToolName("Tool 1");

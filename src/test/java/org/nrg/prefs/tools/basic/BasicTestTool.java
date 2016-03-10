@@ -1,39 +1,31 @@
 package org.nrg.prefs.tools.basic;
 
-import org.nrg.prefs.annotations.NrgPrefValue;
-import org.nrg.prefs.annotations.NrgPrefsTool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 
-@NrgPrefsTool(toolId = "test",
-        toolName = "Test Tool",
-        description = "This is only a test.",
-        preferencesClass = BasicTestToolPreferences.class,
-        preferences = {@NrgPrefValue(name = "prefA", defaultValue = "valueA"), @NrgPrefValue(name = "prefB", defaultValue = "valueB")})
+@Component
 public class BasicTestTool {
     public BasicTestTool() {
 
     }
 
-    @SuppressWarnings("unused")
-    public void setPreferences(final BasicTestToolPreferences preferences) {
-        _preferences = preferences;
-    }
-
     public String getPrefA() {
-        return _preferences.getTestToolPrefA();
+        return _preferences.getPrefA();
     }
 
     public String getPrefB() {
-        return _preferences.getTestToolPrefB();
+        return _preferences.getPrefB();
     }
 
     public void setPrefA(final String prefA) throws InvalidPreferenceName {
-        _preferences.setTestToolPrefA(prefA);
+        _preferences.setPrefA(prefA);
     }
 
     public void setPrefB(final String prefB) throws InvalidPreferenceName {
-        _preferences.setTestToolPrefB(prefB);
+        _preferences.setPrefB(prefB);
     }
 
-    private BasicTestToolPreferences _preferences;
+    @Autowired
+    private BasicTestToolPreferencesBean _preferences;
 }

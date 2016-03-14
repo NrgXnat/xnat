@@ -2,8 +2,11 @@ package org.nrg.prefs.beans;
 
 import org.nrg.framework.constants.Scope;
 import org.nrg.prefs.entities.Preference;
+import org.nrg.prefs.entities.PreferenceInfo;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
+
+import java.util.Map;
 
 public interface PreferencesBean {
     String getToolId();
@@ -29,4 +32,6 @@ public interface PreferencesBean {
     void delete(String preference, String entityId) throws InvalidPreferenceName;
 
     void delete(String preference, Scope scope, String entityId) throws InvalidPreferenceName;
+
+    Map<String, PreferenceInfo> getDefaultPreferences();
 }

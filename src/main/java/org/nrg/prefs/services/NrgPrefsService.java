@@ -1,27 +1,24 @@
 /*
- * ddict.services.DataDictionaryService
+ * org.nrg.prefs.services.NrgPrefsService
  *
- * Copyright (c) 2014, Washington University School of Medicine
+ * Copyright (c) 2016, Washington University School of Medicine
  * All Rights Reserved
  *
  * XNAT is an open-source project of the Neuroinformatics Research Group.
  * Released under the Simplified BSD.
- *
- * Last modified 5/1/14 11:06 AM
  */
-
 package org.nrg.prefs.services;
 
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.services.NrgService;
-import org.nrg.prefs.annotations.NrgPreferencesBean;
+import org.nrg.prefs.annotations.NrgPreferenceBean;
+import org.nrg.prefs.beans.AbstractPreferencesBean;
 import org.nrg.prefs.beans.PreferencesBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 
-import java.util.Map;
 import java.util.Properties;
 import java.util.Set;
 
@@ -32,23 +29,21 @@ import java.util.Set;
 public interface NrgPrefsService extends NrgService {
     /**
      * Creates a {@link Tool tool} with the properties and values specified on the preferences bean and its related
-     * {@link NrgPreferencesBean NrgPreferencesBean annotation}.
+     * {@link NrgPreferenceBean NrgPreferenceBean annotation}.
      *
      * @param bean    The bean object.
      * @return The object representing the persisted tool definition.
      */
-    // TODO: Here the defaults are in a String, String map. The valueType attribute can indicate another type, but currently we only handle strings. This needs to be handled later with ValueDuple.
     Tool createTool(final PreferencesBean bean) throws InvalidPreferenceName;
 
     /**
-     * Creates a {@link Tool tool} with the properties and values specified on the preferences bean class and its
-     * related {@link NrgPreferencesBean NrgPreferencesBean annotation}.
+     * Creates the submitted {@link Tool tool} with the properties and values specified on the tool preferences bean.
+     * This tool works without a dedicated {@link AbstractPreferencesBean preferences bean object}.
      *
-     * @param bean    The bean class.
-     * @return The object representing the persisted tool definition.
+     * @param tool    The tool to create.
+     * @return The newly created tool object.
      */
-    // TODO: Here the defaults are in a String, String map. The valueType attribute can indicate another type, but currently we only handle strings. This needs to be handled later with ValueDuple.
-    Tool createTool(final Class<? extends PreferencesBean> bean) throws InvalidPreferenceName;
+    Tool createTool(final Tool tool) throws InvalidPreferenceName;
 
     /**
      * Gets the preference for the indicated tool. This retrieves the preference for the {@link Scope#Site site scope}.

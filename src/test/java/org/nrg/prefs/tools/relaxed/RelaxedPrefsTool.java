@@ -30,6 +30,14 @@ public class RelaxedPrefsTool {
         _preferences.setRelaxedPrefC(relaxedPrefC);
     }
 
+    public String getRelaxedWhatever(final String preference) {
+        return _preferences.getValue(preference);
+    }
+
+    public void setRelaxedWhatever(final String preference, final String value) throws InvalidPreferenceName {
+        _preferences.set(preference, value);
+    }
+
     @Autowired
     private RelaxedPrefsToolPreferencesBean _preferences;
 }

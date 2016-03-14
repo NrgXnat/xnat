@@ -28,6 +28,7 @@ import org.springframework.stereotype.Service;
 import javax.inject.Inject;
 import java.util.*;
 
+@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 @Service
 public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationContextAware, InitializingBean {
     /**
@@ -35,18 +36,18 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
      */
     @Override
     public Tool createTool(final PreferencesBean bean) {
-        return createTool(bean.getClass());
+        if (_log.isDebugEnabled()) {
+            _log.debug("Request to create a new tool received, ID: {}", bean.getClass().getName());
+        }
+        final Tool tool = new Tool(bean);
+        return createTool(tool);
     }
 
     /**
      * {@inheritDoc}
      */
     @Override
-    public Tool createTool(final Class<? extends PreferencesBean> beanClass) {
-        if (_log.isDebugEnabled()) {
-            _log.debug("Request to create a new tool received: {}", beanClass.getName());
-        }
-        final Tool tool = new Tool(beanClass);
+    public Tool createTool(final Tool tool) {
         _toolService.create(tool);
         if (_log.isDebugEnabled()) {
             _log.debug("New tool {} created with primary key ID: {} at {}", tool.getToolId(), tool.getId(), tool.getCreated());
@@ -60,7 +61,8 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
                 final PreferenceInfo value = defaults.get(preference);
                 if (value != null) {
                     try {
-                        _preferenceService.setPreference(tool.getToolId(), preference, EntityId.Default.getScope(), EntityId.Default.getEntityId(), value.getDefaultValue());
+                        // TODO: For now creates a site-wide preference only.
+                        _preferenceService.setPreference(tool.getToolId(), preference, value.getDefaultValue());
                     } catch (InvalidPreferenceName ignored) {
                         // This shouldn't happen: we're creating new preferences from the defaults that define the list of acceptable preferences.
                     }
@@ -217,6 +219,8 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
                 final Class<? extends PreferenceEntityResolver> resolverClass = bean.getResolver();
                 getResolverByClass(toolId, resolverClass);
             }
+        } else {
+            _preferenceBeans = new ArrayList<>();
         }
     }
 
@@ -298,10 +302,10 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
     @Inject
     private PreferenceService _preferenceService;
 
-    @Inject
+    @Autowired(required = false)
     private List<AbstractPreferencesBean> _preferenceBeans;
 
-    @Autowired(required = false)
+    @Inject
     private List<PreferenceEntityResolver> _resolvers;
 
     private final Map<String, PreferenceEntityResolver> _resolversByToolId = new HashMap<>();

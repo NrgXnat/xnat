@@ -13,7 +13,7 @@ import java.lang.annotation.*;
 @Retention(RetentionPolicy.RUNTIME)
 @Documented
 @Component
-public @interface NrgPreferencesBean {
+public @interface NrgPreferenceBean {
     /**
      * Specifies the ID for this tool in the preferences service. This ID must be unique.
      *
@@ -57,6 +57,13 @@ public @interface NrgPreferencesBean {
      * @return The message resource key for the tool description.
      */
     String descriptionKey() default "";
+
+    /**
+     * Indicates whether the preferences for the tool are limited to the preference keys specified by the preferences
+     * bean or whether free-form preferences can be added to the tool.
+     * @return
+     */
+    boolean strict() default true;
 
     /**
      * Indicates the ID of the tool's {@link PreferenceEntityResolver entity resolver}. This allows the resolver to be

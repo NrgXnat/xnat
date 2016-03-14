@@ -9,6 +9,8 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.services.NrgPrefsService;
 import org.nrg.prefs.tools.basic.BasicTestTool;
+import org.nrg.prefs.tools.relaxed.RelaxedPrefsTool;
+import org.nrg.prefs.tools.strict.StrictPrefsTool;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -56,36 +58,41 @@ public class NrgPrefsServiceTests {
         assertEquals("valueBMod", _basicPrefsTool.getPrefB());
     }
 
-    @Ignore
     @Test
     public void testRelaxedPrefsTool() throws InvalidPreferenceName {
-//        assertNotNull(_relaxedPrefsTool);
-//        assertEquals("defaultA", _relaxedPrefsTool.getRelaxedPrefA());
-//        assertEquals("defaultB", _relaxedPrefsTool.getRelaxedPrefB());
-//        _relaxedPrefsTool.setRelaxedPrefA("defaultAMod");
-//        _relaxedPrefsTool.setRelaxedPrefB("defaultBMod");
-//        assertEquals("defaultAMod", _relaxedPrefsTool.getRelaxedPrefA());
-//        assertEquals("defaultBMod", _relaxedPrefsTool.getRelaxedPrefB());
-//        assertNull(_relaxedPrefsTool.getRelaxedPrefC());
-//        _relaxedPrefsTool.setRelaxedPrefC("defaultC");
-//        assertEquals("defaultC", _relaxedPrefsTool.getRelaxedPrefC());
+        assertNotNull(_relaxedPrefsTool);
+        assertEquals(null, _relaxedPrefsTool.getRelaxedPrefA());
+        assertEquals(null, _relaxedPrefsTool.getRelaxedPrefB());
+        _relaxedPrefsTool.setRelaxedPrefA("valueASet");
+        _relaxedPrefsTool.setRelaxedPrefB("valueBSet");
+        _relaxedPrefsTool.setRelaxedPrefC("valueCSet");
+        assertEquals("valueASet", _relaxedPrefsTool.getRelaxedPrefA());
+        assertEquals("valueBSet", _relaxedPrefsTool.getRelaxedPrefB());
+        assertEquals("valueCSet", _relaxedPrefsTool.getRelaxedPrefC());
+        _relaxedPrefsTool.setRelaxedPrefA("valueAMod");
+        _relaxedPrefsTool.setRelaxedPrefB("valueBMod");
+        _relaxedPrefsTool.setRelaxedPrefC("valueCMod");
+        assertEquals("valueAMod", _relaxedPrefsTool.getRelaxedPrefA());
+        assertEquals("valueBMod", _relaxedPrefsTool.getRelaxedPrefB());
+        assertEquals("valueCMod", _relaxedPrefsTool.getRelaxedPrefC());
+        _relaxedPrefsTool.setRelaxedWhatever("freeform", "this can be anything");
+        assertEquals("this can be anything", _relaxedPrefsTool.getRelaxedWhatever("freeform"));
     }
 
-    @Ignore
     @Test(expected = InvalidPreferenceName.class)
     public void testStrictPrefsTool() throws InvalidPreferenceName {
-//        assertNotNull(_strictPrefsTool);
-//        assertEquals("defaultA", _strictPrefsTool.getStrictPrefA());
-//        assertEquals("defaultB", _strictPrefsTool.getStrictPrefB());
-//        _strictPrefsTool.setStrictPrefA("defaultAMod");
-//        _strictPrefsTool.setStrictPrefB("defaultBMod");
-//        assertEquals("defaultAMod", _strictPrefsTool.getStrictPrefA());
-//        assertEquals("defaultBMod", _strictPrefsTool.getStrictPrefB());
-//        final String prefC = _strictPrefsTool.getStrictPrefC();
-//        assertNull(prefC);
-//
-//        // This will throw the InvalidPreferenceName exception.
-//        _strictPrefsTool.setStrictPrefC("defaultC");
+        assertNotNull(_strictPrefsTool);
+        assertEquals("strictValueA", _strictPrefsTool.getStrictPrefA());
+        assertEquals("strictValueB", _strictPrefsTool.getStrictPrefB());
+        _strictPrefsTool.setStrictPrefA("strictValueAMod");
+        _strictPrefsTool.setStrictPrefB("strictValueBMod");
+        assertEquals("strictValueAMod", _strictPrefsTool.getStrictPrefA());
+        assertEquals("strictValueBMod", _strictPrefsTool.getStrictPrefB());
+        final String prefC = _strictPrefsTool.getStrictPrefC();
+        assertNull(prefC);
+
+        // This will throw the InvalidPreferenceName exception.
+        _strictPrefsTool.setStrictPrefC("defaultC");
     }
 
     @Ignore
@@ -132,9 +139,9 @@ public class NrgPrefsServiceTests {
     @Inject
     private BasicTestTool _basicPrefsTool;
 
-//    @Inject
-//    private RelaxedPrefsTool _relaxedPrefsTool;
-//
-//    @Inject
-//    private StrictPrefsTool _strictPrefsTool;
+    @Inject
+    private RelaxedPrefsTool _relaxedPrefsTool;
+
+    @Inject
+    private StrictPrefsTool _strictPrefsTool;
 }

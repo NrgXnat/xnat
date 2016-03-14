@@ -1,14 +1,15 @@
 package org.nrg.prefs.tools.strict;
 
-import org.nrg.prefs.annotations.NrgPreferencesBean;
+import org.nrg.prefs.annotations.NrgPreference;
+import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferencesBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.prefs.services.NrgPrefsService;
 
-@NrgPreferencesBean(toolId = "strict",
-                    toolName = "Strict Prefs Tool",
-                    description = "This tests the strict mode on adding preferences")
+@NrgPreferenceBean(toolId = "strict",
+                   toolName = "Strict Prefs Tool",
+                   description = "This tests the strict mode on adding preferences")
 public class StrictPrefsToolPreferencesBean extends AbstractPreferencesBean {
+    @NrgPreference(defaultValue = "strictValueA")
     public String getStrictPrefA() {
         return getValue("strictPrefA");
     }
@@ -17,6 +18,7 @@ public class StrictPrefsToolPreferencesBean extends AbstractPreferencesBean {
         set("strictPrefA", strictPrefA);
     }
 
+    @NrgPreference(defaultValue = "strictValueB")
     public String getStrictPrefB() {
         return getValue("strictPrefB");
     }

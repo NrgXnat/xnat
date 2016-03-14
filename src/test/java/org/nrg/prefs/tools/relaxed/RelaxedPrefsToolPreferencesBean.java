@@ -1,13 +1,13 @@
 package org.nrg.prefs.tools.relaxed;
 
-import org.nrg.prefs.annotations.NrgPreferencesBean;
+import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferencesBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.prefs.services.NrgPrefsService;
 
-@NrgPreferencesBean(toolId = "relaxed",
-                    toolName = "Relaxed Prefs Tool",
-                    description = "This tests the non-relaxed mode on adding preferences")
+@NrgPreferenceBean(toolId = "relaxed",
+                   toolName = "Relaxed Prefs Tool",
+                   description = "This tests the non-relaxed mode on adding preferences",
+                   strict = false)
 public class RelaxedPrefsToolPreferencesBean extends AbstractPreferencesBean {
     public String getRelaxedPrefA() {
         return getValue("relaxedPrefA");

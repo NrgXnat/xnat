@@ -12,6 +12,7 @@
 
 package org.nrg.prefs.repositories;
 
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.type.StandardBasicTypes;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateDAO;
@@ -30,13 +31,13 @@ import java.util.List;
 public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
     public Preference findByToolIdNameAndEntity(final String toolId, final String preferenceName, final Scope scope, final String entityId) {
         @SuppressWarnings("all")
-        final Object results = getSession().createSQLQuery("select * from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.name = :preferenceName and pref.scope = :scope and pref.entity_id = :entityId")
-                .addScalar("id", StandardBasicTypes.LONG)
-                .setString("toolId", toolId)
-                .setString("preferenceName", preferenceName)
-                .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal())
-                .setString("entityId", entityId == null ? EntityId.Default.getEntityId() : entityId)
-                .uniqueResult();
+        final Object results = getSession().createSQLQuery("select pref.id as id from xhbm_preference as pref, xhbm_tool as tool where tool.tool_id = :toolId and tool.id = pref.tool and pref.name = :preferenceName and pref.scope = :scope and pref.entity_id = :entityId")
+                                           .addScalar("id", StandardBasicTypes.LONG)
+                                           .setString("toolId", toolId)
+                                           .setString("preferenceName", preferenceName)
+                                           .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal())
+                                           .setString("entityId", resolveEntityId(entityId))
+                                           .uniqueResult();
         if (results == null) {
             return null;
         }
@@ -65,7 +66,7 @@ public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
                 .addScalar("id", StandardBasicTypes.LONG)
                 .setString("toolId", toolId)
                 .setInteger("scope", scope == null ? EntityId.Default.getScope().ordinal() : scope.ordinal())
-                .setString("entityId", entityId == null ? EntityId.Default.getEntityId() : entityId)
+                .setString("entityId", resolveEntityId(entityId))
                 .list();
         if (results == null || results.size() == 0) {
             return new ArrayList<>();
@@ -79,6 +80,9 @@ public class PreferenceRepository extends AbstractHibernateDAO<Preference> {
         return preferences;
     }
 
-    // private static final String[] EXCLUDE_PROPERTY = new String[]{"id", "enabled", "created", "timestamp", "disabled", "value"};
+    private static String resolveEntityId(final String entityId) {
+        return StringUtils.isBlank(entityId) ? EntityId.Default.getEntityId() : entityId;
+    }
 
+    // private static final String[] EXCLUDE_PROPERTY = new String[]{"id", "enabled", "created", "timestamp", "disabled", "value"};
 }

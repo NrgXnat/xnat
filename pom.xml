@@ -37,6 +37,10 @@
         <url>http://nrg.wustl.edu</url>
     </organization>
 
+    <properties>
+        <maven.server.root>https://nrgxnat.artifactoryonline.com/nrgxnat</maven.server.root>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.nrg</groupId>
@@ -110,7 +114,7 @@
         <repository>
             <id>org.nrg.xnat.maven.libraries.release</id>
             <name>XNAT Maven Release Libraries</name>
-            <url>https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release</url>
+            <url>${maven.server.root}/libs-release</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -121,7 +125,7 @@
         <repository>
             <id>org.nrg.xnat.maven.libraries.snapshot</id>
             <name>XNAT Maven Snapshot Libraries</name>
-            <url>https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
+            <url>${maven.server.root}/libs-snapshot</url>
             <releases>
                 <enabled>false</enabled>
             </releases>

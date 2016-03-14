@@ -1,14 +1,13 @@
 package org.nrg.prefs.tools.basic;
 
 import org.nrg.prefs.annotations.NrgPreference;
-import org.nrg.prefs.annotations.NrgPreferencesBean;
+import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferencesBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.prefs.services.NrgPrefsService;
 
-@NrgPreferencesBean(toolId = "basic", toolName = "Basic Test", description = "This is only a test.")
+@NrgPreferenceBean(toolId = "basic", toolName = "Basic Test", description = "This is only a test.", strict = true)
 public class BasicTestToolPreferencesBean extends AbstractPreferencesBean {
-    @NrgPreference(defaultValue = "prefA")
+    @NrgPreference(defaultValue = "valueA")
     public String getPrefA() {
         return getValue("prefA");
     }
@@ -17,7 +16,7 @@ public class BasicTestToolPreferencesBean extends AbstractPreferencesBean {
         set("prefA", prefA);
     }
 
-    @NrgPreference(defaultValue = "prefB")
+    @NrgPreference(defaultValue = "valueB")
     public String getPrefB() {
         return getValue("prefB");
     }

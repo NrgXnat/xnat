@@ -55,6 +55,6 @@
 	    <value>src/test/resources/org/nrg/config</value>
 	</util:list>
 
-    <bean id="defaultResolver" class="org.nrg.framework.scope.NoOpEntityResolver" />
+    <bean id="defaultResolver" class="org.nrg.config.resolvers.SimplePrefsEntityResolver"/>
 
 </beans>

@@ -11,7 +11,8 @@ package org.nrg.config.services.impl;
 
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.prefs.beans.BaseNrgPreferences;
+import org.nrg.prefs.entities.PreferenceInfo;
+import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.services.NrgPrefsService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -27,9 +28,6 @@ import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
 
-//@NrgPrefsTool(toolId = "siteConfig", toolName = "Site Configuration",
-//        description = "Maintains site-level preferences settings", preferencesClass = BaseNrgPreferences.class,
-//        preferences = {})
 @Service
 public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfigurationService  {
     @Override
@@ -56,7 +54,8 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
                     _log.info("Found {} properties in the configuration service, importing those.", existing.size());
                     properties.putAll(existing);
                 }
-                _service.createTool(SITE_CONFIG_TOOL_ID, "Site Configuration", "This is the main tool for mapping the site configuration", convertPropertiesToMap(properties), false, BaseNrgPreferences.class.getName(), null);
+                final Tool siteConfig = new Tool(SITE_CONFIG_TOOL_ID, "Site Configuration", "This is the main tool for mapping the site configuration", convertPropertiesToMap(properties), false, null);
+                _service.createTool(siteConfig);
             } else {
                 _log.info("Working with the existing {} tool, checking for new import values.", SITE_CONFIG_TOOL_ID);
 
@@ -84,10 +83,10 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
         }
     }
 
-    private Map<String, String> convertPropertiesToMap(final Properties properties) {
-        final Map<String, String> map = new HashMap<>(properties.size());
+    private Map<String, PreferenceInfo> convertPropertiesToMap(final Properties properties) {
+        final Map<String, PreferenceInfo> map = new HashMap<>(properties.size());
         for (final String property : properties.stringPropertyNames()) {
-            map.put(property, properties.getProperty(property));
+            map.put(property, new PreferenceInfo(property, properties.getProperty(property)));
         }
         return map;
     }
@@ -129,6 +128,8 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
     @Inject
     private NrgPrefsService _service;
 
+    // This needs to be suppressed here, since we're not creating a data source for it here.
+    @SuppressWarnings("SpringJavaAutowiringInspection")
     @Inject
     private DataSource _dataSource;
 }

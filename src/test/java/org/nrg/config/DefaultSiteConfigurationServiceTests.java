@@ -27,7 +27,6 @@ import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.annotation.Resource;
@@ -63,6 +62,7 @@ public class DefaultSiteConfigurationServiceTests {
 		_service.resetSiteConfiguration();
 	}
 
+	@SuppressWarnings("Duplicates")
 	@Test
 	public void initSiteConfigurationSuccess() throws SiteConfigurationException {
 		final Properties props = _service.getSiteConfiguration();
@@ -76,6 +76,7 @@ public class DefaultSiteConfigurationServiceTests {
 		assertNull(props.getProperty("foo.prop3"));
 	}
 
+	@SuppressWarnings("Duplicates")
 	@Test
 	public void initSiteConfigurationSuccessWithAdditionalPropertiesOnSecondLaunch() throws SiteConfigurationException {
 		final Properties props = _service.getSiteConfiguration();
@@ -133,6 +134,7 @@ public class DefaultSiteConfigurationServiceTests {
 		assertEquals("fooval1", _service.getSiteConfigurationProperty("foo.prop1"));
 	}
 
+	@SuppressWarnings("Duplicates")
 	@Test
 	public void setSiteConfigurationProperty() throws SiteConfigurationException {
 		_service.setSiteConfigurationProperty(ADMIN_USER, "prop1", "newprop1Val");

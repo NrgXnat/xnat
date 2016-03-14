@@ -53,6 +53,8 @@
 
         <!-- xnat.app.name is used as the name for applet manifests to allow all XNAT applets to share dependencies. -->
         <xnat.app.name>XNAT</xnat.app.name>
+        <maven.server.root>https://nrgxnat.artifactoryonline.com/nrgxnat</maven.server.root>
+        <maven.server.id>XNAT Artifactory</maven.server.id>
 
         <xnat.version>${project.version}</xnat.version>
         <xdat.version>${project.version}</xdat.version>
@@ -1435,7 +1437,7 @@
         <repository>
             <id>org.nrg.xnat.maven.libraries.release</id>
             <name>XNAT Maven Release Libraries</name>
-            <url>https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release</url>
+            <url>${maven.server.root}/libs-release</url>
             <releases>
                 <enabled>true</enabled>
             </releases>
@@ -1446,7 +1448,7 @@
         <repository>
             <id>org.nrg.xnat.maven.libraries.snapshot</id>
             <name>XNAT Maven Snapshot Libraries</name>
-            <url>https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
+            <url>${maven.server.root}/libs-snapshot</url>
             <releases>
                 <enabled>false</enabled>
             </releases>
@@ -1491,14 +1493,14 @@
 
     <distributionManagement>
         <repository>
-            <id>XNAT Artifactory</id>
+            <id>${maven.server.id}</id>
             <name>XNAT Maven Release Library</name>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local</url>
+            <url>${maven.server.root}/libs-release-local</url>
         </repository>
         <snapshotRepository>
-            <id>XNAT Artifactory</id>
+            <id>${maven.server.id}</id>
             <name>XNAT Maven Snapshot Library</name>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local</url>
+            <url>${maven.server.root}/libs-snapshot-local</url>
         </snapshotRepository>
     </distributionManagement>
 

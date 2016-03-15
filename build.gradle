@@ -1,5 +1,9 @@
 apply plugin: 'java'
 apply plugin: 'maven'
+apply plugin: 'maven-publish'
+apply plugin: 'ivy-publish'
+apply plugin: 'idea'
+apply plugin: 'eclipse'
 
 group = 'org.nrg.xdat'
 version = '1.7.0-SNAPSHOT'
@@ -10,74 +14,138 @@ sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
 repositories {
-    maven { url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release" }
-    maven { url "http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot" }
+    mavenLocal()
+    maven { url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release" }
+    maven { url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot" }
     mavenCentral()
     jcenter()
+    maven { url "http://www.dcm4che.org/maven2" }
+    maven { url "http://maven.restlet.org" }
 }
 
 configurations {
-    compile.exclude module: 'jamon'
+    all*.exclude module: "commons-codec"
+    all*.exclude module: "commons-configuration"
+    all*.exclude module: "commons-lang"
+    all*.exclude module: "jamon"
+    all*.exclude module: "jms"
+    all*.exclude module: "json-rpc"
+    all*.exclude module: "resources"
+    all*.exclude module: "torque"
+    all*.exclude module: "velocity"
+    all*.exclude module: "xml-apis"
 }
 
 dependencies {
-    compile group: 'org.nrg', name: 'notify', version: '1.7.0-SNAPSHOT'
-    compile group: 'org.nrg', name: 'config', version: '1.7.0-SNAPSHOT'
-    compile group: 'org.nrg', name: 'mail', version: '1.7.0-SNAPSHOT'
-    compile group: 'org.nrg', name: 'framework', version: '1.7.0-SNAPSHOT'
-    compile group: 'org.springframework', name: 'spring-web', version: '4.1.2.RELEASE'
-    compile group: 'org.springframework', name: 'spring-jms', version: '4.1.2.RELEASE'
-    compile group: 'org.springframework', name: 'spring-context-support', version: '4.1.2.RELEASE'
-    compile group: 'org.springframework.security', name: 'spring-security-web', version: '3.2.5.RELEASE'
-    compile(group: 'log4j', name: 'log4j', version: '1.2.17')
-    compile group: 'org.slf4j', name: 'slf4j-api', version: '1.7.7'
-    compile group: 'org.slf4j', name: 'slf4j-log4j12', version: '1.7.7'
-    compile group: 'org.slf4j', name: 'jul-to-slf4j', version: '1.7.7'
-    compile group: 'javax.servlet', name: 'javax.servlet-api', version: '3.1.0'
-    compile group: 'javax.activation', name: 'activation', version: '1.1.1'
-    compile group: 'javax.mail', name: 'mail', version: '1.4.5'
-    compile group: 'javax.inject', name: 'javax.inject', version: '1'
-    compile group: 'org.apache.geronimo.specs', name: 'geronimo-jms_1.1_spec', version: '1.1.1'
-    compile group: 'com.google.guava', name: 'guava', version: '10.0.1'
-    compile group: 'commons-net', name: 'commons-net', version: '3.1'
-    compile group: 'org.apache.commons', name: 'commons-email', version: '1.3.2'
-    compile group: 'org.apache.httpcomponents', name: 'httpclient', version: '4.3.6'
-    compile group: 'commons-lang', name: 'commons-lang', version: '2.6'
-    compile group: 'commons-fileupload', name: 'commons-fileupload', version: '1.2.1'
-    compile group: 'axis', name: 'axis', version: '1.4'
-    compile(group: 'turbine', name: 'turbine', version: '2.3.3') {
-        exclude(module: 'velocity')
-        exclude(module: 'json-rpc')
-        exclude(group: 'jamon', module: 'jamon')
-    }
-    compile(group: 'org.apache.velocity', name: 'velocity', version: '1.7') {
-        exclude(module: 'velocity')
-    }
-    compile group: 'ecs', name: 'ecs', version: '1.4.2'
-    compile group: 'torque', name: 'torque', version: '3.1.1'
-    compile(group: 'commons-configuration', name: 'commons-configuration', version: '1.5') {
-        exclude(module: 'resources')
-        exclude(module: 'commons-codec')
-    }
-    compile(group: 'stratum', name: 'stratum', version: '1.0') {
-        exclude(module: 'jms')
-        exclude(module: 'commons-lang')
-        exclude(module: 'commons-configuration')
-    }
-    compile group: 'com.lowagie', name: 'itext', version: '1.1.4'
-    compile group: 'fop', name: 'fop', version: '0.20.5-rc3-alpha'
-    compile group: 'avalon-framework', name: 'avalon-framework', version: '4.1.4'
-    compile group: 'org.dspace', name: 'jargon', version: '1.4.25'
-    compile group: 'org.nrg.xnat', name: 'xnatsrb', version: '1.0.1'
-    compile group: 'org.json', name: 'json', version: '20140107'
-    compile group: 'commons-io', name: 'commons-io', version: '2.4'
-    compile group: 'commons-codec', name: 'commons-codec', version: '1.5'
-    compile group: 'commons-dbcp', name: 'commons-dbcp', version: '1.4'
-    compile group: 'nl.bitwalker', name: 'UserAgentUtils', version: '1.2.4'
-    compile group: 'ant', name: 'ant', version: '1.6.1'
+    compile "org.nrg:notify:1.7.0-SNAPSHOT"
+    compile "org.nrg:config:1.7.0-SNAPSHOT"
+    compile "org.nrg:mail:1.7.0-SNAPSHOT"
+    compile "org.nrg:framework:1.7.0-SNAPSHOT"
+    compile "org.springframework:spring-web:4.1.2.RELEASE"
+    compile "org.springframework:spring-jms:4.1.2.RELEASE"
+    compile "org.springframework:spring-context-support:4.1.2.RELEASE"
+    compile "org.springframework.security:spring-security-web:3.2.5.RELEASE"
+    compile "log4j:log4j:1.2.17"
+    compile "org.slf4j:slf4j-api:1.7.7"
+    compile "org.slf4j:slf4j-log4j12:1.7.7"
+    compile "org.slf4j:jul-to-slf4j:1.7.7"
+    compile "javax.servlet:javax.servlet-api:3.1.0"
+    compile "javax.activation:activation:1.1.1"
+    compile "javax.mail:mail:1.4.5"
+    compile "javax.inject:javax.inject:1"
+    compile "org.apache.geronimo.specs:geronimo-jms_1.1_spec:1.1.1"
+    compile "com.google.guava:guava:10.0.1"
+    compile "commons-net:commons-net:3.1"
+    compile "org.apache.commons:commons-email:1.3.2"
+    compile "org.apache.httpcomponents:httpclient:4.3.6"
+    compile "commons-lang:commons-lang:2.6"
+    compile "commons-fileupload:commons-fileupload:1.2.1"
+    compile "axis:axis:1.4"
+    compile "turbine:turbine:2.3.3"
+    compile "org.apache.velocity:velocity:1.7"
+    compile "ecs:ecs:1.4.2"
+    compile "torque:torque:3.1.1"
+    compile "commons-configuration:commons-configuration:1.5"
+    compile "stratum:stratum:1.0"
+    compile "com.lowagie:itext:1.1.4"
+    compile "fop:fop:0.20.5-rc3-alpha"
+    compile "avalon-framework:avalon-framework:4.1.4"
+    compile "org.dspace:jargon:1.4.25"
+    compile "org.nrg.xnat:xnatsrb:1.0.1"
+    compile "org.json:json:20140107"
+    compile "commons-io:commons-io:2.4"
+    compile "commons-codec:commons-codec:1.5"
+    compile "commons-dbcp:commons-dbcp:1.4"
+    compile "nl.bitwalker:UserAgentUtils:1.2.4"
+    compile "ant:ant:1.6.1"
+
     testCompile group: 'junit', name: 'junit', version: '4.11'
     testCompile group: 'org.mockito', name: 'mockito-all', version: '1.8.5'
     testCompile group: 'org.springframework', name: 'spring-test', version: '4.1.2.RELEASE'
     testCompile group: 'com.h2database', name: 'h2', version: '1.3.175'
     testCompile group: 'org.hibernate', name: 'hibernate-ehcache', version: '4.3.7.Final'
+}
+
+publishing {
+    publications {
+        mavenJava(MavenPublication) {
+            from components.java
+
+            pom.withXml {
+                def root = asNode()
+                root.appendNode('name', 'XDAT Core')
+                root.appendNode('description', 'Provides the core data-handling and infrastructure technologies for the XNAT server platform.')
+                root.appendNode('url', 'https://bitbucket.org/nrg/xdat_1_7dev')
+                root.appendNode('inceptionYear', '2016')
+
+                def scm = root.appendNode('scm')
+                scm.appendNode('url', 'https://bitbucket.org/nrg/xdat_1_7dev')
+                scm.appendNode('connection', 'scm:https://bitbucket.org/nrg/xdat_1_7dev')
+                scm.appendNode('developerConnection', 'scm:hg://bitbucket.org/nrg/xdat_1_7dev')
+
+                def license = root.appendNode('licenses').appendNode('license')
+                license.appendNode('name', 'Simplified BSD 2-Clause License')
+                license.appendNode('url', 'http://xnat.org/about/license.php')
+                license.appendNode('distribution', 'repo')
+
+                def developers = root.appendNode('developers')
+                def rherrick = developers.appendNode('developer')
+                rherrick.appendNode('id', 'rherrick')
+                rherrick.appendNode('name', 'Rick Herrick')
+                rherrick.appendNode('email', 'jrherrick@wustl.edu')
+            }
+        }
+    }
+    repositories {
+        maven {
+            credentials {
+                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+                // line in the form -PrepoUsername=foo -PrepoPassword=bar.
+                username propertyWithDefault('repoUsername', 'username')
+                password propertyWithDefault('repoPassword', 'password')
+            }
+            if (project.version.endsWith('-SNAPSHOT')) {
+                url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
+            } else {
+                url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local"
+            }
+        }
+        ivy {
+            credentials {
+                // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command
+                // line in the form -DrepoUsername=foo -DrepoPassword=bar.
+                username propertyWithDefault('repoUsername', 'username')
+                password propertyWithDefault('repoPassword', 'password')
+            }
+            if (project.version.endsWith('-SNAPSHOT')) {
+                url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot-local"
+            } else {
+                url "https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release-local"
+            }
+        }
+    }
+}
+
+def propertyWithDefault(def String property, def Object value) {
+    hasProperty(property) ? getProperty(property) : value
 }

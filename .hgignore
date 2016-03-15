@@ -1,4 +1,5 @@
 syntax: glob
+.gradle
 .classpath
 .cvsignore
 .project
@@ -7,23 +8,12 @@ syntax: glob
 .settings
 update_deploy
 build.properties
-plugin-resources/repository/xdat/jars/xdat-beans-*-source.jar
-plugin-resources/repository/xdat/jars/xdat-beans-*.jar
-plugin-resources/repository/javax.persistence/jars/persistence-api-1.0.2.jar
-plugin-resources/repository/javax.persistence/jars/persistence-api-1.0.2.jar.md5
-plugin-resources/repository/org.apache.directory.installers/jars/apacheds-noarch-installer-1.5.7.jar
-plugin-resources/repository/org.apache.directory.installers/jars/apacheds-noarch-installer-1.5.7.jar.md5
-plugin-resources/repository/org.apache.directory.server/jars/apacheds-all-1.5.5.jar
-plugin-resources/repository/org.apache.directory.server/jars/apacheds-all-1.5.5.jar.md5
-plugin-resources/misc/template2.*
 Thumbs.db
 out
 build
 
 work
 pom.xml
-plugin-resources/plugins/maven-turbine-plugin/maven-turbine-plugin/project.xml
-plugin-resources/plugins/maven-turbine-plugin
 hs_err_pid*.log
 classes/XNATTool.class
 classes/ValidateJavaBean.class
@@ -38,45 +28,10 @@ xnat_subjectData_assessors_new.vm
 *__xx
 *__xx*
 
-plugin-resources/webapp/xnat-templates/navigations/htmlOpen.vm copy
-plugin-resources/webapp/xnat-templates/screens/UploadAppletIframe.vm
-plugin-resources/webapp/xnat-templates/screens/XDATScreen_add_experiment_xMenu.vm
-plugin-resources/webapp/xnat-templates/screens/XDATScreen_download_sessions2.vm
-plugin-resources/webapp/xnat-templates/screens/xnat_mrSessionData/edit/scams.vm
-plugin-resources/webapp/xnat/java/org/nrg/xnat/restlet/extensions/ExptList.java
-plugin-resources/webapp/xnat/scripts/bootstrap/*
-plugin-resources/webapp/xnat/scripts/chosen/*
-plugin-resources/webapp/xnat/scripts/downloadManager/*
-plugin-resources/webapp/xnat/scripts/downloadManagerx/*
-plugin-resources/webapp/xnat/scripts/filter.js
-plugin-resources/webapp/xnat/scripts/jquery/jQuery.loadScript.js
-plugin-resources/webapp/xnat/scripts/jquery/jquery.utils.js
-plugin-resources/webapp/xnat/scripts/project/settingsTabMgmtX.js
-plugin-resources/webapp/xnat/scripts/search/tabManager.X.js
-plugin-resources/webapp/xnat/scripts/subjectAssessorData/proj_subj_selector_xmenu.js
-plugin-resources/webapp/xnat/scripts/tabWrangler/tabWrangler.X.js
-plugin-resources/webapp/xnat/scripts/tabWrangler/tabWranglers.js
-plugin-resources/webapp/xnat/scripts/tabWrangler1/*
-plugin-resources/webapp/xnat/scripts/tabWrangler2/*
-plugin-resources/webapp/xnat/scripts/timeLeft copy.js
-plugin-resources/webapp/xnat/scripts/timeLeftX.js
 
-plugin-resources/webapp/xnat/scripts/xModal copy 2/PIE/PIE.php
 
-plugin-resources/webapp/xnat/scripts/xdat-cnda.js
-plugin-resources/webapp/xnat/style/xdat-cnda.css
-plugin-resources/webapp/xnat/style/xnat-alt.css
-plugin-resources/webapp/xnat/style/xnat-cnda.css
 
-plugin-resources/webapp/xnat/scripts/tabWrangler1/images/fade_right_white_40w.png
-plugin-resources/webapp/xnat/scripts/tabWrangler1/images/tab_flipper_bkgd_dark.png
-plugin-resources/webapp/xnat/scripts/tabWrangler1/tabWrangler.X.js
-plugin-resources/webapp/xnat/scripts/tabWrangler1/tabWrangler.css
-plugin-resources/webapp/xnat/scripts/tabWrangler1/tabWrangler.js
-plugin-resources/webapp/xnat/scripts/tabWrangler1/tabWranglers.js
 
-plugin-resources/webapp/xdat/xdat.iml
-plugin-resources/webapp/xnat/xnat.iml
 bin\initXnatDb.bat
 
 bin/*
@@ -89,12 +44,8 @@ syntax: regexp
 ^ide-bin
 ^lib
 ^pipeline
-^plugin-resources/cache
 ^projects
 ^modules
-^xnat_builder_1_6dev.iml
-^xnat_builder.iml
-^xnat_builder.eml
 ^buildXDAT.bat
 ^deployXDAT.bat
 ^restartApache.bat
@@ -105,11 +56,9 @@ syntax: regexp
 ^src/org/nrg/xdat/bean/[^/]*\.java
 # all auto-generated launch scripts start with capital letters
 ^bin/[A-Z].+
-glob:plugin-resources/webapp/xnat/java/org/nrg/xnat/restlet/resources/SubjAssessmentAbst.java.rej
 glob:src/org/nrg/xdat/model/*
 glob:work/java/*
 glob:work/templates/*
-glob:plugin-resources/repository/commons-lang/jars/commons-lang-2.0.jar*
 glob:target*
 build.properties.sample
 qcommit.bat

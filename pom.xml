@@ -67,6 +67,10 @@
         </plugins>
     </reporting>
 
+    <properties>
+        <maven.server.root>https://nrgxnat.artifactoryonline.com/nrgxnat</maven.server.root>
+    </properties>
+
     <dependencies>
         <dependency>
             <groupId>org.nrg</groupId>
@@ -302,30 +306,29 @@
 	    </dependency>
     </dependencies>
 
-    <pluginRepositories>
-        <pluginRepository>
-            <name>XNAT Snapshot Maven Plugin Repo</name>
-            <id>org.nrg.maven.plugins.snapshot</id>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/plugins-snapshot</url>
-        </pluginRepository>
-        <pluginRepository>
-            <name>XNAT Release Maven Plugin Repo</name>
-            <id>org.nrg.maven.plugins.release</id>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/plugins-release</url>
-        </pluginRepository>
-    </pluginRepositories>
-
     <repositories>
         <repository>
-            <name>XNAT Release Maven Repo</name>
-            <id>org.nrg.maven.artifacts.release</id>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-release</url>
+            <id>org.nrg.xnat.maven.libraries.release</id>
+            <name>XNAT Maven Release Libraries</name>
+            <url>${maven.server.root}/libs-release</url>
+            <releases>
+                <enabled>true</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
         </repository>
         <repository>
-            <name>XNAT Snapshot Maven Repo</name>
-            <id>org.nrg.maven.artifacts.snapshot</id>
-            <url>http://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot</url>
-        </repository>       
+            <id>org.nrg.xnat.maven.libraries.snapshot</id>
+            <name>XNAT Maven Snapshot Libraries</name>
+            <url>${maven.server.root}/libs-snapshot</url>
+            <releases>
+                <enabled>false</enabled>
+            </releases>
+            <snapshots>
+                <enabled>true</enabled>
+            </snapshots>
+        </repository>
     </repositories>
 
 </project>

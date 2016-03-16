@@ -1,18 +1,18 @@
 package org.nrg.prefs.services.impl.hibernate;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
-import org.nrg.prefs.beans.AbstractPreferencesBean;
-import org.nrg.prefs.beans.PreferencesBean;
+import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.entities.Preference;
-import org.nrg.prefs.entities.PreferenceInfo;
 import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
-import org.nrg.prefs.services.NrgPrefsService;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.services.PreferenceService;
 import org.nrg.prefs.services.ToolService;
 import org.slf4j.Logger;
@@ -30,12 +30,12 @@ import java.util.*;
 
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 @Service
-public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationContextAware, InitializingBean {
+public class DefaultNrgPreferenceService implements NrgPreferenceService, ApplicationContextAware, InitializingBean {
     /**
      * {@inheritDoc}
      */
     @Override
-    public Tool createTool(final PreferencesBean bean) {
+    public Tool createTool(final PreferenceBean bean) {
         if (_log.isDebugEnabled()) {
             _log.debug("Request to create a new tool received, ID: {}", bean.getClass().getName());
         }
@@ -49,31 +49,11 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
     @Override
     public Tool createTool(final Tool tool) {
         _toolService.create(tool);
+        final String toolId = tool.getToolId();
         if (_log.isDebugEnabled()) {
-            _log.debug("New tool {} created with primary key ID: {} at {}", tool.getToolId(), tool.getId(), tool.getCreated());
+            _log.debug("New tool {} created with primary key ID: {} at {}", toolId, tool.getId(), tool.getCreated());
         }
-        final Map<String, PreferenceInfo> defaults = tool.getToolPreferences();
-        if (defaults != null) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Found {} default values to add to tool {}", defaults.size(), tool.getToolId());
-            }
-            for (final String preference : defaults.keySet()) {
-                final PreferenceInfo value = defaults.get(preference);
-                if (value != null) {
-                    try {
-                        // TODO: For now creates a site-wide preference only.
-                        _preferenceService.setPreference(tool.getToolId(), preference, value.getDefaultValue());
-                    } catch (InvalidPreferenceName ignored) {
-                        // This shouldn't happen: we're creating new preferences from the defaults that define the list of acceptable preferences.
-                    }
-                    if (_log.isDebugEnabled()) {
-                        _log.debug(" * {}: {}", preference, value);
-                    }
-                } else if (_log.isDebugEnabled()) {
-                    _log.debug(" * {}: No default value specified", preference);
-                }
-            }
-        }
+        _beansByToolId.get(toolId).initialize();
         return tool;
     }
 
@@ -211,13 +191,14 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
             _resolversByClass.put(resolver.getClass(), resolver);
         }
         if (_preferenceBeans != null) {
-            for (final AbstractPreferencesBean bean : _preferenceBeans) {
+            for (final PreferenceBean bean : _preferenceBeans) {
                 final String toolId = bean.getToolId();
                 if (!getToolIds().contains(toolId)) {
                     createTool(bean);
                 }
                 final Class<? extends PreferenceEntityResolver> resolverClass = bean.getResolver();
                 getResolverByClass(toolId, resolverClass);
+                _beansByToolId.put(toolId, bean);
             }
         } else {
             _preferenceBeans = new ArrayList<>();
@@ -228,7 +209,7 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
      * Returns the resolver specified for the given tool ID. If the entity resolver is not already cached or found in
      * the current application context, this method returns null.
      *
-     * @param toolId    The tool ID for retrieving a registered entity resolver.
+     * @param toolId The tool ID for retrieving a registered entity resolver.
      *
      * @return The entity resolver with the submitted ID if found, null otherwise.
      */
@@ -279,6 +260,7 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
      * tool if it does not yet exist in the preferences service. Instead it throws an {@link UnknownToolId} exception.
      *
      * @param toolId The unique tool ID.
+     *
      * @return The initialized tool for the indicated object.
      */
     private Tool getTool(final String toolId) throws UnknownToolId {
@@ -291,10 +273,16 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
         }
         return tool;
     }
-    private static final Logger _log = LoggerFactory.getLogger(DefaultNrgPrefsService.class);
-    private static final Scope DEFAULT_SCOPE = EntityId.Default.getScope();
 
+    private static final Scope  DEFAULT_SCOPE     = EntityId.Default.getScope();
     private static final String DEFAULT_ENTITY_ID = EntityId.Default.getEntityId();
+
+    private static final Logger       _log    = LoggerFactory.getLogger(DefaultNrgPreferenceService.class);
+    private static final ObjectMapper _mapper = new ObjectMapper();
+
+    static {
+        _mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+    }
 
     @Inject
     private ToolService _toolService;
@@ -303,14 +291,16 @@ public class DefaultNrgPrefsService implements NrgPrefsService, ApplicationConte
     private PreferenceService _preferenceService;
 
     @Autowired(required = false)
-    private List<AbstractPreferencesBean> _preferenceBeans;
+    private List<PreferenceBean> _preferenceBeans;
 
     @Inject
     private List<PreferenceEntityResolver> _resolvers;
 
-    private final Map<String, PreferenceEntityResolver> _resolversByToolId = new HashMap<>();
-    private final Map<Class<? extends PreferenceEntityResolver>, PreferenceEntityResolver> _resolversByClass = new HashMap<>();
+    private final Map<String, PreferenceEntityResolver>                                    _resolversByToolId = new HashMap<>();
+    private final Map<Class<? extends PreferenceEntityResolver>, PreferenceEntityResolver> _resolversByClass  = new HashMap<>();
 
-    private ApplicationContext _context;
+    private final Map<String, PreferenceBean> _beansByToolId = new HashMap<>();
+
+    private ApplicationContext       _context;
     private PreferenceEntityResolver _defaultResolver;
 }

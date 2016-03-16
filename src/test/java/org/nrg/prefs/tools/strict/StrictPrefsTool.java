@@ -31,5 +31,5 @@ public class StrictPrefsTool {
     }
 
     @Autowired
-    private StrictPrefsToolPreferencesBean _preferences;
+    private StrictPrefsToolPreferenceBean _preferences;
 }

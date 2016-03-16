@@ -12,8 +12,8 @@ package org.nrg.prefs.services;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.services.NrgService;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
-import org.nrg.prefs.beans.AbstractPreferencesBean;
-import org.nrg.prefs.beans.PreferencesBean;
+import org.nrg.prefs.beans.AbstractPreferenceBean;
+import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -26,7 +26,7 @@ import java.util.Set;
  * The preferences service interface is the primary means of working with preferences
  * within the XNAT service context.
  */
-public interface NrgPrefsService extends NrgService {
+public interface NrgPreferenceService extends NrgService {
     /**
      * Creates a {@link Tool tool} with the properties and values specified on the preferences bean and its related
      * {@link NrgPreferenceBean NrgPreferenceBean annotation}.
@@ -34,11 +34,11 @@ public interface NrgPrefsService extends NrgService {
      * @param bean    The bean object.
      * @return The object representing the persisted tool definition.
      */
-    Tool createTool(final PreferencesBean bean) throws InvalidPreferenceName;
+    Tool createTool(final PreferenceBean bean) throws InvalidPreferenceName;
 
     /**
      * Creates the submitted {@link Tool tool} with the properties and values specified on the tool preferences bean.
-     * This tool works without a dedicated {@link AbstractPreferencesBean preferences bean object}.
+     * This tool works without a dedicated {@link AbstractPreferenceBean preferences bean object}.
      *
      * @param tool    The tool to create.
      * @return The newly created tool object.

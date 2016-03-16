@@ -7,8 +7,8 @@ import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.prefs.configuration.NrgPrefsServiceTestsConfiguration;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
-import org.nrg.prefs.services.NrgPrefsService;
 import org.nrg.prefs.tools.basic.BasicTestTool;
+import org.nrg.prefs.tools.beans.BeanPrefsTool;
 import org.nrg.prefs.tools.relaxed.RelaxedPrefsTool;
 import org.nrg.prefs.tools.strict.StrictPrefsTool;
 import org.springframework.test.annotation.Rollback;
@@ -32,21 +32,6 @@ import static org.junit.Assert.*;
 @Rollback
 @Transactional
 public class NrgPrefsServiceTests {
-    private static final Map<String, String> prefs1 = new HashMap<>();
-    static {
-        prefs1.put("preference1", "defaultValue1");
-        prefs1.put("preference2", "defaultValue2");
-        prefs1.put("preference3", "defaultValue3");
-    }
-    private static final Map<String, String> prefs2 = new HashMap<>();
-    static {
-        prefs2.put("preference1", "defaultValue1");
-        prefs2.put("preference2", "defaultValue2");
-        prefs2.put("preference3", "defaultValue3");
-        prefs2.put("preference4", "defaultValue4");
-        prefs2.put("preference5", "defaultValue5");
-    }
-
     @Test
     public void testBasicPrefsTool() throws InvalidPreferenceName {
         assertNotNull(_basicPrefsTool);
@@ -95,6 +80,14 @@ public class NrgPrefsServiceTests {
         _strictPrefsTool.setStrictPrefC("defaultC");
     }
 
+    @Test
+    public void testBeanPrefsTool() throws InvalidPreferenceName, IOException {
+        assertNotNull(_beanPrefsTool);
+        assertEquals("CCIR", _beanPrefsTool.getPrefA().getScpId());
+        assertEquals("XNAT", _beanPrefsTool.getPrefBs().get(0).getScpId());
+        assertEquals("XNAT", _beanPrefsTool.getPrefB("XNAT").getScpId());
+    }
+
     @Ignore
     @Test
     public void testCreateTool() {
@@ -128,13 +121,10 @@ public class NrgPrefsServiceTests {
         for (final String property : properties.stringPropertyNames()) {
             defaults.put(property, properties.getProperty(property));
         }
-        // _service.createTool("siteConfig", "Site Configuration", "This is the main tool for mapping the site configuration", defaults, false, AbstractPreferencesBean.class.getName(), null);
+        // _service.createTool("siteConfig", "Site Configuration", "This is the main tool for mapping the site configuration", defaults, false, AbstractPreferenceBean.class.getName(), null);
         // Assert.assertEquals("true", _service.getPreferenceValue("siteConfig", "enableDicomReceiver"));
         // Assert.assertEquals("org.nrg.xnat.utils.ChecksumsSiteConfigurationListener", _service.getPreferenceValue("siteConfig", "checksums.property.changed.listener"));
     }
-
-    @Inject
-    private NrgPrefsService _service;
 
     @Inject
     private BasicTestTool _basicPrefsTool;
@@ -144,4 +134,7 @@ public class NrgPrefsServiceTests {
 
     @Inject
     private StrictPrefsTool _strictPrefsTool;
+
+    @Inject
+    private BeanPrefsTool _beanPrefsTool;
 }

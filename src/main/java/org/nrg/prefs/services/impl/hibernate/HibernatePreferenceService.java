@@ -4,7 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.scope.EntityId;
-import org.nrg.prefs.beans.AbstractPreferencesBean;
+import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
@@ -82,7 +82,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
     public void afterPropertiesSet() {
         super.afterPropertiesSet();
         if (_preferenceBeans != null) {
-            for (final AbstractPreferencesBean bean : _preferenceBeans) {
+            for (final PreferenceBean bean : _preferenceBeans) {
                 _beansById.put(bean.getToolId(), bean);
             }
         } else {
@@ -93,7 +93,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
     private void createOrUpdatePreference(final Tool tool, final String preferenceName, final Scope scope, final String entityId, final String value, Preference preference) throws InvalidPreferenceName {
         final String resolvedEntityId = resolveEntityId(entityId);
         if (preference == null) {
-            if (tool.isStrict() && !tool.getToolPreferences().containsKey(preferenceName) && !isValidPreference(tool, preferenceName)) {
+            if (tool.isStrict() && !_beansById.get(tool.getToolId()).getDefaultPreferences().containsKey(preferenceName) && !isValidPreference(tool, preferenceName)) {
                 throw new InvalidPreferenceName("The tool " + tool.getToolId() + " doesn't support the preference " + preferenceName + " and is set to use a strict preferences list.");
             }
             if (_log.isDebugEnabled()) {
@@ -126,7 +126,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
 
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     @Autowired(required = false)
-    private List<AbstractPreferencesBean> _preferenceBeans;
+    private List<PreferenceBean> _preferenceBeans;
 
-    private Map<String, AbstractPreferencesBean> _beansById = new HashMap<>();
+    private Map<String, PreferenceBean> _beansById = new HashMap<>();
 }

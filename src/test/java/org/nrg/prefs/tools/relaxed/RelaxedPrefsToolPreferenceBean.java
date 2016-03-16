@@ -1,20 +1,20 @@
 package org.nrg.prefs.tools.relaxed;
 
 import org.nrg.prefs.annotations.NrgPreferenceBean;
-import org.nrg.prefs.beans.AbstractPreferencesBean;
+import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 @NrgPreferenceBean(toolId = "relaxed",
                    toolName = "Relaxed Prefs Tool",
                    description = "This tests the non-relaxed mode on adding preferences",
                    strict = false)
-public class RelaxedPrefsToolPreferencesBean extends AbstractPreferencesBean {
+public class RelaxedPrefsToolPreferenceBean extends AbstractPreferenceBean {
     public String getRelaxedPrefA() {
         return getValue("relaxedPrefA");
     }
 
     public void setRelaxedPrefA(final String relaxedPrefA) throws InvalidPreferenceName {
-        set("relaxedPrefA", relaxedPrefA);
+        set(relaxedPrefA);
     }
 
     public String getRelaxedPrefB() {
@@ -22,7 +22,7 @@ public class RelaxedPrefsToolPreferencesBean extends AbstractPreferencesBean {
     }
 
     public void setRelaxedPrefB(final String relaxedPrefB) throws InvalidPreferenceName {
-        set("relaxedPrefB", relaxedPrefB);
+        set(relaxedPrefB);
     }
 
     public String getRelaxedPrefC() {
@@ -30,6 +30,6 @@ public class RelaxedPrefsToolPreferencesBean extends AbstractPreferencesBean {
     }
 
     public void setRelaxedPrefC(final String relaxedPrefC) throws InvalidPreferenceName {
-        set("relaxedPrefC", relaxedPrefC);
+        set(relaxedPrefC);
     }
 }

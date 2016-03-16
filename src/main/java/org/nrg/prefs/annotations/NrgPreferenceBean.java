@@ -61,7 +61,8 @@ public @interface NrgPreferenceBean {
     /**
      * Indicates whether the preferences for the tool are limited to the preference keys specified by the preferences
      * bean or whether free-form preferences can be added to the tool.
-     * @return
+     *
+     * @return Returns true if the tool preferences are limited to configured preferences, false otherwise.
      */
     boolean strict() default true;
 
@@ -76,6 +77,7 @@ public @interface NrgPreferenceBean {
     /**
      * Any custom {@link PreferenceTransformer transformer classes} required by the preferences service to transform
      * complex data types into serialized values that can be stored and back again.
+     *
      * @return An array of transformer classes, if specified.
      */
     Class<? extends PreferenceTransformer>[] transformers() default {};

@@ -35,9 +35,9 @@ public class RelaxedPrefsTool {
     }
 
     public void setRelaxedWhatever(final String preference, final String value) throws InvalidPreferenceName {
-        _preferences.set(preference, value);
+        _preferences.set(value);
     }
 
     @Autowired
-    private RelaxedPrefsToolPreferencesBean _preferences;
+    private RelaxedPrefsToolPreferenceBean _preferences;
 }

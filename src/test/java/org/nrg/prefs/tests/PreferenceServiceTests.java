@@ -20,7 +20,7 @@ import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.scope.EntityId;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
-import org.nrg.prefs.services.NrgPrefsService;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.nrg.prefs.services.PreferenceService;
 import org.nrg.prefs.services.ToolService;
 import org.slf4j.Logger;
@@ -38,7 +38,7 @@ import static org.junit.Assert.*;
 
 /**
  * Tests the NRG Hibernate preference service. This is a sanity test of the plumbing for the preference entity
- * management. All end-use operations should use an implementation of the {@link NrgPrefsService} interface.
+ * management. All end-use operations should use an implementation of the {@link NrgPreferenceService} interface.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration

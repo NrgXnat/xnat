@@ -6,10 +6,6 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class BasicTestTool {
-    public BasicTestTool() {
-
-    }
-
     public String getPrefA() {
         return _preferences.getPrefA();
     }
@@ -27,5 +23,5 @@ public class BasicTestTool {
     }
 
     @Autowired
-    private BasicTestToolPreferencesBean _preferences;
+    private BasicTestToolPreferenceBean _preferences;
 }

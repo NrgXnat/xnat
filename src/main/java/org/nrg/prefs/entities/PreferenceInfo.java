@@ -1,10 +1,13 @@
 package org.nrg.prefs.entities;
 
 public class PreferenceInfo {
-    private String _name;
-    private String _defaultValue;
+    private String   _name;
+    private String   _defaultValue;
     private Class<?> _valueType;
+    private Class<?> _itemType;
+    private String   _key;
 
+    @SuppressWarnings("unused")
     public PreferenceInfo() {
         // Need to provide default constructor for serialization.
     }
@@ -74,4 +77,41 @@ public class PreferenceInfo {
         _valueType = valueType;
     }
 
+    /**
+     * When the {@link #getValueType() preference value type} is a list, this indicates the type of the item stored in
+     * the list. When the {@link #getValueType() preference value type} is a map, this indicates the type of the value
+     * stored in the list (the key is always presumed to be a string).
+     * @return The type of item stored in a list or map value.
+     */
+    public Class<?> getItemType() {
+        return _itemType;
+    }
+
+    /**
+     * When the {@link #getValueType() preference value type} is a list, this indicates the type of the item stored in
+     * the list. When the {@link #getValueType() preference value type} is a map, this indicates the type of the value
+     * stored in the list (the key is always presumed to be a string).
+     * @param itemType    The type of item stored in a list or map value.
+     */
+    public void setItemType(final Class<?> itemType) {
+        _itemType = itemType;
+    }
+
+    /**
+     * When the {@link #getValueType() preference value type} is a map, this indicates the property of the item stored
+     * in the list to be used as a key.
+     * @return The key to use for items in the map.
+     */
+    public String getKey() {
+        return _key;
+    }
+
+    /**
+     * When the {@link #getValueType() preference value type} is a map, this indicates the property of the item stored
+     * in the list to be used as a key.
+     * @param key    The key to use for items in the map.
+     */
+    public void setKey(final String key) {
+        _key = key;
+    }
 }

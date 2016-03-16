@@ -2,20 +2,20 @@ package org.nrg.prefs.tools.strict;
 
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
-import org.nrg.prefs.beans.AbstractPreferencesBean;
+import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
 @NrgPreferenceBean(toolId = "strict",
                    toolName = "Strict Prefs Tool",
                    description = "This tests the strict mode on adding preferences")
-public class StrictPrefsToolPreferencesBean extends AbstractPreferencesBean {
+public class StrictPrefsToolPreferenceBean extends AbstractPreferenceBean {
     @NrgPreference(defaultValue = "strictValueA")
     public String getStrictPrefA() {
         return getValue("strictPrefA");
     }
 
     public void setStrictPrefA(final String strictPrefA) throws InvalidPreferenceName {
-        set("strictPrefA", strictPrefA);
+        set(strictPrefA);
     }
 
     @NrgPreference(defaultValue = "strictValueB")
@@ -24,7 +24,7 @@ public class StrictPrefsToolPreferencesBean extends AbstractPreferencesBean {
     }
 
     public void setStrictPrefB(final String strictPrefB) throws InvalidPreferenceName {
-        set("strictPrefB", strictPrefB);
+        set(strictPrefB);
     }
 
     public String getStrictPrefC() {
@@ -32,6 +32,6 @@ public class StrictPrefsToolPreferencesBean extends AbstractPreferencesBean {
     }
 
     public void setStrictPrefC(final String strictPrefC) throws InvalidPreferenceName {
-        set("strictPrefC", strictPrefC);
+        set(strictPrefC);
     }
 }

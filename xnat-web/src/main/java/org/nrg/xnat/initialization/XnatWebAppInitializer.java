@@ -5,6 +5,7 @@ import org.apache.axis.transport.http.AxisHTTPSessionListener;
 import org.apache.axis.transport.http.AxisServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.processors.XnatModuleBean;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
@@ -21,6 +22,9 @@ import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatche
 
 import javax.servlet.*;
 import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
 import java.util.*;
 
 public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherServletInitializer {
@@ -73,6 +77,35 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     protected Class<?>[] getServletConfigClasses() {
         return new Class<?>[0];
     }
+
+    @Override
+    protected void customizeRegistration(ServletRegistration.Dynamic registration) {
+        registration.setMultipartConfig(getMultipartConfigElement());
+    }
+
+    private MultipartConfigElement getMultipartConfigElement() {
+        final String temp;
+        if (StringUtils.isNotBlank(System.getProperty("xnat.home"))) {
+            temp = System.getProperty("xnat.home");
+        } else {
+            temp = System.getProperty("java.io.tmpdir");
+        }
+        final String prefix = "xnat_" + Long.toString(System.nanoTime());
+        try {
+            final Path path = Paths.get(temp);
+            path.toFile().mkdirs();
+            final Path tmpDir = Files.createTempDirectory(path, prefix);
+            return new MultipartConfigElement(tmpDir.toAbsolutePath().toString(), MAX_FILE_SIZE, MAX_REQUEST_SIZE, FILE_SIZE_THRESHOLD);
+        } catch (IOException e) {
+            throw new NrgServiceRuntimeException("An error occurred trying to create the temp folder " + prefix + " in the containing folder "+ temp);
+        }
+    }
+
+    private static final long MAX_FILE_SIZE = 1048576 * 20; // 20 MB max file size.
+
+    private static final long MAX_REQUEST_SIZE = 20971520;  // 20MB max request size.
+
+    private static final int FILE_SIZE_THRESHOLD = 0; // Threshold turned off.
 
     private List<Class<?>> getModuleConfigs() {
         final List<Class<?>> moduleConfigs = new ArrayList<>();

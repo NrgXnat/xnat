@@ -314,9 +314,16 @@
                     <td><b>Description: </b>&nbsp;</td>
                     <td><input type="text" name="script-description" class="script-description" size="80" value=""></td>
                 </tr>
+                <!-- VERSION MENU
+                <tr>
+                    <td><b>Load Version: </b>&nbsp;</td>
+                    <td><select name="script-version" class="script-version"></select></td>
+                </tr>
+                -->
             </table>
             <br>
-            <div style="width:840px;height:482px;position:relative;">
+            <div class="editor-wrapper" style="width:840px;height:482px;position:relative;">
+                <!-- the '.editor-content' div gets replaced when the script content is loaded -->
                 <div class="editor-content" style="position:absolute;top:0;right:0;bottom:0;left:0;border:1px solid #ccc;"></div>
             </div>
         </div><!-- /#script-editor-template -->

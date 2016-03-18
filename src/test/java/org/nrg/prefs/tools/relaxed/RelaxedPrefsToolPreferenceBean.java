@@ -14,7 +14,7 @@ public class RelaxedPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setRelaxedPrefA(final String relaxedPrefA) throws InvalidPreferenceName {
-        set(relaxedPrefA);
+        set(relaxedPrefA, "relaxedPrefA");
     }
 
     public String getRelaxedPrefB() {
@@ -22,7 +22,7 @@ public class RelaxedPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setRelaxedPrefB(final String relaxedPrefB) throws InvalidPreferenceName {
-        set(relaxedPrefB);
+        set(relaxedPrefB, "relaxedPrefB");
     }
 
     public String getRelaxedPrefC() {
@@ -30,6 +30,6 @@ public class RelaxedPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setRelaxedPrefC(final String relaxedPrefC) throws InvalidPreferenceName {
-        set(relaxedPrefC);
+        set(relaxedPrefC, "relaxedPrefC");
     }
 }

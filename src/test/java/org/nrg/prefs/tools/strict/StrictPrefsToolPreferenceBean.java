@@ -15,7 +15,7 @@ public class StrictPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setStrictPrefA(final String strictPrefA) throws InvalidPreferenceName {
-        set(strictPrefA);
+        set(strictPrefA, "strictPrefA");
     }
 
     @NrgPreference(defaultValue = "strictValueB")
@@ -24,7 +24,7 @@ public class StrictPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setStrictPrefB(final String strictPrefB) throws InvalidPreferenceName {
-        set(strictPrefB);
+        set(strictPrefB, "strictPrefB");
     }
 
     public String getStrictPrefC() {
@@ -32,6 +32,6 @@ public class StrictPrefsToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setStrictPrefC(final String strictPrefC) throws InvalidPreferenceName {
-        set(strictPrefC);
+        set(strictPrefC, "strictPrefC");
     }
 }

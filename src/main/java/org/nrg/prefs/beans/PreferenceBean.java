@@ -6,24 +6,25 @@ import org.nrg.prefs.entities.PreferenceInfo;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
+import org.nrg.prefs.services.NrgPreferenceService;
 
 import java.util.List;
 import java.util.Map;
 
 public interface PreferenceBean {
-    void initialize();
+    PreferenceBean initialize(final NrgPreferenceService service);
 
     String getToolId();
 
     Class<? extends PreferenceEntityResolver> getResolver();
 
-    Preference get(final String... preference) throws UnknownToolId;
+    Preference get(final String key, final String... subkeys) throws UnknownToolId;
 
-    Preference get(final Scope scope, final String entityId, final String... preference) throws UnknownToolId;
+    Preference get(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
 
-    String getValue(final String... preferenceName) throws UnknownToolId;
+    String getValue(final String key, final String... subkeys) throws UnknownToolId;
 
-    String getValue(final Scope scope, final String entityId, final String... preferenceName) throws UnknownToolId;
+    String getValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
 
     <T> Map<String, T> getMapValue(final String preferenceName) throws UnknownToolId;
 
@@ -37,9 +38,9 @@ public interface PreferenceBean {
 
     <T> T[] getArrayValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId;
 
-    void set(String value, String... preference) throws UnknownToolId, InvalidPreferenceName;
+    void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
-    void set(final Scope scope, final String entityId, final String value, final String... preference) throws UnknownToolId, InvalidPreferenceName;
+    void set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
     <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId;
 
@@ -53,9 +54,9 @@ public interface PreferenceBean {
 
     <T> void setArrayValue(final Scope scope, final String entityId, final String preferenceName, T[] array) throws UnknownToolId;
 
-    void delete(final String... preference) throws InvalidPreferenceName;
+    void delete(final String key, final String... subkeys) throws InvalidPreferenceName;
 
-    void delete(final Scope scope, final String entityId, final String... preference) throws InvalidPreferenceName;
+    void delete(final Scope scope, final String entityId, final String key, final String... subkeys) throws InvalidPreferenceName;
 
     Map<String, PreferenceInfo> getDefaultPreferences();
 }

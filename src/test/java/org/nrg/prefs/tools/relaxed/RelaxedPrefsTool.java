@@ -35,7 +35,7 @@ public class RelaxedPrefsTool {
     }
 
     public void setRelaxedWhatever(final String preference, final String value) throws InvalidPreferenceName {
-        _preferences.set(value);
+        _preferences.set(value, preference);
     }
 
     @Autowired

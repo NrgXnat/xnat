@@ -20,7 +20,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
 import org.springframework.stereotype.Service;
@@ -49,11 +48,9 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
     @Override
     public Tool createTool(final Tool tool) {
         _toolService.create(tool);
-        final String toolId = tool.getToolId();
-        if (_log.isDebugEnabled()) {
-            _log.debug("New tool {} created with primary key ID: {} at {}", toolId, tool.getId(), tool.getCreated());
+        if (_log.isInfoEnabled()) {
+            _log.info("New tool {} created with primary key ID: {} at {}", tool.getToolId(), tool.getId(), tool.getCreated());
         }
-        _beansByToolId.get(toolId).initialize();
         return tool;
     }
 
@@ -190,18 +187,16 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
         for (final PreferenceEntityResolver resolver : _resolvers) {
             _resolversByClass.put(resolver.getClass(), resolver);
         }
-        if (_preferenceBeans != null) {
-            for (final PreferenceBean bean : _preferenceBeans) {
+        final Map<String, PreferenceBean> preferenceBeans = _context.getBeansOfType(PreferenceBean.class);
+        if (preferenceBeans != null) {
+            for (final PreferenceBean bean : preferenceBeans.values()) {
                 final String toolId = bean.getToolId();
                 if (!getToolIds().contains(toolId)) {
                     createTool(bean);
                 }
-                final Class<? extends PreferenceEntityResolver> resolverClass = bean.getResolver();
-                getResolverByClass(toolId, resolverClass);
-                _beansByToolId.put(toolId, bean);
+                _beansByToolId.put(toolId, bean.initialize(this));
+                getResolverByClass(toolId, bean.getResolver());
             }
-        } else {
-            _preferenceBeans = new ArrayList<>();
         }
     }
 
@@ -289,9 +284,6 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
 
     @Inject
     private PreferenceService _preferenceService;
-
-    @Autowired(required = false)
-    private List<PreferenceBean> _preferenceBeans;
 
     @Inject
     private List<PreferenceEntityResolver> _resolvers;

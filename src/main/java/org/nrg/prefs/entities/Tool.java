@@ -34,8 +34,8 @@ public class Tool extends AbstractHibernateEntity {
 
     public Tool(final PreferenceBean bean) {
 
-        final Class<? extends PreferenceBean> beanClass  = bean.getClass();
-        final NrgPreferenceBean               annotation = beanClass.getAnnotation(NrgPreferenceBean.class);
+        final Class<? extends PreferenceBean> beanClass = bean.getClass();
+        final NrgPreferenceBean annotation = beanClass.getAnnotation(NrgPreferenceBean.class);
         if (annotation == null) {
             // TODO: We might be able to use bean properties to extrapolate some of the info in the annotation and allow configuration that way as well.
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preferences bean class " + beanClass.getName() + " must be annotated with the NrgPreferenceBean annotation.");
@@ -57,11 +57,11 @@ public class Tool extends AbstractHibernateEntity {
     /**
      * Creates a tool instance with the specified ID, name, description, and default preference names and values.
      *
-     * @param toolId           The ID of the tool instance.
-     * @param toolName         The name of the tool instance.
-     * @param toolDescription  The description of the tool instance.
-     * @param strict           Whether the available preferences for this tool are limited to the specified list.
-     * @param resolver         The class of the entity resolver to use for this tool.
+     * @param toolId          The ID of the tool instance.
+     * @param toolName        The name of the tool instance.
+     * @param toolDescription The description of the tool instance.
+     * @param strict          Whether the available preferences for this tool are limited to the specified list.
+     * @param resolver        The class of the entity resolver to use for this tool.
      */
     public Tool(final String toolId, final String toolName, final String toolDescription, final boolean strict, final Class<? extends PreferenceEntityResolver> resolver) {
         if (_log.isDebugEnabled()) {
@@ -171,16 +171,6 @@ public class Tool extends AbstractHibernateEntity {
         return _resolver;
     }
 
-    /**
-     * Sets the class of the preferred entity resolver for this tool. If this is set to null, the default entity
-     * resolver for the system should be used.
-     *
-     * @param resolver    The class of the preferred entity resolver for this tool.
-     */
-    public void setResolver(final Class<? extends PreferenceEntityResolver> resolver) {
-        _resolver = resolver;
-    }
-
     @Override
     public String toString() {
         return String.format("Tool {id='%s', name='%s'}", _toolId, _toolName);
@@ -210,11 +200,21 @@ public class Tool extends AbstractHibernateEntity {
         return result;
     }
 
-    private static final Logger       _log           = LoggerFactory.getLogger(Tool.class);
+    /**
+     * Sets the class of the preferred entity resolver for this tool. If this is set to null, the default entity
+     * resolver for the system should be used.
+     *
+     * @param resolver The class of the preferred entity resolver for this tool.
+     */
+    private void setResolver(final Class<? extends PreferenceEntityResolver> resolver) {
+        _resolver = resolver;
+    }
 
-    private String _toolId;
-    private String _toolName;
-    private String _toolDescription;
+    private static final Logger _log = LoggerFactory.getLogger(Tool.class);
+
+    private String                                    _toolId;
+    private String                                    _toolName;
+    private String                                    _toolDescription;
     private boolean                                   _strict;
     private Class<? extends PreferenceEntityResolver> _resolver;
 }

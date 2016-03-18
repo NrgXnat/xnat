@@ -73,7 +73,14 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
         final List<Preference> preferences = getDao().findByToolIdAndEntity(toolId, scope, resolvedEntityId);
         final Properties       properties  = new Properties();
         for (final Preference preference : preferences) {
-            properties.setProperty(preference.getName(), preference.getValue());
+            /*
+                TODO: Something weird happens here: after deleting a preference, when you retrieve prefs by toolId, you
+                get a null entry in the list where the deleted pref used to be, so you have to check and skip it. Root
+                cause of this needs to be found, but this is a hacky workaround in the meantime.
+            */
+            if (preference != null) {
+                properties.setProperty(preference.getName(), preference.getValue());
+            }
         }
         return properties;
     }
@@ -93,7 +100,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
     private void createOrUpdatePreference(final Tool tool, final String preferenceName, final Scope scope, final String entityId, final String value, Preference preference) throws InvalidPreferenceName {
         final String resolvedEntityId = resolveEntityId(entityId);
         if (preference == null) {
-            if (tool.isStrict() && !_beansById.get(tool.getToolId()).getDefaultPreferences().containsKey(preferenceName) && !isValidPreference(tool, preferenceName)) {
+            if (tool.isStrict() && !isValidPreference(tool, getPreferenceKey(preferenceName))) {
                 throw new InvalidPreferenceName("The tool " + tool.getToolId() + " doesn't support the preference " + preferenceName + " and is set to use a strict preferences list.");
             }
             if (_log.isDebugEnabled()) {
@@ -110,13 +117,17 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
         }
     }
 
-    private boolean isValidPreference(final Tool tool, final String preferenceName) {
-        // TODO: Should maybe throw an exception when beans don't include tool ID, but this may be a valid situation?
-        return _beansById.containsKey(tool.getToolId()) && _beansById.get(tool.getToolId()).getDefaultPreferences().containsKey(preferenceName);
+    private static String getPreferenceKey(final String preferenceName) {
+        return StringUtils.isBlank(preferenceName) ? "" : preferenceName.split("\\.", 2)[0];
     }
 
     private static String resolveEntityId(final String entityId) {
         return StringUtils.isBlank(entityId) ? EntityId.Default.getEntityId() : entityId;
+    }
+
+    private boolean isValidPreference(final Tool tool, final String preferenceName) {
+        // TODO: Should maybe throw an exception when beans don't include tool ID, but this may be a valid situation?
+        return _beansById.containsKey(tool.getToolId()) && _beansById.get(tool.getToolId()).getDefaultPreferences().containsKey(preferenceName);
     }
 
     private static final Logger _log = LoggerFactory.getLogger(HibernatePreferenceService.class);

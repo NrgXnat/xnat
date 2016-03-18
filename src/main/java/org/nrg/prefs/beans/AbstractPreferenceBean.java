@@ -3,12 +3,15 @@ package org.nrg.prefs.beans;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.type.CollectionType;
 import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Joiner;
+import com.google.common.collect.Lists;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
@@ -28,7 +31,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
-import javax.inject.Inject;
 import java.io.IOException;
 import java.lang.reflect.*;
 import java.util.*;
@@ -39,11 +41,12 @@ import static org.reflections.ReflectionUtils.withAnnotation;
 
 public abstract class AbstractPreferenceBean implements PreferenceBean {
 
-
     @Override
-    public void initialize() {
+    public PreferenceBean initialize(final NrgPreferenceService service) {
+        _service = service;
         getDefaultPreferences();
         processDefaultPreferences();
+        return this;
     }
 
     @Override
@@ -77,23 +80,23 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     @Override
-    public Preference get(final String... preference) throws UnknownToolId {
-        return _service.getPreference(getToolId(), getNamespacedPropertyId(preference));
+    public Preference get(final String key, final String... subkeys) throws UnknownToolId {
+        return _service.getPreference(getToolId(), getNamespacedPropertyId(key, subkeys));
     }
 
     @Override
-    public Preference get(final Scope scope, final String entityId, final String... preference) throws UnknownToolId {
-        return _service.getPreference(getToolId(), getNamespacedPropertyId(preference), scope, entityId);
+    public Preference get(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
+        return _service.getPreference(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId);
     }
 
     @Override
-    public String getValue(final String... preferenceName) throws UnknownToolId {
-        return _service.getPreferenceValue(getToolId(), getNamespacedPropertyId(preferenceName));
+    public String getValue(final String key, final String... subkeys) throws UnknownToolId {
+        return _service.getPreferenceValue(getToolId(), getNamespacedPropertyId(key, subkeys));
     }
 
     @Override
-    public String getValue(final Scope scope, final String entityId, final String... preferenceName) throws UnknownToolId {
-        return _service.getPreferenceValue(getToolId(), getNamespacedPropertyId(preferenceName), scope, entityId);
+    public String getValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
+        return _service.getPreferenceValue(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId);
     }
 
     @Override
@@ -106,19 +109,12 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         final PreferenceInfo info = _preferences.get(preferenceName);
         @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map>) info.getValueType(), String.class, info.getItemType());
         try {
-            final Map<String, Object> map = _mapper.readValue("[]", mapType);
-            if (BeanUtils.isSimpleValueType(info.getItemType())) {
-                final String value = _service.getPreferenceValue(getToolId(), preferenceName);
-                @SuppressWarnings("unchecked") final Map item = (Map) _mapper.readValue(value, info.getItemType());
-                //noinspection unchecked
-                map.putAll(item);
-            } else {
-                final Set<String> propertyNames = Sets.filter(_service.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + "\\.")));
-                for (final String propertyName : propertyNames) {
-                    final String value = _service.getPreferenceValue(getToolId(), getNamespacedPropertyId(preferenceName, propertyName));
-                    @SuppressWarnings("unchecked") final Object item = _mapper.readValue(value, info.getItemType());
-                    map.put(propertyName, item);
-                }
+            final Map<String, Object> map = deserialize("{}", mapType);
+            final Set<String> propertyNames = Sets.filter(_service.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + "\\.")));
+            for (final String propertyName : propertyNames) {
+                final String value = _service.getPreferenceValue(getToolId(), propertyName);
+                @SuppressWarnings("unchecked") final Object item = deserialize(value, info.getItemType());
+                map.put(getPreferenceSubkey(propertyName), item);
             }
             //noinspection unchecked
             return (Map<String, T>) map;
@@ -137,21 +133,19 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         final PreferenceInfo info = _preferences.get(preferenceName);
         @SuppressWarnings("unchecked") final CollectionType listType = getTypeFactory().constructCollectionType((Class<? extends List>) info.getValueType(), info.getItemType());
         try {
-            final List<Object> list = _mapper.readValue("[]", listType);
             if (BeanUtils.isSimpleValueType(info.getItemType())) {
                 final String value = _service.getPreferenceValue(getToolId(), preferenceName);
-                @SuppressWarnings("unchecked") final Object item = _mapper.readValue(value, info.getItemType());
-                list.add(item);
+                return deserialize(value, listType);
             } else {
+                final List<T> list = deserialize("[]", listType);
                 final Set<String> propertyNames = Sets.filter(_service.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + "\\.")));
                 for (final String propertyName : propertyNames) {
-                    final String value = _service.getPreferenceValue(getToolId(), getNamespacedPropertyId(preferenceName, propertyName));
-                    @SuppressWarnings("unchecked") final T item = (T) _mapper.readValue(value, info.getItemType());
+                    final String value = _service.getPreferenceValue(getToolId(), propertyName);
+                    @SuppressWarnings("unchecked") final T item = deserialize(value, (Class<? extends T>) info.getItemType());
                     list.add(item);
                 }
+                return list;
             }
-            //noinspection unchecked
-            return (List<T>) list;
         } catch (IOException e) {
             throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", e);
         }
@@ -170,13 +164,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     @Override
-    public void set(final String value, final String... preference) throws UnknownToolId, InvalidPreferenceName {
-        _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(preference), value);
+    public void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(key, subkeys), value);
     }
 
     @Override
-    public void set(final Scope scope, final String entityId, final String value, final String... preference) throws UnknownToolId, InvalidPreferenceName {
-        _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(preference), scope, entityId, value);
+    public void set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId, value);
     }
 
     @Override
@@ -186,9 +180,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     @Override
     public <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId {
-
         for (final String key : map.keySet()) {
-
             final String id = getNamespacedPropertyId(preferenceName, key);
             try {
                 set(scope, entityId, serialize(map.get(key)), id);
@@ -219,90 +211,19 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     @Override
-    public void delete(final String... preference) throws InvalidPreferenceName {
-        _service.deletePreference(getToolId(), getNamespacedPropertyId(preference));
+    public void delete(final String key, final String... subkeys) throws InvalidPreferenceName {
+        _service.deletePreference(getToolId(), getNamespacedPropertyId(key, subkeys));
     }
 
     @Override
-    public void delete(final Scope scope, final String entityId, final String... preference) throws InvalidPreferenceName {
-        _service.deletePreference(getToolId(), getNamespacedPropertyId(preference), scope, entityId);
+    public void delete(final Scope scope, final String entityId, final String key, final String... subkeys) throws InvalidPreferenceName {
+        _service.deletePreference(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId);
     }
 
     @Override
     public Map<String, PreferenceInfo> getDefaultPreferences() {
         if (_preferences.isEmpty()) {
-            @SuppressWarnings("unchecked") final Set<Method> properties = ReflectionUtils.getAllMethods(getClass(), withAnnotation(NrgPreference.class));
-            for (final Method method : properties) {
-                final NrgPreference annotation = method.getAnnotation(NrgPreference.class);
-                final String name;
-                final Class<?> type;
-                final Type genericType;
-                if (isGetter(method)) {
-                    name = propertize(method.getName(), "get");
-                    type = method.getReturnType();
-                    genericType = method.getGenericReturnType();
-                } else if (isSetter(method)) {
-                    final Class<?>[] parameterTypes = method.getParameterTypes();
-                    if (parameterTypes.length != 1) {
-                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You can't annotate the " + method.getName() + "() method with " + parameterTypes.length + " parameters: it must have one and only one parameter.");
-                    }
-                    name = propertize(method.getName(), "set");
-                    type = parameterTypes[0];
-                    genericType = method.getGenericParameterTypes()[0];
-                } else {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The" + method.getName() + "() method doesn't appear to be a getter or a setter, but is annotated anyway. Only getter and setter methods should be annotated.");
-                }
-
-                final boolean isArray = type.isArray();
-                final boolean isList = List.class.isAssignableFrom(type);
-                final boolean isMap = Map.class.isAssignableFrom(type);
-
-                // If this is a list or a map, then the type should be the type of map and the generic type should be the
-                // parameterized type. If they're equal, that means it's just a List or Map with no type set, which means we
-                // can't determine what type of object is inside the list or map.
-                if ((isList || isMap) && type.equals(genericType)) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method must use a parameterized " + (isList ? "list" : "map") + " type so that I can determine the type of preference in the collection.");
-                }
-
-                final PreferenceInfo info = new PreferenceInfo();
-                info.setName(name);
-                info.setValueType(type);
-                info.setKey(annotation.key());
-                info.setDefaultValue(annotation.defaultValue());
-
-                if (isArray || isList) {
-                    final Class<?> itemType;
-                    try {
-                        itemType = isArray ? type.getComponentType() : getClassesFromParameterizedType(genericType).get(0);
-                    } catch (NotParameterizedTypeException e) {
-                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a list that is not parameterized, i.e. is just a List rather than List<String>. This is not currently supported.");
-                    } catch (NotConcreteTypeException e) {
-                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a list that is parameterized to contain a parameterized type, e.g. List<List<String>>. This is not currently supported.");
-                    }
-                    if (!BeanUtils.isSimpleValueType(itemType) && StringUtils.isBlank(annotation.key())) {
-                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying an array or list of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
-                    }
-                    info.setItemType(itemType);
-                } else if (isMap) {
-                    final List<Class<?>> classes;
-                    try {
-                        classes = getClassesFromParameterizedType(genericType);
-                    } catch (NotParameterizedTypeException e) {
-                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that is not parameterized, i.e. is just a Map rather than Map<String, String>. This is not currently supported.");
-                    } catch (NotConcreteTypeException e) {
-                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that is parameterized to contain a parameterized type, e.g. Map<String, List<String>>. This is not currently supported.");
-                    }
-                    final Class<?> keyType = classes.get(0);
-                    if (!keyType.equals(String.class)) {
-                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that uses a non-String key type. This is not currently supported.");
-                    }
-                    final Class<?> valueType = classes.get(1);
-                    info.setItemType(valueType);
-                } else {
-                    info.setItemType(null);
-                }
-                _preferences.put(name, info);
-            }
+            initializeDefaultPreferences();
         }
         return _preferences;
     }
@@ -311,19 +232,99 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return getObjectMapper().readValue(json, clazz);
     }
 
+    private <T> T deserialize(final String json, JavaType type) throws IOException {
+        return getObjectMapper().readValue(json, type);
+    }
+
     protected <T> String serialize(final T instance) throws IOException {
         return getObjectMapper().writeValueAsString(instance);
     }
 
-    protected static ObjectMapper getObjectMapper() {
+    private static ObjectMapper getObjectMapper() {
         return _mapper;
     }
 
-    protected static TypeFactory getTypeFactory() {
+    private static TypeFactory getTypeFactory() {
         return _typeFactory;
     }
 
-    protected void processDefaultPreferences() {
+    private void initializeDefaultPreferences() {
+        _preferences.clear();
+        @SuppressWarnings("unchecked") final Set<Method> properties = ReflectionUtils.getAllMethods(getClass(), withAnnotation(NrgPreference.class));
+        for (final Method method : properties) {
+            final NrgPreference annotation = method.getAnnotation(NrgPreference.class);
+            final String name;
+            final Class<?> type;
+            final Type genericType;
+            if (isGetter(method)) {
+                name = propertize(method.getName(), "get");
+                type = method.getReturnType();
+                genericType = method.getGenericReturnType();
+            } else if (isSetter(method)) {
+                final Class<?>[] parameterTypes = method.getParameterTypes();
+                if (parameterTypes.length != 1) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You can't annotate the " + method.getName() + "() method with " + parameterTypes.length + " parameters: it must have one and only one parameter.");
+                }
+                name = propertize(method.getName(), "set");
+                type = parameterTypes[0];
+                genericType = method.getGenericParameterTypes()[0];
+            } else {
+                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The" + method.getName() + "() method doesn't appear to be a getter or a setter, but is annotated anyway. Only getter and setter methods should be annotated.");
+            }
+
+            final boolean isArray = type.isArray();
+            final boolean isList = List.class.isAssignableFrom(type);
+            final boolean isMap = Map.class.isAssignableFrom(type);
+
+            // If this is a list or a map, then the type should be the type of map and the generic type should be the
+            // parameterized type. If they're equal, that means it's just a List or Map with no type set, which means we
+            // can't determine what type of object is inside the list or map.
+            if ((isList || isMap) && type.equals(genericType)) {
+                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method must use a parameterized " + (isList ? "list" : "map") + " type so that I can determine the type of preference in the collection.");
+            }
+
+            final PreferenceInfo info = new PreferenceInfo();
+            info.setName(name);
+            info.setValueType(type);
+            info.setKey(annotation.key());
+            info.setDefaultValue(annotation.defaultValue());
+
+            if (isArray || isList) {
+                final Class<?> itemType;
+                try {
+                    itemType = isArray ? type.getComponentType() : getClassesFromParameterizedType(genericType).get(0);
+                } catch (NotParameterizedTypeException e) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a list that is not parameterized, i.e. is just a List rather than List<String>. This is not currently supported.");
+                } catch (NotConcreteTypeException e) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a list that is parameterized to contain a parameterized type, e.g. List<List<String>>. This is not currently supported.");
+                }
+                if (!BeanUtils.isSimpleValueType(itemType) && StringUtils.isBlank(annotation.key())) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying an array or list of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
+                }
+                info.setItemType(itemType);
+            } else if (isMap) {
+                final List<Class<?>> classes;
+                try {
+                    classes = getClassesFromParameterizedType(genericType);
+                } catch (NotParameterizedTypeException e) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that is not parameterized, i.e. is just a Map rather than Map<String, String>. This is not currently supported.");
+                } catch (NotConcreteTypeException e) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that is parameterized to contain a parameterized type, e.g. Map<String, List<String>>. This is not currently supported.");
+                }
+                final Class<?> keyType = classes.get(0);
+                if (!keyType.equals(String.class)) {
+                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that uses a non-String key type. This is not currently supported.");
+                }
+                final Class<?> valueType = classes.get(1);
+                info.setItemType(valueType);
+            } else {
+                info.setItemType(null);
+            }
+            _preferences.put(name, info);
+        }
+    }
+
+    private void processDefaultPreferences() {
         if (!_preferences.isEmpty()) {
             if (_log.isDebugEnabled()) {
                 _log.debug("Found {} default values to add to tool {}", _preferences.size(), getToolId());
@@ -349,35 +350,37 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                                 if (StringUtils.isBlank(key)) {
                                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying an array or list of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
                                 }
-                                final List<?> list = _mapper.readValue(defaultValue, listType);
+                                final List<?> list = deserialize(defaultValue, listType);
                                 final String getterName = "get" + StringUtils.capitalize(key);
                                 final Method getter;
                                 try {
-                                    getter = itemType.getClass().getMethod(getterName);
+                                    getter = itemType.getMethod(getterName);
                                 } catch (NoSuchMethodException e) {
                                     throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preference " + info.getName() + " specifies a key " + key + " that doesn't exist on the object type.");
                                 }
                                 for (final Object item : list) {
                                     final String keyValue = getter.invoke(item).toString();
-                                    _service.setPreferenceValue(getToolId(), Joiner.on(".").join(info.getName(), keyValue), _mapper.writeValueAsString(item));
+                                    _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(info.getName(), keyValue), _mapper.writeValueAsString(item));
                                 }
                             } else {
                                 _service.setPreferenceValue(getToolId(), info.getName(), defaultValue);
                             }
                         } else if (isMap) {
                             @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map>) valueType, String.class, itemType);
-                            final Map<String, ?> map = _mapper.readValue(defaultValue, mapType);
-                            if (!BeanUtils.isSimpleValueType(itemType) && StringUtils.isBlank(key)) {
-                                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying a map of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
-                            }
-                            final String getterName = "get" + StringUtils.capitalize(key);
-                            try {
-                                itemType.getClass().getMethod(getterName);
-                            } catch (NoSuchMethodException e) {
-                                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preference " + info.getName() + " specifies a key " + key + " that doesn't exist on the object type.");
+                            final Map<String, ?> map = deserialize(defaultValue, mapType);
+                            if (!BeanUtils.isSimpleValueType(itemType)) {
+                                if (StringUtils.isBlank(key)) {
+                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying a map of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
+                                }
+                                final String getterName = "get" + StringUtils.capitalize(key);
+                                try {
+                                    itemType.getMethod(getterName);
+                                } catch (NoSuchMethodException e) {
+                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preference " + info.getName() + " specifies a key " + key + " that doesn't exist on the object type.");
+                                }
                             }
                             for (final String mapKey : map.keySet()) {
-                                _service.setPreferenceValue(getToolId(), Joiner.on(".").join(info.getName(), mapKey), _mapper.writeValueAsString(map.get(mapKey)));
+                                _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(info.getName(), mapKey), _mapper.writeValueAsString(map.get(mapKey)));
                             }
                         } else {
                             _service.setPreferenceValue(getToolId(), info.getName(), defaultValue);
@@ -409,7 +412,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
-    protected List<Class<?>> getClassesFromParameterizedType(final Type type) throws NotParameterizedTypeException, NotConcreteTypeException {
+    private List<Class<?>> getClassesFromParameterizedType(final Type type) throws NotParameterizedTypeException, NotConcreteTypeException {
         if (!(type instanceof ParameterizedType)) {
             throw new NotParameterizedTypeException("The type " + type.toString() + " is not a parameterized type");
         }
@@ -424,8 +427,8 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return classes;
     }
 
-    protected String getNamespacedPropertyId(final String... names) {
-        return Joiner.on(".").join(names);
+    protected String getNamespacedPropertyId(final String key, final String... names) {
+        return Joiner.on(".").join(Lists.asList(key, names));
     }
 
     private static String propertize(final String name, final String type) {
@@ -440,8 +443,16 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return Modifier.isPublic(method.getModifiers()) && PATTERN_SETTER.matcher(method.getName()).matches() && method.getParameterTypes().length == 1;
     }
 
+    private static String getPreferenceSubkey(final String preferenceName) {
+        if (StringUtils.isBlank(preferenceName)) {
+            return "";
+        }
+        final String[] atoms = preferenceName.split("\\.", 2);
+        return atoms.length == 1 ? "" : atoms[1];
+    }
+
     private class NotParameterizedTypeException extends Throwable {
-        public NotParameterizedTypeException(final String message) {
+        NotParameterizedTypeException(final String message) {
             super(message);
         }
     }
@@ -462,12 +473,11 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     private static final Pattern PATTERN_GETTER = Pattern.compile("^get[A-Z][A-z]+");
 
     private static final Pattern PATTERN_SETTER = Pattern.compile("^set[A-Z][A-z]+");
-    @Inject
+
     private NrgPreferenceService _service;
-    private String               _toolId;
-
-    private boolean _resolverInited = false;
-
     private final Map<String, PreferenceInfo> _preferences = new HashMap<>();
+
+    private String _toolId;
+    private boolean _resolverInited = false;
     private Class<? extends PreferenceEntityResolver> _resolver;
 }

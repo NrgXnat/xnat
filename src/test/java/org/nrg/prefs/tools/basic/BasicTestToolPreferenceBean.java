@@ -4,8 +4,12 @@ import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.prefs.services.NrgPreferenceService;
 
-@NrgPreferenceBean(toolId = "basic", toolName = "Basic Test", description = "This is only a test.", strict = true)
+import javax.inject.Inject;
+
+@SuppressWarnings("WeakerAccess")
+@NrgPreferenceBean(toolId = "basic", toolName = "Basic Test", description = "This is only a test.")
 public class BasicTestToolPreferenceBean extends AbstractPreferenceBean {
     @NrgPreference(defaultValue = "valueA")
     public String getPrefA() {
@@ -13,7 +17,7 @@ public class BasicTestToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setPrefA(final String prefA) throws InvalidPreferenceName {
-        set(prefA);
+        set(prefA, "prefA");
     }
 
     @NrgPreference(defaultValue = "valueB")
@@ -22,6 +26,6 @@ public class BasicTestToolPreferenceBean extends AbstractPreferenceBean {
     }
 
     public void setPrefB(final String prefB) throws InvalidPreferenceName {
-        set(prefB);
+        set(prefB, "prefB");
     }
 }

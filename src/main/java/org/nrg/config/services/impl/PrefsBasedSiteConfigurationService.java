@@ -13,7 +13,7 @@ import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.prefs.entities.PreferenceInfo;
 import org.nrg.prefs.entities.Tool;
-import org.nrg.prefs.services.NrgPrefsService;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -54,7 +54,7 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
                     _log.info("Found {} properties in the configuration service, importing those.", existing.size());
                     properties.putAll(existing);
                 }
-                final Tool siteConfig = new Tool(SITE_CONFIG_TOOL_ID, "Site Configuration", "This is the main tool for mapping the site configuration", convertPropertiesToMap(properties), false, null);
+                final Tool siteConfig = new Tool(SITE_CONFIG_TOOL_ID, "Site Configuration", "This is the main tool for mapping the site configuration", false, null);
                 _service.createTool(siteConfig);
             } else {
                 _log.info("Working with the existing {} tool, checking for new import values.", SITE_CONFIG_TOOL_ID);
@@ -126,7 +126,7 @@ public class PrefsBasedSiteConfigurationService extends PropertiesBasedSiteConfi
     private static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 
     @Inject
-    private NrgPrefsService _service;
+    private NrgPreferenceService _service;
 
     // This needs to be suppressed here, since we're not creating a data source for it here.
     @SuppressWarnings("SpringJavaAutowiringInspection")

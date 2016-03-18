@@ -12,7 +12,7 @@ import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.prefs.services.NrgPrefsService;
+import org.nrg.prefs.services.NrgPreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
@@ -62,7 +62,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     /**
-     * Initializes the site configuration service. This implementation loads the site configuration from the persistent {@link NrgPrefsService preferences service}, as well as scanning for properties files that match the in all of the {@link #getConfigFilesLocations() specified configuration folders} located under the {@link #getConfigFilesLocationsRoot()}
+     * Initializes the site configuration service. This implementation loads the site configuration from the persistent {@link NrgPreferenceService preferences service}, as well as scanning for properties files that match the in all of the {@link #getConfigFilesLocations() specified configuration folders} located under the {@link #getConfigFilesLocationsRoot()}
      */
     @Override
     public void initSiteConfiguration() throws SiteConfigurationException {

@@ -14,12 +14,10 @@ import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.dcm.preferences.DicomSCPInstance;
-import org.nrg.dcm.preferences.DicomSCPPreferences;
+import org.nrg.dcm.preferences.DicomSCPPreference;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.prefs.annotations.NrgPrefValue;
-import org.nrg.prefs.annotations.NrgPrefsTool;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.utils.XnatUserProvider;
@@ -32,16 +30,12 @@ import org.springframework.context.ApplicationContextAware;
 import javax.annotation.PreDestroy;
 import javax.inject.Inject;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Executors;
 
-@NrgPrefsTool(toolId = "dicomScpManager",
-        toolName = "DICOM SCP Manager",
-        description = "Manages configuration of the various DICOM SCP endpoints on the XNAT system.",
-        preferencesClass = DicomSCPPreferences.class,
-        preferences = {@NrgPrefValue(name = "xnat", defaultValue = "{'scpId': 'xnat', 'port': 8104, 'aeTitle': 'XNAT'}", valueType = DicomSCPInstance.class)})
 public class DicomSCPManager implements ApplicationContextAware {
 
     public DicomSCPManager(final XnatUserProvider provider) throws IOException {
@@ -64,9 +58,9 @@ public class DicomSCPManager implements ApplicationContextAware {
      * @param preferences    The preferences to set.
      */
     @SuppressWarnings("unused")
-    public void setPreferences(final DicomSCPPreferences preferences) {
+    public void setPreferences(final DicomSCPPreference preferences) {
         _preferences = preferences;
-        for (final DicomSCPInstance instance : preferences.getDicomSCPInstances()) {
+        for (final DicomSCPInstance instance : preferences.getDicomSCPInstances().values()) {
             try {
                 createDicomScpFromInstance(instance);
             } catch (IOException e) {
@@ -136,7 +130,7 @@ public class DicomSCPManager implements ApplicationContextAware {
         }
     }
 
-    public void disableDicomSCP(final String scpId) {
+    public void disableDicomSCP(final String scpId) throws IOException {
         final DicomSCPInstance instance = _preferences.getDicomSCPInstance(scpId);
         if (instance.isEnabled()) {
             instance.setEnabled(false);
@@ -185,7 +179,7 @@ public class DicomSCPManager implements ApplicationContextAware {
     }
 
     public List<DicomSCPInstance> getDicomSCPInstances() {
-        return _preferences.getDicomSCPInstances();
+        return new ArrayList<>(_preferences.getDicomSCPInstances().values());
     }
 
     public DicomSCPInstance getDicomSCPInstance(final String scpId) {
@@ -234,7 +228,7 @@ public class DicomSCPManager implements ApplicationContextAware {
 
     private final Map<String, DicomSCP> _dicomSCPs = new HashMap<>();
 
-    private ApplicationContext _context;
-    private DicomSCPPreferences _preferences;
-    private final XnatUserProvider _provider;
+    private       ApplicationContext _context;
+    private       DicomSCPPreference _preferences;
+    private final XnatUserProvider   _provider;
 }

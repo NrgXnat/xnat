@@ -33,20 +33,19 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
 import java.util.List;
 
 @XnatRestlet({"/services/dicomscp", "/services/dicomscp/instance/{SCP_ID}", "/services/dicomscp/instance/{SCP_ID}/{ACTION}", "/services/dicomscp/{ACTION}"})
 public class DicomSCPRestlet extends SecureResource {
-    private static final String PARAM_SCP_ID = "SCP_ID";
-    private static final String PARAM_ACTION = "ACTION";
-    private static final Logger _log = LoggerFactory.getLogger(DicomSCPRestlet.class);
-    private static final ObjectMapper _mapper = new ObjectMapper();
+    private static final String       PARAM_SCP_ID    = "SCP_ID";
+    private static final String       PARAM_ACTION    = "ACTION";
+    private static final List<String> ALLOWED_ACTIONS = new ArrayList<>(Arrays.asList("status", "start", "stop", "enable", "disable"));
+    private static final Logger       _log            = LoggerFactory.getLogger(DicomSCPRestlet.class);
 
+    private static final ObjectMapper _mapper = new ObjectMapper();
     private final DicomSCPManager _dicomSCPManager;
-    private final String _scpId;
-    private final String _action;
-    private final List<String> _allowedActions = new ArrayList<>(Arrays.asList("status", "start", "stop", "enable", "disable"));
+    private final String          _scpId;
+    private final String          _action;
 
     public DicomSCPRestlet(Context context, Request request, Response response) throws ResourceException {
         super(context, request, response);
@@ -67,8 +66,8 @@ public class DicomSCPRestlet extends SecureResource {
         }
 
         _action = (String) getRequest().getAttributes().get(PARAM_ACTION);
-        if (StringUtils.isNotBlank(_action) && !_allowedActions.contains(_action)) {
-            final String message = String.format("Action '%s' is not supported by this resource.  Valid actions are: %s", _action, Joiner.on(",").join(_allowedActions));
+        if (StringUtils.isNotBlank(_action) && !ALLOWED_ACTIONS.contains(_action)) {
+            final String message = String.format("Action '%s' is not supported by this resource.  Valid actions are: %s", _action, Joiner.on(",").join(ALLOWED_ACTIONS));
             getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, message);
             throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, message);
         }
@@ -163,8 +162,12 @@ public class DicomSCPRestlet extends SecureResource {
             if (StringUtils.isBlank(_scpId)) {
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a specific DICOM SCP instance to disable.");
             } else {
-                _dicomSCPManager.disableDicomSCP(_scpId);
-                returnDefaultRepresentation();
+                try {
+                    _dicomSCPManager.disableDicomSCP(_scpId);
+                    returnDefaultRepresentation();
+                } catch (IOException e) {
+                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "An error occurred while disabling the DICOM receiver " + _scpId);
+                }
             }
         } else {
             _dicomSCPManager.startDicomSCPs();

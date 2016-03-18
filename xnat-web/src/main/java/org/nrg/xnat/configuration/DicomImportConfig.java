@@ -4,7 +4,6 @@ import org.nrg.dcm.DicomFileNamer;
 import org.nrg.dcm.DicomSCPManager;
 import org.nrg.dcm.id.ClassicDicomObjectIdentifier;
 import org.nrg.dcm.id.TemplatizedDicomFileNamer;
-import org.nrg.prefs.services.NrgPrefsService;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.utils.XnatUserProvider;

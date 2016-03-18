@@ -74,19 +74,17 @@ apply plugin: 'com.bmuschko.cargo'
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
-sourceCompatibility = 1.7
-targetCompatibility = 1.7
+configurations {
+    sourceCompatibility = 1.7
+    targetCompatibility = 1.7
+}
 
 war.baseName = "xnat-web"
 
-compileJava {
-    source "${projectDir}/src/generated/java"
-}
-
 sourceSets {
-    xnat {
+    main {
         java {
-            srcDir 'src/generated/java'
+            srcDirs 'src/main/java', 'src/generated/java'
         }
         resources {
             srcDir 'src/generated/resources'

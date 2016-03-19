@@ -8,6 +8,7 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xnat.DicomObjectIdentifier;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
 
 import java.util.ArrayList;
@@ -15,6 +16,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @Configuration
+@ComponentScan("org.nrg.dcm.preferences")
 public class DicomImportConfig {
     @Bean
     public DicomObjectIdentifier<XnatProjectdata> dicomObjectIdentifier(final XnatUserProvider provider) {

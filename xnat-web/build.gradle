@@ -116,6 +116,7 @@ configurations {
     all*.exclude group: 'jamon'
     all*.exclude group: 'jakarta-regexp'
     all*.exclude group: 'org.apache.geronimo.specs'
+    all*.exclude group: 'servletapi'
     all*.exclude group: 'velocity'
     all*.exclude group: 'xmlrpc'
     all*.exclude group: 'ant', module: 'ant'

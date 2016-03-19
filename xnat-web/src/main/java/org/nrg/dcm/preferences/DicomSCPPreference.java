@@ -42,5 +42,5 @@ public class DicomSCPPreference extends AbstractPreferenceBean {
         }
     }
     private static final Logger _log = LoggerFactory.getLogger(DicomSCPInstance.class);
-    private static final String PREF_ID = "dicomSCPInstance";
+    private static final String PREF_ID = "dicomSCPInstances";
 }

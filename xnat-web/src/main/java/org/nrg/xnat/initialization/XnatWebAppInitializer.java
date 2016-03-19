@@ -84,20 +84,24 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     }
 
     private MultipartConfigElement getMultipartConfigElement() {
-        final String temp;
+        final String root;
+        final String subfolder;
         if (StringUtils.isNotBlank(System.getProperty("xnat.home"))) {
-            temp = System.getProperty("xnat.home");
+            root = System.getProperty("xnat.home");
+            subfolder = "work";
         } else {
-            temp = System.getProperty("java.io.tmpdir");
+            root = System.getProperty("java.io.tmpdir");
+            subfolder = "xnat";
         }
         final String prefix = "xnat_" + Long.toString(System.nanoTime());
         try {
-            final Path path = Paths.get(temp);
+            final Path path = Paths.get(root, subfolder);
             path.toFile().mkdirs();
             final Path tmpDir = Files.createTempDirectory(path, prefix);
+            tmpDir.toFile().deleteOnExit();
             return new MultipartConfigElement(tmpDir.toAbsolutePath().toString(), MAX_FILE_SIZE, MAX_REQUEST_SIZE, FILE_SIZE_THRESHOLD);
         } catch (IOException e) {
-            throw new NrgServiceRuntimeException("An error occurred trying to create the temp folder " + prefix + " in the containing folder "+ temp);
+            throw new NrgServiceRuntimeException("An error occurred trying to create the temp folder " + prefix + " in the containing folder "+ root);
         }
     }
 

@@ -55,7 +55,8 @@ public class DicomSCPManager implements ApplicationContextAware {
 
     /**
      * Sets the preferences for the DICOM SCP manager.
-     * @param preferences    The preferences to set.
+     *
+     * @param preferences The preferences to set.
      */
     @SuppressWarnings("unused")
     public void setPreferences(final DicomSCPPreference preferences) {
@@ -195,7 +196,7 @@ public class DicomSCPManager implements ApplicationContextAware {
     }
 
     private void createDicomScpFromInstance(final DicomSCPInstance instance) throws IOException {
-        final String scpId = instance.getScpId();
+        final String   scpId    = instance.getScpId();
         final DicomSCP dicomScp = DicomSCP.create(scpId, Executors.newCachedThreadPool(), instance.getPort(), _provider, instance.getAeTitle(), getIdentifier(instance.getIdentifier()), getDicomFileNamer(instance.getFileNamer()));
         _dicomSCPs.put(scpId, dicomScp);
         if (instance.isEnabled()) {
@@ -226,9 +227,10 @@ public class DicomSCPManager implements ApplicationContextAware {
     @Inject
     private SiteConfigurationService _siteConfigurationService;
 
-    private final Map<String, DicomSCP> _dicomSCPs = new HashMap<>();
+    @Inject
+    private DicomSCPPreference _preferences;
 
+    private final Map<String, DicomSCP> _dicomSCPs = new HashMap<>();
     private       ApplicationContext _context;
-    private       DicomSCPPreference _preferences;
     private final XnatUserProvider   _provider;
 }

@@ -3,7 +3,6 @@ package org.nrg.prefs.beans;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JavaType;
 import com.fasterxml.jackson.databind.JsonMappingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -63,7 +62,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     @Override
     public final Class<? extends PreferenceEntityResolver> getResolver() {
-        if (!_resolverInited) {
+        if (!_resolverInitialized) {
             if (getClass().isAnnotationPresent(NrgPreferenceBean.class)) {
                 final Class<? extends PreferenceEntityResolver>[] resolvers = getClass().getAnnotation(NrgPreferenceBean.class).resolver();
                 if (resolvers.length == 0) {
@@ -71,7 +70,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                 } else {
                     _resolver = resolvers[0];
                 }
-                _resolverInited = true;
+                _resolverInitialized = true;
             } else {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preferences bean class " + getClass().getName() + " must be annotated with the NrgPreferenceBean annotation.");
             }
@@ -360,10 +359,23 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                                 }
                                 for (final Object item : list) {
                                     final String keyValue = getter.invoke(item).toString();
-                                    _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(info.getName(), keyValue), _mapper.writeValueAsString(item));
+                                    final String propertyId = getNamespacedPropertyId(info.getName(), keyValue);
+                                    if (!_service.hasPreference(getToolId(), propertyId)) {
+                                        try {
+                                            set(_mapper.writeValueAsString(item), propertyId);
+                                        } catch (InvalidPreferenceName invalidPreferenceName) {
+                                            throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + propertyId + " preference for the " + getToolId() + " tool.");
+                                        }
+                                    }
                                 }
                             } else {
-                                _service.setPreferenceValue(getToolId(), info.getName(), defaultValue);
+                                if (!_service.hasPreference(getToolId(), info.getName())) {
+                                    try {
+                                        set(defaultValue, info.getName());
+                                    } catch (InvalidPreferenceName invalidPreferenceName) {
+                                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + info.getName() + " preference for the " + getToolId() + " tool.");
+                                    }
+                                }
                             }
                         } else if (isMap) {
                             @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map>) valueType, String.class, itemType);
@@ -380,13 +392,24 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                                 }
                             }
                             for (final String mapKey : map.keySet()) {
-                                _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(info.getName(), mapKey), _mapper.writeValueAsString(map.get(mapKey)));
+                                final String propertyId = getNamespacedPropertyId(info.getName(), mapKey);
+                                if (!_service.hasPreference(getToolId(), propertyId)) {
+                                    try {
+                                        set(_mapper.writeValueAsString(map.get(mapKey)), propertyId);
+                                    } catch (InvalidPreferenceName invalidPreferenceName) {
+                                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + propertyId + " preference for the " + getToolId() + " tool.");
+                                    }
+                                }
                             }
                         } else {
-                            _service.setPreferenceValue(getToolId(), info.getName(), defaultValue);
+                            if (!_service.hasPreference(getToolId(), info.getName())) {
+                                try {
+                                    set(defaultValue, info.getName());
+                                } catch (InvalidPreferenceName invalidPreferenceName) {
+                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + info.getName() + " preference for the " + getToolId() + " tool.");
+                                }
+                            }
                         }
-                    } catch (InvalidPreferenceName ignored) {
-                        // This shouldn't happen: we're creating new preferences from the _preferences that define the list of acceptable preferences.
                     } catch (JsonParseException e) {
                         final String message = "An error occurred parsing the JSON string: " + defaultValue;
                         _log.error(message);
@@ -478,6 +501,6 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     private final Map<String, PreferenceInfo> _preferences = new HashMap<>();
 
     private String _toolId;
-    private boolean _resolverInited = false;
+    private boolean _resolverInitialized = false;
     private Class<? extends PreferenceEntityResolver> _resolver;
 }

@@ -23,6 +23,24 @@ import java.util.*;
 @Service
 public class HibernatePreferenceService extends AbstractHibernateEntityService<Preference, PreferenceRepository> implements PreferenceService {
 
+    /**
+     * {@inheritDoc}
+     */
+    @Transactional
+    @Override
+    public boolean hasPreference(final String toolId, final String preference) {
+        return hasPreference(toolId, preference, EntityId.Default.getScope(), EntityId.Default.getEntityId());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Transactional
+    @Override
+    public boolean hasPreference(final String toolId, final String preference, final Scope scope, final String entityId) {
+        return getDao().findByToolIdNameAndEntity(toolId, preference, scope, entityId) != null;
+    }
+
     @Transactional
     @Override
     public Preference getPreference(final String toolId, final String preferenceName) {

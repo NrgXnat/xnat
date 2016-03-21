@@ -58,6 +58,22 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
      * {@inheritDoc}
      */
     @Override
+    public boolean hasPreference(final String toolId, final String preference) {
+        return _preferenceService.hasPreference(toolId, preference);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public boolean hasPreference(final String toolId, final String preference, final Scope scope, final String entityId) {
+        return _preferenceService.hasPreference(toolId, preference, scope, entityId);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public Preference getPreference(final String toolId, final String preferenceName) throws UnknownToolId {
         return getPreference(toolId, preferenceName, Scope.Site, null);
     }

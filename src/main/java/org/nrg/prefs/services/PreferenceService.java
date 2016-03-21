@@ -10,6 +10,30 @@ import java.util.Properties;
 // TODO: Remove the versions of calls that take the Tool object. It would be best to get these directly via the tool ID if possible.
 public interface PreferenceService extends BaseHibernateService<Preference> {
     /**
+     * Checks whether the preference exists for the indicated tool. This checks at the {@link Scope#Site site scope}. If
+     * you need to specify the preference for a particular entity, use the {@link #getPreference(String, String, Scope,
+     * String)} form of this method instead.
+     *
+     * @param toolId     The unique tool ID.
+     * @param preference The preference name.
+     *
+     * @return Returns true if the preference exists for the tool, false otherwise.
+     */
+    boolean hasPreference(final String toolId, final String preference);
+
+    /**
+     * Checks whether the preference exists for the indicated tool and entity.
+     *
+     * @param toolId     The unique tool ID.
+     * @param preference The preference name.
+     * @param scope      The scope of the object identified by the entityId parameter.
+     * @param entityId   The ID of the particular object associated with the preference.
+     *
+     * @return Returns true if the preference exists for the tool, false otherwise.
+     */
+    boolean hasPreference(final String toolId, final String preference, final Scope scope, final String entityId);
+
+    /**
      * Gets the preference object for the specified tool and name. This retrieves the preference for the {@link
      * Scope#Site site scope}. If you need to retrieve the preference for a particular entity, use the {@link
      * #getPreference(String, String, Scope, String)} form of this method.

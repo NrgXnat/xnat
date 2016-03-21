@@ -31,8 +31,8 @@ public class DicomImportConfig {
     }
     
     @Bean
-    public DicomSCPManager dicomSCPManager(final XnatUserProvider provider) throws Exception {
-        return new DicomSCPManager(provider);
+    public DicomSCPManager dicomSCPManager() throws Exception {
+        return new DicomSCPManager();
     }
 
     @Bean

@@ -23,10 +23,11 @@
 	<name>NRG Mail Services</name>
 	<description>Implements mail services for the NRG code framework.</description>
 
-	<scm>
-		<connection>scm:hg:https://bitbucket.org/nrg/nrg_mail</connection>
-		<url>scm:hg:https://bitbucket.org/nrg/nrg_mail</url>
-	</scm>
+    <scm>
+        <url>https://bitbucket.org/xnatdev/mail</url>
+        <connection>scm:git:git://bitbucket.org/xnatdev/mail.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:xnatdev/mail.git</developerConnection>
+    </scm>
 
 	<issueManagement>
 		<system>JIRA</system>

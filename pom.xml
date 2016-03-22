@@ -27,8 +27,9 @@
     <description>Implements configuration management for XNAT</description>
 
     <scm>
-        <connection>scm:hg:https://bitbucket.org/nrg/nrg_config</connection>
-        <url>scm:hg:https://bitbucket.org/nrg/nrg_config</url>
+        <url>https://bitbucket.org/xnatdev/config</url>
+        <connection>scm:git:git://bitbucket.org/xnatdev/config.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:xnatdev/config.git</developerConnection>
     </scm>
 
     <issueManagement>

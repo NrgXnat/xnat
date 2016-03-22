@@ -19,8 +19,9 @@
     </description>
 
     <scm>
-        <connection>scm:hg:https://bitbucket.org/nrg/nrg_automation</connection>
-        <url>scm:hg:https://bitbucket.org/nrg/nrg_automation</url>
+        <url>https://bitbucket.org/xnatdev/automation</url>
+        <connection>scm:git:git://bitbucket.org/xnatdev/automation.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:xnatdev/automation.git</developerConnection>
     </scm>
 
     <issueManagement>

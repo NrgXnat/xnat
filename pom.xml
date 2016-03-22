@@ -15,8 +15,9 @@
     <description>Provides a high-level set of tools for managing and manipulating DICOM data.</description>
 
     <scm>
-        <connection>scm:hg:https://bitbucket.org/nrg/nrg_dicomtools</connection>
-        <url>scm:hg:https://bitbucket.org/nrg/nrg_dicomtools</url>
+        <url>https://bitbucket.org/xnatdev/dicomtools</url>
+        <connection>scm:git:git://bitbucket.org/xnatdev/dicomtools.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:xnatdev/dicomtools.git</developerConnection>
     </scm>
 
     <issueManagement>

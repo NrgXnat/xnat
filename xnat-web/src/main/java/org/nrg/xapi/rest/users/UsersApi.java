@@ -3,6 +3,7 @@ package org.nrg.xapi.rest.users;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xapi.model.users.User;
+import org.nrg.xapi.rest.AbstractXnatRestApi;
 import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xdat.security.helpers.Users;
@@ -24,7 +25,7 @@ import java.util.List;
 @Api(description = "The XNAT POC User Management API")
 @RestController
 @RequestMapping(value = "/users")
-public class UsersApi {
+public class UsersApi extends AbstractXnatRestApi {
     private static final Logger _log = LoggerFactory.getLogger(UsersApi.class);
 
     @ApiOperation(value = "Get list of users.", notes = "The primary users function returns a list of all users of the XNAT system.", response = User.class, responseContainer = "List")
@@ -196,34 +197,6 @@ public class UsersApi {
         } catch (UserNotFoundException e) {
             return new ResponseEntity<>(HttpStatus.NOT_FOUND);
         }
-    }
-
-    private UserI getSessionUser() {
-        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
-        if ((principal instanceof UserI)) {
-            return (UserI) principal;
-        }
-        return null;
-    }
-
-    private HttpStatus isPermitted(String id) {
-        UserI sessionUser = getSessionUser();
-        if (sessionUser == null) {
-            return HttpStatus.UNAUTHORIZED;
-        }
-        if ((sessionUser.getUsername().equals(id)) || (isPermitted() == null)) {
-            return null;
-        }
-        return HttpStatus.FORBIDDEN;
-    }
-
-    private HttpStatus isPermitted() {
-        UserI sessionUser = getSessionUser();
-        if ((sessionUser instanceof XDATUser)) {
-            return ((XDATUser) sessionUser).isSiteAdmin() ? null : HttpStatus.FORBIDDEN;
-        }
-
-        return null;
     }
 
     @SuppressWarnings("unused")

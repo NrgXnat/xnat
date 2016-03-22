@@ -6,7 +6,7 @@ import org.apache.axis.transport.http.AxisServlet;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
-import org.nrg.framework.processors.XnatModuleBean;
+import org.nrg.framework.processors.XnatPluginBean;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
@@ -62,14 +62,14 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected String[] getServletMappings() {
-        return new String[] { "/admin/*", "/xapi/*" };
+        return new String[] {"/admin/*", "/xapi/*"};
     }
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
         final List<Class<?>> configClasses = new ArrayList<>();
         configClasses.add(RootConfig.class);
-        configClasses.addAll(getModuleConfigs());
+        configClasses.addAll(getPluginConfigs());
         return configClasses.toArray(new Class[configClasses.size()]);
     }
 
@@ -101,7 +101,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
             tmpDir.toFile().deleteOnExit();
             return new MultipartConfigElement(tmpDir.toAbsolutePath().toString(), MAX_FILE_SIZE, MAX_REQUEST_SIZE, FILE_SIZE_THRESHOLD);
         } catch (IOException e) {
-            throw new NrgServiceRuntimeException("An error occurred trying to create the temp folder " + prefix + " in the containing folder "+ root);
+            throw new NrgServiceRuntimeException("An error occurred trying to create the temp folder " + prefix + " in the containing folder " + root);
         }
     }
 
@@ -111,35 +111,35 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     private static final int FILE_SIZE_THRESHOLD = 0; // Threshold turned off.
 
-    private List<Class<?>> getModuleConfigs() {
-        final List<Class<?>> moduleConfigs = new ArrayList<>();
+    private List<Class<?>> getPluginConfigs() {
+        final List<Class<?>> configs = new ArrayList<>();
         try {
             final PathMatchingResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
-            final Resource[]                          resources = resolver.getResources("classpath*:META-INF/xnat/**/*-module.properties");
+            final Resource[]                          resources = resolver.getResources("classpath*:META-INF/xnat/**/*-plugin.properties");
             for (final Resource resource : resources) {
-                final Properties     properties   = PropertiesLoaderUtils.loadProperties(resource);
-                final XnatModuleBean module       = new XnatModuleBean(properties);
-                final Class<?>       moduleConfig = module.getConfigClass();
-                moduleConfigs.add(moduleConfig);
+                final Properties     properties = PropertiesLoaderUtils.loadProperties(resource);
+                final XnatPluginBean plugin     = new XnatPluginBean(properties);
+                final Class<?>       config     = plugin.getConfigClass();
+                configs.add(config);
             }
         } catch (IOException e) {
-            throw new RuntimeException("An error occurred trying to locate XNAT module definitions.");
+            throw new RuntimeException("An error occurred trying to locate XNAT plugin definitions.");
         } catch (ClassNotFoundException e) {
-            _log.error("Did not find a class specified in a module definition.", e);
+            _log.error("Did not find a class specified in a plugin definition.", e);
         }
 
-        return moduleConfigs;
+        return configs;
     }
 
     private void addServlet(final Class<? extends Servlet> clazz, final int loadOnStartup, final String... mappings) {
-        final String                      name = StringUtils.uncapitalize(clazz.getSimpleName());
-        final ServletRegistration.Dynamic registration  = _context.addServlet(name, clazz);
+        final String                      name         = StringUtils.uncapitalize(clazz.getSimpleName());
+        final ServletRegistration.Dynamic registration = _context.addServlet(name, clazz);
         registration.setLoadOnStartup(loadOnStartup);
         registration.addMapping(mappings);
     }
 
     private static class XnatTurbineConfig implements ServletConfig {
-        public XnatTurbineConfig(final ServletContext context) {
+        XnatTurbineConfig(final ServletContext context) {
             _context = context;
         }
 

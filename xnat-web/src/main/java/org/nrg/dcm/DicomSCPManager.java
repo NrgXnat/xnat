@@ -35,13 +35,17 @@ public class DicomSCPManager {
         stopDicomSCPs();
     }
 
-    public DicomSCP create(final DicomSCPInstance instance) throws IOException, NrgServiceException {
+    public DicomSCP create(final DicomSCPInstance instance) throws NrgServiceException {
         final String scpId = instance.getScpId();
         if (_preferences.hasDicomSCPInstance(scpId)) {
             throw new NrgServiceException(NrgServiceError.ConfigurationError, "There is already a DICOM SCP instance with the ID " + scpId);
         }
-        _preferences.setDicomSCPInstance(instance);
-        return _preferences.getDicomSCP(scpId);
+        try {
+            _preferences.setDicomSCPInstance(instance);
+            return _preferences.getDicomSCP(scpId);
+        } catch (IOException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to create DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
+        }
     }
 
     public void delete(final String scpId) throws NrgServiceException {
@@ -55,31 +59,43 @@ public class DicomSCPManager {
         return new ArrayList<>(_preferences.getDicomSCPInstances().values());
     }
 
-    public void startOrStopDicomSCPAsDictatedByConfiguration() {
-        final boolean enableDicomReceiver = _siteConfigurationService.getBoolSiteConfigurationProperty("enableDicomReceiver", true);
-        if (enableDicomReceiver) {
-            startDicomSCPs();
-        } else {
-            stopDicomSCPs();
+    public void setDicomSCPInstance(final DicomSCPInstance instance) {
+        try {
+            _preferences.setDicomSCPInstance(instance);
+        } catch (IOException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "Unable to update DICOM SCP: " + instance.getAeTitle() + ":" + instance.getPort(), e);
         }
     }
 
-    public void startDicomSCPs() {
+    public List<String> startOrStopDicomSCPAsDictatedByConfiguration() {
+        final boolean enableDicomReceiver = _siteConfigurationService.getBoolSiteConfigurationProperty("enableDicomReceiver", true);
+        return enableDicomReceiver ? startDicomSCPs() : stopDicomSCPs();
+    }
+
+    public List<String> startDicomSCPs() {
+        final List<String> started = new ArrayList<>();
         for (final DicomSCPInstance instance : _preferences.getDicomSCPInstances().values()) {
             if (instance.isEnabled()) {
                 startDicomSCP(instance);
+                started.add(instance.getScpId());
             }
         }
+        return started;
     }
 
     public void startDicomSCP(final String scpId) {
         startDicomSCP(_preferences.getDicomSCPInstance(scpId));
     }
 
-    public void stopDicomSCPs() {
+    public List<String> stopDicomSCPs() {
+        final List<String> stopped = new ArrayList<>();
         for (final DicomSCP dicomSCP : _preferences.getDicomSCPs()) {
-            dicomSCP.stop();
+            if (dicomSCP.isStarted()) {
+                dicomSCP.stop();
+                stopped.add(dicomSCP.getScpId());
+            }
         }
+        return stopped;
     }
 
     public void stopDicomSCP(final String scpId) {

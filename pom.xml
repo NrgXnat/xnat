@@ -25,8 +25,9 @@
     <description>Provide chainable transactions that can be run and rolled back.</description>
 
     <scm>
-        <connection>scm:hg:https://bitbucket.org/nrg/nrg_transaction</connection>
-        <url>scm:hg:https://bitbucket.org/nrg/nrg_transaction</url>
+        <url>https://bitbucket.org/xnatdev/transaction</url>
+        <connection>scm:git:git://bitbucket.org/xnatdev/transaction.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:xnatdev/transaction.git</developerConnection>
     </scm>
 
     <issueManagement>

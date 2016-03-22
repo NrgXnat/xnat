@@ -23,8 +23,9 @@
     <description>Defines NRG-wide dependency, versioning, repository, and other build property values.</description>
 
     <scm>
-        <connection>scm:hg:https://bitbucket.org/nrg/nrg_parent</connection>
-        <url>scm:hg:https://bitbucket.org/nrg/nrg_parent</url>
+        <url>https://bitbucket.org/xnatdev/parent</url>
+        <connection>scm:git:git://bitbucket.org/xnatdev/parent.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:xnatdev/parent.git</developerConnection>
     </scm>
 
     <issueManagement>

@@ -24,8 +24,9 @@
     <description>Defines the NRG notification service.</description>
 
     <scm>
-        <connection>scm:hg:https://bitbucket.org/nrg/nrg_notify</connection>
-        <url>scm:hg:https://bitbucket.org/nrg/nrg_notify</url>
+        <url>https://bitbucket.org/xnatdev/notify</url>
+        <connection>scm:git:git://bitbucket.org/xnatdev/notify.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:xnatdev/notify.git</developerConnection>
     </scm>
 
     <issueManagement>

@@ -16,8 +16,9 @@
     <description>Defines the preferences library for NRG tools.</description>
 
     <scm>
-        <connection>scm:hg:https://bitbucket.org/nrg/nrg_prefs</connection>
-        <url>scm:hg:https://bitbucket.org/nrg/nrg_prefs</url>
+        <url>https://bitbucket.org/xnatdev/prefs</url>
+        <connection>scm:git:git://bitbucket.org/xnatdev/prefs.git</connection>
+        <developerConnection>scm:git:git@bitbucket.org:xnatdev/prefs.git</developerConnection>
     </scm>
 
     <issueManagement>

@@ -4,9 +4,6 @@ import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
-import org.nrg.prefs.services.NrgPreferenceService;
-
-import javax.inject.Inject;
 
 @SuppressWarnings("WeakerAccess")
 @NrgPreferenceBean(toolId = "basic", toolName = "Basic Test", description = "This is only a test.")

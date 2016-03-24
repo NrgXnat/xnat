@@ -45,6 +45,11 @@ var XNAT = getObject(XNAT||{});
         return XNAT.url.restUrl('/data/automation/scripts/' + scriptId, params);
     }
 
+    // return script url with common parts pre-defined
+    function scriptVersionsURL( scriptId, params ){
+        return XNAT.url.restUrl('/data/automation/scriptVersions/' + scriptId, params);
+    }
+
     function langMenuOptions(langs){
 
         langs = langs || scriptEditor.languages;
@@ -81,8 +86,8 @@ var XNAT = getObject(XNAT||{});
                     scriptEditor.scriptIds.push(script['Script ID']);
                     list +=
                         rowTemplate.
-                            replace(/__SCRIPT_ID__/g, script['Script ID']).
-                            replace(/__SCRIPT_DESCRIPTION__/g, XNAT.utils.escapeXML(script['Description']));
+                        replace(/__SCRIPT_ID__/g, script['Script ID']).
+                        replace(/__SCRIPT_DESCRIPTION__/g, XNAT.utils.escapeXML(script['Description']));
                 });
                 scriptsTable.find('> tbody').html(list);
                 scriptsTable.show();
@@ -138,6 +143,7 @@ var XNAT = getObject(XNAT||{});
             var data = {
                 content: ace.edit(editor_id).getSession().getValue(),
                 description: $dialog.find('.script-description').val(),
+                scriptVersion: $dialog.find('.script-version').val(),
                 language: $dialog.find('input.language').val() || ''
             };
 
@@ -167,57 +173,18 @@ var XNAT = getObject(XNAT||{});
     }
 
     var counter = 0;
-
-    // load script into the editor
-    function loadEditor($dialog, json){
-
-        json = json || {};
-
-        console.log(json);
-
-        var scriptId = json.scriptId || '';
-        var lang = json.language || 'groovy';
-        var time = json.timestamp || '';
-
-        $dialog.find('.id').val(json.id || '');
-        $dialog.find('.scriptId').val(scriptId);
-        $dialog.find('.language').val(lang);
-        $dialog.find('.timestamp').val(time);
-        $dialog.find('.script-description').val(json.description || '');
-
-        if (scriptId){
-            $dialog.find('.script-id-text').html(scriptId);
-            $dialog.find('.script-id-input').remove();
-            //$dialog.find('.script-id-input').val(scriptId);
-        }
-
-        var $wrapper = $dialog.find('.editor-wrapper');
-
-        // make sure the editor wrapper is empty
-        $wrapper.empty();
-
-        // create an entirely new editor div
-        var _editor = document.createElement('div');
-        _editor.id = 'script-' + (scriptId || (json.id||++counter)) + '-content';
-        _editor.className = 'editor-content';
-        _editor.innerHTML = XNAT.utils.escapeXML(json.content) || '';
-        _editor.style = 'position:absolute;top:0;right:0;bottom:0;left:0;border: 1px solid #ccc';
-
-        // put the new editor div in the wrapper
-        $wrapper.append(_editor);
-
-        // save the id to outer scope for other functions
-        scriptEditor.editor_id = _editor.id;
-
-        var aceEditor = ace.edit(_editor);
-        aceEditor.setTheme("ace/theme/eclipse");
-        aceEditor.getSession().setMode("ace/mode/" + stringLower(lang));
-
-    }
-
-
     // open xmodal dialog for script editing
     function renderEditor( json ){
+        //var fullJson = json || {};
+        //json = {};
+        //var largestVersion = -1;
+        //var arrayLength = fullJson.length;
+        //for (var i = 0; i < arrayLength; i++) {
+        //    if(fullJson[i].scriptVersion>largestVersion){
+        //        largestVersion = fullJson[i].scriptVersion;
+        //        json = fullJson[i];
+        //    }
+        //}
 
         var scriptId = json.scriptId || '';
         var lang = json.language || 'groovy';
@@ -236,7 +203,7 @@ var XNAT = getObject(XNAT||{});
         opts.footerContent = '<span style="color:#555;">';
         if (time){
             opts.footerContent +=
-            'last modified: ' + (new Date(time)).toString();
+                'last modified: ' + (new Date(time)).toString();
         }
         opts.footerContent += '</span>';
         opts.buttons = {
@@ -259,51 +226,123 @@ var XNAT = getObject(XNAT||{});
 
             var $dialog = obj.$modal;
 
-            loadEditor($dialog, json);
+            $dialog.find('.id').val(json.id || '');
+            $dialog.find('.scriptId').val(scriptId);
+            $dialog.find('.language').val(lang);
+            $dialog.find('.timestamp').val(time);
+            $dialog.find('.script-description').val(json.description || '');
 
-            /*
-
-            // VERSION MENU START
-            // NEEDS EDITING FOR IMPLEMENTATION
-
-            var $versionMenu = $dialog.find('.script-version');
-
-            //////////////////////////////////////////////////////////////////////
-            // populate the 'version' menu
-            // THIS IS A PLACEHOLDER
-            // REPLACE WITH VERSIONS FROM 'json'
-            //////////////////////////////////////////////////////////////////////
-            $('#scripts-table').find('[data-script-id]').each(function(){
-                var id = $(this).data('script-id');
-                var $option = $(document.createElement('option'));
-                //$option.attr('data-url', scriptURL(id));
-                $option.html(id);
-                $option.val(id);
-                $versionMenu.append($option);
-            });
-            //////////////////////////////////////////////////////////////////////
-
-            // put select menu handler here
-            $versionMenu.on('change', function(){
-                xhr.getJSON(scriptURL(this.value), function(data){
-                    loadEditor($dialog, data)
+            var currScriptVersion = 1;
+            if(scriptId) {
+                //xhr.getJSON(XNAT.url.restUrl('/data/automation/scriptVersions/' + scriptId), function (jsonVersions) {
+                //    for(var key in jsonVersions){
+                //        if(key!="contains") {
+                //            var currScript = jsonVersions[key];
+                //            currScriptVersion = currScript.scriptVersion;
+                //            $('#script-version')
+                //                .append($("<option></option>")
+                //                    .attr("value", currScriptVersion)
+                //                    .text(currScriptVersion));
+                //        }
+                //    }
+                //    $('#script-version').val(currScriptVersion);
+                //});
+                xhr.getJSON(XNAT.url.restUrl('/data/automation/scriptVersions/' + scriptId), function (versionsList) {
+                    var versCounter = 1;
+                    for(var vers in versionsList){
+                        if(vers!="contains") {
+                            currScriptVersion = versionsList[vers];
+                            $('#script-version')
+                                .append($("<option></option>")
+                                    .attr("value", currScriptVersion)
+                                    .text(versCounter));
+                            versCounter = versCounter+1;
+                        }
+                    }
+                    $('#script-version').val(currScriptVersion);
                 });
+            }
+            else{
+                $('#script-version')
+                    .append($("<option></option>")
+                        .attr("value", "1")
+                        .attr("selected","selected")
+                        .text("1"));
+            }
+            //$("div.script-version select").val(currScriptVersion);
+            $('#script-version').change(function(){
+                var selectedVersion = $('#script-version')[0].value;
+                xhr.getJSON(XNAT.url.restUrl('/data/automation/scripts/' + scriptId + '/'+ selectedVersion), function (versionObj) {
+                    json = versionObj;
+                    var $dialog = obj.$modal;
+
+                    //$dialog.find('.id').val(json.id || '');
+                    $dialog.find('.scriptId').val(scriptId || '');
+                    $dialog.find('.language').val(json.language || '');
+                    $dialog.find('.timestamp').val(json.timestamp || '');
+                    $dialog.find('.script-description').val(json.description || '');
+                    $dialog.find('.script-version').val(selectedVersion || '');
+
+                    var $wrapper = $dialog.find('.editor-wrapper');
+
+                    // make sure the editor wrapper is empty
+                    $wrapper.empty();
+
+                    // create an entirely new editor div
+                    var _editor = document.createElement('div');
+                    _editor.id = 'script-' + (scriptId || (json.id||++counter)) + '-content';
+                    _editor.className = 'editor-content';
+                    _editor.innerHTML = XNAT.utils.escapeXML(json.content) || '';
+                    _editor.style = 'position:absolute;top:0;right:0;bottom:0;left:0;border: 1px solid #ccc';
+
+                    // put the new editor div in the wrapper
+                    $wrapper.append(_editor);
+
+                    // save the id to outer scope for other functions
+                    scriptEditor.editor_id = _editor.id;
+
+                    var aceEditor = ace.edit(_editor);
+                    aceEditor.setTheme("ace/theme/eclipse");
+                    aceEditor.getSession().setMode("ace/mode/" + stringLower(lang));
+                });
+
             });
 
-            // VERSION MENU END
+            if (scriptId){
+                $dialog.find('.script-id-text').html(scriptId);
+                $dialog.find('.script-id-input').remove();
+                //$dialog.find('.script-id-input').val(scriptId);
+            }
 
-            */
+            var $wrapper = $dialog.find('.editor-wrapper');
+
+            // make sure the editor wrapper is empty
+            $wrapper.empty();
+
+            // create an entirely new editor div
+            var _editor = document.createElement('div');
+            _editor.id = 'script-' + (scriptId || (json.id||++counter)) + '-content';
+            _editor.className = 'editor-content';
+            _editor.innerHTML = XNAT.utils.escapeXML(json.content) || '';
+            _editor.style = 'position:absolute;top:0;right:0;bottom:0;left:0;border: 1px solid #ccc';
+
+            // put the new editor div in the wrapper
+            $wrapper.append(_editor);
+
+            // save the id to outer scope for other functions
+            scriptEditor.editor_id = _editor.id;
+
+            var aceEditor = ace.edit(_editor);
+            aceEditor.setTheme("ace/theme/eclipse");
+            aceEditor.getSession().setMode("ace/mode/" + stringLower(lang));
 
         };
         opts.afterShow = function(obj){
             if (!scriptId){
                 obj.$modal.find('.script-id-input').focus().select();
             }
-            // TODO: prompt user to save if they could lose unsaved changes
         };
-
         xmodal.open(opts);
-
     }
 
     // open dialog to choose language
@@ -402,8 +441,11 @@ var XNAT = getObject(XNAT||{});
                 xmodal.closeAll();
             }
         };
+        var csrfParam = {
+            XNAT_CSRF: csrfToken
+        };
 
-        xhr.delete(scriptURL(scriptId), {
+        xhr.delete(scriptURL(scriptId, csrfParam), {
             success: function(){
                 xmodal.message(successDialog);
             },

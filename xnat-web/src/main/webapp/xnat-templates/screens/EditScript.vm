@@ -68,6 +68,9 @@
                     <td><label for="scriptId"><strong>Script ID:</strong></label></td><td><input type="text" name="scriptId" id="scriptId" value="$!script.scriptId"/></td>
                 </tr>
                 <tr>
+                    <td><label for="scriptVersion"><strong>Version:</strong></label></td><td><input type="text" name="scriptVersion" id="scriptVersion" size="80" value="$!script.scriptVersion" readonly/></td>
+                </tr>
+                <tr>
                     <td><label for="description"><strong>Description:</strong></label></td><td><input type="text" name="description" id="description" size="80" value="$!script.description"/></td>
                 </tr>
                 <tr>

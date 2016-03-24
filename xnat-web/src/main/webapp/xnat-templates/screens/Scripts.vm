@@ -27,7 +27,7 @@
 
 <div class="yui-skin-sam">
 
-    <div id="tp_fm" style="display:none"></div>
+##    <div id="tp_fm" style="display:none"></div>
 
     #if($data.getSession().getAttribute("user").checkRole("Administrator"))
 
@@ -133,7 +133,7 @@
                             </table>
                             <br>
                             <b style="padding:0 8px;">Create a site-wide Event Handler: </b>
-                            <button type="button" id="manage_event_handlers" class="btn1" style="font-size:12px;" title="manage event handlers">Manage Event Handlers</button>
+    <button type="button" id="add_event_handler" class="btn1" style="font-size:12px;" title="add an event handler">Add Event Handler</button>
                         </div>
 
 
@@ -184,7 +184,7 @@
                                 <thead>
                                 <th>Script ID</th>
                                 <th width="50%">Description</th>
-                                ##                <th>Version</th>
+                                ##<th>Version</th>
                                 <th>&nbsp;</th>
                                 ##                <th>&nbsp;</th>
                                 ##                <th>&nbsp;</th>
@@ -314,12 +314,12 @@
                     <td><b>Description: </b>&nbsp;</td>
                     <td><input type="text" name="script-description" class="script-description" size="80" value=""></td>
                 </tr>
-                <!-- VERSION MENU
                 <tr>
-                    <td><b>Load Version: </b>&nbsp;</td>
-                    <td><select name="script-version" class="script-version"></select></td>
+                    <td><b>Script Version: </b>&nbsp;</td>
+                    <td><select id="script-version" class="script-version">
+                        <option value="!">Select a Version</option>
+                    </select></td>
                 </tr>
-                -->
             </table>
             <br>
             <div class="editor-wrapper" style="width:840px;height:482px;position:relative;">

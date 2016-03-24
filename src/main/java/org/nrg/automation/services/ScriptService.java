@@ -3,6 +3,8 @@ package org.nrg.automation.services;
 import org.nrg.automation.entities.Script;
 import org.nrg.framework.orm.hibernate.BaseHibernateService;
 
+import java.util.List;
+
 /**
  * ScriptService interface.
  */
@@ -23,4 +25,10 @@ public interface ScriptService extends BaseHibernateService<Script> {
      * @return The script with the indicated scriptId, if it exists, <b>null</b> otherwise.
      */
     Script getByScriptId(final String scriptId);
+
+    List<String> getVersions(final String scriptId);
+
+    Object getVersion(final String scriptId, final String version);
+
+    void writeScriptToFile(final String scriptId, final String filePath);
 }

@@ -117,6 +117,7 @@ public class TestScriptRunnerService {
         parameters.put("scope", Scope.Project.code());
         parameters.put("entityId", ID_PROJECT_1);
         parameters.put("event", ScriptTrigger.DEFAULT_EVENT);
+        //parameters.put("scriptVersion", "1");
         final ScriptOutput output = _service.runScript(script, parameters);
         assertNotNull(output);
         assertNotNull(output.getResults());
@@ -147,7 +148,7 @@ public class TestScriptRunnerService {
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("submit", 4);
-
+        //parameters.put("scriptVersion", "1");
         final ScriptOutput output = _service.runScript(script, parameters);
         assertNotNull(output);
         assertNotNull(output.getResults());
@@ -168,6 +169,7 @@ public class TestScriptRunnerService {
 
         Map<String, Object> parameters = new HashMap<>();
         parameters.put("variable", "This is a value!");
+        //parameters.put("scriptVersion", "1");
         final ScriptOutput output = _service.runScript(script, parameters);
         assertNotNull(output);
         assertNotNull(output.getResults());

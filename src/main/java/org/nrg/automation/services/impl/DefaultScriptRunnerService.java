@@ -91,6 +91,16 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     }
 
     /**
+     * This method should no longer be used now that we do not have the versions of scripts saved as separate scripts.
+     */
+    @Override
+    public List<Script> getScripts(final String scriptId) {
+        List<Script> scriptsList = new ArrayList<Script>();
+        scriptsList.add(_scriptService.getByScriptId(scriptId));
+        return scriptsList;
+    }
+
+    /**
      * Gets the script for the specified script ID that is also associated (via {@link ScriptTrigger trigger}) with the
      * indicated scope, entity ID, and event. If a script doesn't exist with that script ID and trigger association,
      * this method returns null. Note that this method does no checking of the scope, associated entity, or event, but
@@ -367,6 +377,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         }
         final String content = properties.getProperty("content");
         final String description = properties.getProperty("description");
+        //final String scriptVersion = properties.getProperty("scriptVersion");
         final Scope scope = properties.containsKey("scope") ? Scope.getScope(properties.getProperty("scope")) : null;
         final String entityId = properties.getProperty("entityId");
         final String event = properties.getProperty("event", ScriptTrigger.DEFAULT_EVENT);
@@ -573,14 +584,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         if (StringUtils.isBlank(content)) {
             throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save the script " + scriptId + " with an empty script ID!");
         }
-        final Script script;
-        if (_scriptService.hasScript(scriptId)) {
-            script = _scriptService.getByScriptId(scriptId);
-        } else {
-            script = new Script();
-            script.setScriptId(scriptId);
-        }
-
+        final Script script = new Script();
+        script.setScriptId(scriptId);
+        //script.setScriptVersion(StringUtils.isNotBlank(scriptVersion) ? scriptVersion : "1");
         script.setDescription(StringUtils.isNotBlank(description) ? description : getDefaultScriptDescription(script));
         script.setLanguage(StringUtils.isNotBlank(language) ? language : ScriptRunner.DEFAULT_LANGUAGE);
         script.setContent(content);

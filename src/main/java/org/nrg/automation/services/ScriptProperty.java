@@ -11,6 +11,7 @@ public enum ScriptProperty {
     Script("script"),
     Language("language", "groovy"),
     LanguageVersion("languageVersion", "2.3.6");
+    //ScriptVersion("scriptVersion","1");
 
     ScriptProperty(final String key) {
         this(key, null);

@@ -82,6 +82,8 @@ public interface ScriptRunnerService extends NrgService {
      */
     List<Script> getScripts();
 
+    List<Script> getScripts(final String scriptId);
+
     /**
      * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the scope, event, and language arguments to default values. This is useful for creating a

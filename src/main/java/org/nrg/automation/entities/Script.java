@@ -2,9 +2,9 @@ package org.nrg.automation.entities;
 
 import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
+import org.hibernate.envers.Audited;
 import org.nrg.automation.services.ScriptProperty;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
-import org.nrg.framework.orm.hibernate.annotations.Auditable;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,7 @@ import java.util.Properties;
  *
  * @author Rick Herrick
  */
-@Auditable
+@Audited
 @Entity
 @Table(uniqueConstraints = @UniqueConstraint(columnNames = {"scriptId", "disabled"}))
 @Cache(usage = CacheConcurrencyStrategy.READ_WRITE, region = "nrg")
@@ -33,12 +33,14 @@ public class Script extends AbstractHibernateEntity {
 
     public Script(final String scriptId, final String description, final String language, final String languageVersion, final String content) {
         if (_log.isDebugEnabled()) {
-            _log.debug("Creating Script object with parameters:\n * Script ID: " + scriptId + "\n * Description: " + description + "\n * Language: " + language + "\n * Language version: " + languageVersion);
+            _log.debug("Creating Script object with parameters:\n * Script ID: " + scriptId + "\n * Description: " + description + "\n" +
+                    " * Language: " + language + "\n * Language version: " + languageVersion);
         }
         setScriptId(scriptId);
         setDescription(description);
         setLanguage(language);
         setContent(content);
+        //setScriptVersion(version);
     }
 
     public String getScriptId() {
@@ -74,12 +76,25 @@ public class Script extends AbstractHibernateEntity {
         _content = content;
     }
 
+//    public String getScriptVersion() {
+//        return _scriptVersion;
+//    }
+//
+//    public void setScriptVersion(final String version) {
+//        _scriptVersion = version;
+////    }
+//
+//    public List<String> getVersions(){
+//        return new ArrayList<String>();
+//    }
+
     public Properties toProperties() {
         final Properties properties = new Properties();
         properties.setProperty(ScriptProperty.ScriptId.key(), _scriptId);
         properties.setProperty(ScriptProperty.Description.key(), _description);
         properties.setProperty(ScriptProperty.Language.key(), _language);
         properties.setProperty(ScriptProperty.Script.key(), _content);
+        //properties.setProperty(ScriptProperty.ScriptVersion.key(), _scriptVersion);
         return properties;
     }
 
@@ -89,4 +104,5 @@ public class Script extends AbstractHibernateEntity {
     private String _description;
     private String _language;
     private String _content;
+    //private String _scriptVersion;
 }

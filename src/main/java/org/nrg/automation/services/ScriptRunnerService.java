@@ -5,6 +5,7 @@ import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
 import org.nrg.framework.constants.Scope;
+import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.NrgService;
 
@@ -13,6 +14,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Properties;
 
+@SuppressWarnings("unused")
 public interface ScriptRunnerService extends NrgService {
 
     /**
@@ -33,6 +35,11 @@ public interface ScriptRunnerService extends NrgService {
      * this method returns null. Note that this method does no checking of the scope, associated entity, or event, but
      * just returns the script. You can get @{link Script scripts} for particular scopes or events by calling {@link
      * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String)}.
+     *
+     * @param scriptId The ID of the script to locate.
+     * @param scope    The scope for the script.
+     * @param entityId The associated entity for the script.
+     * @param event    The event for the script.
      *
      * @return The {@link Script} object if a script with the indicated script ID and association is found, <b>null</b>
      * otherwise.
@@ -132,12 +139,12 @@ public interface ScriptRunnerService extends NrgService {
      * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
      * sets the description to the default value.
      *
-     * @param scriptId        The ID of the script to set.
-     * @param content         The content to set for the script.
-     * @param scope           The scope for the script.
-     * @param entityId        The associated entity for the script.
-     * @param event           The event for the script.
-     * @param language        The script language for this script.
+     * @param scriptId The ID of the script to set.
+     * @param content  The content to set for the script.
+     * @param scope    The scope for the script.
+     * @param entityId The associated entity for the script.
+     * @param event    The event for the script.
+     * @param language The script language for this script.
      */
     @SuppressWarnings("unused")
     void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language);
@@ -171,13 +178,13 @@ public interface ScriptRunnerService extends NrgService {
      * Creates a script and trigger with the indicated attributes and saves them to the script repository. If objects
      * with the same unique constraints already exist, they will be retrieved then updated.
      *
-     * @param scriptId        The ID of the script to set.
-     * @param content         The content to set for the script.
-     * @param description     The description of the script.
-     * @param scope           The scope for the script.
-     * @param entityId        The associated entity for the script.
-     * @param event           The event for the script.
-     * @param language        The script language for this script.
+     * @param scriptId    The ID of the script to set.
+     * @param content     The content to set for the script.
+     * @param description The description of the script.
+     * @param scope       The scope for the script.
+     * @param entityId    The associated entity for the script.
+     * @param event       The event for the script.
+     * @param language    The script language for this script.
      */
     void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language);
 
@@ -207,6 +214,9 @@ public interface ScriptRunnerService extends NrgService {
      *
      * @param scriptId   The ID of the script to set.
      * @param properties The properties to set on the script.
+     *
+     * @throws NrgServiceException Indicates an error occurred during script execution. Reference the {@link
+     *                             NrgServiceError} code and exception message for information on the specific error.
      */
     void setScript(final String scriptId, final Properties properties) throws NrgServiceException;
 
@@ -219,6 +229,9 @@ public interface ScriptRunnerService extends NrgService {
      * @param script The script to run.
      *
      * @return The results of the script execution.
+     *
+     * @throws NrgServiceException Indicates an error occurred during script execution. Reference the {@link
+     *                             NrgServiceError} code and exception message for information on the specific error.
      */
     ScriptOutput runScript(final Script script) throws NrgServiceException;
 
@@ -232,6 +245,9 @@ public interface ScriptRunnerService extends NrgService {
      * @param parameters The parameters to pass to the script.
      *
      * @return The results of the script execution.
+     *
+     * @throws NrgServiceException Indicates an error occurred during script execution. Reference the {@link
+     *                             NrgServiceError} code and exception message for information on the specific error.
      */
     ScriptOutput runScript(final Script script, Map<String, Object> parameters) throws NrgServiceException;
 
@@ -245,6 +261,9 @@ public interface ScriptRunnerService extends NrgService {
      * @param trigger The associated trigger for the script execution.
      *
      * @return The results of the script execution.
+     *
+     * @throws NrgServiceException Indicates an error occurred during script execution. Reference the {@link
+     *                             NrgServiceError} code and exception message for information on the specific error.
      */
     ScriptOutput runScript(final Script script, final ScriptTrigger trigger) throws NrgServiceException;
 
@@ -259,6 +278,9 @@ public interface ScriptRunnerService extends NrgService {
      * @param parameters The parameters to pass to the script.
      *
      * @return The results of the script execution.
+     *
+     * @throws NrgServiceException Indicates an error occurred during script execution. Reference the {@link
+     *                             NrgServiceError} code and exception message for information on the specific error.
      */
     ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException;
 
@@ -268,12 +290,15 @@ public interface ScriptRunnerService extends NrgService {
      * get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
      * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String)} methods.
      *
-     * @param script     The script to run.
-     * @param trigger    The associated trigger for the script execution.
-     * @param parameters The parameters to pass to the script.
+     * @param script           The script to run.
+     * @param trigger          The associated trigger for the script execution.
+     * @param parameters       The parameters to pass to the script.
      * @param exceptionOnError Throw exception on script error.
      *
      * @return The results of the script execution.
+     *
+     * @throws NrgServiceException Indicates an error occurred during script execution. Reference the {@link
+     *                             NrgServiceError} code and exception message for information on the specific error.
      */
     ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters, boolean exceptionOnError) throws NrgServiceException;
 
@@ -285,7 +310,7 @@ public interface ScriptRunnerService extends NrgService {
     void setRunners(final Collection<Class<? extends ScriptRunner>> runners);
 
     /**
-     * Indicates whether a {@link ScriptRunner script runner} compatible with the indicated language exists on the 
+     * Indicates whether a {@link ScriptRunner script runner} compatible with the indicated language exists on the
      * system.
      *
      * @param language The script language for the script.
@@ -296,6 +321,7 @@ public interface ScriptRunnerService extends NrgService {
 
     /**
      * Gets a list of the available script runners.
+     *
      * @return A list of all available script runners in the system.
      */
     List<String> getRunners();

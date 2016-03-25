@@ -23,16 +23,12 @@ import java.util.List;
  * this can be pre-populated with a query stored in the string bean in the application context. This query should return
  * two columns, both strings, named "event_label" and "event_id".
  */
-@SuppressWarnings({"JpaQlInspection", "SqlDialectInspection"})
+@SuppressWarnings({"JpaQlInspection", "SqlDialectInspection", "WeakerAccess"})
 @Service
 public class HibernateEventService extends AbstractHibernateEntityService<Event, EventRepository> implements EventService {
 
     /**
-     * A convenience test for the existence of a event with the indicated event ID.
-     *
-     * @param eventId The ID of the event to test for.
-     *
-     * @return <b>true</b> if a event with the indicated ID exists, <b>false</b> otherwise.
+     * {@inheritDoc}
      */
     @Override
     @Transactional
@@ -43,12 +39,7 @@ public class HibernateEventService extends AbstractHibernateEntityService<Event,
     }
 
     /**
-     * Retrieves the {@link Event} with the indicated event ID.
-     *
-     * @param eventId The {@link Event#getEventId() event ID} of the event to
-     *                 retrieve.
-     *
-     * @return The event with the indicated eventId, if it exists, <b>null</b> otherwise.
+     * {@inheritDoc}
      */
     @Override
     @Transactional
@@ -57,14 +48,7 @@ public class HibernateEventService extends AbstractHibernateEntityService<Event,
     }
 
     /**
-     * Deletes the {@link Event event} with the indicated ID. If the cascade flag is set to false, the event will only
-     * be deleted if there are no {@link ScriptTrigger script triggers} that reference the event. Otherwise, the
-     * {@link EventReferencedException} will be thrown. If the cascade flag is set to true, the event and any associated
-     * script triggers will be deleted.
-     *
-     * @param eventId The event ID of the event to delete.
-     * @param cascade Whether the delete operation should cascade.
-     * @throws EventReferencedException
+     * {@inheritDoc}
      */
     @Override
     @Transactional
@@ -82,7 +66,6 @@ public class HibernateEventService extends AbstractHibernateEntityService<Event,
         delete(getByEventId(eventId));
     }
 
-    @SuppressWarnings("unused")
     private static final Logger _log = LoggerFactory.getLogger(HibernateEventService.class);
 
     @Inject

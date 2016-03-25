@@ -96,7 +96,6 @@
         <commons-collections.version>3.2.1</commons-collections.version>
         <commons-collections4.version>4.0</commons-collections4.version>
         <commons-configuration.version>1.5</commons-configuration.version>
-        <commons-dbcp.version>1.4</commons-dbcp.version>
         <commons-dbcp2.version>2.1.1</commons-dbcp2.version>
         <commons-discovery.version>0.5</commons-discovery.version>
         <commons-email.version>1.4</commons-email.version>
@@ -170,6 +169,7 @@
         <torque.version>3.1.1</torque.version>
         <turbine.version>2.3.3</turbine.version>
         <user-agent-utils.version>1.2.4</user-agent-utils.version>
+        <io-projectreactor.version>2.0.7.RELEASE</io-projectreactor.version>
         <velocity-tools.version>2.0</velocity-tools.version>
         <velocity.version>1.7</velocity.version>
         <wizard.version>1.1</wizard.version>
@@ -622,11 +622,6 @@
                 <version>${commons-collections4.version}</version>
             </dependency>
             <dependency>
-                <groupId>commons-dbcp</groupId>
-                <artifactId>commons-dbcp</artifactId>
-                <version>${commons-dbcp.version}</version>
-            </dependency>
-            <dependency>
                 <groupId>org.apache.commons</groupId>
                 <artifactId>commons-dbcp2</artifactId>
                 <version>${commons-dbcp2.version}</version>
@@ -777,6 +772,16 @@
                 <artifactId>quartz</artifactId>
                 <version>${quartz.version}</version>
             </dependency>
+ 	        <dependency>
+	            <groupId>io.projectreactor</groupId>
+	            <artifactId>reactor-bus</artifactId>
+                <version>${io-projectreactor.version}</version>
+	        </dependency>
+	        <dependency>
+	            <groupId>io.projectreactor</groupId>
+	            <artifactId>reactor-core</artifactId>
+                <version>${io-projectreactor.version}</version>
+	        </dependency>
             <dependency>
                 <groupId>com.google.guava</groupId>
                 <artifactId>guava</artifactId>
@@ -968,6 +973,14 @@
                     <exclusion>
                         <groupId>jamon</groupId>
                         <artifactId>jamon</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-dbcp</groupId>
+                        <artifactId>commons-dbcp</artifactId>
+                    </exclusion>
+                    <exclusion>
+                        <groupId>commons-pool</groupId>
+                        <artifactId>commons-pool</artifactId>
                     </exclusion>
                 </exclusions>
             </dependency>

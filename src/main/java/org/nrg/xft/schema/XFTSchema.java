@@ -14,8 +14,6 @@ package org.nrg.xft.schema;
 import java.io.File;
 import java.util.*;
 
-import org.nrg.xft.db.DBConfig;
-import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
@@ -56,8 +54,6 @@ public class XFTSchema {
 	private String targetPrefix = "";
 	private String xmlns = "xs";
 
-	private DBConfig config = null;
-	
 	/**
 	 * Constructs an XFTSchema object from the XML DOM Document. Stores each root level node
 	 * in the XML DOM Document as a NodeWrapper. All import nodes are added as additional 
@@ -349,27 +345,10 @@ public class XFTSchema {
 	}
 	
 	/**
-	 * @return The database configuration.
-	 */
-	private DBConfig getDBConfig()
-	{
-		if (config == null)
-		{
-			config = DBPool.GetDBConfig(this.getDataModel().getDb());
-		}
-		return config;
-	}
-
-	/**
 	 * @return The database type.
 	 */
 	public String getDbType() {
-		if (getDBConfig()!= null)
-		{
-			return getDBConfig().getType();
-		}else{
-			return "";
-		}
+		return "postgresql";
 	}
 
 	/**

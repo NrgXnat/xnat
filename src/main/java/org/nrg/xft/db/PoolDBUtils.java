@@ -12,6 +12,7 @@
 
 package org.nrg.xft.db;
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
@@ -144,7 +145,6 @@ public class PoolDBUtils {
 
 	public Object getNextID(String db,String table, String pk, String sequence) throws SQLException, Exception
 	{
-	    if(db==null)db=PoolDBUtils.getDefaultDBName();
 		Object o = null;
 		ResultSet rs = null;
 		try {
@@ -231,10 +231,9 @@ public class PoolDBUtils {
 	}
 
 	private void sendBatchExec(List<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{
-		if(db==null)db=PoolDBUtils.getDefaultDBName();
 	    Date start = Calendar.getInstance().getTime();
 	    try {
-            con = getConnection(db);
+            con = getConnection();
             try {
             	con.setAutoCommit(false);
 
@@ -406,7 +405,6 @@ public class PoolDBUtils {
 	private void resetConnections(){
 		System.out.println("WARNING: DB CONNECTION FAILURE: Resetting all DB connections!!!!!!");
 		this.con=null;
-		DBPool.GetPool().resetConnections();
 	}
 
 	/**
@@ -500,11 +498,9 @@ public class PoolDBUtils {
 	/**
 	 * @return
 	 */
-	private Connection getConnection(String db) throws SQLException, DBPoolException {
-	    if (con == null)
-		{
-		    if(db==null)db=PoolDBUtils.getDefaultDBName();
-			con = DBPool.GetConnection(db);
+	private Connection getConnection() throws SQLException, DBPoolException {
+		if (con == null) {
+			con = XDAT.getDataSource().getConnection();
 		}
 		return con;
 	}
@@ -611,10 +607,9 @@ public class PoolDBUtils {
         }
     }
 
-    public static String getDefaultDBName(){
-    	DBConfig config=DBPool.GetDBConfig((String)DBPool.GetPool().getDS().keySet().toArray()[0]);
-    	return config.getDbIdentifier();
-    }
+	public static String getDefaultDBName(){
+		return "";
+	}
 
     /**
      * @param rootElement
@@ -672,7 +667,7 @@ public class PoolDBUtils {
         CallableStatement st = null;
         String query = null;
         try {
-            con = DBPool.GetConnection(item.getDBName());
+            con = XDAT.getDataSource().getConnection();
             int count =0;
             String ids = "";
             ArrayList keys = item.getGenericSchemaElement().getAllPrimaryKeys();
@@ -707,10 +702,7 @@ public class PoolDBUtils {
         } catch (SQLException e) {
             logger.error(query);
             throw e;
-        } catch (DBPoolException e) {
-            logger.error(query);
-            throw e;
-        }finally{
+        } finally{
             if (st != null)
             {
                 try {
@@ -871,21 +863,18 @@ public class PoolDBUtils {
 		}
     }
 
-    private Statement getStatement(String db) throws DBPoolException,SQLException{
-    	return getConnection(db).createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
+    private Statement getStatement() throws DBPoolException, SQLException{
+    	return getConnection().createStatement(ResultSet.TYPE_SCROLL_INSENSITIVE, ResultSet.CONCUR_UPDATABLE);
     }
     
     public PreparedStatement getPreparedStatement(String db, String sql) throws SQLException, DBPoolException {
-    	if(db==null)db=PoolDBUtils.getDefaultDBName();
-    	return getConnection(db).prepareStatement(sql);
+    	return getConnection().prepareStatement(sql);
     }
 
     public ResultSet executeQuery(String db, String query, String userName) throws SQLException, DBPoolException{
     	ResultSet rs;
 
-    	if(db==null)db=PoolDBUtils.getDefaultDBName();
-
-		st = getStatement(db);
+		st = getStatement();
 		final Date start = Calendar.getInstance().getTime();
 
 		try {
@@ -895,7 +884,7 @@ public class PoolDBUtils {
 			if(message.contains("Connection reset")){
 				closeConnection();
 				resetConnections();
-				st = getStatement(db);
+				st = getStatement();
 				rs = st.executeQuery(query);
 			} else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
@@ -912,9 +901,7 @@ public class PoolDBUtils {
     }
 
     private void execute(String db, String query, String userName) throws SQLException, DBPoolException{
-    	if(db==null)db=PoolDBUtils.getDefaultDBName();
-
-		st = getStatement(db);
+		st = getStatement();
 		final Date start = Calendar.getInstance().getTime();
 
 		try {
@@ -928,7 +915,7 @@ public class PoolDBUtils {
 			} else if(message.contains("Connection reset")){
 				closeConnection();
 				resetConnections();
-				st = getStatement(db);
+				st = getStatement();
 				st.execute(query);
 			}else if (message.matches(EXPR_COLUMN_NOT_FOUND)) {
 				final Matcher matcher = PATTERN_COLUMN_NOT_FOUND.matcher(message);
@@ -975,10 +962,10 @@ public class PoolDBUtils {
 		Statement st;
 		
 		public void start() throws SQLException, DBPoolException{
-			con=pooledConnection.getConnection(PoolDBUtils.getDefaultDBName());
+			con=pooledConnection.getConnection();
 	    	con.setAutoCommit(false);
 	    	
-	    	st=pooledConnection.getStatement(PoolDBUtils.getDefaultDBName());
+	    	st=pooledConnection.getStatement();
 		}
 		
 		public void execute(String query) throws SQLException{

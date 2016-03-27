@@ -15,8 +15,6 @@ import com.google.common.collect.Lists;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
-import org.nrg.xft.db.DBConfig;
-import org.nrg.xft.db.DBPool;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -277,55 +275,7 @@ public class XFTManager {
             for (int i=0;i<root.getChildNodes().getLength();i++)
             {
                 Node child1 = root.getChildNodes().item(i);
-                if (child1.getNodeName().equalsIgnoreCase("Databases"))
-               {
-                   if (child1.hasChildNodes())
-                   {
-                       for (int j=0;j<child1.getChildNodes().getLength();j++)
-                       {
-                           Node child2 = child1.getChildNodes().item(j);
-                           if (child2.getNodeName().equalsIgnoreCase("Database"))
-                           {
-                                DBConfig db = new DBConfig();
-                                if (NodeUtils.HasAttribute(child2,"Type"))
-                                {
-                                    db.setType(NodeUtils.GetAttributeValue(child2,"Type",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"Id"))
-                                {
-                                    db.setDbIdentifier(NodeUtils.GetAttributeValue(child2,"Id",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"Url"))
-                                {
-                                    db.setUrl(NodeUtils.GetAttributeValue(child2,"Url",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"User"))
-                                {
-                                    db.setUser(NodeUtils.GetAttributeValue(child2,"User",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"Pass"))
-                                {
-                                    db.setPass(NodeUtils.GetAttributeValue(child2,"Pass",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"Driver"))
-                                {
-                                    db.setDriver(NodeUtils.GetAttributeValue(child2,"Driver",""));
-                                }
-                                if (NodeUtils.HasAttribute(child2,"MaxConnections"))
-                                {
-                                    db.setMaxConnections(new Integer(NodeUtils.GetAttributeValue(child2, "MaxConnections", "")));
-                                }
-                                DBPool.AddDBConfig(db);
-                           }
-                       }
-                   }
-               }else if (child1.getNodeName().equalsIgnoreCase("Package"))
-                {
-//					if (NodeUtils.HasAttribute(child1,"Name"))
-//					{
-//						this.setPackageName(NodeUtils.GetAttributeValue(child1,"Name",""));
-//					}
-                }else if (child1.getNodeName().equalsIgnoreCase("Models"))
+                if (child1.getNodeName().equalsIgnoreCase("Models"))
                 {
                     if (child1.hasChildNodes())
                     {

@@ -16,8 +16,6 @@ import org.nrg.xft.TypeConverter.PGSQLMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
-import org.nrg.xft.db.DBConfig;
-import org.nrg.xft.db.DBPool;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -76,67 +74,57 @@ public class SQLUpdateGenerator {
         List<String> optional = new ArrayList<>();
         List<String> alters = new ArrayList<>();
 
-        Map<String, List<String>> databases = new Hashtable<>();
-        for (DBConfig config : DBPool.GetPool().getDBConfigs()) {
-            //LOAD CURRENT TABLES FROM DB
-            List<String> lowerCaseLoadedTables = new ArrayList<>();
-            PoolDBUtils con;
-            try {
-                con = new PoolDBUtils();
-                XFTTable t = con.executeSelectQuery("SELECT c.relname  FROM      pg_catalog.pg_class AS c            LEFT JOIN pg_catalog.pg_namespace AS n                 ON n.oid = c.relnamespace  WHERE     c.relkind IN ('r') AND            n.nspname NOT IN ('pg_catalog', 'pg_toast') AND            pg_catalog.pg_table_is_visible(c.oid)  ORDER BY  c.relname;", config.getDbIdentifier(), null);
-                while (t.hasMoreRows()) {
-                    t.nextRow();
-                    lowerCaseLoadedTables.add(t.getCellValue("relname").toString().toLowerCase());
-                }
-            } catch (SQLException ex) {
-                logger.error("An SQL error occurred [" + ex.getErrorCode() + "] " + ex.getSQLState(), ex);
-            } catch (Exception ex) {
-                logger.error("An unknown error occurred.", ex);
+        //LOAD CURRENT TABLES FROM DB
+        final List<String> tables = new ArrayList<>();
+        PoolDBUtils con;
+        try {
+            con = new PoolDBUtils();
+            XFTTable t = con.executeSelectQuery("SELECT c.relname  FROM      pg_catalog.pg_class AS c            LEFT JOIN pg_catalog.pg_namespace AS n                 ON n.oid = c.relnamespace  WHERE     c.relkind IN ('r') AND            n.nspname NOT IN ('pg_catalog', 'pg_toast') AND            pg_catalog.pg_table_is_visible(c.oid)  ORDER BY  c.relname;", PoolDBUtils.getDefaultDBName(), null);
+            while (t.hasMoreRows()) {
+                t.nextRow();
+                tables.add(t.getCellValue("relname").toString().toLowerCase());
             }
-            databases.put(config.getDbIdentifier().toLowerCase(), lowerCaseLoadedTables);
+        } catch (SQLException ex) {
+            logger.error("An SQL error occurred [" + ex.getErrorCode() + "] " + ex.getSQLState(), ex);
+        } catch (Exception ex) {
+            logger.error("An unknown error occurred.", ex);
         }
 
         //ITERATE THROUGH ELEMENTS
         for (Object o : XFTManager.GetInstance().getOrderedElements()) {
             GenericWrapperElement element = (GenericWrapperElement) o;
             if (!(element.getName().equalsIgnoreCase("meta_data") || element.getName().equalsIgnoreCase("history") || element.isSkipSQL())) {
-                String dbname = element.getDbName().toLowerCase();
-                ArrayList lowerCaseLoadedTables = (ArrayList) databases.get(dbname);
-                if (lowerCaseLoadedTables != null) {
-                    if (lowerCaseLoadedTables.contains(element.getSQLName().toLowerCase())) {
-                    	//table exists, make sure its up to date
-                        List<String>[] updSts = GetUpdateStatements(element);
-                        if (updSts[0].size() > 0) {
-                            for (Object updSt : updSts[0]) {
-                                creates.add("\n\n" + updSt);
-                            }
-                        }
-                        if(updSts[1].size()>0){
-                        	optional.addAll(updSts[1]);
-                        }
-                    } else {
-                    	//table missing, add it.
-                        creates.add("\n\n" + GenericWrapperUtils.GetCreateStatement(element));
-
-                        for (Object o1 : GenericWrapperUtils.GetAlterTableStatements(element)) {
-                            alters.add("\n\n" + o1);
+                if (tables.contains(element.getSQLName().toLowerCase())) {
+                    //table exists, make sure its up to date
+                    List<String>[] updSts = GetUpdateStatements(element);
+                    if (updSts[0].size() > 0) {
+                        for (Object updSt : updSts[0]) {
+                            creates.add("\n\n" + updSt);
                         }
                     }
+                    if (updSts[1].size() > 0) {
+                        optional.addAll(updSts[1]);
+                    }
                 } else {
-                    throw new Exception("Unable to connect to database.  Check your InstanceSettings.xml.");
+                    //table missing, add it.
+                    creates.add("\n\n" + GenericWrapperUtils.GetCreateStatement(element));
+
+                    for (Object o1 : GenericWrapperUtils.GetAlterTableStatements(element)) {
+                        alters.add("\n\n" + o1);
+                    }
                 }
 
             } else {
-                if (XFT.VERBOSE)
+                if (XFT.VERBOSE) {
                     System.out.print(" ");
+                }
             }
         }
 
         //create mapping tables, these don't have corresponding elements in the schema representation, they are added by XNAT
         for (Object o : XFTReferenceManager.GetInstance().getUniqueMappings()) {
             XFTManyToManyReference map = (XFTManyToManyReference) o;
-            ArrayList lowerCaseLoadedTables = (ArrayList) databases.get(map.getElement1().getDbName().toLowerCase());
-            if (!lowerCaseLoadedTables.contains(map.getMappingTable().toLowerCase())) {
+            if (!tables.contains(map.getMappingTable().toLowerCase())) {
                 logger.debug("Generating the CREATE sql for '" + map.getMappingTable() + "'");
                 //delete.add("\n\nDELETE FROM "+ map.getMappingTable() + ";");
                 creates.add("\n\n" + GenericWrapperUtils.GetCreateStatement(map));

@@ -170,15 +170,6 @@ public class XDATServlet extends HttpServlet {
         }
     }
 
-    public void destroy() {
-        try {
-            XFT.closeConnections();
-        } catch (SQLException e) {
-            logger.warn("An SQL exception occurred trying to close the XFT database connections.", e);
-        }
-        super.destroy();
-    }
-
     public class DelayedSequenceChecker extends Thread {
         public void run() {
             DBAction.AdjustSequences();

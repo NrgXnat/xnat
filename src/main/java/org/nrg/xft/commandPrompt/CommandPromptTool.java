@@ -103,11 +103,6 @@ public abstract class CommandPromptTool {
 		} catch (Exception e) {
 			e.printStackTrace();
 			_return= 9;
-		}finally{
-		    try {
-	            XFT.closeConnections();
-	        } catch (Exception e1) {
-	        }
 		}
 		System.exit(_return);
 	

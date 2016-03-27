@@ -467,11 +467,6 @@ public class XDATTool {
         this.user = user;
     }
 
-    public void close() throws SQLException
-    {
-        XFT.closeConnections();
-    }
-
     public void info(String message)
     {
         logger.info(message);

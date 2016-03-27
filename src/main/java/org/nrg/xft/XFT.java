@@ -12,16 +12,6 @@
 
 package org.nrg.xft;
 
-import java.io.File;
-import java.sql.SQLException;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Enumeration;
-import java.util.Iterator;
-import java.util.Properties;
-import java.util.Random;
-
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
@@ -29,20 +19,23 @@ import org.apache.log4j.PropertyConfigurator;
 import org.apache.log4j.spi.LoggerRepository;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xft.db.DBPool;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.references.XFTPseudonymManager;
 import org.nrg.xft.references.XFTReferenceManager;
-import org.nrg.xft.schema.XFTManager;
-import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
+import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
+
+import java.io.File;
+import java.text.NumberFormat;
+import java.util.*;
 public class XFT {
     private static String ADMIN_EMAIL = "nrgtech@nrg.wustl.edu";
     private static String ADMIN_EMAIL_HOST = "";
@@ -53,7 +46,7 @@ public class XFT {
     private static String ARCHIVE_ROOT_PATH = "";
     private static String PREARCHIVE_PATH = "";
     private static String CACHE_PATH = "";
-    static org.apache.log4j.Logger logger = Logger.getLogger(XFT.class);
+    private static final Logger logger = Logger.getLogger(XFT.class);
     public static final String PREFIX = "xdat";
     public static final char PATH_SEPERATOR = '/';
     private static String WEBAPP_NAME = null;
@@ -230,17 +223,7 @@ public class XFT {
         }
     }
 
-    public static void closeConnections() throws SQLException
-    {
-       DBPool.GetPool().closeConnections();
-    }
-
-    public static void LogError(Object message, Throwable e)
-    {
-        logger.error(message,e);
-    }
-
-    public static String buildLogFileName(ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException{
+    public static String buildLogFileName(ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
         String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
         if(!(new File(s)).exists())
         {
@@ -363,44 +346,6 @@ public class XFT {
              }
         }
     }
-
-    public static void LogError(Object message)
-    {
-        logger.error(message);
-    }
-
-    public static void LogCurrentTime(Object message)
-    {
-        logger.debug(message + "--\t\t" + Calendar.getInstance().get(Calendar.MINUTE)+":" + Calendar.getInstance().get(Calendar.SECOND) +":" + Calendar.getInstance().get(Calendar.MILLISECOND));
-    }
-
-    public static void LogCurrentTime(Object message, String level)
-    {
-        if (level.equalsIgnoreCase("ERROR"))
-        {
-            logger.error(message + "--\t\t" + Calendar.getInstance().get(Calendar.MINUTE)+":" + Calendar.getInstance().get(Calendar.SECOND) +":" + Calendar.getInstance().get(Calendar.MILLISECOND));
-        }else if (level.equalsIgnoreCase("INFO"))
-        {
-            logger.info(message + "--\t\t" + Calendar.getInstance().get(Calendar.MINUTE)+":" + Calendar.getInstance().get(Calendar.SECOND) +":" + Calendar.getInstance().get(Calendar.MILLISECOND));
-        }else
-        {
-            logger.debug(message + "--\t\t" + Calendar.getInstance().get(Calendar.MINUTE)+":" + Calendar.getInstance().get(Calendar.SECOND) +":" + Calendar.getInstance().get(Calendar.MILLISECOND));
-        }
-
-    }
-//    /**
-//     * @return Returns the wEBAPP_NAME.
-//     */
-//    public static String getWEBAPP_NAME() {
-//        return WEBAPP_NAME;
-//    }
-//
-//    public static void setWEBAPP_NAME(String s){
-//        WEBAPP_NAME= s;
-//        if (WEBAPP_NAME.startsWith("/")){
-//            WEBAPP_NAME=WEBAPP_NAME.substring(1);
-//        }
-//    }
 
     public static Character CreateRandomCharacter(Random randGen){
         int i = 111;

@@ -28,9 +28,6 @@ public class ThemeConfig {
      */
     public ThemeConfig() {
     }
-    public ThemeConfig(String themeName) {
-        this.name = themeName;
-    }
     public ThemeConfig(String themeName, String themePath, boolean enabled) {
         this.name = themeName;
         this.path = themePath;

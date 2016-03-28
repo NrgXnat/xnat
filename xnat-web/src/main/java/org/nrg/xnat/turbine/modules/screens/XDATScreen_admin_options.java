@@ -23,8 +23,8 @@ import org.nrg.xnat.services.ThemeService;
 /**
  * Created by jcleve01 on 1/22/2016.
  */
-public class XDATScreen_themes extends SecureScreen  {
-    public final static Logger logger = Logger.getLogger(XDATScreen_themes.class);
+public class XDATScreen_admin_options extends SecureScreen  {
+    public final static Logger logger = Logger.getLogger(XDATScreen_admin_options.class);
     @Override
     protected void doBuildTemplate(RunData data, Context context) throws Exception {
         ThemeService themeService = XDAT.getContextService().getBean(ThemeService.class);

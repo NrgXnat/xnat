@@ -15,6 +15,13 @@
 <meta http-equiv="expires" content="-1">
 <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
 
+#if ($themedRedirect)
+<!-- As a backup, reload the appropriate page if a global theme style specifies a redirect -->
+<script type="text/javascript">
+    window.location = "$content.getURI("")$themedRedirect";
+</script>
+#end
+
 <!-- load polyfills before ANY other JavaScript -->
 <script type="text/javascript" src="$content.getURI('scripts/polyfills.js')"></script>
 
@@ -285,5 +292,15 @@
 ##<script type="text/javascript" src="$content.getURI('scripts/xnat/widget.js')"></script>
 <script type="text/javascript" src="$content.getURI('scripts/xnat/ui/popup.js')"></script>
 <script type="text/javascript" src="$content.getURI('scripts/xnat/ui/dialog.js')"></script>
+
+#if ($themedScript)
+<!-- Load active global theme script -->
+<script type="text/javascript" src="$content.getURI("")$themedScript"></script>
+#end
+
+#if ($themedStyle)
+<!-- Load active global theme style -->
+<link rel="stylesheet" type="text/css" href="$content.getURI("")$themedStyle">
+#end
 
 #addGlobalCustomScreens("header")

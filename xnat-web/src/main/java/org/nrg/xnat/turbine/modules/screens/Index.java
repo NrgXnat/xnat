@@ -14,19 +14,41 @@ import java.util.Date;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase;
+
+import org.nrg.xnat.services.ThemeService;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 
 public class Index extends SecureScreen {
 
     @Override
     protected void doBuildTemplate(RunData data, Context context) throws Exception {
-        
+        ThemeService themeService = XDAT.getContextService().getBean(ThemeService.class);
+//        String themedLandingPath = themeService.getThemePage("Landing");
+//        if(themedLandingPath != null) {
+//            doRedirect(data, themedLandingPath);
+//            data.setRedirectURI(themedLandingPath);
+//        }
+        String themedRedirect = themeService.getThemePage("Landing");           // put all this in a method in the theme service with an optional requested page parameter
+        if(themedRedirect != null) {
+            context.put("themedRedirect", themedRedirect);
+            return;
+        }
+        String themedStyle = themeService.getThemePage("theme", "style");
+        if(themedStyle != null) {
+            context.put("themedStyle", themedStyle);
+        }
+        String themedScript = themeService.getThemePage("theme", "script");
+        if(themedScript != null) {
+            context.put("themedScript", themedScript);
+        }
+
         UserI user = TurbineUtils.getUser(data);
         
         if(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("node",data))!=null){

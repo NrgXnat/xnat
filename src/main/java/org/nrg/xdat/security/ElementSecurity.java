@@ -12,29 +12,12 @@
 
 package org.nrg.xdat.security;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-import java.util.Scanner;
-
+import com.google.common.collect.Lists;
 import org.apache.log4j.Logger;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
-import org.nrg.xdat.om.XdatElementAccess;
-import org.nrg.xdat.om.XdatElementSecurityListingAction;
-import org.nrg.xdat.om.XdatFieldMapping;
-import org.nrg.xdat.om.XdatFieldMappingSet;
-import org.nrg.xdat.om.XdatPrimarySecurityField;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
@@ -43,11 +26,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.security.services.impl.FeatureRepositoryServiceImpl;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
-import org.nrg.xft.ItemI;
-import org.nrg.xft.ItemWrapper;
-import org.nrg.xft.XFT;
-import org.nrg.xft.XFTItem;
-import org.nrg.xft.XFTTable;
+import org.nrg.xft.*;
 import org.nrg.xft.cache.CacheManager;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
@@ -57,21 +36,17 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.XftEventService;
 import org.nrg.xft.event.XftItemEvent;
-import org.nrg.xft.exception.DBPoolException;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidItemException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.exception.*;
 import org.nrg.xft.references.XFTReferenceI;
 import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.references.XFTRelationSpecification;
 import org.nrg.xft.references.XFTSuperiorReference;
 import org.nrg.xft.schema.DataModelDefinition;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.XFTElement;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
@@ -80,7 +55,10 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.StringUtils;
 
-import com.google.common.collect.Lists;
+import java.io.IOException;
+import java.io.InputStream;
+import java.sql.SQLException;
+import java.util.*;
 
 /**
  * @author Tim
@@ -108,14 +86,14 @@ public class ElementSecurity extends ItemWrapper {
      * @throws Exception When something goes wrong.
      */
     public static Hashtable<String, ElementSecurity> GetElementSecurities() throws Exception {
-        if (elements == null) {
+        if (elements == null || elements.size() == 0) {
             synchronized (lock) {
-                if (elements == null) {
+                if (elements == null || elements.size() == 0) {
                     elements = new Hashtable<>();
                     ArrayList al = DisplaySearch.SearchForItems(SchemaElement.GetElement(XDAT_ELEMENT_SECURITY), new CriteriaCollection("AND"));
                     for (final Object anItem : al) {
-                        ItemI           item = (ItemI) anItem;
-                        ElementSecurity es   = new ElementSecurity(item);
+                        ItemI item = (ItemI) anItem;
+                        ElementSecurity es = new ElementSecurity(item);
                         es.getItem().internValues();
                         elements.put(es.getElementName(), es);
                     }

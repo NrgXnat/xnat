@@ -34,7 +34,6 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "org.nrg.xnat.build:gradle-xnat-plugin:1.7.0-SNAPSHOT"
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.2"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.2.4"
     }
@@ -62,7 +61,6 @@ repositories {
     jcenter()
 }
 
-apply plugin: 'xnat'
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'war'
@@ -152,6 +150,9 @@ dependencies {
     compile "org.nrg:anonymize:${vXnat}"
     compile "org.nrg:mail:${vXnat}"
     compile "org.nrg:notify:${vXnat}"
+    compile("org.nrg.xnat:xnat-data-plugin:${vXnat}"){
+     transitive = false
+    }
 
     compile "org.nrg:dicom-xnat-mx:1.7.0-SNAPSHOT"
     compile "org.nrg:dicom-xnat-sop:1.7.0-SNAPSHOT"

@@ -7,3 +7,6 @@ gradle.properties
 /out
 /build
 InstanceSettings.xml
+/bin/
+.classpath
+.project

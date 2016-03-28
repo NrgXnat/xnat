@@ -98,4 +98,19 @@
     </tr>
 </table>
 #end
+<button type="button" id="launchScript">Launch Script</button>
+<script type="text/javascript">
+
+    scriptCallback={
+        success:function(){alert("Script launched.")},
+        failure:function(){alert("Script failed to launch.")},
+        cache:false, // Turn off caching for IE
+        scope:this
+    }
+
+    jQuery('#launchScript').click(function(event){
+        var params="sessionId=" + "${om.getId()}" + "&mountIn=" + "/data/input" + "&mountOut=" + "/data/output" + "&imageId=" + "kelseym/pydicom";
+        YAHOO.util.Connect.asyncRequest('POST',serverRoot +"/xapi/containers/launch/script/${om.getId()}?XNAT_CSRF=" + csrfToken,scriptCallback,params,this);
+    });
+</script>
 <!--END xnat_imageSessionData_details.vm -->

@@ -44,6 +44,8 @@ public class ScriptResource extends AutomationResource {
 
         _scriptId = (String) getRequest().getAttributes().get(SCRIPT_ID);
 
+        _version = (String) getRequest().getAttributes().get(VERSION);
+
         // If the user isn't a site admin, there's a limited set of operations they are permitted to perform.
         if (!Roles.isSiteAdmin(user)) {
             // You can't put or post or delete a script and you can't retrieve a specific script OTHER THAN the split
@@ -91,21 +93,27 @@ public class ScriptResource extends AutomationResource {
 
         if (StringUtils.isNotBlank(_scriptId)) {
             try {
-                // They're requesting a specific script, so return that to them.
-                Script script = getScript();
-
-                // Here's a special case: if they're trying to get the split PET/MR script and it doesn't exist, give
-                // them the default implementation.
-                // TODO This should be expanded into a default script repository function.
-                if (script == null && _scriptId.equalsIgnoreCase(PrearcDatabase.SPLIT_PETMR_SESSION_ID)) {
-                    script = PrearcDatabase.DEFAULT_SPLIT_PETMR_SESSION_SCRIPT;
+                if (StringUtils.isNotBlank(_version)) {
+                    //They're requesting a specific version of a specific script
+                    return new StringRepresentation(MAPPER.writeValueAsString(_scriptService.getVersion(_scriptId, _version)), mediaType);
                 }
+                else {
+                    // They're requesting a specific script, so return that to them.
+                    Script script = getScript();
 
-                // have to check if it's null, or else it will return a StringRepresentation containing the word null instead of a 404
-                if (script != null) {
-                    return new StringRepresentation(MAPPER.writeValueAsString(script), mediaType);
-                } else {
-                    return null;
+                    // Here's a special case: if they're trying to get the split PET/MR script and it doesn't exist, give
+                    // them the default implementation.
+                    // TODO This should be expanded into a default script repository function.
+                    if (script == null && _scriptId.equalsIgnoreCase(PrearcDatabase.SPLIT_PETMR_SESSION_ID)) {
+                        script = PrearcDatabase.DEFAULT_SPLIT_PETMR_SESSION_SCRIPT;
+                    }
+
+                    // have to check if it's null, or else it will return a StringRepresentation containing the word null instead of a 404
+                    if (script != null) {
+                        return new StringRepresentation(MAPPER.writeValueAsString(script), mediaType);
+                    } else {
+                        return null;
+                    }
                 }
             } catch (IOException e) {
                 throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "An error occurred marshalling the script data to JSON", e);
@@ -158,6 +166,7 @@ public class ScriptResource extends AutomationResource {
         columns.add("Script ID");
         columns.add("Language");
         columns.add("Description");
+        //columns.add("Version");
 
         XFTTable table = new XFTTable();
         table.initTable(columns);
@@ -167,6 +176,7 @@ public class ScriptResource extends AutomationResource {
             table.insertRowItems(script.getScriptId(),
                     script.getLanguage(),
                     script.getDescription());
+                    //script.getScriptVersion());
         }
 
         return representTable(table, mediaType, params);
@@ -213,6 +223,23 @@ public class ScriptResource extends AutomationResource {
         if (properties.containsKey("scriptId")) {
             properties.remove("scriptId");
         }
+//        int previousMaxVersion = 0;
+//        try{
+//            int version = Integer.parseInt(_scriptService.getByScriptId(_scriptId).getScriptVersion());
+//            if(version>0){
+//                previousMaxVersion=version;
+//            }
+//        }
+//        catch(Exception e){
+//            _log.error("",e);
+//        }
+//        if (properties.containsKey("scriptVersion") && !properties.getProperty("scriptVersion").isEmpty()) {
+//            //properties.setProperty("scriptVersion", ""+(Integer.parseInt(properties.getProperty("scriptVersion"))+1));
+//            properties.setProperty("scriptVersion", ""+(Integer.parseInt(properties.getProperty("scriptVersion"))));
+//        }
+//        else{
+            //properties.setProperty("scriptVersion", ""+(previousMaxVersion+1));
+//        }
 
         try {
             _runnerService.setScript(_scriptId, properties);
@@ -225,9 +252,11 @@ public class ScriptResource extends AutomationResource {
     private static final Logger _log = LoggerFactory.getLogger(ScriptResource.class);
 
     private static final String SCRIPT_ID = "SCRIPT_ID";
+    private static final String VERSION = "VERSION";
     private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     private final ScriptService _scriptService;
     private final ScriptRunnerService _runnerService;
     private final String _scriptId;
+    private final String _version;
 }

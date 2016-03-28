@@ -25,9 +25,6 @@ import java.util.List;
  */
 @Configuration
 @PropertySources({
-        @PropertySource(value = "file:${HOME}/config/services.properties", ignoreResourceNotFound = true),
-        @PropertySource(value = "file:${HOME}/xnat/config/services.properties", ignoreResourceNotFound = true),
-        @PropertySource(value = "file:${XNAT_HOME}/config/services.properties", ignoreResourceNotFound = true),
         @PropertySource(value = "file:${xnat.home}/config/services.properties", ignoreResourceNotFound = true),
         @PropertySource(value = "file:${xnat.config.home}/services.properties", ignoreResourceNotFound = true),
         @PropertySource(value = "file:${xnat.config}", ignoreResourceNotFound = true)})

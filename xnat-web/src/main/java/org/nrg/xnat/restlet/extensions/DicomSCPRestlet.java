@@ -151,23 +151,15 @@ public class DicomSCPRestlet extends SecureResource {
             if (StringUtils.isBlank(_scpId)) {
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a specific DICOM SCP instance to enable.");
             } else {
-                try {
-                    _dicomSCPManager.enableDicomSCP(_scpId);
-                    returnDefaultRepresentation();
-                } catch (IOException e) {
-                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "An error occurred trying to enable the DICOM SCP instance for ID: " + _scpId);
-                }
+                _dicomSCPManager.enableDicomSCP(_scpId);
+                returnDefaultRepresentation();
             }
         } else if (_action.equalsIgnoreCase("disable")) {
             if (StringUtils.isBlank(_scpId)) {
                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify a specific DICOM SCP instance to disable.");
             } else {
-                try {
-                    _dicomSCPManager.disableDicomSCP(_scpId);
-                    returnDefaultRepresentation();
-                } catch (IOException e) {
-                    getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "An error occurred while disabling the DICOM receiver " + _scpId);
-                }
+                _dicomSCPManager.disableDicomSCP(_scpId);
+                returnDefaultRepresentation();
             }
         } else {
             _dicomSCPManager.startDicomSCPs();

@@ -10,18 +10,9 @@
  */
 package org.nrg.dcm.id;
 
-import java.io.StringReader;
-import java.io.StringWriter;
-import java.util.Arrays;
-import java.util.HashMap;
-import java.util.HashSet;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.apache.commons.lang.StringUtils;
+import com.google.common.base.Functions;
+import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.runtime.RuntimeServices;
@@ -33,8 +24,11 @@ import org.nrg.dcm.DicomFileNamer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import com.google.common.base.Functions;
-import com.google.common.collect.Lists;
+import java.io.StringReader;
+import java.io.StringWriter;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 public class TemplatizedDicomFileNamer implements DicomFileNamer {
 
@@ -42,8 +36,8 @@ public class TemplatizedDicomFileNamer implements DicomFileNamer {
     private static final String SUFFIX = ".dcm";
     private static final String HASH_PREFIX = "Hash";
 
-    private static final Logger _log = LoggerFactory.getLogger(TemplatizedDicomFileNamer.class);
-    public static final String HASH_DELIMITER = "With";
+    private static final Logger _log           = LoggerFactory.getLogger(TemplatizedDicomFileNamer.class);
+    private static final String HASH_DELIMITER = "With";
 
     public TemplatizedDicomFileNamer(final String naming) throws Exception {
         if (_log.isDebugEnabled()) {
@@ -61,31 +55,21 @@ public class TemplatizedDicomFileNamer implements DicomFileNamer {
      * @param dicomObject    The DICOM object for which the name should be calculated.
      * @return The generated file name from the variable values extracted from the DICOM object.
      */
-    public String makeFileName(DicomObject dicomObject) {
-        Map<String, String> values = new HashMap<>();
+    public String makeFileName(final DicomObject dicomObject) {
+        final VelocityContext context = new VelocityContext();
+        final Map<String, String> values = new HashMap<>();
         for (final String variable : _variables) {
             if (!variable.startsWith(HASH_PREFIX)) {
                 final String tagValue = dicomObject.getString(Tag.forName(variable));
-                values.put(variable, tagValue == null ? "no-value-for-" + variable : tagValue);
+                final String value = StringUtils.isEmpty(tagValue) ? "no-value-for-" + variable : tagValue;
+                context.put(variable, value);
+                values.put(variable, value);
             }
-        }
-        return makeFileName(values);
-    }
-
-    /**
-     * Makes the file name from the given variables.
-     * @param values    The various extracted variable values.
-     * @return The generated file name from the given variable values.
-     */
-    public String makeFileName(Map<String, String> values) {
-        VelocityContext context = new VelocityContext();
-        for (Map.Entry<String, String> value : values.entrySet()) {
-            context.put(value.getKey(), value.getValue());
         }
         for (final Map.Entry<String, List<String>> hash : _hashes.entrySet()) {
             context.put(hash.getKey(), calculateHashString(hash.getValue(), values));
         }
-        StringWriter writer = new StringWriter();
+        final StringWriter writer = new StringWriter();
         try {
             getTemplate().merge(context, writer);
         } catch (Exception exception) {
@@ -132,10 +116,10 @@ public class TemplatizedDicomFileNamer implements DicomFileNamer {
                 runtimeServices.init();
                 StringReader reader   = new StringReader(_naming);
                 SimpleNode   node     = runtimeServices.parse(reader, "naming");
-                Template     template = new Template();
-                template.setRuntimeServices(runtimeServices);
-                template.setData(node);
-                template.initDocument();
+                _template = new Template();
+                _template.setRuntimeServices(runtimeServices);
+                _template.setData(node);
+                _template.initDocument();
             }
         }
         return _template;
@@ -160,14 +144,14 @@ public class TemplatizedDicomFileNamer implements DicomFileNamer {
      * @return All of the hashes in the template.
      */
     private Map<String, List<String>> initializeHashes() {
-        Map<String, List<String>> hashes = new HashMap<>();
-        Set<String> hashedVariables = new HashSet<>();
+        final Map<String, List<String>> hashes = new HashMap<>();
+        final Set<String> hashedVariables = new HashSet<>();
         for (final String variable : _variables) {
             if (variable.startsWith(HASH_PREFIX)) {
                 if (!variable.contains(HASH_DELIMITER)) {
                     throw new RuntimeException("You can't specify a " + HASH_PREFIX + " without specifying at least two DICOM header values joined by the " + HASH_DELIMITER + " delimiter.");
                 }
-                List<String> variables = Arrays.asList(variable.substring(4).split(HASH_DELIMITER));
+                final List<String> variables = Arrays.asList(variable.substring(4).split(HASH_DELIMITER));
                 hashes.put(variable, variables);
                 hashedVariables.addAll(variables);
             }

@@ -11,7 +11,8 @@
 (function(window, doc){
 
     var undefined,
-        UNDEFINED = 'undefined';
+        UNDEFINED = 'undefined',
+        hasConsole = console && console.log;
 
     // which HTML elements are
     // self-closing "void" elements?
@@ -55,6 +56,444 @@
         'hidden'
     ];
 
+    // use these as a shortcut to create <input> elements:
+    // spawn.html('input|text')
+    //
+    var inputTags = inputTypes.map(function(type){
+        return 'input|' + type;
+    });
+
+
+    function parseAttrs(el, attrs){
+        // allow ';' or ',' for attribute delimeter
+        (attrs.split(/;|,/) || []).forEach(function(att, i){
+            if (!att) return;
+            // allow ':' or '=' for key/value separator
+            var sep = /:|=/;
+            // tolerate quotes around values
+            var quotes = /^['"]+|['"]+$/g;
+            var key = att.split(sep)[0].trim();
+            var val = (att.split(sep)[1]||'').trim().replace(quotes, '') || key;
+            // allow use of 'class', but (secretly) use 'className'
+            if (key === 'class') {
+                el.className = val;
+                return;
+            }
+            el.setAttribute(key, val);
+        });
+    }
+
+
+    function appendChildren(el, children, fn){
+        [].concat(children).forEach(function(child){
+            // each 'child' can be an array of
+            // spawn arrays...
+            if (Array.isArray(child)){
+                el.appendChild(fn.apply(el, child));
+            }
+            // ...or an HTML string (or number)...
+            else if (/(string|number)/.test(typeof child)){
+                el.innerHTML += child;
+            }
+            // ...or 'appendable' nodes
+            else {
+                el.appendChild(child);
+            }
+        });
+    }
+
+
+    /**
+     * Fairly lean and fast element spawner that's
+     * a little more robust than spawn.element().
+     * @param tag {String} element's tagName
+     * @param [opts] {Object|Array|String} element
+     *        properties/attributes -or- array of
+     *        children -or- HTML string
+     * @param [children] {Array|String}
+     *        array of child element 'spawn' arg arrays
+     *        or elements or HTML string
+     * @returns {Element|*}
+     */
+    function spawn(tag, opts, children){
+
+        var el, $el, parts, id, classes, tagParts, attrs, isVoid,
+            skip = ['innerHTML', 'html', 'append',  // properties to skip later
+                'classes', 'attr', 'data', 'fn'],
+            errors = []; // collect errors
+
+        if (tag === '!'){
+            el = doc.createDocumentFragment();
+            appendChildren(el, opts, spawn);
+            return el;
+        }
+
+        try {
+            parts = tag.split('|');
+        }
+        catch(e){
+            if (hasConsole) console.log(e);
+            parts = ['div.bogus'];
+        }
+
+        tag = parts.shift().trim();
+
+        // also allow 'tag' to use selector syntax for id and class
+        // spawn.plus('div#foo.bar', 'Foo');
+        // -> '<div id="foo" class="bar">Foo</div>'
+        // split classes first
+        classes = tag.split('.');
+
+        // first item will ALWAYS be tag name
+        // wich MAY also have an id
+        tag = classes.shift();
+
+        tagParts = tag.split('#');
+
+        tag = tagParts.shift();
+
+        isVoid = voidElements.indexOf(tag) > -1;
+
+        el = doc.createElement(tag||'div');
+
+        if (tagParts.length){
+            id = tagParts[0];
+        }
+
+        if (id){
+            el.id = id;
+        }
+
+        if (classes.length){
+            el.className = classes.join(' ').trim();
+        }
+
+        if (parts.length){
+            // pass element attributes in 'tag' string, like:
+            // spawn('a|id="foo-link";href="foo";class="bar"');
+            // or (colons for separators, commas for delimeters, no quotes),:
+            // spawn('input|type:checkbox,id:foo-ckbx');
+            parseAttrs(el, parts[0]||'');
+        }
+
+        if (!opts && !children){
+            // return early for
+            // basic element creation
+            return el;
+        }
+
+        opts = opts || {};
+        children = children || null;
+
+        if (!isVoid){
+            // if 'opts' is a string,
+            // set el's innerHTML and
+            // return the element
+            if (/(string|number)/.test(typeof opts)){
+                el.innerHTML += opts;
+                return el;
+            }
+
+            // if 'children' arg is not present
+            // and 'opts' is really an array
+            if (!children && Array.isArray(opts)){
+                children = opts;
+                opts = {};
+            }
+            // or if 'children' is a string
+            // set THAT to the innerHTML
+            else if (/(string|number)/.test(typeof children)){
+                el.innerHTML += children;
+                children = null;
+            }
+        }
+
+        // allow use of 'classes' property for classNames
+        if (opts.className || opts.classes){
+            el.className = [].concat(opts.className||[], opts.classes||[]).join(' ').trim();
+        }
+
+        // add attributes and properties to element
+        forOwn(opts, function(prop, val){
+            // only add if NOT in 'skip' array
+            if (skip.indexOf(prop) === -1){
+                el[prop] = val;
+            }
+        });
+
+        // explicitly add element attributes
+        if (opts.attr){
+            forOwn(opts.attr, function(name, val){
+                el.setAttribute(name, val);
+            });
+        }
+
+        // explicitly add 'data-' attributes
+        if (opts.data){
+            forOwn(opts.data, function(name, val){
+                setElementData(el, name, [].concat(val).join(''));
+            });
+        }
+
+        // only add innerHTML and children for non-void elements
+        if (!isVoid){
+
+            // special handling of 'prepend' property
+            if (opts.prepend){
+                try {
+                    appendChildren(el, opts.prepend, spawn)
+                }
+                catch(e){
+                    // write error to console
+                    if (hasConsole) console.log(e);
+                    //errors.push('Error appending: ' + e);
+                }
+            }
+
+            // add innerHTML now, if present
+            el.innerHTML += (opts.innerHTML||opts.html||'');
+
+            // append any spawned children
+            if (children){
+                try {
+                    appendChildren(el, children, spawn)
+                }
+                catch(e){
+                    // write error to console
+                    if (hasConsole) console.log(e);
+                    //errors.push('Error appending: ' + e);
+                }
+            }
+
+            // special handling of 'append' property
+            if (opts.append){
+                try {
+                    appendChildren(el, opts.append, spawn)
+                }
+                catch(e){
+                    // write error to console
+                    if (hasConsole) console.log(e);
+                    //errors.push('Error appending: ' + e);
+                }
+            }
+        }
+
+        // execute element methods last...
+        // attach object or array of methods
+        // to 'fn' property - this can be an
+        // array in case you want to run the
+        // same method(s) more than once
+        if (opts.fn){
+            [].concat(opts.fn).forEach(function(fn){
+                forOwn(fn, function(f, args){
+                    el[f].apply(el, [].concat(args));
+                });
+            });
+        }
+
+        // execute jQuery methods from the `$` property
+        if (opts.$ && window.$){
+            $el = $(el);
+            forOwn(opts.$, function(method, args){
+                $el[method].apply($el, [].concat(args));
+            });
+        }
+
+        if (errors.length){
+            if (hasConsole) console.log(errors);
+        }
+
+        return el;
+
+    }
+    // aliases
+    spawn.plus = spawn;
+    spawn.lite = spawn;
+    spawn.alt = spawn;
+
+    /**
+     * Leanest and fastest element spawner
+     * @param tag {String|Object} tag name or config object
+     * @param [opts] {Object|String|Array} config object, HTML content, or array of Elements
+     * @param [content] {String|Array} HTML content or array of Elements
+     * @returns {Element|*}
+     */
+    spawn.element = function spawnElement(tag, opts, content){
+
+        var el, $el, id, classes, tagParts;
+
+        if (typeof tag != 'string'){
+            // if 'tag' isn't a string,
+            // it MUST be a config object
+            opts = tag;
+            // and it MUST have a 'tag'
+            // or 'tagName' property
+            tag = opts.tag || opts.tagName || 'div';
+        }
+
+        // also allow 'tag' to use selector syntax for id and class
+        // spawn.plus('div#foo.bar', 'Foo');
+        // -> '<div id="foo" class="bar">Foo</div>'
+        // split classes first
+        classes = tag.split('.');
+
+        // first item will ALWAYS be tag name
+        // wich MAY also have an id
+        tag = classes.shift();
+
+        tagParts = tag.split('#');
+
+        tag = tagParts[0];
+
+        el = doc.createElement(tag||'div');
+
+        if (tagParts.length > 1){
+            id = tagParts[1];
+        }
+
+        if (id){
+            el.id = id;
+        }
+
+        if (classes.length){
+            el.className = classes.join(' ').trim();
+        }
+
+        // return early for basic usage
+        if (!content && !opts && typeof tag == 'string') {
+            return el;
+        }
+
+        // allow use of only 2 arguments
+        // with the HTML text being the second
+        if (/(string|number)/.test(typeof opts)){
+            el.innerHTML += (opts+'');
+            return el;
+        }
+        else if (Array.isArray(opts)){
+            content = opts;
+            opts = {};
+        }
+
+        if (opts.classes || opts.className){
+            el.className = [].concat(el.className||[], opts.classes||[], opts.className||[]).join(' ');
+        }
+
+        if (opts.html){
+            opts.innerHTML += opts.html+'';
+        }
+
+        // add attributes and properties to element
+        forOwn(opts, function(prop, val){
+            if (/^(tag|html|classes|attr|data|$)$/.test(prop)) return;
+            el[prop] = val;
+        });
+
+        // explicitly add element attributes
+        if (opts.attr){
+            forOwn(opts.attr, function(name, val){
+                el.setAttribute(name, val);
+            });
+        }
+
+        // explicitly add 'data-' attributes
+        if (opts.data){
+            forOwn(opts.data, function(name, val){
+                setElementData(el, name, [].concat(val).join(''));
+            });
+        }
+
+        // add any HTML content or child elements
+        if (content){
+            appendChildren(el, content, spawnElement);
+        }
+
+        if (opts.$){
+            $el = $(el);
+            forOwn(opts.$, function(method, args){
+                $el[method].apply($el, [].concat(args));
+            });
+            //delete opts.$;
+        }
+
+        return el;
+
+    };
+
+    /**
+     * Spawn an HTML string using input parameters
+     * Simple and fast but only generates HTML
+     * @param tag {String} tag name for HTML element
+     * @param [attrs] {Object|Array|String} element attributes
+     * @param [content] {String|Array} string or array of strings for HTML content
+     * @returns {String} HTML string
+     */
+    spawn.html = function spawnHTML(tag, attrs, content){
+        // the 'html' method can be useful
+        // for easily churning out plain old HTML
+        // no event handlers or other methods
+
+        tag = tag || 'div';
+        attrs = attrs || null;
+        content = content || [];
+
+        var output = {};
+        output.inner = '';
+        output.attrs = '';
+
+        if (inputTags.indexOf(tag) > -1){
+            tag = tag.split('|');
+            output.attrs += (' type="' + tag[1] +'"');
+            tag = tag[0];
+            // maybe set 'content' as the value?
+            output.attrs += (' value="' + content + '"');
+            // add content to [data-content] attribute?
+            //output.attrs += (' data-content="' + content + '"');
+        }
+
+        var isVoid = voidElements.indexOf(tag) > -1;
+
+        if (isVoid){
+            output.open = '<' + tag;
+            output.close = '>';
+        }
+        else {
+            output.open = '<' + tag;
+            output.inner = '>' + [].concat(content).map(function(child){
+                    if (Array.isArray(child)){
+                        return spawnHTML.apply(null, child)
+                    }
+                    else {
+                        return child+''
+                    }
+                }).join('');
+            output.close = '</' + tag + '>';
+        }
+
+        // process the attributes;
+        if (attrs){
+            if (isPlainObject(attrs)){
+                forOwn(attrs, function(attr, val){
+                    if (boolAttrs.indexOf(attr) > -1){
+                        if (attr){
+                            // boolean attributes don't need a value
+                            output.attrs += (' ' + attr);
+                        }
+                    }
+                    else {
+                        output.attrs += (' ' + attr + '="' + val + '"');
+                    }
+                });
+            }
+            else {
+                output.attrs += [''].concat(attrs).join(' ');
+            }
+        }
+
+        return output.open + output.attrs + output.inner + output.close;
+
+    };
+
     /**
      * Full-featured (but slowest) element spawner
      * @param tag {String|Object} tag name or config object
@@ -62,7 +501,7 @@
      * @param [inner] {String|Array} HTML string or array of 'appendable' items
      * @returns {Element|*}
      */
-    function spawn(tag, opts, inner){
+    spawn.extreme = spawn.xt = function(tag, opts, inner){
 
         var el, parts, attrs, use$, $el, children,
             DIV        = doc.createElement('div'),
@@ -128,7 +567,7 @@
                 contents = contents();
             }
             catch(e){
-                if (console && console.log) console.log(e);
+                if (hasConsole) console.log(e);
                 contents = [];
             }
         }
@@ -171,7 +610,7 @@
                     el = doc.createElement(tag || 'span');
                 }
                 catch(e) {
-                    if (console && console.log) console.log(e);
+                    if (hasConsole) console.log(e);
                     el = doc.createDocumentFragment();
                     el.appendChild(doc.createTextNode(tag || ''));
                 }
@@ -191,8 +630,11 @@
             var quotes = /^('|")|('|")$/g;
             var key = att.split(sep)[0].trim();
             var val = (att.split(sep)[1] || '').trim().replace(quotes, '') || key;
-            // add each attribute/property directly to DOM element
-            //el[key] = val;
+            // allow use of 'class', but (secretly) use 'className'
+            if (key === 'class') {
+                el.className = val;
+                return;
+            }
             el.setAttribute(key, val);
         });
 
@@ -292,7 +734,7 @@
                 }
             }
             catch(e) {
-                if (console && console.log) console.log(e);
+                if (hasConsole) console.log(e);
             }
         });
         // that's it... 'contents' HAS to be one of the following
@@ -306,13 +748,13 @@
             forOwn($opts, function(method, args){
                 // accept on/off event handlers with varying
                 // number of arguments
-                if (/^(on|off)$/.test(method.toLowerCase())) {
+                if (/^(on|off)$/i.test(method)) {
                     forOwn(args, function(evt, fn){
                         try {
                             $el[method].apply($el, [].concat(evt, fn));
                         }
                         catch(e) {
-                            if (console && console.log) console.log(e);
+                            if (hasConsole) console.log(e);
                         }
                     });
                     return;
@@ -324,317 +766,10 @@
 
         return el;
 
-    }
-
-    /**
-     * Leanest and fastest element spawner
-     * @param tag {String|Object} tag name or config object
-     * @param [opts] {Object|String|Array} config object, HTML content, or array of Elements
-     * @param [content] {String|Array} HTML content or array of Elements
-     * @returns {Element|*}
-     */
-    spawn.element = function(tag, opts, content){
-
-        var el;
-
-        if (typeof tag != 'string'){
-            // if 'tag' isn't a string,
-            // it MUST be a config object
-            opts = tag;
-            // and it MUST have a 'tag'
-            // or 'tagName' property
-            tag = opts.tag || opts.tagName || 'div';
-        }
-
-        el = doc.createElement(tag||'div');
-
-        // return early for basic usage
-        if (!content && !opts && typeof tag == 'string') {
-            return el;
-        }
-
-        // allow use of only 2 arguments
-        // with the HTML text being the second
-        if (/(string|number)/.test(typeof opts)){
-            el.innerHTML += (opts+'');
-            return el;
-        }
-        else if (Array.isArray(opts)){
-            content = opts;
-            opts = {};
-        }
-
-        // add attributes and properties to element
-        forOwn(opts, function(prop, val){
-            if (prop === 'tag') return;
-            el[prop] = val;
-        });
-
-        // add any HTML content or child elements
-        if (content){
-            [].concat(content).forEach(function(item){
-                if (/(string|number)/.test(typeof item)){
-                    el.innerHTML += (item+'');
-                }
-                else {
-                    el.appendChild(item);
-                }
-            });
-        }
-
-        return el;
-
-    };
-    // alias
-    spawn.basic = spawn.element;
-
-    /**
-     * Fairly lean and fast element spawner that's
-     * a little more robust than spawn.element().
-     * @param tag {String} element's tagName
-     * @param [opts] {Object|Array|String} element
-     *        properties/attributes -or- array of
-     *        children -or- HTML string
-     * @param [children] {Array|String}
-     *        array of child element 'spawn' arg arrays
-     *        or elements or HTML string
-     * @returns {Element}
-     */
-    spawn.plus = function(tag, opts, children){
-
-        var el, parts, attrs,
-            skip = [], // properties to skip later
-            errors = []; // collect errors
-
-        parts = tag.split('|');
-
-        tag = parts.shift().trim();
-
-        el = doc.createElement(tag||'div');
-
-        if (parts.length){
-            // pass element attributes in 'tag' string, like:
-            // spawn('a|id="foo-link";href="foo";class="bar"');
-            // or (colons for separators, commas for delimeters, no quotes),:
-            // spawn('input|type:checkbox,id:foo-ckbx');
-            attrs = (parts[0]||'').split(/;|,/) || []; // allow ';' or ',' for attribute delimeter
-            attrs.forEach(function(att, i){
-                if (!att) return;
-                var sep = /:|=/; // allow ':' or '=' for key/value separator
-                var quotes = /^('|")|('|")$/g;
-                var key = att.split(sep)[0].trim();
-                var val = (att.split(sep)[1]||'').trim().replace(quotes, '') || key;
-                // allow use of 'class', but (secretly) use 'className'
-                if (key === 'class') {
-                    el.className = val;
-                    return;
-                }
-                el.setAttribute(key, val);
-            });
-        }
-
-        if (!opts && !children){
-            // return early for
-            // basic element creation
-            return el;
-        }
-
-        opts = opts || {};
-        children = children || null;
-
-        // if 'opts' is a string,
-        // set el's innerHTML and
-        // return the element
-        if (typeof opts == 'string'){
-            el.innerHTML += opts;
-            return el;
-        }
-
-        // if 'children' arg is not present
-        // and 'opts' is really an array
-        if (!children && Array.isArray(opts)){
-            children = opts;
-            opts = {};
-        }
-        // or if 'children' is a string
-        // set THAT to the innerHTML
-        else if (typeof children == 'string'){
-            el.innerHTML += children;
-            children = null;
-        }
-
-        // add innerHTML now, if present
-        el.innerHTML += (opts.innerHTML||opts.html||'');
-
-        // append any spawned children
-        if (children && Array.isArray(children)){
-            children.forEach(function(child){
-                // each 'child' can be an array of
-                // spawn arrays...
-                if (Array.isArray(child)){
-                    el.appendChild(spawn.plus.apply(el, child));
-                }
-                // ...or an HTML string...
-                else if (typeof child == 'string'){
-                    el.innerHTML += child;
-                }
-                // ...or 'appendable' nodes
-                else {
-                    try {
-                        el.appendChild(child);
-                    }
-                    catch(e){
-                        // fail silently
-                        errors.push('Error processing children: ' + e);
-                    }
-                }
-            });
-        }
-
-        // special handling of 'append' property
-        if (opts.append){
-            // a string should be HTML
-            if (typeof opts.append == 'string'){
-                el.innerHTML += opts.append;
-            }
-            // otherwise an 'appendable' node
-            else {
-                try {
-                    el.appendChild(opts.append);
-                }
-                catch(e){
-                    errors.push('Error appending: ' + e);
-                }
-            }
-        }
-
-        // DO NOT ADD THESE DIRECTLY TO 'el'
-        skip.push('innerHTML', 'html', 'append', 'attr', 'data', 'fn');
-
-        // add attributes and properties to element
-        forOwn(opts, function(prop, val){
-            // only add if NOT in 'skip' array
-            if (skip.indexOf(prop) === -1){
-                el[prop] = val;
-            }
-        });
-
-        // explicitly add element attributes
-        if (opts.attr){
-            forOwn(opts.attr, function(name, val){
-                el.setAttribute(name, val);
-            });
-        }
-
-        // explicitly add 'data-' attributes
-        if (opts.data){
-            forOwn(opts.data, function(name, val){
-                setElementData(el, name, val);
-            });
-        }
-
-        // execute element methods last...
-        // attach object or array of methods
-        // to 'fn' property - this can be an
-        // array in case you want to run the
-        // same method(s) more than once
-        if (opts.fn){
-            [].concat(opts.fn).forEach(function(fn){
-                forOwn(fn, function(f, args){
-                    el[f].apply(el, [].concat(args));
-                });
-            });
-        }
-
-        if (errors.length){
-            if (console && console.log) console.log(errors)
-        }
-
-        return el;
-
-    };
-    // aliases
-    spawn.lite = spawn.plus;
-    spawn.alt = spawn.plus;
-
-    /**
-     * Spawn an HTML string using input parameters
-     * Simple but not super fast
-     * @param tag {String} tag name for HTML element
-     * @param [attrs] {Object|Array|String} element attributes
-     * @param [content] {String|Array} string or array of strings for HTML content
-     * @returns {String} HTML string
-     */
-    spawn.html = function(tag, attrs, content){
-        // the 'template' method can be useful
-        // for easily churning out plain old HTML
-        // no event handlers or other methods
-
-        tag = tag || 'div';
-        attrs = attrs || null;
-        content = content || [];
-
-        var output = {};
-        output.inner = '';
-        output.attrs = '';
-
-        // use these as a shortcut to create <input> elements:
-        // spawn.html('input|text')
-        //
-        var inputTags = inputTypes.map(function(type){
-            return 'input|' + type;
-        });
-
-        if (inputTags.indexOf(tag) > -1){
-            tag = tag.split('|');
-            output.attrs += (' type="' + tag[1] +'"');
-            tag = tag[0];
-            // maybe set 'content' as the value?
-            output.attrs += (' value="' + content + '"');
-            // add content to [data-content] attribute?
-            //output.attrs += (' data-content="' + content + '"');
-        }
-
-        var isVoid = voidElements.indexOf(tag) > -1;
-
-        if (inputTypes.indexOf(tag))
-
-        if (isVoid){
-            output.open = '<' + tag;
-            output.close = '>';
-        }
-        else {
-            output.open = '<' + tag;
-            output.inner = '>' + [].concat(content).join(' ');
-            output.close = '</' + tag + '>';
-        }
-
-        // process the attributes;
-        if (attrs){
-            if (isPlainObject(attrs)){
-                forOwn(attrs, function(attr, val){
-                    if (boolAttrs.indexOf(attr) > -1){
-                        if (attr){
-                            // boolean attributes don't need a value
-                            output.attrs += (' ' + attr);
-                        }
-                    }
-                    else {
-                        output.attrs += (' ' + attr + '="' + val + '"');
-                    }
-                });
-            }
-            else {
-                output.attrs += [''].concat(attrs).join(' ');
-            }
-        }
-
-        return output.open + output.attrs + output.inner + output.close;
-
     };
 
     // convenience alias
-    spawn.fragment = function(el){
+    spawn.fragment = spawn.lite.fragment = function(el){
         var frag = doc.createDocumentFragment();
         if (el){
             frag.appendChild(el);

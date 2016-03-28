@@ -54,18 +54,40 @@ var XNAT = getObject(XNAT||{});
         return this;
     };
 
+    var $methods = [
+        'attr', 'prepend', 'append',
+        'before', 'after',
+        'addClass', 'removeClass'
+    ];
+
+    // hijack some methods from jQuery
+    $methods.forEach(function(method){
+        Element.p[method] = function(){
+            var $el = this.getLast$();
+            $el[method].apply($el, arguments);
+            return this;
+        }
+    });
+
+    // uses jquery.dataAttr.js
+    Element.p.data = function(name, value){
+        this.lastElement = this.lastElement || this.parent || this.rootElement;
+        $(this.lastElement).dataAttr(name, value);
+        return this;
+    };
+
     // return root element and all children
-    Element.p.get = function(){
+    Element.p.get = function(i){
         if (this.isFragment){
             if (this.rootElement.childNodes.length){
-                return this.rootElement.childNodes;
+                return this.rootElement.childNodes[i||0];
             }
         }
         return this.rootElement;
     };
 
-    Element.p.get$ = function(){
-        return $(this.get())
+    Element.p.get$ = function(i){
+        return $(this.get(i))
     };
 
     // return last element in the chain
@@ -77,7 +99,24 @@ var XNAT = getObject(XNAT||{});
     };
 
     Element.p.getLast$ = function(){
-        return $(this.getLast())
+        this.$last = this.last$ = $(this.getLast());
+        return this.$last;
+    };
+
+    Element.p.$ = function($opts){
+        var $last = this.getLast$();
+        if (arguments.length === 2){
+            $last[arguments[0]].apply($last, [].concat(arguments[1]));
+        }
+        else if (Array.isArray($opts)){
+            $last[$opts[0]].apply($last, [].concat($opts[1]));
+        }
+        else {
+            forOwn($opts, function($opt, args){
+                $last[$opt].apply($last, [].concat(args));
+            });
+        }
+        return this;
     };
 
     Element.p.upTo = Element.p.up = function(tag){
@@ -105,11 +144,60 @@ var XNAT = getObject(XNAT||{});
         return this;
     };
 
+    //////////////////////////////////////////////////////////////////////
     // chainable spawner
     // XNAT.element('div').p()._b('Bold text. ')._i('Italic text.');
     // -> <div><p><b>Bold text. </b><i>Italic text.</i></p></div>
     XNAT.element = XNAT.el = element = function(tag, opts, content){
         return new Element(tag, opts, content);
+    };
+    //////////////////////////////////////////////////////////////////////
+
+    // copy value from 'target' to 'source'
+    element.copyValue = function(target, source){
+        var sourceValue = $$(source).val();
+        $$(target).val(sourceValue).dataAttr('value', sourceValue);
+    };
+
+    // copy value from 'source' to last element in the chain
+    Element.p.copyValue = function(source){
+        element.copyValue(this.getLast$(), source);
+        return this;
+    };
+
+    // set 'name' property with 'value' on 'elements'
+    element.setProp = function(elements, name, value){
+        [].concat(elements).forEach(function(element){
+            $$(element).prop(name, value);
+        });
+    };
+
+    // set properties and classes to 'disable' an element
+    element.setDisabled = function(elements, disabled){
+        disabled = firstDefined(disabled, true);
+        [].concat(elements).forEach(function(element){
+            var _disabled = !!disabled;
+            var modifyClass = _disabled ? 'addClass' : 'removeClass';
+            $$(element).prop('disabled', _disabled)[modifyClass]('disabled');
+        });
+    };
+
+    // 'disable' last element in the chain
+    Element.p.disabled = Element.p.setDisabled = function(disabled){
+        element.setDisabled(this.getLast$(), disabled);
+        return this;
+    };
+
+    element.checked = function(elements, checked){
+        [].concat(elements).forEach(function(element){
+            var _checked = !!checked;
+            var modifyClass = _checked ? 'addClass' : 'removeClass';
+            $$(element).prop('checked', _checked)[modifyClass]('checked');
+        });
+    };
+
+    Element.p.checked = function(checked){
+
     };
 
     // space-separated list of elements
@@ -126,7 +214,7 @@ var XNAT = getObject(XNAT||{});
     'ul ol li dl dt dd hr br iframe ' +
     's small sub sup u b i em strong pre ' +
     'form fieldset button input textarea ' +
-    'select option optgroup ' +
+    'label select option optgroup ' +
     'img map area embed object script' +
     '').split(/\s+/);
 
@@ -146,15 +234,11 @@ var XNAT = getObject(XNAT||{});
             return this;
         };
 
-        //// add siblings
-        //Element.p['_'+tag] = function(opts, content){
-        //    var el = setupElement(tag, opts, content);
-        //    this.lastParent = this.lastElement.parentNode;
-        //    this.lastParent.appendChild(el);
-        //    this.parent = el;
-        //    this.lastElement = el;
-        //    return this;
-        //};
+        Element.p['_'+tag+'$'] = function(opts, content){
+            this.last$ = this.$last =
+                this['_'+tag]().$(opts).get$().append(content);
+            return this;
+        };
 
         // add generators to prototype for chaining
         Element.p[tag] = function(opts, content){
@@ -177,9 +261,5 @@ var XNAT = getObject(XNAT||{});
         }
 
     });
-
-    // TODO: make element methods chainable:
-    // XNAT.element.div({id:'foo'}).p({className:'bar'}, 'Foo Bar');
-    // --> <div id="foo"><p class="bar">Foo Bar</p></div>
 
 })(XNAT);

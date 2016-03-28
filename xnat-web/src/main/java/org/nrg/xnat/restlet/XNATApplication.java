@@ -337,7 +337,8 @@ public class XNATApplication extends Application {
         attachURI(router, "/services/features", FeatureDefinitionRestlet.class);
 
         attachURIs(router, ScriptRunnerResource.class, "/automation/runners", "/automation/runners/{LANGUAGE}", "/automation/runners/{LANGUAGE}/{VERSION}");
-        attachURIs(router, ScriptResource.class, "/automation/scripts", "/automation/scripts/{SCRIPT_ID}");
+        attachURIs(router, ScriptResource.class, "/automation/scripts", "/automation/scripts/{SCRIPT_ID}", "/automation/scripts/{SCRIPT_ID}/{VERSION}");
+        attachURIs(router, ScriptVersionsResource.class, "/automation/scriptVersions", "/automation/scriptVersions/{SCRIPT_ID}");
         attachURIs(router, EventResource.class, "/automation/events", "/automation/events/{EVENT_ID}");
         attachURIs(router, WorkflowEventResource.class, "/automation/workflows", "/automation/workflows/{SPEC}");
         attachURIs(router, ScriptTriggerResource.class, "/automation/handlers",

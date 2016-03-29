@@ -59,7 +59,7 @@ public class JavaFileGenerator {
      * @param location
      * @throws Exception
      */
-    public void generateJavaFile(GenericWrapperElement e, String location) throws Exception
+    public void generateJavaFile(GenericWrapperElement e, String location, String srcControlDir) throws Exception
     {
         StringBuffer sb = new StringBuffer();
         
@@ -75,7 +75,8 @@ public class JavaFileGenerator {
         sb.append("\nimport org.nrg.xft.exception.*;");
         sb.append("\n\nimport java.util.*;");
         sb.append("\n\n/**\n * @author XDAT\n *\n */");
-        
+
+        sb.append("/*\n ******************************** \n * DO NOT MODIFY THIS FILE\n *\n ********************************/");
         //CLASS
         String extensionName = "org.nrg.xdat.base.BaseElement";
         if (e.isExtension())
@@ -784,7 +785,6 @@ public class JavaFileGenerator {
         }
         
         String dirStucture = packageName;
-        String finalLocation = location + File.separator + StringUtils.ReplaceStr(dirStucture,".",File.separator);
         while (dirStucture.indexOf(".")!=-1)
         {
             String folder = dirStucture.substring(0,dirStucture.indexOf("."));
@@ -810,7 +810,17 @@ public class JavaFileGenerator {
         FileUtils.OutputToFile(sb.toString(),location +getClassName(e) + ".java");
         
 
+        String basePackage = "org.nrg.xdat.om.base";
+        String baseDir2Check=srcControlDir.toString();
+        while (basePackage.indexOf(".")!=-1)
+        {
+            String folder = basePackage.substring(0,basePackage.indexOf("."));
+            basePackage = basePackage.substring(basePackage.indexOf(".")+1);
+            
+            baseDir2Check = baseDir2Check + folder + File.separator;
+        }        
         
+        baseDir2Check = baseDir2Check + basePackage + File.separator;
 
         
         //GENERATED BASE CLASS
@@ -820,7 +830,7 @@ public class JavaFileGenerator {
             location = location.substring(0,location.lastIndexOf(File.separator)) + File.separator;
             
             File file = new File(location + getBaseClassName(e)+".java");
-            if (! file.exists())
+            if ((! file.exists()) && (!(new File(baseDir2Check,getBaseClassName(e)+".java").exists())))
             {
                 sb = new StringBuffer();
                 sb.append("/*\n * GENERATED FILE\n * Created on " + Calendar.getInstance().getTime() + "\n *\n */");
@@ -833,6 +843,8 @@ public class JavaFileGenerator {
                 //CLASS COMMENTS
                 sb.append("\n\n/**\n * @author XDAT\n *\n */");
                 
+
+                sb.append("/*\n ******************************** \n * DO NOT MODIFY THIS FILE HERE\n *\n * TO MODIFY, COPY THIS FILE to src/main/java/org/nrg/xdat/om/base/ and modify it there \n ********************************/");
                 //CLASS
 
                 sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
@@ -862,12 +874,27 @@ public class JavaFileGenerator {
                 FileUtils.OutputToFile(sb.toString(),location + getBaseClassName(e)+".java");
             }
             
+   
+         
             //CREATE OM CLASS
             location = location.substring(0,location.lastIndexOf(File.separator));
             location = location.substring(0,location.lastIndexOf(File.separator)) + File.separator;
+
+            String omPackage = "org.nrg.xdat.om";
+            String omDir2Check=srcControlDir.toString();
+            while (omPackage.indexOf(".")!=-1)
+            {
+                String folder = omPackage.substring(0,omPackage.indexOf("."));
+                omPackage = omPackage.substring(omPackage.indexOf(".")+1);
+                
+                omDir2Check = omDir2Check + folder + File.separator;
+            }        
+
+            omDir2Check = omDir2Check + omPackage + File.separator;
+            
             
             file = new File(location + getSQLClassName(e)+".java");
-            if (! file.exists())
+            if ((! file.exists()) && (! ((new File(omDir2Check,getSQLClassName(e)+".java")).exists())))
             {
                 sb = new StringBuffer();
                 sb.append("/*\n * GENERATED FILE\n * Created on " + Calendar.getInstance().getTime() + "\n *\n */");
@@ -879,6 +906,9 @@ public class JavaFileGenerator {
               
                 //CLASS COMMENTS
                 sb.append("\n\n/**\n * @author XDAT\n *\n */");
+                
+
+                sb.append("/*\n ******************************** \n * DO NOT MODIFY THIS FILE HERE\n *\n * TO MODIFY, COPY THIS FILE to src/main/java/org/nrg/xdat/om/ and modify it there \n ********************************/");
                 
 
                 sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
@@ -963,7 +993,7 @@ public class JavaFileGenerator {
         this.prefix = prefix;
     }
     
-    public static void GenerateJavaFiles(String javalocation, String templateLocation, boolean skipXDAT,boolean generateDisplayDocs) throws Exception
+    public static void GenerateJavaFiles(String javalocation, String templateLocation, boolean skipXDAT,boolean generateDisplayDocs, String srcControlDir) throws Exception
     {
 
 		JavaFileGenerator generator = new JavaFileGenerator();
@@ -980,7 +1010,7 @@ public class JavaFileGenerator {
 			    {
 			        if ((!skipXDAT) || (!e.getSchemaTargetNamespacePrefix().equalsIgnoreCase("xdat")))
 			        {
-						generator.generateJavaFile(e,javalocation);
+						generator.generateJavaFile(e,javalocation, srcControlDir);
 						if (! e.getProperName().equals(e.getFullXMLName()))
 						{
 						    generator.generateDisplayFile(e);
@@ -1002,7 +1032,7 @@ public class JavaFileGenerator {
 		    {
 		        if ((!skipXDAT) || (!e.getSchemaTargetNamespacePrefix().equalsIgnoreCase("xdat")))
 		        {
-					generator.generateJavaFile(e,javalocation);
+					generator.generateJavaFile(e,javalocation, srcControlDir);
 					if (! e.getProperName().equals(e.getFullXMLName()))
 					{
 					    generator.generateJavaReportFile(e,javalocation);
@@ -2266,6 +2296,7 @@ public class JavaFileGenerator {
         sb.append("\n$page.setTitle(\"XDAT\")");
         sb.append("\n$page.setLinkColor($ui.alink)");
         sb.append("\n$page.setVlinkColor($ui.vlink)");
+        sb.append("/*\n ##---------------------------------------- \n ## DO NOT MODIFY THIS FILE HERE\n ##\n ## TO MODIFY, COPY THIS FILE to src/main/resources/templates/screens/ and modify it there \n ##----------------------------------------");
         sb.append("\n#set($months = [\"January\", \"February\", \"March\", \"April\", \"May\", \"June\", \"July\", \"August\", \"September\", \"October\", \"November\", \"December\"])");
         sb.append("\n#set($days = [ 1..31 ])");
         sb.append("\n#set($years = [ $!turbineUtils.getYear()..1900])");
@@ -2331,6 +2362,9 @@ public class JavaFileGenerator {
         sb.append("\n$page.setTitle(\"@PAGE_TITLE@\")");
         sb.append("\n$page.setLinkColor($ui.alink)");
         sb.append("\n$page.setVlinkColor($ui.vlink)");
+        
+
+        sb.append("/*\n ##---------------------------------------- \n ## DO NOT MODIFY THIS FILE HERE\n ##\n ## TO MODIFY, COPY THIS FILE to src/main/resources/templates/screens/ and modify it there \n ##----------------------------------------");
         sb.append("\n#if ($turbineUtils.GetPassedParameter(\"popup\", $data))");
         sb.append("\n\t#set ($popup = $turbineUtils.GetPassedParameter(\"popup\", data) )");
         sb.append("\n\t#set ($popup = \"false\")");

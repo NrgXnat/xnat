@@ -76,6 +76,9 @@ public class JavaBeanGenerator {
             extensionName = getFormattedBean(ext);
         }
         
+
+        sb.append("/*\n ******************************** \n * DO NOT MODIFY THIS FILE \n *\n ********************************/");
+        
         sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
         
         sb.append("\npublic class ").append(getFormattedBean(e)).append(" extends " + extensionName + " implements java.io.Serializable, "+INTERFACE_PACKAGE + "." + this.getFormattedInterface(e) +" {");
@@ -1536,7 +1539,7 @@ public class JavaBeanGenerator {
     }
     
 
-    public static void GenerateJavaFiles(String javalocation, boolean skipXDAT, String packag) throws Exception
+    public static void GenerateJavaFiles(String name, String javalocation, boolean skipXDAT, String packag, String propsLocation) throws Exception
     {
 
         JavaBeanGenerator generator = new JavaBeanGenerator();
@@ -1566,33 +1569,15 @@ public class JavaBeanGenerator {
                 }
             }
         }
-        
+                
         StringBuffer sb = new StringBuffer();
         String packageName = packag + ".bean";
-        sb.append("\npackage " + packageName + ";");
-        //IMPORTS
-        sb.append("\nimport java.util.Hashtable;");
-        
-        sb.append("\n\npublic class ClassMapping{");
-        sb.append("\n\t").append("public Hashtable");
-        if (VERSION5)sb.append("<String,String>");
-        sb.append(" ELEMENTS = new Hashtable");
-        if (VERSION5)sb.append("<String,String>");
-        sb.append("();");
-        sb.append("\n\t").append("private final static ClassMapping mapping = new ClassMapping();");
-        sb.append("\n\n\t").append("private ClassMapping(){");
         for (Map.Entry<String, String> entry : elements.entrySet())
         {
-            sb.append("\n\t\t").append("ELEMENTS.put(\"" + entry.getKey() + "\",\"" + entry.getValue() + "\");");
+            sb.append("" + entry.getKey() + "=" + entry.getValue()).append("\n");
         }
-                
-        sb.append("\n\t").append("}");
-        sb.append("\n\n\t").append("public static ClassMapping GetInstance(){");
-        sb.append("\n\t\t").append("return mapping;");
-        sb.append("\n\t").append("}");
-        sb.append("}");
-        
-        outputToFile(javalocation,sb.toString(),"ClassMapping.java",packageName);
+          
+        outputToFile(propsLocation,sb.toString(),name+"-bean-definition.properties",packageName);
     }
     
     public static void outputToFile(String location,String contents, String fileName, String packageName){

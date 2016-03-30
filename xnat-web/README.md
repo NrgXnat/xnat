@@ -62,6 +62,24 @@ gradle clean jar publishToMavenLocal publishMavenJavaPublicationToMavenRepositor
 
 For this last one, the values set for **repoUsername** and **repoPassword** must be valid credentials for pushing artifacts to the Maven server.
 
+You can specify the name of the generated WAR file (and thus the application context of the application within the Tomcat server) from the command line or a properties file.
+
+On the command line, add the flag **-ParchiveName=name[.war]** to your Gradle command (.war will be appended if it’s not specified). This may look something like this:
+
+```bash
+./gradlew -ParchiveName=ROOT.war war
+```
+
+You can also set the **archiveName** value in the **gradle.properties** file. **gradle.properties** can be in your repository folder, thus affecting only the local build, or in **~/.gradle/gradle.properties**, which will affect any build that uses the **archiveName** property. To set this value in **gradle.properties**, just add the line:
+
+```properties
+archiveName=ROOT
+```
+
+If you don’t explicitly set **archiveName**, the build uses the naming scheme **xnat-web-_version_.war**.
+
+Note that **gradle.properties** is in this repository's **.gitignore** file, so if you create a local version you won’t get the annoying “Untracked files” message from git.
+
 # Configuring #
 
 You must perform a couple of configuration steps in your run-time environment (e.g. your local development workstation, a Vagrant VM, etc.) in order for XNAT to run properly:
@@ -73,6 +91,28 @@ You must perform a couple of configuration steps in your run-time environment (e
 # Running XNAT #
 
 ## From Gradle ##
+
+You can deploy your generated war file to a local Tomcat instance with the **deployToTomcat** task. Unlike the Cargo tasks described below, this task doesn't go through the Tomcat manager or transfer the war via network connection. Instead, it copies the physical war file to a local folder named **webapps**. The key is that you need to specify the location of your Tomcat instance with the property **tomcatHome**. As with **archiveName** above, you can specify this on the command line or in the **gradle.properties** file:
+
+```bash
+./gradlew -PtomcatHome=/var/lib/tomcat7
+```
+```properties
+tomcatHome=/var/lib/tomcat7
+```
+
+**tomcatHome** defaults to ‘.’, so if you don’t specify a value for it, you’ll end up with a folder named **webapps** in your local repository folder. That folder is also in **.gitignore** so you won’t get bugged by git. You probably didn't intend to have another copy of the war file somewhere in your development folder, but it’s better than copying files off to random locations or pitching a fit.
+
+Note that **deployToTomcat** depends on the **war** task, so there’s no need to specify the **war** task explicitly.
+
+This provides an efficient workflow for development on a VM or server: set the two values in **gradle.properties** and you can quickly redeploy:
+
+```bash
+./gradlew deployToTomcat
+```
+
+Gradle will compile or package any changes since the last build as necessary, re-package your application into a war if needed, and copy the resulting war file into the Tomcat **webapps** folder. It’s worth noting if nothing has changed the war won’t be regenerated or copied.
+
 
 You can deploy the built war to a remote Tomcat using the Cargo plugin.
 

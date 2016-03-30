@@ -7,3 +7,5 @@ gradle.properties
 /out
 /build
 InstanceSettings.xml
+dependencies.txt
+/webapps

@@ -104,7 +104,7 @@ tomcatRunWar.contextPath = '/'
     task.additionalRuntimeResources << file('/Users/rherrick/xnat/config/plugins')
 }
 
-task deployToTomcat(type: Copy) {
+task deployToTomcat(type: Copy, dependsOn: war) {
     from war.archivePath
     into "${propertyWithDefault('tomcatHome', '.')}/webapps"
 }

@@ -1,6 +1,6 @@
 def vXnat = '1.7.0-SNAPSHOT'
 def vXnatPipeline = vXnat
-def vSpring = '4.2.4.RELEASE'
+def vSpring = '4.2.5.RELEASE'
 def vSpringSecurity = '4.0.3.RELEASE'
 def vSwagger = '2.3.1'
 def vHibernate = '4.3.11.Final'
@@ -297,6 +297,7 @@ dependencies {
     compile "com.fasterxml.jackson.core:jackson-annotations:${vJackson}"
     compile "com.fasterxml.jackson.core:jackson-core:${vJackson}"
     compile "com.fasterxml.jackson.core:jackson-databind:${vJackson}"
+    compile "com.fasterxml.jackson.dataformat:jackson-dataformat-yaml:${vJackson}"
     compile "org.json:json:20151123"
     compile "xerces:xercesImpl:2.11.0"
 

@@ -34,6 +34,7 @@ import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.NumberFormat;
 import java.util.*;
 public class XFT {
@@ -223,130 +224,6 @@ public class XFT {
         }
     }
 
-    public static String buildLogFileName(ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
-        String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
-        if(!(new File(s)).exists())
-        {
-            (new File(s)).mkdir();
-        }
-
-        s += "inserts/";
-        if(!(new File(s)).exists())
-        {
-            (new File(s)).mkdir();
-        }
-
-        String fileName = item.getItem().getProperName();
-
-        Iterator iter = item.getItem().getGenericSchemaElement().getAllPrimaryKeys().iterator();
-        while (iter.hasNext())
-        {
-            SchemaFieldI sf = (SchemaFieldI)iter.next();
-            Object pk = item.getProperty(sf.getXMLPathString(item.getXSIType()));
-
-            fileName += "_" + pk;
-        }
-
-        if ((new File(s + fileName + ".sql")).exists())
-        {
-            int counter = 0;
-            while ((new File(s + fileName + "_" + counter + ".sql")).exists())
-            {
-                counter ++;
-            }
-            fileName = fileName+ "_" + counter;
-        }
-
-        fileName += ".sql";
-
-        return fileName;
-    }
-
-    public static void LogInsert(String message, String fileName)
-    {
-        if (!fileName.startsWith("xdat:"))
-        {
-            try {
-                 String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
-                 if(!(new File(s)).exists())
-                 {
-                     (new File(s)).mkdir();
-                 }
-
-                 s += "inserts/";
-                 if(!(new File(s)).exists())
-                 {
-                     (new File(s)).mkdir();
-                 }
-
-                 if ((new File(s + fileName + ".sql")).exists())
-                 {
-                     int counter = 0;
-                     while ((new File(s + fileName + "_" + counter + ".sql")).exists())
-                     {
-                         counter ++;
-                     }
-                     fileName = fileName+ "_" + counter;
-                 }
-
-                 fileName += ".sql";
-
-                 FileUtils.OutputToFile(message,s + fileName);
-             } catch (Exception e) {
-                 logger.error("",e);
-             }
-        }
-    }
-
-    public static void LogInsert(String message, ItemI item)
-    {
-        if (!item.getItem().getXSIType().startsWith("wrk:"))
-        {
-            try {
-                 String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
-                 if(!(new File(s)).exists())
-                 {
-                     (new File(s)).mkdir();
-                 }
-
-                 s += "inserts/";
-                 if(!(new File(s)).exists())
-                 {
-                     (new File(s)).mkdir();
-                 }
-
-                 String fileName = item.getItem().getProperName();
-
-                 Iterator iter = item.getItem().getGenericSchemaElement().getAllPrimaryKeys().iterator();
-                 while (iter.hasNext())
-                 {
-                     SchemaFieldI sf = (SchemaFieldI)iter.next();
-                     Object pk = item.getProperty(sf.getXMLPathString(item.getXSIType()));
-
-                     fileName += "_" + pk;
-                 }
-                 
-                 fileName=fileName.replace(":", "_");
-
-                 if ((new File(s + fileName + ".sql")).exists())
-                 {
-                     int counter = 0;
-                     while ((new File(s + fileName + "_" + counter + ".sql")).exists())
-                     {
-                         counter ++;
-                     }
-                     fileName = fileName+ "_" + counter;
-                 }
-
-                 fileName += ".sql";
-
-                 FileUtils.OutputToFile(message,s + fileName);
-             } catch (Exception e) {
-                 e.printStackTrace();
-             }
-        }
-    }
-
     public static Character CreateRandomCharacter(Random randGen){
         int i = 111;
         while (i==111)
@@ -515,23 +392,22 @@ public class XFT {
         int counter = 0;
         while (schemas.hasNext())
         {
-            XFTSchema s = (XFTSchema)schemas.next();
-            if (counter++==0)
-            {
-                if (location==null)
-                {
-                    sb.append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.ReplaceStr(s.getDataModel().getFullFileSpecification(),"\\","/"));
-                }else{
-                    sb.append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.ReplaceStr(location,"\\","/") + StringUtils.ReplaceStr(s.getDataModel().getFolderName(),"\\","/") + "/" + s.getDataModel().getFileName());
-                }
-            }else{
-                if (location==null)
-                {
-                    sb.append(" ").append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.ReplaceStr(s.getDataModel().getFullFileSpecification(),"\\","/"));
-                }else{
-                    sb.append(" ").append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.ReplaceStr(location,"\\","/") + StringUtils.ReplaceStr(s.getDataModel().getFolderName(),"\\","/") + "/" + s.getDataModel().getFileName());
-                }
-            }
+            try {
+				XFTSchema s = (XFTSchema)schemas.next();
+				if (counter++>0)
+				{
+					sb.append(" ");
+				}
+
+				if (location==null)
+				{
+				    sb.append(s.getTargetNamespaceURI()).append(" ").append(s.getDataModel().getResource().getFile().getPath());
+				}else{
+				    sb.append(s.getTargetNamespaceURI()).append(" ").append(XFT.GetSiteURL()).append("/schemas/").append(s.getDataModel().getFileName());
+				}
+			} catch (IOException e) {
+				logger.error("",e);
+			}
         }
 
         return sb.toString();

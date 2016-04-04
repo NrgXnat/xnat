@@ -12,11 +12,13 @@
 
 package org.nrg.xft.schema;
 import java.io.File;
+import java.io.IOException;
 import java.util.Hashtable;
 
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
+import org.springframework.core.io.ClassPathResource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -158,17 +160,7 @@ public class NodeWrapper {
 	public Node getNode() {
 		if (s != null)
 		{
-			File f = new File(s.getDataModel().getFileLocation() + s.getDataModel().getFileName());
-			Document doc;
-			if(f.exists()){
-				doc = XMLUtils.GetDOM(f);
-			}else{
-				String path=s.getDataModel().getFileLocation();
-				if(path.endsWith(File.separator)){
-					path=path.substring(0,path.length()-1);
-				}
-				doc = XMLUtils.GetDOM(getClass().getClassLoader().getResourceAsStream(path));
-			}
+			Document doc = XMLUtils.GetDOM(s.getDataModel().getResource());
 			
 			Element root = doc.getDocumentElement();
 			NodeList elements = root.getChildNodes();

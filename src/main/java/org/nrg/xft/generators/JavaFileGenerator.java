@@ -23,7 +23,6 @@ import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.services.XMLSearch;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -36,6 +35,8 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.StringUtils;
+import org.springframework.core.io.FileSystemResource;
+import org.springframework.core.io.Resource;
 
 /**
  * @author Tim
@@ -1519,723 +1520,177 @@ public class JavaFileGenerator {
     {
     	ResetItemCounter();
         
-        String location =e.getSchema().getDataModel().getFileLocation();
+        Resource resource =e.getSchema().getDataModel().getResource();
+        if(resource instanceof FileSystemResource){
+        	String location=resource.getFile().getParent();
+        	
 
-        if (!location.endsWith(File.separator))
-        {
-            location += File.separator;
-        }
-        
-        location += "display" + File.separator;
-        
-        File dir = new File(location);
-        if (!dir.exists())
-        {
-            dir.mkdir();
-        }
-        
-        File file = new File(location+ e.getFormattedName() +"_display.xml");
-        File file2 = new File(location+ e.getName() +"_display.xml");
 
-        if (!file.exists() && !file2.exists())
-        {
-            String header = "\n";
-            StringBuffer sb = new StringBuffer();
-            sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
-            sb.append(header).append("<Displays xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"../../xdat/display.xsd\" schema-element=\"");
-            sb.append(e.getFullXMLName()).append("\" full-description=\"").append(e.getProperName()).append("\" brief-description=\"").append(e.getProperName()).append("\">");
-
-            if (e.instanceOf("xnat:mrAssessorData"))
+            if (!location.endsWith(File.separator))
             {
-                //MR ASSESSOR
-                sb.append(header).append("\t<Arc name=\"ASSESSOR\">");
-                sb.append(header).append("\t\t<CommonField id=\"EXPT_ID\" local-field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t<CommonField id=\"ASSESSED_EXPT_ID\" local-field=\"SESSION_ID\"/>");
-                sb.append(header).append("\t</Arc>");
-                
-                sb.append(header).append("\t<Arc name=\"PARTICIPANT_EXPERIMENT\">");
-                sb.append(header).append("\t\t<CommonField id=\"PART_ID\" local-field=\"SUBJECT_ID\"/>");
-                sb.append(header).append("\t\t<CommonField id=\"DATE\" local-field=\"MR_DATE\"/>");
-                sb.append(header).append("\t\t<CommonField id=\"EXPT_ID\" local-field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t</Arc>");
-                
-                sb.append(header).append("\t<DisplayField id=\"SESSION_ID\" header=\"Session\" visible=\"true\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".imageSession_ID\"/>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','xnat:mrSessionData','xnat:mrSessionData.ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"SESSION_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"SUBJECT_ID\" header=\"Subject\" visible=\"true\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"xnat:mrSessionData.subject_ID\"/>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','xnat:subjectData','xnat:subjectData.ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"SUBJECT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"MR_DATE\" header=\"MR Date\" visible=\"true\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"xnat:mrSessionData.date\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"EXPT_ID\" header=\"ID\" visible=\"false\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"RPT\" header=\"ID\" visible=\"true\" image=\"true\">");
-                sb.append(header).append("\t\t<Content type=\"sql\">'/@WEBAPP/images/r.gif'::text</Content>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"DATE\" header=\"Date\" visible=\"true\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".date\"/>");
-                sb.append(header).append("\t</DisplayField>");                
-
-                sb.append(header).append("\t<DisplayField id=\"AGE\" header=\"Age\" visible=\"true\" searchable=\"true\" data-type=\"integer\">");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"xnat:mrSessionData.date\"/>");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"xnat:demographicData.dob\"/>");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field3\" schema-element=\"xnat:demographicData.yob\"/>");
-                sb.append(header).append("\t<Content type=\"sql\">CAST(COALESCE(FLOOR(CAST((CAST(((@Field1) - (@Field2))AS FLOAT4)/365) AS numeric)),FLOOR((EXTRACT(YEAR FROM @Field1)) - (@Field3))) AS numeric)</Content>");
-                sb.append(header).append("\t</DisplayField>");
-                
-
-                sb.append(header).append("\t<DisplayField header=\"Projects\" id=\"PROJECTS\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" viewName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" viewColumn=\"PROJECTS\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField header=\"Label\" id=\"LABEL\" data-type=\"string\">");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"").append(e.getFullXMLName()).append(".label\"/>");
-                sb.append(header).append("\t<Content type=\"sql\">COALESCE(@Field2, @Field1)</Content>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
-                sb.append(header).append("\t\t\t</SecureLink>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t\t<Property name=\"TITLE\" value=\"Inserted: @Field1 (@Field2)\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"INSERT_DATE\"/>");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"INSERT_USER\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"PROJECT\" header=\"Project\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".project\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\" header=\"").append(e.getFormattedName().toUpperCase()).append(" ID\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
-                sb.append(header).append("\t\t<Content type=\"sql\">").append(e.getFormattedName().toLowerCase()).append("_project_id</Content>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
-                sb.append(header).append("\t\t\t</SecureLink>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID/project/@Field2\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"@WHERE\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS ").append(e.getFormattedName().toLowerCase()).append("_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>");
-                sb.append(header).append("\t\t<MappingColumns>");
-                sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"sharing_share_xnat_experimentda_id\"/>");
-                sb.append(header).append("\t\t</MappingColumns>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_FIELD_MAP\" header=\"Field\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
-                sb.append(header).append("\t\t<Content type=\"sql\">field</Content>");
-                sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='").append(e.getFullXMLName()).append("') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>");
-                sb.append(header).append("\t\t<MappingColumns>");
-                sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"expt_id\"/>");
-                sb.append(header).append("\t\t</MappingColumns>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"INSERT_DATE\" header=\"Inserted\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_date\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"INSERT_USER\" header=\"Creator\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_user.login\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                ArrayList localFields = new ArrayList();
-                Iterator fields = e.getAllFields(true,true).iterator();
-                while (fields.hasNext())
-                {
-                    GenericWrapperField f= (GenericWrapperField)fields.next();
-                    if (!f.isReference())
-                    {
-                        String id = f.getSQLName().toUpperCase();
-                        localFields.add(id);
-                        sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
-                        sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
-                        sb.append(header).append("\t</DisplayField>");
-                    }
-                }
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"listing\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"RPT\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"  element_name=\"xnat:mrSessionData\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
-                
-                Iterator iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                
-                sb.append(header).append("\t</DisplayVersion>");
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"listing_csv\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"  element_name=\"xnat:mrSessionData\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-                
-                //full
-                sb.append(header).append("\t<DisplayVersion versionName=\"full\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"  element_name=\"xnat:mrSessionData\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-
-                //DETAILED
-                sb.append(header).append("\t<DisplayVersion versionName=\"detailed\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-                
-                //project bundle
-                sb.append(header).append("\t<DisplayVersion versionName=\"project_bundle\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"MR_PROJECT_IDENTIFIER\" element_name=\"xnat:mrSessionData\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"SUB_PROJECT_IDENTIFIER\" element_name=\"xnat:subjectData\"/>");
-
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-                
-
-                sb.append(header).append("\t<ViewLink alias=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
-                sb.append(header).append("\t\t<Mapping TableName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
-                sb.append(header).append("\t\t\t<MappingColumn rootElement=\"").append(e.getFullXMLName()).append("\" fieldElement=\"").append(e.getFullXMLName()).append(".ID\" mapsTo=\"id\"/>");
-                sb.append(header).append("\t\t</Mapping>");
-                sb.append(header).append("\t</ViewLink>");
-                
-                sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
-                
-                
-
-                sb.append(header).append("</Displays>");
-                
-                if (XFT.VERBOSE)
-        	        System.out.println("Generating File " + location+ e.getFormattedName() +"_display.xml");
-                FileUtils.OutputToFile(sb.toString(),location+ e.getFormattedName() +"_display.xml");
-            }else if (e.instanceOf("xnat:subjectAssessorData"))
+                location += File.separator;
+            }
+            
+            location += "display" + File.separator;
+            
+            File dir = new File(location);
+            if (!dir.exists())
             {
-                //SUBJECT ASSESSOR
-                sb.append(header).append("\t<Arc name=\"PARTICIPANT_EXPERIMENT\">");
-                sb.append(header).append("\t\t<CommonField id=\"PART_ID\" local-field=\"SUBJECT_ID\"/>");
-                sb.append(header).append("\t\t<CommonField id=\"DATE\" local-field=\"DATE\"/>");
-                sb.append(header).append("\t\t<CommonField id=\"EXPT_ID\" local-field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t</Arc>");
-                
-                sb.append(header).append("\t<DisplayField id=\"SUBJECT_ID\" header=\"Subject\" visible=\"true\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".subject_ID\"/>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','xnat:subjectData','xnat:subjectData.ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"SUBJECT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"EXPT_ID\" header=\"ID\" visible=\"true\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"RPT\" header=\"ID\" visible=\"true\" image=\"true\">");
-                sb.append(header).append("\t\t<Content type=\"sql\">'/@WEBAPP/images/r.gif'::text</Content>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"DATE\" header=\"Date\" visible=\"true\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".date\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                                
-                sb.append(header).append("\t<DisplayField id=\"AGE\" header=\"Age\" visible=\"true\" searchable=\"true\" data-type=\"integer\">");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".date\"/>");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"xnat:demographicData.dob\"/>");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field3\" schema-element=\"xnat:demographicData.yob\"/>");
-                sb.append(header).append("\t<Content type=\"sql\">CAST(COALESCE(FLOOR(CAST((CAST(((@Field1) - (@Field2))AS FLOAT4)/365) AS numeric)),FLOOR((EXTRACT(YEAR FROM @Field1)) - (@Field3))) AS numeric)</Content>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField header=\"Projects\" id=\"PROJECTS\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" viewName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" viewColumn=\"PROJECTS\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField header=\"Label\" id=\"LABEL\" data-type=\"string\">");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"").append(e.getFullXMLName()).append(".label\"/>");
-                sb.append(header).append("\t<Content type=\"sql\">COALESCE(@Field2, @Field1)</Content>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
-                sb.append(header).append("\t\t\t</SecureLink>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t\t<Property name=\"TITLE\" value=\"Inserted: @Field1 (@Field2)\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"INSERT_DATE\"/>");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"INSERT_USER\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"PROJECT\" header=\"Project\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".project\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\" header=\"").append(e.getFormattedName().toUpperCase()).append(" ID\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
-                sb.append(header).append("\t\t<Content type=\"sql\">").append(e.getFormattedName().toLowerCase()).append("_project_id</Content>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
-                sb.append(header).append("\t\t\t</SecureLink>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID/project/@Field2\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"@WHERE\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS ").append(e.getFormattedName().toLowerCase()).append("_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>");
-                sb.append(header).append("\t\t<MappingColumns>");
-                sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"sharing_share_xnat_experimentda_id\"/>");
-                sb.append(header).append("\t\t</MappingColumns>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"INSERT_DATE\" header=\"Inserted\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_date\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"INSERT_USER\" header=\"Creator\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_user.login\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_FIELD_MAP\" header=\"Field\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
-                sb.append(header).append("\t\t<Content type=\"sql\">field</Content>");
-                sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='").append(e.getFullXMLName()).append("') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>");
-                sb.append(header).append("\t\t<MappingColumns>");
-                sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"expt_id\"/>");
-                sb.append(header).append("\t\t</MappingColumns>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                ArrayList localFields = new ArrayList();
-                Iterator fields = e.getAllFields(true,true).iterator();
-                while (fields.hasNext())
+                dir.mkdir();
+            }
+            
+            File file = new File(location+ e.getFormattedName() +"_display.xml");
+            File file2 = new File(location+ e.getName() +"_display.xml");
+
+            if (!file.exists() && !file2.exists())
+            {
+                String header = "\n";
+                StringBuffer sb = new StringBuffer();
+                sb.append("<?xml version=\"1.0\" encoding=\"UTF-8\"?>");
+                sb.append(header).append("<Displays xmlns:xsi=\"http://www.w3.org/2001/XMLSchema-instance\" xsi:noNamespaceSchemaLocation=\"../../xdat/display.xsd\" schema-element=\"");
+                sb.append(e.getFullXMLName()).append("\" full-description=\"").append(e.getProperName()).append("\" brief-description=\"").append(e.getProperName()).append("\">");
+
+                if (e.instanceOf("xnat:mrAssessorData"))
                 {
-                    GenericWrapperField f= (GenericWrapperField)fields.next();
-                    if (!f.isReference())
+                    //MR ASSESSOR
+                    sb.append(header).append("\t<Arc name=\"ASSESSOR\">");
+                    sb.append(header).append("\t\t<CommonField id=\"EXPT_ID\" local-field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t<CommonField id=\"ASSESSED_EXPT_ID\" local-field=\"SESSION_ID\"/>");
+                    sb.append(header).append("\t</Arc>");
+                    
+                    sb.append(header).append("\t<Arc name=\"PARTICIPANT_EXPERIMENT\">");
+                    sb.append(header).append("\t\t<CommonField id=\"PART_ID\" local-field=\"SUBJECT_ID\"/>");
+                    sb.append(header).append("\t\t<CommonField id=\"DATE\" local-field=\"MR_DATE\"/>");
+                    sb.append(header).append("\t\t<CommonField id=\"EXPT_ID\" local-field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t</Arc>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"SESSION_ID\" header=\"Session\" visible=\"true\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".imageSession_ID\"/>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','xnat:mrSessionData','xnat:mrSessionData.ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"SESSION_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"SUBJECT_ID\" header=\"Subject\" visible=\"true\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"xnat:mrSessionData.subject_ID\"/>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','xnat:subjectData','xnat:subjectData.ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"SUBJECT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"MR_DATE\" header=\"MR Date\" visible=\"true\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"xnat:mrSessionData.date\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"EXPT_ID\" header=\"ID\" visible=\"false\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"RPT\" header=\"ID\" visible=\"true\" image=\"true\">");
+                    sb.append(header).append("\t\t<Content type=\"sql\">'/@WEBAPP/images/r.gif'::text</Content>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"DATE\" header=\"Date\" visible=\"true\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".date\"/>");
+                    sb.append(header).append("\t</DisplayField>");                
+
+                    sb.append(header).append("\t<DisplayField id=\"AGE\" header=\"Age\" visible=\"true\" searchable=\"true\" data-type=\"integer\">");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"xnat:mrSessionData.date\"/>");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"xnat:demographicData.dob\"/>");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field3\" schema-element=\"xnat:demographicData.yob\"/>");
+                    sb.append(header).append("\t<Content type=\"sql\">CAST(COALESCE(FLOOR(CAST((CAST(((@Field1) - (@Field2))AS FLOAT4)/365) AS numeric)),FLOOR((EXTRACT(YEAR FROM @Field1)) - (@Field3))) AS numeric)</Content>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+
+                    sb.append(header).append("\t<DisplayField header=\"Projects\" id=\"PROJECTS\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" viewName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" viewColumn=\"PROJECTS\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField header=\"Label\" id=\"LABEL\" data-type=\"string\">");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"").append(e.getFullXMLName()).append(".label\"/>");
+                    sb.append(header).append("\t<Content type=\"sql\">COALESCE(@Field2, @Field1)</Content>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
+                    sb.append(header).append("\t\t\t</SecureLink>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t\t<Property name=\"TITLE\" value=\"Inserted: @Field1 (@Field2)\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"INSERT_DATE\"/>");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"INSERT_USER\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"PROJECT\" header=\"Project\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".project\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\" header=\"").append(e.getFormattedName().toUpperCase()).append(" ID\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
+                    sb.append(header).append("\t\t<Content type=\"sql\">").append(e.getFormattedName().toLowerCase()).append("_project_id</Content>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
+                    sb.append(header).append("\t\t\t</SecureLink>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID/project/@Field2\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"@WHERE\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS ").append(e.getFormattedName().toLowerCase()).append("_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>");
+                    sb.append(header).append("\t\t<MappingColumns>");
+                    sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"sharing_share_xnat_experimentda_id\"/>");
+                    sb.append(header).append("\t\t</MappingColumns>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_FIELD_MAP\" header=\"Field\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
+                    sb.append(header).append("\t\t<Content type=\"sql\">field</Content>");
+                    sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='").append(e.getFullXMLName()).append("') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>");
+                    sb.append(header).append("\t\t<MappingColumns>");
+                    sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"expt_id\"/>");
+                    sb.append(header).append("\t\t</MappingColumns>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"INSERT_DATE\" header=\"Inserted\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_date\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"INSERT_USER\" header=\"Creator\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_user.login\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    ArrayList localFields = new ArrayList();
+                    Iterator fields = e.getAllFields(true,true).iterator();
+                    while (fields.hasNext())
                     {
-                        String id = f.getSQLName().toUpperCase();
-                        localFields.add(id);
-                        sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
-                        sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
-                        sb.append(header).append("\t</DisplayField>");
-                    }
-                }
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"listing\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"RPT\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"GENDER\" element_name=\"xnat:subjectData\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"AGE\"/>");
-                
-                Iterator iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                
-                sb.append(header).append("\t</DisplayVersion>");
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"listing_csv\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"AGE\"/>");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"full\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"AGE\"/>");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-
-                //detailed
-                sb.append(header).append("\t<DisplayVersion versionName=\"detailed\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"project_bundle\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"SUB_PROJECT_IDENTIFIER\" element_name=\"xnat:subjectData\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"AGE\"/>");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-                
-
-                sb.append(header).append("\t<ViewLink alias=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
-                sb.append(header).append("\t\t<Mapping TableName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
-                sb.append(header).append("\t\t\t<MappingColumn rootElement=\"").append(e.getFullXMLName()).append("\" fieldElement=\"").append(e.getFullXMLName()).append(".ID\" mapsTo=\"id\"/>");
-                sb.append(header).append("\t\t</Mapping>");
-                sb.append(header).append("\t</ViewLink>");
-                
-                sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
-                
-                sb.append(header).append("</Displays>");
-                
-                if (XFT.VERBOSE)
-        	        System.out.println("Generating File " + location+ e.getFormattedName() +"_display.xml");
-                FileUtils.OutputToFile(sb.toString(),location+ e.getFormattedName() +"_display.xml");
-            }else if (e.instanceOf("xnat:experimentData"))
-            {                
-                sb.append(header).append("\t<DisplayField id=\"EXPT_ID\" header=\"ID\" visible=\"true\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"RPT\" header=\"ID\" visible=\"true\" image=\"true\">");
-                sb.append(header).append("\t\t<Content type=\"sql\">'/@WEBAPP/images/r.gif'::text</Content>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"DATE\" header=\"Date\" visible=\"true\" searchable=\"true\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".date\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField header=\"Projects\" id=\"PROJECTS\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" viewName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" viewColumn=\"PROJECTS\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField header=\"Label\" id=\"LABEL\" data-type=\"string\">");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
-                sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"").append(e.getFullXMLName()).append(".label\"/>");
-                sb.append(header).append("\t<Content type=\"sql\">COALESCE(@Field2, @Field1)</Content>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
-                sb.append(header).append("\t\t\t</SecureLink>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t\t<Property name=\"TITLE\" value=\"Inserted: @Field1 (@Field2)\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"INSERT_DATE\"/>");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"INSERT_USER\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"PROJECT\" header=\"Project\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".project\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\" header=\"").append(e.getFormattedName().toUpperCase()).append(" ID\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
-                sb.append(header).append("\t\t<Content type=\"sql\">").append(e.getFormattedName().toLowerCase()).append("_project_id</Content>");
-                sb.append(header).append("\t\t<HTML-Link>");
-                sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
-                sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
-                sb.append(header).append("\t\t\t</SecureLink>");
-                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID/project/@Field2\">");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"@WHERE\"/>");
-                sb.append(header).append("\t\t\t</Property>");
-                sb.append(header).append("\t\t</HTML-Link>");
-                sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS ").append(e.getFormattedName().toLowerCase()).append("_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>");
-                sb.append(header).append("\t\t<MappingColumns>");
-                sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"sharing_share_xnat_experimentda_id\"/>");
-                sb.append(header).append("\t\t</MappingColumns>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"INSERT_DATE\" header=\"Inserted\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_date\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"INSERT_USER\" header=\"Creator\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_user.login\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_FIELD_MAP\" header=\"Field\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
-                sb.append(header).append("\t\t<Content type=\"sql\">field</Content>");
-                sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='").append(e.getFullXMLName()).append("') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>");
-                sb.append(header).append("\t\t<MappingColumns>");
-                sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"expt_id\"/>");
-                sb.append(header).append("\t\t</MappingColumns>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                ArrayList localFields = new ArrayList();
-                Iterator fields = e.getAllFields(true,true).iterator();
-                while (fields.hasNext())
-                {
-                    GenericWrapperField f= (GenericWrapperField)fields.next();
-                    if (!f.isReference())
-                    {
-                        String id = f.getSQLName().toUpperCase();
-                        localFields.add(id);
-                        sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
-                        sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
-                        sb.append(header).append("\t</DisplayField>");
-                    }
-                }
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"listing\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"RPT\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
-                
-                Iterator iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                
-                sb.append(header).append("\t</DisplayVersion>");
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"listing_csv\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"full\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-
-
-                //detailed
-                sb.append(header).append("\t<DisplayVersion versionName=\"detailed\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-
-                
-                sb.append(header).append("\t<DisplayVersion versionName=\"project_bundle\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\"/>");
-                sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
-                iter = localFields.iterator();
-                while (iter.hasNext())
-                {
-                    String id = (String)iter.next();
-                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
-                }
-                sb.append(header).append("\t</DisplayVersion>");
-                
-
-                sb.append(header).append("\t<ViewLink alias=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
-                sb.append(header).append("\t\t<Mapping TableName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
-                sb.append(header).append("\t\t\t<MappingColumn rootElement=\"").append(e.getFullXMLName()).append("\" fieldElement=\"").append(e.getFullXMLName()).append(".ID\" mapsTo=\"id\"/>");
-                sb.append(header).append("\t\t</Mapping>");
-                sb.append(header).append("\t</ViewLink>");
-                
-                sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
-                
-                sb.append(header).append("</Displays>");
-                
-                if (XFT.VERBOSE)
-                    System.out.println("Generating File " + location+ e.getFormattedName() +"_display.xml");
-                FileUtils.OutputToFile(sb.toString(),location+ e.getFormattedName() +"_display.xml");
-            }else{
-                //UNKNOWN
-                ArrayList localFields = new ArrayList();
-                
-                GenericWrapperElement ext = e;
-                while (ext.isExtension())
-                {
-                    try {
-                        ext = ext.getExtensionField().getReferenceElement().getGenericXFTElement();
-                        
-                        Iterator fields = ext.getAllFields(true,true).iterator();
-                        while (fields.hasNext())
+                        GenericWrapperField f= (GenericWrapperField)fields.next();
+                        if (!f.isReference())
                         {
-                            GenericWrapperField f= (GenericWrapperField)fields.next();
-                            if (!f.isReference())
-                            {
-                                if (f.isPrimaryKey())
-                                {
-                                    String id = f.getSQLName().toUpperCase();
-                                    localFields.add(id);
-                                    sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
-                                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
-                                    sb.append(header).append("\t\t<HTML-Link>");
-                                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(f.getXMLPathString(e.getFullXMLName()).replace('/', '.')).append("');\">");
-                                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"").append(id).append("\"/>");
-                                    sb.append(header).append("\t\t\t</Property>");
-                                    sb.append(header).append("\t\t</HTML-Link>");
-                                    sb.append(header).append("\t</DisplayField>");
-                                }else{
-                                    String id = f.getSQLName().toUpperCase();
-                                    localFields.add(id);
-                                    sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
-                                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
-                                    sb.append(header).append("\t</DisplayField>");
-                                }
-                            }
-                        }
-                    } catch (Exception e1) {
-                    }
-                }
-                
-                sb.append(header).append("\t<DisplayField id=\"INSERT_DATE\" header=\"Inserted\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_date\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                sb.append(header).append("\t<DisplayField id=\"INSERT_USER\" header=\"Creator\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
-                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_user.login\"/>");
-                sb.append(header).append("\t</DisplayField>");
-                
-                Iterator fields = e.getAllFields(true,true).iterator();
-                while (fields.hasNext())
-                {
-                    GenericWrapperField f= (GenericWrapperField)fields.next();
-                    if (!f.isReference())
-                    {
-                        if (f.isPrimaryKey())
-                        {
-                            String id = f.getSQLName().toUpperCase();
-                            localFields.add(id);
-                            sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
-                            sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
-                            sb.append(header).append("\t\t<HTML-Link>");
-                            sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
-                            sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(f.getXMLPathString(e.getFullXMLName()).replace('/', '.')).append("');\">");
-                            sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"").append(id).append("\"/>");
-                            sb.append(header).append("\t\t\t</Property>");
-                            sb.append(header).append("\t\t</HTML-Link>");
-                            sb.append(header).append("\t</DisplayField>");
-                        }else{
                             String id = f.getSQLName().toUpperCase();
                             localFields.add(id);
                             sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
@@ -2243,11 +1698,12 @@ public class JavaFileGenerator {
                             sb.append(header).append("\t</DisplayField>");
                         }
                     }
-                }
-                
-                if (localFields.size()>0)
-                {
-                    sb.append(header).append("\t<DisplayVersion versionName=\"listing\" default-order-by=\"").append(localFields.get(0)).append("\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"listing\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"RPT\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"  element_name=\"xnat:mrSessionData\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
                     
                     Iterator iter = localFields.iterator();
                     while (iter.hasNext())
@@ -2258,9 +1714,211 @@ public class JavaFileGenerator {
                     
                     sb.append(header).append("\t</DisplayVersion>");
                     
-                    sb.append(header).append("\t<DisplayVersion versionName=\"full\" default-order-by=\"").append(localFields.get(0)).append("\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
-                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"listing_csv\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"  element_name=\"xnat:mrSessionData\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
                     iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+                    
+                    //full
+                    sb.append(header).append("\t<DisplayVersion versionName=\"full\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"  element_name=\"xnat:mrSessionData\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+
+                    //DETAILED
+                    sb.append(header).append("\t<DisplayVersion versionName=\"detailed\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+                    
+                    //project bundle
+                    sb.append(header).append("\t<DisplayVersion versionName=\"project_bundle\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"MR_PROJECT_IDENTIFIER\" element_name=\"xnat:mrSessionData\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"SUB_PROJECT_IDENTIFIER\" element_name=\"xnat:subjectData\"/>");
+
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+                    
+
+                    sb.append(header).append("\t<ViewLink alias=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
+                    sb.append(header).append("\t\t<Mapping TableName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
+                    sb.append(header).append("\t\t\t<MappingColumn rootElement=\"").append(e.getFullXMLName()).append("\" fieldElement=\"").append(e.getFullXMLName()).append(".ID\" mapsTo=\"id\"/>");
+                    sb.append(header).append("\t\t</Mapping>");
+                    sb.append(header).append("\t</ViewLink>");
+                    
+                    sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
+                    
+                    
+
+                    sb.append(header).append("</Displays>");
+                    
+                    if (XFT.VERBOSE)
+            	        System.out.println("Generating File " + location+ e.getFormattedName() +"_display.xml");
+                    FileUtils.OutputToFile(sb.toString(),location+ e.getFormattedName() +"_display.xml");
+                }else if (e.instanceOf("xnat:subjectAssessorData"))
+                {
+                    //SUBJECT ASSESSOR
+                    sb.append(header).append("\t<Arc name=\"PARTICIPANT_EXPERIMENT\">");
+                    sb.append(header).append("\t\t<CommonField id=\"PART_ID\" local-field=\"SUBJECT_ID\"/>");
+                    sb.append(header).append("\t\t<CommonField id=\"DATE\" local-field=\"DATE\"/>");
+                    sb.append(header).append("\t\t<CommonField id=\"EXPT_ID\" local-field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t</Arc>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"SUBJECT_ID\" header=\"Subject\" visible=\"true\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".subject_ID\"/>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','xnat:subjectData','xnat:subjectData.ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"SUBJECT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"EXPT_ID\" header=\"ID\" visible=\"true\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"RPT\" header=\"ID\" visible=\"true\" image=\"true\">");
+                    sb.append(header).append("\t\t<Content type=\"sql\">'/@WEBAPP/images/r.gif'::text</Content>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"DATE\" header=\"Date\" visible=\"true\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".date\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                                    
+                    sb.append(header).append("\t<DisplayField id=\"AGE\" header=\"Age\" visible=\"true\" searchable=\"true\" data-type=\"integer\">");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".date\"/>");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"xnat:demographicData.dob\"/>");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field3\" schema-element=\"xnat:demographicData.yob\"/>");
+                    sb.append(header).append("\t<Content type=\"sql\">CAST(COALESCE(FLOOR(CAST((CAST(((@Field1) - (@Field2))AS FLOAT4)/365) AS numeric)),FLOOR((EXTRACT(YEAR FROM @Field1)) - (@Field3))) AS numeric)</Content>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField header=\"Projects\" id=\"PROJECTS\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" viewName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" viewColumn=\"PROJECTS\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField header=\"Label\" id=\"LABEL\" data-type=\"string\">");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"").append(e.getFullXMLName()).append(".label\"/>");
+                    sb.append(header).append("\t<Content type=\"sql\">COALESCE(@Field2, @Field1)</Content>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
+                    sb.append(header).append("\t\t\t</SecureLink>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t\t<Property name=\"TITLE\" value=\"Inserted: @Field1 (@Field2)\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"INSERT_DATE\"/>");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"INSERT_USER\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"PROJECT\" header=\"Project\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".project\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\" header=\"").append(e.getFormattedName().toUpperCase()).append(" ID\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
+                    sb.append(header).append("\t\t<Content type=\"sql\">").append(e.getFormattedName().toLowerCase()).append("_project_id</Content>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
+                    sb.append(header).append("\t\t\t</SecureLink>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID/project/@Field2\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"@WHERE\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS ").append(e.getFormattedName().toLowerCase()).append("_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>");
+                    sb.append(header).append("\t\t<MappingColumns>");
+                    sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"sharing_share_xnat_experimentda_id\"/>");
+                    sb.append(header).append("\t\t</MappingColumns>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"INSERT_DATE\" header=\"Inserted\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_date\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"INSERT_USER\" header=\"Creator\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_user.login\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_FIELD_MAP\" header=\"Field\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
+                    sb.append(header).append("\t\t<Content type=\"sql\">field</Content>");
+                    sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='").append(e.getFullXMLName()).append("') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>");
+                    sb.append(header).append("\t\t<MappingColumns>");
+                    sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"expt_id\"/>");
+                    sb.append(header).append("\t\t</MappingColumns>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    ArrayList localFields = new ArrayList();
+                    Iterator fields = e.getAllFields(true,true).iterator();
+                    while (fields.hasNext())
+                    {
+                        GenericWrapperField f= (GenericWrapperField)fields.next();
+                        if (!f.isReference())
+                        {
+                            String id = f.getSQLName().toUpperCase();
+                            localFields.add(id);
+                            sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
+                            sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
+                            sb.append(header).append("\t</DisplayField>");
+                        }
+                    }
+                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"listing\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"RPT\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"GENDER\" element_name=\"xnat:subjectData\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"AGE\"/>");
+                    
+                    Iterator iter = localFields.iterator();
                     while (iter.hasNext())
                     {
                         String id = (String)iter.next();
@@ -2268,22 +1926,370 @@ public class JavaFileGenerator {
                     }
                     
                     sb.append(header).append("\t</DisplayVersion>");
+                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"listing_csv\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"AGE\"/>");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"full\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"SUBJECT_LABEL\" element_name=\"xnat:subjectData\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"AGE\"/>");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
 
+                    //detailed
+                    sb.append(header).append("\t<DisplayVersion versionName=\"detailed\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+
+                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"project_bundle\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"SUB_PROJECT_IDENTIFIER\" element_name=\"xnat:subjectData\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"AGE\"/>");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+                    
+
+                    sb.append(header).append("\t<ViewLink alias=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
+                    sb.append(header).append("\t\t<Mapping TableName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
+                    sb.append(header).append("\t\t\t<MappingColumn rootElement=\"").append(e.getFullXMLName()).append("\" fieldElement=\"").append(e.getFullXMLName()).append(".ID\" mapsTo=\"id\"/>");
+                    sb.append(header).append("\t\t</Mapping>");
+                    sb.append(header).append("\t</ViewLink>");
+                    
+                    sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
+                    
                     sb.append(header).append("</Displays>");
                     
                     if (XFT.VERBOSE)
             	        System.out.println("Generating File " + location+ e.getFormattedName() +"_display.xml");
                     FileUtils.OutputToFile(sb.toString(),location+ e.getFormattedName() +"_display.xml");
+                }else if (e.instanceOf("xnat:experimentData"))
+                {                
+                    sb.append(header).append("\t<DisplayField id=\"EXPT_ID\" header=\"ID\" visible=\"true\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"RPT\" header=\"ID\" visible=\"true\" image=\"true\">");
+                    sb.append(header).append("\t\t<Content type=\"sql\">'/@WEBAPP/images/r.gif'::text</Content>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"DATE\" header=\"Date\" visible=\"true\" searchable=\"true\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".date\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField header=\"Projects\" id=\"PROJECTS\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" viewName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" viewColumn=\"PROJECTS\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField header=\"Label\" id=\"LABEL\" data-type=\"string\">");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".ID\"/>");
+                    sb.append(header).append("\t<DisplayFieldElement name=\"Field2\" schema-element=\"").append(e.getFullXMLName()).append(".label\"/>");
+                    sb.append(header).append("\t<Content type=\"sql\">COALESCE(@Field2, @Field1)</Content>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
+                    sb.append(header).append("\t\t\t</SecureLink>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(e.getFullXMLName()).append(".ID');\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t\t<Property name=\"TITLE\" value=\"Inserted: @Field1 (@Field2)\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"INSERT_DATE\"/>");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"INSERT_USER\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"PROJECT\" header=\"Project\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".project\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\" header=\"").append(e.getFormattedName().toUpperCase()).append(" ID\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
+                    sb.append(header).append("\t\t<Content type=\"sql\">").append(e.getFormattedName().toLowerCase()).append("_project_id</Content>");
+                    sb.append(header).append("\t\t<HTML-Link>");
+                    sb.append(header).append("\t\t\t<SecureLink elementName=\"").append(e.getFullXMLName()).append("\">");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECTS\" schemaElementMap=\"").append(e.getFullXMLName()).append("/sharing/share/project\"/>");
+                    sb.append(header).append("\t\t\t\t<securityMappingValue displayFieldId=\"PROJECT\" schemaElementMap=\"").append(e.getFullXMLName()).append("/project\"/>");
+                    sb.append(header).append("\t\t\t</SecureLink>");
+                    sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"@WEBAPPapp/action/DisplayItemAction/search_value/@Field1/search_element/").append(e.getFullXMLName()).append("/search_field/").append(e.getFullXMLName()).append(".ID/project/@Field2\">");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t\t\t<InsertValue id=\"Field2\" field=\"@WHERE\"/>");
+                    sb.append(header).append("\t\t\t</Property>");
+                    sb.append(header).append("\t\t</HTML-Link>");
+                    sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT COALESCE(label,sharing_share_xnat_experimentda_id) AS ").append(e.getFormattedName().toLowerCase()).append("_project_id,sharing_share_xnat_experimentda_id FROM (	SELECT sharing_share_xnat_experimentda_id,label FROM xnat_experimentdata_share WHERE project='@WHERE'	UNION 	SELECT id,label FROM xnat_experimentData WHERE project='@WHERE' )SEARCH</SubQuery>");
+                    sb.append(header).append("\t\t<MappingColumns>");
+                    sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"sharing_share_xnat_experimentda_id\"/>");
+                    sb.append(header).append("\t\t</MappingColumns>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"INSERT_DATE\" header=\"Inserted\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_date\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"INSERT_USER\" header=\"Creator\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_user.login\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"").append(e.getFormattedName().toUpperCase()).append("_FIELD_MAP\" header=\"Field\" visible=\"true\" searchable=\"false\" data-type=\"string\" xsi:type=\"SubQueryField\">");
+                    sb.append(header).append("\t\t<Content type=\"sql\">field</Content>");
+                    sb.append(header).append("\t\t<SubQuery>SELECT DISTINCT ON ( e.ID) e.ID AS expt_id,field FROM xnat_experimentData_field ef JOIN (SELECT ID,extension,element_name FROM xnat_experimentData e JOIN xdat_meta_element xme ON e.extension=xme.xdat_meta_element_id WHERE xme.element_name='").append(e.getFullXMLName()).append("') e on ef.fields_field_xnat_experimentdat_id=e.id WHERE name='@WHERE'</SubQuery>");
+                    sb.append(header).append("\t\t<MappingColumns>");
+                    sb.append(header).append("\t\t\t<MappingColumn schemaField=\"").append(e.getFullXMLName()).append(".ID\" queryField=\"expt_id\"/>");
+                    sb.append(header).append("\t\t</MappingColumns>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    ArrayList localFields = new ArrayList();
+                    Iterator fields = e.getAllFields(true,true).iterator();
+                    while (fields.hasNext())
+                    {
+                        GenericWrapperField f= (GenericWrapperField)fields.next();
+                        if (!f.isReference())
+                        {
+                            String id = f.getSQLName().toUpperCase();
+                            localFields.add(id);
+                            sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
+                            sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
+                            sb.append(header).append("\t</DisplayField>");
+                        }
+                    }
+                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"listing\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"RPT\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
+                    
+                    Iterator iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    
+                    sb.append(header).append("\t</DisplayVersion>");
+                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"listing_csv\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"LABEL\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"full\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+
+
+                    //detailed
+                    sb.append(header).append("\t<DisplayVersion versionName=\"detailed\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"EXPT_ID\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+
+                    
+                    sb.append(header).append("\t<DisplayVersion versionName=\"project_bundle\" default-order-by=\"DATE\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECT_IDENTIFIER\"/>");
+                    sb.append(header).append("\t\t<DisplayFieldRef id=\"DATE\"/>");
+                    iter = localFields.iterator();
+                    while (iter.hasNext())
+                    {
+                        String id = (String)iter.next();
+                        sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                    }
+                    sb.append(header).append("\t</DisplayVersion>");
+                    
+
+                    sb.append(header).append("\t<ViewLink alias=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
+                    sb.append(header).append("\t\t<Mapping TableName=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\">");
+                    sb.append(header).append("\t\t\t<MappingColumn rootElement=\"").append(e.getFullXMLName()).append("\" fieldElement=\"").append(e.getFullXMLName()).append(".ID\" mapsTo=\"id\"/>");
+                    sb.append(header).append("\t\t</Mapping>");
+                    sb.append(header).append("\t</ViewLink>");
+                    
+                    sb.append(header).append("\t<SQLView name=\"").append(e.getFormattedName().toUpperCase()).append("_PROJECTS\" sql=\"SELECT id, '&lt;' || expt.project || '&gt;' || xs_a_concat(',&lt;' || shared.project || '&gt;') AS projects FROM xnat_experimentData expt LEFT JOIN xnat_experimentData_share shared ON expt.id=shared.sharing_share_xnat_experimentda_id LEFT JOIN xdat_meta_element xme ON expt.extension = xme.xdat_meta_element_id WHERE element_name='").append(e.getFullXMLName()).append("' GROUP BY expt.id,expt.project\"/>");
+                    
+                    sb.append(header).append("</Displays>");
+                    
+                    if (XFT.VERBOSE)
+                        System.out.println("Generating File " + location+ e.getFormattedName() +"_display.xml");
+                    FileUtils.OutputToFile(sb.toString(),location+ e.getFormattedName() +"_display.xml");
+                }else{
+                    //UNKNOWN
+                    ArrayList localFields = new ArrayList();
+                    
+                    GenericWrapperElement ext = e;
+                    while (ext.isExtension())
+                    {
+                        try {
+                            ext = ext.getExtensionField().getReferenceElement().getGenericXFTElement();
+                            
+                            Iterator fields = ext.getAllFields(true,true).iterator();
+                            while (fields.hasNext())
+                            {
+                                GenericWrapperField f= (GenericWrapperField)fields.next();
+                                if (!f.isReference())
+                                {
+                                    if (f.isPrimaryKey())
+                                    {
+                                        String id = f.getSQLName().toUpperCase();
+                                        localFields.add(id);
+                                        sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
+                                        sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
+                                        sb.append(header).append("\t\t<HTML-Link>");
+                                        sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                                        sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(f.getXMLPathString(e.getFullXMLName()).replace('/', '.')).append("');\">");
+                                        sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"").append(id).append("\"/>");
+                                        sb.append(header).append("\t\t\t</Property>");
+                                        sb.append(header).append("\t\t</HTML-Link>");
+                                        sb.append(header).append("\t</DisplayField>");
+                                    }else{
+                                        String id = f.getSQLName().toUpperCase();
+                                        localFields.add(id);
+                                        sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
+                                        sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
+                                        sb.append(header).append("\t</DisplayField>");
+                                    }
+                                }
+                            }
+                        } catch (Exception e1) {
+                        }
+                    }
+                    
+                    sb.append(header).append("\t<DisplayField id=\"INSERT_DATE\" header=\"Inserted\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_date\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    sb.append(header).append("\t<DisplayField id=\"INSERT_USER\" header=\"Creator\" visible=\"true\" searchable=\"true\" data-type=\"string\">");
+                    sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(e.getFullXMLName()).append(".meta.insert_user.login\"/>");
+                    sb.append(header).append("\t</DisplayField>");
+                    
+                    Iterator fields = e.getAllFields(true,true).iterator();
+                    while (fields.hasNext())
+                    {
+                        GenericWrapperField f= (GenericWrapperField)fields.next();
+                        if (!f.isReference())
+                        {
+                            if (f.isPrimaryKey())
+                            {
+                                String id = f.getSQLName().toUpperCase();
+                                localFields.add(id);
+                                sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
+                                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
+                                sb.append(header).append("\t\t<HTML-Link>");
+                                sb.append(header).append("\t\t\t<Property name=\"HREF\" value=\"none\"/>");
+                                sb.append(header).append("\t\t\t<Property name=\"ONCLICK\" value=\"return rpt('@Field1','").append(e.getFullXMLName()).append("','").append(f.getXMLPathString(e.getFullXMLName()).replace('/', '.')).append("');\">");
+                                sb.append(header).append("\t\t\t\t<InsertValue id=\"Field1\" field=\"").append(id).append("\"/>");
+                                sb.append(header).append("\t\t\t</Property>");
+                                sb.append(header).append("\t\t</HTML-Link>");
+                                sb.append(header).append("\t</DisplayField>");
+                            }else{
+                                String id = f.getSQLName().toUpperCase();
+                                localFields.add(id);
+                                sb.append(header).append("\t<DisplayField id=\"").append(id).append("\" header=\"").append(f.getName()).append("\" visible=\"true\" searchable=\"true\">");
+                                sb.append(header).append("\t\t<DisplayFieldElement name=\"Field1\" schema-element=\"").append(f.getXMLPathString(e.getFullXMLName())).append("\"/>");
+                                sb.append(header).append("\t</DisplayField>");
+                            }
+                        }
+                    }
+                    
+                    if (localFields.size()>0)
+                    {
+                        sb.append(header).append("\t<DisplayVersion versionName=\"listing\" default-order-by=\"").append(localFields.get(0)).append("\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                        
+                        Iterator iter = localFields.iterator();
+                        while (iter.hasNext())
+                        {
+                            String id = (String)iter.next();
+                            sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                        }
+                        
+                        sb.append(header).append("\t</DisplayVersion>");
+                        
+                        sb.append(header).append("\t<DisplayVersion versionName=\"full\" default-order-by=\"").append(localFields.get(0)).append("\" default-sort-order=\"DESC\" brief-description=\"").append(e.getProperName()).append("\" dark-color=\"9999CC\" light-color=\"CCCCFF\">");
+                        
+                        iter = localFields.iterator();
+                        while (iter.hasNext())
+                        {
+                            String id = (String)iter.next();
+                            sb.append(header).append("\t\t<DisplayFieldRef id=\"").append(id).append("\"/>");
+                        }
+                        
+                        sb.append(header).append("\t</DisplayVersion>");
+
+                        sb.append(header).append("</Displays>");
+                        
+                        if (XFT.VERBOSE)
+                	        System.out.println("Generating File " + location+ e.getFormattedName() +"_display.xml");
+                        FileUtils.OutputToFile(sb.toString(),location+ e.getFormattedName() +"_display.xml");
+                    }
                 }
-            }
-            
-        }else{
-            if (file.exists())
-            {
-                System.out.println("\n\nFile already exists: " + file.getAbsolutePath());
-            }else if(file2.exists())
-            {
-                System.out.println("\n\nFile already exists: " + file2.getAbsolutePath());
+                
+            }else{
+                if (file.exists())
+                {
+                    System.out.println("\n\nFile already exists: " + file.getAbsolutePath());
+                }else if(file2.exists())
+                {
+                    System.out.println("\n\nFile already exists: " + file2.getAbsolutePath());
+                }
             }
         }
     }

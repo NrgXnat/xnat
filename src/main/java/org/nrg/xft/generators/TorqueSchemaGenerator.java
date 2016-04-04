@@ -58,7 +58,6 @@ public class TorqueSchemaGenerator {
 			TypeConverter converter = null;
 			String prefix = "xs";
 				
-			XFTSchema.OutputSchema();
 			XFTSchema schema = null;
 			
 			Iterator schemas = XFTManager.GetSchemas().iterator();

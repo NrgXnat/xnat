@@ -1,0 +1,865 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!-- edited with XMLSPY v2004 rel. 3 U (http://www.xmlspy.com) by Tim Olsen (Washington University) -->
+<xs:schema targetNamespace="http://nrg.wustl.edu/security" xmlns:xdat="http://nrg.wustl.edu/security" xmlns:xs="http://www.w3.org/2001/XMLSchema" elementFormDefault="qualified" attributeFormDefault="unqualified">
+	<xs:element name="security">
+		<xs:annotation>
+			<xs:documentation>Comment describing your root element</xs:documentation>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence minOccurs="0">
+				<xs:element name="groups" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence minOccurs="0">
+							<xs:element name="group" type="xdat:userGroup" minOccurs="0" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="users" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="user" type="xdat:user" minOccurs="0" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:appinfo>
+										<xdat:field>
+											<xdat:relation relationType="single"/>
+										</xdat:field>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="roles" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="role" type="xdat:role_type" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="actions" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="action" type="xdat:action_type" maxOccurs="unbounded"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="element_security_set" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="element_security" type="xdat:element_security" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:appinfo>
+										<xdat:field>
+											<xdat:relation relationType="single"/>
+										</xdat:field>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="newsList" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence minOccurs="0">
+							<xs:element name="news" type="xdat:newsEntry" minOccurs="0"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="infoList" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence minOccurs="0">
+							<xs:element name="info" type="xdat:infoEntry" minOccurs="0"/>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="system" type="xs:string" use="required">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field unique="true"/>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:attribute>
+			<xs:attribute name="require_login" type="xs:boolean" use="required"/>
+		</xs:complexType>
+	</xs:element>
+	<xs:element name="element_access">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element displayIdentifiers="element_name"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:complexType>
+			<xs:sequence>
+				<xs:element name="secondary_password" minOccurs="0">
+					<xs:complexType>
+						<xs:simpleContent>
+							<xs:extension base="xs:string">
+								<xs:attribute name="encrypt" type="xs:boolean"/>
+							</xs:extension>
+						</xs:simpleContent>
+					</xs:complexType>
+				</xs:element>
+				<xs:element name="secure_ip" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+					<xs:annotation>
+						<xs:appinfo>
+							<xdat:field uniqueComposite="UNIQUE">
+								<xdat:relation uniqueComposite="UNIQUE" relationType="single"/>
+							</xdat:field>
+						</xs:appinfo>
+					</xs:annotation>
+				</xs:element>
+				<xs:element name="permissions" minOccurs="0">
+					<xs:complexType>
+						<xs:sequence>
+							<xs:element name="allow_set" type="xdat:field_mapping_set" maxOccurs="unbounded">
+								<xs:annotation>
+									<xs:appinfo>
+										<xdat:field>
+											<xdat:relation relationType="single"/>
+										</xdat:field>
+									</xs:appinfo>
+								</xs:annotation>
+							</xs:element>
+						</xs:sequence>
+					</xs:complexType>
+				</xs:element>
+			</xs:sequence>
+			<xs:attribute name="element_name" type="xs:string" use="required">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field uniqueComposite="user_access,group_access"/>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:attribute>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="field_mapping">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element ignoreWarnings="true" displayIdentifiers="field_value"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="field" type="xs:string" use="required"/>
+		<xs:attribute name="field_value" type="xs:string" use="required"/>
+		<xs:attribute name="create_element" type="xs:boolean" default="false"/>
+		<xs:attribute name="read_element" type="xs:boolean" default="false"/>
+		<xs:attribute name="edit_element" type="xs:boolean" default="false"/>
+		<xs:attribute name="delete_element" type="xs:boolean" default="false"/>
+		<xs:attribute name="active_element" type="xs:boolean" default="false"/>
+		<xs:attribute name="comparison_type">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="equals"/>
+					<xs:enumeration value="greater than"/>
+					<xs:enumeration value="less than"/>
+					<xs:enumeration value="greater than or equals"/>
+					<xs:enumeration value="less than or equals"/>
+					<xs:enumeration value="like"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="field_mapping_set">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element ignoreWarnings="true" displayIdentifiers="method"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="allow" type="xdat:field_mapping" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:relation relationType="single"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="sub_set" type="xdat:field_mapping_set" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:relation relationType="single"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="method">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="AND"/>
+					<xs:enumeration value="OR"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="role_type">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element displayIdentifiers="role_name"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="allowed_actions" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="allowed_action" type="xdat:action_type" maxOccurs="unbounded">
+							<xs:annotation>
+								<xs:appinfo>
+									<xdat:field>
+										<xdat:relation relationType="multi"/>
+									</xdat:field>
+								</xs:appinfo>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="role_name" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field size="255">
+						<xdat:sqlField primaryKey="true"/>
+					</xdat:field>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="description" type="xs:string" use="optional"/>
+		<xs:attribute name="sequence" type="xs:integer" use="optional" default="0"/>
+	</xs:complexType>
+	<xs:complexType name="action_type">
+		<xs:attribute name="action_name" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field>
+						<xdat:sqlField primaryKey="true"/>
+					</xdat:field>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="display_name" type="xs:string" use="optional"/>
+		<xs:attribute name="sequence" type="xs:integer" use="optional" default="0"/>
+	</xs:complexType>
+	<xs:complexType name="primary_security_field">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element  displayIdentifiers="primary_security_field"/>
+				<xdat:field uniqueComposite="UNIQUE" size="255"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:simpleContent>
+			<xs:extension base="xs:string"/>
+		</xs:simpleContent>
+	</xs:complexType>
+	<xs:complexType name="element_security">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element displayIdentifiers="element_name"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="primary_security_fields" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="primary_security_field" type="xdat:primary_security_field" minOccurs="0" maxOccurs="unbounded">
+							<xs:annotation>
+								<xs:appinfo>
+									<xdat:field>
+										<xdat:relation uniqueComposite="UNIQUE" relationType="single"/>
+									</xdat:field>
+								</xs:appinfo>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="element_actions" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="element_action" type="xdat:element_action_type" minOccurs="0" maxOccurs="unbounded">
+							<xs:annotation>
+								<xs:appinfo>
+									<xdat:field>
+										<xdat:relation relationType="single" uniqueComposite="true"/>
+									</xdat:field>
+								</xs:appinfo>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="listing_actions" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence minOccurs="0">
+						<xs:element name="listing_action" minOccurs="0" maxOccurs="unbounded">
+							<xs:annotation>
+								<xs:appinfo>
+									<xdat:element  displayIdentifiers="element_action_name"/>
+									<xdat:field>
+										<xdat:relation relationType="single" uniqueComposite="true"/>
+									</xdat:field>
+								</xs:appinfo>
+							</xs:annotation>
+							<xs:complexType>
+								<xs:attribute name="element_action_name" type="xs:string" use="required">
+									<xs:annotation>
+										<xs:appinfo>
+											<xdat:field uniqueComposite="true"/>
+										</xs:appinfo>
+									</xs:annotation>
+								</xs:attribute>
+								<xs:attribute name="display_name" type="xs:string" use="required"/>
+								<xs:attribute name="sequence" type="xs:integer" use="optional" default="0"/>
+								<xs:attribute name="image" type="xs:string" use="optional"/>
+                                <xs:attribute name="popup" type="xs:string" use="optional"/>
+								<xs:attribute name="secureAccess" use="optional" type="xs:string"/>
+								<xs:attribute name="secureFeature" use="optional" type="xs:string"/>
+								<xs:attribute name="parameterString" type="xs:string"/>
+							</xs:complexType>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="element_name" type="xs:string">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field>
+						<xdat:sqlField primaryKey="true"/>
+					</xdat:field>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="secondary_password" type="xs:boolean"/>
+		<xs:attribute name="secure_ip" type="xs:boolean" default="false"/>
+		<xs:attribute name="secure" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="browse" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="sequence" type="xs:integer" use="optional" default="0"/>
+		<xs:attribute name="quarantine" type="xs:boolean" use="optional"/>
+		<xs:attribute name="pre_load" type="xs:boolean" use="optional" default="false"/>
+		<xs:attribute name="searchable" type="xs:boolean" use="optional"/>
+		<xs:attribute name="secure_read" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="secure_edit" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="secure_create" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="secure_delete" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="accessible" type="xs:boolean" use="optional"/>
+		<xs:attribute name="usage" type="xs:string" use="optional"/>
+		<xs:attribute name="singular" type="xs:string" use="optional"/>
+		<xs:attribute name="plural" type="xs:string" use="optional"/>
+		<xs:attribute name="category" type="xs:string" use="optional"/>
+		<xs:attribute name="code" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="element_action_type">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element displayIdentifiers="element_action_name"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="element_action_name" type="xs:string" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field uniqueComposite="true"/>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="display_name" type="xs:string" use="required"/>
+		<xs:attribute name="sequence" type="xs:integer" use="optional" default="0"/>
+		<xs:attribute name="image" type="xs:string" use="optional"/>
+        <xs:attribute name="popup" type="xs:string" use="optional"/>
+        <xs:attribute name="secureAccess" use="optional" type="xs:string"/>
+		<xs:attribute name="secureFeature" use="optional" type="xs:string"/>
+		<xs:attribute name="parameterString" type="xs:string" use="optional"/>
+		<xs:attribute name="grouping" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="user">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element displayIdentifiers="login"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="login">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field unique="true"/>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="firstname" minOccurs="0"/>
+			<xs:element name="lastname" minOccurs="0"/>
+			<xs:element name="email" minOccurs="0"/>
+			<xs:element name="primary_password" minOccurs="0">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field xmlDisplay="root"/>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:simpleContent>
+						<xs:extension base="xs:string">
+							<xs:attribute name="encrypt" type="xs:boolean"/>
+						</xs:extension>
+					</xs:simpleContent>
+				</xs:complexType>
+			</xs:element>
+			<xs:element ref="xdat:element_access" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field xmlDisplay="root">
+							<xdat:relation uniqueComposite="user_access" relationType="single"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="assigned_roles" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="assigned_role" type="xdat:role_type" minOccurs="0" maxOccurs="unbounded">
+							<xs:annotation>
+								<xs:appinfo>
+									<xdat:field xmlDisplay="root">
+										<xdat:relation relationType="multi"/>
+									</xdat:field>
+								</xs:appinfo>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="quarantine_path" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="255"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="groups" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence minOccurs="0">
+						<xs:element name="groupID" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+							<xs:annotation>
+								<xs:appinfo>
+									<xdat:element displayIdentifiers="groupID"/>
+									<xdat:field displayName="user group" uniqueComposite="true" baseElement="xdat:userGroup" baseCol="ID">
+										<xdat:relation relationType="single" uniqueComposite="true"/>
+									</xdat:field>
+								</xs:appinfo>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="enabled" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="verified" type="xs:boolean" use="optional" default="true"/>
+        <xs:attribute name="salt" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:attributeGroup name="meta_element">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element addin="extension"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:attribute name="element_name">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field unique="true"/>
+				</xs:appinfo>
+			</xs:annotation>
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:maxLength value="250"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:attributeGroup>
+	<xs:complexType name="meta_data">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element addin="global"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="insert_date" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="insert_user" type="xdat:user" minOccurs="0"/>
+			<xs:element name="activation_date" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="activation_user" type="xdat:user" minOccurs="0"/>
+			<xs:element name="last_modified" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="row_last_modified" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="xft_version" type="xs:string" minOccurs="0"/>
+			<xs:element name="origin" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="meta_data_id" type="xs:integer" use="required">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field>
+						<xdat:sqlField primaryKey="true" autoIncrement="true"/>
+					</xdat:field>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="shareable" type="xs:boolean" default="1"/>
+		<xs:attribute name="status" default="quarantine">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="active"/>
+					<xs:enumeration value="quarantine"/>
+					<xs:enumeration value="obsolete"/>
+					<xs:enumeration value="deleted"/>
+					<xs:enumeration value="locked"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+		<xs:attribute name="modified" type="xs:boolean" default="0"/>
+	</xs:complexType>
+	<xs:complexType name="history">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element addin="history" skipSql="true"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="new_row" type="xs:anyType">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field local_map="true" unique="true"/>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="change_user" type="xdat:user" minOccurs="0">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:sqlField name="change_user"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="history_id" type="xs:integer">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field>
+						<xdat:sqlField primaryKey="true" autoIncrement="true" name="history_id"/>
+					</xdat:field>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="change_date" type="xs:dateTime"/>
+		<xs:attribute name="previous_change_date" type="xs:dateTime"/>
+	</xs:complexType>
+	<xs:complexType name="change_info">
+		<xs:sequence>
+			<xs:element name="change_user" type="xdat:user" minOccurs="0">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:sqlField name="change_user"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="comment" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="change_date" type="xs:dateTime"/>
+		<xs:attribute name="event_id" type="xs:integer"/>
+		<xs:attribute name="xdat_change_info_id" type="xs:long">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field>
+						<xdat:sqlField primaryKey="true" type="bigserial" autoIncrement="true"/>
+					</xdat:field>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="user_login">
+		<xs:sequence>
+			<xs:element name="login_date" type="xs:dateTime" minOccurs="0">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field uniqueComposite="UNIQUE"/>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="logout_date" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="session_id" type="xs:string" minOccurs="0"/>
+			<xs:element name="ip_address" type="xs:string" minOccurs="0"/>
+			<xs:element name="user" type="xdat:user">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field uniqueComposite="UNIQUE">
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="stored_search">
+		<xs:sequence>
+			<xs:element name="root_element_name" type="xs:string"/>
+			<xs:element name="search_field" type="xdat:search_field" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:relation relationType="single" uniqueComposite="true"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="search_where" type="xdat:criteria_set" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:relation relationType="single"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="sort_by" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence>
+						<xs:element name="element_name" type="xs:string" minOccurs="0"/>
+						<xs:element name="field_ID" type="xs:string" minOccurs="0"/>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="allowed_user" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:relation relationType="single" uniqueComposite="true"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+				<xs:complexType>
+					<xs:sequence minOccurs="0">
+						<xs:element name="login" type="xs:string" minOccurs="0">
+							<xs:annotation>
+								<xs:appinfo>
+									<xdat:field uniqueComposite="true"/>
+								</xs:appinfo>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+			<xs:element name="allowed_groups" minOccurs="0">
+				<xs:complexType>
+					<xs:sequence minOccurs="0">
+						<xs:element name="groupID" type="xs:string" minOccurs="0" maxOccurs="unbounded">
+							<xs:annotation>
+								<xs:appinfo>
+									<xdat:field uniqueComposite="true">
+										<xdat:relation relationType="single" uniqueComposite="true"/>
+									</xdat:field>
+								</xs:appinfo>
+							</xs:annotation>
+						</xs:element>
+					</xs:sequence>
+				</xs:complexType>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="ID" type="xs:string">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field>
+						<xdat:sqlField primaryKey="true"/>
+					</xdat:field>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="description" type="xs:string"/>
+		<xs:attribute name="layeredSequence" type="xs:string" use="optional"/>
+		<xs:attribute name="allow-diff-columns" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="secure" type="xs:boolean" use="optional" default="true"/>
+		<xs:attribute name="brief-description" type="xs:string"/>
+		<xs:attribute name="tag" type="xs:string" use="optional"/>
+	</xs:complexType>
+	<xs:complexType name="criteria_set">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element ignoreWarnings="true" displayIdentifiers="method"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="criteria" type="xdat:criteria" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:relation relationType="single"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="child_set" type="xdat:criteria_set" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:relation relationType="single"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="method" use="required">
+			<xs:simpleType>
+				<xs:restriction base="xs:string">
+					<xs:enumeration value="AND"/>
+					<xs:enumeration value="OR"/>
+				</xs:restriction>
+			</xs:simpleType>
+		</xs:attribute>
+	</xs:complexType>
+	<xs:complexType name="criteria">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element ignoreWarnings="true" displayIdentifiers="schema_field"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="schema_field" type="xs:string" minOccurs="0"/>
+			<xs:element name="comparison_type" type="xs:string" minOccurs="0"/>
+			<xs:element name="custom_search" type="xs:string" minOccurs="0"/>
+			<xs:element name="value" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="override_value_formatting" type="xs:boolean" use="optional" default="0"/>
+	</xs:complexType>
+	<xs:complexType name="search_field">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element ignoreWarnings="true" displayIdentifiers="field_ID"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="element_name" type="xs:string">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field uniqueComposite="true"/>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="field_ID" type="xs:string">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field uniqueComposite="true"/>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="sequence" type="xs:integer"/>
+			<xs:element name="type" type="xs:string"/>
+			<xs:element name="header" minOccurs="0"/>
+			<xs:element name="value" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+		<xs:attribute name="visible" type="xs:boolean" use="optional"/>
+	</xs:complexType>
+	<xs:element name="bundle" type="xdat:stored_search"/>
+	<xs:complexType name="access_log">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element ignoreWarnings="true"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element name="login" type="xs:string"/>
+			<xs:element name="access_date" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="ip" type="xs:string" minOccurs="0"/>
+			<xs:element name="method" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:enumeration value="report"/>
+						<xs:enumeration value="edit"/>
+						<xs:enumeration value="pdf"/>
+						<xs:enumeration value="xml"/>
+						<xs:enumeration value="transfer"/>
+						<xs:enumeration value="build"/>
+						<xs:enumeration value="activation"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="userGroup">
+		<xs:annotation>
+			<xs:appinfo>
+				<xdat:element displayIdentifiers="ID"/>
+			</xs:appinfo>
+		</xs:annotation>
+		<xs:sequence>
+			<xs:element ref="xdat:element_access" minOccurs="0" maxOccurs="unbounded">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field>
+							<xdat:relation uniqueComposite="group_access" relationType="single"/>
+						</xdat:field>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+		</xs:sequence>
+		<xs:attribute name="ID" type="xs:string">
+			<xs:annotation>
+				<xs:appinfo>
+					<xdat:field unique="true"/>
+				</xs:appinfo>
+			</xs:annotation>
+		</xs:attribute>
+		<xs:attribute name="displayName" type="xs:string"/>
+		<xs:attribute name="tag" type="xs:string"/>
+	</xs:complexType>
+	<xs:element name="UserGroup" type="xdat:userGroup"/>
+	<xs:element name="XDATUser" type="xdat:user"/>
+	<xs:element name="Search">
+		<xs:complexType>
+			<xs:complexContent>
+				<xs:extension base="xdat:stored_search">
+					<xs:attribute name="page" type="xs:integer" use="optional"/>
+				</xs:extension>
+			</xs:complexContent>
+		</xs:complexType>
+	</xs:element>
+	<xs:complexType name="newsEntry">
+		<xs:sequence minOccurs="0">
+			<xs:element name="date" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="title" type="xs:string">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field unique="true"/>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="description" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="1000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="link" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:complexType name="infoEntry">
+		<xs:sequence minOccurs="0">
+			<xs:element name="date" type="xs:dateTime" minOccurs="0"/>
+			<xs:element name="title" type="xs:string">
+				<xs:annotation>
+					<xs:appinfo>
+						<xdat:field unique="true"/>
+					</xs:appinfo>
+				</xs:annotation>
+			</xs:element>
+			<xs:element name="description" minOccurs="0">
+				<xs:simpleType>
+					<xs:restriction base="xs:string">
+						<xs:maxLength value="1000"/>
+					</xs:restriction>
+				</xs:simpleType>
+			</xs:element>
+			<xs:element name="link" type="xs:string" minOccurs="0"/>
+		</xs:sequence>
+	</xs:complexType>
+	<xs:element name="News" type="xdat:newsEntry"/>
+	<xs:element name="Info" type="xdat:infoEntry"/>
+</xs:schema>

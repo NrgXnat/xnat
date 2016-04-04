@@ -8,20 +8,17 @@
  */
 package org.nrg.xft.schema;
 
-import java.io.File;
-import java.util.ArrayList;
+import java.util.List;
 
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.utils.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 
 public class XFTDataModel {
     private static final Logger _log = LoggerFactory.getLogger(XFTDataModel.class);
 
     public String    db           = "";
-    public String    fileLocation = "";
+    public Resource    resource = null;
     public String    fileName     = "";
     public String    packageName  = "";
     public XFTSchema schema       = null;
@@ -41,18 +38,25 @@ public class XFTDataModel {
      * @return ArrayList of Strings
      */
     @SuppressWarnings("unused")
-    public ArrayList getElementNames() {
+    public List<String> getElementNames() {
         return schema.getSortedElementNames();
     }
 
     /**
-     * Location of the schema file.
+     * Resource for the schema file.
      *
-     * @return The file location.
-     * @see XFTDataModel#getFullFileSpecification()
+     * @return The resource.
      */
-    public String getFileLocation() {
-        return fileLocation;
+    public Resource getResource() {
+        return resource;
+    }
+
+    /**
+     * Set the Resource for the schema file.
+     *
+     */
+    public void setResource(Resource res) {
+        this.resource=res;
     }
 
     /**
@@ -65,42 +69,11 @@ public class XFTDataModel {
     }
 
     /**
-     * Returns the file's {@link #setFileLocation(String) location} and {@link #setFileName(String) name}.
-     *
-     * @return The full file specification.
-     */
-    public String getFullFileSpecification() {
-        if (!fileLocation.endsWith(File.separator)) {
-            fileLocation += File.separator;
-        }
-        return fileLocation + fileName;
-    }
-
-    public String getFolderName() {
-        String temp = fileLocation;
-
-        final String fs = !temp.contains("/") ? File.separator : "/";
-
-        if (temp.endsWith(File.separator)) {
-            temp = temp.substring(0, temp.length() - 1);
-        }
-
-        return temp.substring(temp.lastIndexOf(fs) + 1);
-    }
-
-    /**
      * if the schema has been populated it is returned, else it is populated and returned.
      *
      * @return The schema.
      */
     public XFTSchema getSchema() {
-        if (schema == null) {
-            try {
-                setSchema();
-            } catch (XFTInitException | ElementNotFoundException e) {
-                _log.error("An error occurred setting the data model schema", e);
-            }
-        }
         return schema;
     }
 
@@ -132,31 +105,10 @@ public class XFTDataModel {
     }
 
     /**
-     * @param location The file location (folder).
-     */
-    public void setFileLocation(String location) {
-        if (!location.endsWith(File.separator)) {
-            location = location + File.separator;
-        }
-        fileLocation = location;
-    }
-
-    /**
      * @param name The file name.
      */
     public void setFileName(String name) {
         fileName = name;
-    }
-
-    /**
-     * Sets the data model's schema by extrapolating from the {@link #setFileLocation(String)} and {@link
-     * #setFileName(String)} properties.
-     *
-     * @throws XFTInitException         When an error occurs in XFT.
-     * @throws ElementNotFoundException When a specified element isn't found on the object.
-     */
-    public void setSchema() throws XFTInitException, ElementNotFoundException {
-        this.schema = new XFTSchema(XMLUtils.GetDOM(new File(this.fileLocation + this.fileName)), fileLocation, this);
     }
 
     /**

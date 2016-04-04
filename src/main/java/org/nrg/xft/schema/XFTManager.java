@@ -10,10 +10,24 @@
  */
 package org.nrg.xft.schema;
 
-import com.google.common.collect.Lists;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Map;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.Reflection;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
 import org.nrg.xft.db.ViewManager;
@@ -27,38 +41,28 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
-import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.FileSystemResource;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.w3c.dom.Document;
-import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.*;
+import com.google.common.collect.Lists;
 
 public class XFTManager {
     private static final Logger     logger  = LoggerFactory.getLogger(XFTManager.class);
     private static       XFTManager MANAGER = null;
 
     private static XFTElement                      ELEMENT_TABLE = null;
-    private static final Hashtable<String, XFTDataModel> DATA_MODELS   = new Hashtable<>();
+    private static final Map<String, XFTDataModel> DATA_MODELS   = new Hashtable<>();
 
-    private static Hashtable ROOT_LEVEL_ELEMENTS = new Hashtable();
+    private static Map<String,String> ROOT_LEVEL_ELEMENTS = new Hashtable<String,String>();
 
-    //private String packageName = "";
     private String sourceDir = "";
 
     /**
@@ -141,11 +145,10 @@ public class XFTManager {
      *
      * @see XFTSchema
      */
-    public static ArrayList GetSchemas() {
-        ArrayList al = new ArrayList();
-        Enumeration enumer = DATA_MODELS.keys();
-        while (enumer.hasMoreElements()) {
-            al.add(((XFTDataModel) DATA_MODELS.get(enumer.nextElement())).getSchema());
+    public static List<XFTSchema> GetSchemas() {
+        final List<XFTSchema> al = Lists.newArrayList();
+        for(final XFTDataModel model:DATA_MODELS.values()){
+        	al.add(model.getSchema());
         }
         return al;
     }
@@ -157,7 +160,7 @@ public class XFTManager {
      *
      * @see XFTDataModel
      */
-    public static Hashtable GetDataModels() {
+    public static  Map<String,XFTDataModel> GetDataModels() {
         return DATA_MODELS;
     }
 
@@ -166,7 +169,7 @@ public class XFTManager {
      *
      * @return hash of String properName,String complexType
      */
-    public static Hashtable GetRootElementsHash() {
+    public static Map<String,String> GetRootElementsHash() {
         return ROOT_LEVEL_ELEMENTS;
     }
 
@@ -205,7 +208,7 @@ public class XFTManager {
      * @throws ElementNotFoundException
      */
     private XFTManager(String source) throws ElementNotFoundException {
-        logger.debug("Java Version is: " + System.getProperty("java.version"));
+		logger.debug("Java Version is: " + System.getProperty("java.version"));
         if (!source.endsWith(File.separator)) {
             source = source + File.separator;
         }
@@ -214,114 +217,42 @@ public class XFTManager {
             System.out.println("SOURCE: " + sourceDir);
         } else {
             sourceDir = source;
+        }    	
+
+		if (StringUtils.isEmpty(XFT.GetAdminEmail())) {
+            XFT.SetAdminEmail("admin@yourXnat.org");
         }
-        String lastDB = null;
-        File file = new File(source + "InstanceSettings.xml");
-        if (file.exists()) {
-            Document doc = XMLUtils.GetDOM(file);
-            Element root = doc.getDocumentElement();
+    	
+    	if (StringUtils.isEmpty(XFT.GetSiteURL())) {
+            XFT.SetSiteURL("http://192.168.50.50:8080");
+        }
 
-            ViewManager.PRE_LOAD_HISTORY = NodeUtils.GetBooleanAttributeValue(root, "Pre_Load_History", false);
+        if (StringUtils.isEmpty(XFT.GetArchiveRootPath()) || XFT.GetArchiveRootPath().equals(File.separator)) {
+            XFT.SetArchiveRootPath("/data/xnat/archive");
+        }
 
-            String admin_email = (NodeUtils.GetAttributeValue(root, "admin_email", ""));
-            if (!admin_email.equals("")) {
-                XFT.SetAdminEmail(admin_email);
-            }
-            String site_url = (NodeUtils.GetAttributeValue(root, "site_url", ""));
-            if (!site_url.equals("")) {
-                XFT.SetSiteURL(site_url);
-            }
+        if (StringUtils.isEmpty(XFT.GetPrearchivePath()) || XFT.GetPrearchivePath().equals(File.separator)) {
+            XFT.SetPrearchivePath("/data/xnat/prearchive");
+        }
 
-            String archive_root_path = (NodeUtils.GetAttributeValue(root, "archive_root_path", ""));
-            if (!archive_root_path.equals("")) {
-                XFT.SetArchiveRootPath(archive_root_path);
-            }
+        if (StringUtils.isEmpty(XFT.GetCachePath()) || XFT.GetCachePath().equals(File.separator)) {
+            XFT.SetCachePath("/data/xnat/cache");
+        }
 
-            String prearchive_path = (NodeUtils.GetAttributeValue(root, "prearchive_path", ""));
-            if (!prearchive_path.equals("")) {
-                XFT.SetPrearchivePath(prearchive_path);
-            }
+        if (StringUtils.isEmpty(XFT.GetAdminEmailHost())) {
+            XFT.SetAdminEmailHost("localhost");
+        }
 
-            String cache_path = (NodeUtils.GetAttributeValue(root, "cache_path", ""));
-            if (!cache_path.equals("")) {
-                XFT.SetCachePath(cache_path);
-            }
+        if (StringUtils.isEmpty(XFT.GetPipelinePath()) || XFT.GetPipelinePath().equals(File.separator)) {
+            XFT.SetPipelinePath("/data/xnat/pipeline");
+        }
 
-            String smtp_server = (NodeUtils.GetAttributeValue(root, "smtp_server", ""));
-            if (!smtp_server.equals("")) {
-                XFT.SetAdminEmailHost(smtp_server);
-            }
+        if (StringUtils.isEmpty(XFT.getFtpPath()) || XFT.getFtpPath().equals(File.separator)) {
+            XFT.setFtpPath("/data/xnat/ftp");
+        }
 
-
-            String pipeline_path = (NodeUtils.GetAttributeValue(root, "pipeline_path", ""));
-            if (!pipeline_path.equals("")) {
-                XFT.SetPipelinePath(pipeline_path);
-            }
-
-            String ftp_path = (NodeUtils.GetAttributeValue(root, "ftp_path", ""));
-            if (!ftp_path.equals("")) {
-                XFT.setFtpPath(ftp_path);
-            }
-
-            String build_path = (NodeUtils.GetAttributeValue(root, "build_path", ""));
-            if (!build_path.equals("")) {
-                XFT.setBuildPath(build_path);
-            }
-
-            String require_login = (NodeUtils.GetAttributeValue(root, "require_login", ""));
-            if (!require_login.equals("")) {
-                XFT.SetRequireLogin(require_login);
-            }
-
-            String user_registration = (NodeUtils.GetAttributeValue(root, "user_registration", ""));
-            if (!user_registration.equals("")) {
-                XFT.SetUserRegistration(user_registration);
-            }
-
-            if (root.hasChildNodes()) {
-                for (int i = 0; i < root.getChildNodes().getLength(); i++) {
-                    Node child1 = root.getChildNodes().item(i);
-                    if (child1.getNodeName().equalsIgnoreCase("Models")) {
-                        if (child1.hasChildNodes()) {
-                            for (int j = 0; j < child1.getChildNodes().getLength(); j++) {
-                                Node child2 = child1.getChildNodes().item(j);
-                                if (child2.getNodeName().equalsIgnoreCase("Data_Model")) {
-                                    XFTDataModel model = new XFTDataModel();
-                                    if (NodeUtils.HasAttribute(child2, "File_Name")) {
-                                        model.setFileName(NodeUtils.GetAttributeValue(child2, "File_Name", ""));
-                                    }
-                                    if (NodeUtils.HasAttribute(child2, "File_Location")) {
-                                        String file_location = NodeUtils.GetAttributeValue(child2, "File_Location", "");
-                                        if (!FileUtils.IsAbsolutePath(file_location)) {
-                                            file_location = sourceDir + file_location;
-                                        }
-                                        model.setFileLocation(file_location);
-                                    }
-                                    if (NodeUtils.HasAttribute(child2, "DB")) {
-                                        lastDB = NodeUtils.GetAttributeValue(child2, "DB", "");
-                                        model.setDb(lastDB);
-                                    }
-                                    if (NodeUtils.HasAttribute(child2, "package")) {
-                                        model.setDb(NodeUtils.GetAttributeValue(child2, "package", ""));
-                                    }
-                                    try {
-                                        model.setSchema();
-                                    } catch (XFTInitException | ElementNotFoundException e) {
-                                        logger.error("An error occurred", e);
-                                    }
-                                    DATA_MODELS.put(model.getFileName(), model);
-                                }
-                            }
-                        }
-                    }
-                }
-            } else {
-                System.out.println("Missing InstanceSettings.xml, skipping InstanceSettings.xml initialization");
-                logger.error("Missing InstanceSettings.xml, skipping InstanceSettings.xml initialization");
-            }
-        } else {
-            System.out.println("Missing SOURCE parameter.  Unable to identify WEB-INF/conf location.");
-            logger.error("Missing SOURCE parameter.  Unable to identify WEB-INF/conf location.");
+        if (StringUtils.isEmpty(XFT.getBuildPath()) || XFT.getBuildPath().equals(File.separator)) {
+            XFT.setBuildPath("/data/xnat/build");
         }
 
         try {
@@ -338,16 +269,15 @@ public class XFTManager {
 
                 //look for schema that are ok to parse in this pass
                 for (SchemaWrapper schema : toLoadCopy) {
-                    try (final InputStream inputStream = schema.getStream()) {
+                    try (final InputStream inputStream = schema.getResource().getInputStream()) {
                         if (inputStream != null && !schemaParsed.contains(schema.getName())) {
                             //check if dependent schema have been registered yet.
                             if (schema.getDependencies().size() == 0 || schemaParsed.containsAll(schema.getDependencies())) {
-                                System.out.println("Importing schema: " + schema.toString());
+                                logger.info("Importing schema: " + schema.toString());
                                 XFTDataModel model = new XFTDataModel();
-                                model.setFileLocation(schema.getLocation());
+                                model.setResource(schema.getResource());
                                 model.setFileName(schema.getName());
-                                model.setSchema(new XFTSchema(XMLUtils.GetDOM(inputStream), schema.getLocation(), model));
-                                model.setDb(lastDB);
+                                model.setSchema(new XFTSchema(XMLUtils.GetDOM(inputStream), model));
 
                                 DATA_MODELS.put(model.getFileName(), model);
                                 schemaParsed.add(schema.getName());
@@ -401,8 +331,8 @@ public class XFTManager {
                                             schemaLoaded.add(level2.getName());
 
                                             try {
-                                                List<String> dependencies = getDependentSchema(level2.getName(), new FileInputStream(level2));
-                                                SchemaWrapper schema = new SchemaWrapper("file", level2.getParentFile().getAbsolutePath(), level2.getName(), new FileInputStream(level2), dependencies);
+                                                List<String> dependencies = getDependentSchema(new FileInputStream(level2));
+                                                SchemaWrapper schema = new SchemaWrapper("file", level2.getParentFile().getAbsolutePath(), level2.getName(), new FileSystemResource(level2), dependencies);
 
                                                 toLoad.add(schema);
                                             } catch (Exception e) {
@@ -418,25 +348,6 @@ public class XFTManager {
             }
         }
 
-        //retrieve schema from jars registered via DataModelDefinitions
-        List<DataModelDefinition> defs = discoverDataModelDefs();
-        for (DataModelDefinition annotation : defs) {
-            String name = FilenameUtils.getName(annotation.getSchemaPath());
-            if (!schemaLoaded.contains(name)) {
-                schemaLoaded.add(name);
-
-                try {
-                    List<String> dependencies = getDependentSchema(name, this.getClass().getClassLoader().getResourceAsStream(annotation.getSchemaPath()));
-                    SchemaWrapper schema = new SchemaWrapper("def", annotation.getSchemaPath(), name, this.getClass().getClassLoader().getResourceAsStream(annotation.getSchemaPath()), dependencies);
-
-                    toLoad.add(schema);
-                } catch (Exception e) {
-                    logger.error("", e);
-                }
-
-            }
-        }
-
         //retrieve schema from classpath through discovery
         final PathMatchingResourcePatternResolver resolver = new PathMatchingResourcePatternResolver();
         try {
@@ -447,8 +358,8 @@ public class XFTManager {
                     schemaLoaded.add(name);
 
                     try {
-                        List<String> dependencies = getDependentSchema(name, resource.getInputStream());
-                        SchemaWrapper schema = new SchemaWrapper("cp", resource.getURL().getPath(), name, resource.getInputStream(), dependencies);
+                        List<String> dependencies = getDependentSchema(resource.getInputStream());
+                        SchemaWrapper schema = new SchemaWrapper("cp", resource.getURL().getPath(), name, resource, dependencies);
 
                         toLoad.add(schema);
                     } catch (Exception e) {
@@ -482,7 +393,7 @@ public class XFTManager {
      * @throws ParserConfigurationException
      * @throws IOException
      */
-    private static List<String> getDependentSchema(String filename, InputStream in) throws ParserConfigurationException, SAXException, IOException {
+    private static List<String> getDependentSchema(InputStream in) throws ParserConfigurationException, SAXException, IOException {
         try (final InputStream inputStream = in) {
             SAXParserFactory spf = SAXParserFactory.newInstance();
             DependencyParser parser = new DependencyParser();
@@ -502,19 +413,24 @@ public class XFTManager {
         private final String       name;
         private final String       src;
         private final List<String> dependencies;
-        private final InputStream  in;
+        private final Resource  in;
 
-        public SchemaWrapper(String src, String location, String name, InputStream in, List<String> dependencies) {
+        public SchemaWrapper(String src, String location, String name, Resource fileSystemResource, List<String> dependencies) {
             super();
             this.src = src;
             this.location = location;
             this.name = name;
-            this.in = in;
+            this.in = fileSystemResource;
             this.dependencies = dependencies;
         }
 
 
-        public String getLocation() {
+        public Resource getResource() {
+			return in;
+		}
+
+
+		public String getLocation() {
             return location;
         }
 
@@ -524,10 +440,6 @@ public class XFTManager {
 
         public List<String> getDependencies() {
             return dependencies;
-        }
-
-        public InputStream getStream() {
-            return in;
         }
 
         public String toString() {
@@ -705,8 +617,6 @@ public class XFTManager {
                                             cloneField.setXMLType(spec.getSchemaType());
                                             clone.addField(cloneField);
                                         }
-                                    } else {
-                                        System.out.println();
                                     }
                                 } catch (RuntimeException e) {
                                     throw new RuntimeException("Error managing XDAT add-ins for element(" + wrapE.getFullXMLName() + ") field(" + field.getXMLPathString("") + ")");

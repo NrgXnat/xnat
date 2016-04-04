@@ -9,13 +9,18 @@ import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.schema.XFTDataModel;
+import org.nrg.xft.schema.XFTManager;
+import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
+import org.springframework.core.io.FileSystemResource;
 
 /**
  * @author Tim
  *
  */
 public class GenerateResources {
-    private String schemaDir;
+    private static final String PACKAGE = "org.nrg.xdat";
+	private String schemaDir;
     private String javaDir;
     private String templatesDir;
     private String name;
@@ -109,11 +114,6 @@ public class GenerateResources {
 				return;
 			}
 			
-			if(beanDir==null){
-				System.out.println("Missing required -beanPropsDir parameter");
-				return;
-			}
-			
 			GenerateResources generator = new GenerateResources(name, schema, java, templates, srcControlDir, beanDir,beanPropsDir);
 			generator.process();
 			return;
@@ -151,9 +151,54 @@ public class GenerateResources {
 			
 			XDAT.init(schemaDir,false);	
 			
-			JavaFileGenerator.GenerateJavaFiles(javaDir,templatesDir,false,true, srcControlDir);
+			JavaFileGenerator generator = new JavaFileGenerator();
+			JavaBeanGenerator beanGenerator=new JavaBeanGenerator();
+			beanGenerator.setProject(PACKAGE);
 			
-			JavaBeanGenerator.GenerateJavaFiles(name, beanDir, false, "org.nrg.xdat", beanPropsDir);
+			for(XFTDataModel model: XFTManager.GetDataModels().values()){
+				if(model.getResource() instanceof FileSystemResource){
+					//only build resources for schema that are on the file system
+					for(String elementName: model.getSchema().getSortedElementNames()){
+						GenericWrapperElement e = GenericWrapperElement.GetElement(elementName);
+						if (e.getAddin().equalsIgnoreCase(""))
+					    {
+							generator.generateJavaFile(e,javaDir, srcControlDir);
+							if (! e.getProperName().equals(e.getFullXMLName()))
+							{
+							    generator.generateDisplayFile(e);
+							}
+					    }
+					}
+				}
+			}
+			
+			//not sure why this ad to run in 2 iterations... but I remember that being a requirement.  So, we run it again.
+			for(XFTDataModel model: XFTManager.GetDataModels().values()){
+				if(model.getResource() instanceof FileSystemResource){
+					//only build resources for schema that are on the file system
+					for(String elementName: model.getSchema().getSortedElementNames()){
+						GenericWrapperElement e = GenericWrapperElement.GetElement(elementName);
+						
+						if (e.getAddin().equalsIgnoreCase(""))
+					    {
+							generator.generateJavaFile(e,javaDir, srcControlDir);
+							if (! e.getProperName().equals(e.getFullXMLName()))
+							{
+							    generator.generateJavaReportFile(e,javaDir);
+							    generator.generateVMReportFile(e,templatesDir);
+							    generator.generateJavaEditFile(e,javaDir);
+							    generator.generateVMEditFile(e,templatesDir);
+							    generator.generateVMSearchFile(e,templatesDir);
+							}
+					    }
+						
+					}
+					
+
+					beanGenerator.generateJavaFiles(model.getSchema().getSortedElementNames(),name, beanDir, PACKAGE, beanPropsDir);
+				}
+			}
+
 			
 			System.out.println("File generation complete!");
 		} catch (ElementNotFoundException e) {

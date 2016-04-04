@@ -12,7 +12,6 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.io.File;
 import java.sql.SQLException;
 
 import org.apache.log4j.Logger;
@@ -24,10 +23,8 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.services.StudyRoutingService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFTTool;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.utils.FileUtils;
 /**
  * @author Tim
  *
@@ -39,16 +36,7 @@ public class RefreshAction extends AdminAction {
 		if (TurbineUtils.GetPassedParameter("refresh",data) !=null)
 		{
 			String refresh = ((String)TurbineUtils.GetPassedParameter("refresh",data));
-			if (refresh.equalsIgnoreCase("security"))
-			{
-				String location = XFTTool.GetSettingsLocation();
-				location =FileUtils.AppendSlash(location);
-				File f = new File(location + "security.xml");
-				if (f.exists())
-				{
-					XFTTool.StoreXMLToDB(f,TurbineUtils.getUser(data),null,false);
-				}
-			}else if (refresh.equalsIgnoreCase("DisplayManager"))
+			if (refresh.equalsIgnoreCase("DisplayManager"))
 			{
 				XDAT.RefreshDisplay();
                 System.out.println("DisplayManager Refreshed.");

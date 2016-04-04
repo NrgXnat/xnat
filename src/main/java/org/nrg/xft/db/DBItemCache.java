@@ -210,8 +210,7 @@ public class DBItemCache {
 
     public void store(String fileName, String dbName,UserI user) throws Exception
     {
-       XFT.LogInsert(getSQL(),fileName);
- 	   if (!getSQL().equals("") && !getSQL().equals("[]"))
+       if (!getSQL().equals("") && !getSQL().equals("[]"))
  	   {
  		   PoolDBUtils con = null;
  			try {

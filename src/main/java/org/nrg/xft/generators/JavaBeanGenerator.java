@@ -18,6 +18,7 @@ import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -1544,29 +1545,26 @@ public class JavaBeanGenerator {
 
         JavaBeanGenerator generator = new JavaBeanGenerator();
         generator.setProject(packag);
-        ArrayList al = XFTMetaManager.GetElementNames();
-        Iterator iter = al.iterator();
+        List<String> al = XFTMetaManager.GetElementNames();
                 
-                
+        generator.generateJavaFiles(al, name, javalocation, packag, propsLocation);
+    }
+    
+    public void generateJavaFiles(List<String> elementList, String name, String javalocation, String packag, String propsLocation) throws Exception
+    {
         Hashtable<String,String> elements =new Hashtable<String,String>();
-        //SECOND PASS
-        iter = al.iterator();
-        while (iter.hasNext())
+    	for (String s: elementList)
         {
-            String s = (String)iter.next();
             GenericWrapperElement e = GenericWrapperElement.GetElement(s);
             if (e.getAddin().equalsIgnoreCase(""))
             {
-                elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getLocalXMLName(), packag + ".bean." +generator.getFormattedBean(e));
+                elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getLocalXMLName(), packag + ".bean." +this.getFormattedBean(e));
                 if (!e.getProperName().equals(e.getFullXMLName()))
                 {
-                    elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getProperName(), packag + ".bean." +generator.getFormattedBean(e));
+                    elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getProperName(), packag + ".bean." +this.getFormattedBean(e));
                 }
-                if ((!skipXDAT) || (!e.getSchemaTargetNamespacePrefix().equalsIgnoreCase("xdat")))
-                {
-                    generator.generateJavaBeanFile(e,javalocation);
-                    generator.generateJavaInterface(e,javalocation);
-                }
+                this.generateJavaBeanFile(e,javalocation);
+                this.generateJavaInterface(e,javalocation);
             }
         }
                 

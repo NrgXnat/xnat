@@ -5,6 +5,7 @@ import org.nrg.dcm.DicomSCPManager;
 import org.nrg.dcm.preferences.DicomSCPInstance;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.rest.NotFoundException;
+import org.nrg.xdat.rest.AbstractXnatRestApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
@@ -19,7 +20,7 @@ import java.util.List;
 @Api(description = "XNAT DICOM SCP management API")
 @RestController
 @RequestMapping(value = "/dicomscp")
-public class DicomSCPApi extends org.nrg.xapi.rest.AbstractXnatRestApi {
+public class DicomSCPApi extends AbstractXnatRestApi {
     private static final Logger _log = LoggerFactory.getLogger(DicomSCPApi.class);
 
     @ApiOperation(value = "Get list of all configured DICOM SCP receiver definitions.", notes = "The primary DICOM SCP retrieval function returns a list of all DICOM SCP receivers defined for the current system.", response = DicomSCPInstance.class, responseContainer = "List")
@@ -148,8 +149,8 @@ public class DicomSCPApi extends org.nrg.xapi.rest.AbstractXnatRestApi {
         return new ResponseEntity<>(_manager.stopDicomSCPs(), HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Stops the DICOM SCP receiver.", notes = "This stops the DICOM SCP receiver. Note that this will stop the receiver regardless of its enabled or disabled setting. This returns true if the instance was stoped and false if not.", response = Boolean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "DICOM SCP receiver successfully stoped."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to enable or disable this DICOM SCP receiver definition."), @ApiResponse(code = 404, message = "DICOM SCP receiver definition not found."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @ApiOperation(value = "Stops the DICOM SCP receiver.", notes = "This stops the DICOM SCP receiver. Note that this will stop the receiver regardless of its enabled or disabled setting. This returns true if the instance was stopped and false if not.", response = Boolean.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "DICOM SCP receiver successfully stopped."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to enable or disable this DICOM SCP receiver definition."), @ApiResponse(code = 404, message = "DICOM SCP receiver definition not found."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/{id}/stop"}, produces = {"application/json"}, method = {RequestMethod.PUT})
     public ResponseEntity<Boolean> dicomSCPInstanceStop(@ApiParam(value = "ID of the DICOM SCP receiver to stop.", required = true) @PathVariable("id") final String id) {
         HttpStatus status = isPermitted(id);

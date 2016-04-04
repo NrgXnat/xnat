@@ -883,6 +883,11 @@
                 <version>${jackson.version}</version>
             </dependency>
             <dependency>
+                <groupId>com.fasterxml.jackson.dataformat</groupId>
+                <artifactId>jackson-dataformat-yaml</artifactId>
+                <version>${jackson.version}</version>
+            </dependency>
+            <dependency>
                 <groupId>javax.xml</groupId>
                 <artifactId>jaxrpc-api</artifactId>
                 <version>1.1</version>

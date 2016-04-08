@@ -361,6 +361,7 @@ public class GradualDicomImporter extends ImporterHandlerA {
             //
             // This record is necessary so that, if this row was created by this call, it can be deleted if anonymization
             // goes wrong. In case of any other error the file is left on the filesystem.
+            // TODO: This is where things are going awry with Jenny's prearchive bug.
             Either<SessionData, SessionData> getOrCreate;
             try {
                 getOrCreate = PrearcDatabase.eitherGetOrCreateSession(session, tsdir, shouldAutoArchive(project, dicom));

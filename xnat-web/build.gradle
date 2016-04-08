@@ -221,6 +221,7 @@ configurations {
 
 dependencies {
     // NRG dependencies first.
+    compile "org.nrg.xnat:spawner:${vXnat}"
     compile "org.nrg.xdat:core:${vXnat}"
     compile "org.nrg:framework:${vXnat}"
     compile "org.nrg:transaction:${vXnat}"

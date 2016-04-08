@@ -7,9 +7,8 @@ var XNAT = getObject(XNAT||{});
 (function(XNAT){
 
     var popup,
-        window = this,
-        xurl = getObject(XNAT.url||{});
-
+        window = this;
+    
     // base popup function
     function popupCentered( /* url, title, w, h, y, params */ ) {
 
@@ -91,8 +90,8 @@ var XNAT = getObject(XNAT||{});
 
     // is the current window or 'loc' an XNAT popup?
     function isPopup(loc){
-        loc = xurl.splitUrl(loc || window.location.href);
-        return (loc.base.indexOf('popup/true') > -1 || xurl.getParam('popup') === 'true')
+        loc = XNAT.url.splitUrl(loc || window.location.href);
+        return (loc.base.indexOf('popup/true') > -1 || XNAT.url.getQueryStringValue('popup') === 'true')
     }
     // save popup status for global usage
     window.isPopup = isPopup();
@@ -101,10 +100,10 @@ var XNAT = getObject(XNAT||{});
     // process a url to add the 'popup' parts
     function setupUrl(fullUrl){
 
-        var urlParts = xurl.splitUrl(fullUrl),
-            newUrl = xurl.updateBase(fullUrl, urlParts.base.replace(/(\/popup\/(false|true))|(\/+$)/g,'') + '/popup/true');
+        var urlParts = XNAT.url.splitUrl(fullUrl),
+            newUrl = XNAT.url.updateBase(fullUrl, urlParts.base.replace(/(\/popup\/(false|true))|(\/+$)/g,'') + '/popup/true');
 
-        return xurl.addQueryString(newUrl, '?popup=true')
+        return XNAT.url.addQueryString(newUrl, '?popup=true')
 
     }
     popup.setupUrl = setupUrl;

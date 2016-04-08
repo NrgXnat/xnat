@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.restlet.resources;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
@@ -28,7 +29,7 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.actions.TriggerPipelines;
@@ -232,7 +233,7 @@ public class ProjSubExptList extends SubjAssessmentAbst {
 						allowDataDeletion=true;
 					}
 
-				if(!StringUtils.IsEmpty(expt.getLabel()) && !StringUtils.IsAlphaNumericUnderscore(expt.getId())){
+				if(StringUtils.isNotBlank(expt.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(expt.getId())){
 					this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED,"Invalid character in experiment label.");
 					return;
 				}

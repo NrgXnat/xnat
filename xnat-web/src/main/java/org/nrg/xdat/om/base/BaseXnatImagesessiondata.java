@@ -15,6 +15,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import edu.sdsc.grid.io.GeneralFile;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.CopyOp;
 import org.nrg.transaction.OperationI;
 import org.nrg.transaction.RollbackException;
@@ -52,7 +53,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileTracker;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.merge.ProjectAnonymizer;
 import org.nrg.xnat.helpers.scanType.ScanTypeMappingI;
@@ -405,7 +406,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                     int count = 0;
                     long size = 0;
                     try {
-                        String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                        String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(), "-", ""), "*", "AST");
 
                         ArrayList fileGroup = (ArrayList)getFileGroups().get(SCAN_ABBR + parsedScanID);
                         if (fileGroup==null){
@@ -439,7 +440,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                     int count = 0;
                     long size = 0;
                     try {
-                        String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(recon.getId(),"-",""),"*","AST");
+                        String parsedScanID= StringUtils.replace(StringUtils.replace(recon.getId(),"-",""),"*","AST");
 
                         ArrayList fileGroup = (ArrayList)getFileGroups().get(RECON_ABBR + parsedScanID);
                         if (fileGroup==null){
@@ -473,7 +474,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                     int count = 0;
                     long size = 0;
                     try {
-                        String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(assess.getId(),"-",""),"*","AST");
+                        String parsedScanID= StringUtils.replace(StringUtils.replace(assess.getId(),"-",""),"*","AST");
 
                         ArrayList fileGroup = (ArrayList)getFileGroups().get(ASSESSOR_ABBR + parsedScanID);
                         if (fileGroup==null){
@@ -943,7 +944,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                             String projects = (String)row.get("projects");
                             if (projects!=null)
                             {
-                                Iterator iter= StringUtils.CommaDelimitedStringToArrayList(projects, true).iterator();
+                                Iterator iter= XftStringUtils.CommaDelimitedStringToArrayList(projects, true).iterator();
                                 while(iter.hasNext())
                                 {
                                    String projectName = (String)iter.next();
@@ -1026,7 +1027,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                     XNATMetaData meta = new XNATMetaData();
                     meta.setCategory("SCAN"); //match operator is = by default
                     meta.setExternalId(scan.getId());
-                    String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                    String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
                     fileGroups.put(SCAN_ABBR +parsedScanID,dir.filterLocal(meta));
                 }
 
@@ -1038,7 +1039,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                         XNATMetaData meta = new XNATMetaData();
                         meta.setCategory("RECON"); //match operator is = by default
                         meta.setExternalId(recon.getId());
-                        String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(recon.getId(),"-",""),"*","AST");
+                        String parsedScanID= StringUtils.replace(StringUtils.replace(recon.getId(),"-",""),"*","AST");
                         fileGroups.put(RECON_ABBR +parsedScanID,dir.filterLocal(meta));
 
                 }
@@ -1048,7 +1049,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                         XNATMetaData meta = new XNATMetaData();
                         meta.setCategory("ASSESSOR"); //match operator is = by default
                         meta.setExternalId(assess.getId());
-                        String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(assess.getId(),"-",""),"*","AST");
+                        String parsedScanID= StringUtils.replace(StringUtils.replace(assess.getId(),"-",""),"*","AST");
                         fileGroups.put("assess" +parsedScanID,dir.filterLocal(meta));
 
                 }
@@ -1092,7 +1093,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                     }
                 }
                 if (fileGrouping.size()>0){
-                    String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                    String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
                     fileGroups.put(SCAN_ABBR + parsedScanID,fileGrouping);
                 }
             }
@@ -1137,7 +1138,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                 if (fileGrouping.size()>0){
                     if (recon.getId()!=null)
                     {
-                        String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(recon.getId(),"-",""),"*","AST");
+                        String parsedScanID= StringUtils.replace(StringUtils.replace(recon.getId(),"-",""),"*","AST");
                         fileGroups.put(RECON_ABBR + parsedScanID,fileGrouping);
                     }
                 }
@@ -1177,7 +1178,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                     }
                 }
                 if (fileGrouping.size()>0){
-                    String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(assess.getId(),"-",""),"*","AST");
+                    String parsedScanID= StringUtils.replace(StringUtils.replace(assess.getId(),"-",""),"*","AST");
                     fileGroups.put(ASSESSOR_ABBR + parsedScanID,fileGrouping);
                 }
             }
@@ -1426,7 +1427,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                         }
                     }
                 }
-                String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
                 if (hasContent){
                     sb.append("\n");
                     if (hasFunctionText)
@@ -1517,7 +1518,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                     }
                 }
             }
-            String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(recon.getId(),"-",""),"*","AST");
+            String parsedScanID= StringUtils.replace(StringUtils.replace(recon.getId(),"-",""),"*","AST");
             if (hasContent){
             	if(c++==0)
                     sb.append("<b>RECONSTRUCTIONS</b></TD><TD>");
@@ -1610,7 +1611,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
                                 }
                             }
                         }
-                        String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(assess.getId(),"-",""),"*","AST");
+                        String parsedScanID= StringUtils.replace(StringUtils.replace(assess.getId(),"-",""),"*","AST");
                         if (hasContent){
                         	if(c++==0)
                                 sb.append("<b>ASSESSMENTS</b></TD><TD>");
@@ -2601,7 +2602,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
     public boolean validateSubjectId(){
         String subjectid = this.getSubjectId();
         if (subjectid!=null){
-            subjectid=StringUtils.RemoveChar(subjectid, '\'');
+            subjectid=StringUtils.remove(subjectid, '\'');
             String query = "SELECT ID FROM xnat_subjectdata WHERE ID='";
             String login =null;
             if (this.getUser()!=null){
@@ -2933,7 +2934,7 @@ public abstract class BaseXnatImagesessiondata extends AutoXnatImagesessiondata 
 				SecurityValues values = new SecurityValues();
 				values.put(this.getXSIType() + "/project", proj.getId());
 				
-				if (!Permissions.canDelete(user,expt) && !Permissions.canDelete(user,this.getSchemaElement(),values))
+				if (!Permissions.canDelete(user, expt) && !Permissions.canDelete(user,this.getSchemaElement(),values))
 				{
 					return "User cannot delete experiments for project " + proj.getId();
 				}

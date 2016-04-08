@@ -12,13 +12,14 @@ package org.nrg.xdat.om.base;
 
 import edu.sdsc.grid.io.GeneralFile;
 import edu.sdsc.grid.io.srb.SRBFile;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.om.base.auto.AutoXnatPublicationresource;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.srb.XNATDirectory;
 import org.nrg.xnat.srb.XNATSrbSearch;
 
@@ -154,10 +155,10 @@ public class BaseXnatPublicationresource extends AutoXnatPublicationresource {
 
     public String getFullPath(String rootPath){
 
-        String fullPath = StringUtils.ReplaceStr(FileUtils.AppendRootPath(rootPath,this.getUri()),"\\","/");
+        String fullPath = StringUtils.replace(FileUtils.AppendRootPath(rootPath, this.getUri()), "\\", "/");
         while (fullPath.indexOf("//")!=-1)
         {
-            fullPath =StringUtils.ReplaceStr(fullPath,"//","/");
+            fullPath =StringUtils.replace(fullPath,"//","/");
         }
 
         if(!fullPath.endsWith("/"))

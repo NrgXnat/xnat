@@ -10,8 +10,8 @@
  */
 package org.nrg.xnat.helpers.resource;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
 
 import java.io.Serializable;
 import java.util.*;
@@ -20,8 +20,8 @@ public class XnatResourceInfo implements Serializable {
     private static final long serialVersionUID = 42L;
 	private String description,format,content=null;
 	private Number event_id=null;
-	private List<String> tags=new ArrayList<String>();
-	private Map<String,String> meta=new HashMap<String,String>();
+	private List<String> tags= new ArrayList<>();
+	private Map<String,String> meta= new HashMap<>();
 	private final Date lastModified,created;
 	private final UserI user;
 	
@@ -100,14 +100,14 @@ public class XnatResourceInfo implements Serializable {
 	    if(tags!=null){
 	    	for(String tag: tags){
 	    		tag = tag.trim();
-	    		if(!tag.equals("")){
-	    			for(String s:StringUtils.CommaDelimitedStringToArrayList(tag)){
+	    		if(StringUtils.isNotBlank(tag)){
+	    			for(String s: tag.split("[\\s]*,[\\s]*")){
 	    				s=s.trim();
 	    				if(!s.equals("")){
-	    		    		if(s.indexOf("=")>-1){
+	    		    		if(s.contains("=")){
 	    		    			info.addMeta(s.substring(0,s.indexOf("=")),s.substring(s.indexOf("=")+1));
 	    		    		}else{
-	    		    			if(s.indexOf(":")>-1){
+	    		    			if(s.contains(":")){
 		    		    			info.addMeta(s.substring(0,s.indexOf(":")),s.substring(s.indexOf(":")+1));
 		    		    		}else{
 		    		    			info.addTag(s);

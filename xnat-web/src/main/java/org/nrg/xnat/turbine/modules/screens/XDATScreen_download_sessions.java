@@ -15,6 +15,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.schema.SchemaElement;
@@ -24,7 +25,7 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import com.google.common.collect.Lists;
 
@@ -42,7 +43,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
             String value = (String) TurbineUtils.GetPassedParameter("search_value", data);
             
             // TODO: For now, hard-limit this to MR sessions.
-            if(!StringUtils.IsEmpty(element) && !StringUtils.IsEmpty(field) && !StringUtils.IsEmpty(value)){
+            if(StringUtils.isNotBlank(element) && StringUtils.isNotBlank(field) && StringUtils.isNotBlank(value)){
             	SchemaElement se=SchemaElement.GetElement(element);
             	if(se.getGenericXFTElement().instanceOf("xnat:imageSessionData")){
             		sessionList = new ArrayList<String>();
@@ -69,7 +70,7 @@ public class XDATScreen_download_sessions extends SecureScreen {
                     }
                     if(s.contains("'"))
                     {
-                    	s= StringUtils.RemoveChar(s, '\'');
+                    	s= StringUtils.remove(s, '\'');
                     }
                     sessionString+="'" + s + "'";
             	}

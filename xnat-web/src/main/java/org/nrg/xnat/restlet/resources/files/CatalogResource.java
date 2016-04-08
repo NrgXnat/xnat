@@ -11,6 +11,7 @@
 package org.nrg.xnat.restlet.resources.files;
 
 import org.apache.commons.collections.CollectionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.xdat.base.BaseElement;
@@ -25,7 +26,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.restlet.representations.BeanRepresentation;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
 import org.nrg.xnat.restlet.resources.ScanResource;
@@ -163,7 +164,7 @@ public class CatalogResource extends XNATCatalogTemplate {
 							for(String tag: tags){
 								tag = tag.trim();
 								if(!tag.equals("")){
-									for(String s:StringUtils.CommaDelimitedStringToArrayList(tag)){
+									for(String s:XftStringUtils.CommaDelimitedStringToArrayList(tag)){
 										s=s.trim();
 										if(!s.equals("")){
 											XnatAbstractresourceTag t = new XnatAbstractresourceTag((UserI)user);
@@ -197,7 +198,7 @@ public class CatalogResource extends XNATCatalogTemplate {
 									if(!"xnat_tools/AutoRun.xml".equals(wrk.getPipelineName())){
 										wrk=null;
 									}else{
-										if(StringUtils.IsEmpty(wrk.getCategory())){
+										if(StringUtils.isBlank(wrk.getCategory())){
 											wrk.setCategory(EventUtils.CATEGORY.DATA);
 											wrk.setType(EventUtils.TYPE.PROCESS);
 											WorkflowUtils.save(wrk, wrk.buildEvent());
@@ -225,12 +226,10 @@ public class CatalogResource extends XNATCatalogTemplate {
 					}
 				}else{
 					this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"User account doesn't have permission to modify this session.");
-					return;
 				}
 
 			} catch (ActionException e) {
 				this.getResponse().setStatus(e.getStatus(),e.getMessage());
-				return;
 			} catch (Exception e) {
 				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
 				logger.error("",e);
@@ -315,7 +314,7 @@ public class CatalogResource extends XNATCatalogTemplate {
 	
 	private void getAllMatches(){
 		catalogs=null;
-		resources=new ArrayList<XnatAbstractresource>();
+		resources= new ArrayList<>();
 		try {
 			catalogs=this.loadCatalogs(resource_ids,false,true);
 		} catch (Exception e) {

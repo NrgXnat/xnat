@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.resources.search;
 
 import com.noelios.restlet.ext.servlet.ServletCall;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -20,7 +21,7 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.MaterializedView;
 import org.nrg.xft.db.MaterializedViewI;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.restlet.presentation.RESTHTMLPresenter;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
@@ -72,7 +73,7 @@ public class CachedSearchResource extends SecureResource {
 					response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 					return;
 				}
-				sortBy=StringUtils.ReplaceStr(sortBy, " ", "");
+				sortBy= StringUtils.replace(sortBy, " ", "");
 			}
 			
 			if (this.getQueryVariable("sortOrder")!=null){
@@ -82,7 +83,7 @@ public class CachedSearchResource extends SecureResource {
 					response.setStatus(Status.CLIENT_ERROR_UNPROCESSABLE_ENTITY);
 					return;
 				}
-				sortOrder=StringUtils.ReplaceStr(sortOrder, " ", "");
+				sortOrder=StringUtils.replace(sortOrder, " ", "");
 			}
 			
 			this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
@@ -94,7 +95,7 @@ public class CachedSearchResource extends SecureResource {
 
 	@Override
 	public Representation getRepresentation(Variant variant) {	
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+		Hashtable<String,Object> params= new Hashtable<>();
 		if(tableName!=null){
 			params.put("ID", tableName);
 		}

@@ -10,26 +10,8 @@
  */
 package org.nrg.xnat.turbine.utils;
 
-import static org.nrg.xdat.om.base.BaseXnatProjectdata.getProjectByIDorAlias;
-import static org.nrg.xdat.om.base.auto.AutoXnatProjectdata.SCHEMA_ELEMENT_NAME;
-import static org.nrg.xdat.om.base.auto.AutoXnatProjectdata.getXnatProjectdatasById;
-import static org.nrg.xdat.om.base.auto.AutoXnatProjectdata.logger;
-
-import java.io.StringWriter;
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Calendar;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.UUID;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.mail.MessagingException;
-
 import org.apache.commons.codec.digest.DigestUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.app.Velocity;
@@ -48,10 +30,19 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
 import org.nrg.xnat.exceptions.XFTItemNotFoundException;
 import org.nrg.xnat.exceptions.XNATException;
 import org.nrg.xnat.utils.WorkflowUtils;
+
+import javax.mail.MessagingException;
+import java.io.StringWriter;
+import java.sql.SQLException;
+import java.util.*;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
+
+import static org.nrg.xdat.om.base.BaseXnatProjectdata.getProjectByIDorAlias;
+import static org.nrg.xdat.om.base.auto.AutoXnatProjectdata.*;
 
 public class ProjectAccessRequest {
     public static boolean CREATED_PAR_TABLE = false;
@@ -391,10 +382,8 @@ public class ProjectAccessRequest {
                 CreatePARTable();
             }
 
-            String query = String.format("INSERT INTO xs_par_table (proj_id,user_id,level) VALUES ('%s', %d, '%s');", pID, user.getID(), StringUtils.RemoveChar(level, '\''));
+            String query = String.format("INSERT INTO xs_par_table (proj_id,user_id,level) VALUES ('%s', %d, '%s');", pID, user.getID(), StringUtils.remove(level, '\''));
             PoolDBUtils.ExecuteNonSelectQuery(query, user.getDBName(), user.getLogin());
-        } catch (SQLException e) {
-            _logger.error("", e);
         } catch (Exception e) {
             _logger.error("", e);
         }
@@ -474,7 +463,7 @@ public class ProjectAccessRequest {
 	             CreatePARTable();
 	         }
 
-	         invitee = StringUtils.RemoveChar(invitee, '\'');
+	         invitee = StringUtils.remove(invitee, '\'');
             String guid = UUID.randomUUID().toString();
 
             StringBuilder query = new StringBuilder("INSERT INTO xs_par_table (email, guid, proj_id, approver_id, level) VALUES ('");

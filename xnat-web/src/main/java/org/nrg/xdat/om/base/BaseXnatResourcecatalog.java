@@ -21,6 +21,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.zip.GZIPInputStream;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.bean.base.BaseElement;
@@ -34,7 +35,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.utils.CatalogUtils;
 
 /**
@@ -81,7 +82,7 @@ public abstract class BaseXnatResourcecatalog extends AutoXnatResourcecatalog {
 
             if (cat!=null){
                 for(CatEntryI entry: cat.getEntries_entry()){
-                    String entryPath = StringUtils.ReplaceStr(FileUtils.AppendRootPath(parentPath,entry.getUri()),"\\","/");
+                    String entryPath = StringUtils.replace(FileUtils.AppendRootPath(parentPath, entry.getUri()), "\\", "/");
                     File temp=getFileOnLocalFileSystem(entryPath);
                     if(temp!=null)
                     	files.add(temp);

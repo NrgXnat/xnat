@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.om.base;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.om.base.auto.AutoXnatResourceseries;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.event.EventMetaI;
@@ -18,7 +19,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.FileUtils.OldFileHandlerI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -66,10 +67,10 @@ public class BaseXnatResourceseries extends AutoXnatResourceseries {
     public String getFullPath(String rootpath){
         if (fullPath==null)
         {
-            fullPath = StringUtils.ReplaceStr(FileUtils.AppendRootPath(rootpath,this.getPath()),"\\","/");
+            fullPath = StringUtils.replace(FileUtils.AppendRootPath(rootpath,this.getPath()),"\\","/");
             while (fullPath.indexOf("//")!=-1)
             {
-                fullPath =StringUtils.ReplaceStr(fullPath,"//","/");
+                fullPath = StringUtils.replace(fullPath, "//", "/");
             }
 
             if(!fullPath.endsWith("/"))
@@ -220,7 +221,6 @@ public class BaseXnatResourceseries extends AutoXnatResourceseries {
 
     /**
      * Appends this path to the enclosed URI or path variables.
-     * @param root
      */
     public ArrayList<String> getUnresolvedPaths(){
         ArrayList<String> al = new ArrayList<String>();

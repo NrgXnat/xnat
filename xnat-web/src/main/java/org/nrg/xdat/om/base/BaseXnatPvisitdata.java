@@ -17,6 +17,7 @@ import java.util.Hashtable;
 import org.apache.commons.lang.builder.CompareToBuilder;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
 import org.nrg.xdat.om.*;
@@ -39,7 +40,7 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 public class BaseXnatPvisitdata extends AutoXnatPvisitdata implements Comparable {
 
@@ -72,7 +73,7 @@ public class BaseXnatPvisitdata extends AutoXnatPvisitdata implements Comparable
 
 	
     public static XnatPvisitdata GetVisitByProjectIdentifier(String project, String identifier,UserI user,boolean preLoad){
-        if(StringUtils.IsEmpty(identifier)){
+        if(StringUtils.isBlank(identifier)){
         	return null;
         }
         

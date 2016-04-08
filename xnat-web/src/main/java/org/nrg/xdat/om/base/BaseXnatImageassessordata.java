@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.om.base;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.auto.AutoXnatImageassessordata;
@@ -20,7 +21,7 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
@@ -85,7 +86,7 @@ public abstract class BaseXnatImageassessordata extends AutoXnatImageassessordat
         String session_id = this.getImagesessionId();
         
         if (session_id!=null){
-			session_id=StringUtils.RemoveChar(session_id, '\'');
+			session_id= StringUtils.remove(session_id, '\'');
             String query = "SELECT ID FROM xnat_imageSessiondata WHERE ID='";
             String login =null;
             if (this.getUser()!=null){
@@ -156,7 +157,7 @@ public abstract class BaseXnatImageassessordata extends AutoXnatImageassessordat
     	// XNAT-1382: Delete the root Assessor Directory if it is empty.
     	String assessorDir = this.getArchiveDirectoryName();
     	String sessionDir = this.getExpectedSessionDir().getAbsolutePath();
-    	if(!StringUtils.IsEmpty(sessionDir) && !StringUtils.IsEmpty(assessorDir)){
+    	if(StringUtils.isNotBlank(sessionDir) && StringUtils.isNotBlank(assessorDir)){
     		File f = new File(sessionDir + "/ASSESSORS/" + assessorDir);
     		if(f.exists() && f.isDirectory() && f.list().length == 0){
     			FileUtils.DeleteFile(f);
@@ -171,19 +172,19 @@ public abstract class BaseXnatImageassessordata extends AutoXnatImageassessordat
 
 	@Override
 	public void preSave() throws Exception{
-		if(StringUtils.IsEmpty(this.getId())){
+		if(StringUtils.isBlank(this.getId())){
 			throw new IllegalArgumentException("Please specify an ID for your experiment.");
 		}	
 		
-		if(XFT.getBooleanProperty("security.require_image_assessor_labels", false) && StringUtils.IsEmpty(this.getLabel())){
+		if(XFT.getBooleanProperty("security.require_image_assessor_labels", false) && StringUtils.isBlank(this.getLabel())){
 			throw new IllegalArgumentException("Please specify a label for your experiment.");
 		}
 		
-		if(!StringUtils.IsAlphaNumericUnderscore(getId())){
+		if(!XftStringUtils.IsAlphaNumericUnderscore(getId())){
 			throw new IllegalArgumentException("Identifiers cannot use special characters.");
 		}
 		
-		if(!StringUtils.IsEmpty(this.getLabel()) && !StringUtils.IsAlphaNumericUnderscore(getLabel())){
+		if(StringUtils.isNotBlank(this.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(getLabel())){
 			throw new IllegalArgumentException("Labels cannot use special characters.");
 		}
 		

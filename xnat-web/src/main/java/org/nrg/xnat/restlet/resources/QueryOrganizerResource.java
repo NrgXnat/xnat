@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.restlet.resources;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.TypeConverter.JavaMapping;
 import org.nrg.xft.TypeConverter.TypeConverter;
 import org.nrg.xft.XFTTable;
@@ -21,7 +22,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.utils.DateUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.restlet.Context;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
@@ -42,11 +43,11 @@ public abstract class QueryOrganizerResource extends SecureResource {
 
 	
 	public CriteriaCollection processStringQuery(String xmlPath, String values){
-		ArrayList<String> al=StringUtils.CommaDelimitedStringToArrayList(values);
+		ArrayList<String> al=XftStringUtils.CommaDelimitedStringToArrayList(values);
 		CriteriaCollection cc= new CriteriaCollection("OR");
 		for(String value:al){
 			if(value.contains("%") || value.contains("*")){
-				value=StringUtils.ReplaceStr(value, "*", "%");
+				value= StringUtils.replace(value, "*", "%");
 				cc.addClause(xmlPath, "LIKE", value);
 			}else{
 				cc.addClause(xmlPath, value);
@@ -56,7 +57,7 @@ public abstract class QueryOrganizerResource extends SecureResource {
 	}
 	
 	public CriteriaCollection processDateQuery(String column, String dates){
-		ArrayList<String> al=StringUtils.CommaDelimitedStringToArrayList(dates);
+		ArrayList<String> al=XftStringUtils.CommaDelimitedStringToArrayList(dates);
 		CriteriaCollection cc= new CriteriaCollection("OR");
 		for(String date:al){
 			if(date.contains("-")){
@@ -92,7 +93,7 @@ public abstract class QueryOrganizerResource extends SecureResource {
 	}
 	
 	public CriteriaCollection processNumericQuery(String column, String values){
-		ArrayList<String> al=StringUtils.CommaDelimitedStringToArrayList(values);
+		ArrayList<String> al=XftStringUtils.CommaDelimitedStringToArrayList(values);
 		CriteriaCollection cc= new CriteriaCollection("OR");
 		for(String date:al){
 			if(date.contains("-")){
@@ -111,7 +112,7 @@ public abstract class QueryOrganizerResource extends SecureResource {
 	}
 	
 	public CriteriaCollection processBooleanQuery(String column, String values){
-		ArrayList<String> al=StringUtils.CommaDelimitedStringToArrayList(values);
+		ArrayList<String> al=XftStringUtils.CommaDelimitedStringToArrayList(values);
 		CriteriaCollection cc= new CriteriaCollection("OR");
 		for(String value:al){
 			cc.addClause(column, value);
@@ -160,7 +161,7 @@ public abstract class QueryOrganizerResource extends SecureResource {
 	public void populateQuery(QueryOrganizer qo){
 		if(hasQueryVariable("columns") && !getQueryVariable("columns").equals("DEFAULT")){ 
 			try {
-				columns=StringUtils.CommaDelimitedStringToArrayList(URLDecoder.decode(getQueryVariable("columns"), "UTF-8"));
+				columns=XftStringUtils.CommaDelimitedStringToArrayList(URLDecoder.decode(getQueryVariable("columns"), "UTF-8"));
 			} catch (UnsupportedEncodingException e) {
 				logger.error("",e);
 				columns=getDefaultFields(qo.getRootElement());
@@ -216,7 +217,7 @@ public abstract class QueryOrganizerResource extends SecureResource {
 			}
 			
 			if(hasBodyVariable("columns")){
-				columns=StringUtils.CommaDelimitedStringToArrayList(getBodyVariable("columns"));
+				columns=XftStringUtils.CommaDelimitedStringToArrayList(getBodyVariable("columns"));
 				for(String col:columns){
 					if(col.contains("/")){
 						try {
@@ -305,7 +306,7 @@ public abstract class QueryOrganizerResource extends SecureResource {
 				}else if(this.fieldMapping.containsKey(key)){
 					fields.add(this.fieldMapping.get(key));
 				}else if(key.equals("columns")){
-					for(String col:StringUtils.CommaDelimitedStringToArrayList(getQueryVariable("columns"))){
+					for(String col:XftStringUtils.CommaDelimitedStringToArrayList(getQueryVariable("columns"))){
 						if(col.contains("/")){
 							fields.add(col);
 						}else if(this.fieldMapping.containsKey(col)){
@@ -317,7 +318,7 @@ public abstract class QueryOrganizerResource extends SecureResource {
 			
 			for(String field:fields){
 				try {
-					GenericWrapperElement ge=StringUtils.GetRootElement(field);
+					GenericWrapperElement ge=XftStringUtils.GetRootElement(field);
                     assert ge != null;
                     if(!ge.getXSIType().equals(rootElementName.getXSIType()) && ge.isExtensionOf(rootElementName)){
 						rootElementName=ge;

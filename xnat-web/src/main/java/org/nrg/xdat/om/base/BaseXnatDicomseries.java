@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.om.base;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatDicomseriesImageI;
 import org.nrg.xdat.om.XnatDicomseriesImage;
 import org.nrg.xdat.om.base.auto.AutoXnatDicomseries;
@@ -18,7 +19,6 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
 
 import java.io.File;
 import java.io.IOException;
@@ -118,7 +118,6 @@ public class BaseXnatDicomseries extends AutoXnatDicomseries {
 
     /**
      * Appends this path to the enclosed URI or path variables.
-     * @param root
      */
     public ArrayList<String> getUnresolvedPaths(){
         ArrayList<String> al = new ArrayList<String>();
@@ -140,10 +139,10 @@ public class BaseXnatDicomseries extends AutoXnatDicomseries {
             break;
         }
 
-        String fullPath = StringUtils.ReplaceStr(FileUtils.AppendRootPath(rootPath,path),"\\","/");
+        String fullPath = StringUtils.replace(FileUtils.AppendRootPath(rootPath, path), "\\", "/");
         while (fullPath.indexOf("//")!=-1)
         {
-            fullPath =StringUtils.ReplaceStr(fullPath,"//","/");
+            fullPath =StringUtils.replace(fullPath,"//","/");
         }
 
         if(!fullPath.endsWith("/"))
@@ -168,6 +167,6 @@ public class BaseXnatDicomseries extends AutoXnatDicomseries {
     	for(XnatDicomseriesImageI img : this.getImageset_image()){
     		((XnatDicomseriesImage)img).moveTo(newSessionDir, existingSessionDir, rootPath, user,ci);
     	}
-    	SaveItemHelper.authorizedSave(this,user, true, false,ci);
+    	SaveItemHelper.authorizedSave(this, user, true, false, ci);
     }
 }

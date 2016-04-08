@@ -31,6 +31,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.archive.ValidationException;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
@@ -413,7 +414,7 @@ public class ExperimentResource extends ItemResource {
                 }
 
 
-                if (StringUtils.isNotBlank(_experiment.getLabel()) && !org.nrg.xft.utils.StringUtils.IsAlphaNumericUnderscore(_experiment.getId())) {
+                if (StringUtils.isNotBlank(_experiment.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(_experiment.getId())) {
                     getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in experiment label.");
                     return;
                 }

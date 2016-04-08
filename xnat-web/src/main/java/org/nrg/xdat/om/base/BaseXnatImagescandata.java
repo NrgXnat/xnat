@@ -18,6 +18,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.CatEntryI;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -38,7 +39,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.scanType.ImageScanTypeMapping;
 import org.nrg.xnat.helpers.scanType.ScanTypeMappingI;
@@ -436,11 +437,11 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
 	
 	public void validate(String expectedPath) throws Exception{
 		
-		if(StringUtils.IsEmpty(this.getId())){
+		if(StringUtils.isBlank(this.getId())){
 			throw new IllegalArgumentException();
 		}	
 		
-		if(!StringUtils.IsAlphaNumericUnderscore(getId())){
+		if(!XftStringUtils.IsAlphaNumericUnderscore(getId())){
 			throw new IllegalArgumentException("Identifiers cannot use special characters.");
 		}
 		
@@ -468,7 +469,7 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
 			subcc.addClause("xnat:imageScanData/ID", scanID);
 		} else {
 			final CriteriaCollection subsubcc = new CriteriaCollection("OR");
-			for (final String s : StringUtils.CommaDelimitedStringToArrayList(
+			for (final String s : XftStringUtils.CommaDelimitedStringToArrayList(
 					scanID, true)) {
 				subsubcc.addClause("xnat:imageScanData/ID", s);
 			}
@@ -490,7 +491,7 @@ public class BaseXnatImagescandata extends AutoXnatImagescandata {
 			}
 		} else {
 			CriteriaCollection subsubcc = new CriteriaCollection("OR");
-			for (String s : StringUtils.CommaDelimitedStringToArrayList(scanID,
+			for (String s : XftStringUtils.CommaDelimitedStringToArrayList(scanID,
 					true)) {
 				if (s.equals("NULL")) {
 					subsubcc.addClause("xnat:imageScanData/type", "",

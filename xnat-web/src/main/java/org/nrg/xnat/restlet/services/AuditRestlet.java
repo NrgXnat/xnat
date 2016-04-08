@@ -20,7 +20,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.ItemSearch;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.restlet.representations.ItemHTMLRepresentation;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
@@ -47,7 +47,7 @@ public class AuditRestlet extends SecureResource {
 		key=this.filepath.substring(filepath.indexOf("/")+1);
 		
 
-		List<String> ids=StringUtils.DelimitedStringToArrayList(key, ",");
+		List<String> ids=XftStringUtils.DelimitedStringToArrayList(key, ",");
 		
 		try {
 			item=retrieveItemByIds(xsiType, ids);

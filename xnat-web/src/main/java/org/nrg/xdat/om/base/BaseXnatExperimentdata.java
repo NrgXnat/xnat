@@ -12,6 +12,7 @@ package org.nrg.xdat.om.base;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.exception.ExceptionUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -41,7 +42,7 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
@@ -369,7 +370,7 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
     }
 
     public static XnatExperimentdata GetExptByProjectIdentifier(String project, String identifier,UserI user,boolean preLoad){
-        if(StringUtils.IsEmpty(identifier)){
+        if(StringUtils.isBlank(identifier)){
         	return null;
         }
 
@@ -636,36 +637,36 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
 
 
     public static String cleanValue(String v){
-    	v= StringUtils.ReplaceStr(v, " ", "_");
-    	v= StringUtils.ReplaceStr(v, "`", "_");
-    	v= StringUtils.ReplaceStr(v, "~", "_");
-    	v= StringUtils.ReplaceStr(v, "@", "_");
-    	v= StringUtils.ReplaceStr(v, "#", "_");
-    	v= StringUtils.ReplaceStr(v, "$", "_");
-    	v= StringUtils.ReplaceStr(v, "%", "_");
-    	v= StringUtils.ReplaceStr(v, "^", "_");
-    	v= StringUtils.ReplaceStr(v, "&", "_");
-    	v= StringUtils.ReplaceStr(v, "*", "_");
-    	v= StringUtils.ReplaceStr(v, "(", "_");
-    	v= StringUtils.ReplaceStr(v, ")", "_");
-    	v= StringUtils.ReplaceStr(v, "+", "_");
-    	v= StringUtils.ReplaceStr(v, "=", "_");
-    	v= StringUtils.ReplaceStr(v, "[", "_");
-    	v= StringUtils.ReplaceStr(v, "]", "_");
-    	v= StringUtils.ReplaceStr(v, "{", "_");
-    	v= StringUtils.ReplaceStr(v, "}", "_");
-    	v= StringUtils.ReplaceStr(v, "|", "_");
-    	v= StringUtils.ReplaceStr(v, "\\", "_");
-    	v= StringUtils.ReplaceStr(v, "/", "_");
-    	v= StringUtils.ReplaceStr(v, "?", "_");
-    	v= StringUtils.ReplaceStr(v, ":", "_");
-    	v= StringUtils.ReplaceStr(v, ";", "_");
-    	v= StringUtils.ReplaceStr(v, "\"", "_");
-    	v= StringUtils.ReplaceStr(v, "'", "_");
-    	v= StringUtils.ReplaceStr(v, ",", "_");
-    	v= StringUtils.ReplaceStr(v, ".", "_");
-    	v= StringUtils.ReplaceStr(v, "<", "_");
-    	v= StringUtils.ReplaceStr(v, ">", "_");
+    	v= StringUtils.replace(v, " ", "_");
+    	v= StringUtils.replace(v, "`", "_");
+    	v= StringUtils.replace(v, "~", "_");
+    	v= StringUtils.replace(v, "@", "_");
+    	v= StringUtils.replace(v, "#", "_");
+    	v= StringUtils.replace(v, "$", "_");
+    	v= StringUtils.replace(v, "%", "_");
+    	v= StringUtils.replace(v, "^", "_");
+    	v= StringUtils.replace(v, "&", "_");
+    	v= StringUtils.replace(v, "*", "_");
+    	v= StringUtils.replace(v, "(", "_");
+    	v= StringUtils.replace(v, ")", "_");
+    	v= StringUtils.replace(v, "+", "_");
+    	v= StringUtils.replace(v, "=", "_");
+    	v= StringUtils.replace(v, "[", "_");
+    	v= StringUtils.replace(v, "]", "_");
+    	v= StringUtils.replace(v, "{", "_");
+    	v= StringUtils.replace(v, "}", "_");
+    	v= StringUtils.replace(v, "|", "_");
+    	v= StringUtils.replace(v, "\\", "_");
+    	v= StringUtils.replace(v, "/", "_");
+    	v= StringUtils.replace(v, "?", "_");
+    	v= StringUtils.replace(v, ":", "_");
+    	v= StringUtils.replace(v, ";", "_");
+    	v= StringUtils.replace(v, "\"", "_");
+    	v= StringUtils.replace(v, "'", "_");
+    	v= StringUtils.replace(v, ",", "_");
+    	v= StringUtils.replace(v, ".", "_");
+    	v= StringUtils.replace(v, "<", "_");
+    	v= StringUtils.replace(v, ">", "_");
 
     	return v;
     }
@@ -794,17 +795,17 @@ public class BaseXnatExperimentdata extends AutoXnatExperimentdata implements Ar
 
     protected void checkIsValidID(String s) throws IllegalArgumentException{
 
-		if(StringUtils.IsEmpty(s)){
+		if(StringUtils.isBlank(s)){
 			throw new IllegalArgumentException();
 		}
 
-		if(!StringUtils.IsAlphaNumericUnderscore(s)){
+		if(!XftStringUtils.IsAlphaNumericUnderscore(s)){
 			throw new IllegalArgumentException("Identifiers cannot use special characters.");
 		}
     }
 
     public void checkUniqueLabel() throws Exception{
-		if(!StringUtils.IsEmpty(this.getLabel())){
+		if(StringUtils.isNotBlank(this.getLabel())){
 			Long count=(Long)PoolDBUtils.ReturnStatisticQuery(String.format("SELECT COUNT(*) FROM (SELECT label, ID FROM xnat_experimentData WHERE label='%1$s' AND ID !='%2$s' AND project='%3$s' UNION SELECT label, sharing_share_xnat_experimentda_id AS ID FROM xnat_experimentData_share WHERE label='%1$s' AND sharing_share_xnat_experimentda_id !='%2$s' AND project='%3$s') SRCH",this.getLabel(),this.getId(),this.getProject()), "count", this.getDBName(), "system");
 			if(count>0){
 				throw new ClientException(Status.CLIENT_ERROR_CONFLICT,"Conflict: Duplicate experiment label",new Exception());

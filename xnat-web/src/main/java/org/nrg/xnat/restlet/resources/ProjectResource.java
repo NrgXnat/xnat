@@ -11,6 +11,7 @@
 package org.nrg.xnat.restlet.resources;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
@@ -26,7 +27,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.WorkflowUtils;
@@ -239,16 +240,16 @@ public class ProjectResource extends ItemResource {
                                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
                             }
                         } else {
-                            if (StringUtils.IsEmpty(project.getId())) {
+                            if (StringUtils.isBlank(project.getId())) {
                                 project.setId(projectId);
                             }
 
-                            if (StringUtils.IsEmpty(project.getId())) {
+                            if (StringUtils.isBlank(project.getId())) {
                                 getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Requires XNAT ProjectData ID");
                                 return;
                             }
 
-                            if (!StringUtils.IsAlphaNumericUnderscore(project.getId()) && !isQueryVariableTrue("testHyphen")) {
+                            if (!XftStringUtils.IsAlphaNumericUnderscore(project.getId()) && !isQueryVariableTrue("testHyphen")) {
                                 getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in project ID.");
                                 return;
                             }

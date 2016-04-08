@@ -20,6 +20,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.Random;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.display.DisplayFieldReferenceI;
 import org.nrg.xdat.display.DisplayManager;
@@ -38,7 +39,7 @@ import org.nrg.xft.XFTTableI;
 import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 /**
  * @author Tim
  *
@@ -208,7 +209,7 @@ public class RESTHTMLPresenter extends PresentationA {
 				    SchemaElementI foreign = SchemaElement.GetElement(dfr.getElementName());
 				    if (search.isMultipleRelationship(foreign))
 				    {
-					    String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
+					    String temp = XftStringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
 					    Integer index = ((XFTTable)table).getColumnIndex(temp);
 					    if (index!=null)
 					    {
@@ -301,7 +302,7 @@ public class RESTHTMLPresenter extends PresentationA {
 					    if (search.isMultipleRelationship(foreign))
 					    {
 							//XFT.LogCurrentTime("BEGIN HTML FORMAT :: ROWS(" + table.getRowCursor() + ") FIELDS: diffs :IF:1");
-						    String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
+						    String temp = XftStringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
 						    Integer index = ((XFTTable)table).getColumnIndex(temp);
 						    if (index!=null)
 						    {
@@ -399,10 +400,10 @@ public class RESTHTMLPresenter extends PresentationA {
 								if (secureVariable != null)
 								{
                                     if (secureVariable.toString().indexOf("<")!=-1){
-                                        secureVariable = StringUtils.ReplaceStr(secureVariable.toString(), "<", "");
+                                        secureVariable = StringUtils.replace(secureVariable.toString(), "<", "");
                                     }
                                     if (secureVariable.toString().indexOf(">")!=-1){
-                                        secureVariable = StringUtils.ReplaceStr(secureVariable.toString(), ">", "");
+                                        secureVariable = StringUtils.replace(secureVariable.toString(), ">", "");
                                     }
 									values.put((String)link.getSecureProps().get(key),secureVariable.toString());
 								}
@@ -435,14 +436,14 @@ public class RESTHTMLPresenter extends PresentationA {
                                                             id = id.substring(6);
                                                             try {
                                                                 Integer i = Integer.parseInt(id);
-                                                                ArrayList<String> al = StringUtils.CommaDelimitedStringToArrayList(insertValue.toString());
+                                                                ArrayList<String> al = XftStringUtils.CommaDelimitedStringToArrayList(insertValue.toString());
                                                                 insertValue =al.get(i);
                                                             } catch (Throwable e) {
                                                                 logger.error("",e);
                                                             }
                                                         }
                                                     }
-                                                    value = StringUtils.ReplaceStr(value,"@" + key,insertValue.toString());
+                                                    value = StringUtils.replace(value,"@" + key,insertValue.toString());
                                                 }
                                             }else{
                                                 Object insertValue = row.get(id.toLowerCase());
@@ -454,13 +455,13 @@ public class RESTHTMLPresenter extends PresentationA {
                                                 {
                                                     insertValue = "NULL";
                                                 }
-                                                value = StringUtils.ReplaceStr(value,"@" + key,insertValue.toString());
+                                                value = StringUtils.replace(value,"@" + key,insertValue.toString());
                                             }
 										}
-										value = StringUtils.ReplaceStr(value,"@WEBAPP",server);
+										value = StringUtils.replace(value,"@WEBAPP",server);
 										sb.append(" ").append(prop.getName().toLowerCase()).append("=");
 										
-										if(StringUtils.IsEmpty(value)){
+										if(StringUtils.isBlank(value)){
 											sb.append("\"&nbsp;\"");
 										}else{
 											sb.append("\"").append(value).append("\"");
@@ -493,14 +494,14 @@ public class RESTHTMLPresenter extends PresentationA {
                                                     id = id.substring(6);
                                                     try {
                                                         Integer i = Integer.parseInt(id);
-                                                        ArrayList<String> al = StringUtils.CommaDelimitedStringToArrayList(insertValue.toString());
+                                                        ArrayList<String> al = XftStringUtils.CommaDelimitedStringToArrayList(insertValue.toString());
                                                         insertValue =al.get(i);
                                                     } catch (Throwable e) {
                                                         logger.error("",e);
                                                     }
                                                 }
                                             }
-                                            value = StringUtils.ReplaceStr(value,"@" + key,insertValue.toString());
+                                            value = StringUtils.replace(value,"@" + key,insertValue.toString());
                                         }
                                     }else{
                                         Object insertValue = row.get(id.toLowerCase());
@@ -512,13 +513,13 @@ public class RESTHTMLPresenter extends PresentationA {
                                         {
                                             insertValue = "NULL";
                                         }
-                                        value = StringUtils.ReplaceStr(value,"@" + key,insertValue.toString());
+                                        value = StringUtils.replace(value,"@" + key,insertValue.toString());
                                     }
 								}
-								value = StringUtils.ReplaceStr(value,"@WEBAPP",server);
+								value = StringUtils.replace(value,"@WEBAPP",server);
 								sb.append(" ").append(prop.getName()).append("=");
 
-								if(StringUtils.IsEmpty(value)){
+								if(StringUtils.isBlank(value)){
 									sb.append("\"&nbsp;\"");
 								}else{
 									sb.append("\"").append(value).append("\"");
@@ -534,10 +535,10 @@ public class RESTHTMLPresenter extends PresentationA {
 					if (dfr.isImage())
 					{
 						sb.append("<img");
-                        v = StringUtils.ReplaceStr((String)v,"/@WEBAPP/",server);
-                        v = StringUtils.ReplaceStr((String)v,"@WEBAPP/",server);
-                        v = StringUtils.ReplaceStr((String)v,"/@WEBAPP",server);
-                        v = StringUtils.ReplaceStr((String)v,"@WEBAPP",server);
+                        v = StringUtils.replace((String)v,"/@WEBAPP/",server);
+                        v = StringUtils.replace((String)v,"@WEBAPP/",server);
+                        v = StringUtils.replace((String)v,"/@WEBAPP",server);
+                        v = StringUtils.replace((String)v,"@WEBAPP",server);
 						if (dfr.getDisplayField().getHtmlImage().getWidth() != null)
 						{
 							sb.append(" width=\"" + dfr.getDisplayField().getHtmlImage().getWidth() + "\"");
@@ -557,7 +558,7 @@ public class RESTHTMLPresenter extends PresentationA {
                             String vS = v.toString();
                             if (vS.indexOf("<")!=-1 && vS.indexOf(">")==-1)
                             {
-                                vS= StringUtils.ReplaceStr(vS, "<", "&#60;");
+                                vS= StringUtils.replace(vS, "<", "&#60;");
                             }
 							sb.append(vS);
 					    }

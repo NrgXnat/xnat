@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.om.base;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatExperimentdata.UnknownPrimaryProjectException;
@@ -17,7 +18,7 @@ import org.nrg.xdat.om.base.auto.AutoXnatReconstructedimagedata;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 
 import java.io.File;
@@ -149,11 +150,11 @@ public class BaseXnatReconstructedimagedata extends AutoXnatReconstructedimageda
 	
 	public void validate(String expectedPath) throws Exception{
 		
-		if(StringUtils.IsEmpty(this.getId())){
+		if(StringUtils.isBlank(this.getId())){
 			throw new IllegalArgumentException();
 		}	
 		
-		if(!StringUtils.IsAlphaNumericUnderscore(getId())){
+		if(!XftStringUtils.IsAlphaNumericUnderscore(getId())){
 			throw new IllegalArgumentException("Identifiers cannot use special characters.");
 		}
 		

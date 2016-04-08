@@ -25,6 +25,7 @@ import java.util.zip.ZipOutputStream;
 
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -42,7 +43,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 import org.nrg.xnat.srb.XNATDirectory;
@@ -163,7 +164,7 @@ created in buildPDF.
                                                 Hashtable fileGroups = mr.getFileGroups();
                                                 for (Enumeration e = fileGroups.keys(); e.hasMoreElements();) {
                                                     String key = (String)e.nextElement();
-                                                    if (key.toLowerCase().indexOf("scan")!=-1){
+                                                    if (key.toLowerCase().contains("scan")){
                                                         XNATDirectory filesA = (XNATDirectory)fileGroups.get(key);
                                                         zip.write(filesA);
                                                     }
@@ -171,7 +172,7 @@ created in buildPDF.
                                             }else{
                                                 Hashtable fileGroups = mr.getFileGroups();
                                                 raw = raw.trim();
-                                                ArrayList rawTypes = StringUtils.CommaDelimitedStringToArrayList(raw);
+                                                ArrayList rawTypes = XftStringUtils.CommaDelimitedStringToArrayList(raw);
                                                 Iterator iter= rawTypes.iterator();
                                                 while (iter.hasNext())
                                                 {
@@ -180,7 +181,7 @@ created in buildPDF.
                                                     if (scans!=null && scans.size()>0)
                                                     {
                                                         for(XnatImagescandata scan: scans){
-                                                            String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                                                            String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(), "-", ""), "*", "AST");
                                                             XNATDirectory filesA = (XNATDirectory)fileGroups.get("scan" +parsedScanID);
                                                             zip.write(filesA);
 
@@ -208,13 +209,13 @@ created in buildPDF.
                                             } else {
                                         	Hashtable fileGroups = mr.getFileGroups();
                                         	processed = processed.trim();
-                                        	for (final String rType : StringUtils.CommaDelimitedStringToArrayList(processed)) {
+                                        	for (final String rType : XftStringUtils.CommaDelimitedStringToArrayList(processed)) {
                                         	    Collection<XnatReconstructedimagedata> scans= mr.getReconstructionsByType(rType);
                                         	    if (scans.isEmpty()) {
                                         		fw.write("No " +rType + " Processed Images Found.\n");
                                         	    } else {
                                         		for (final XnatReconstructedimagedata scan : scans) {
-                                        		    final String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                                        		    final String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
                                         		    final XNATDirectory filesA = (XNATDirectory)fileGroups.get("recon" +parsedScanID);
                                         		    zip.write(filesA);
                                         		    fw.write("Including " +filesA.getSize() + " Processed Files for " + scan.getId() +" (" + rType + ").\n");                                                	    
@@ -290,7 +291,7 @@ created in buildPDF.
                                                                 {
                                                                     include=true;
                                                                 }else{
-                                                                    ArrayList qualities = StringUtils.CommaDelimitedStringToArrayList(quality);
+                                                                    ArrayList qualities = XftStringUtils.CommaDelimitedStringToArrayList(quality);
                                                                     if (scan.getQuality()!=null){
                                                                         if (qualities.contains(scan.getQuality()))
                                                                         {
@@ -301,7 +302,7 @@ created in buildPDF.
                                                             }
                                                             
                                                             if (include){
-                                                                String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                                                                String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
                                                                 ArrayList filesA = (ArrayList)fileGroups.get("scan" +parsedScanID);
                                                                 images.addAll(filesA);
                                                                 fw.write("Including " +filesA.size() + " Raw Files for scan " + scan.getId() +" (" + scan.getQuality() + ").\n");
@@ -311,7 +312,7 @@ created in buildPDF.
                                                 }else{
                                                     Hashtable fileGroups = mr.getFileGroups();
                                                     raw = raw.trim();
-                                                    for (final String rType : StringUtils.CommaDelimitedStringToArrayList(raw)) {
+                                                    for (final String rType : XftStringUtils.CommaDelimitedStringToArrayList(raw)) {
                                                         ArrayList<XnatImagescandata> scans= mr.getScansByType(rType);
                                                         if (scans!=null && scans.size()>0)
                                                         {
@@ -325,7 +326,7 @@ created in buildPDF.
                                                                     {
                                                                         include=true;
                                                                     }else{
-                                                                        ArrayList qualities = StringUtils.CommaDelimitedStringToArrayList(quality);
+                                                                        ArrayList qualities = XftStringUtils.CommaDelimitedStringToArrayList(quality);
                                                                         if (scan.getQuality()!=null){
                                                                             if (qualities.contains(scan.getQuality()))
                                                                             {
@@ -336,7 +337,7 @@ created in buildPDF.
                                                                 }
                                                                 
                                                                 if (include){
-                                                                    String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                                                                    String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
                                                                     ArrayList filesA = (ArrayList)fileGroups.get("scan" +parsedScanID);
                                                                     images.addAll(filesA);
                                                                     fw.write("Including " +filesA.size() + " Raw Files for " + scan.getId() +" (" + rType + ":" + scan.getQuality() + ").\n");
@@ -347,7 +348,7 @@ created in buildPDF.
                                                             if (scan==null)
                                                                 fw.write("No " +rType + " Raw Scans Found.\n");
                                                             else{
-                                                                String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                                                                String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
                                                                 ArrayList filesA = (ArrayList)fileGroups.get("scan" +parsedScanID);
                                                                 images.addAll(filesA);
                                                                 fw.write("Including " +filesA.size() + " Raw Files for " + scan.getId() +" (" + rType + ":" + scan.getQuality() + ").\n");
@@ -371,12 +372,12 @@ created in buildPDF.
                                                 }else{
                                                     Hashtable fileGroups = mr.getFileGroups();
                                                     processed = processed.trim();
-                                                    for (final String rType : StringUtils.CommaDelimitedStringToArrayList(processed)) {
+                                                    for (final String rType : XftStringUtils.CommaDelimitedStringToArrayList(processed)) {
                                                         Collection<XnatReconstructedimagedata> scans= mr.getReconstructionsByType(rType);
                                                         if (scans.isEmpty())
                                                         {
                                                             for (final XnatReconstructedimagedata scan : scans) {
-                                                                String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                                                                String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
                                                                 Collection filesA = (Collection)fileGroups.get("recon" +parsedScanID);
                                                                 images.addAll(filesA);    
                                                                 fw.write("Including " +filesA.size() + " Processed Files for " + scan.getId() +" (" + rType + ").\n");
@@ -386,7 +387,7 @@ created in buildPDF.
                                                             if (scan==null)
                                                                 fw.write("No " +rType + " Processed Images Found.\n");
                                                             else{
-                                                                String parsedScanID= StringUtils.ReplaceStr(StringUtils.ReplaceStr(scan.getId(),"-",""),"*","AST");
+                                                                String parsedScanID= StringUtils.replace(StringUtils.replace(scan.getId(),"-",""),"*","AST");
                                                                 ArrayList filesA = (ArrayList)fileGroups.get("recon" +parsedScanID);
                                                                 images.addAll(filesA);
                                                                 fw.write("Including " +filesA.size() + " Processed Files for " + scan.getId() +" (" + rType + ").\n");

@@ -16,6 +16,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -39,7 +40,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import com.google.common.collect.Lists;
 
@@ -202,7 +203,7 @@ public class QuickSearchAction extends SecureAction {
                                 
                                 String identifier = idSet.substring(0,idSet.indexOf(" ("));
                                 idSet = idSet.substring(idSet.indexOf(" (")+2);
-                                ArrayList<String> ps = StringUtils.CommaDelimitedStringToArrayList(idSet, true);
+                                ArrayList<String> ps = XftStringUtils.CommaDelimitedStringToArrayList(idSet, true);
                                 
                                 for (String p : ps){
                                 	if(Permissions.canRead(user,element_name + "/sharing/share/project", p)){
@@ -313,10 +314,10 @@ public class QuickSearchAction extends SecureAction {
                     boolean canRead=false;
                     for(Integer pC: columns){
                         String pId=(String)t.rows().get(rowC)[pC];
-                        if(!StringUtils.IsEmpty(pId)){
+                        if(StringUtils.isNotBlank(pId)){
                             String[] projects=pId.split(", ");
                             for(String project:projects){
-                                if(!StringUtils.IsEmpty(project)){
+                                if(StringUtils.isNotBlank(project)){
                                     project=project.replace(">", "");
                                     project=project.replace("<", "");
                                     if(Permissions.canRead(user,xsiPath,project)){

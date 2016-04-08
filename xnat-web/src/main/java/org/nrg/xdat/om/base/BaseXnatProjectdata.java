@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.om.base;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
@@ -56,7 +57,7 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.helpers.prearchive.PrearcUtils;
@@ -196,10 +197,10 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
 
         if (base != null) {
             identifier = base;
-            identifier = StringUtils.ReplaceStr(identifier, " ", "");
-            identifier = StringUtils.ReplaceStr(identifier, "-", "_");
-            identifier = StringUtils.ReplaceStr(identifier, "\"", "");
-            identifier = StringUtils.ReplaceStr(identifier, "'", "");
+            identifier = StringUtils.replace(identifier, " ", "");
+            identifier = StringUtils.replace(identifier, "-", "_");
+            identifier = StringUtils.replace(identifier, "\"", "");
+            identifier = StringUtils.replace(identifier, "'", "");
 
             identifier = incrementID(identifier, digits);
         }
@@ -225,12 +226,12 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
         nf.setMinimumIntegerDigits(digits);
         if (al.size() > 0) {
             int count = al.size() + 1;
-            String full = StringUtils.ReplaceStr(nf.format(count), ",", "");
+            String full = StringUtils.replace(nf.format(count), ",", "");
             temp_id = s + full;
 
             while (al.contains(temp_id)) {
                 count++;
-                full = StringUtils.ReplaceStr(nf.format(count), ",", "");
+                full = StringUtils.replace(nf.format(count), ",", "");
                 temp_id = s + full;
             }
 
@@ -1312,11 +1313,11 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
     public void preSave() throws Exception {
         super.preSave();
 
-        if (StringUtils.IsEmpty(this.getId())) {
+        if (StringUtils.isBlank(this.getId())) {
             throw new IllegalArgumentException();
         }
 
-        if (!StringUtils.IsAlphaNumericUnderscore(getId())) {
+        if (!XftStringUtils.IsAlphaNumericUnderscore(getId())) {
             throw new IllegalArgumentException("Identifiers cannot use special characters.");
         }
 
@@ -1531,7 +1532,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
 
         //Trim excess white space from the project id
         String id = this.getId();
-        if (!StringUtils.IsEmpty(id)) {
+        if (StringUtils.isNotBlank(id)) {
             trim = id.trim();
             if (!trim.equals(id)) {
                 this.setId(trim);
@@ -1540,7 +1541,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
 
         // Trim excess white space from the secondary id
         String secondaryId = this.getSecondaryId();
-        if (!StringUtils.IsEmpty(secondaryId)) {
+        if (StringUtils.isNotBlank(secondaryId)) {
             trim = secondaryId.trim();
             if (!trim.equals(secondaryId)) {
                 this.setSecondaryId(trim);
@@ -1549,7 +1550,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
 
         // Trim excess white space from the project name
         String name = this.getName();
-        if (!StringUtils.IsEmpty(name)) {
+        if (StringUtils.isNotBlank(name)) {
             trim = name.trim();
             if (!trim.equals(name)) {
                 this.setName(trim);
@@ -1575,7 +1576,7 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
     public Collection<String> validateProjectFields() throws Exception {
 
         // Make sure the Id isn't null or empty
-        if (StringUtils.IsEmpty(this.getId())) {
+        if (StringUtils.isBlank(this.getId())) {
             return Arrays.asList("Missing required field: Project Id.");
         }
 
@@ -1583,11 +1584,11 @@ public class BaseXnatProjectdata extends AutoXnatProjectdata implements Archivab
         Map<String, String> elements = new HashMap<String, String>();
         elements.put("Project Id", TurbineUtils.escapeParam(this.getId().toLowerCase())); // Add the Project Id.
 
-        if (!StringUtils.IsEmpty(this.getName())) { // Add the Project Title.
+        if (StringUtils.isNotBlank(this.getName())) { // Add the Project Title.
             elements.put("Project Title", TurbineUtils.escapeParam(this.getName().toLowerCase()));
         }
 
-        if (!StringUtils.IsEmpty(this.getSecondaryId())) { // Add the Running Title.
+        if (StringUtils.isNotBlank(this.getSecondaryId())) { // Add the Running Title.
             elements.put("Running Title", TurbineUtils.escapeParam(this.getSecondaryId().toLowerCase()));
         }
 

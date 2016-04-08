@@ -21,7 +21,7 @@ import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.restlet.resources.ScanList;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.utils.CatalogUtils;
@@ -115,7 +115,7 @@ public class CatalogResourceList extends XNATTemplate {
                     for(String tag: tags){
                         tag = tag.trim();
                         if(!tag.equals("")){
-                            for(String s:StringUtils.CommaDelimitedStringToArrayList(tag)){
+                            for(String s:XftStringUtils.CommaDelimitedStringToArrayList(tag)){
                                 s=s.trim();
                                 if(!s.equals("")){
                                     XnatAbstractresourceTag t = new XnatAbstractresourceTag(user);

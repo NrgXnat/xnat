@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.om.base;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -37,7 +38,7 @@ import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
 import org.nrg.xnat.turbine.utils.XNATUtils;
@@ -128,7 +129,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	        {
 	            return "Unknown";
 	        }else{
-	            return StringUtils.CapitalFirstLetter(s.toLowerCase());
+	            return StringUtils.capitalize(s.toLowerCase());
 	        }
 	    }
 	}
@@ -202,7 +203,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	        {
 	            return "Unknown";
 	        }else{
-	            return StringUtils.CapitalFirstLetter(s.toLowerCase());
+	            return StringUtils.capitalize(s.toLowerCase());
 	        }
 	    }
 	}
@@ -470,7 +471,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
                         final String projects = (String)row.get("projects");
                         if (projects!=null)
                         {
-                            for(final String projectName:StringUtils.CommaDelimitedStringToArrayList(projects, true))
+                            for(final String projectName:XftStringUtils.CommaDelimitedStringToArrayList(projects, true))
                             {
                                if(projectName.contains(":")){
                             	   XnatExperimentdataShare es = new XnatExperimentdataShare(this.getUser());
@@ -577,7 +578,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
                                         final String projects2 = (String)row2.get("projects");
                                         if (projects2!=null)
                                         {
-                                        	for(final String projectName:StringUtils.CommaDelimitedStringToArrayList(projects2, true))
+                                        	for(final String projectName:XftStringUtils.CommaDelimitedStringToArrayList(projects2, true))
                                             {
                                                if(projectName.contains(":")){
                                             	   final XnatExperimentdataShare es = new XnatExperimentdataShare(this.getUser());
@@ -1004,7 +1005,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 //        if(code!=null && !code.equals(""))
 //            prefix+="_" + code;
 //        
-//        newID+=prefix +"_"+ StringUtils.ReplaceStr(nf.format(i), ",", "");
+//        newID+=prefix +"_"+ StringUtils.replace(nf.format(i), ",", "");
 //        
 //        String query = "SELECT count(ID) AS id_count FROM xnat_experimentdata WHERE ID='";
 //
@@ -1016,7 +1017,7 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 //            Long idCOUNT= (Long)PoolDBUtils.ReturnStatisticQuery(query + newID + "';", "id_count", this.getDBName(), login);
 //            while (idCOUNT > 0){
 //                i++;
-//                newID=prefix + "_"+ StringUtils.ReplaceStr(nf.format(i), ",", "");
+//                newID=prefix + "_"+ StringUtils.replace(nf.format(i), ",", "");
 //                idCOUNT= (Long)PoolDBUtils.ReturnStatisticQuery(query + newID + "';", "id_count", this.getDBName(), login);
 //            }
 //        } catch (Exception e) {
@@ -1327,42 +1328,42 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
     }
 
     public static String cleanValue(String v){
-    	v= StringUtils.ReplaceStr(v, " ", "_");
-    	v= StringUtils.ReplaceStr(v, "`", "_");
-    	v= StringUtils.ReplaceStr(v, "~", "_");
-    	v= StringUtils.ReplaceStr(v, "@", "_");
-    	v= StringUtils.ReplaceStr(v, "#", "_");
-    	v= StringUtils.ReplaceStr(v, "$", "_");
-    	v= StringUtils.ReplaceStr(v, "%", "_");
-    	v= StringUtils.ReplaceStr(v, "^", "_");
-    	v= StringUtils.ReplaceStr(v, "&", "_");
-    	v= StringUtils.ReplaceStr(v, "*", "_");
-    	v= StringUtils.ReplaceStr(v, "(", "_");
-    	v= StringUtils.ReplaceStr(v, ")", "_");
-    	v= StringUtils.ReplaceStr(v, "+", "_");
-    	v= StringUtils.ReplaceStr(v, "=", "_");
-    	v= StringUtils.ReplaceStr(v, "[", "_");
-    	v= StringUtils.ReplaceStr(v, "]", "_");
-    	v= StringUtils.ReplaceStr(v, "{", "_");
-    	v= StringUtils.ReplaceStr(v, "}", "_");
-    	v= StringUtils.ReplaceStr(v, "|", "_");
-    	v= StringUtils.ReplaceStr(v, "\\", "_");
-    	v= StringUtils.ReplaceStr(v, "/", "_");
-    	v= StringUtils.ReplaceStr(v, "?", "_");
-    	v= StringUtils.ReplaceStr(v, ":", "_");
-    	v= StringUtils.ReplaceStr(v, ";", "_");
-    	v= StringUtils.ReplaceStr(v, "\"", "_");
-    	v= StringUtils.ReplaceStr(v, "'", "_");
-    	v= StringUtils.ReplaceStr(v, ",", "_");
-    	v= StringUtils.ReplaceStr(v, ".", "_");
-    	v= StringUtils.ReplaceStr(v, "<", "_");
-    	v= StringUtils.ReplaceStr(v, ">", "_");
+    	v= StringUtils.replace(v, " ", "_");
+    	v= StringUtils.replace(v, "`", "_");
+    	v= StringUtils.replace(v, "~", "_");
+    	v= StringUtils.replace(v, "@", "_");
+    	v= StringUtils.replace(v, "#", "_");
+    	v= StringUtils.replace(v, "$", "_");
+    	v= StringUtils.replace(v, "%", "_");
+    	v= StringUtils.replace(v, "^", "_");
+    	v= StringUtils.replace(v, "&", "_");
+    	v= StringUtils.replace(v, "*", "_");
+    	v= StringUtils.replace(v, "(", "_");
+    	v= StringUtils.replace(v, ")", "_");
+    	v= StringUtils.replace(v, "+", "_");
+    	v= StringUtils.replace(v, "=", "_");
+    	v= StringUtils.replace(v, "[", "_");
+    	v= StringUtils.replace(v, "]", "_");
+    	v= StringUtils.replace(v, "{", "_");
+    	v= StringUtils.replace(v, "}", "_");
+    	v= StringUtils.replace(v, "|", "_");
+    	v= StringUtils.replace(v, "\\", "_");
+    	v= StringUtils.replace(v, "/", "_");
+    	v= StringUtils.replace(v, "?", "_");
+    	v= StringUtils.replace(v, ":", "_");
+    	v= StringUtils.replace(v, ";", "_");
+    	v= StringUtils.replace(v, "\"", "_");
+    	v= StringUtils.replace(v, "'", "_");
+    	v= StringUtils.replace(v, ",", "_");
+    	v= StringUtils.replace(v, ".", "_");
+    	v= StringUtils.replace(v, "<", "_");
+    	v= StringUtils.replace(v, ">", "_");
     	
     	return v;
     }
     
     public void checkUniqueLabel() throws Exception{
-		if(!StringUtils.IsEmpty(this.getLabel())){
+		if(StringUtils.isNotBlank(this.getLabel())){
 			Long count=(Long)PoolDBUtils.ReturnStatisticQuery(String.format("SELECT COUNT(*) FROM (SELECT label,id FROM xnat_subjectData WHERE label='%1$s' AND ID !='%2$s' AND project='%3$s' UNION SELECT label, subject_id as ID FROM xnat_projectParticipant WHERE label='%1$s' AND subject_id !='%2$s' AND project='%3$s')SRCH",this.getLabel(),this.getId(),this.getProject()), "count", this.getDBName(), "system");
 			if(count>0){
 				throw new ClientException(Status.CLIENT_ERROR_CONFLICT,"Conflict: Duplicate subject label",new Exception());
@@ -1375,19 +1376,19 @@ public class BaseXnatSubjectdata extends AutoXnatSubjectdata implements Archivab
 	public void preSave() throws Exception{
 		super.preSave();
 		
-		if(StringUtils.IsEmpty(this.getId())){
+		if(StringUtils.isBlank(this.getId())){
 			throw new IllegalArgumentException();
 		}	
 		
-		if(StringUtils.IsEmpty(this.getLabel())){
+		if(StringUtils.isBlank(this.getLabel())){
 			throw new IllegalArgumentException();
 		}
 		
-		if(!StringUtils.IsAlphaNumericUnderscore(getId())){
+		if(!XftStringUtils.IsAlphaNumericUnderscore(getId())){
 			throw new IllegalArgumentException("Identifiers cannot use special characters.");
 		}
 		
-		if(!StringUtils.IsAlphaNumericUnderscore(getLabel())){
+		if(!XftStringUtils.IsAlphaNumericUnderscore(getLabel())){
 			throw new IllegalArgumentException("Labels cannot use special characters.");
 		}
 		

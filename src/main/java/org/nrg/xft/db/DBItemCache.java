@@ -12,14 +12,11 @@
 
 package org.nrg.xft.db;
 
-import java.io.IOException;
-import java.lang.reflect.Constructor;
 import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Iterator;
-import java.util.List;
 import java.util.Map;
 
 import org.apache.log4j.Logger;
@@ -33,9 +30,6 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
-
-import com.google.common.collect.Lists;
 
 /**
  * @author Tim

@@ -50,7 +50,7 @@ import org.nrg.xft.security.SecurityManagerI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 @SuppressWarnings({"unchecked", "rawtypes"})
 public class DBAction {
@@ -1804,12 +1804,12 @@ public class DBAction {
                 try {
                     PoolDBUtils.ExecuteNonSelectQuery(newQuery, e.getDbName(), null);
                 } catch (Exception e2) {
-                    col_name = StringUtils.SQLSequenceFormat1(e.getSQLName(), key.getSQLName());
+                    col_name = XftStringUtils.SQLSequenceFormat1(e.getSQLName(), key.getSQLName());
                     newQuery = "SELECT * FROM " + col_name;
                     try {
                         PoolDBUtils.ExecuteNonSelectQuery(newQuery, e.getDbName(), null);
                     } catch (Exception e3) {
-                        col_name = StringUtils.SQLSequenceFormat2(e.getSQLName(), key.getSQLName());
+                        col_name = XftStringUtils.SQLSequenceFormat2(e.getSQLName(), key.getSQLName());
                         newQuery = "SELECT * FROM " + col_name;
                         try {
                             PoolDBUtils.ExecuteNonSelectQuery(newQuery, e.getDbName(), null);
@@ -1841,12 +1841,12 @@ public class DBAction {
             try {
                 PoolDBUtils.ExecuteNonSelectQuery(newQuery, dbName, null);
             } catch (Exception e2) {
-                col_name = StringUtils.SQLSequenceFormat1(table, key);
+                col_name = XftStringUtils.SQLSequenceFormat1(table, key);
                 newQuery = "SELECT * FROM " + col_name;
                 try {
                     PoolDBUtils.ExecuteNonSelectQuery(newQuery, dbName, null);
                 } catch (Exception e3) {
-                    col_name = StringUtils.SQLSequenceFormat2(table, key);
+                    col_name = XftStringUtils.SQLSequenceFormat2(table, key);
                     newQuery = "SELECT * FROM " + col_name;
                     try {
                         PoolDBUtils.ExecuteNonSelectQuery(newQuery, dbName, null);
@@ -2148,7 +2148,7 @@ public class DBAction {
                 if (object.toString().equalsIgnoreCase("NULL")) {
                     return "NULL";
                 } else {
-                    return "'" + StringUtils.CleanForSQLValue(object.toString()) + "'";
+                    return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
                 }
             } else {
                 return object.toString();
@@ -2194,7 +2194,7 @@ public class DBAction {
                             throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");
                         }
                     }
-                    return "'" + StringUtils.CleanForSQLValue(s) + "'";
+                    return "'" + XftStringUtils.CleanForSQLValue(s) + "'";
                 }
             } else if (object.toString().equalsIgnoreCase("NULL")) {
                 return "NULL";
@@ -2207,7 +2207,7 @@ public class DBAction {
                         throw new InvalidValueException("Use of '<' and '>' are not allowed in content.");
                     }
                 }
-                return "'" + StringUtils.CleanForSQLValue(s) + "'";
+                return "'" + XftStringUtils.CleanForSQLValue(s) + "'";
             }
         } else if (type.equalsIgnoreCase("anyURI")) {
             if (object.toString().equalsIgnoreCase("NULL")) {
@@ -2223,10 +2223,10 @@ public class DBAction {
                         FileUtils.ValidateUriAgainstRoot(uri, XFT.GetArchiveRootPath(), "URI references data outside of the archive:" + uri);
 
                 }
-                return "'" + StringUtils.CleanForSQLValue(uri) + "'";
+                return "'" + XftStringUtils.CleanForSQLValue(uri) + "'";
             }
         } else if (type.equalsIgnoreCase("ID")) {
-            return "'" + StringUtils.CleanForSQLValue(object.toString()) + "'";
+            return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
         } else if (type.equalsIgnoreCase("boolean")) {
             if (object.toString().equalsIgnoreCase("true") || object.toString().equalsIgnoreCase("1")) {
                 return "1";
@@ -2386,9 +2386,9 @@ public class DBAction {
                 return object.toString();
             }
         } else if (type.equalsIgnoreCase("time")) {
-            return "'" + StringUtils.CleanForSQLValue(object.toString()) + "'";
+            return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
         } else if (type.equalsIgnoreCase("date")) {
-            return "'" + StringUtils.CleanForSQLValue(object.toString()) + "'";
+            return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
         } else if (type.equalsIgnoreCase("dateTime")) {
             Date d;
             if (object instanceof Date) {
@@ -2400,7 +2400,7 @@ public class DBAction {
                     if (object.toString().trim().equals("NOW()")) {
                         return "NOW()";
                     } else {
-                        return "'" + StringUtils.CleanForSQLValue(object.toString()) + "'";
+                        return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
                     }
                 }
             }
@@ -2410,7 +2410,7 @@ public class DBAction {
 
                 return "'" + df.format(d) + "'";
             } else {
-                return "'" + StringUtils.CleanForSQLValue(object.toString()) + "'";
+                return "'" + XftStringUtils.CleanForSQLValue(object.toString()) + "'";
             }
         } else {
             return object.toString();

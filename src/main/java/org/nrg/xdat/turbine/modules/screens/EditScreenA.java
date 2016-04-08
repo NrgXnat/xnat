@@ -22,7 +22,7 @@ import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 
 /**
@@ -100,7 +100,7 @@ public abstract class EditScreenA extends SecureScreen {
                 } catch (Exception ignored) {
                 }
             }
-            context.put("edit_screen", StringUtils.getLocalClassName(this.getClass()) + ".vm");
+            context.put("edit_screen", XftStringUtils.getLocalClassName(this.getClass()) + ".vm");
             if (item == null) {
                 try {
                     String s = getElementName();

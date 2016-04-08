@@ -13,6 +13,7 @@
 package org.nrg.xdat.security;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.display.DisplayField;
@@ -53,7 +54,6 @@ import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
 
 import java.io.IOException;
 import java.io.InputStream;
@@ -127,7 +127,7 @@ public class ElementSecurity extends ItemWrapper {
         for (DataModelDefinition def : XFTManager.discoverDataModelDefs()) {
             for (String s : def.getSecuredElements()) {
 
-                if ((!StringUtils.IsEmpty(s)) && elements.get(s) == null) {
+                if ((StringUtils.isNotBlank(s)) && elements.get(s) == null) {
                     if (GenericWrapperElement.GetFieldForXMLPath(s + "/project") != null) {
                         ElementSecurity es = ElementSecurity.newElementSecurity(s);
                         es.initExistingPermissions("admin");
@@ -1376,13 +1376,13 @@ public class ElementSecurity extends ItemWrapper {
                 final Scanner      scanner = new Scanner(is).useDelimiter(";");
                 while (scanner.hasNext()) {
                     String query = scanner.next();
-                    if (StringUtils.HasContent(query)) {
+                    if (StringUtils.isNotBlank(query)) {
                         stmts.add(query.replace("$!element_name", this.getElementName()).replace("$element_name", this.getElementName()));
                     }
                 }
                 PoolDBUtils.ExecuteBatch(stmts, this.getDBName(), userName);
             }
-        } catch (Exception e) {
+        } catch (Exception ignore) {
         } finally {
             try {
                 if (is != null) {
@@ -1728,7 +1728,7 @@ public class ElementSecurity extends ItemWrapper {
         String usage = getUsage();
 
         if (usage != null) {
-            return StringUtils.CommaDelimitedStringToArrayList(usage, true).contains(id);
+            return Arrays.asList(usage.split("[\\s]*,[\\s]*")).contains(id);
         }
 
         return false;
@@ -1924,7 +1924,7 @@ public class ElementSecurity extends ItemWrapper {
     public static String GetSingularDescription(String elementName) {
         try {
             ElementSecurity es = GetElementSecurities().get(elementName);
-            return (es != null && !StringUtils.IsEmpty(es.getSingularDescription())) ? es.getSingularDescription() : GenericWrapperElement.GetElement(elementName).getProperName();
+            return (es != null && StringUtils.isNotBlank(es.getSingularDescription())) ? es.getSingularDescription() : GenericWrapperElement.GetElement(elementName).getProperName();
         } catch (Exception e) {
             logger.error("", e);
         }

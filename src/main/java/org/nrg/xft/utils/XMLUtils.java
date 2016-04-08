@@ -24,6 +24,7 @@ import java.io.StringWriter;
 import javax.xml.parsers.DocumentBuilder;
 import javax.xml.parsers.DocumentBuilderFactory;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.slf4j.Logger;
@@ -162,9 +163,9 @@ public  class XMLUtils
 		}
 		
 		String s = writer.toString();
-		s = StringUtils.ReplaceStr(s,"<BR>","*BR*");
-		s =  StringUtils.ReplaceStr(StringUtils.ReplaceStr(StringUtils.ReplaceStr(s,"</","&lt;/"),"<","&lt;"),">","&gt;");
-		return StringUtils.ReplaceStr(s,"*BR*","<BR>");
+		s = StringUtils.replace(s, "<BR>", "*BR*");
+		s =  StringUtils.replace(StringUtils.replace(StringUtils.replace(s, "</", "&lt;/"), "<", "&lt;"), ">", "&gt;");
+		return StringUtils.replace(s, "*BR*", "<BR>");
 	}
 	
 	/**

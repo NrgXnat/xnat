@@ -23,7 +23,7 @@ import org.apache.log4j.Logger;
 import org.nrg.xft.identifier.Identifier;
 import org.nrg.xft.schema.design.XFTNode;
 import org.nrg.xft.utils.NodeUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 public abstract class XFTField extends XFTNode implements Identifier{
@@ -144,49 +144,49 @@ public abstract class XFTField extends XFTNode implements Identifier{
 	 * @param string
 	 */
 	public void setDescription(String string) {
-		description = StringUtils.intern(string);
+		description = XftStringUtils.intern(string);
 	}
 
 	/**
 	 * @param string
 	 */
 	public void setDisplayName(String string) {
-		displayName = StringUtils.intern(string);
+		displayName = XftStringUtils.intern(string);
 	}
 
 	/**
 	 * @param string
 	 */
 	public void setFixed(String string) {
-		fixed = StringUtils.intern(string);
+		fixed = XftStringUtils.intern(string);
 	}
 
 	/**
 	 * @param i
 	 */
 	public void setMaxOccurs(String i) {
-		maxOccurs = StringUtils.intern(i);
+		maxOccurs = XftStringUtils.intern(i);
 	}
 
 	/**
 	 * @param i
 	 */
 	public void setMinOccurs(String i) {
-		minOccurs = StringUtils.intern(i);
+		minOccurs = XftStringUtils.intern(i);
 	}
 
 	/**
 	 * @param i
 	 */
 	public void setSize(String i) {
-		size = StringUtils.intern(i);
+		size = XftStringUtils.intern(i);
 	}
 
 	/**
 	 * @param string
 	 */
 	public void setUse(String string) {
-		use = StringUtils.intern(string);
+		use = XftStringUtils.intern(string);
 		if (use.equalsIgnoreCase("optional"))
 		{
 			this.setMinOccurs("0");

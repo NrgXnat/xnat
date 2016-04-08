@@ -26,7 +26,7 @@ import org.nrg.xft.XFTTableI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 /**
  * @author Tim
  *
@@ -76,7 +76,7 @@ public class CSVPresenter extends PresentationA {
 				    SchemaElementI foreign = SchemaElement.GetElement(df.getElementName());
 				    if (search.isMultipleRelationship(foreign))
 				    {
-					    String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
+					    String temp = XftStringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
 					    Integer index = ((XFTTable)table).getColumnIndex(temp);
 					    if (index!=null)
 					    {
@@ -140,7 +140,7 @@ public class CSVPresenter extends PresentationA {
 		                        SchemaElementI foreign = SchemaElement.GetElement(dfr.getElementName());
 		                        if (search.isMultipleRelationship(foreign))
 		                        {
-		                    	    String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
+		                    	    String temp = XftStringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
 		                    	    Integer index = ((XFTTable)table).getColumnIndex(temp);
 		                    	    if (index!=null)
 		                    	    {

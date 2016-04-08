@@ -1,6 +1,7 @@
 package org.nrg.xdat.security;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
@@ -21,7 +22,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
@@ -175,7 +176,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 			 // NEW USER
 		    if (overrideSecurity || Roles.isSiteAdmin(authenticatedUser)) {
 		        String tempPass = user.getPassword();
-		        if (!StringUtils.IsEmpty(tempPass)){
+		        if (StringUtils.isNotBlank(tempPass)){
 		        	PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 		        	if(validator.isValid(tempPass, null)){
 		        		//this is set to null instead of authenticatedUser because new users should be able to use any password even those that have recently been used by other users.
@@ -205,7 +206,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		    String savedPass = existing.getPassword();
 		 
 		    // check if the password is being updated
-		    if (!StringUtils.IsEmpty(tempPass) && !org.apache.commons.lang.StringUtils.equals(tempPass,savedPass) && !org.apache.commons.lang.StringUtils.equals(new ShaPasswordEncoder(256).encodePassword(tempPass, user.getSalt()),savedPass)) {
+		    if (StringUtils.isNotBlank(tempPass) && !org.apache.commons.lang.StringUtils.equals(tempPass, savedPass) && !org.apache.commons.lang.StringUtils.equals(new ShaPasswordEncoder(256).encodePassword(tempPass, user.getSalt()), savedPass)) {
 		        String encrypted=(new ShaPasswordEncoder(256).encodePassword(tempPass, existing.getSalt()));
 			    if(!org.apache.commons.lang.StringUtils.equals(encrypted, savedPass)){
 		    		PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);

@@ -15,7 +15,7 @@ package org.nrg.xdat.security;
 import java.util.Comparator;
 
 import org.nrg.xft.exception.MetaDataException;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 
 /**
@@ -38,7 +38,7 @@ public class PermissionItem {
     private boolean wasSet          = false;
 
     public void set(PermissionCriteriaI c) throws MetaDataException {
-        if (c.getField().equalsIgnoreCase(StringUtils.StandardizeXMLPath(fullFieldName)) && c.getFieldValue().toString().equalsIgnoreCase(value.toString())) {
+        if (c.getField().equalsIgnoreCase(XftStringUtils.StandardizeXMLPath(fullFieldName)) && c.getFieldValue().toString().equalsIgnoreCase(value.toString())) {
             this.setCreate(c.getCreate());
             this.setEdit(c.getEdit());
             this.setDelete(c.getDelete());

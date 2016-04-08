@@ -36,7 +36,8 @@ import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
+
 /**
  * @author Tim
  *
@@ -399,7 +400,7 @@ public class SchemaElement implements SchemaElementI {
 	    {
 			for (final Object anAl : al) {
 				String s     = (String) anAl;
-				int    count = StringUtils.CountStringOccurrences(s, String.valueOf(XFT.PATH_SEPERATOR));
+				int    count = XftStringUtils.CountStringOccurrences(s, String.valueOf(XFT.PATH_SEPERATOR));
 				if (count == 0) {
 					return this.getFullXMLName() + "/" + s;
 				} else {
@@ -474,7 +475,7 @@ public class SchemaElement implements SchemaElementI {
             while (iter.hasNext())
             {
                 String s =(String)iter.next();
-                s = StringUtils.StandardizeXMLPath(s);
+                s = XftStringUtils.StandardizeXMLPath(s);
                 int dotCounter = 0;
                 int lastIndex = 0;
                 while (s.indexOf(XFT.PATH_SEPERATOR,lastIndex + 1)!=-1)

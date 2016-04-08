@@ -17,7 +17,7 @@ import org.nrg.xft.exception.InvalidItemException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 public abstract class GenericItemObject implements ItemI {
 	private static final String TRUE = "true";
@@ -145,12 +145,12 @@ public abstract class GenericItemObject implements ItemI {
 	    }else{
 	        if (value instanceof XFTItem)
 	        {
-	            props.put(StringUtils.intern(key),value);
+	            props.put(XftStringUtils.intern(key), value);
 	        }else if (value.toString().equals(NULL))
 	        {
-	            props.put(StringUtils.intern(key),NULL);
+	            props.put(XftStringUtils.intern(key), NULL);
 	        }else{
-	    		props.put(StringUtils.intern(key),value);
+	    		props.put(XftStringUtils.intern(key), value);
 	        }
 	    }
 	    sv=null;
@@ -330,8 +330,8 @@ public abstract class GenericItemObject implements ItemI {
 					} catch (InvalidValueException e) {
 						dateErrors.put(key, e);
 					}
-				} else if (StringUtils.OccursBefore(key, ":", "/")
-						|| StringUtils.OccursBefore(key, ":", "/")) {
+				} else if (XftStringUtils.OccursBefore(key, ":", "/")
+						   || XftStringUtils.OccursBefore(key, ":", "/")) {
 					String temp = key.replace('.', '/');
 					String root = key.substring(0, key.indexOf("/"));
 					try {

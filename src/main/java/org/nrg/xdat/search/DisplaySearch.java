@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.search;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.collections.DisplayFieldWrapperCollection;
 import org.nrg.xdat.display.*;
@@ -34,7 +35,7 @@ import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.*;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -115,8 +116,8 @@ public class DisplaySearch implements TableSearchI {
 
         String db = rootElement.getGenericXFTElement().getDbName();
         if (pagingOn) {
-            query = StringUtils.ReplaceStr(query, "'", "*'*");
-            query = StringUtils.ReplaceStr(query, "*'*", "''");
+            query = StringUtils.replace(query, "'", "*'*");
+            query = StringUtils.replace(query, "*'*", "''");
 
             Long count = MaterializedView.createView(this.getResultsTableName(), query, user, MaterializedView.DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE);
             try {
@@ -167,8 +168,8 @@ public class DisplaySearch implements TableSearchI {
         query = this.getSQLQuery(presenter);
         resetResultsTableName();
 
-        query = StringUtils.ReplaceStr(query, "'", "*'*");
-        query = StringUtils.ReplaceStr(query, "*'*", "''");
+        query = StringUtils.replace(query, "'", "*'*");
+        query = StringUtils.replace(query, "*'*", "''");
 
         return MaterializedView.createView(this.getResultsTableName(), query, user, MaterializedView.DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE);
 
@@ -222,7 +223,7 @@ public class DisplaySearch implements TableSearchI {
 
             if (this.inClauses.size() > 0) {
                 for (Map.Entry<String, String> entry : inClauses.entrySet()) {
-                    for (String key : StringUtils.CommaDelimitedStringToArrayList(entry.getKey())) {
+                    for (String key : XftStringUtils.CommaDelimitedStringToArrayList(entry.getKey())) {
                         try {
                             DisplayField df = DisplayField.getDisplayFieldForUnknownPath(key);
 
@@ -254,7 +255,7 @@ public class DisplaySearch implements TableSearchI {
 
             if (this.inClauses.size() > 0) {
                 for (Map.Entry<String, String> entry : inClauses.entrySet()) {
-                    for (String key : StringUtils.CommaDelimitedStringToArrayList(entry.getKey())) {
+                    for (String key : XftStringUtils.CommaDelimitedStringToArrayList(entry.getKey())) {
                         try {
                             DisplayField df = DisplayField.getDisplayFieldForUnknownPath(key);
 
@@ -397,7 +398,7 @@ public class DisplaySearch implements TableSearchI {
                 }
 
                 if (df instanceof SQLQueryField) {
-//System.out.println("SUBQUERY_" + df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() +"." + StringUtils.ReplaceStr(StringUtils.ReplaceStr((dfw).getValue().toString(), ",", "_com_"),":", "_col_"));
+//System.out.println("SUBQUERY_" + df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() +"." + StringUtils.replace(StringUtils.replace((dfw).getValue().toString(), ",", "_com_"),":", "_col_"));
                     String df_value = (dfw.getValue() == null) ? "NULL" : dfw.getValue().toString();
                     qo.addField("SUBQUERY_" + df.getParentDisplay().getElementName() + ".SUBQUERYFIELD_" + df.getId() + "." + df_value);
                 }
@@ -415,7 +416,7 @@ public class DisplaySearch implements TableSearchI {
 
         if (this.inClauses.size() > 0) {
             for (Map.Entry<String, String> entry : inClauses.entrySet()) {
-                for (String key : StringUtils.CommaDelimitedStringToArrayList(entry.getKey())) {
+                for (String key : XftStringUtils.CommaDelimitedStringToArrayList(entry.getKey())) {
                     try {
                         DisplayField df = DisplayField.getDisplayFieldForUnknownPath(key);
 
@@ -494,7 +495,7 @@ public class DisplaySearch implements TableSearchI {
                     DisplayField df2 = DisplayField.getDisplayFieldForUnknownPath(s);
                     if (df2 != null && !added.contains(dfr.getElementName() + df2.getId())) {
                         String content = this.getSQLContent(df2, qo);
-                        SchemaElementI se = SchemaElement.GetElement(StringUtils.GetRootElementName(s));
+                        SchemaElementI se = SchemaElement.GetElement(XftStringUtils.GetRootElementName(s));
 
                         if (counter == 0) {
                             select.append("SELECT ");
@@ -548,7 +549,7 @@ public class DisplaySearch implements TableSearchI {
                         String localType = GenericWrapperElement.GetFieldForXMLPath(rootField).getXMLType().getLocalType();
                         String foreignType = GenericWrapperElement.GetFieldForXMLPath(foreignFilter).getXMLType().getLocalType();
                         if (localType.equalsIgnoreCase(foreignType)) {
-                            select.append(", ").append(StringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName() + "_DIFF"));
+                            select.append(", ").append(XftStringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName() + "_DIFF"));
                         }
                     }
                 }
@@ -708,7 +709,7 @@ public class DisplaySearch implements TableSearchI {
                 sb2.append(")) AS search").append(inCounter);
 
                 int subCounter = 0;
-                for (String key : StringUtils.CommaDelimitedStringToArrayList(entry.getKey())) {
+                for (String key : XftStringUtils.CommaDelimitedStringToArrayList(entry.getKey())) {
                     DisplayField inDF = DisplayField.getDisplayFieldForUnknownPath(key);
                     if (inDF != null) {
                         String keyField = inDF.getId();
@@ -755,36 +756,36 @@ public class DisplaySearch implements TableSearchI {
 
 
     public static String cleanColumnName(String s) {
-        s = StringUtils.ReplaceStr(s, ",", "_com_");
-        s = StringUtils.ReplaceStr(s, ":", "_col_");
-        s = StringUtils.ReplaceStr(s, "-", "_");
-        s = StringUtils.ReplaceStr(s, "/", "");
-        s = StringUtils.ReplaceStr(s, "\\", "_");
-        s = StringUtils.ReplaceStr(s, ";", "_");
-        s = StringUtils.ReplaceStr(s, "'", "_");
-        s = StringUtils.ReplaceStr(s, "\"", "_");
-        s = StringUtils.ReplaceStr(s, "?", "_");
-        s = StringUtils.ReplaceStr(s, "!", "_");
-        s = StringUtils.ReplaceStr(s, "~", "_");
-        s = StringUtils.ReplaceStr(s, "`", "_");
-        s = StringUtils.ReplaceStr(s, "#", "_");
-        s = StringUtils.ReplaceStr(s, "$", "_");
-        s = StringUtils.ReplaceStr(s, "%", "_");
-        s = StringUtils.ReplaceStr(s, "^", "_");
-        s = StringUtils.ReplaceStr(s, "&", "_");
-        s = StringUtils.ReplaceStr(s, "*", "_");
-        s = StringUtils.ReplaceStr(s, "(", "_");
-        s = StringUtils.ReplaceStr(s, ")", "_");
-        s = StringUtils.ReplaceStr(s, "+", "_");
-        s = StringUtils.ReplaceStr(s, "=", "_");
-        s = StringUtils.ReplaceStr(s, "|", "_");
-        s = StringUtils.ReplaceStr(s, "{", "_");
-        s = StringUtils.ReplaceStr(s, "}", "_");
-        s = StringUtils.ReplaceStr(s, "[", "");
-        s = StringUtils.ReplaceStr(s, "]", "");
-        s = StringUtils.ReplaceStr(s, "<", "_");
-        s = StringUtils.ReplaceStr(s, ">", "_");
-        s = StringUtils.ReplaceStr(s, "@", "");
+        s = StringUtils.replace(s, ",", "_com_");
+        s = StringUtils.replace(s, ":", "_col_");
+        s = StringUtils.replace(s, "-", "_");
+        s = StringUtils.replace(s, "/", "");
+        s = StringUtils.replace(s, "\\", "_");
+        s = StringUtils.replace(s, ";", "_");
+        s = StringUtils.replace(s, "'", "_");
+        s = StringUtils.replace(s, "\"", "_");
+        s = StringUtils.replace(s, "?", "_");
+        s = StringUtils.replace(s, "!", "_");
+        s = StringUtils.replace(s, "~", "_");
+        s = StringUtils.replace(s, "`", "_");
+        s = StringUtils.replace(s, "#", "_");
+        s = StringUtils.replace(s, "$", "_");
+        s = StringUtils.replace(s, "%", "_");
+        s = StringUtils.replace(s, "^", "_");
+        s = StringUtils.replace(s, "&", "_");
+        s = StringUtils.replace(s, "*", "_");
+        s = StringUtils.replace(s, "(", "_");
+        s = StringUtils.replace(s, ")", "_");
+        s = StringUtils.replace(s, "+", "_");
+        s = StringUtils.replace(s, "=", "_");
+        s = StringUtils.replace(s, "|", "_");
+        s = StringUtils.replace(s, "{", "_");
+        s = StringUtils.replace(s, "}", "_");
+        s = StringUtils.replace(s, "[", "");
+        s = StringUtils.replace(s, "]", "");
+        s = StringUtils.replace(s, "<", "_");
+        s = StringUtils.replace(s, ">", "_");
+        s = StringUtils.replace(s, "@", "");
         return s;
     }
 
@@ -944,7 +945,7 @@ public class DisplaySearch implements TableSearchI {
             if (content == null) {
                 content = dfeAlias;
             } else {
-                content = StringUtils.ReplaceStr(content, "@" + dfe.getName(), dfeAlias);
+                content = StringUtils.replace(content, "@" + dfe.getName(), dfeAlias);
             }
         }
 
@@ -1285,15 +1286,15 @@ public class DisplaySearch implements TableSearchI {
     }
 
     public void addInClause(String fields, String commaDelimitedValues) {
-        commaDelimitedValues = StringUtils.ReplaceStr(commaDelimitedValues, "\r\n,", ",");
-        commaDelimitedValues = StringUtils.ReplaceStr(commaDelimitedValues, ",\r\n", ",");
-        commaDelimitedValues = StringUtils.ReplaceStr(commaDelimitedValues, "\"", "");
-        commaDelimitedValues = StringUtils.ReplaceStr(commaDelimitedValues, "'", "");
-        commaDelimitedValues = StringUtils.ReplaceStr(commaDelimitedValues, "\r\n", ",");
+        commaDelimitedValues = StringUtils.replace(commaDelimitedValues, "\r\n,", ",");
+        commaDelimitedValues = StringUtils.replace(commaDelimitedValues, ",\r\n", ",");
+        commaDelimitedValues = StringUtils.replace(commaDelimitedValues, "\"", "");
+        commaDelimitedValues = StringUtils.replace(commaDelimitedValues, "'", "");
+        commaDelimitedValues = StringUtils.replace(commaDelimitedValues, "\r\n", ",");
 
         StringBuilder sb = new StringBuilder();
         int counter = 0;
-        for (final String s : StringUtils.CommaDelimitedStringToArrayList(commaDelimitedValues)) {
+        for (final String s : XftStringUtils.CommaDelimitedStringToArrayList(commaDelimitedValues)) {
             if (!s.trim().contains(" ")) {
                 if (counter++ != 0) {
                     sb.append(",\"").append(s.trim()).append("\"");
@@ -1301,7 +1302,7 @@ public class DisplaySearch implements TableSearchI {
                     sb.append("\"").append(s.trim()).append("\"");
                 }
             } else {
-                for (final String s2 : StringUtils.DelimitedStringToArrayList(s.trim(), " ")) {
+                for (final String s2 : XftStringUtils.DelimitedStringToArrayList(s.trim(), " ")) {
                     if (counter++ != 0) {
                         sb.append(",\"").append(s2.trim()).append("\"");
                     } else {

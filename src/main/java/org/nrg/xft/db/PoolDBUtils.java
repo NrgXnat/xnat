@@ -11,6 +11,7 @@
 
 
 package org.nrg.xft.db;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTItem;
@@ -20,7 +21,7 @@ import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import java.sql.*;
 import java.util.*;
@@ -246,7 +247,7 @@ public class PoolDBUtils {
 
             	st.executeBatch();
 
-            	logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr("BATCH","\n"," "));
+            	logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace("BATCH", "\n", " "));
 
             	st.clearBatch();
 
@@ -695,7 +696,7 @@ public class PoolDBUtils {
 
             st.execute();
 
-            logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + login + "): " + StringUtils.ReplaceStr(query,"\n"," "));
+            logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + login + "): " + StringUtils.replace(query, "\n", " "));
 
         } catch (ElementNotFoundException e) {
             logger.error(query);
@@ -767,7 +768,7 @@ public class PoolDBUtils {
     public static Object LogCustomSearch(String login,String search_xml, String dbname)throws SQLException,DBPoolException,Exception{
         CreateCustomSearchLog(dbname, login);
         Object o = PoolDBUtils.ReturnStatisticQuery("SELECT nextval('xs_custom_searches_id_seq');", "nextval", dbname, login);
-        String query = "INSERT INTO xs_custom_searches (id,username,search_xml) VALUES (" + StringUtils.CleanForSQLValue(o.toString()) + ",'" + login + "','" + StringUtils.CleanForSQLValue(search_xml) + "');";
+        String query = "INSERT INTO xs_custom_searches (id,username,search_xml) VALUES (" + XftStringUtils.CleanForSQLValue(o.toString()) + ",'" + login + "','" + XftStringUtils.CleanForSQLValue(search_xml) + "');";
         PoolDBUtils.ExecuteNonSelectQuery(query, dbname, login);
 
         return o;
@@ -781,7 +782,7 @@ public class PoolDBUtils {
      */
     public static String RetrieveLoggedCustomSearch(String login,String dbname,Object search_id)throws SQLException,DBPoolException,Exception{
         CreateCustomSearchLog(dbname, login);
-        return (String)PoolDBUtils.ReturnStatisticQuery("SELECT search_xml FROM xs_custom_searches WHERE id=" + StringUtils.CleanForSQLValue(search_id.toString()) + ";","search_xml",dbname,login);
+        return (String)PoolDBUtils.ReturnStatisticQuery("SELECT search_xml FROM xs_custom_searches WHERE id=" + XftStringUtils.CleanForSQLValue(search_id.toString()) + ";", "search_xml", dbname, login);
     }
 
     public static final String search_schema_name="xdat_search";
@@ -895,7 +896,7 @@ public class PoolDBUtils {
 			}
 		}
 
-		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
+		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
 
 		return rs;
     }
@@ -926,10 +927,10 @@ public class PoolDBUtils {
 		}
 		
 		if(getTimeDiff(start,Calendar.getInstance().getTime())>1000){
-			logger.error(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
+			logger.error(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
 		}
 
-		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.ReplaceStr(query,"\n"," "));
+		logger.debug(getTimeDiff(start,Calendar.getInstance().getTime()) + " ms" + " (" + userName + "): " + StringUtils.replace(query, "\n", " "));
     }
 
 	public void sendBatch(List<String> statements,String db,String userName,int resultSetType,int resultSetConcurrency) throws SQLException, Exception{

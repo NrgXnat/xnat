@@ -18,6 +18,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -43,15 +44,13 @@ import org.nrg.xft.schema.XFTReferenceField;
 import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.schema.XFTSqlField;
 import org.nrg.xft.schema.XMLType;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperElement;
-import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperFactory;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
-import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.TableSearch;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
+
 @SuppressWarnings({"unchecked","rawtypes"})
 public class GenericWrapperElement extends XFTElementWrapper implements SchemaElementI{	
 	static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperElement.class);
@@ -96,7 +95,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	    {
 			try {
 	            gwe = (GenericWrapperElement) XFTMetaManager.GetWrappedElementByXMLType(GenericWrapperFactory.GetInstance(),t);
-	            ALL_ELEMENTS_CACHE.put(StringUtils.intern(t.getFullForeignType().toLowerCase()),gwe);
+	            ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(t.getFullForeignType().toLowerCase()), gwe);
 	        } catch (RuntimeException e) {
 		        logger.error("GetElement:" + t.getFullForeignType().toLowerCase());
 	            logger.error("",e);
@@ -132,10 +131,10 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 				}
 	    	}
 	    	
-	    	if(!StringUtils.IsEmpty(URI)){
+	    	if(StringUtils.isNotBlank(URI)){
 		    	String abbr = XFTMetaManager.TranslateURIToPrefix(URI);
 		    	
-		    	if(!StringUtils.IsEmpty(abbr)){
+		    	if(StringUtils.isNotBlank(abbr)){
 		    		xsiType=abbr+":"+name;
 		    	}
 	    	}
@@ -161,7 +160,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
             {
                 try {
                     gwe = (GenericWrapperElement) XFTMetaManager.GetWrappedElementByName(GenericWrapperFactory.GetInstance(),name);
-                    ALL_ELEMENTS_CACHE.put(StringUtils.intern(name.toLowerCase()),gwe);
+                    ALL_ELEMENTS_CACHE.put(XftStringUtils.intern(name.toLowerCase()), gwe);
                 } catch (RuntimeException e) {
                     logger.error("GetElement:" + name);
                     logger.error("",e);
@@ -1154,7 +1153,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 		}
 
 		if (getLocalXMLName().indexOf("_") != -1) {
-			return StringUtils.FormatStringToMethodName("", getLocalXMLName());
+			return XftStringUtils.FormatStringToMethodName("", getLocalXMLName());
 		} else {
 			return getLocalXMLName();
 		}
@@ -1430,7 +1429,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					temp= getSchemaTargetNamespacePrefix() + "_" + getXMLName();
 			}
 
-			_finalSqlName=StringUtils.CleanForSQLTableName(temp);
+			_finalSqlName= XftStringUtils.CleanForSQLTableName(temp);
 	    }
 	    
 	    return _finalSqlName;
@@ -1462,7 +1461,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					temp= getSchemaTargetNamespacePrefix() + "_" + getXMLName();
 			}
 
-			_finalFormattedName=StringUtils.CleanForSQLTableName(temp);
+			_finalFormattedName= XftStringUtils.CleanForSQLTableName(temp);
 	    }
 	    
 	    return _finalFormattedName;
@@ -1693,7 +1692,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 //		if (tableName == null || tableName.equalsIgnoreCase("")) {
 //			tableName = getSQLName();
 //		}
-	    path = StringUtils.StandardizeXMLPath(path);
+	    path = XftStringUtils.StandardizeXMLPath(path);
 	    if (correctedXMLPath==null || correctedXMLPath.equalsIgnoreCase(""))
 	    {
 	        correctedXMLPath = this.getFullXMLName();
@@ -1726,7 +1725,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                         }
 						return child.getTableAndFieldGrandSQLForXMLPath(
 								path,
-								header + StringUtils.MinCharsAbbr(lastField.getSQLName()) + "_",
+								header + XftStringUtils.MinCharsAbbr(lastField.getSQLName()) + "_",
 								correctedXMLPath + XFT.PATH_SEPERATOR + current);
 					}
 				} catch (FieldNotFoundException e) {
@@ -1736,7 +1735,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						return extendedE
 								.getTableAndFieldGrandSQLForXMLPath(
 								last,
-								header + StringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
+								header + XftStringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
 								correctedXMLPath + XFT.PATH_SEPERATOR + getExtensionFieldName());
 					}
 					throw new FieldNotFoundException(current);
@@ -1751,7 +1750,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 								.getReferenceElement();
 						return child.getTableAndFieldGrandSQLForXMLPath(
 									path,
-									header + StringUtils.MinCharsAbbr(lastField.getSQLName()) + "_",
+									header + XftStringUtils.MinCharsAbbr(lastField.getSQLName()) + "_",
 									correctedXMLPath + XFT.PATH_SEPERATOR + current);
 					}
 				} catch (FieldNotFoundException e) {
@@ -1761,7 +1760,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						return extendedE
 							.getTableAndFieldGrandSQLForXMLPath(
 							last,
-							header + StringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
+							header + XftStringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
 							correctedXMLPath + XFT.PATH_SEPERATOR + getExtensionFieldName());
 						
 					}
@@ -1780,7 +1779,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						GenericWrapperElement.GetElement(getExtensionType());
 					return extendedE.getTableAndFieldGrandSQLForXMLPath(
 							path,
-							header + StringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
+							header + XftStringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
 							correctedXMLPath + XFT.PATH_SEPERATOR + getExtensionFieldName());
 					
 				}
@@ -1798,7 +1797,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						GenericWrapperElement.GetElement(getExtensionType());
 					return extendedE.getTableAndFieldGrandSQLForXMLPath(
 								path,
-								header + StringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
+								header + XftStringUtils.MinCharsAbbr(getExtensionFieldName()) + "_",
 								correctedXMLPath + XFT.PATH_SEPERATOR + getExtensionFieldName());
 				}
 				throw new FieldNotFoundException(path);
@@ -1811,13 +1810,13 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 		Object[] _return = new Object[3];
 		if (header.equalsIgnoreCase(""))
 			_return[0] =
-				StringUtils.RegCharsAbbr(this.getSQLName())
+					XftStringUtils.RegCharsAbbr(this.getSQLName())
 					+ "_"
 					+ lastField.getSQLName();
 		else
 			_return[0] =
-				header
-					+ StringUtils.RegCharsAbbr(this.getSQLName())
+					header
+					+ XftStringUtils.RegCharsAbbr(this.getSQLName())
 					+ "_"
 					+ lastField.getSQLName();
 		_return[2]= correctedXMLPath + XFT.PATH_SEPERATOR + path;
@@ -1977,7 +1976,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 				{
 					if (field.getUniqueComposite() != "" || field.getUniqueComposite() != null)
 					{
-					    Iterator ids = StringUtils.CommaDelimitedStringToArrayList(field.getUniqueComposite()).iterator();
+					    Iterator ids = XftStringUtils.CommaDelimitedStringToArrayList(field.getUniqueComposite()).iterator();
 					    while(ids.hasNext())
 					    {
 					        String s = (String)ids.next();
@@ -2020,7 +2019,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 								temp.setParent(this.wrapped);
 								GenericWrapperField gwf = (GenericWrapperField)GenericWrapperFactory.GetInstance().wrapField(temp);
 								
-								Iterator ids = StringUtils.CommaDelimitedStringToArrayList(f.getRelationUniqueComposite()).iterator();
+								Iterator ids = XftStringUtils.CommaDelimitedStringToArrayList(f.getRelationUniqueComposite()).iterator();
 							    while(ids.hasNext())
 							    {
 							        String s = (String)ids.next();
@@ -2333,8 +2332,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 */
 	public static Object[] GetViewBasedGrandColumnNameForXMLPath(String s) throws XFTInitException,ElementNotFoundException,Exception
 	{
-	    s = StringUtils.StandardizeXMLPath(s);
-		String rootElement = StringUtils.GetRootElementName(s);
+	    s = XftStringUtils.StandardizeXMLPath(s);
+		String rootElement = XftStringUtils.GetRootElementName(s);
 		GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
 		try {
 
@@ -2362,8 +2361,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 */
 	public static Object[] GetGrandColumnNameForXMLPath(String s) throws XFTInitException,ElementNotFoundException,Exception
 	{
-	    s = StringUtils.StandardizeXMLPath(s);
-		String rootElement = StringUtils.GetRootElementName(s);
+	    s = XftStringUtils.StandardizeXMLPath(s);
+		String rootElement = XftStringUtils.GetRootElementName(s);
 		GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
 		try {
 		    String fieldXMLPath = s.substring(s.indexOf(XFT.PATH_SEPERATOR) + 1);
@@ -2386,8 +2385,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 */
 	public static String GetVerifiedXMLPath(String s) throws XFTInitException,ElementNotFoundException,Exception
 	{
-	    s = StringUtils.StandardizeXMLPath(s);
-		String rootElement = StringUtils.GetRootElementName(s);
+	    s = XftStringUtils.StandardizeXMLPath(s);
+		String rootElement = XftStringUtils.GetRootElementName(s);
 		GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
 		String fieldXMLPath = s.substring(s.indexOf(XFT.PATH_SEPERATOR) + 1);
 		Object [] fieldInfo = root.getTableAndFieldGrandSQLForXMLPath(fieldXMLPath);
@@ -2405,7 +2404,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	 */
 	public static GenericWrapperField GetFieldForXMLPath(String path) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
-	    path= StringUtils.StandardizeXMLPath(path);
+	    path= XftStringUtils.StandardizeXMLPath(path);
             String rootElement = path.substring(0,path.indexOf(XFT.PATH_SEPERATOR));
             path = path.substring(path.indexOf(XFT.PATH_SEPERATOR) + 1);
             GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
@@ -2425,7 +2424,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	
 //	public String getGrandColumnNameForField(GenericWrapperField f) throws XFTInitException,ElementNotFoundException,Exception
 //	{
-//		return StringUtils.MaxCharsAbbr(this.getSQLName()) + "_" + f.getSQLName();
+//		return XftStringUtils.MaxCharsAbbr(this.getSQLName()) + "_" + f.getSQLName();
 //	}
 	
 	/**
@@ -2612,10 +2611,10 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	public static String[] TranslateXMLPathToTables(String path) throws FieldNotFoundException
 	{
 	    try {
-	        path = StringUtils.StandardizeXMLPath(path);
+	        path = XftStringUtils.StandardizeXMLPath(path);
 	        if (XMLPATH_TABLES_CACHE.get(path)==null || (!ENABLE_XPATH_TABLE_CACHING))
 	        {
-	            String rootElement = StringUtils.GetRootElementName(path);
+	            String rootElement = XftStringUtils.GetRootElementName(path);
 	            GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
 	            String fieldXMLPath = path.substring(path.indexOf(XFT.PATH_SEPERATOR) + 1);
 	            String[] tables = root.translateXMLPathToTables(fieldXMLPath);
@@ -2639,8 +2638,8 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	public static String GetCompactXMLPath(String s)
 	{
 	    try {
-	        s = StringUtils.StandardizeXMLPath(s);
-            String rootElement = StringUtils.GetRootElementName(s);
+	        s = XftStringUtils.StandardizeXMLPath(s);
+            String rootElement = XftStringUtils.GetRootElementName(s);
             GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
             String fieldXMLPath = s.substring(s.indexOf(XFT.PATH_SEPERATOR) + 1);
             return root.getCompactXMLPath(fieldXMLPath);
@@ -2875,9 +2874,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						layer[0] = this.getFullXMLName() + "." + "[" + lastField.getWrapped().getFullName() +"]" + layer[0];
 						if (lastField.getName().equalsIgnoreCase(this.getExtensionFieldName()))
 						{
-							layer[1] = this.getSQLName() + "."+ child.getName().toLowerCase() + "_EXT_" + getSQLName() + "_"+ StringUtils.InsertCharsIntoDelimitedString(layer[1],child.getName().toLowerCase() + "_EXT_");
+							layer[1] = this.getSQLName() + "." + child.getName().toLowerCase() + "_EXT_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], child.getName().toLowerCase() + "_EXT_");
 						}else{
-							layer[1] = this.getSQLName() + "."+ lastField.getSQLName()+"_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],lastField.getSQLName()+"_" + getSQLName() + "_" + lastField.getXMLType().getLocalType()+"_");
+							layer[1] = this.getSQLName() + "." + lastField.getSQLName() + "_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], lastField.getSQLName() + "_" + getSQLName() + "_" + lastField.getXMLType().getLocalType() + "_");
 						}
 						if (layer[3]==null)
 						{
@@ -2895,7 +2894,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 							GenericWrapperElement.GetElement(getExtensionType());
 						String[] layer = extendedE.translateXMLPathToTables(last);
 						layer[0] = this.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
-						layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT_");
+						layer[1] = this.getSQLName() + "." + extendedE.getName().toLowerCase() + "_EXT_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], extendedE.getName().toLowerCase() + "_EXT_");
 						if (layer[3]==null)
 						{
 							layer[3] = getExtensionFieldName();
@@ -2913,7 +2912,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 							(GenericWrapperElement) lastField
 								.getReferenceElement();
 						layer[0] = this.getFullXMLName() + "." + "[" + lastField.getWrapped().getFullName() +"]" +child.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
-						layer[1] = this.getSQLName() + "." + lastField.getSQLName()+"_"+ getSQLName()+ "_" + child.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT_" + "."+ child.getName().toLowerCase() + "_EXT_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],child.getName().toLowerCase() + "_EXT_"));
+						layer[1] = this.getSQLName() + "." + lastField.getSQLName() + "_" + getSQLName() + "_" + child.getSQLName() + "." + extendedE.getName().toLowerCase() + "_EXT_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], extendedE.getName().toLowerCase() + "_EXT_" + "." + child.getName().toLowerCase() + "_EXT_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], child.getName().toLowerCase() + "_EXT_"));
 						if (layer[3]==null)
 						{
 							layer[3] = lastField.getXMLType().getLocalType() + "." + extendedE.getType().getLocalType();
@@ -2946,9 +2945,9 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						layer[0] = this.getFullXMLName() + "." + "[" + lastField.getWrapped().getFullName() +"]" + layer[0];
 						if (lastField.getName().equalsIgnoreCase(this.getExtensionFieldName()))
 						{
-							layer[1] = this.getSQLName() + "."+ lastField.getSQLName()+"_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],lastField.getSQLName()+"_" + getSQLName() + "_EXT" + "_");
+							layer[1] = this.getSQLName() + "." + lastField.getSQLName() + "_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], lastField.getSQLName() + "_" + getSQLName() + "_EXT" + "_");
 						}else{
-							layer[1] = this.getSQLName() + "." +lastField.getSQLName()+"_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],lastField.getSQLName()+"_" + getSQLName() + "_" + lastField.getXMLType().getLocalType()+"_");
+							layer[1] = this.getSQLName() + "." + lastField.getSQLName() + "_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], lastField.getSQLName() + "_" + getSQLName() + "_" + lastField.getXMLType().getLocalType() + "_");
 						}
 						if (layer[3]==null)
 						{
@@ -2964,7 +2963,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 							GenericWrapperElement.GetElement(getExtensionType());
 						String[] layer = extendedE.translateXMLPathToTables(last);
 						layer[0] = this.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
-						layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_");
+						layer[1] = this.getSQLName() + "." + extendedE.getName().toLowerCase() + "_EXT_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], extendedE.getName().toLowerCase() + "_EXT" + "_");
 						if (layer[3]==null)
 						{
 							layer[3] = getExtensionFieldName();
@@ -2982,7 +2981,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 							(GenericWrapperElement) lastField
 								.getReferenceElement();
 						layer[0] = this.getFullXMLName() + "." + "[" + lastField.getWrapped().getFullName() +"]" +child.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
-						layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_" + "."+ child.getName().toLowerCase() + "_EXT_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],child.getName().toLowerCase() + "_EXT_"));
+						layer[1] = this.getSQLName() + "." + extendedE.getName().toLowerCase() + "_EXT_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], extendedE.getName().toLowerCase() + "_EXT" + "_" + "." + child.getName().toLowerCase() + "_EXT_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], child.getName().toLowerCase() + "_EXT_"));
 						if (layer[3]==null)
 						{
 							layer[3] = getExtensionFieldName();
@@ -3017,7 +3016,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 					try {
                         String[] layer = extendedE.translateXMLPathToTables(path);
                         layer[0] = this.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
-						layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_");
+						layer[1] = this.getSQLName() + "." + extendedE.getName().toLowerCase() + "_EXT_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], extendedE.getName().toLowerCase() + "_EXT" + "_");
                         if (layer[3]==null)
                         {
                         	layer[3] = getExtensionFieldName();
@@ -3036,7 +3035,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                         String[] layer = extendedE.translateXMLPathToTables(path);
 						GenericWrapperElement child =(GenericWrapperElement) lastField.getReferenceElement();
                         layer[0] = this.getFullXMLName() + "." + "[" + lastField.getWrapped().getFullName() +"]" +child.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
-						layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_" + "."+ child.getName().toLowerCase() + "_EXT_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],child.getName().toLowerCase() + "_EXT_"));
+						layer[1] = this.getSQLName() + "." + extendedE.getName().toLowerCase() + "_EXT_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], extendedE.getName().toLowerCase() + "_EXT" + "_" + "." + child.getName().toLowerCase() + "_EXT_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], child.getName().toLowerCase() + "_EXT_"));
                         if (layer[3]==null)
                         {
                         	layer[3] = getExtensionFieldName();
@@ -3094,7 +3093,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						GenericWrapperElement.GetElement(getExtensionType());
 					String[] layer = extendedE.translateXMLPathToTables(path);
 					layer[0] = this.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
-					layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_");
+					layer[1] = this.getSQLName() + "." + extendedE.getName().toLowerCase() + "_EXT_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], extendedE.getName().toLowerCase() + "_EXT" + "_");
 					if (layer[3]==null)
 					{
 						layer[3] = getExtensionFieldName();
@@ -3108,7 +3107,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 						GenericWrapperElement.GetElement(getExtensionType());
 					String[] layer = extendedE.translateXMLPathToTables(path);
 					layer[0] = this.getFullXMLName() + "." + "[" + extendedE.getName() +"]" + layer[0];
-					layer[1] = this.getSQLName() + "."+ extendedE.getName().toLowerCase() + "_EXT_"+ getSQLName() + "_" + StringUtils.InsertCharsIntoDelimitedString(layer[1],extendedE.getName().toLowerCase() + "_EXT" + "_");
+					layer[1] = this.getSQLName() + "." + extendedE.getName().toLowerCase() + "_EXT_" + getSQLName() + "_" + XftStringUtils.InsertCharsIntoDelimitedString(layer[1], extendedE.getName().toLowerCase() + "_EXT" + "_");
 					if (layer[3]==null)
 					{
 						layer[3] = getExtensionFieldName();
@@ -3190,7 +3189,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 				                            temp = gwf.getXMLPathString() + XFT.PATH_SEPERATOR + temp.substring(temp.indexOf(XFT.PATH_SEPERATOR)+1);
 				                            try {
                                                 String[] layers = GenericWrapperElement.TranslateXMLPathToTables(this.getFullXMLName() + XFT.PATH_SEPERATOR + temp);
-                                                int tempJoinCount = StringUtils.DelimitedStringToArrayList(layers[1],".").size();
+                                                int tempJoinCount = XftStringUtils.DelimitedStringToArrayList(layers[1], ".").size();
                                                 if (tempJoinCount<joinCount)
                                                 {
                                                     s = temp;
@@ -3359,12 +3358,12 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	public static boolean IsMultipleReference(String s)
 	{
 	    try {
-		    s = StringUtils.StandardizeXMLPath(s);
+		    s = XftStringUtils.StandardizeXMLPath(s);
 	        if (s.indexOf(XFT.PATH_SEPERATOR)==-1)
 	        {
 	            return false;
 	        }
-			String rootElement = StringUtils.GetRootElementName(s);
+			String rootElement = XftStringUtils.GetRootElementName(s);
             GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
             String fieldXMLPath = s.substring(s.indexOf(XFT.PATH_SEPERATOR) + 1);
             return root.isMultipleReference(fieldXMLPath);
@@ -3673,7 +3672,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                     {
                         String temp = (String)link.get(1);
                        
-                        int tempJoinCount = StringUtils.DelimitedStringToArrayList(temp,String.valueOf(XFT.PATH_SEPERATOR)).size();
+                        int tempJoinCount = XftStringUtils.DelimitedStringToArrayList(temp, String.valueOf(XFT.PATH_SEPERATOR)).size();
                         if (tempJoinCount < joinCount)
                         {
                             joinCount = tempJoinCount;
@@ -3693,7 +3692,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
                             String temp = (String)link.get(1);
                             String extensionTemp = (String)extensionLink.get(1);
                            
-                            int tempJoinCount = StringUtils.DelimitedStringToArrayList(temp,String.valueOf(XFT.PATH_SEPERATOR)).size() + 1;
+                            int tempJoinCount = XftStringUtils.DelimitedStringToArrayList(temp, String.valueOf(XFT.PATH_SEPERATOR)).size() + 1;
                             if (tempJoinCount < joinCount)
                             {
                                 joinCount = tempJoinCount;
@@ -3721,7 +3720,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	                {
 	                    String temp = (String)link.get(1);
 	                   
-	                    int tempJoinCount = StringUtils.DelimitedStringToArrayList(temp,String.valueOf(XFT.PATH_SEPERATOR)).size();
+	                    int tempJoinCount = XftStringUtils.DelimitedStringToArrayList(temp, String.valueOf(XFT.PATH_SEPERATOR)).size();
 	                    if (tempJoinCount < joinCount)
 	                    {
 	                        joinCount = tempJoinCount;
@@ -3741,7 +3740,7 @@ public class GenericWrapperElement extends XFTElementWrapper implements SchemaEl
 	                        String temp = (String)link.get(1);
 	                        String extensionTemp = (String)extensionLink.get(1);
 	                       
-	                        int tempJoinCount = StringUtils.DelimitedStringToArrayList(temp,String.valueOf(XFT.PATH_SEPERATOR)).size() + 1;
+	                        int tempJoinCount = XftStringUtils.DelimitedStringToArrayList(temp, String.valueOf(XFT.PATH_SEPERATOR)).size() + 1;
 	                        if (tempJoinCount < joinCount)
 	                        {
 	                            joinCount = tempJoinCount;

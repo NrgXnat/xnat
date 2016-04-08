@@ -13,6 +13,7 @@
 
 package org.nrg.xft.utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTool;
@@ -482,7 +483,7 @@ public  class FileUtils
         List<String> rows = FileLinesToArrayList(f);
         for (String row : rows)
         {
-            all.add(StringUtils.CommaDelimitedStringToArrayList(row));
+            all.add(XftStringUtils.CommaDelimitedStringToArrayList(row));
         }
         all.trimToSize();
         return all;
@@ -969,7 +970,7 @@ public  class FileUtils
 	public static String BuildRootHistoryPath(){
 		String cache = XFT.GetArchiveRootPath();
 		
-		if(StringUtils.IsEmpty(cache))
+		if(StringUtils.isBlank(cache))
 		{
 			return "/.history/";
 		}else{
@@ -982,7 +983,7 @@ public  class FileUtils
 	}
     
     public static File BuildHistoryFile(final File f, String timestamp) throws FileNotFoundException, IOException{
-		return new File(BuildHistoryParentFile(f),(StringUtils.IsEmpty(timestamp)?"":AppendSlash(timestamp))+ f.getName());
+		return new File(BuildHistoryParentFile(f), (StringUtils.isBlank(timestamp) ? "" : AppendSlash(timestamp)) + f.getName());
 	}
     
     public static File MoveToHistory(final File f,String timestamp) throws FileNotFoundException, IOException{

@@ -12,6 +12,7 @@
 
 package org.nrg.xft.search;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplayCriteria;
 import org.nrg.xdat.security.PermissionCriteriaI;
@@ -26,7 +27,7 @@ import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.ArrayList;
 
@@ -113,7 +114,7 @@ public class SearchCriteria implements SQLClause {
                 } else {
                     String v = valueToDB();
                     if (v.contains("*")) {
-                        v = StringUtils.ReplaceStr(v, "*", "%");
+                        v = StringUtils.replace(v, "*", "%");
                     }
                     if (!v.contains("%")) {
                         //remove single quotes
@@ -243,7 +244,7 @@ public class SearchCriteria implements SQLClause {
             }
 
             if (temp.contains("'")) {
-                value = StringUtils.CleanForSQLValue(temp);
+                value = XftStringUtils.CleanForSQLValue(temp);
             }
         }
         this.value = value;
@@ -281,8 +282,8 @@ public class SearchCriteria implements SQLClause {
      * @throws FieldNotFoundException   When a specified field isn't found on the object.
      */
     public void setFieldWXMLPath(String field) throws ElementNotFoundException, XFTInitException, FieldNotFoundException {
-        xmlPath = StringUtils.StandardizeXMLPath(field);
-        String                rootElement = StringUtils.GetRootElementName(field);
+        xmlPath = XftStringUtils.StandardizeXMLPath(field);
+        String                rootElement = XftStringUtils.GetRootElementName(field);
         GenericWrapperElement root        = GenericWrapperElement.GetElement(rootElement);
         this.setElementName(root.getFullXMLName());
         field = root.getFullXMLName() + xmlPath.substring(xmlPath.indexOf(XFT.PATH_SEPERATOR));

@@ -17,7 +17,8 @@ import org.apache.log4j.Logger;
 import org.nrg.xft.identifier.Identifier;
 import org.nrg.xft.schema.XFTDataField;
 import org.nrg.xft.schema.XFTField;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
+
 public abstract class XFTFieldWrapper implements Identifier{
 	static org.apache.log4j.Logger logger = Logger.getLogger(XFTFieldWrapper.class);
 	protected XFTField wrapped = null;
@@ -42,7 +43,7 @@ public abstract class XFTFieldWrapper implements Identifier{
 	public void loadElement(XFTField xe)
 	{
 		wrapped = xe;
-		label = StringUtils.intern(xe.getFullName() + " -> " + xe.getXMLType());
+		label = XftStringUtils.intern(xe.getFullName() + " -> " + xe.getXMLType());
 	}
 	/**
 	 * Get wrapped field
@@ -57,7 +58,7 @@ public abstract class XFTFieldWrapper implements Identifier{
 	 * @param element
 	 */
 	public void setWrapped(XFTField element) {
-		label = StringUtils.intern(element.getFullName() + " -> " + element.getXMLType());
+		label = XftStringUtils.intern(element.getFullName() + " -> " + element.getXMLType());
 		wrapped = element;
 	}
 	

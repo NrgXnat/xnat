@@ -18,6 +18,7 @@ import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -253,10 +254,10 @@ public class XFTReferenceField extends XFTField {
 		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"description",this.getDescription()));
 		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"displayName",this.getDisplayName()));
 		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"fixed",this.getFixed()));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"child-xml-node",org.nrg.xft.utils.StringUtils.ToString(this.childXMLNode)));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"created-child",org.nrg.xft.utils.StringUtils.ToString(this.createdChild)));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"in-line-repeater",org.nrg.xft.utils.StringUtils.ToString(this.isInLineRepeaterElement)));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"local-map",org.nrg.xft.utils.StringUtils.ToString(this.isLocalMap())));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "child-xml-node", XftStringUtils.ToString(this.childXMLNode)));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "created-child", XftStringUtils.ToString(this.createdChild)));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "in-line-repeater", XftStringUtils.ToString(this.isInLineRepeaterElement)));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "local-map", XftStringUtils.ToString(this.isLocalMap())));
 		
 		
 		main.appendChild(this.getRule().toXML(doc));

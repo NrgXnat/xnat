@@ -15,12 +15,13 @@ package org.nrg.xdat.turbine.modules.actions;
 import java.net.URLEncoder;
 import java.util.Calendar;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 public class EmailCustomSearchAction extends SecureAction{
     public String getScreenTemplate(RunData data)
@@ -46,7 +47,7 @@ public class EmailCustomSearchAction extends SecureAction{
         }
         
         if (data.getSession().getAttribute("search_xml")!=null){
-            search_xml = URLEncoder.encode(StringUtils.ReplaceStr(((String) data.getSession().getAttribute("search_xml")),"/",".close."),"UTF-8");
+            search_xml = URLEncoder.encode(StringUtils.replace(((String) data.getSession().getAttribute("search_xml")), "/", ".close."), "UTF-8");
             if(XFT.VERBOSE)System.out.println("URL LENGTH:" + search_xml.length());
         }
         

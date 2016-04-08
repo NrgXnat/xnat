@@ -1,6 +1,7 @@
 package org.nrg.xft.db.views;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatStoredSearch;
@@ -12,7 +13,7 @@ import org.nrg.xft.db.MaterializedViewI;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.db.views.service.MaterializedViewManager;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import java.sql.SQLException;
 import java.util.*;
@@ -377,8 +378,8 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 		String select="SELECT relname FROM pg_catalog.pg_class WHERE  relname=LOWER('"+table_name+"');";
 		Object o=PoolDBUtils.ReturnStatisticQuery(select, "relname", PoolDBUtils.getDefaultDBName(), user.getUsername());
 		if(o==null){
-			search_sql=StringUtils.ReplaceStr(search_sql, ";", "");
-			String create = "CREATE TABLE " +PoolDBUtils.search_schema_name + "." + table_name + " AS " + StringUtils.ReplaceStr(search_sql,"''","'") + ";";
+			search_sql= StringUtils.replace(search_sql, ";", "");
+			String create = "CREATE TABLE " + PoolDBUtils.search_schema_name + "." + table_name + " AS " + StringUtils.replace(search_sql, "''", "'") + ";";
 			
 		
 			try {
@@ -410,7 +411,7 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 	}
 	
 	public static String buildComparison(String key, Object v){
-		List<String> values=StringUtils.CommaDelimitedStringToArrayList(v.toString());
+		List<String> values= XftStringUtils.CommaDelimitedStringToArrayList(v.toString());
 		List<String> validValues=Lists.newArrayList();
 		String clause="";
 		

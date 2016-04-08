@@ -18,12 +18,12 @@ import java.util.Calendar;
 import java.util.Hashtable;
 import java.util.Iterator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.schema.SchemaElement;
-import org.nrg.xdat.services.XMLSearch;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -35,7 +35,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 /**
  * @author Tim
@@ -784,7 +784,7 @@ public class JavaFileGenerator {
         }
         
         String dirStucture = packageName;
-        String finalLocation = location + File.separator + StringUtils.ReplaceStr(dirStucture,".",File.separator);
+        String finalLocation = location + File.separator + StringUtils.replace(dirStucture, ".", File.separator);
         while (dirStucture.indexOf(".")!=-1)
         {
             String folder = dirStucture.substring(0,dirStucture.indexOf("."));
@@ -925,12 +925,12 @@ public class JavaFileGenerator {
     
     public String getSQLClassName(GenericWrapperElement e)
     {
-        return StringUtils.FormatStringToClassName(e.getFormattedName());
+        return XftStringUtils.FormatStringToClassName(e.getFormattedName());
     }
     
     public String getBaseClassName(GenericWrapperElement e)
     {
-        return "Base" +StringUtils.FormatStringToClassName(e.getFormattedName());
+        return "Base" + XftStringUtils.FormatStringToClassName(e.getFormattedName());
     }
     
     /**
@@ -939,7 +939,7 @@ public class JavaFileGenerator {
      */
     public String getClassName(GenericWrapperElement e)
     {
-        return StringUtils.FormatStringToClassName("Auto_" + e.getFormattedName());
+        return XftStringUtils.FormatStringToClassName("Auto_" + e.getFormattedName());
     }
     /**
      * @param s
@@ -947,7 +947,7 @@ public class JavaFileGenerator {
      */
     private String formatFieldName(String s)
     {
-        return StringUtils.FormatStringToMethodSignature(s);
+        return XftStringUtils.FormatStringToMethodSignature(s);
     }
 
     /**
@@ -1032,7 +1032,7 @@ public class JavaFileGenerator {
         }
         
         String dirStucture = "org.nrg.xdat.turbine.modules.screens";
-        String finalLocation = location + File.separator + StringUtils.ReplaceStr(dirStucture,".",File.separator);
+        String finalLocation = location + File.separator + StringUtils.replace(dirStucture, ".", File.separator);
         while (dirStucture.indexOf(".")!=-1)
         {
             String folder = dirStucture.substring(0,dirStucture.indexOf("."));
@@ -1122,7 +1122,7 @@ public class JavaFileGenerator {
         }
         
         String dirStucture = "org.nrg.xdat.turbine.modules.screens";
-        String finalLocation = location + File.separator + StringUtils.ReplaceStr(dirStucture,".",File.separator);
+        String finalLocation = location + File.separator + StringUtils.replace(dirStucture, ".", File.separator);
         while (dirStucture.indexOf(".")!=-1)
         {
             String folder = dirStucture.substring(0,dirStucture.indexOf("."));
@@ -1228,7 +1228,7 @@ public class JavaFileGenerator {
             properName = e.getFullXMLName();
         }
         
-        template = StringUtils.ReplaceStr(template,"@PAGE_TITLE@",properName + " Details");
+        template = StringUtils.replace(template, "@PAGE_TITLE@", properName + " Details");
         
         String header = "\n\t\t\t\t\t\t";
         StringBuffer sb = new StringBuffer();
@@ -1250,13 +1250,13 @@ public class JavaFileGenerator {
         sb.append(header).append("</TABLE>");
         
 
-        template = StringUtils.ReplaceStr(template,"@STATIC@",sb.toString());
+        template = StringUtils.replace(template, "@STATIC@", sb.toString());
         
         
         //BUILD CUSTOM CONTENT
         sb = new StringBuffer();
         sb.append(getChildFieldsReport(e,new ArrayList(),"\n\t\t\t",e.getFullXMLName(),true));
-        template = StringUtils.ReplaceStr(template,"@CONTENT@",sb.toString());
+        template = StringUtils.replace(template, "@CONTENT@", sb.toString());
 
         if (e.instanceOf("xnat:mrAssessorData"))
         {
@@ -1373,7 +1373,7 @@ public class JavaFileGenerator {
             properName = e.getFullXMLName();
         }
         
-        template = StringUtils.ReplaceStr(template,"@PAGE_TITLE@",properName + " Details");
+        template = StringUtils.replace(template, "@PAGE_TITLE@", properName + " Details");
         
         ArrayList<String> ignoreXMLPaths= new ArrayList<String>();
         
@@ -1384,7 +1384,7 @@ public class JavaFileGenerator {
         sb.append(header).append("<TABLE>");
 
         if (e.instanceOf("xnat:subjectAssessorData")){
-            template = StringUtils.ReplaceStr(template, "ModifyItem", "ModifySubjectAssessorData");
+            template = StringUtils.replace(template, "ModifyItem", "ModifySubjectAssessorData");
             
             ignoreXMLPaths.add("xnat:experimentData/project");
             ignoreXMLPaths.add("xnat:experimentData/ID");
@@ -1412,7 +1412,7 @@ public class JavaFileGenerator {
         }else if(e.instanceOf("xnat:experimentData")){
 
             if (e.instanceOf("xnat:imageAssessorData")){
-                template = StringUtils.ReplaceStr(template, "ModifyItem", "ModifyImageAssessorData");
+                template = StringUtils.replace(template, "ModifyItem", "ModifyImageAssessorData");
             }
             
             ignoreXMLPaths.add("xnat:experimentData/project");
@@ -1469,13 +1469,13 @@ public class JavaFileGenerator {
         sb.append(header).append("</TABLE>");
         
 
-        template = StringUtils.ReplaceStr(template,"@STATIC@",sb.toString());
-        template = StringUtils.ReplaceStr(template,"@VALIDATE_FORM@",validateForm.toString());
+        template = StringUtils.replace(template, "@STATIC@", sb.toString());
+        template = StringUtils.replace(template, "@VALIDATE_FORM@", validateForm.toString());
         
         //BUILD CUSTOM CONTENT
         sb = new StringBuffer();
         sb.append(getChildFieldsEdit(e,new ArrayList(),"\n\t\t\t",e.getFullXMLName(),true,ignoreXMLPaths));
-        template = StringUtils.ReplaceStr(template,"@CONTENT@",sb.toString());
+        template = StringUtils.replace(template, "@CONTENT@", sb.toString());
 
         if (XFT.VERBOSE)
 	        System.out.println("Generating File " + location +"XDATScreen_edit_"+ e.getFormattedName() +".vm...");

@@ -12,7 +12,6 @@ import org.nrg.xdat.om.XdatFieldMapping;
 import org.nrg.xdat.om.XdatFieldMappingSet;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.search.DisplayCriteria;
-import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.PermissionsServiceI;
@@ -31,7 +30,7 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -325,7 +324,7 @@ public class PermissionsServiceImpl implements PermissionsServiceI {
         if (user.isGuest() && !action.equalsIgnoreCase(SecurityManager.READ)) {
             return false;
         }
-        String rootElement = StringUtils.GetRootElementName(xmlPath);
+        String rootElement = XftStringUtils.GetRootElementName(xmlPath);
         boolean isOK = false;
         if (!ElementSecurity.HasDefinedElementSecurity(rootElement)) {
             isOK = true;

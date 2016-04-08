@@ -17,6 +17,7 @@ import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.display.Arc;
 import org.nrg.xdat.display.ArcDefinition;
@@ -43,7 +44,7 @@ import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizerI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 @SuppressWarnings({ "rawtypes", "unchecked" })
 public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements QueryOrganizerI{
@@ -83,8 +84,8 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
             xmlPath = xmlPath.substring(9);
             addSubquery(xmlPath);
         }else{
-        	xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
-            String root = StringUtils.GetRootElementName(xmlPath);
+        	xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
+            String root = XftStringUtils.GetRootElementName(xmlPath);
             if (rootElement.getFullXMLName().equalsIgnoreCase(root))
             {
                 super.addField(xmlPath);
@@ -112,7 +113,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     String temp = ViewManager.GetViewColumnName(se.getGenericXFTElement(),xmlPath,ViewManager.DEFAULT_LEVEL,true,true);
                     if (temp !=null)
                     {
-                        fieldAliases.put(xmlPath.toLowerCase(),StringUtils.CreateAlias(se.getSQLName(),temp));
+                        fieldAliases.put(xmlPath.toLowerCase(), XftStringUtils.CreateAlias(se.getSQLName(), temp));
                     }
                 } catch (XFTInitException e) {
                     logger.error("",e);
@@ -127,7 +128,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
      */
     public void addSubquery(String xmlPath) throws ElementNotFoundException
     {
-        String root = StringUtils.GetRootElementName(xmlPath);
+        String root = XftStringUtils.GetRootElementName(xmlPath);
         if (rootElement.getFullXMLName().equalsIgnoreCase(root))
         {
             if (! subqueryFields.contains(xmlPath))
@@ -153,7 +154,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
      */
     public void addView(String xmlPath) throws ElementNotFoundException
     {
-        String root = StringUtils.GetRootElementName(xmlPath);
+        String root = XftStringUtils.GetRootElementName(xmlPath);
         if (rootElement.getFullXMLName().equalsIgnoreCase(root))
         {
             if (! viewFields.contains(xmlPath))
@@ -193,7 +194,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     String FIELDID = s.substring(0,indexDot);
                     String VALUE = s.substring(indexDot+1);
                     String alias = FIELDID +"_" + DisplaySearch.cleanColumnName(VALUE);
-                    VALUE = StringUtils.ReplaceStr(StringUtils.ReplaceStr(VALUE, "_com_", ","),"_col_",":");
+                    VALUE = StringUtils.replace(StringUtils.replace(VALUE, "_com_", ","), "_col_", ":");
 
 
                     StringBuffer sb = new StringBuffer();
@@ -201,12 +202,12 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     SQLQueryField df = (SQLQueryField) ed.getDisplayField(FIELDID);
                     String subquery = df.getSubQuery();
                     if (VALUE.indexOf(",")==-1){
-                        subquery= StringUtils.ReplaceStr(subquery, "@WHERE", VALUE);
+                        subquery= StringUtils.replace(subquery, "@WHERE", VALUE);
                     }else{
-                        ArrayList<String> values = StringUtils.CommaDelimitedStringToArrayList(VALUE);
+                        ArrayList<String> values = XftStringUtils.CommaDelimitedStringToArrayList(VALUE);
                         int count =0;
                         for(String value1:values){
-                            subquery= StringUtils.ReplaceStr(subquery, "@WHERE" + count++, value1);
+                            subquery= StringUtils.replace(subquery, "@WHERE" + count++, value1);
                         }
                     }
 
@@ -853,7 +854,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
     private CriteriaCollection buildStatusCriteria(SchemaElement e,String level){
     	//add support for limited status reflected in search results
         CriteriaCollection inner = new CriteriaCollection("OR");
-    	for(String l: StringUtils.CommaDelimitedStringToArrayList(level)){
+    	for(String l: XftStringUtils.CommaDelimitedStringToArrayList(level)){
         	inner.addClause(e.getFullXMLName()+"/meta/status", l);
     	}
     	return inner;
@@ -1167,7 +1168,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
             if (!selected.contains(s.toLowerCase()))
             {
                 selected.add(s.toLowerCase());
-                String element = StringUtils.GetRootElementName(s);
+                String element = XftStringUtils.GetRootElementName(s);
                 SchemaElementI se = SchemaElement.GetElement(element);
                 if (rootElement.getFullXMLName().equalsIgnoreCase(se.getFullXMLName()))
                 {
@@ -1191,9 +1192,9 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     String alias = "";
                     if (viewColName==null)
                     {
-                        alias = StringUtils.CreateAlias(tableName,colName);
+                        alias = XftStringUtils.CreateAlias(tableName, colName);
                     }else{
-                        alias = StringUtils.Last62Chars(viewColName);
+                        alias = XftStringUtils.Last62Chars(viewColName);
                     }
                     if (!selected.contains(alias.toLowerCase()))
 		            {
@@ -1231,13 +1232,13 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     String alias = "";
                     if (viewColName!=null)
                     {
-                        alias = StringUtils.CreateAlias(tableName,viewColName);
+                        alias = XftStringUtils.CreateAlias(tableName, viewColName);
                     }else{
-                        alias = StringUtils.CreateAlias(tableName,colName);
+                        alias = XftStringUtils.CreateAlias(tableName, colName);
                     }
                   if (! alias.startsWith(se.getSQLName()))
                   {
-                      alias = StringUtils.CreateAlias(se.getSQLName(),alias);
+                      alias = XftStringUtils.CreateAlias(se.getSQLName(), alias);
                   }
                     if (!selected.contains(alias.toLowerCase()))
 		            {
@@ -1270,7 +1271,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
         while (viewIter.hasNext())
         {
             String xmlPath = (String) viewIter.next();
-            String elementName = StringUtils.GetRootElementName(xmlPath);
+            String elementName = XftStringUtils.GetRootElementName(xmlPath);
             String s = xmlPath.substring(xmlPath.indexOf(".")+1);
 
             if (!selected.contains(s.toLowerCase()))
@@ -1284,7 +1285,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     s = foreign.getSQLName() + "_COUNT";
                 }
 
-	            String temp = StringUtils.ReplaceStr(s,".","_");
+	            String temp = StringUtils.replace(s, ".", "_");
 	            if (! selected.contains(temp.toLowerCase()))
 	            {
 	                selected.add(temp.toLowerCase());
@@ -1299,7 +1300,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
 		                    sb.append(", ").append(s).append(" AS ").append(temp);
 		                }
 		            }else{
-		                alias = StringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp;
+		                alias = XftStringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp;
 		                if (counter++==0)
 		                {
 		                    sb.append(se.getSQLName() + "." + temp).append(" AS ").append(alias);
@@ -1319,7 +1320,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
         while (subQueryIter.hasNext())
         {
             String xmlPath = (String) subQueryIter.next();
-            String elementName = StringUtils.GetRootElementName(xmlPath);
+            String elementName = XftStringUtils.GetRootElementName(xmlPath);
             String s = xmlPath.substring(xmlPath.indexOf(".")+1);
 
             if (!selected.contains(s.toLowerCase()))
@@ -1330,7 +1331,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                     s = s.substring(14);
                 }
 
-                String temp = DisplaySearch.cleanColumnName(StringUtils.ReplaceStr(s,".","_"));
+                String temp = DisplaySearch.cleanColumnName(StringUtils.replace(s, ".", "_"));
                 if (! selected.contains(temp.toLowerCase()))
                 {
                     selected.add(temp.toLowerCase());
@@ -1348,7 +1349,7 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                             sb.append(", ").append(s).append(" AS ").append(temp);
                         }
                     }else{
-                        alias = StringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp;
+                        alias = XftStringUtils.RegCharsAbbr(se.getSQLName()) + "_" + temp;
                         if (counter++==0)
                         {
                             sb.append(se.getSQLName() + "." + temp).append(" AS ").append(alias);
@@ -1475,13 +1476,13 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                         String[] s = new String[3];
                         s[0] = foreignAlias;
                         s[1] = "DESC";
-                        s[2] = StringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName()+ "_DIFF");
+                        s[2] = XftStringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
                         orderBys.add(s);
                     }else{
                         String[] s = new String[3];
                         s[0] = foreignAlias;
                         s[1] = "ASC";
-                        s[2] = StringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName()+ "_DIFF");
+                        s[2] = XftStringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
                         orderBys.add(s);
                     }
                 } catch (XFTInitException e) {
@@ -1525,13 +1526,13 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                             String[] s = new String[3];
                             s[0] = "EXTRACT( MILLISECONDS FROM (" + rootAlias + "-" + foreignAlias + "))";
                             s[1] = "ASC";
-                            s[2] = StringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName()+ "_DIFF");
+                            s[2] = XftStringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
                             orderBys.add(s);
                         }else{
                             String[] s = new String[3];
                             s[0] = "(" + rootAlias + "-" + foreignAlias + ")";
                             s[1] = "ASC";
-                            s[2] = StringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName()+ "_DIFF");
+                            s[2] = XftStringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
                             orderBys.add(s);
                         }
                     }else{
@@ -1540,13 +1541,13 @@ public class QueryOrganizer extends org.nrg.xft.search.QueryOrganizer implements
                             String[] s = new String[3];
                             s[0] = foreignAlias;
                             s[1] = "DESC";
-                            s[2] = StringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName()+ "_DIFF");
+                            s[2] = XftStringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
                             orderBys.add(s);
                         }else{
                             String[] s = new String[3];
                             s[0] = foreignAlias;
                             s[1] = "ASC";
-                            s[2] = StringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName()+ "_DIFF");
+                            s[2] = XftStringUtils.SQLMaxCharsAbbr(rootElement.getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
                             orderBys.add(s);
                         }
                     }

@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.display;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.schema.SchemaElement;
@@ -17,7 +18,7 @@ import org.nrg.xdat.sortable.Sortable;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.identifier.Identifier;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.ArrayList;
 import java.util.Enumeration;
@@ -196,7 +197,7 @@ public class DisplayFieldRef extends Sortable implements Identifier, DisplayFiel
         try {
             String alias = this.getDisplayField().getId();
             if (this.getValue() != null)
-                alias = df.getId() + "_" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(this.getValue().toString(), ",", "_com_"), ":", "_col_");
+                alias = df.getId() + "_" + StringUtils.replace(StringUtils.replace(this.getValue().toString(), ",", "_com_"), ":", "_col_");
             return alias;
         } catch (DisplayFieldNotFoundException e) {
             return id;

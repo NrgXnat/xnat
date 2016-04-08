@@ -16,6 +16,7 @@ import org.apache.commons.collections.Predicate;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang.ObjectUtils;
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.services.intake.model.Group;
@@ -49,7 +50,7 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.xml.sax.InputSource;
 
 import javax.servlet.http.HttpServletRequest;
@@ -153,7 +154,7 @@ public class TurbineUtils {
             final ItemSearch search = new ItemSearch();
             search.setUser(TurbineUtils.getUser(data));
 
-            final String elementName = StringUtils.GetRootElementName(searchField);
+            final String elementName = XftStringUtils.GetRootElementName(searchField);
 
             search.setElement(elementName);
             search.addCriteria(searchField, searchValue);
@@ -190,7 +191,7 @@ public class TurbineUtils {
 
         if (searchField != null) {
             try {
-                return StringUtils.GetRootElement(searchField);
+                return XftStringUtils.GetRootElement(searchField);
             } catch (ElementNotFoundException e) {
                 logger.info("Couldn't find element " + e.ELEMENT, e);
             }
@@ -211,7 +212,7 @@ public class TurbineUtils {
             final ItemSearch search = new ItemSearch();
             search.setUser(TurbineUtils.getUser(data));
 
-            final String elementName = StringUtils.GetRootElementName(searchField);
+            final String elementName = XftStringUtils.GetRootElementName(searchField);
 
             final SchemaElementI gwe = SchemaElement.GetElement(elementName);
             search.setElement(elementName);
@@ -244,7 +245,7 @@ public class TurbineUtils {
             final ItemSearch search = new ItemSearch();
             search.setUser(TurbineUtils.getUser(data));
 
-            final String elementName = StringUtils.GetRootElementName(searchField);
+            final String elementName = XftStringUtils.GetRootElementName(searchField);
 
             final SchemaElementI gwe = SchemaElement.GetElement(elementName);
             search.setElement(elementName);
@@ -517,7 +518,7 @@ public class TurbineUtils {
                     String search_xml = data.getParameters().getString("search_xml");
                     search_xml = search_xml.replaceAll("%", "%25");
                     search_xml = URLDecoder.decode(search_xml, "UTF-8");
-                    search_xml = StringUtils.ReplaceStr(search_xml, ".close.", "/");
+                    search_xml = StringUtils.replace(search_xml, ".close.", "/");
 
                     final StringReader sr = new StringReader(search_xml);
                     final InputSource is = new InputSource(sr);
@@ -571,7 +572,7 @@ public class TurbineUtils {
         try {
             final SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
             final SchemaField sf = (SchemaField) se.getAllPrimaryKeys().get(0);
-            data.getParameters().setString("search_field", StringUtils.ReplaceStr(StringUtils.ReplaceStr(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
+            data.getParameters().setString("search_field", StringUtils.replace(StringUtils.replace(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
             final Object o = item.getProperty(sf.getId());
             data.getParameters().setString("search_value", o.toString());
         } catch (Exception e) {
@@ -585,7 +586,7 @@ public class TurbineUtils {
         try {
             final SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
             final SchemaField sf = (SchemaField) se.getAllPrimaryKeys().get(0);
-            context.put("search_field", StringUtils.ReplaceStr(StringUtils.ReplaceStr(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
+            context.put("search_field", StringUtils.replace(StringUtils.replace(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
             final Object o = item.getProperty(sf.getId());
             context.put("search_value", o.toString());
         } catch (Exception e) {
@@ -764,7 +765,7 @@ public class TurbineUtils {
         final String[] v = data.getParameters().getStrings(s);
         if (v != null) {
             for (final String aV : v) {
-                if (!StringUtils.IsEmpty(aV) && !StringUtils.IsEmpty(TurbineUtils.escapeParam(aV))) {
+                if (StringUtils.isNotBlank(aV) && StringUtils.isNotBlank(TurbineUtils.escapeParam(aV))) {
                     _ret.add(TurbineUtils.escapeParam(aV));
                 }
             }

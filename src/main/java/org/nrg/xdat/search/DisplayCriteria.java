@@ -19,7 +19,7 @@ import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.search.QueryOrganizerI;
 import org.nrg.xft.search.SQLClause;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -258,7 +258,7 @@ public class DisplayCriteria implements SQLClause {
             }
 
             if (temp.contains("'")) {
-                value = StringUtils.CleanForSQLValue(temp);
+                value = XftStringUtils.CleanForSQLValue(temp);
             }
         }
         o = value;

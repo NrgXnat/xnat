@@ -19,7 +19,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
@@ -103,7 +103,7 @@ public class UserGroup implements UserGroupI{
     public void init(ItemI item) throws Exception
     {
     	this.tag=item.getStringProperty("tag");
-    	tag=StringUtils.intern(tag);
+    	tag= XftStringUtils.intern(tag);
     	
         accessManagers = new Hashtable<String,ElementAccessManager>();
 

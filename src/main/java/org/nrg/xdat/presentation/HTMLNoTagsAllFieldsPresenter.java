@@ -23,7 +23,7 @@ import org.nrg.xft.XFTTableI;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.design.SchemaElementI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 public class HTMLNoTagsAllFieldsPresenter extends CSVPresenter {
 
@@ -92,7 +92,7 @@ public class HTMLNoTagsAllFieldsPresenter extends CSVPresenter {
 
                     {
 
-                        String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
+                        String temp = XftStringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
 
                         Integer index = ((XFTTable) table).getColumnIndex(temp);
 
@@ -201,7 +201,7 @@ public class HTMLNoTagsAllFieldsPresenter extends CSVPresenter {
 
                                 {
 
-                                    String temp = StringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
+                                    String temp = XftStringUtils.SQLMaxCharsAbbr(search.getRootElement().getSQLName() + "_" + foreign.getSQLName() + "_DIFF");
 
                                     Integer index = ((XFTTable) table).getColumnIndex(temp);
 

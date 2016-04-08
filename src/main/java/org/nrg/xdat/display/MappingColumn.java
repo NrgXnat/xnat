@@ -14,7 +14,7 @@ import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 /**
  * @author Tim
@@ -40,7 +40,7 @@ public class MappingColumn {
     @SuppressWarnings("unused")
     public String getFieldElementFullSQL() throws XFTInitException, ElementNotFoundException {
         if (fieldElementFullSQL == null) {
-            String rootElement = StringUtils.GetRootElementName(fieldElementXMLPath);
+            String rootElement = XftStringUtils.GetRootElementName(fieldElementXMLPath);
             GenericWrapperElement root = GenericWrapperElement.GetElement(rootElement);
 
             fieldElementFullSQL = ViewManager.GetViewColumnName(root, fieldElementXMLPath, ViewManager.DEFAULT_LEVEL, false, true);

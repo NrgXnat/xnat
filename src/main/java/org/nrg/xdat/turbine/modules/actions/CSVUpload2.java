@@ -34,7 +34,6 @@ import org.nrg.xft.XFTItem;
 import org.nrg.xft.collections.ItemCollection;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.MaterializedView;
-import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
@@ -51,7 +50,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FieldMapping;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 
@@ -324,7 +323,7 @@ public class CSVUpload2 extends SecureAction {
         while (data.getParameters().containsKey("row" + i))
         {
             String row = TurbineUtils.escapeParam(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("row" + i,data)));
-            ArrayList rowAL =StringUtils.CommaDelimitedStringToArrayList(row);
+            ArrayList rowAL = XftStringUtils.CommaDelimitedStringToArrayList(row);
             rows.add(rowAL);
             i++;
         }

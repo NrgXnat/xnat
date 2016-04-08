@@ -28,7 +28,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 /**
  * @author Tim
@@ -56,7 +56,7 @@ public class SearchService {
     public ItemCollection execute() throws ElementNotFoundException,DBPoolException,SQLException,FieldNotFoundException,FailedLoginException,Exception
     {
         try {
-            String elementName = StringUtils.GetRootElementName(getField());
+            String elementName = XftStringUtils.GetRootElementName(getField());
             
             boolean valid = XFTTool.ValidateElementName(elementName);
             if (! valid)
@@ -78,11 +78,11 @@ public class SearchService {
 
             String field = getField();
 
-            String fieldElementName = StringUtils.GetRootElementName(getField());
+            String fieldElementName = XftStringUtils.GetRootElementName(getField());
             String validElementName = XFTTool.GetValidElementName(fieldElementName);
             if (!validElementName.equals(fieldElementName))
             {
-                field = validElementName + XFT.PATH_SEPERATOR + StringUtils.GetFieldText(field);
+                field = validElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(field);
             }
             
             Object o = getValue();
@@ -103,7 +103,7 @@ public class SearchService {
                 throw new Exception("Invalid User.");
             }
             
-            String xmlPath = StringUtils.StandardizeXMLPath(field);
+            String xmlPath = XftStringUtils.StandardizeXMLPath(field);
             ItemSearch search = ItemSearch.GetItemSearch(elementName,user);
             search.setAllowMultiples(false);
             search.addCriteria(xmlPath,getValue(),getComparison());

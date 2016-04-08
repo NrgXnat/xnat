@@ -23,7 +23,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.search.SQLClause;
 import org.nrg.xft.search.SearchCriteria;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 /**
  * @author XDAT
@@ -112,8 +112,8 @@ public class XdatCriteria extends BaseXdatCriteria {
         // In the meantime, we can move this into separate methods to pinpoint which Criteria type should be tried first.
 
         try {
-            final String rootElement = StringUtils.GetRootElementName(schema_field);
-            String fieldName = StringUtils.GetFieldText(schema_field);
+            final String rootElement = XftStringUtils.GetRootElementName(schema_field);
+            String fieldName = XftStringUtils.GetFieldText(schema_field);
             final SchemaElement se = SchemaElement.GetElement(rootElement);
             final DisplayCriteria dc = new DisplayCriteria();
             if(fieldName.indexOf("=")>-1){
@@ -184,8 +184,8 @@ public class XdatCriteria extends BaseXdatCriteria {
             return ec;
         } catch (FieldNotFoundException e) {
             //NOT AN STANDARD FIELD... CHECK DISPLAY FIELDS
-            final String rootElement = StringUtils.GetRootElementName(schema_field);
-            String fieldName = StringUtils.GetFieldText(schema_field);
+            final String rootElement = XftStringUtils.GetRootElementName(schema_field);
+            String fieldName = XftStringUtils.GetFieldText(schema_field);
             final SchemaElement se = SchemaElement.GetElement(rootElement);
             try {
                 final DisplayCriteria dc = new DisplayCriteria();

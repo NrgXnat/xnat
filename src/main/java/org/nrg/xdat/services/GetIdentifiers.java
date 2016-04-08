@@ -30,7 +30,8 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
+
 /**
  * @author timo
  *
@@ -46,9 +47,9 @@ public class GetIdentifiers {
         try {
             String elementName=null;
             if (_dataType==null){
-                elementName = StringUtils.GetRootElementName(_field);
+                elementName = XftStringUtils.GetRootElementName(_field);
             }else{
-                elementName = StringUtils.GetRootElementName(_dataType);
+                elementName = XftStringUtils.GetRootElementName(_dataType);
             }
 			boolean valid = XFTTool.ValidateElementName(elementName);
 			if (! valid)
@@ -63,14 +64,14 @@ public class GetIdentifiers {
 			    GenericWrapperField f = (GenericWrapperField)iter.next();
 			    rfield = f.getXMLPathString(gwe.getXSIType());
 			}
-			rfield = org.nrg.xft.utils.StringUtils.StandardizeXMLPath(rfield);
+			rfield = XftStringUtils.StandardizeXMLPath(rfield);
 			String sfield = (String)_field;
-			sfield = org.nrg.xft.utils.StringUtils.StandardizeXMLPath(sfield);
-			String sfieldElementName = StringUtils.GetRootElementName(_field);
+			sfield = XftStringUtils.StandardizeXMLPath(sfield);
+			String sfieldElementName = XftStringUtils.GetRootElementName(_field);
 			String svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 			if (!svalidElementName.equals(sfieldElementName))
 			{
-			    sfield = svalidElementName + XFT.PATH_SEPERATOR + StringUtils.GetFieldText(sfield);
+			    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
 			}
 			String comparison = "=";
 			if (_comparison!=null)
@@ -92,13 +93,13 @@ public class GetIdentifiers {
 			if(al.size()==0 && _field.endsWith(".ID")){
 				_field= _field.substring(0,_field.length()-2) + "label";
 				sfield = (String)_field;
-				sfield = org.nrg.xft.utils.StringUtils.StandardizeXMLPath(sfield);
+				sfield = XftStringUtils.StandardizeXMLPath(sfield);
 	
-				sfieldElementName = StringUtils.GetRootElementName(_field);
+				sfieldElementName = XftStringUtils.GetRootElementName(_field);
 				svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 				if (!svalidElementName.equals(sfieldElementName))
 				{
-				    sfield = svalidElementName + XFT.PATH_SEPERATOR + StringUtils.GetFieldText(sfield);
+				    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
 				}
 			al =  FieldValues.GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,null);
 			}
@@ -130,9 +131,9 @@ public class GetIdentifiers {
         try {
             String elementName=null;
             if (_dataType==null){
-                elementName = StringUtils.GetRootElementName(_field);
+                elementName = XftStringUtils.GetRootElementName(_field);
             }else{
-                elementName = StringUtils.GetRootElementName(_dataType);
+                elementName = XftStringUtils.GetRootElementName(_dataType);
             }
 			boolean valid = XFTTool.ValidateElementName(elementName);
 			if (! valid)
@@ -147,14 +148,14 @@ public class GetIdentifiers {
 			    GenericWrapperField f = (GenericWrapperField)iter.next();
 			    rfield = f.getXMLPathString(gwe.getXSIType());
 			}
-			rfield = org.nrg.xft.utils.StringUtils.StandardizeXMLPath(rfield);
+			rfield = XftStringUtils.StandardizeXMLPath(rfield);
 			String sfield = (String)_field;
-			sfield = org.nrg.xft.utils.StringUtils.StandardizeXMLPath(sfield);
-			String sfieldElementName = StringUtils.GetRootElementName(_field);
+			sfield = XftStringUtils.StandardizeXMLPath(sfield);
+			String sfieldElementName = XftStringUtils.GetRootElementName(_field);
 			String svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 			if (!svalidElementName.equals(sfieldElementName))
 			{
-			    sfield = svalidElementName + XFT.PATH_SEPERATOR + StringUtils.GetFieldText(sfield);
+			    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
 			}
 			String comparison = "=";
 			if (_comparison!=null)
@@ -175,12 +176,12 @@ public class GetIdentifiers {
 			if(al.size()==0 && _field.endsWith(".ID")){
 				_field= _field.substring(0,_field.length()-2) + "label";
 				sfield = (String)_field;
-				sfield = org.nrg.xft.utils.StringUtils.StandardizeXMLPath(sfield);
-				sfieldElementName = StringUtils.GetRootElementName(_field);
+				sfield = XftStringUtils.StandardizeXMLPath(sfield);
+				sfieldElementName = XftStringUtils.GetRootElementName(_field);
 				svalidElementName = XFTTool.GetValidElementName(sfieldElementName);
 				if (!svalidElementName.equals(sfieldElementName))
 				{
-				    sfield = svalidElementName + XFT.PATH_SEPERATOR + StringUtils.GetFieldText(sfield);
+				    sfield = svalidElementName + XFT.PATH_SEPERATOR + XftStringUtils.GetFieldText(sfield);
 				}
 			al =  FieldValues.GetValuesBySearchField(elementName,user,rfield,sfield,comparison,o,null);
 			}

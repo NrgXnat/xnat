@@ -12,6 +12,7 @@
 
 package org.nrg.xft;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Appender;
 import org.apache.log4j.FileAppender;
 import org.apache.log4j.Logger;
@@ -31,7 +32,7 @@ import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
 import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import java.io.File;
 import java.text.NumberFormat;
@@ -461,10 +462,10 @@ public class XFT {
         if (base!=null)
         {
             identifier = base;
-            identifier = StringUtils.ReplaceStr(identifier, " ", "");
-            identifier = StringUtils.ReplaceStr(identifier, "-", "_");
-            identifier = StringUtils.ReplaceStr(identifier, "\"", "");
-            identifier = StringUtils.ReplaceStr(identifier, "'", "");
+            identifier = StringUtils.replace(identifier, " ", "");
+            identifier = StringUtils.replace(identifier, "-", "_");
+            identifier = StringUtils.replace(identifier, "\"", "");
+            identifier = StringUtils.replace(identifier, "'", "");
 
             identifier= IncrementID(identifier,digits,column,tableName,dbname,login);
         }else{
@@ -489,19 +490,19 @@ public class XFT {
         nf.setMinimumIntegerDigits(digits);
         if (al.size()>0){
             int count =al.size()+1;
-            String full = StringUtils.ReplaceStr(nf.format(count), ",", "");
+            String full = StringUtils.replace(nf.format(count), ",", "");
             temp_id = s+ full;
 
             while (al.contains(temp_id)){
                 count++;
-                full =StringUtils.ReplaceStr(nf.format(count), ",", "");
+                full = StringUtils.replace(nf.format(count), ",", "");
                 temp_id = s+ full;
             }
 
             return temp_id;
         }else{
             int count =1;
-            String full = StringUtils.ReplaceStr(nf.format(count), ",", "");
+            String full = StringUtils.replace(nf.format(count), ",", "");
             temp_id = s+ full;
             return temp_id;
         }
@@ -520,16 +521,16 @@ public class XFT {
             {
                 if (location==null)
                 {
-                    sb.append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.ReplaceStr(s.getDataModel().getFullFileSpecification(),"\\","/"));
+                    sb.append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.replace(s.getDataModel().getFullFileSpecification(), "\\", "/"));
                 }else{
-                    sb.append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.ReplaceStr(location,"\\","/") + StringUtils.ReplaceStr(s.getDataModel().getFolderName(),"\\","/") + "/" + s.getDataModel().getFileName());
+                    sb.append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.replace(location, "\\", "/") + StringUtils.replace(s.getDataModel().getFolderName(), "\\", "/") + "/" + s.getDataModel().getFileName());
                 }
             }else{
                 if (location==null)
                 {
-                    sb.append(" ").append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.ReplaceStr(s.getDataModel().getFullFileSpecification(),"\\","/"));
+                    sb.append(" ").append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.replace(s.getDataModel().getFullFileSpecification(), "\\", "/"));
                 }else{
-                    sb.append(" ").append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.ReplaceStr(location,"\\","/") + StringUtils.ReplaceStr(s.getDataModel().getFolderName(),"\\","/") + "/" + s.getDataModel().getFileName());
+                    sb.append(" ").append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.replace(location, "\\", "/") + StringUtils.replace(s.getDataModel().getFolderName(), "\\", "/") + "/" + s.getDataModel().getFileName());
                 }
             }
         }

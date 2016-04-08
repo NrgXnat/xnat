@@ -23,7 +23,7 @@ import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -140,11 +140,11 @@ public class XFTSchema {
             }
             File f = new File(tempDir);
             if (f.exists()) {
-                String fileName = StringUtils.GetFileName(tempDir);
+                String fileName = XftStringUtils.GetFileName(tempDir);
                 if (XFTManager.GetDataModels().get(fileName) == null) {
                     XFTDataModel model = new XFTDataModel();
                     model.setFileName(fileName);
-                    model.setFileLocation(StringUtils.GetDirName(tempDir));
+                    model.setFileLocation(XftStringUtils.GetDirName(tempDir));
                     model.setDb(this.getDataModel().getDb());
 
                     XFTManager.GetDataModels().put(model.getFileName(), model);
@@ -393,14 +393,14 @@ public class XFTSchema {
                 final String name = xe.getSqlElement().getName();
                 if (name != null && !name.equals(""))
 				{
-					elementsByJavaName.put(StringUtils.FormatStringToClassName(name).toLowerCase(),xe);
+					elementsByJavaName.put(XftStringUtils.FormatStringToClassName(name).toLowerCase(), xe);
 					addedJavaName = true;
 				}
 			}
 			
 			if (! addedJavaName)
 			{
-				elementsByJavaName.put(StringUtils.FormatStringToClassName(xe.getName()).toLowerCase(),xe);
+				elementsByJavaName.put(XftStringUtils.FormatStringToClassName(xe.getName()).toLowerCase(), xe);
 			}
 		}
 		
@@ -565,7 +565,7 @@ public class XFTSchema {
 	 */
 	protected XFTElementWrapper getWrappedElementByObject(XFTFactoryI xef,Object o)
 	{
-		String temp = StringUtils.getLocalClassName(o.getClass()).toLowerCase();
+		String temp = XftStringUtils.getLocalClassName(o.getClass()).toLowerCase();
 		XFTElement xe = (XFTElement)getElementsByJavaName().get(temp);
 		return xef.wrapElement(xe);
 	}

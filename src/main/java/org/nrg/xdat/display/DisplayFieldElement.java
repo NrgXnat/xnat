@@ -20,7 +20,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.SchemaFieldI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -89,7 +89,7 @@ public class DisplayFieldElement {
      * @param schemaElementName The schema element name.
      */
     public void setSchemaElementName(String schemaElementName) {
-        this.schemaElementName = StringUtils.StandardizeXMLPath(schemaElementName);
+        this.schemaElementName = XftStringUtils.StandardizeXMLPath(schemaElementName);
 	}
 
     /**

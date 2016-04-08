@@ -14,13 +14,14 @@ package org.nrg.xft.utils.ValidationUtils;
 import java.util.ArrayList;
 import java.util.Iterator;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 public class ValidationResults implements ValidationResultsI{
 	private ArrayList results = new ArrayList(); // FIELD (VWrapperField), MESSAGE (String)
 	/* (non-Javadoc)
@@ -108,7 +109,7 @@ public class ValidationResults implements ValidationResultsI{
 	public String getField(String s)
 	{
         String original = s;
-	    s = StringUtils.StandardizeXMLPath(s);
+	    s = XftStringUtils.StandardizeXMLPath(s);
 		Iterator iter = getResultsIterator();
 		while(iter.hasNext())
 		{
@@ -145,7 +146,7 @@ public class ValidationResults implements ValidationResultsI{
 		while (iter.hasNext())
 		{
 			Object [] messages = (Object [])iter.next();
-			sb.append("<li>" + messages[2] + " : " + StringUtils.ReplaceStr((String)messages[1],"'bad'","") + "</li>");
+			sb.append("<li>" + messages[2] + " : " + StringUtils.replace((String)messages[1], "'bad'", "") + "</li>");
 		}
 		sb.append("</UL>");
 		return sb.toString();	

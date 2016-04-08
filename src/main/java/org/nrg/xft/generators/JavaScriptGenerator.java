@@ -36,7 +36,7 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 public class JavaScriptGenerator {
     private enum TYPE {data,single_reference,multi_reference,inline_repeater,LONG_DATA,NO_CHILD}
@@ -1443,7 +1443,7 @@ public class JavaScriptGenerator {
      */
     private String formatFieldName(String s)
     {
-        return StringUtils.FormatStringToMethodSignature(s);
+        return XftStringUtils.FormatStringToMethodSignature(s);
     }
     
 

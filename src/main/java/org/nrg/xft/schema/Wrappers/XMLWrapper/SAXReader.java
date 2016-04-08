@@ -12,18 +12,7 @@
 
 package org.nrg.xft.schema.Wrappers.XMLWrapper;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.io.Reader;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.Map;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -34,10 +23,20 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 import org.xml.sax.SAXParseException;
+
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.Reader;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.Iterator;
+import java.util.Map;
 
 /**
  * @author timo
@@ -341,7 +340,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                                     if (attributes.getURI(i).equalsIgnoreCase("http://www.w3.org/2001/XMLSchema-instance") && attributes.getLocalName(i).equalsIgnoreCase("type"))
                                     {
                                         foreignElement=attributes.getValue(i);
-                                        if (foreignElement.indexOf(":")>-1){
+                                        if (foreignElement.contains(":")){
                                             String prefix = foreignElement.substring(0,foreignElement.indexOf(":"));
                                             foreignElement = foreignElement.substring(foreignElement.indexOf(":")+1);
                                             
@@ -454,10 +453,10 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
         {
            return false;
         }else{
-            s = StringUtils.RemoveChar(s.trim(),'\n');
-            s = StringUtils.RemoveChar(s,'\t');
+            s = StringUtils.remove(s.trim(), '\n');
+            s = StringUtils.remove(s, '\t');
             
-            if (s==null || s.equals(""))
+            if (StringUtils.isBlank(s))
             {
                 return false;
             }
@@ -500,18 +499,18 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                 }
             }
             
-            if (current.getHeader() == "")
+            if (StringUtils.isBlank(current.getHeader()))
             {
-                while ((!current.isRoot()) && current.getHeader()=="")
+                while ((!current.isRoot()) && StringUtils.isBlank(current.getHeader()))
                 {
                     current = current.getParent();
                 }
                 current.removeHeader();
             }else{
                 current.removeHeader();
-                if (current.getIsInlineRepeater() && current.getHeader() == "")
+                if (current.getIsInlineRepeater() && StringUtils.isBlank(current.getHeader()))
                 {
-                    while ((!current.isRoot()) && current.getHeader()=="")
+                    while ((!current.isRoot()) && StringUtils.isBlank(current.getHeader()))
                     {
                         current = current.getParent();
                     }
@@ -570,7 +569,7 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
         public boolean isRoot(){return root;}
         
         public void addHeader(String s){
-            if (header =="")
+            if (StringUtils.isBlank(header))
             {
                 header += s;
             }else{
@@ -629,13 +628,8 @@ public class SAXReader extends org.xml.sax.ext.DefaultHandler2{
                 }else{
                     if (f.getXMLType().getLocalType().equals("string"))
                     {
-                        int size = Integer.valueOf(f.getSize()).intValue();
-                        if (size > 256)
-                        {
-                            return true;
-                        }else{
-                            return false;
-                        }
+                        int size = Integer.valueOf(f.getSize());
+                        return size > 256;
                     }else{
                         return false;
                     }

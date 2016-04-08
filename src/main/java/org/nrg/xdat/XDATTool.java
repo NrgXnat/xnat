@@ -40,7 +40,7 @@ import org.nrg.xft.search.TableSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
 import org.nrg.xft.utils.XMLValidator;
@@ -50,7 +50,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.net.URI;
 import java.net.URISyntaxException;
-import java.sql.SQLException;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.Iterator;
@@ -311,7 +310,7 @@ public class XDATTool {
 	        throw new Exception("Error: No username and password.");
 	    }
 
-	    xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
+	    xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
 	    ItemSearch search = ItemSearch.GetItemSearch(elementName,user);
 	    search.setAllowMultiples(false);
 	    search.addCriteria(xmlPath,value,comparisonType);
@@ -333,7 +332,7 @@ public class XDATTool {
 	    {
 	        throw new Exception("Error: No username and password.");
 	    }
-	    String rootElement = StringUtils.GetRootElementName(xmlPath);
+	    String rootElement = XftStringUtils.GetRootElementName(xmlPath);
 	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user,rootElement,"listing");
 	    ds.addCriteria(xmlPath,comparisonType,value);
 	    XFTTableI table =ds.execute(new HTMLPresenter(""),user.getLogin());
@@ -347,7 +346,7 @@ public class XDATTool {
 	        throw new Exception("Error: No username and password.");
 	    }
 
-	    xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
+	    xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
 	    ItemSearch search = ItemSearch.GetItemSearch(elementName,user);
 	    search.setAllowMultiples(false);
 	    search.addCriteria(xmlPath,value,comparisonType);
@@ -379,7 +378,7 @@ public class XDATTool {
 	    {
 	        throw new Exception("Error: No username and password.");
 	    }
-	    String rootElement = StringUtils.GetRootElementName(xmlPath);
+	    String rootElement = XftStringUtils.GetRootElementName(xmlPath);
 	    DisplaySearch ds = UserHelper.getSearchHelperService().getSearchForUser(user, rootElement, "listing");
 	    ds.addCriteria(xmlPath,comparisonType,value);
 	    XFTTableI table =ds.execute(new CSVPresenter(),user.getLogin());

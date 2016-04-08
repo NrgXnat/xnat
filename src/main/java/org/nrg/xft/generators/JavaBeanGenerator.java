@@ -21,6 +21,7 @@ import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -34,7 +35,7 @@ import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperFactory;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 
 public class JavaBeanGenerator {
@@ -1101,7 +1102,7 @@ public class JavaBeanGenerator {
         }
         
         String dirStucture = packageName;
-        String finalLocation = location + File.separator + StringUtils.ReplaceStr(dirStucture,".",File.separator);
+        String finalLocation = location + File.separator + StringUtils.replace(dirStucture, ".", File.separator);
         while (dirStucture.indexOf(".")!=-1)
         {
             String folder = dirStucture.substring(0,dirStucture.indexOf("."));
@@ -1463,12 +1464,12 @@ public class JavaBeanGenerator {
     
     public static String getFormattedBean(GenericWrapperElement e)
     {
-        return StringUtils.FormatStringToClassName(e.getFormattedName()) + "Bean";
+        return XftStringUtils.FormatStringToClassName(e.getFormattedName()) + "Bean";
     }
     
     public static String getFormattedInterface(GenericWrapperElement e)
     {
-        return StringUtils.FormatStringToClassName(e.getFormattedName())+"I";
+        return XftStringUtils.FormatStringToClassName(e.getFormattedName()) + "I";
     }
     /**
      * @param e
@@ -1476,7 +1477,7 @@ public class JavaBeanGenerator {
      */
     private String formatFieldName(String s)
     {
-        return StringUtils.FormatStringToMethodSignature(s);
+        return XftStringUtils.FormatStringToMethodSignature(s);
     }
 
 
@@ -1502,7 +1503,7 @@ public class JavaBeanGenerator {
         }
         
         String dirStucture = packageName;
-        String finalLocation = location + File.separator + StringUtils.ReplaceStr(dirStucture,".",File.separator);
+        String finalLocation = location + File.separator + StringUtils.replace(dirStucture, ".", File.separator);
         while (dirStucture.indexOf(".")!=-1)
         {
             String folder = dirStucture.substring(0,dirStucture.indexOf("."));
@@ -1603,7 +1604,7 @@ public class JavaBeanGenerator {
         }
         
         String dirStucture = packageName;
-        String finalLocation = location + File.separator + StringUtils.ReplaceStr(dirStucture,".",File.separator);
+        String finalLocation = location + File.separator + StringUtils.replace(dirStucture, ".", File.separator);
         while (dirStucture.indexOf(".")!=-1)
         {
             String folder = dirStucture.substring(0,dirStucture.indexOf("."));

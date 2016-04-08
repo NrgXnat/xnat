@@ -11,11 +11,11 @@
 package org.nrg.xdat.turbine.modules.actions;
 
 import java.io.StringWriter;
-import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
 
 import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -36,7 +36,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 /**
  * @author Tim
@@ -260,7 +260,7 @@ public abstract class SearchA extends SecureAction {
                         ds.setWebFormValue(s + "_in",o);
                         String temp = (String)o;
 
-                        temp = StringUtils.ReplaceStr(temp.trim(),"\r\n",",");
+                        temp = StringUtils.replace(temp.trim(), "\r\n", ",");
 
                         ds.addInClause(s,temp);
                     }
@@ -474,7 +474,7 @@ public abstract class SearchA extends SecureAction {
                     ds.setWebFormValue(comboID + counter + "_FIELDS",keys);
                     String inClause = "";
 
-                    Iterator<String> keyIter = StringUtils.CommaDelimitedStringToArrayList(keys).iterator();
+                    Iterator<String> keyIter = XftStringUtils.CommaDelimitedStringToArrayList(keys).iterator();
                     while (keyIter.hasNext())
                     {
                         String key = (String)keyIter.next();
@@ -490,7 +490,7 @@ public abstract class SearchA extends SecureAction {
                         {
                             key = key.substring(0,key.length()-7);
                             
-                            final String elementName1 = StringUtils.GetRootElementName(key);
+                            final String elementName1 = XftStringUtils.GetRootElementName(key);
 
                             final SchemaElement element = SchemaElement.GetElement(elementName1);
                             final DisplayField df = DisplayField.getDisplayFieldForDFIdOrXPath(key);
@@ -527,13 +527,13 @@ public abstract class SearchA extends SecureAction {
 
         CriteriaCollection cc = new CriteriaCollection("OR");
         value=StringEscapeUtils.unescapeXml(value);
-        value = StringUtils.ReplaceStr(value.trim(),"\r\n,",",");
-        value = StringUtils.ReplaceStr(value.trim(),",\r\n",",");
-        value = StringUtils.ReplaceStr(value.trim(),"\r\n",",");
-        value = StringUtils.ReplaceStr(value.trim(),"NOT NULL","NOT_NULL");
-        value = StringUtils.ReplaceStr(value.trim(),"IS NULL","IS_NULL");
-        value = StringUtils.ReplaceStr(value.trim(),"IS NOT NULL","IS_NOT_NULL");
-        value = StringUtils.ReplaceStr(value,"*","%");
+        value = StringUtils.replace(value.trim(), "\r\n,", ",");
+        value = StringUtils.replace(value.trim(), ",\r\n", ",");
+        value = StringUtils.replace(value.trim(), "\r\n", ",");
+        value = StringUtils.replace(value.trim(), "NOT NULL", "NOT_NULL");
+        value = StringUtils.replace(value.trim(), "IS NULL", "IS_NULL");
+        value = StringUtils.replace(value.trim(), "IS NOT NULL", "IS_NOT_NULL");
+        value = StringUtils.replace(value, "*", "%");
         while (value.indexOf(",")!=-1 && !df.getId().equalsIgnoreCase("PROJECT_INVS")) // PROJECT_INVS has a comma in its middle
         {
             if (value.indexOf(",")==0)
@@ -550,11 +550,11 @@ public abstract class SearchA extends SecureAction {
 
                 if (temp.startsWith("'"))
                 {
-                    temp= StringUtils.ReplaceStr(temp,"'","");
+                    temp= StringUtils.replace(temp, "'", "");
                     DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",temp);
                     cc.add(dc);
                 }else if (temp.startsWith("\"")){
-                    temp= StringUtils.ReplaceStr(temp,"\"","");
+                    temp= StringUtils.replace(temp, "\"", "");
                     DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",temp);
                     cc.add(dc);
                 }else{
@@ -562,7 +562,7 @@ public abstract class SearchA extends SecureAction {
                     {
                     	
                         CriteriaCollection subCC = new CriteriaCollection("OR");
-                        Iterator strings= StringUtils.DelimitedStringToArrayList(temp," ").iterator();
+                        Iterator strings= XftStringUtils.DelimitedStringToArrayList(temp, " ").iterator();
                         while (strings.hasNext())
                         {
                             String s= (String)strings.next();
@@ -674,11 +674,11 @@ public abstract class SearchA extends SecureAction {
 
             if (temp.startsWith("'"))
             {
-                temp= StringUtils.ReplaceStr(temp,"'","");
+                temp= StringUtils.replace(temp, "'", "");
                 DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",temp);
                 cc.add(dc);
             }else if (temp.startsWith("\"")){
-                temp= StringUtils.ReplaceStr(temp,"\"","");
+                temp= StringUtils.replace(temp, "\"", "");
                 DisplayCriteria dc = DisplayCriteria.addCriteria(ed.getElementName(),df.getId(),"=",temp);
                 cc.add(dc);
             }else{
@@ -689,7 +689,7 @@ public abstract class SearchA extends SecureAction {
                     if (df.getId().equalsIgnoreCase("PROJECT_INVS")) {  //project_invs always has a space in it and we don't want it torn apart
                         strings = Arrays.asList(new String[]{temp}).iterator(); // this is stupid, but it needs an iterator
                     } else {
-                        strings= StringUtils.DelimitedStringToArrayList(temp," ").iterator();
+                        strings= XftStringUtils.DelimitedStringToArrayList(temp, " ").iterator();
                     }
                     while (strings.hasNext())
                     {
@@ -802,12 +802,12 @@ public abstract class SearchA extends SecureAction {
     {
         CriteriaCollection cc = new CriteriaCollection("OR");
         value=StringEscapeUtils.unescapeXml(value);
-        value = StringUtils.ReplaceStr(value.trim(),"\r\n",",");
-        value = StringUtils.ReplaceStr(value.trim(),"'","");
-        value = StringUtils.ReplaceStr(value.trim(),"\"","");
-        value = StringUtils.ReplaceStr(value.trim(),"NOT NULL","NOT_NULL");
-        value = StringUtils.ReplaceStr(value.trim(),"IS NULL","IS_NULL");
-        value = StringUtils.ReplaceStr(value.trim(),"IS NOT NULL","IS_NOT_NULL");
+        value = StringUtils.replace(value.trim(), "\r\n", ",");
+        value = StringUtils.replace(value.trim(), "'", "");
+        value = StringUtils.replace(value.trim(), "\"", "");
+        value = StringUtils.replace(value.trim(), "NOT NULL", "NOT_NULL");
+        value = StringUtils.replace(value.trim(), "IS NULL", "IS_NULL");
+        value = StringUtils.replace(value.trim(), "IS NOT NULL", "IS_NOT_NULL");
         while (value.indexOf(",")!=-1)
         {
             if (value.indexOf(",")==0)
@@ -827,7 +827,7 @@ public abstract class SearchA extends SecureAction {
                 if (integer.indexOf(" ")!= -1)
                 {
                     CriteriaCollection subCC = new CriteriaCollection("OR");
-                    Iterator strings= StringUtils.DelimitedStringToArrayList(integer," ").iterator();
+                    Iterator strings= XftStringUtils.DelimitedStringToArrayList(integer, " ").iterator();
                     while (strings.hasNext())
                     {
                         String s= (String)strings.next();
@@ -892,15 +892,15 @@ public abstract class SearchA extends SecureAction {
                                 if (s.startsWith("("))
                                 {
                                     pre = s.substring(0,s.indexOf(")"));
-                                    pre = StringUtils.ReplaceStr(pre,"(","");
+                                    pre = StringUtils.replace(pre, "(", "");
                                     s = s.substring(s.indexOf(")-")+2);
                                 }else{
                                     pre = s.substring(s.indexOf("-"));
                                     s = s.substring(s.indexOf("-")+1);
                                 }
 
-                                post = StringUtils.ReplaceStr(s,"(","");
-                                post = StringUtils.ReplaceStr(post,")","");
+                                post = StringUtils.replace(s, "(", "");
+                                post = StringUtils.replace(post, ")", "");
 
                                 CriteriaCollection newcc= ds.getEmptyCollection("AND");
 
@@ -978,15 +978,15 @@ public abstract class SearchA extends SecureAction {
                             if (s.startsWith("("))
                             {
                                 pre = s.substring(0,s.indexOf(")"));
-                                pre = StringUtils.ReplaceStr(pre,"(","");
+                                pre = StringUtils.replace(pre, "(", "");
                                 s = s.substring(s.indexOf(")-")+2);
                             }else{
                                 pre = s.substring(s.indexOf("-"));
                                 s = s.substring(s.indexOf("-")+1);
                             }
 
-                            post = StringUtils.ReplaceStr(s,"(","");
-                            post = StringUtils.ReplaceStr(post,")","");
+                            post = StringUtils.replace(s, "(", "");
+                            post = StringUtils.replace(post, ")", "");
 
                             CriteriaCollection newcc= ds.getEmptyCollection("AND");
 
@@ -1014,7 +1014,7 @@ public abstract class SearchA extends SecureAction {
             if (integer.indexOf(" ")!= -1)
             {
                 CriteriaCollection subCC = new CriteriaCollection("OR");
-                Iterator strings= StringUtils.DelimitedStringToArrayList(integer," ").iterator();
+                Iterator strings= XftStringUtils.DelimitedStringToArrayList(integer, " ").iterator();
                 while (strings.hasNext())
                 {
                     String s= (String)strings.next();
@@ -1079,15 +1079,15 @@ public abstract class SearchA extends SecureAction {
                             if (s.startsWith("("))
                             {
                                 pre = s.substring(0,s.indexOf(")"));
-                                pre = StringUtils.ReplaceStr(pre,"(","");
+                                pre = StringUtils.replace(pre, "(", "");
                                 s = s.substring(s.indexOf(")-")+2);
                             }else{
                                 pre = s.substring(s.indexOf("-"));
                                 s = s.substring(s.indexOf("-")+1);
                             }
 
-                            post = StringUtils.ReplaceStr(s,"(","");
-                            post = StringUtils.ReplaceStr(post,")","");
+                            post = StringUtils.replace(s, "(", "");
+                            post = StringUtils.replace(post, ")", "");
 
                             CriteriaCollection newcc= ds.getEmptyCollection("AND");
 
@@ -1168,15 +1168,15 @@ public abstract class SearchA extends SecureAction {
                         if (s.startsWith("("))
                         {
                             pre = s.substring(0,s.indexOf(")"));
-                            pre = StringUtils.ReplaceStr(pre,"(","");
+                            pre = StringUtils.replace(pre, "(", "");
                             s = s.substring(s.indexOf(")-")+2);
                         }else{
                             pre = s.substring(s.indexOf("-"));
                             s = s.substring(s.indexOf("-")+1);
                         }
 
-                        post = StringUtils.ReplaceStr(s,"(","");
-                        post = StringUtils.ReplaceStr(post,")","");
+                        post = StringUtils.replace(s, "(", "");
+                        post = StringUtils.replace(post, ")", "");
 
                         CriteriaCollection newcc= ds.getEmptyCollection("AND");
 
@@ -1199,22 +1199,22 @@ public abstract class SearchA extends SecureAction {
 
     public static String CleanWhiteSpaces(String s)
     {
-        s = StringUtils.ReplaceStr(s,"  "," ");
+        s = StringUtils.replace(s, "  ", " ");
 
-        s = StringUtils.ReplaceStr(s," -","-");
-        s = StringUtils.ReplaceStr(s,"- ","-");
+        s = StringUtils.replace(s, " -", "-");
+        s = StringUtils.replace(s, "- ", "-");
 
-        //s = StringUtils.ReplaceStr(s," >",">");
-        s = StringUtils.ReplaceStr(s,"> ",">");
+        //s = StringUtils.replace(s," >",">");
+        s = StringUtils.replace(s, "> ", ">");
 
-        //s = StringUtils.ReplaceStr(s," <","<");
-        s = StringUtils.ReplaceStr(s,"< ","<");
+        //s = StringUtils.replace(s," <","<");
+        s = StringUtils.replace(s, "< ", "<");
 
-        //s = StringUtils.ReplaceStr(s," <=","<=");
-        s = StringUtils.ReplaceStr(s,"<= ","<=");
+        //s = StringUtils.replace(s," <=","<=");
+        s = StringUtils.replace(s, "<= ", "<=");
 
-        //s = StringUtils.ReplaceStr(s," >=",">=");
-        s = StringUtils.ReplaceStr(s,">= ",">=");
+        //s = StringUtils.replace(s," >=",">=");
+        s = StringUtils.replace(s, ">= ", ">=");
 
         return s;
     }

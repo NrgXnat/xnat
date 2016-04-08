@@ -15,7 +15,7 @@ package org.nrg.xft.schema;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.schema.design.XFTNode;
 import org.nrg.xft.utils.NodeUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -211,7 +211,7 @@ public class XFTDataField extends XFTField {
         if (temp.length() > 63) {
             temp = temp.substring(0, 63);
         }
-        temp = StringUtils.CleanForSQL(temp);
+        temp = XftStringUtils.CleanForSQL(temp);
         return temp;
     }
 
@@ -360,7 +360,7 @@ public class XFTDataField extends XFTField {
         if (org.apache.commons.lang3.StringUtils.isNotBlank(getUniqueComposite())) {
             props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "uniqueComposite", this.getUniqueComposite()));
         }
-        props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "local-map", StringUtils.ToString(this.isLocalMap())));
+        props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "local-map", XftStringUtils.ToString(this.isLocalMap())));
 
         if (getRule() != null) {
             main.appendChild(this.getRule().toXML(doc));

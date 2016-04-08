@@ -10,6 +10,7 @@
  */
 package org.nrg.xft;
 import org.apache.commons.collections.Predicate;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.SecurityManager;
 import org.nrg.xdat.security.helpers.Permissions;
@@ -49,7 +50,7 @@ import org.nrg.xft.search.ItemSearch.IdentifierResults;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.nrg.xft.utils.ValidationUtils.XFTValidator;
@@ -61,7 +62,6 @@ import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 import java.io.*;
 import java.lang.reflect.Method;
-import java.sql.SQLException;
 import java.text.ParseException;
 import java.util.*;
 
@@ -815,7 +815,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 */
 	public Object findSubValue(String sub, String key)
 	{
-	    sub = StringUtils.StandardizeXMLPath(sub);
+	    sub = XftStringUtils.StandardizeXMLPath(sub);
 		if (sub.indexOf(XFT.PATH_SEPERATOR) != -1)
 		{
 			String current = sub.substring(0,sub.indexOf(XFT.PATH_SEPERATOR));
@@ -1466,7 +1466,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 */
 	public boolean isPKField(String xmlPath) throws XFTInitException
 	{
-		xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
+		xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
 	    boolean b= false;
 	    try {
 			Iterator keys = getGenericSchemaElement().getAllPrimaryKeys().iterator();
@@ -3408,7 +3408,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
                     //fix for when labels get close to 64 characters.
                     if (v == null && colName.length() > 62) {
-                        v = row.get(StringUtils.Last62Chars(colName.toLowerCase()));
+                        v = row.get(XftStringUtils.Last62Chars(colName.toLowerCase()));
                     }
 
                     if (v != null) {
@@ -3489,7 +3489,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 			    return false;
 			}
 		}else{
-		    id = StringUtils.StandardizeXMLPath(id);
+		    id = XftStringUtils.StandardizeXMLPath(id);
 			if (id.indexOf(XFT.PATH_SEPERATOR) == -1)
 			{
 				try {
@@ -3602,7 +3602,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 		{
 			return getField(id);
 		}else{
-		    id = StringUtils.StandardizeXMLPath(id);
+		    id = XftStringUtils.StandardizeXMLPath(id);
 			if (id.indexOf(XFT.PATH_SEPERATOR) == -1 && id.indexOf("[")==-1)
 			{
 				try {
@@ -4196,7 +4196,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	public static boolean EndsWithFilter(String s)
 	{
-	    if (StringUtils.EndsWithInt(s))
+	    if (XftStringUtils.EndsWithInt(s))
 	    {
 	        if(s.indexOf("__") == -1)
 	        {
@@ -4215,11 +4215,11 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	public static Map GetFilterOptions(String s)
 	{
         Hashtable map = new Hashtable();
-	    if (StringUtils.EndsWithInt(s))
+	    if (XftStringUtils.EndsWithInt(s))
 	    {
-	 	   int index= StringUtils.GetEndingInt(s);
+	 	   int index= XftStringUtils.GetEndingInt(s);
            map.put("@index", new Integer(index));
-           s = StringUtils.CleanEndingInt(s);
+           s = XftStringUtils.CleanEndingInt(s);
 	    }
 
         while (s.endsWith("]")){
@@ -4254,9 +4254,9 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 
 	public static String CleanFilter(String s)
 	{
-	    if (StringUtils.EndsWithInt(s))
+	    if (XftStringUtils.EndsWithInt(s))
 	    {
-		    s = StringUtils.CleanEndingInt(s);
+		    s = XftStringUtils.CleanEndingInt(s);
 		    return s.substring(0,s.length()-2);
 	    }else if (s.endsWith("]")){
 	        return s.substring(0,s.indexOf("["));
@@ -4341,7 +4341,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	@SuppressWarnings("deprecation")
     private void setXMLPropertyChild(String xmlPath, Object value,boolean parseValue) throws XFTInitException,ElementNotFoundException,FieldNotFoundException,InvalidValueException
 	{
-        xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
+        xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
         String originalPath = xmlPath;
 		try {
             GenericWrapperField lastField = null;
@@ -5027,7 +5027,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	 */
 	public ArrayList<XFTItem> getChildItems(String id, String xsiType,boolean allowMultiples, boolean allowDBAccess,UserI user) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
-	    id = StringUtils.StandardizeXMLPath(id);
+	    id = XftStringUtils.StandardizeXMLPath(id);
 	    if (id.indexOf(XFT.PATH_SEPERATOR)!=-1)
 	    {
 	        if (id.substring(0,id.indexOf(XFT.PATH_SEPERATOR)).equalsIgnoreCase(this.getXSIType()))
@@ -5125,7 +5125,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	private ArrayList getXMLChildItems(String xmlPath,UserI user) throws XFTInitException,ElementNotFoundException,FieldNotFoundException
 	{
 		GenericWrapperField lastField = null;
-		xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
+		xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
 		while(xmlPath.indexOf(XFT.PATH_SEPERATOR)!= -1)
 		{
 			int multiIndex = 0;
@@ -6847,7 +6847,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
                 s+= ((XFTItem)o).writeToFlatString(++count) + ")";
             }else if (o instanceof String){
                 s+="(" +key + ":)=(";
-                o = StringUtils.ReplaceStr(StringUtils.ReplaceStr(((String)o),"(",SPECIAL_CHAR1),")",SPECIAL_CHAR2);
+                o = StringUtils.replace(StringUtils.replace(((String)o), "(", SPECIAL_CHAR1), ")", SPECIAL_CHAR2);
 
                s+= o + ")";
             }else{
@@ -6885,7 +6885,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
 	    }else{
 	        if (className.equals("java.lang.String"))
 	        {
-	            value = StringUtils.ReplaceStr(StringUtils.ReplaceStr(value,SPECIAL_CHAR1,"("),SPECIAL_CHAR2,")");
+	            value = StringUtils.replace(StringUtils.replace(value, SPECIAL_CHAR1, "("), SPECIAL_CHAR2, ")");
                 return value;
 	        }else if (XMLType.CleanType(type).equals("date"))
 	        {
@@ -7516,7 +7516,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     public void internValues(){
     	for(Map.Entry<String, Object> e:this.props.entrySet()){
     		if(e.getValue() instanceof String){
-    			props.put(e.getKey(),StringUtils.intern((String)e.getValue()));
+    			props.put(e.getKey(), XftStringUtils.intern((String)e.getValue()));
     		}else if(e.getValue() instanceof ItemI){
     			((ItemI)e.getValue()).getItem().internValues();
     		}

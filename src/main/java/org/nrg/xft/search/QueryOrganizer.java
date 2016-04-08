@@ -17,6 +17,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.display.Arc;
 import org.nrg.xdat.display.ArcDefinition;
@@ -40,7 +41,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.schema.design.SchemaFieldI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 /**
  * @author Tim
@@ -124,9 +125,9 @@ public class QueryOrganizer implements QueryOrganizerI{
      */
     public void addField(String xmlPath) throws ElementNotFoundException
     {
-        xmlPath = org.nrg.xft.utils.StringUtils.StandardizeXMLPath(xmlPath);
+        xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
 
-        if (StringUtils.GetRootElementName(xmlPath).equalsIgnoreCase(this.getRootElement().getFullXMLName()))
+        if (XftStringUtils.GetRootElementName(xmlPath).equalsIgnoreCase(this.getRootElement().getFullXMLName()))
         {
             boolean found = false;
             for(String tField: fields)
@@ -142,7 +143,7 @@ public class QueryOrganizer implements QueryOrganizerI{
                 fields.add(xmlPath);
             }
         }else{
-            SchemaElementI foreign = StringUtils.GetRootElement(xmlPath);
+            SchemaElementI foreign = XftStringUtils.GetRootElement(xmlPath);
 
             assert foreign != null;
             ArrayList al = (ArrayList)externalFields.get(foreign.getFullXMLName());
@@ -226,7 +227,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         }else{
             tableName = layers[1];
         }
-        String rootElement = StringUtils.GetRootElementName(xmlPath);
+        String rootElement = XftStringUtils.GetRootElementName(xmlPath);
         String viewColumnName="";
         try {
             SchemaElement se = SchemaElement.GetElement(rootElement);
@@ -234,7 +235,7 @@ public class QueryOrganizer implements QueryOrganizerI{
         } catch (XFTInitException | ElementNotFoundException e) {
             logger.error("",e);
         }
-        return tableAlias + "." + StringUtils.CreateAlias(tableName,viewColumnName);
+        return tableAlias + "." + XftStringUtils.CreateAlias(tableName, viewColumnName);
     }
 
     /**
@@ -465,7 +466,7 @@ public class QueryOrganizer implements QueryOrganizerI{
             if (!selected.contains(lowerCase))
             {
                 selected.add(lowerCase);
-                String element = StringUtils.GetRootElementName(s);
+                String element = XftStringUtils.GetRootElementName(s);
                 GenericWrapperElement se = GenericWrapperElement.GetElement(element);
                 if (rootElement.getFullXMLName().equalsIgnoreCase(se.getFullXMLName()))
                 {
@@ -484,9 +485,9 @@ public class QueryOrganizer implements QueryOrganizerI{
                     String alias;
                     if (viewColName==null)
                     {
-                        alias = StringUtils.CreateAlias(tableName,colName);
+                        alias = XftStringUtils.CreateAlias(tableName, colName);
                     }else{
-                        alias = StringUtils.Last62Chars(viewColName);
+                        alias = XftStringUtils.Last62Chars(viewColName);
                     }
 
                     String tableNameLC= tableName.toLowerCase();
@@ -527,9 +528,9 @@ public class QueryOrganizer implements QueryOrganizerI{
                     String alias;
                     if (viewColName!=null)
                     {
-                        alias = StringUtils.CreateAlias(tableName,viewColName);
+                        alias = XftStringUtils.CreateAlias(tableName, viewColName);
                     }else{
-                        alias = StringUtils.CreateAlias(tableName,colName);
+                        alias = XftStringUtils.CreateAlias(tableName, colName);
                     }
 
                     String tableNameLC= tableName.toLowerCase();
@@ -637,22 +638,22 @@ public class QueryOrganizer implements QueryOrganizerI{
                         newColl.add(coll);
 
                         //add support for limited status reflected in search results
-                        if (!StringUtils.IsEmpty(level) && !level.equals(ViewManager.ALL)){
+                        if (StringUtils.isNotBlank(level) && !level.equals(ViewManager.ALL)){
                             CriteriaCollection inner = new CriteriaCollection("OR");
-                        	for(String l: StringUtils.CommaDelimitedStringToArrayList(level)){
+                        	for(String l: XftStringUtils.CommaDelimitedStringToArrayList(level)){
                             	inner.addClause(e.getFullXMLName()+"/meta/status", l);
                         	}
                             newColl.add(inner);
                         }
                         
                         coll = newColl;
-                    }else if (!StringUtils.IsEmpty(level) && !level.equals(ViewManager.ALL)){
+                    }else if (StringUtils.isNotBlank(level) && !level.equals(ViewManager.ALL)){
                         CriteriaCollection newColl = new CriteriaCollection("AND");
                         newColl.add(coll);
                         
                         //add support for limited status reflected in search results
                         CriteriaCollection inner = new CriteriaCollection("OR");
-                    	for(String l: StringUtils.CommaDelimitedStringToArrayList(level)){
+                    	for(String l: XftStringUtils.CommaDelimitedStringToArrayList(level)){
                         	inner.addClause(e.getFullXMLName()+"/meta/status", l);
                     	}
                         newColl.add(inner);
@@ -1199,7 +1200,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 			DisplayFieldElement dfe = df.getElements().get(0);
 			String localFieldElement = dfe.getSchemaElementName();
 
-			if (StringUtils.GetRootElementName(localFieldElement).equalsIgnoreCase(getRootElement().getFullXMLName()))
+			if (XftStringUtils.GetRootElementName(localFieldElement).equalsIgnoreCase(getRootElement().getFullXMLName()))
 			{
 
 				this.addField(dfe.getSchemaElementName());
@@ -1213,7 +1214,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 
 				String foreignFieldElement = dfe2.getSchemaElementName();
 
-				if (StringUtils.GetRootElementName(foreignFieldElement).equalsIgnoreCase(qo.getRootElement().getFullXMLName()))
+				if (XftStringUtils.GetRootElementName(foreignFieldElement).equalsIgnoreCase(qo.getRootElement().getFullXMLName()))
 				{
 					qo.addField(dfe2.getSchemaElementName());
 
@@ -1281,7 +1282,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 	                }
 				}
 			}else{
-			    SchemaElementI middle = StringUtils.GetRootElement(localFieldElement);
+			    SchemaElementI middle = XftStringUtils.GetRootElement(localFieldElement);
 			    QueryOrganizer localMap = new QueryOrganizer(rootElement,this.getUser(),ViewManager.ALL);
 			    localMap.setIsMappingTable(true);
 				localMap.addField(localFieldElement);
@@ -1326,7 +1327,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 
 				String foreignFieldElement = dfe2.getSchemaElementName();
 
-				if (StringUtils.GetRootElementName(foreignFieldElement).equalsIgnoreCase(qo.getRootElement().getFullXMLName()))
+				if (XftStringUtils.GetRootElementName(foreignFieldElement).equalsIgnoreCase(qo.getRootElement().getFullXMLName()))
 				{
 					qo.addField(dfe2.getSchemaElementName());
 
@@ -1403,7 +1404,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 			DisplayFieldElement dfe = df.getElements().get(0);
 			String localFieldElement = dfe.getSchemaElementName();
 
-			if (StringUtils.GetRootElementName(localFieldElement).equalsIgnoreCase(getRootElement().getFullXMLName()))
+			if (XftStringUtils.GetRootElementName(localFieldElement).equalsIgnoreCase(getRootElement().getFullXMLName()))
 			{
 
 				this.addField(dfe.getSchemaElementName());
@@ -1417,7 +1418,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 
 				String foreignFieldElement = dfe2.getSchemaElementName();
 
-				if (StringUtils.GetRootElementName(foreignFieldElement).equalsIgnoreCase(qo.getRootElement().getFullXMLName()))
+				if (XftStringUtils.GetRootElementName(foreignFieldElement).equalsIgnoreCase(qo.getRootElement().getFullXMLName()))
 				{
 					qo.addField(dfe2.getSchemaElementName());
 
@@ -1484,7 +1485,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 	                }
 				}
 			}else{
-			    SchemaElementI middle = StringUtils.GetRootElement(localFieldElement);
+			    SchemaElementI middle = XftStringUtils.GetRootElement(localFieldElement);
 			    QueryOrganizer localMap = new QueryOrganizer(rootElement,this.getUser(),ViewManager.ALL);
 			    localMap.setIsMappingTable(true);
 			    localMap.addField(localFieldElement);
@@ -1529,7 +1530,7 @@ public class QueryOrganizer implements QueryOrganizerI{
 
 				String foreignFieldElement = dfe2.getSchemaElementName();
 
-				if (StringUtils.GetRootElementName(foreignFieldElement).equalsIgnoreCase(qo.getRootElement().getFullXMLName()))
+				if (XftStringUtils.GetRootElementName(foreignFieldElement).equalsIgnoreCase(qo.getRootElement().getFullXMLName()))
 				{
 					qo.addField(dfe2.getSchemaElementName());
 

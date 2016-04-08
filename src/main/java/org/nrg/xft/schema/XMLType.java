@@ -15,7 +15,7 @@ package org.nrg.xft.schema;
 import java.text.ParseException;
 
 import org.nrg.xft.meta.XFTMetaManager;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 public class XMLType {
 	private static final String TIMESTAMP = "timestamp";
@@ -48,22 +48,22 @@ public class XMLType {
 		int index = xml.indexOf(":");
 		if (index != -1)
 		{
-			localPrefix = StringUtils.intern(xml.substring(0,index));
+			localPrefix = XftStringUtils.intern(xml.substring(0, index));
 			setLocalType(xml.substring(index + 1).intern());
 		}else
 		{
-			localPrefix = StringUtils.intern(s.getTargetNamespacePrefix());
+			localPrefix = XftStringUtils.intern(s.getTargetNamespacePrefix());
             setLocalType(xml.intern());
 		}
 		if (local.indexOf(":")!=-1)
 		{
-            setLocalType(StringUtils.intern(local.substring(index + 1)));
+            setLocalType(XftStringUtils.intern(local.substring(index + 1)));
 		}
 		if (localPrefix.equalsIgnoreCase(""))
 		{
-			fullLocalType = StringUtils.intern(local);
+			fullLocalType = XftStringUtils.intern(local);
 		}else{
-			fullLocalType = StringUtils.intern(localPrefix + ":" + local);
+			fullLocalType = XftStringUtils.intern(localPrefix + ":" + local);
 		}
 		schema = s;
 	}
@@ -136,7 +136,7 @@ public class XMLType {
 	 * @param string
 	 */
 	public void setLocalPrefix(String string) {
-		localPrefix = StringUtils.intern(string);
+		localPrefix = XftStringUtils.intern(string);
 	}
 
 	/**
@@ -147,7 +147,7 @@ public class XMLType {
         if (string.equalsIgnoreCase("anyURI")){
             string = "string";
         }
-		local = StringUtils.intern(string);
+		local = XftStringUtils.intern(string);
 	}
 
 	/**
@@ -167,7 +167,7 @@ public class XMLType {
 		{
 			if (fullForeignType == null)
 			{
-				fullForeignType = StringUtils.intern(this.getForeignPrefix() + ":" + this.local);
+				fullForeignType = XftStringUtils.intern(this.getForeignPrefix() + ":" + this.local);
 			}
 			return fullForeignType;
 		}else{
@@ -188,7 +188,7 @@ public class XMLType {
 	 */
     @SuppressWarnings("unused")
 	private void setFullXMLType(String string) {
-		fullLocalType = StringUtils.intern(string);
+		fullLocalType = XftStringUtils.intern(string);
 	}
 
 	/**

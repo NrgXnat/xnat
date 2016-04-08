@@ -20,7 +20,8 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XMLType;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
+
 public class XFTSuperiorReference implements org.nrg.xft.references.XFTReferenceI {
 	/**
 	 * value used for specifier field to say the relation was defined in the superior element (as a max occurs &gt; 1).
@@ -201,11 +202,11 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 					GenericWrapperField foreignKey = (GenericWrapperField)foreignKeys.next();
 					if (! subordinateField.getXMLSqlNameValue().equalsIgnoreCase(""))
 					{
-						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),StringUtils.SQLMaxCharsAbbr(subordinateField.getXMLSqlNameValue(),foreignKey.getSQLName()),superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
+						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(), XftStringUtils.SQLMaxCharsAbbr(subordinateField.getXMLSqlNameValue(), foreignKey.getSQLName()), superiorElement.getSQLName(), foreignKey.getSQLName(), foreignKey.getXMLType(), foreignKey, subordinateField, this);
 						keyRelations.add(spec);
 					}else
 					{
-						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),StringUtils.SQLMaxCharsAbbr(foreignKey.getSQLName()),superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
+						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(), XftStringUtils.SQLMaxCharsAbbr(foreignKey.getSQLName()), superiorElement.getSQLName(), foreignKey.getSQLName(), foreignKey.getXMLType(), foreignKey, subordinateField, this);
 						keyRelations.add(spec);
 					}
 				}
@@ -220,10 +221,10 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 				{
 					if (subordinateField.getName().equalsIgnoreCase(superiorElement.getFullXMLName()) || subordinateField.getPrimaryKey().equalsIgnoreCase("true"))
 					{
-						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),StringUtils.SQLMaxCharsAbbr(foreignKey.getSQLName()),superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
+						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(), XftStringUtils.SQLMaxCharsAbbr(foreignKey.getSQLName()), superiorElement.getSQLName(), foreignKey.getSQLName(), foreignKey.getXMLType(), foreignKey, subordinateField, this);
 						keyRelations.add(spec);
 					}else{
-						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),StringUtils.SQLMaxCharsAbbr(subordinateField.getSQLName(),foreignKey.getSQLName()),superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
+						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(), XftStringUtils.SQLMaxCharsAbbr(subordinateField.getSQLName(), foreignKey.getSQLName()), superiorElement.getSQLName(), foreignKey.getSQLName(), foreignKey.getXMLType(), foreignKey, subordinateField, this);
 						keyRelations.add(spec);
 					}
 				}
@@ -239,19 +240,19 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 					GenericWrapperField foreignKey = (GenericWrapperField)foreignKeys.next();
 					if (! superiorField.getXMLSqlNameValue().equalsIgnoreCase(""))
 					{
-						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),StringUtils.SQLMaxCharsAbbr(superiorField.getXMLSqlNameValue(),foreignKey.getSQLName()),superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
+						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(), XftStringUtils.SQLMaxCharsAbbr(superiorField.getXMLSqlNameValue(), foreignKey.getSQLName()), superiorElement.getSQLName(), foreignKey.getSQLName(), foreignKey.getXMLType(), foreignKey, subordinateField, this);
 						keyRelations.add(spec);
 					}else
 					{
 						String fkName = null;
 					    if (superiorField.getName().equalsIgnoreCase(superiorField.getWrapped().getFullName()))
 					    { 
-					        fkName = StringUtils.SQLMaxCharsAbbr(superiorElement.getSQLName(),foreignKey.getSQLName());
+					        fkName = XftStringUtils.SQLMaxCharsAbbr(superiorElement.getSQLName(), foreignKey.getSQLName());
 							XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),fkName,superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
 							keyRelations.add(spec);
 					    }else
 					    {
-					        fkName = StringUtils.SQLMaxCharsAbbr(superiorField.getSQLName() + "_" +superiorElement.getSQLName(),foreignKey.getSQLName());
+					        fkName = XftStringUtils.SQLMaxCharsAbbr(superiorField.getSQLName() + "_" + superiorElement.getSQLName(), foreignKey.getSQLName());
 							XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),fkName,superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
 							keyRelations.add(spec);
 					    }
@@ -269,12 +270,12 @@ public class XFTSuperiorReference implements org.nrg.xft.references.XFTReference
 				    String fkName = null;
 				    if (superiorField.getName().equalsIgnoreCase(superiorField.getWrapped().getFullName()))
 				    { 
-				        fkName = StringUtils.SQLMaxCharsAbbr(superiorElement.getSQLName(),foreignKey.getSQLName());
+				        fkName = XftStringUtils.SQLMaxCharsAbbr(superiorElement.getSQLName(), foreignKey.getSQLName());
 						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),fkName,superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
 						keyRelations.add(spec);
 				    }else
 				    {
-				        fkName = StringUtils.SQLMaxCharsAbbr(superiorField.getSQLName() + "_" +superiorElement.getSQLName(),foreignKey.getSQLName());
+				        fkName = XftStringUtils.SQLMaxCharsAbbr(superiorField.getSQLName() + "_" + superiorElement.getSQLName(), foreignKey.getSQLName());
 						XFTRelationSpecification spec = new XFTRelationSpecification(subordinateElement.getSQLName(),fkName,superiorElement.getSQLName(),foreignKey.getSQLName(),foreignKey.getXMLType(),foreignKey,subordinateField,this);
 						keyRelations.add(spec);
 				    }

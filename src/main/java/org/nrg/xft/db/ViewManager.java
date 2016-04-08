@@ -30,7 +30,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 /**
  * @author Tim
@@ -104,9 +104,9 @@ public class ViewManager {
 										String[] refField = (String[])refFields.next();
 										if (refField[2] != null && ! refField[2].equalsIgnoreCase(""))
 										{
-											refField[2] = StringUtils.MinCharsAbbr(field.getSQLName())+ "_" + refField[2];
+											refField[2] = XftStringUtils.MinCharsAbbr(field.getSQLName()) + "_" + refField[2];
 										}else{
-											refField[2] = StringUtils.MinCharsAbbr(field.getSQLName());
+											refField[2] = XftStringUtils.MinCharsAbbr(field.getSQLName());
 										}
 										al.add(refField);
 									}
@@ -204,7 +204,7 @@ public class ViewManager {
 						String array[] = new String[6];
 						array[0]= e.getSQLName();
 						array[1]= (String) ref.get(0);
-						array[2]= StringUtils.RegCharsAbbr(e.getSQLName());
+						array[2]= XftStringUtils.RegCharsAbbr(e.getSQLName());
 						if (tableAlias !=null && !tableAlias.equalsIgnoreCase(""))
 						{
 							array[3]= tableAlias;
@@ -227,7 +227,7 @@ public class ViewManager {
 					String temp[] = new String[6];
 					temp[0]= e.getSQLName();
 					temp[1]= (String)field[0];
-					temp[2]= StringUtils.RegCharsAbbr(e.getSQLName());
+					temp[2]= XftStringUtils.RegCharsAbbr(e.getSQLName());
 					if (tableAlias !=null && !tableAlias.equalsIgnoreCase(""))
 					{
 						temp[3]= tableAlias;
@@ -291,12 +291,12 @@ public class ViewManager {
 										
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(ViewManager.GetViewName(foreign,level,allowMultiples,isExtension));
-											sb.append(" ").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
+											sb.append(" ").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
 											sb.append(" ON ").append(e.getSQLName()).append(".").append((String) ref.get(0));
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(temp);
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(temp);
 										} else {
 											sb.append(" AND ").append(e.getSQLName()).append(".").append((String) ref.get(0));
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(temp);
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(temp);
 										}
 									}
 							}
@@ -317,12 +317,12 @@ public class ViewManager {
 						
 									if (counter++ == 0) {
 										sb.append(" \nLEFT JOIN ").append(foreign.getSQLName());
-										sb.append(" ").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
+										sb.append(" ").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
 										sb.append(" ON ").append(e.getSQLName()).append(".").append((String) ref.get(0));
-										sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(foreignKey.getSQLName());
+										sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(foreignKey.getSQLName());
 									} else {
 										sb.append(" AND ").append(e.getSQLName()).append(".").append((String) ref.get(0));
-										sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(foreignKey.getSQLName());
+										sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(".").append(foreignKey.getSQLName());
 									}
 								}
 							}
@@ -345,11 +345,11 @@ public class ViewManager {
 										XFTMappingColumn map =(XFTMappingColumn) localMaps.next();
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(many.getMappingTable()
-													+ " "+ StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()));
+																			  + " " + XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()));
 											sb.append(" ON ").append(e.getSQLName()).append(".").append(map.getForeignKey().getSQLName());
 											sb
 												.append("=")
-												.append(StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
+												.append(XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(".")
 												.append(map.getLocalSqlName());
 										} else {
@@ -357,7 +357,7 @@ public class ViewManager {
 												".").append(
 												map.getForeignKey().getSQLName());
 											sb.append("=")
-												.append(StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
+												.append(XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(".")
 												.append(map.getLocalSqlName());
 										}
@@ -376,20 +376,20 @@ public class ViewManager {
 											
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(ViewManager.GetViewName(foreign,level,allowMultiples,false));
-											sb.append(" ").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()))
+											sb.append(" ").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(" ON ")
-												.append(StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
+												.append(XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(".")
 												.append(map.getLocalSqlName());
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
 												".").append(temp);
 										} else {
 											sb
 												.append(" AND ")
-												.append(StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
+												.append(XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(".")
 												.append(map.getLocalSqlName());
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
 												".").append(temp);
 										}
 									}
@@ -406,19 +406,19 @@ public class ViewManager {
 										
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(ViewManager.GetViewName(foreign,level,allowMultiples,false));
-											sb.append(" ").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
+											sb.append(" ").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
 											sb.append(" ON ").append(
 												e.getSQLName()).append(
 												".").append(
 												foreignKey.getSQLName());
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
 												".").append(temp);
 										} else {
 											sb.append(" AND ").append(
 												e.getSQLName()).append(
 												".").append(
 												foreignKey.getSQLName());
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
 												".").append(temp);
 										}
 									}
@@ -434,11 +434,11 @@ public class ViewManager {
 										XFTMappingColumn map =(XFTMappingColumn) localMaps.next();
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(many.getMappingTable()
-													+ " "+ StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()));
+																			  + " " + XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()));
 											sb.append(" ON ").append(e.getSQLName()).append(".").append(map.getForeignKey().getSQLName());
 											sb
 												.append("=")
-												.append(StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
+												.append(XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(".")
 												.append(map.getLocalSqlName());
 										} else {
@@ -446,7 +446,7 @@ public class ViewManager {
 												".").append(
 												map.getForeignKey().getSQLName());
 											sb.append("=")
-												.append(StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
+												.append(XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(".")
 												.append(map.getLocalSqlName());
 										}
@@ -464,20 +464,20 @@ public class ViewManager {
 										
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(foreign.getSQLName());
-											sb.append(" ").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()))
+											sb.append(" ").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(" ON ")
-												.append(StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
+												.append(XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(".")
 												.append(map.getLocalSqlName());
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
 												".").append(map.getForeignKey().getSQLName());
 										} else {
 											sb
 												.append(" AND ")
-												.append(StringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
+												.append(XftStringUtils.SQLMaxCharsAbbr("mapping_" + field.getSQLName() + "_" + foreign.getSQLName()))
 												.append(".")
 												.append(map.getLocalSqlName());
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
 												".").append(map.getForeignKey().getSQLName());
 										}
 									}
@@ -493,19 +493,19 @@ public class ViewManager {
 										
 										if (counter++ == 0) {
 											sb.append(" \nLEFT JOIN ").append(foreign.getSQLName());
-											sb.append(" ").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
+											sb.append(" ").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName()));
 											sb.append(" ON ").append(
 												e.getSQLName()).append(
 												".").append(
 												foreignKey.getSQLName());
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
 												".").append((String) ref.get(0));
 										} else {
 											sb.append(" AND ").append(
 												e.getSQLName()).append(
 												".").append(
 												foreignKey.getSQLName());
-											sb.append("=").append(StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
+											sb.append("=").append(XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + foreign.getSQLName())).append(
 												".").append((String) ref.get(0));
 										}
 									}
@@ -551,15 +551,15 @@ public class ViewManager {
 								if (! e.getAddin().equalsIgnoreCase(""))
 								{
 								    if(e.getExtensionFieldName().equals(field.getName()))
-										refFields = (ViewManager.GetSubFields(ref,ViewManager.QUARANTINE,allowMultiples,StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()),hierarchy,field.getXMLPathString(xmlPath),true)).iterator();
+										refFields = (ViewManager.GetSubFields(ref, ViewManager.QUARANTINE, allowMultiples, XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()), hierarchy, field.getXMLPathString(xmlPath), true)).iterator();
 								    else{
-										refFields = (ViewManager.GetSubFields(ref,ViewManager.QUARANTINE,allowMultiples,StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()),hierarchy,field.getXMLPathString(xmlPath),true)).iterator();
+										refFields = (ViewManager.GetSubFields(ref, ViewManager.QUARANTINE, allowMultiples, XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()), hierarchy, field.getXMLPathString(xmlPath), true)).iterator();
 								    }
 								}else{
 								    if(e.getExtensionFieldName().equals(field.getName()))
-										refFields = (ViewManager.GetSubFields(ref,level,allowMultiples,StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()),hierarchy,field.getXMLPathString(xmlPath),true)).iterator();
+										refFields = (ViewManager.GetSubFields(ref, level, allowMultiples, XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()), hierarchy, field.getXMLPathString(xmlPath), true)).iterator();
 								    else{
-										refFields = (ViewManager.GetSubFields(ref,level,allowMultiples,StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()),hierarchy,field.getXMLPathString(xmlPath),true)).iterator();
+										refFields = (ViewManager.GetSubFields(ref, level, allowMultiples, XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()), hierarchy, field.getXMLPathString(xmlPath), true)).iterator();
 								    }
 								}
 
@@ -597,7 +597,7 @@ public class ViewManager {
 										{
 											refField[1] = refField[2] + "_" + refField[1];
 										}
-										refField[2]=StringUtils.MinCharsAbbr(field.getSQLName());
+										refField[2]= XftStringUtils.MinCharsAbbr(field.getSQLName());
 										
 										refField[1]= refField[0] + counter++;
 										fieldsArray.add(refField);
@@ -606,7 +606,7 @@ public class ViewManager {
 									}
 								}
 							}else if(! field.getXMLDisplay().equalsIgnoreCase("root")){
-								refFields = (ViewManager.GetDirectFields(ref,StringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()),field.getXMLPathString(xmlPath),false,allowMultiples)).iterator();
+								refFields = (ViewManager.GetDirectFields(ref, XftStringUtils.SQLMaxCharsAbbr(field.getSQLName() + "_" + ref.getSQLName()), field.getXMLPathString(xmlPath), false, allowMultiples)).iterator();
 										
 								while (refFields.hasNext())
 								{
@@ -620,7 +620,7 @@ public class ViewManager {
 								{
 									String[] refField = (String[])refFields.next();
 									
-									refField[2]=StringUtils.MinCharsAbbr(field.getSQLName());
+									refField[2]= XftStringUtils.MinCharsAbbr(field.getSQLName());
 
 									refField[1]= refField[0] + counter++;
 									fieldsArray.add(refField);
@@ -672,7 +672,7 @@ public class ViewManager {
 	    while(iter.hasNext())
 	    {
 	        String s = (String)iter.next();
-	        s = StringUtils.StandardizeXMLPath(s);
+	        s = XftStringUtils.StandardizeXMLPath(s);
 	        qo.addField(s);
 	    }		
 	    
@@ -718,7 +718,7 @@ public class ViewManager {
 //			}else{
 //				i = 65-s.length();
 //			}
-//			temp.append(StringUtils.WhiteSpace(i)).append(field[5]);
+//			temp.append(XftStringUtils.WhiteSpace(i)).append(field[5]);
 //			
 //			counter++;
 //		}
@@ -729,7 +729,7 @@ public class ViewManager {
 //		{
 //			GenericWrapperElement meta = GenericWrapperElement.GetElement(e.getFullXMLName() +"_meta_data");
 //			String statusCol = ViewManager.GetViewColumnName(meta,e.getFullXMLName() +"_meta_data.status",false);
-//		    String s = StringUtils.SQLMaxCharsAbbr(StringUtils.CleanForSQL(e.getType().getLocalType()) + "_info_" + meta.getSQLName());
+//		    String s = XftStringUtils.SQLMaxCharsAbbr(XftStringUtils.CleanForSQL(e.getType().getLocalType()) + "_info_" + meta.getSQLName());
 //			if (level.equalsIgnoreCase(ViewManager.ACTIVE))
 //			{
 //				sb.append(" \nWHERE ").append(s);
@@ -924,7 +924,7 @@ public class ViewManager {
 				}
 				
 				String s = field[5];
-				s = StringUtils.StandardizeXMLPath(s);
+				s = XftStringUtils.StandardizeXMLPath(s);
 				hash.put(s.toLowerCase(),field[0] + Integer.toString(counter));
 				al.add(s);
 				counter++;
@@ -1005,7 +1005,7 @@ public class ViewManager {
 				}
 				
 				String s = field[5];
-				s = StringUtils.StandardizeXMLPath(s);
+				s = XftStringUtils.StandardizeXMLPath(s);
 				hash.put(s.toLowerCase(),field[0] + Integer.toString(counter));
 				al.add(s);
 				counter++;
@@ -1112,7 +1112,7 @@ public class ViewManager {
                             if (name.length() < 100)
                             {
                             	int i = 100-name.length();
-                            	sb.append("\n").append(name).append(StringUtils.WhiteSpace(i)).append(id);
+                            	sb.append("\n").append(name).append(XftStringUtils.WhiteSpace(i)).append(id);
                             }else{
                             	sb.append("\n").append(name).append("\t").append(id);
                             }

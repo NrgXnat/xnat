@@ -14,7 +14,7 @@ package org.nrg.xdat.security;
 
 import org.apache.log4j.Logger;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import java.util.ArrayList;
 /**
@@ -205,7 +205,7 @@ public class PermissionCriteria implements PermissionCriteriaI{
                             return false;
                         }
                     }else{
-                        ArrayList<String> multiple = StringUtils.CommaDelimitedStringToArrayList(s,true);
+                        ArrayList<String> multiple = XftStringUtils.CommaDelimitedStringToArrayList(s, true);
                         for (String temp:multiple)
                         {
                             if (!temp.trim().equals(EMPTY) && temp.equals(compareTo.toString()))
@@ -265,7 +265,7 @@ public class PermissionCriteria implements PermissionCriteriaI{
 	
 	public void setField(String s)
 	{
-		field=StringUtils.intern(s);
+		field= XftStringUtils.intern(s);
 	}
 		
 	public void setFieldValue(Object o)
@@ -275,7 +275,7 @@ public class PermissionCriteria implements PermissionCriteriaI{
 	
 	public void setComparisonType(String o)
 	{
-		comparison=StringUtils.intern(o);
+		comparison= XftStringUtils.intern(o);
 	}
 	
 	public String toString()

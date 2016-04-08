@@ -4,6 +4,7 @@ package org.nrg.xft.utils;
 import java.sql.SQLException;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.base.BaseElement;
@@ -28,7 +29,7 @@ public class SaveItemHelper {
 	}
 
 	protected void save(ItemI i,UserI user, boolean overrideSecurity, boolean quarantine, boolean overrideQuarantine, boolean allowItemRemoval,EventMetaI c) throws Exception {
-		if(!StringUtils.IsEmpty(i.getItem().getGenericSchemaElement().getAddin())){
+		if(StringUtils.isNotBlank(i.getItem().getGenericSchemaElement().getAddin())){
 			i.save(user,overrideSecurity,quarantine,overrideQuarantine,allowItemRemoval,c);
 		}else{
 			ItemWrapper temp;
@@ -52,7 +53,7 @@ public class SaveItemHelper {
 	}
 
 	protected boolean save(ItemI i,UserI user, boolean overrideSecurity, boolean allowItemRemoval,EventMetaI c) throws Exception {
-		if(!StringUtils.IsEmpty(i.getItem().getGenericSchemaElement().getAddin())){
+		if(StringUtils.isNotBlank(i.getItem().getGenericSchemaElement().getAddin())){
 			return i.save(user, overrideSecurity, allowItemRemoval,c);
 		}else{
 			ItemWrapper temp;
@@ -276,7 +277,7 @@ public class SaveItemHelper {
 		Authorizer.getInstance().authorizeSave(i.getItem(), user);
 		
 		String id=i.getItem().getPKValueString();
-        if(StringUtils.IsEmpty(id)){
+        if(StringUtils.isBlank(id)){
         	id=ID_PLACEHOLDER;
         }
 
@@ -336,7 +337,7 @@ public class SaveItemHelper {
 		}
 
 		String id=i.getItem().getPKValueString();
-        if(StringUtils.IsEmpty(id)){
+        if(StringUtils.isBlank(id)){
         	id=ID_PLACEHOLDER;
         }
 
@@ -396,7 +397,7 @@ public class SaveItemHelper {
 		Authorizer.getInstance().authorizeSave(i.getItem(), user);
 		
 		String id=i.getItem().getPKValueString();
-        if(StringUtils.IsEmpty(id)){
+        if(StringUtils.isBlank(id)){
         	id=ID_PLACEHOLDER;
         }
 
@@ -471,7 +472,7 @@ public class SaveItemHelper {
 		}
 
 		String id=i.getItem().getPKValueString();
-        if(StringUtils.IsEmpty(id)){
+        if(StringUtils.isBlank(id)){
         	id=ID_PLACEHOLDER;
         }
 

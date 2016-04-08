@@ -19,7 +19,8 @@ import org.nrg.xft.schema.XFTReferenceField;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
+
 public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferenceI{
 	private GenericWrapperElement element1 = null;
 	private GenericWrapperField field1 = null;
@@ -187,13 +188,13 @@ public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferen
 	{
 	    if (this.getMapping_name() == null)
 	    {
-			String f1 = StringUtils.RegCharsAbbr(field1.getSQLName());
+			String f1 = XftStringUtils.RegCharsAbbr(field1.getSQLName());
 			String e1 = element1.getSQLName();
 			String f2 = "";
 			String e2 = element2.getSQLName();
 			if (field2 != null)
 			{
-				f2 = StringUtils.RegCharsAbbr(field2.getSQLName());
+				f2 = XftStringUtils.RegCharsAbbr(field2.getSQLName());
 			}
 			if (f1.compareTo(e2) >= 0)
 			{
@@ -331,7 +332,7 @@ public class XFTManyToManyReference implements org.nrg.xft.references.XFTReferen
     	}else{
     	    if (mappingName.length()>60)
     		{
-    		   mappingName = StringUtils.FirstNChars(mappingName,60) + "_h";
+    		   mappingName = XftStringUtils.FirstNChars(mappingName, 60) + "_h";
     		}else{
      		   mappingName += "_h";
     		}

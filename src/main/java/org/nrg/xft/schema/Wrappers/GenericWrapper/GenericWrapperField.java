@@ -44,7 +44,7 @@ import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactoryI;
 import org.nrg.xft.schema.design.XFTFieldWrapper;
 import org.nrg.xft.schema.design.XFTNode;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 @SuppressWarnings({"unchecked","rawtypes"})
 public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(GenericWrapperField.class);
@@ -197,7 +197,7 @@ public class GenericWrapperField extends XFTFieldWrapper implements SchemaFieldI
 		            temp = temp.substring(0,63);
 		        }
 		    }
-			this.getWrapped().setFinalSqlName(StringUtils.CleanForSQL(temp));
+			this.getWrapped().setFinalSqlName(XftStringUtils.CleanForSQL(temp));
 	    }
 	    
 	    return getWrapped().getFinalSqlName();

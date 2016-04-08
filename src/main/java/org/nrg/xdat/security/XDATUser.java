@@ -15,6 +15,7 @@ import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
 import org.apache.commons.lang.builder.EqualsBuilder;
 import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -42,7 +43,7 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -150,7 +151,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         String pass = getStringProperty("primary_password");
         String salt = getStringProperty("salt");
 
-        if (StringUtils.IsEmpty(pass)) throw new PasswordAuthenticationException(getUsername());
+        if (StringUtils.isBlank(pass)) throw new PasswordAuthenticationException(getUsername());
 
         // encryption
         if (new ShaPasswordEncoder(256).isPasswordValid(pass, password, salt)) {
@@ -274,7 +275,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      */
     public boolean isGuest() {
         final String login = getLogin();
-        return StringUtils.IsEmpty(login) || login.equalsIgnoreCase("guest");
+        return StringUtils.isBlank(login) || login.equalsIgnoreCase("guest");
     }
 
     /**
@@ -436,7 +437,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @throws Exception
      */
     public void addRole(UserI authenticatedUser, String dRole) throws Exception{
-    	if(!StringUtils.IsEmpty(dRole)){
+    	if(StringUtils.isNotBlank(dRole)){
 	    	if(XDAT.getContextService().getBean(UserRoleService.class).findUserRole(this.getLogin(), dRole)==null){
 	    		if(!((XDATUser)authenticatedUser).isSiteAdmin()){
 	    			throw new Exception("Invalid permissions for user modification.");
@@ -762,7 +763,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 
             QueryOrganizer qo = new QueryOrganizer(rootElement, this, ViewManager.ALL);
 
-            ArrayList fields = StringUtils.CommaDelimitedStringToArrayList(xmlPaths);
+            ArrayList fields = XftStringUtils.CommaDelimitedStringToArrayList(xmlPaths);
             for (Object field : fields) {
                 qo.addField((String) field);
             }
@@ -909,10 +910,10 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
                     readable_counts.put("wrk:workflowData", wrk_count);
 
                     //experiments
-                    query = StringUtils.ReplaceStr(query, idField, "id");
-                    query = StringUtils.ReplaceStr(query, "xnat_subjectData", "xnat_experimentData");
-                    query = StringUtils.ReplaceStr(query, "xnat_projectParticipant", "xnat_experimentData_share");
-                    query = StringUtils.ReplaceStr(query, "subject_id", "sharing_share_xnat_experimentda_id");
+                    query = StringUtils.replace(query, idField, "id");
+                    query = StringUtils.replace(query, "xnat_subjectData", "xnat_experimentData");
+                    query = StringUtils.replace(query, "xnat_projectParticipant", "xnat_experimentData_share");
+                    query = StringUtils.replace(query, "subject_id", "sharing_share_xnat_experimentda_id");
 
                     XFTTable t = XFTTable.Execute("SELECT element_name, COUNT(*) FROM (" + query + ") SEARCH  LEFT JOIN xnat_experimentData expt ON search.id=expt.id LEFT JOIN xdat_meta_element xme ON expt.extension=xme.xdat_meta_element_id GROUP BY element_name", this.getDBName(), this.getUsername());
                     readable_counts.putAll(t.convertToHashtable("element_name", "count"));

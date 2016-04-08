@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.display;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
@@ -20,7 +21,7 @@ import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.identifier.Identifier;
 import org.nrg.xft.search.QueryOrganizerI;
 import org.nrg.xft.sequence.SequentialObject;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -194,7 +195,7 @@ public class DisplayField implements Identifier, SequentialObject {
             if (content == null) {
                 content = dfeAlias;
             } else {
-                content = StringUtils.ReplaceStr(content, "@" + dfe.getName(), dfeAlias);
+                content = StringUtils.replace(content, "@" + dfe.getName(), dfeAlias);
             }
         }
         return content;
@@ -231,7 +232,7 @@ public class DisplayField implements Identifier, SequentialObject {
             if (content == null) {
                 content = dfeAlias;
             } else {
-                content = StringUtils.ReplaceStr(content, "@" + dfe.getName(), dfeAlias);
+                content = StringUtils.replace(content, "@" + dfe.getName(), dfeAlias);
             }
         }
         return content;
@@ -668,14 +669,14 @@ public class DisplayField implements Identifier, SequentialObject {
             SchemaElement se = SchemaElement.GetElement(keyElement);
             return se.getDisplayField(keyField);
         } else {
-            SchemaElement se = SchemaElement.GetElement(StringUtils.GetRootElementName(s));
+            SchemaElement se = SchemaElement.GetElement(XftStringUtils.GetRootElementName(s));
             return se.getDisplayFieldForXMLPath(s);
         }
     }
 
     public static DisplayField getDisplayFieldForDFIdOrXPath(String s) throws Exception {
-        final String elementName1 = StringUtils.GetRootElementName(s);
-        final String field = StringUtils.GetFieldText(s);
+        final String elementName1 = XftStringUtils.GetRootElementName(s);
+        final String field = XftStringUtils.GetFieldText(s);
 
         final SchemaElement element = SchemaElement.GetElement(elementName1);
 

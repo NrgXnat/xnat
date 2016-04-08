@@ -14,6 +14,7 @@ import java.io.File;
 import java.io.InputStream;
 import java.util.*;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
@@ -33,8 +34,8 @@ import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
-import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.XMLUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
@@ -222,7 +223,7 @@ public class DisplayManager {
                                     Node child4 = child3.getChildNodes().item(m);
                                     if (child4.getNodeName().equalsIgnoreCase("securityMappingValue")) {
                                         String id = NodeUtils.GetAttributeValue(child4, "displayFieldId", "");
-                                        String field = StringUtils.StandardizeXMLPath(NodeUtils.GetAttributeValue(child4, "schemaElementMap", ""));
+                                        String field = XftStringUtils.StandardizeXMLPath(NodeUtils.GetAttributeValue(child4, "schemaElementMap", ""));
                                         if (!id.equalsIgnoreCase("") && !field.equalsIgnoreCase("")) {
                                             htmlLink.getSecureProps().put(id, field);
                                         }
@@ -447,7 +448,7 @@ public class DisplayManager {
 
         for (DataModelDefinition annotation : XFTManager.discoverDataModelDefs()) {
             for (String s : annotation.getDisplayDocs()) {
-                if (!StringUtils.IsEmpty(s)) {
+                if (!StringUtils.isBlank(s)) {
                     InputStream in = annotation.getClass().getClassLoader().getResourceAsStream(s);
 
                     if (in != null) {
@@ -1014,7 +1015,7 @@ public class DisplayManager {
      * @throws ConfigServiceException When the name can't be located.
      */
     public String getSingularDisplayNameForImageSession() throws ConfigServiceException {
-        return org.apache.commons.lang.StringUtils.defaultIfEmpty(
+        return StringUtils.defaultIfEmpty(
                 XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.singular"), "Session");
     }
 
@@ -1025,7 +1026,7 @@ public class DisplayManager {
      * @throws ConfigServiceException When the name can't be located.
      */
     public String getPluralDisplayNameForImageSession() throws ConfigServiceException {
-        return org.apache.commons.lang.StringUtils.defaultIfEmpty(
+        return StringUtils.defaultIfEmpty(
                 XDAT.getSiteConfigurationProperty("displayNameForGenericImageSession.plural"), "Sessions");
     }
 

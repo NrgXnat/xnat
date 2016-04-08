@@ -4,6 +4,7 @@ package org.nrg.xft.db;
 import java.sql.SQLException;
 import java.util.Calendar;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
@@ -11,7 +12,7 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 public class ItemAccessHistory {
 	static org.apache.log4j.Logger logger = Logger.getLogger(ItemAccessHistory.class);
@@ -164,7 +165,7 @@ public class ItemAccessHistory {
 		his.setSearch_element(item.getXSIType());
 		SchemaElementI se = SchemaElement.GetElement(item.getXSIType());
 		SchemaField sf = (SchemaField)se.getAllPrimaryKeys().get(0);
-		his.setSearch_field(StringUtils.ReplaceStr(StringUtils.ReplaceStr(sf.getXMLPathString(se.getFullXMLName()),"/","."),"@","."));
+		his.setSearch_field(StringUtils.replace(StringUtils.replace(sf.getXMLPathString(se.getFullXMLName()), "/", "."), "@", "."));
 		Object o = item.getProperty(sf.getId());
 		his.setSearch_value(o.toString());
 

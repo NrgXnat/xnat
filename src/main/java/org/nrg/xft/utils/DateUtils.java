@@ -10,6 +10,8 @@
  */
 package org.nrg.xft.utils;
 
+import org.apache.commons.lang3.StringUtils;
+
 import java.text.DateFormat;
 import java.text.ParseException;
 import java.text.SimpleDateFormat;
@@ -90,7 +92,7 @@ public class DateUtils {
 
     private Date parse(List<SimpleDateFormat> al, String s) throws ParseException {
         if (s.contains("'")) {
-            s = StringUtils.ReplaceStr(s, "'", "");
+            s = StringUtils.replace(s, "'", "");
         }
         if (s == null) {
             return null;

@@ -34,7 +34,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperUtils;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 public class ItemSearch implements SearchI {
 	static org.apache.log4j.Logger logger = Logger.getLogger(ItemSearch.class);
@@ -748,8 +748,8 @@ public class ItemSearch implements SearchI {
 	 */
 	public static ItemCollection GetItems(String xmlPath,String comparisonType, Object v, UserI user, boolean preLoad) throws Exception
 	{
-	    xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
-	    String rootElement = StringUtils.GetRootElementName(xmlPath);
+	    xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
+	    String rootElement = XftStringUtils.GetRootElementName(xmlPath);
 	    ItemSearch search = GetItemSearch(rootElement,user);
 	    search.setAllowMultiples(preLoad);
 	    search.addCriteria(xmlPath,v,comparisonType);
@@ -767,8 +767,8 @@ public class ItemSearch implements SearchI {
 	 */
 	public static ItemCollection GetItems(String xmlPath,Object v, UserI user, boolean preLoad) throws Exception
 	{
-	    xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
-	    String rootElement = StringUtils.GetRootElementName(xmlPath);
+	    xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
+	    String rootElement = XftStringUtils.GetRootElementName(xmlPath);
 	    ItemSearch search = GetItemSearch(rootElement,user);
 	    search.setAllowMultiples(preLoad);
 	    search.addCriteria(xmlPath,v);
@@ -786,7 +786,7 @@ public class ItemSearch implements SearchI {
 	 */
 	public static XFTItem GetItem(String xmlPath,Object v, UserI user,boolean preLoad) throws Exception
 	{
-	    xmlPath = StringUtils.StandardizeXMLPath(xmlPath);
+	    xmlPath = XftStringUtils.StandardizeXMLPath(xmlPath);
 	    ItemCollection items = ItemSearch.GetItems(xmlPath,v,user,preLoad);
 	    if (items.size()>0)
 	    {

@@ -19,7 +19,7 @@ import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.schema.design.SchemaElementI;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 public class XDATScreen_change_email extends SecureScreen {
 
@@ -28,7 +28,7 @@ public class XDATScreen_change_email extends SecureScreen {
         try {            
             UserI user = TurbineUtils.getUser(data);
             
-            context.put("edit_screen",StringUtils.getLocalClassName(this.getClass()) + ".vm");
+            context.put("edit_screen", XftStringUtils.getLocalClassName(this.getClass()) + ".vm");
             try {
                     SchemaElementI se = SchemaElement.GetElement(Users.getUserDataType());
                     context.put("item",user);

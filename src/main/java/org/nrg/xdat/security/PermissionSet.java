@@ -21,7 +21,7 @@ import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import com.google.common.collect.Lists;
 /**
@@ -71,7 +71,7 @@ public class PermissionSet implements PermissionSetI{
 	
 	public void setMethod(String m)
 	{
-		method=StringUtils.intern(m);
+		method= XftStringUtils.intern(m);
 	}
 	
 	/* (non-Javadoc)

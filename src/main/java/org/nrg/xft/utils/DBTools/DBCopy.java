@@ -10,13 +10,14 @@
  */
 package org.nrg.xft.utils.DBTools;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -53,7 +54,7 @@ public class DBCopy {
         logger.info("Clean Destination DB: " + props.getProperty("dest.db.url"));
         try {
             final StringBuilder sb = new StringBuilder();
-            final List<String> tableNames = StringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
+            final List<String> tableNames = XftStringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
             for (final String table : tableNames) {
                 logger.info("Cleaning " + table + "...");
                 sb.append("DELETE FROM ").append(table).append(";");
@@ -91,7 +92,7 @@ public class DBCopy {
         try (final Connection con = DriverManager.getConnection(props.getProperty("src.db.url"), props.getProperty("src.db.user"), props.getProperty("src.db.password"))){
             Statement stmt = con.createStatement();
 
-            final List<String> tableNames = StringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
+            final List<String> tableNames = XftStringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
             for (final String table : tableNames) {
                 logger.info("Copying " + table + " ...");
                 final StringBuilder sb = new StringBuilder();
@@ -163,18 +164,18 @@ public class DBCopy {
                     if (o.getClass().getName().equalsIgnoreCase("java.lang.String")) {
                         String temp = o.toString();
                         if (temp.contains("\\")) {
-                            temp = StringUtils.ReplaceStr(StringUtils.ReplaceStr(temp, "\\", "*#*"), "*#*", "\\\\");
+                            temp = StringUtils.replace(StringUtils.replace(temp, "\\", "*#*"), "*#*", "\\\\");
                         }
 
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(temp, "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(temp, "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Timestamp")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'::TIMESTAMP";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'::TIMESTAMP";
                     } else if (o.getClass().getName().equalsIgnoreCase("[B")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr((new String((byte[]) o)), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace((new String((byte[]) o)), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Date")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Time")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.lang.Float")) {
                         Float value = (Float) o;
                         if (value.isNaN())
@@ -193,18 +194,18 @@ public class DBCopy {
                     if (o.getClass().getName().equalsIgnoreCase("java.lang.String")) {
                         String temp = o.toString();
                         if (temp.contains("\\")) {
-                            temp = StringUtils.ReplaceStr(StringUtils.ReplaceStr(temp, "\\", "*#*"), "*#*", "\\\\");
+                            temp = StringUtils.replace(StringUtils.replace(temp, "\\", "*#*"), "*#*", "\\\\");
                         }
 
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(temp, "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(temp, "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Timestamp")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'::TIMESTAMP";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'::TIMESTAMP";
                     } else if (o.getClass().getName().equalsIgnoreCase("[B")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr((new String((byte[]) o)), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace((new String((byte[]) o)), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Date")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Time")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.lang.Float")) {
                         Float value = (Float) o;
                         if (value.isNaN())
@@ -226,18 +227,18 @@ public class DBCopy {
                     if (o.getClass().getName().equalsIgnoreCase("java.lang.String")) {
                         String temp = o.toString();
                         if (temp.contains("\\")) {
-                            temp = StringUtils.ReplaceStr(StringUtils.ReplaceStr(temp, "\\", "*#*"), "*#*", "\\\\");
+                            temp = StringUtils.replace(StringUtils.replace(temp, "\\", "*#*"), "*#*", "\\\\");
                         }
 
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(temp, "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(temp, "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Timestamp")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'::TIMESTAMP";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'::TIMESTAMP";
                     } else if (o.getClass().getName().equalsIgnoreCase("[B")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr((new String((byte[]) o)), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace((new String((byte[]) o)), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Date")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Time")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.lang.Float")) {
                         Float value = (Float) o;
                         if (value.isNaN())
@@ -256,18 +257,18 @@ public class DBCopy {
                     if (o.getClass().getName().equalsIgnoreCase("java.lang.String")) {
                         String temp = o.toString();
                         if (temp.contains("\\")) {
-                            temp = StringUtils.ReplaceStr(StringUtils.ReplaceStr(temp, "\\", "*#*"), "*#*", "\\\\");
+                            temp = StringUtils.replace(StringUtils.replace(temp, "\\", "*#*"), "*#*", "\\\\");
                         }
 
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(temp, "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(temp, "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Timestamp")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'::TIMESTAMP";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'::TIMESTAMP";
                     } else if (o.getClass().getName().equalsIgnoreCase("[B")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr((new String((byte[]) o)), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace((new String((byte[]) o)), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Date")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.sql.Time")) {
-                        return "'" + StringUtils.ReplaceStr(StringUtils.ReplaceStr(o.toString(), "'", "*#*"), "*#*", "''") + "'";
+                        return "'" + StringUtils.replace(StringUtils.replace(o.toString(), "'", "*#*"), "*#*", "''") + "'";
                     } else if (o.getClass().getName().equalsIgnoreCase("java.lang.Float")) {
                         Float value = (Float) o;
                         if (value.isNaN())
@@ -306,7 +307,7 @@ public class DBCopy {
     public boolean validateCopy() {
         logger.info("Validate Source DB: " + props.getProperty("src.db.url"));
         logger.info("Validate Destination DB: " + props.getProperty("dest.db.url"));
-        final List<String> tableNames = StringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
+        final List<String> tableNames = XftStringUtils.CommaDelimitedStringToArrayList(props.getProperty("tableNames"));
         for (final String table : tableNames) {
             try {
                 if (!DBValidator.CompareTable(this, table, false)) {

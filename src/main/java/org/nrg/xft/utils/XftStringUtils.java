@@ -13,64 +13,13 @@
 package org.nrg.xft.utils;
 import java.io.File;
 import java.util.ArrayList;
+import java.util.regex.Pattern;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-public class StringUtils {
-
-    public static boolean IsEmpty(String s)
-    {
-        if (s== null || s.equalsIgnoreCase(""))
-        {
-            return true;
-        }else{
-            return false;
-        }
-    }
-
-    public static boolean HasContent(String s)
-    {
-        return !IsEmpty(s);
-    }
-
-	/**
-	 * Replaces all instances of the Old string in the Base String with the New String.
-	 * @param _base Original string
-	 * @param _old String to be replaced
-	 * @param _new String to be added.
-	 * @return
-	 */
-	public static String ReplaceStr(String _base, String _old, String _new)
-	{
-	    if (_base.indexOf(_old)==-1)
-	    {
-	        return _base;
-	    }else{
-			StringBuffer sb = new StringBuffer();
-//			if (_base != null)
-//			{
-				while(_base.indexOf(_old) != -1)
-				{
-
-					String pre = _base.substring(0,_base.indexOf(_old));
-
-					String post;
-	                try {
-	                    post = _base.substring(_base.indexOf(_old) + _old.length());
-	                } catch (RuntimeException e) {
-	                    post = "";
-	                }
-
-	                sb.append(pre).append(_new);
-					_base = post;
-				}
-				sb.append(_base);
-//			}
-
-			return sb.toString();
-	    }
-	}
+public class XftStringUtils {
 
 	public static String WhiteSpace(int i)
 	{
@@ -81,30 +30,6 @@ public class StringUtils {
 			i--;
 		}
 		return sb.toString();
-	}
-
-	public static String RemoveChar(String _base, char _old)
-	{
-	    while (_base.indexOf(_old) !=-1)
-	    {
-	        int index =_base.indexOf(_old);
-	        if (index==0)
-	        {
-	            _base = _base.substring(1);
-	        }else if (index== (_base.length()-1)) {
-	            _base = _base.substring(0,index);
-	        }else{
-	            String pre = _base.substring(0,index);
-	            _base = pre + _base.substring(index+1);
-	        }
-	    }
-
-	    return _base;
-	}
-
-	public static String ReplaceStr(String _base, char _old, char _new)
-	{
-	    return _base.replace(_old,_new);
 	}
 
 	/**
@@ -140,7 +65,7 @@ public class StringUtils {
 	 */
 	public static String FormatMethodNameToHeader(String method)
 	{
-	 	String header = ReplaceStr(method,"get","");
+	 	String header = StringUtils.replace(method, "get", "");
 
 	 	StringBuffer sb = new StringBuffer("");
 
@@ -175,7 +100,7 @@ public class StringUtils {
 	 */
 	public static String FormatMethodNameToSQL(String method)
 	{
-		String header = ReplaceStr(method,"get","");
+		String header = StringUtils.replace(method,"get","");
 
 		StringBuffer sb = new StringBuffer("");
 
@@ -245,8 +170,8 @@ public class StringUtils {
 	{
 		StringBuffer sb = new StringBuffer();
 
-		name = StringUtils.ReplaceStr(name,".","_");
-		name = StringUtils.ReplaceStr(name,":","_");
+		name = StringUtils.replace(name, ".", "_");
+		name = StringUtils.replace(name, ":", "_");
 
 		String first = name.substring(0,1);
 		sb.append(first.toUpperCase());
@@ -281,8 +206,8 @@ public class StringUtils {
 	{
 		StringBuffer sb = new StringBuffer();
 
-		name = StringUtils.ReplaceStr(name,":","_");
-		name = StringUtils.ReplaceStr(name,"-","_");
+		name = StringUtils.replace(name, ":", "_");
+		name = StringUtils.replace(name, "-", "_");
 
 		String first = name.substring(0,1);
 		sb.append(first.toUpperCase());
@@ -308,7 +233,6 @@ public class StringUtils {
 		return name;
 	}
 
-
 	/**
 	 * Returns just the class name (without its package).
 	 * @param c
@@ -323,23 +247,6 @@ public class StringUtils {
 		}
 		return className;
 	}
-
-	/**
-	 * Capitalizes the first character of the string.
-	 * @param name
-	 * @return
-	 */
-	public static String CapitalFirstLetter(String name)
-	{
-		StringBuffer sb = new StringBuffer();
-
-		String first = name.substring(0,1);
-		sb.append(first.toUpperCase());
-		sb.append(name.substring(1));
-
-		return sb.toString();
-	}
-
 
 	public static String MinCharsAbbr(String name)
 	{
@@ -523,17 +430,17 @@ public class StringUtils {
 
 	public static String CleanForSQL(String temp)
 	{
-		temp = StringUtils.ReplaceStr(temp,"-","_");
-		temp = StringUtils.ReplaceStr(temp," ","_");
-		temp = StringUtils.ReplaceStr(temp,":","_");
+		temp = StringUtils.replace(temp, "-", "_");
+		temp = StringUtils.replace(temp, " ", "_");
+		temp = StringUtils.replace(temp, ":", "_");
 		return temp;
 	}
 
     public static String CleanForSQLTableName(String temp)
     {
-        temp = StringUtils.ReplaceStr(temp,"-","_");
-        temp = StringUtils.ReplaceStr(temp," ","_");
-        temp = StringUtils.ReplaceStr(temp,":","_");
+        temp = StringUtils.replace(temp, "-", "_");
+        temp = StringUtils.replace(temp, " ", "_");
+        temp = StringUtils.replace(temp, ":", "_");
 
         if (temp.length()>64)
         {
@@ -542,20 +449,18 @@ public class StringUtils {
         return temp;
     }
 
-
-
 	public static String CleanForSQLValue(String temp)
 	{
-		temp = StringUtils.ReplaceStr(temp,"''","#3939#");
-		temp = StringUtils.ReplaceStr(temp,"\'","#\39#");
-		temp = StringUtils.ReplaceStr(temp,"'","#39#");
-		temp = StringUtils.ReplaceStr(temp,"#39#","''");
-		temp = StringUtils.ReplaceStr(temp,"#\39#","''");
-		temp = StringUtils.ReplaceStr(temp,"#3939#","''");
+		temp = StringUtils.replace(temp, "''", "#3939#");
+		temp = StringUtils.replace(temp, "\'", "#\39#");
+		temp = StringUtils.replace(temp, "'", "#39#");
+		temp = StringUtils.replace(temp, "#39#", "''");
+		temp = StringUtils.replace(temp, "#\39#", "''");
+		temp = StringUtils.replace(temp, "#3939#", "''");
 
 		//DOUBLE \
-		temp = StringUtils.ReplaceStr(temp,"\\","#39#39#");
-		temp = StringUtils.ReplaceStr(temp,"#39#39#","\\\\");
+		temp = StringUtils.replace(temp, "\\", "#39#39#");
+		temp = StringUtils.replace(temp, "#39#39#", "\\\\");
 		return temp;
 	}
 
@@ -583,7 +488,6 @@ public class StringUtils {
 		}
 	}
 
-
 	public static String CleanEndingInt(String next)
 	{
 		int index = next.length()-1;
@@ -596,8 +500,8 @@ public class StringUtils {
 
 	public static String InsertCharsIntoDelimitedString(String s, String insert)
 	{
-	    s = StringUtils.ReplaceStr(s,".","*$*");
-	    return StringUtils.ReplaceStr(s,"*$*","." + insert);
+	    s = StringUtils.replace(s, ".", "*$*");
+	    return StringUtils.replace(s, "*$*", "." + insert);
 	}
 
 	public static  String ToString(boolean b)
@@ -714,7 +618,6 @@ public class StringUtils {
 	    return fullString;
 	}
 
-
 	public static GenericWrapperElement GetRootElement(String fullString) throws org.nrg.xft.exception.ElementNotFoundException
 	{
 	    try {
@@ -729,13 +632,13 @@ public class StringUtils {
 	{
 	    if (XFT.PATH_SEPERATOR=='.')
 	    {
-	        fullString = StringUtils.ReplaceStr(fullString,'/',XFT.PATH_SEPERATOR);
+	        fullString = StringUtils.replaceChars(fullString, '/', XFT.PATH_SEPERATOR);
 	    }else{
-	        fullString = StringUtils.ReplaceStr(fullString,'.',XFT.PATH_SEPERATOR);
+	        fullString = StringUtils.replaceChars(fullString, '.', XFT.PATH_SEPERATOR);
 	    }
-        fullString = StringUtils.ReplaceStr(fullString,"[@","[*");
-        fullString = StringUtils.ReplaceStr(fullString,'@',XFT.PATH_SEPERATOR);
-        fullString = StringUtils.ReplaceStr(fullString,"[*","[@");
+        fullString = StringUtils.replace(fullString, "[@", "[*");
+        fullString = StringUtils.replaceChars(fullString, '@', XFT.PATH_SEPERATOR);
+        fullString = StringUtils.replace(fullString, "[*", "[@");
 
         while (fullString.startsWith(String.valueOf(XFT.PATH_SEPERATOR)))
         {
@@ -745,63 +648,18 @@ public class StringUtils {
         return fullString;
 	}
 
-	
-	public static boolean IsAlphaNumericUnderscore(String s){
-		if(s==null)return false;
-		if(s.indexOf(',')>-1) return false;
-		if(s.indexOf('.')>-1) return false;
-		if(s.indexOf('/')>-1) return false;
-		if(s.indexOf('`')>-1) return false;
-		if(s.indexOf('`')>-1) return false;
-		if(s.indexOf('~')>-1) return false;
-		if(s.indexOf('!')>-1) return false;
-		if(s.indexOf('@')>-1) return false;
-		if(s.indexOf('#')>-1) return false;
-		if(s.indexOf('$')>-1) return false;
-		if(s.indexOf('%')>-1) return false;
-		if(s.indexOf('^')>-1) return false;
-		if(s.indexOf('&')>-1) return false;
-		if(s.indexOf('*')>-1) return false;
-		if(s.indexOf('(')>-1) return false;
-		if(s.indexOf(')')>-1) return false;
-		if(s.indexOf('+')>-1) return false;
-		if(s.indexOf('=')>-1) return false;
-		if(s.indexOf('|')>-1) return false;
-		if(s.indexOf('\\')>-1) return false;
-		if(s.indexOf('{')>-1) return false;
-		if(s.indexOf('[')>-1) return false;
-		if(s.indexOf('}')>-1) return false;
-		if(s.indexOf(']')>-1) return false;
-		if(s.indexOf(':')>-1) return false;
-		if(s.indexOf(';')>-1) return false;
-		if(s.indexOf('"')>-1) return false;
-		if(s.indexOf('\'')>-1) return false;
-		if(s.indexOf('<')>-1) return false;
-		if(s.indexOf('>')>-1) return false;
-		if(s.indexOf('?')>-1) return false;
-		
-		return true;
+	public static boolean IsAlphaNumericUnderscore(String s) {
+		return !StringUtils.isBlank(s) && ALPHANUMERICUNDERSCORE.matcher(s).matches();
 	}
 	
-	public static boolean OccursBefore(String root,String f, String l){
-		if(root==null || f==null || l==null)
-		{
-			return false;
-		}
-		
-		if(root.indexOf(f)==-1 || root.indexOf(l)==-1){
-			return false;
-		}
-		
-		if(root.indexOf(f)< root.indexOf(l)){
-			return true;
-		}
-		
-		return false;
+	public static boolean OccursBefore(String root,String f, String l) {
+		return !(root == null || f == null || l == null) && !(!root.contains(f) || !root.contains(l)) && root.indexOf(f) < root.indexOf(l);
 	}
 	
 	public static String intern(String s){
 		return (s!=null)?s.intern():s;
 	}
+
+	private static final Pattern ALPHANUMERICUNDERSCORE = Pattern.compile("^[A-z0-9_]+$");
 }
 

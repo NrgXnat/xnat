@@ -24,7 +24,7 @@ import org.nrg.xft.meta.XFTMetaElement;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.schema.design.XFTNode;
 import org.nrg.xft.utils.NodeUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.XMLUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
@@ -173,7 +173,7 @@ public class XFTElement extends XFTNode{
 				if (NodeUtils.HasAttribute(coreElement,QUARANTINE))
 				    this.setQuarantineSetting(NodeUtils.GetBooleanAttributeValue(coreElement,QUARANTINE,false));
 				this.setSkipSQL(NodeUtils.GetAttributeValue(coreElement,SKIP_SQL,FALSE));
-				this.setDisplayIdentifiers(StringUtils.CommaDelimitedStringToArrayList(NodeUtils.GetAttributeValue(coreElement,"displayIdentifiers","")));
+				this.setDisplayIdentifiers(XftStringUtils.CommaDelimitedStringToArrayList(NodeUtils.GetAttributeValue(coreElement, "displayIdentifiers", "")));
 			}
 			if (sqlElement != null)
 			{
@@ -551,14 +551,14 @@ public class XFTElement extends XFTNode{
 
 		if (getAddin()!=null)
 			props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,_ADDIN,this.getAddin()));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"created-child",org.nrg.xft.utils.StringUtils.ToString(this.createdChild)));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"extension",org.nrg.xft.utils.StringUtils.ToString(this.extension)));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "created-child", XftStringUtils.ToString(this.createdChild)));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "extension", XftStringUtils.ToString(this.extension)));
 		if (extensionType!=null)
 			props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"extension-type",this.extensionType.getFullForeignType()));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"has-extension-element",org.nrg.xft.utils.StringUtils.ToString(this.hasExtensionElement)));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"is-a-no-child-element",org.nrg.xft.utils.StringUtils.ToString(this.isANoChildElement)));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"is-extended",org.nrg.xft.utils.StringUtils.ToString(this.isExtended)));
-		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc,"skip-sql",org.nrg.xft.utils.StringUtils.ToString(this.skipSQL)));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "has-extension-element", XftStringUtils.ToString(this.hasExtensionElement)));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "is-a-no-child-element", XftStringUtils.ToString(this.isANoChildElement)));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "is-extended", XftStringUtils.ToString(this.isExtended)));
+		props.getAttributes().setNamedItem(NodeUtils.CreateAttributeNode(doc, "skip-sql", XftStringUtils.ToString(this.skipSQL)));
 
 		if (getSqlElement()!=null)
 			props.appendChild(getSqlElement().toXML(doc));

@@ -13,7 +13,7 @@
 package org.nrg.xft.schema;
 
 import org.nrg.xft.utils.NodeUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
 public class XFTSqlField {
@@ -109,7 +109,7 @@ public class XFTSqlField {
 	 * @param string
 	 */
 	public void setSqlName(String string) {
-		sqlName = StringUtils.CleanForSQL(string);
+		sqlName = XftStringUtils.CleanForSQL(string);
 	}
 
 	/* (non-Javadoc)

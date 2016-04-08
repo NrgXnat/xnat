@@ -39,7 +39,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 
 import java.io.StringWriter;
 import java.sql.SQLException;
@@ -157,7 +157,7 @@ public class UserGroupManager implements UserGroupServiceI{
                     Template template =Velocity.getTemplate("/screens/" + templateName);
                     template.merge(context,sw);
                     
-                    ArrayList<String> stmts=StringUtils.DelimitedStringToArrayList(sw.toString(), ";");
+                    ArrayList<String> stmts= XftStringUtils.DelimitedStringToArrayList(sw.toString(), ";");
                     PoolDBUtils.ExecuteBatch(stmts, null, authenticatedUser.getUsername());
                 }
             }

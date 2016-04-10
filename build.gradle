@@ -92,10 +92,26 @@ dependencies {
     testCompile group: 'org.hibernate', name: 'hibernate-ehcache', version: '4.3.7.Final'
 }
 
+task sourceJar(type: Jar, dependsOn: classes) {
+    from sourceSets.main.allSource
+}
+
+task javadocJar(type: Jar, dependsOn: javadoc) {
+    from javadoc.destinationDir
+}
+
 publishing {
     publications {
         mavenJava(MavenPublication) {
             from components.java
+
+            artifact sourceJar {
+                classifier "sources"
+            }
+
+            artifact javadocJar {
+                classifier "javadoc"
+            }
 
             pom.withXml {
                 def root = asNode()

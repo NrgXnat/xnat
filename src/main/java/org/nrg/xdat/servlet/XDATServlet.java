@@ -14,11 +14,11 @@ package org.nrg.xdat.servlet;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.lang.BooleanUtils;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xft.XFT;
 import org.nrg.xft.db.DBAction;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.generators.SQLCreateGenerator;
@@ -30,8 +30,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.slf4j.bridge.SLF4JBridgeHandler;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
-import org.springframework.core.io.support.ResourcePatternResolver;
 
 import javax.servlet.ServletConfig;
 import javax.servlet.ServletException;
@@ -280,10 +278,7 @@ public class XDATServlet extends HttpServlet {
         private List<String> getInitScripts() {
             final List<String> statements = new ArrayList<>();
             try {
-                final ResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
-                final List<Resource> filtered = filterAndSortInitSqlResources(resolver.getResources("classpath*:META-INF/xnat/**/init_*.sql"));
-
-                for (final Resource resource : filtered) {
+                for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/init_*.sql")) {
                     try (final BufferedReader reader = new BufferedReader(new InputStreamReader(resource.getInputStream()), 1024)) {
                         String statement;
                         while ((statement = reader.readLine()) != null) {

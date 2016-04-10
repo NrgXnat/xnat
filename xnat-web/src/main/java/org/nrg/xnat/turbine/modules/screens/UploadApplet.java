@@ -12,7 +12,6 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.AppletConfig;
@@ -20,6 +19,7 @@ import org.nrg.xnat.utils.XnatHttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+@SuppressWarnings("unused")
 public class UploadApplet extends UploadAppletScreen {
 	private static final Logger logger = LoggerFactory.getLogger(UploadApplet.class);
 	
@@ -41,19 +41,19 @@ public class UploadApplet extends UploadAppletScreen {
         	// HH:MM or if HH:MM == 00:00 the applet will only verify the scan is on the same day as mm/dd/yyyy. If it receives no
         	// session_date, it will prompt the user for one.  With that said, we want to build up the mm/dd/yyyy string if we can.
         	// we'll do it here.
-        	String hhmm = " 00:00";
+        	String time = " 00:00";
         	if (TurbineUtils.HasPassedParameter("session_time_h", data) && TurbineUtils.HasPassedParameter("session_time_m", data)) {
         		// parameters are set with drop-downs so no need to validate here.
         		String hr = (String)TurbineUtils.GetPassedParameter("session_time_h", data);
         		String mm =(String)TurbineUtils.GetPassedParameter("session_time_m", data);
         		try{
         			//poor man's validation
-        			hhmm =  Integer.parseInt(hr) + ":" + Integer.parseInt(mm);
+        			time =  Integer.parseInt(hr) + ":" + Integer.parseInt(mm);
         		} catch (Exception e){
         			//if one or both aren't an integer, we'll get here, which is fine. it just means they didn't select a time. 
         		}
         	}
-            context.put("session_date", ((String)TurbineUtils.GetPassedParameter("session_date", data)).replace('.', '/') + " " + hhmm);
+            context.put("session_date", ((String)TurbineUtils.GetPassedParameter("session_date", data)).replace('.', '/') + " " + time);
         } else if (TurbineUtils.HasPassedParameter("no_session_date", data)) {
             context.put("session_date", "no_session_date");
         }
@@ -67,8 +67,7 @@ public class UploadApplet extends UploadAppletScreen {
 	        if (json != null) {
 	            try {
 	            	//we have JSON, so, create applet parameters from it.
-	            	ObjectMapper mapper = new ObjectMapper();
-	            	AppletConfig jsonParams = mapper.readValue(json, AppletConfig.class);
+	            	AppletConfig jsonParams = getSerializer().deserializeJson(json, AppletConfig.class);
 	            	StringBuilder sb = new StringBuilder();
 	            	if(jsonParams.getParameters() != null) {
 	            		for(String key:jsonParams.getParameters().keySet()) {

@@ -7,6 +7,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.Turbine;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.processors.XnatPluginBean;
+import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
@@ -15,7 +16,6 @@ import org.nrg.xnat.security.XnatSessionEventPublisher;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
-import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
@@ -114,9 +114,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     private List<Class<?>> getPluginConfigs() {
         final List<Class<?>> configs = new ArrayList<>();
         try {
-            final PathMatchingResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
-            final Resource[]                          resources = resolver.getResources("classpath*:META-INF/xnat/**/*-plugin.properties");
-            for (final Resource resource : resources) {
+            for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
                 final Properties     properties = PropertiesLoaderUtils.loadProperties(resource);
                 final XnatPluginBean plugin     = new XnatPluginBean(properties);
                 final Class<?>       config     = plugin.getConfigClass();

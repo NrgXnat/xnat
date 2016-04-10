@@ -35,8 +35,8 @@ import java.util.Properties;
 
 public class EventResource extends AutomationResource {
 
-    public static final String PROPERTY_EVENT_ID = "event_id";
-    public static final String PROPERTY_EVENT_LABEL = "event_label";
+    private static final String PROPERTY_EVENT_ID    = "event_id";
+    private static final String PROPERTY_EVENT_LABEL = "event_label";
 
     public EventResource(Context context, Request request, Response response) throws ResourceException {
         super(context, request, response);
@@ -142,7 +142,7 @@ public class EventResource extends AutomationResource {
                     final Map<String, String> event = new HashMap<>();
                     event.put(PROPERTY_EVENT_ID, getResourceId());
                     event.put(PROPERTY_EVENT_LABEL, label);
-                    return new StringRepresentation(MAPPER.writeValueAsString(event), mediaType);
+                    return new StringRepresentation(getSerializer().toJson(event), mediaType);
                 }
             } else {
                 // They're asking for list of existing script events, so give them that.
@@ -213,7 +213,7 @@ public class EventResource extends AutomationResource {
                 } else {
                     try {
                         final String text = entity.getText();
-                        _properties.putAll(MAPPER.readValue(text, Properties.class));
+                        _properties.putAll(getSerializer().deserializeJson(text, Properties.class));
                     } catch (IOException e) {
                         throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "An error occurred processing the script properties", e);
                     }

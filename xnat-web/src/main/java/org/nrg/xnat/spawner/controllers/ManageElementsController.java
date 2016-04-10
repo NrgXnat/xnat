@@ -12,20 +12,23 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.inject.Inject;
+import java.util.List;
 
+@SuppressWarnings("SpringMVCViewInspection")
 @Controller
 @RequestMapping(value = "/spawner/elements", produces = "application/json")
 public class ManageElementsController {
 
     @RequestMapping
     public ModelAndView getAvailableElements() {
-        return new ModelAndView("spawner/elements", "elements", _service.getAvailableSpawnerElementIds());
+        final List<SpawnerElement> elements = _service.getAll();
+        return new ModelAndView("spawner/elements", "elements", elements);
     }
 
     @RequestMapping(value = "{elementId}", method = RequestMethod.GET)
     public ModelAndView getElement(@PathVariable final String elementId) {
         final SpawnerElement element = _service.retrieve(elementId);
-        return new ModelAndView("spawner/element", element == null ? "error" : "element", element == null ? "The ID element " + elementId + " was not found in the system." : element);
+        return new ModelAndView("spawner/element", element == null ? "error" : "elementId", element == null ? "The ID element " + elementId + " was not found in the system." : elementId);
     }
 
     @RequestMapping(value = "{elementId}", method = RequestMethod.PUT)

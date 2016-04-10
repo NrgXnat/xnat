@@ -723,7 +723,7 @@
     <div id="layout_content">
         <!--BEGIN SCREEN CONTENT -->
 
-        <jsp:doBody scope="page"/>
+        <jsp:doBody/>
 
         <!-- END SCREEN CONTENT -->
     </div>

@@ -3,13 +3,12 @@
 <%@ taglib prefix="sp" tagdir="/WEB-INF/tags/spawner" %>
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <jsp:useBean id="elements" scope="request" type="java.util.List"/>
-<jsp:useBean id="element" scope="request" type="org.nrg.xnat.spawner.entities.SpawnerElement"/>
 
 <sp:layout title="Spawner Elements">
     <h3 style="margin:0 0 15px 0;">Spawner Elements</h3>
 
     <div style="margin:15px 0;max-width:696px;min-width:400px;">
-        The Spawner is XNAT's system for managing dynamically configurable user interface elements.
+        The Spawner is XNAT's system for creating and updating dynamically configurable user interface elements.
     </div>
 
     <div class="yui-skin-sam">
@@ -105,14 +104,13 @@
                 <c:forEach var="element" items="${elements}">
                     <tr class="highlight events-list">
                         <td class="site-event-id">
-                                ${element.label}
+                            <a href="elements/${element.elementId}" class="edit-event" data-action="editEvent"
+                               title="edit existing event">${element.label}</a>
                         </td>
                         <td class="site-event-label">
                                 ${element.description}
                         </td>
                         <td class="actions" style="text-align:center;white-space:nowrap;">
-                            <a href="#!" class="edit-event" data-action="editEvent"
-                               title="edit existing event">edit</a>
                             <a href="#!" class="delete-event" data-action="deleteEvent"
                                title="delete existing event">delete</a>
                         </td>

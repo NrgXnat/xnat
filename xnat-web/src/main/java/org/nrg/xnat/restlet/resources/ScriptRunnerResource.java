@@ -1,7 +1,5 @@
 package org.nrg.xnat.restlet.resources;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.automation.runners.ScriptRunner;
 import org.nrg.automation.services.ScriptRunnerService;
@@ -58,13 +56,13 @@ public class ScriptRunnerResource extends AutomationResource {
                 if (!_runnerService.hasRunner(_language)) {
                     throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, String.format("No script runner found for %s", _language));
                 }
-                final String json = _serializer.writeValueAsString(_runnerService.getRunner(_language));
+                final String json = toJson(_runnerService.getRunner(_language));
                 return new StringRepresentation(json, mediaType);
             } else {
                 final List<String> runners = _runnerService.getRunners();
-                return new StringRepresentation(_serializer.writeValueAsString(runners), mediaType);
+                return new StringRepresentation(toJson(runners), mediaType);
             }
-        } catch (JsonProcessingException e) {
+        } catch (java.io.IOException e) {
             throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "There was an error processing the script runners to JSON", e);
         }
     }
@@ -73,7 +71,6 @@ public class ScriptRunnerResource extends AutomationResource {
 
     private static final String LANGUAGE = "LANGUAGE";
 
-    private static final ObjectMapper _serializer = new ObjectMapper();
     private final ScriptRunnerService _runnerService;
     private final String _language;
 }

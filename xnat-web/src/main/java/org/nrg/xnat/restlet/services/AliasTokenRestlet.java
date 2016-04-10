@@ -11,14 +11,13 @@
 package org.nrg.xnat.restlet.services;
 
 import com.google.common.collect.Maps;
-
 import org.apache.commons.lang.StringUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.restlet.resources.SecureResource;
+import org.nrg.xnat.utils.SerializerService;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;
@@ -34,15 +33,15 @@ import java.util.HashMap;
 import java.util.Map;
 
 public class AliasTokenRestlet extends SecureResource {
-    public static final String PARAM_OPERATION = "OPERATION";
-    public static final String PARAM_USERNAME = "USERNAME";
-    public static final String PARAM_TOKEN = "TOKEN";
-    public static final String PARAM_SECRET = "SECRET";
-    public static final String OP_ISSUE = "issue";
-    public static final String OP_VALIDATE = "validate";
-    public static final String OP_INVALIDATE = "invalidate";
+    private static final String PARAM_OPERATION = "OPERATION";
+    private static final String PARAM_USERNAME  = "USERNAME";
+    private static final String PARAM_TOKEN     = "TOKEN";
+    private static final String PARAM_SECRET    = "SECRET";
+    private static final String OP_ISSUE        = "issue";
+    private static final String OP_VALIDATE     = "validate";
+    private static final String OP_INVALIDATE   = "invalidate";
 
-    public AliasTokenRestlet(Context context, Request request, Response response) {
+    public AliasTokenRestlet(Context context, Request request, Response response) throws ResourceException {
         super(context, request, response);
         getVariants().add(new Variant(MediaType.APPLICATION_JSON));
         _operation = (String) getRequest().getAttributes().get(PARAM_OPERATION);
@@ -50,6 +49,12 @@ public class AliasTokenRestlet extends SecureResource {
         _token = (String) getRequest().getAttributes().get(PARAM_TOKEN);
         final String secret = (String) getRequest().getAttributes().get(PARAM_SECRET);
         _secret = StringUtils.isBlank(secret) ? INVALID : Long.parseLong(secret);
+
+        _serializer = XDAT.getContextService().getBean(SerializerService.class);
+        if (null == _serializer) {
+            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
+            throw new ResourceException(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "ERROR: Serializer service was not properly initialized.");
+        }
     }
 
     @Override
@@ -69,9 +74,9 @@ public class AliasTokenRestlet extends SecureResource {
                 throw new ResourceException(Status.CLIENT_ERROR_UNAUTHORIZED, "You must specify both token and secret to validate a token.");
             }
             try {
-                final HashMap<String, String> results = new HashMap<String, String>();
+                final HashMap<String, String> results = new HashMap<>();
                 results.put("valid", getService().validateToken(_token, _secret));
-                return new StringRepresentation(_serializer.writeValueAsString(results));
+                return new StringRepresentation(_serializer.toJson(results));
             } catch (IOException exception) {
                 throw new ResourceException(Status.SERVER_ERROR_INTERNAL, exception.toString());
             }
@@ -89,7 +94,7 @@ public class AliasTokenRestlet extends SecureResource {
         map.put("secret", Long.toString(token.getSecret()));
         String value = "";
         try {
-            value = _serializer.writeValueAsString(map);
+            value = _serializer.toJson(map);
         } catch (IOException e) {
             //
         }
@@ -109,10 +114,10 @@ public class AliasTokenRestlet extends SecureResource {
     }
 
     private static final int INVALID = -1;
-    private static final ObjectMapper _serializer = new ObjectMapper();
-    private AliasTokenService _service;
-    private String _operation;
-    private final String _username;
-    private final String _token;
-    private final long _secret;
+    private final SerializerService _serializer;
+    private       AliasTokenService _service;
+    private       String            _operation;
+    private final String            _username;
+    private final String            _token;
+    private final long              _secret;
 }

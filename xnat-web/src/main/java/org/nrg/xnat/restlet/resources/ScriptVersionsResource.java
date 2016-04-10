@@ -21,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -88,7 +87,7 @@ public class ScriptVersionsResource extends AutomationResource {
 
                 // have to check if it's null, or else it will return a StringRepresentation containing the word null instead of a 404
                 if (versions != null) {
-                    return new StringRepresentation(MAPPER.writeValueAsString(versions), mediaType);
+                    return new StringRepresentation(toJson(versions), mediaType);
                 } else {
                     return null;
                 }
@@ -136,7 +135,6 @@ public class ScriptVersionsResource extends AutomationResource {
     private static final Logger _log = LoggerFactory.getLogger(ScriptVersionsResource.class);
 
     private static final String SCRIPT_ID = "SCRIPT_ID";
-    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     private final ScriptService _scriptService;
     private final ScriptRunnerService _runnerService;

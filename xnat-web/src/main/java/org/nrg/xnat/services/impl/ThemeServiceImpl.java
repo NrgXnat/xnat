@@ -12,11 +12,11 @@
 package org.nrg.xnat.services.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.ArrayUtils;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.xnat.configuration.ThemeConfig;
 import org.nrg.xnat.services.ThemeService;
+import org.nrg.xnat.utils.SerializerService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
@@ -34,8 +34,10 @@ public class ThemeServiceImpl implements ThemeService {
     private static String themesPath;
     private static ThemeConfig themeConfig = null;
     private static File themeFile = null;
-    protected final ObjectMapper mapper = new ObjectMapper();
     private static final int FILE_BUFFER_SIZE = 4096;
+
+    @Autowired
+    private SerializerService _serializer;
 
     @Autowired
     private ServletContext servletContext;
@@ -75,7 +77,7 @@ System.out.println("Theme Path: "+themeFile);
                     }
                     reader.close();
                     String contents = sb.toString();
-                    themeConfig = mapper.readValue(contents, ThemeConfig.class);
+                    themeConfig = _serializer.deserializeJson(contents, ThemeConfig.class);
                 } catch (IOException e) {
                     e.printStackTrace();
                 }
@@ -86,7 +88,7 @@ System.out.println("Theme Path: "+themeFile);
                 e.printStackTrace();
             }
         }
-        if(role != null){
+        if (role != null) {
             // TODO: implement search through the roles array in the ThemeConfig object for a matching ThemeConfig object for the specified role
         }
         return themeConfig;
@@ -130,6 +132,7 @@ System.out.println("Theme Path: "+themeFile);
     private String checkThemeFileExists(ThemeConfig theme, String pageName) {
         return checkThemeFileExists(theme, pageName, null);
     }
+
     private String checkThemeFileExists(ThemeConfig theme, String pageName, String type) {
         String pagePath = null, typeSep = type + "s" + File.separator;
         String[] extensions = new String[]{};
@@ -174,7 +177,7 @@ System.out.println("Theme Path: "+themeFile);
                 themeConfig = new ThemeConfig();
             }
             if(themeExists(themeConfig.getName())) {
-                String themeJson = mapper.writeValueAsString(themeConfig);
+                String themeJson = _serializer.toJson(themeConfig);
                 if (!themeFile.exists()) {
                     themeFile.createNewFile();
                 }
@@ -276,7 +279,7 @@ System.out.println("Theme Path: "+themeFile);
      * @throws IOException
      */
     public List<String> extractTheme(InputStream inputStream) throws IOException {
-        ArrayList rootDirs = new ArrayList();
+        final List<String> rootDirs = new ArrayList<>();
         ZipInputStream zipIn = new ZipInputStream(inputStream);
         ZipEntry entry = zipIn.getNextEntry();
         while (entry != null) {  // iterate over entries in the zip file
@@ -284,8 +287,7 @@ System.out.println("Theme Path: "+themeFile);
             if (!entry.isDirectory()) {  // if the entry is a file, extract it      // TODO: Make sure we get a directory the first iteration through (fail otherwise) so that no files get dumped in the root themes directory
                 this.extractFile(zipIn, filePath);
             } else {  // if the entry is a directory, make the directory
-                String rootDir = "";
-                rootDir = entry.getName();
+                String rootDir = entry.getName();
                 int slashIndex = rootDir.indexOf('/');
                 if(slashIndex>1){
                     int nextSlashIndex = rootDir.indexOf('/', slashIndex+1);

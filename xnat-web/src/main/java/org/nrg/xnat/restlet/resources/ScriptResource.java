@@ -1,8 +1,6 @@
 package org.nrg.xnat.restlet.resources;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.automation.entities.Script;
@@ -23,7 +21,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.ArrayList;
 import java.util.Hashtable;
 import java.util.List;
@@ -95,7 +92,7 @@ public class ScriptResource extends AutomationResource {
             try {
                 if (StringUtils.isNotBlank(_version)) {
                     //They're requesting a specific version of a specific script
-                    return new StringRepresentation(MAPPER.writeValueAsString(_scriptService.getVersion(_scriptId, _version)), mediaType);
+                    return new StringRepresentation(toJson(_scriptService.getVersion(_scriptId, _version)), mediaType);
                 }
                 else {
                     // They're requesting a specific script, so return that to them.
@@ -110,7 +107,7 @@ public class ScriptResource extends AutomationResource {
 
                     // have to check if it's null, or else it will return a StringRepresentation containing the word null instead of a 404
                     if (script != null) {
-                        return new StringRepresentation(MAPPER.writeValueAsString(script), mediaType);
+                        return new StringRepresentation(toJson(script), mediaType);
                     } else {
                         return null;
                     }
@@ -200,25 +197,7 @@ public class ScriptResource extends AutomationResource {
             throw new ClientException(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, "This function currently only supports " + MediaType.APPLICATION_WWW_FORM + " and " + MediaType.APPLICATION_JSON);
         }
 
-        final Properties properties;
-        if (mediaType.equals(MediaType.APPLICATION_WWW_FORM)) {
-            try {
-                final List<NameValuePair> formMap = URLEncodedUtils.parse(entity.getText(), DEFAULT_CHARSET);
-                properties = new Properties();
-                for (final NameValuePair entry : formMap) {
-                    properties.setProperty(entry.getName(), entry.getValue());
-                }
-            } catch (IOException e) {
-                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred trying to read the submitted form body.", e);
-            }
-        } else {
-            try {
-                final String text = entity.getText();
-                properties = MAPPER.readValue(text, Properties.class);
-            } catch (IOException e) {
-                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred processing the script properties", e);
-            }
-        }
+        final Properties properties = decodeProperties(entity, mediaType);
 
         if (properties.containsKey("scriptId")) {
             properties.remove("scriptId");
@@ -253,7 +232,6 @@ public class ScriptResource extends AutomationResource {
 
     private static final String SCRIPT_ID = "SCRIPT_ID";
     private static final String VERSION = "VERSION";
-    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     private final ScriptService _scriptService;
     private final ScriptRunnerService _runnerService;

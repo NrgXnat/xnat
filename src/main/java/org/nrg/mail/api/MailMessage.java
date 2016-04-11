@@ -9,6 +9,7 @@
  */
 package org.nrg.mail.api;
 
+import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.mail.EmailException;
 import org.apache.commons.mail.HtmlEmail;
@@ -306,16 +307,38 @@ public class MailMessage {
     public HtmlEmail asHtmlEmail() throws EmailException {
     	HtmlEmail email = new HtmlEmail();
 
-    	if (!StringUtils.isBlank(_from)) { email.setFrom(_from); }
-    	if (_headers.size() > 0) { email.setHeaders(_headers); }
-    	if (!StringUtils.isBlank(_onBehalfOf)) { email.addHeader("Sender", _onBehalfOf); }
-        if (_tos.size() > 0) { email.setTo(convertToInternetAddresses(_tos)); }
-        if (_ccs.size() > 0) { email.setCc(convertToInternetAddresses(_ccs)); }
-        if (_bccs.size() > 0) { email.setBcc(convertToInternetAddresses(_bccs)); }
-    	if (!StringUtils.isBlank(_subject)) { email.setSubject(_subject); }
-    	if (!StringUtils.isBlank(_html)) { email.setHtmlMsg(_html); }
-    	if (!StringUtils.isBlank(_text)) { email.setTextMsg(_text); }
-    	if (_attachments.size() > 0) {
+        if (!StringUtils.isBlank(_from)) {
+            email.setFrom(_from);
+        }
+        if (_headers.size() > 0) {
+            final Map<String, String> converted = new HashMap<>();
+            for (final String key : _headers.keySet()) {
+                converted.put(key, Joiner.on(", ").join(_headers.get(key)));
+            }
+            email.setHeaders(converted);
+        }
+        if (!StringUtils.isBlank(_onBehalfOf)) {
+            email.addHeader("Sender", _onBehalfOf);
+        }
+        if (_tos.size() > 0) {
+            email.setTo(convertToInternetAddresses(_tos));
+        }
+        if (_ccs.size() > 0) {
+            email.setCc(convertToInternetAddresses(_ccs));
+        }
+        if (_bccs.size() > 0) {
+            email.setBcc(convertToInternetAddresses(_bccs));
+        }
+        if (!StringUtils.isBlank(_subject)) {
+            email.setSubject(_subject);
+        }
+        if (!StringUtils.isBlank(_html)) {
+            email.setHtmlMsg(_html);
+        }
+        if (!StringUtils.isBlank(_text)) {
+            email.setTextMsg(_text);
+        }
+        if (_attachments.size() > 0) {
     		for (Map.Entry<String, File> entry : _attachments.entrySet()) {
     			String key = entry.getKey();
     			FileSystemResource resource = new FileSystemResource(entry.getValue());

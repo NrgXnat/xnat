@@ -96,8 +96,6 @@ public class DBAction {
             logger.debug("quarantine-sql: " + (Calendar.getInstance().getTimeInMillis() - localStartTime) + " ms");
             localStartTime = Calendar.getInstance().getTimeInMillis();
 
-            XFT.LogInsert(cache.getSQL(), item);
-
             PoolDBUtils con;
             String username = null;
             Integer xdat_user_id = null;
@@ -133,9 +131,7 @@ public class DBAction {
 
     }
 
-    public static void executeCache(final DBItemCache cache, final UserI user, final String db, final String logFileName) throws Exception {
-        XFT.LogInsert(cache.getSQL(), logFileName);
-
+    public static void executeCache(final DBItemCache cache, final UserI user, final String db) throws Exception {
         PoolDBUtils con;
         String username = null;
         Integer xdat_user_id = null;
@@ -2430,8 +2426,6 @@ public class DBAction {
 
         PoolDBUtils con;
         if (!cache.getSQL().equals("") && !cache.getSQL().equals("[]")) {
-            XFT.LogInsert(cache.getSQL(), item);
-
             String username = null;
             Integer xdat_user_id = null;
             if (user != null) {
@@ -2897,8 +2891,6 @@ public class DBAction {
         DBItemCache cache = new DBItemCache(user, c);
         DeleteItem(item, user, cache, false, false);
 
-        XFT.LogInsert(cache.getSQL(), item);
-
         String username = null;
         Integer xdat_user_id = null;
         if (user != null) {
@@ -2926,8 +2918,6 @@ public class DBAction {
     public static void CleanDeleteItem(XFTItem item, UserI user, EventMetaI c) throws Exception {
         DBItemCache cache = new DBItemCache(user, c);
         DeleteItem(item, user, cache, true, false);
-
-        XFT.LogInsert(cache.getSQL(), item);
 
         PoolDBUtils con;
         String username = null;

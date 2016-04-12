@@ -192,6 +192,14 @@
                     <groupId>velocity</groupId>
                     <artifactId>velocity</artifactId>
                 </exclusion>
+                <exclusion>
+                    <groupId>jamon</groupId>
+                    <artifactId>jamon</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>fulcrum</groupId>
+                    <artifactId>fulcrum-yaafi</artifactId>
+                </exclusion>
             </exclusions>
         </dependency>
         <dependency>
@@ -209,6 +217,20 @@
         <dependency>
             <groupId>torque</groupId>
             <artifactId>torque</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>velocity</groupId>
+                    <artifactId>velocity</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jamon</groupId>
+                    <artifactId>jamon</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>fulcrum</groupId>
+                    <artifactId>fulcrum-yaafi</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>

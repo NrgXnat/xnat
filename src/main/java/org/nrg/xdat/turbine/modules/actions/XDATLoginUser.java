@@ -17,8 +17,8 @@ import java.util.UUID;
 
 import javax.servlet.http.HttpSession;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.log4j.Logger;
@@ -129,7 +129,7 @@ public class XDATLoginUser extends VelocityAction{
             if(username.toLowerCase().contains("script"))
             {
             	e= new Exception("Illegal username &lt;script&gt; usage.");
-				AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml(username));
+				AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml4(username));
             	logger.error("",e);
                 data.setScreenTemplate("Error.vm");
                 data.getParameters().setString("exception", e.toString());

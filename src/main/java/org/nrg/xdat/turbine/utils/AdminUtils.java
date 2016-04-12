@@ -11,7 +11,7 @@
 
 package org.nrg.xdat.turbine.utils;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;

@@ -1832,10 +1832,10 @@ public class DisplaySearch implements TableSearchI {
      * the query mode parameter.
      */
     private int resolveQueryMode(final String queryMode) {
-        if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(queryMode, QUERY_MODE_CRITERIA)) {
+        if (StringUtils.equalsIgnoreCase(queryMode, QUERY_MODE_CRITERIA)) {
             return QUERY_MODE_VAL_CRITERIA;
         }
-        if (org.apache.commons.lang.StringUtils.equalsIgnoreCase(queryMode, QUERY_MODE_BYID)) {
+        if (StringUtils.equalsIgnoreCase(queryMode, QUERY_MODE_BYID)) {
             return QUERY_MODE_VAL_BYID;
         }
         return QUERY_MODE_VAL_NONE;

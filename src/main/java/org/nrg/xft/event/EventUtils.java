@@ -4,6 +4,7 @@ package org.nrg.xft.event;
 import java.util.Calendar;
 import java.util.Date;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
@@ -101,7 +102,7 @@ public class EventUtils {
 	}
 
 	public static String getTimestamp(final EventMetaI ci){
-		return (ci==null || org.apache.commons.lang.StringUtils.isEmpty(ci.getTimestamp()))?FileUtils.getTimestamp(Calendar.getInstance().getTime()):ci.getTimestamp();
+		return (ci==null || StringUtils.isEmpty(ci.getTimestamp())) ? FileUtils.getTimestamp(Calendar.getInstance().getTime()) : ci.getTimestamp();
 	}
 	
 	public static Number getEventId(final EventMetaI ci){

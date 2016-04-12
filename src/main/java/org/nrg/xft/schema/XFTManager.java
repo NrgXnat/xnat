@@ -224,7 +224,7 @@ public class XFTManager {
         }
     	
     	if (StringUtils.isEmpty(XFT.GetSiteURL())) {
-            XFT.SetSiteURL("http://192.168.50.50:8080");
+            XFT.SetSiteURL("");
         }
 
         if (StringUtils.isEmpty(XFT.GetArchiveRootPath()) || XFT.GetArchiveRootPath().equals(File.separator)) {

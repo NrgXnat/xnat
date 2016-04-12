@@ -12,7 +12,7 @@
 
 package org.nrg.xdat.security;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.ItemWrapper;
 import org.nrg.xft.exception.ElementNotFoundException;

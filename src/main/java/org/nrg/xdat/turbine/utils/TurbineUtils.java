@@ -14,8 +14,8 @@ import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang.ObjectUtils;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.ObjectUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
@@ -125,7 +125,7 @@ public class TurbineUtils {
 
     public static String GetSystemName() {
         final String site_id = XFT.GetSiteID();
-        if (site_id == null || org.apache.commons.lang.StringUtils.isEmpty(site_id)) {
+        if (site_id == null || StringUtils.isEmpty(site_id)) {
             return "XNAT";
         } else {
             return site_id;
@@ -1257,11 +1257,11 @@ public class TurbineUtils {
     }
 
     public String escapeHTML(String o) {
-        return (o == null) ? null : StringEscapeUtils.escapeHtml(o);
+        return (o == null) ? null : StringEscapeUtils.escapeHtml4(o);
     }
 
     public String escapeJS(String o) {
-        return (o == null) ? null : StringEscapeUtils.escapeJavaScript(o);
+        return (o == null) ? null : StringEscapeUtils.escapeEcmaScript(o);
     }
 
     public int getYear() {

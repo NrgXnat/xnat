@@ -10,9 +10,7 @@ import java.text.ParseException;
 import java.text.SimpleDateFormat;
 import java.util.*;
 
-import org.apache.commons.lang.StringEscapeUtils;
-
-
+import org.apache.commons.lang3.StringEscapeUtils;
 
 @SuppressWarnings({"rawtypes"})
 public abstract class BaseElement{

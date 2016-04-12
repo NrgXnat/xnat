@@ -13,7 +13,7 @@
 package org.nrg.xdat.servlet;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;

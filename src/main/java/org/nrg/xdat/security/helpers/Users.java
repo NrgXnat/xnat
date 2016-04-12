@@ -1,6 +1,6 @@
 package org.nrg.xdat.security.helpers;
 
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;

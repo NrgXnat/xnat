@@ -7,6 +7,7 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.GroupFeature;
@@ -299,7 +300,7 @@ public class UserGroup implements UserGroupI{
     	List<PermissionCriteriaI> criteria=Lists.newArrayList();
     	
     	for(PermissionCriteriaI crit: getPermissionsByDataType(dataType)){
-    		if(org.apache.commons.lang.StringUtils.equals(crit.getField(), field)){
+    		if(StringUtils.equals(crit.getField(), field)){
     			criteria.add(crit);
     		}
     	}

@@ -23,6 +23,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -813,7 +814,7 @@ public class DBAction {
                         Object newObject = oldHashClone.get(field);
                         if (!(newObject instanceof XFTItem)) {
                             final String newString = newObject.toString();
-                            if (org.apache.commons.lang.StringUtils.isBlank(newString)) {
+                            if (StringUtils.isBlank(newString)) {
                                 if (!oldI.getPkNames().contains(field)) {
                                     logger.info("NEW:NULL OLD:" + newString);
                                     return true;
@@ -832,7 +833,7 @@ public class DBAction {
                         if (e.getAddin().equals("")) {
                             if (!(newObject instanceof XFTItem)) {
                                 final String newString = newObject.toString();
-                                if (org.apache.commons.lang.StringUtils.isBlank(newString)) {
+                                if (StringUtils.isBlank(newString)) {
                                     if (!oldI.getPkNames().contains(field)) {
                                         logger.info("NEW:NULL OLD:" + newObject);
                                         return true;
@@ -854,7 +855,7 @@ public class DBAction {
                         }
                         if (!(newObject instanceof XFTItem)) {
                             final String newString = newObject.toString();
-                            if (org.apache.commons.lang.StringUtils.isBlank(newString)) {
+                            if (StringUtils.isBlank(newString)) {
                                 if (!oldI.getPkNames().contains(field)) {
                                     logger.info("NEW:NULL OLD:" + newObject);
                                     return true;

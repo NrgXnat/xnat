@@ -16,7 +16,7 @@ import java.util.Collections;
 import java.util.Hashtable;
 import java.util.Iterator;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.om.base.BaseXdatStoredSearch;

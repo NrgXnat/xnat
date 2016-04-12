@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.resources;
 
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.om.XdatStoredSearch;
 import org.nrg.xdat.om.XnatProjectdata;
@@ -34,7 +35,7 @@ import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.search.QueryOrganizer;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.DateUtils;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.restlet.representations.ItemXMLRepresentation;
 import org.restlet.Context;
@@ -99,12 +100,12 @@ public class ProjectListResource extends QueryOrganizerResource {
             if (item.instanceOf("xnat:projectData")) {
                 XnatProjectdata project = new XnatProjectdata(item);
 
-                if (StringUtils.IsEmpty(project.getId())) {
+                if (StringUtils.isBlank(project.getId())) {
                     this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Requires XNAT ProjectData ID");
                     return;
                 }
 
-                if (!StringUtils.IsAlphaNumericUnderscore(project.getId())) {
+                if (!XftStringUtils.IsAlphaNumericUnderscore(project.getId())) {
                     this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in project ID.");
                     return;
                 }
@@ -505,7 +506,7 @@ public class ProjectListResource extends QueryOrganizerResource {
             table.initTable(columns);
 
             final String permissions = resource.getQueryVariable("permissions");
-            if (StringUtils.IsEmpty(permissions)) {
+            if (StringUtils.isBlank(permissions)) {
                 throw new Exception("You must specify a value for the permissions parameter.");
             } else if (!PERMISSIONS.contains(permissions)) {
                 throw new Exception("You must specify one of the following values for the permissions parameter: " + Joiner.on(", ").join(PERMISSIONS));
@@ -519,7 +520,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                     final String projectId = (String) key;
                     // If no data type is specified, we check both MR and PET session data permissions. This is basically
                     // tailored for checking for projects to which the user can upload imaging data.
-                    final boolean canEdit = StringUtils.IsEmpty(dataType) ? userHelperService.hasEditAccessToSessionDataByTag(projectId) : Permissions.can(resource.user, dataType + "/project", projectId, permissions);
+                    final boolean canEdit = StringUtils.isBlank(dataType) ? userHelperService.hasEditAccessToSessionDataByTag(projectId) : Permissions.can(resource.user, dataType + "/project", projectId, permissions);
                     if (canEdit) {
                         table.insertRowItems(projectId, projects.get(projectId));
                     }

@@ -12,7 +12,6 @@ package org.nrg.xnat.restlet.extensions;
 
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
@@ -49,8 +48,8 @@ import java.util.*;
 
 @XnatRestlet({"/user", "/user/{USER_ID}", "/user/actions/{ACTION}", "/user/actions/{USER_ID}/{ACTION}"})
 public class UserSettingsRestlet extends SecureResource {
-    public static final String PARAM_USER_ID = "USER_ID";
-    public static final String PARAM_ACTION = "ACTION";
+    private static final String PARAM_USER_ID = "USER_ID";
+    private static final String PARAM_ACTION  = "ACTION";
 
     public UserSettingsRestlet(Context context, Request request, Response response) throws ResourceException {
         super(context, request, response);
@@ -114,7 +113,7 @@ public class UserSettingsRestlet extends SecureResource {
         try {
             if (StringUtils.isBlank(_userId)) {
                 Collection<String> logins = Users.getAllLogins();
-                return new StringRepresentation(_isJsonRequested ? _serializer.writeValueAsString(logins) : createLoginListXml(logins));
+                return new StringRepresentation(_isJsonRequested ? getSerializer().toJson(logins) : createLoginListXml(logins));
             }
 
             UserI requestedUser = Users.getUser(_userId);
@@ -343,7 +342,7 @@ public class UserSettingsRestlet extends SecureResource {
 
     private JsonNode getJsonNode() throws IOException {
         if (_node == null) {
-            _node = _serializer.readValue(_payload, JsonNode.class);
+            _node = getSerializer().deserializeJson(_payload);
         }
         return _node;
     }
@@ -411,7 +410,7 @@ public class UserSettingsRestlet extends SecureResource {
         return new StringRepresentation(output.toString());
     }
 
-    enum UserAction {
+    private enum UserAction {
         Reset,
         ResetEmailRequests;
 
@@ -437,7 +436,7 @@ public class UserSettingsRestlet extends SecureResource {
         private static Map<String, UserAction> _actions = new TreeMap<>(String.CASE_INSENSITIVE_ORDER);
     }
 
-    enum UserProperty {
+    private enum UserProperty {
         email,
         enabled,
         firstname,
@@ -458,11 +457,6 @@ public class UserSettingsRestlet extends SecureResource {
     }
 
     private static final Log _log = LogFactory.getLog(UserSettingsRestlet.class);
-    private static final ObjectMapper _serializer = new ObjectMapper() {{
-        // Migration: Get the mix-in annotations working for XDATUser.
-        // getSerializationConfig().addMixInAnnotations(UserI.class, IgnoreSetValueMixIn.class);
-        // getSerializationConfig().addMixInAnnotations(GenericWrapperField.class, IgnoreSetValueMixIn.class);
-    }};
     private static final Map<UserProperty, String> XPATH_EXPRESSIONS = new HashMap<UserProperty, String>() {{
         put(UserProperty.userAuths, "//userAuths/userAuth");
         put(UserProperty.authId, "authId");

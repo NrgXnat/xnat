@@ -122,6 +122,7 @@
                 <value>/images/**</value>
                 <value>/scripts/**</value>
                 <value>/style/**</value>
+                <value>/themes/**</value>
                 <value>/applet/**</value>
             </list>
         </property>

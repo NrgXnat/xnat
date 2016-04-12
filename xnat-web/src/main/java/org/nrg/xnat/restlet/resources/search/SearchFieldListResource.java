@@ -32,7 +32,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
@@ -187,7 +187,7 @@ public class SearchFieldListResource extends SecureResource{
 		XFTTable fields = new XFTTable();
 		fields.initTable(new String[]{"FIELD_ID","HEADER","SUMMARY","TYPE","REQUIRES_VALUE","DESC","ELEMENT_NAME","SRC"});
 
-		ArrayList<String> elementNames=StringUtils.CommaDelimitedStringToArrayList(elementName);
+		ArrayList<String> elementNames=XftStringUtils.CommaDelimitedStringToArrayList(elementName);
 		for(String en : elementNames)
         {
             try {

@@ -15,7 +15,7 @@ import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.helpers.resource.XnatResourceInfo;
 import org.nrg.xnat.helpers.resource.direct.DirectResourceModifierBuilder;
 import org.nrg.xnat.helpers.resource.direct.ResourceModifierA;
@@ -41,8 +41,8 @@ public class XNATCatalogTemplate extends XNATTemplate {
 		String resourceID= (String)getParameter(request,"RESOURCE_ID");
 
 		if(resourceID!=null){
-			resource_ids=new ArrayList<String>();
-			for(String s:StringUtils.CommaDelimitedStringToArrayList(resourceID, true)){
+			resource_ids=new ArrayList<>();
+			for(String s:XftStringUtils.CommaDelimitedStringToArrayList(resourceID, true)){
 				resource_ids.add(s);
 				}
 			}

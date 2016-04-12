@@ -1,11 +1,8 @@
 package org.nrg.dcm.preferences;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
 
-import java.io.IOException;
-
+@SuppressWarnings("WeakerAccess")
 @JsonInclude(JsonInclude.Include.NON_DEFAULT)
 public class DicomSCPInstance {
     @SuppressWarnings("unused")
@@ -27,14 +24,6 @@ public class DicomSCPInstance {
         setAeTitle(aeTitle);
         setIdentifier(identifier);
         setFileNamer(fileNamer);
-    }
-
-    public static DicomSCPInstance deserialize(final String json) throws IOException {
-        return _mapper.readValue(json, DicomSCPInstance.class);
-    }
-
-    public static String serialize(final DicomSCPInstance instance) throws IOException {
-        return _mapper.writeValueAsString(instance);
     }
 
     public String getScpId() {
@@ -95,11 +84,6 @@ public class DicomSCPInstance {
                 ", _fileNamer='" + _fileNamer + '\'' +
                 ", _enabled='" + _enabled + '\'' +
                 '}';
-    }
-
-    private static final ObjectMapper _mapper = new ObjectMapper();
-    static {
-        _mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
     }
 
     private String _scpId;

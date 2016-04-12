@@ -11,7 +11,6 @@
 package org.nrg.xnat.helpers.prearchive;
 
 import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.apache.commons.collections.CollectionUtils;
@@ -42,6 +41,7 @@ import org.nrg.xnat.restlet.XNATApplication;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.services.Archiver;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.nrg.xnat.utils.SerializerService;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.restlet.data.Status;
 import org.slf4j.Logger;
@@ -61,7 +61,6 @@ import java.util.*;
 
 public final class PrearcDatabase {
     private static final Logger logger = LoggerFactory.getLogger(PrearcTableBuilder.class);
-    public static final ObjectMapper MAPPER = new ObjectMapper(new JsonFactory());
     public static Connection conn;
     final static String table = "prearchive";
     final static String tableWithSchema = PoolDBUtils.search_schema_name + "." + PrearcDatabase.table;
@@ -72,6 +71,8 @@ public final class PrearcDatabase {
     private static SessionDataDelegate sessionDelegate;
 
     private static String prearcPath;
+
+    private static SerializerService _serializer;
 
     public static final String SPLIT_PETMR_SESSION_ID = "SplitPetMrSessions";
 
@@ -713,8 +714,15 @@ public final class PrearcDatabase {
         } else {
             content = script.getContent();
         }
-        final LinkedHashMap<String, String> keys = MAPPER.readValue(content, SeriesImportFilter.MAP_TYPE_REFERENCE);
+        final LinkedHashMap<String, String> keys = getSerializer().deserializeJson(content, SeriesImportFilter.MAP_TYPE_REFERENCE);
         return DicomFilterService.buildSeriesImportFilter(keys);
+    }
+
+    private static SerializerService getSerializer() {
+        if (_serializer == null) {
+            _serializer = XDAT.getContextService().getBean(SerializerService.class);
+        }
+        return _serializer;
     }
 
     static String getUniqueSessionLabel(final String stem, final String target, final String replacement, final String projectId, final UserI user) {

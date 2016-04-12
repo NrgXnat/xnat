@@ -1,7 +1,9 @@
 package org.nrg.xnat.restlet.resources;
 
 import org.apache.commons.lang.StringUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import org.apache.http.NameValuePair;
+import org.apache.http.client.utils.URLEncodedUtils;
+import org.nrg.action.ServerException;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.XFTTable;
@@ -11,19 +13,27 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
+import org.restlet.data.MediaType;
 import org.restlet.data.Request;
 import org.restlet.data.Response;
 import org.restlet.data.Status;
+import org.restlet.resource.Representation;
 import org.restlet.resource.ResourceException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.nio.charset.Charset;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
+@SuppressWarnings("WeakerAccess")
 public abstract class AutomationResource extends SecureResource {
 
-    public static final String SITE_SCOPE = Scope.encode(Scope.Site, "");
+    static final         String  SITE_SCOPE      = Scope.encode(Scope.Site, "");
+    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     public AutomationResource(final Context context, final Request request, final Response response) throws ResourceException {
         super(context, request, response);
@@ -152,6 +162,29 @@ public abstract class AutomationResource extends SecureResource {
         return buffer.toString();
     }
 
+    protected Properties decodeProperties(final Representation entity, final MediaType mediaType) throws ServerException {
+        final Properties properties;
+        if (mediaType.equals(MediaType.APPLICATION_WWW_FORM)) {
+            try {
+                final List<NameValuePair> formMap = URLEncodedUtils.parse(entity.getText(), DEFAULT_CHARSET);
+                properties = new Properties();
+                for (final NameValuePair entry : formMap) {
+                    properties.setProperty(entry.getName(), entry.getValue());
+                }
+            } catch (IOException e) {
+                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred trying to read the submitted form body.", e);
+            }
+        } else {
+            try {
+                final String text = entity.getText();
+                properties = getSerializer().deserializeJson(text, Properties.class);
+            } catch (IOException e) {
+                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred processing the script properties", e);
+            }
+        }
+        return properties;
+    }
+
     private Map<String, String> validateEntityId(final String entityId) throws ResourceException {
         if (getScope() == null) {
             return null;
@@ -191,8 +224,6 @@ public abstract class AutomationResource extends SecureResource {
         }
     }
 
-    protected static final ObjectMapper MAPPER = new ObjectMapper();
-
     private static final Logger _log = LoggerFactory.getLogger(AutomationResource.class);
     private static final String ENTITY_ID = "ENTITY_ID";
     private static final String PROJECT_ID = "PROJECT_ID";
@@ -201,6 +232,7 @@ public abstract class AutomationResource extends SecureResource {
     private static final String KEY_PROJECTID = "projectId";
     private Scope _scope;
     private boolean _hasProjectId;
+
     private String _projectId;
 
     private final String _path;

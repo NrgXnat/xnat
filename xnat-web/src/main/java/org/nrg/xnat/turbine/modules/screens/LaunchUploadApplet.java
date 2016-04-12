@@ -15,7 +15,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.om.XnatPvisitdata;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -28,24 +27,25 @@ import java.util.List;
  * @author timo
  *
  */
+@SuppressWarnings({"WeakerAccess", "unused"})
 public class LaunchUploadApplet extends UploadAppletScreen {
 	
 	private static final Log _log = LogFactory.getLog(LaunchUploadApplet.class);
-	
 
-	
-	@Override
+    @Override
 	public void doBuildTemplate(RunData data, Context context) {
 		context.put("jsessionid", XnatHttpUtils.getJSESSIONID(data));
 		
-		if(StringUtils.trimToEmpty((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_field",data)).equals("xnat:subjectData.ID")) {
-		    context.put("subject", StringUtils.trimToEmpty((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data)));
+		if(StringUtils.trimToEmpty((String)TurbineUtils.GetPassedParameter("search_field",data)).equals("xnat:subjectData.ID")) {
+		    context.put("subject", StringUtils.trimToEmpty((String)TurbineUtils.GetPassedParameter("search_value",data)));
 		}
 
-        if(StringUtils.isNotBlank((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("pvisit", data))) {
-            XnatPvisitdata visit = XnatPvisitdata.getXnatPvisitdatasById((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("pvisit", data), TurbineUtils.getUser(data), false);
-            context.put("subject", visit.getSubjectId());
-            context.put("visit", visit.getId());
+        if(StringUtils.isNotBlank((String) TurbineUtils.GetPassedParameter("pvisit", data))) {
+            final XnatPvisitdata visit = XnatPvisitdata.getXnatPvisitdatasById(TurbineUtils.GetPassedParameter("pvisit", data), TurbineUtils.getUser(data), false);
+            if (visit != null) {
+                context.put("subject", visit.getSubjectId());
+                context.put("visit", visit.getId());
+            }
         }
 
         try {
@@ -62,8 +62,7 @@ public class LaunchUploadApplet extends UploadAppletScreen {
 	        if (json != null) {
 	            try {
 	            	//we have JSON, so, create applet parameters from it.
-	            	ObjectMapper mapper = new ObjectMapper();
-	            	AppletConfig jsonParams = mapper.readValue(json, AppletConfig.class);
+	            	AppletConfig jsonParams = getSerializer().deserializeJson(json, AppletConfig.class);
 
 	            	if(jsonParams.getLaunch() != null){
 	            		for(String key:jsonParams.getLaunch().keySet()){
@@ -79,8 +78,8 @@ public class LaunchUploadApplet extends UploadAppletScreen {
 		}
 	}
 
-    public interface ContextAction {
-        public void execute(RunData data, Context context);
+    private interface ContextAction {
+        void execute(RunData data, Context context);
     }
 
     private void dynamicContextExpansion(RunData data, Context context) throws Exception {

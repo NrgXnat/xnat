@@ -2,7 +2,6 @@ package org.nrg.xnat.restlet.resources;
 
 import com.google.common.base.Joiner;
 import org.apache.commons.lang.StringUtils;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.action.ClientException;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.entities.ScriptTriggerTemplate;
@@ -224,7 +223,7 @@ public class ScriptTriggerTemplateResource extends AutomationResource {
         } else if (entity.getMediaType().equals(MediaType.APPLICATION_JSON)) {
             try {
                 final String text = entity.getText();
-                found = MAPPER.readValue(text, ScriptTriggerTemplate.class);
+                found = getSerializer().deserializeJson(text, ScriptTriggerTemplate.class);
             } catch (IOException e) {
                 throw new ClientException(Status.SERVER_ERROR_INTERNAL, "An error occurred processing the script properties", e);
             }
@@ -310,6 +309,4 @@ public class ScriptTriggerTemplateResource extends AutomationResource {
         }
         return persisted.size() > 0 ? persisted : null;
     }
-
-    private static final ObjectMapper MAPPER = new ObjectMapper();
 }

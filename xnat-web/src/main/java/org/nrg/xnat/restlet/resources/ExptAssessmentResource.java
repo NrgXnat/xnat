@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.restlet.resources;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatExperimentdataShareI;
@@ -30,7 +31,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.helpers.xmlpath.XMLPathShortcuts;
 import org.nrg.xnat.utils.WorkflowUtils;
@@ -315,7 +316,7 @@ public class ExptAssessmentResource extends ItemResource {
 						allowDataDeletion=true;
 					}
 
-					if(!StringUtils.IsEmpty(assessor.getLabel()) && !StringUtils.IsAlphaNumericUnderscore(assessor.getId())){
+					if(StringUtils.isNotBlank(assessor.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(assessor.getId())){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED,"Invalid character in experiment label.");
 						return;
 					}

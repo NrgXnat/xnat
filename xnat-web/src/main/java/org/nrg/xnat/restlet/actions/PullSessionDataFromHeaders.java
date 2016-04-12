@@ -15,6 +15,7 @@ import java.io.IOException;
 import java.util.Calendar;
 import java.util.concurrent.Callable;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.XnatAbstractresourceI;
@@ -30,7 +31,7 @@ import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.nrg.xnat.archive.XNATSessionBuilder;
 import org.nrg.xnat.exceptions.ValidationException;
@@ -66,7 +67,6 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 	 * 
 	 * @throws IOException
 	 * @throws SAXException
-	 * @throws MultipleSessionException
 	 * @throws ValidationException: Scan invalid according to schema requirements (including xdat tags)
 	 * @throws Exception
 	 */
@@ -129,11 +129,11 @@ public class PullSessionDataFromHeaders implements Callable<Boolean> {
 
 							final XnatAbstractresourceI oldCat=oldScan.getFile().get(0);
 							if(oldCat instanceof XnatResource){
-								if(StringUtils.IsEmpty(((XnatResource)oldCat).getContent()) && !StringUtils.IsEmpty(newcat.getContent()))
+								if(StringUtils.isBlank(((XnatResource)oldCat).getContent()) && StringUtils.isNotBlank(newcat.getContent()))
 									((XnatResource)oldCat).setContent(newcat.getContent());
-								if(StringUtils.IsEmpty(((XnatResource)oldCat).getFormat()) && !StringUtils.IsEmpty(newcat.getFormat()))
+								if(StringUtils.isBlank(((XnatResource)oldCat).getFormat()) && StringUtils.isNotBlank(newcat.getFormat()))
 									((XnatResource)oldCat).setFormat(newcat.getFormat());
-								if(StringUtils.IsEmpty(((XnatResource)oldCat).getDescription()) && !StringUtils.IsEmpty(newcat.getDescription()))
+								if(StringUtils.isBlank(((XnatResource)oldCat).getDescription()) && StringUtils.isNotBlank(newcat.getDescription()))
 									((XnatResource)oldCat).setDescription(newcat.getDescription());
 							}
 

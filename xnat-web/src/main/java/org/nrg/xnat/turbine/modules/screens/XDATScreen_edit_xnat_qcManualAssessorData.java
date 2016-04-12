@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.turbine.modules.screens;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.om.*;
@@ -18,7 +19,6 @@ import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
 
 import java.util.Calendar;
 
@@ -31,11 +31,11 @@ public class XDATScreen_edit_xnat_qcManualAssessorData
 		final UserI user = TurbineUtils.getUser(data);
 		final XnatQcmanualassessordata qcAccessor = new XnatQcmanualassessordata(XFTItem.NewItem(getElementName(), user));
 		final String search_element = TurbineUtils.GetSearchElement(data);
-		if (!StringUtils.IsEmpty(search_element)) {
+		if (StringUtils.isNotBlank(search_element)) {
 			final GenericWrapperElement se = GenericWrapperElement.GetElement(search_element);
 			if (se.instanceOf(XnatImagesessiondata.SCHEMA_ELEMENT_NAME)) {
 				final String search_value = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_value",data));
-				if (!StringUtils.IsEmpty(search_value)) {
+				if (StringUtils.isNotBlank(search_value)) {
 					XnatImagesessiondata imageSession = new XnatImagesessiondata(TurbineUtils.GetItemBySearch(data));
 
 					// set defaults for new qc assessors

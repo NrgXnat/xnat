@@ -18,6 +18,7 @@ import javax.servlet.http.HttpServletResponse;
 import javax.xml.transform.TransformerConfigurationException;
 import javax.xml.transform.TransformerFactoryConfigurationError;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.base.BaseElement;
@@ -35,7 +36,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperField;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXWriter;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.xml.sax.SAXException;
 
 /**
@@ -131,7 +132,7 @@ created in buildPDF.
                             
                         }else{
                             if (adjustPath.equals("fullpath")){
-                                String root= StringUtils.ReplaceStr(mr.getArchiveRootPath(),"\\","/");
+                                String root= StringUtils.replace(mr.getArchiveRootPath(), "\\", "/");
                                 System.out.println(root);
                                 if (!root.endsWith("/")){
                                     root += "/";

@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.restlet.resources;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
 import org.nrg.xdat.base.BaseElement;
@@ -31,7 +32,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
 import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.archive.Rename.DuplicateLabelException;
@@ -335,7 +336,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 					if(this.subject!=null){
 							expt.setSubjectId(this.subject.getId());
 					}else{
-						if(StringUtils.IsEmpty(expt.getSubjectId()) && org.apache.commons.lang.StringUtils.isNotEmpty(subID)){
+						if(StringUtils.isBlank(expt.getSubjectId()) && org.apache.commons.lang.StringUtils.isNotEmpty(subID)){
 							expt.setSubjectId(subID);
 						}
 
@@ -507,7 +508,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 					}
 
 
-					if(!StringUtils.IsEmpty(expt.getLabel()) && !StringUtils.IsAlphaNumericUnderscore(expt.getId())){
+					if(StringUtils.isNotBlank(expt.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(expt.getId())){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED,"Invalid character in experiment label.");
 						return;
 					}

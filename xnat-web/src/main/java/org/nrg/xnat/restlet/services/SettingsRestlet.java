@@ -10,8 +10,6 @@
  */
 package org.nrg.xnat.restlet.services;
 
-import com.fasterxml.jackson.core.JsonFactory;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.hibernate.PropertyNotFoundException;
 import org.nrg.config.entities.Configuration;
@@ -66,12 +64,17 @@ public class SettingsRestlet extends SecureResource {
 
     public SettingsRestlet(Context context, Request request, Response response) throws IOException {
         super(context, request, response);
+
         setModifiable(true);
-        this.getVariants().add(new Variant(MediaType.APPLICATION_JSON));
-        this.getVariants().add(new Variant(MediaType.TEXT_XML));
+
+        getVariants().add(new Variant(MediaType.APPLICATION_JSON));
+        getVariants().add(new Variant(MediaType.TEXT_XML));
+
+        _filterService = XDAT.getContextService().getBean(DicomFilterService.class);
 
         _arcSpec = ArcSpecManager.GetInstance();
         _property = (String) getRequest().getAttributes().get("PROPERTY");
+
         if (!StringUtils.isBlank(_property)) {
             if (_property.equals("initialize")) {
                 if (_arcSpec != null && _arcSpec.isComplete()) {
@@ -103,7 +106,7 @@ public class SettingsRestlet extends SecureResource {
             if (StringUtils.isBlank(_property)) {
                 return mediaType == MediaType.TEXT_XML ?
                         new ItemXMLRepresentation(_arcSpec.getItem(), mediaType) :
-                        new StringRepresentation("{\"ResultSet\":{\"Result\":" + new ObjectMapper().writeValueAsString(getArcSpecAsMap()) + ", \"title\": \"Settings\"}}");
+                        new StringRepresentation("{\"ResultSet\":{\"Result\":" + toJson(getArcSpecAsMap()) + ", \"title\": \"Settings\"}}");
             } else {
                 if (!getArcSpecAsMap().containsKey(_property)) {
                     throw new PropertyNotFoundException(String.format("Setting '%s' was not found in the system.", _property));
@@ -114,7 +117,7 @@ public class SettingsRestlet extends SecureResource {
                     String xml = "<" + _property + ">" + propertyValue.toString() + "</" + _property + ">";
                     return new StringRepresentation(xml, mediaType);
                 } else {
-                    return new StringRepresentation("{\"ResultSet\":{\"Result\":" + new ObjectMapper().writeValueAsString(propertyValue) + ", \"title\": \"" + _property + "\"}}");
+                    return new StringRepresentation("{\"ResultSet\":{\"Result\":" + toJson(propertyValue) + ", \"title\": \"" + _property + "\"}}");
                 }
             }
         } catch (PropertyNotFoundException exception) {
@@ -180,11 +183,6 @@ public class SettingsRestlet extends SecureResource {
     }
 
     private DicomFilterService getDicomFilterService() {
-        if (_filterService == null) {
-            synchronized (_log) {
-                _filterService = XDAT.getContextService().getBean(DicomFilterService.class);
-            }
-        }
         return _filterService;
     }
 
@@ -225,7 +223,7 @@ public class SettingsRestlet extends SecureResource {
                 map.put(atoms[0], atoms[1]);
             }
 
-            return MAPPER.writeValueAsString(map);
+            return toJson(map);
         } catch (IOException ignored) {
             // We're not reading from a file, so we shouldn't encounter this.
         }
@@ -234,7 +232,7 @@ public class SettingsRestlet extends SecureResource {
     }
 
     // TODO: Gross.
-    public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "admin";
+    private static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "admin";
 
     /**
      * This returns the current subscriber or subscribers to a particular <i>site-wide</i> event. If the event doesn't
@@ -934,11 +932,9 @@ public class SettingsRestlet extends SecureResource {
         return users.get(0).getLogin();
     }
 
-    private static final ObjectMapper MAPPER = new ObjectMapper(new JsonFactory());
-
     private static final Logger _log = LoggerFactory.getLogger(SettingsRestlet.class);
 
-    private DicomFilterService _filterService;
+    private final DicomFilterService _filterService;
 
     private NotificationService _notificationService;
     private ArcArchivespecification _arcSpec;

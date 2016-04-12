@@ -1,8 +1,6 @@
 package org.nrg.xnat.restlet.resources;
 
 import org.apache.commons.lang.StringUtils;
-import org.apache.http.NameValuePair;
-import org.apache.http.client.utils.URLEncodedUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.automation.entities.ScriptTrigger;
@@ -22,7 +20,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.nio.charset.Charset;
 import java.util.*;
 
 public class ScriptTriggerResource extends AutomationResource {
@@ -124,7 +121,7 @@ public class ScriptTriggerResource extends AutomationResource {
         if (_trigger != null) {
             try {
                 // They're requesting a specific trigger, so return that to them.
-                return new StringRepresentation(MAPPER.writeValueAsString(mapTrigger(_trigger)), mediaType);
+                return new StringRepresentation(toJson(mapTrigger(_trigger)), mediaType);
             } catch (IOException e) {
                 throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "An error occurred marshalling the script trigger data to JSON", e);
             }
@@ -245,25 +242,7 @@ public class ScriptTriggerResource extends AutomationResource {
             throw new ClientException(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, "This function currently only supports " + MediaType.APPLICATION_WWW_FORM + " and " + MediaType.APPLICATION_JSON);
         }
 
-        final Properties properties;
-        if (mediaType.equals(MediaType.APPLICATION_WWW_FORM)) {
-            try {
-                final List<NameValuePair> formMap = URLEncodedUtils.parse(entity.getText(), DEFAULT_CHARSET);
-                properties = new Properties();
-                for (final NameValuePair entry : formMap) {
-                    properties.setProperty(entry.getName(), entry.getValue());
-                }
-            } catch (IOException e) {
-                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred trying to read the submitted form body.", e);
-            }
-        } else {
-            try {
-                final String text = entity.getText();
-                properties = MAPPER.readValue(text, Properties.class);
-            } catch (IOException e) {
-                throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred processing the script properties", e);
-            }
-        }
+        final Properties properties = decodeProperties(entity, mediaType);
 
         // TODO: These remove definitions of scope, entity ID, and script ID that may be passed in on the API call.
         // TODO: We may consider throwing an exception if something in the body parameters contradicts the URI
@@ -364,7 +343,6 @@ public class ScriptTriggerResource extends AutomationResource {
 
     private static final String EVENT_ID = "EVENT_ID";
     private static final String TRIGGER_ID = "TRIGGER_ID";
-    private static final Charset DEFAULT_CHARSET = Charset.forName("UTF-8");
 
     private final EventService _eventService;
     private final ScriptTriggerService _scriptTriggerService;

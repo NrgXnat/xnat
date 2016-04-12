@@ -11,7 +11,6 @@
 
 package org.nrg.xnat.restlet.extensions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.base.Joiner;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.dcm.DicomSCPManager;
@@ -42,10 +41,9 @@ public class DicomSCPRestlet extends SecureResource {
     private static final List<String> ALLOWED_ACTIONS = new ArrayList<>(Arrays.asList("status", "start", "stop", "enable", "disable"));
     private static final Logger       _log            = LoggerFactory.getLogger(DicomSCPRestlet.class);
 
-    private static final ObjectMapper _mapper = new ObjectMapper();
-    private final DicomSCPManager _dicomSCPManager;
-    private final String          _scpId;
-    private final String          _action;
+    private final DicomSCPManager   _dicomSCPManager;
+    private final String            _scpId;
+    private final String            _action;
 
     public DicomSCPRestlet(Context context, Request request, Response response) throws ResourceException {
         super(context, request, response);
@@ -86,11 +84,11 @@ public class DicomSCPRestlet extends SecureResource {
 
         try {
             if (Method.DELETE.equals(getRequest().getMethod()) || (StringUtils.isNotBlank(_action) && _action.equalsIgnoreCase("status"))) {
-                return new StringRepresentation(_mapper.writeValueAsString(_dicomSCPManager.areDicomSCPsStarted()));
+                return new StringRepresentation(getSerializer().toJson(_dicomSCPManager.areDicomSCPsStarted()));
             } else if (StringUtils.isBlank(_scpId)) {
-                return new StringRepresentation(_mapper.writeValueAsString(_dicomSCPManager.getDicomSCPInstances()));
+                return new StringRepresentation(getSerializer().toJson(_dicomSCPManager.getDicomSCPInstances()));
             } else {
-                return new StringRepresentation(DicomSCPInstance.serialize(_dicomSCPManager.getDicomSCPInstance(_scpId)));
+                return new StringRepresentation(getSerializer().toJson(_dicomSCPManager.getDicomSCPInstance(_scpId)));
             }
         } catch (IOException e) {
             throw new ResourceException(Status.SERVER_ERROR_INTERNAL, "An error occurred marshaling the DICOM SCP statuses", e);
@@ -110,8 +108,8 @@ public class DicomSCPRestlet extends SecureResource {
             getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "You should only POST to this URL to create a new DICOM SCP instance. The DICOM SCP ID " + _scpId + " is invalid in this context.");
         }
         try {
-            final String serialized = getRequest().getEntity().getText();
-            final DicomSCPInstance instance = DicomSCPInstance.deserialize(serialized);
+            final String           serialized = getRequest().getEntity().getText();
+            final DicomSCPInstance instance   = getSerializer().deserializeJson(serialized, DicomSCPInstance.class);
             _dicomSCPManager.create(instance);
         } catch (IOException e) {
             getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, e, "An error occurred trying to retrieve the body text of the PUT request.");

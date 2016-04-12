@@ -8,11 +8,17 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.AppletConfig;
+import org.nrg.xnat.utils.SerializerService;
 
 /**
  * Contains basic methods used by upload applet screen classes.
  */
 public abstract class UploadAppletScreen extends SecureScreen {
+
+    protected UploadAppletScreen() {
+        _serializer = XDAT.getContextService().getBean(SerializerService.class);
+    }
+
     protected org.nrg.config.entities.Configuration getAppletConfiguration(final UserI user, final String projectName) {
         //grab the applet config. Project level if it exists, otherwise, do the site-wide
         ConfigService configService = XDAT.getConfigService();
@@ -53,4 +59,10 @@ public abstract class UploadAppletScreen extends SecureScreen {
         }
         return config;
     }
+
+    protected SerializerService getSerializer() {
+        return _serializer;
+    }
+
+    private final SerializerService _serializer;
 }

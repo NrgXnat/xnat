@@ -21,7 +21,7 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.search.CriteriaCollection;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.exceptions.InvalidArchiveStructure;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
@@ -98,7 +98,7 @@ public class XNATTemplate extends SecureResource {
 		String assessid = (String) getParameter(request,
 				"ASSESSED_ID");
 			if(assessid!=null){
-			for(String s: StringUtils.CommaDelimitedStringToArrayList(assessid)){
+			for(String s: XftStringUtils.CommaDelimitedStringToArrayList(assessid)){
 				XnatExperimentdata assessed = XnatImagesessiondata.getXnatImagesessiondatasById(
 					s, user, false);
 
@@ -132,7 +132,7 @@ public class XNATTemplate extends SecureResource {
 
 			String exptID= (String)getParameter(request,"EXPT_ID");
 			if(exptID!=null){
-			for(String s: StringUtils.CommaDelimitedStringToArrayList(exptID)){
+			for(String s: XftStringUtils.CommaDelimitedStringToArrayList(exptID)){
 				XnatExperimentdata expt = XnatExperimentdata.getXnatExperimentdatasById(s,
 						user, false);
 
@@ -203,7 +203,7 @@ public class XNATTemplate extends SecureResource {
 					subcc.addClause("xnat:imageScanData/ID", scanID);
 				}else{
 					CriteriaCollection subsubcc = new CriteriaCollection("OR");
-					for(String s:StringUtils.CommaDelimitedStringToArrayList(scanID, true)){
+					for(String s:XftStringUtils.CommaDelimitedStringToArrayList(scanID, true)){
 						subsubcc.addClause("xnat:imageScanData/ID", s);
 					}
 					subcc.add(subsubcc);
@@ -226,7 +226,7 @@ public class XNATTemplate extends SecureResource {
 					}
 				}else{
 					CriteriaCollection subsubcc = new CriteriaCollection("OR");
-					for(String s:StringUtils.CommaDelimitedStringToArrayList(scanID, true)){
+					for(String s:XftStringUtils.CommaDelimitedStringToArrayList(scanID, true)){
 						if(s.equals("NULL")){
 							subsubcc.addClause("xnat:imageScanData/type",""," IS NULL ",true);
 							subsubcc.addClause("xnat:imageScanData/type","");
@@ -264,7 +264,7 @@ public class XNATTemplate extends SecureResource {
 					subcc.addClause("xnat:reconstructedImageData/ID", reconID);
 				}else{
 					CriteriaCollection subsubcc = new CriteriaCollection("OR");
-					for(String s:StringUtils.CommaDelimitedStringToArrayList(reconID, true)){
+					for(String s:XftStringUtils.CommaDelimitedStringToArrayList(reconID, true)){
 						subsubcc.addClause("xnat:reconstructedImageData/ID", s);
 					}
 					subcc.add(subsubcc);
@@ -287,7 +287,7 @@ public class XNATTemplate extends SecureResource {
 					}
 				}else{
 					CriteriaCollection subsubcc = new CriteriaCollection("OR");
-					for(String s:StringUtils.CommaDelimitedStringToArrayList(reconID, true)){
+					for(String s:XftStringUtils.CommaDelimitedStringToArrayList(reconID, true)){
 						if(s.equals("NULL")){
 							subsubcc.addClause("xnat:reconstructedImageData/type",""," IS NULL ",true);
 							subsubcc.addClause("xnat:reconstructedImageData/type","");

@@ -10,10 +10,10 @@
  */
 package org.nrg.xnat.turbine.utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.identifier.IDGeneratorI;
-import org.nrg.xft.utils.StringUtils;
 import org.nrg.xnat.services.impl.hibernate.HibernateHostInfoService;
 
 import java.util.ArrayList;
@@ -172,11 +172,11 @@ public class IDGenerator implements IDGeneratorI {
 	 */
 	private String getSiteID(){
 		String site_id = XFT.GetSiteID();
-		site_id = StringUtils.ReplaceStr(site_id, " ", "");
-		site_id = StringUtils.ReplaceStr(site_id, "-", "_");
-		site_id = StringUtils.ReplaceStr(site_id, "\"", "");
-		site_id = StringUtils.ReplaceStr(site_id, "'", "");
-		site_id = StringUtils.ReplaceStr(site_id, "^", "");
+		site_id = StringUtils.replace(site_id, " ", "");
+		site_id = StringUtils.replace(site_id, "-", "_");
+		site_id = StringUtils.replace(site_id, "\"", "");
+		site_id = StringUtils.replace(site_id, "'", "");
+		site_id = StringUtils.replace(site_id, "^", "");
 		return site_id;
 	}
 	

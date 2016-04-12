@@ -21,6 +21,7 @@ import java.util.Map;
 
 import org.apache.commons.fileupload.FileItem;
 import org.apache.commons.fileupload.FileUploadException;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.display.DisplayFieldReferenceI;
@@ -44,7 +45,7 @@ import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.restlet.presentation.RESTHTMLPresenter;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.Context;
@@ -241,8 +242,8 @@ public class SearchResource extends SecureResource {
 						ds.addKeyColumn(true);
 						
 						String query = ds.getSQLQuery(null);
-						query = StringUtils.ReplaceStr(query,"'","*'*");
-						query = StringUtils.ReplaceStr(query,"*'*","''");
+						query = StringUtils.replace(query, "'", "*'*");
+						query = StringUtils.replace(query,"*'*","''");
 
                         String codeToUse = getQueryVariable(MaterializedView.CACHING_HANDLER,MaterializedView.DEFAULT_MATERIALIZED_VIEW_SERVICE_CODE);
 						mv = MaterializedView.createView(user,codeToUse);
@@ -400,7 +401,7 @@ public class SearchResource extends SecureResource {
 							linkProps.append(prop.getName()).append("\"");
 							linkProps.append(",\"value\":\"");
 							String v =prop.getValue();
-							v = StringUtils.ReplaceStr(v,"@WEBAPP",TurbineUtils.GetRelativePath(ServletCall.getRequest(sr.getRequest())) + "/");
+							v = StringUtils.replace(v,"@WEBAPP",TurbineUtils.GetRelativePath(ServletCall.getRequest(sr.getRequest())) + "/");
 							
 							linkProps.append(v).append("\"");
 
@@ -426,7 +427,7 @@ public class SearchResource extends SecureResource {
 											        	insert_value = insert_value.substring(6);
 											            try {
 											                Integer i = Integer.parseInt(insert_value);
-											                ArrayList<String> al = StringUtils.CommaDelimitedStringToArrayList(insertValue.toString());
+											                ArrayList<String> al = XftStringUtils.CommaDelimitedStringToArrayList(insertValue.toString());
 											                insertValue =al.get(i);
 											            } catch (Throwable e) {
 											                logger.error("",e);
@@ -471,28 +472,24 @@ public class SearchResource extends SecureResource {
                     if (dfr.isImage()) {
 						cp.get(id).put("imgRoot", TurbineUtils.GetRelativePath(ServletCall.getRequest(sr.getRequest())) + "/");
 					}
-				} catch (XFTInitException e) {
-					logger.error("",e);
-				} catch (ElementNotFoundException e) {
+				} catch (XFTInitException | ElementNotFoundException e) {
 					logger.error("",e);
 				}
 
-				
+
 			}
 			
 			cp.put("quarantine_status",new Hashtable<String,String>());
-		} catch (ElementNotFoundException e) {
-			logger.error("",e);
-		} catch (XFTInitException e) {
+		} catch (ElementNotFoundException | XFTInitException e) {
 			logger.error("",e);
 		}
-		
+
 		return cp;
 	}
 
     private boolean canQueryByAllowedUser(final XdatStoredSearch search) {
         boolean allowed=false;
-        if(!StringUtils.IsEmpty(search.getId()))
+        if(StringUtils.isNotBlank(search.getId()))
         {
             //need to check against unmodified stored search
             final org.nrg.xdat.om.XdatStoredSearch stored = XdatStoredSearch.getXdatStoredSearchsById(search.getId(), user, true);

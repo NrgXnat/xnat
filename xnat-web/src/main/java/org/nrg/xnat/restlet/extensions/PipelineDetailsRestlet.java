@@ -10,7 +10,6 @@
  */
 package org.nrg.xnat.restlet.extensions;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang.StringUtils;
 import org.nrg.pipeline.PipelineRepositoryManager;
 import org.nrg.pipeline.utils.PipelineFileUtils;
@@ -43,15 +42,13 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-
-
 @XnatRestlet({"/projects/{PROJECT_ID}/pipelines/{PIPELINE_NAME}", "/projects/{PROJECT_ID}/pipelines/{PIPELINE_NAME}/details"})
 public class PipelineDetailsRestlet extends SecureResource {
     public static final String PARAM_PROJECT_ID = "PROJECT_ID";
     public static final String PARAM_PIPELINE_NAME = "PIPELINE_NAME";
 
-    private final String _projectId;
-    private final String _pipelineName;
+    private final String            _projectId;
+    private final String            _pipelineName;
 
     private static final Logger _log = LoggerFactory.getLogger(PipelineDetailsRestlet.class);
 
@@ -79,8 +76,7 @@ public class PipelineDetailsRestlet extends SecureResource {
             Map<String,Object> pipelineDetails = getPipelineDetailsMap();
 
             // Make a json object from the pipelineDetails map
-            ObjectMapper mapper = new ObjectMapper();
-            String json = mapper.writeValueAsString(pipelineDetails);
+            String json = getSerializer().toJson(pipelineDetails);
             return new StringRepresentation(json, MediaType.APPLICATION_JSON);
 
         } catch (Exception exception) {
@@ -119,7 +115,7 @@ public class PipelineDetailsRestlet extends SecureResource {
         }
 
         // Build hash map
-        Map<String,Object> pipelineDetails = new HashMap<String,Object>();
+        Map<String,Object> pipelineDetails = new HashMap<>();
 
         // Basic info
         pipelineDetails.put("path",pipelineDescriptorPath);
@@ -155,9 +151,9 @@ public class PipelineDetailsRestlet extends SecureResource {
                 pipelineDetails.put("publications",doc.getPublications().getPublicationArray());
             }
             if (doc.isSetAuthors()) {
-                List<Map<String,String>> authorInfoList = new ArrayList<Map<String,String>>();
+                List<Map<String,String>> authorInfoList = new ArrayList<>();
                 for (Author aAuthor : doc.getAuthors().getAuthorArray()) {
-                    Map<String,String> authorInfo = new HashMap<String,String>();
+                    Map<String,String> authorInfo = new HashMap<>();
                     if (StringUtils.isNotBlank(aAuthor.getFirstname())) {
                         authorInfo.put("firstname", aAuthor.getFirstname());
                     }
@@ -183,9 +179,9 @@ public class PipelineDetailsRestlet extends SecureResource {
         }
 
         // Step ids and descriptions
-        List<Map<String,String>> stepInfoList = new ArrayList<Map<String,String>>();
+        List<Map<String,String>> stepInfoList = new ArrayList<>();
         for (Step aStep : pipelineData.getSteps().getStepArray()) {
-            Map<String,String> stepInfo = new HashMap<String,String>();
+            Map<String,String> stepInfo = new HashMap<>();
             stepInfo.put("id",aStep.getId());
 
             if (StringUtils.isNotBlank(aStep.getDescription())) {
@@ -196,11 +192,11 @@ public class PipelineDetailsRestlet extends SecureResource {
         pipelineDetails.put("steps",stepInfoList);
 
         // Project-level param defaults
-        List<Map<String,Object>> paramInfoList = new ArrayList<Map<String,Object>>();
+        List<Map<String,Object>> paramInfoList = new ArrayList<>();
         for (ArcPipelineparameterdataI aParamI : projectPipelineData.getParameters_parameter()) {
             ArcPipelineparameterdata aParam = (ArcPipelineparameterdata) aParamI;
 
-            Map<String,Object> paramInfo = new HashMap<String,Object>();
+            Map<String,Object> paramInfo = new HashMap<>();
             paramInfo.put("name",aParam.getName());
             if (StringUtils.isNotBlank(aParam.getDescription())) {
                 paramInfo.put("description", aParam.getDescription());
@@ -209,7 +205,7 @@ public class PipelineDetailsRestlet extends SecureResource {
             String csv = aParam.getCsvvalues();
             String schemaLink = aParam.getSchemalink();
             if (StringUtils.isNotBlank(schemaLink) || StringUtils.isNotBlank(csv)) {
-                Map<String,String> paramValues = new HashMap<String,String>();
+                Map<String,String> paramValues = new HashMap<>();
                 if (StringUtils.isNotBlank(schemaLink)) {
                     paramValues.put("schemaLink",schemaLink);
                 } else {
@@ -223,5 +219,4 @@ public class PipelineDetailsRestlet extends SecureResource {
 
         return pipelineDetails;
     }
-
 }

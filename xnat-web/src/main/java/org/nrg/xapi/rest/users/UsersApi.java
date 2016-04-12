@@ -3,9 +3,8 @@ package org.nrg.xapi.rest.users;
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xapi.model.users.User;
-import org.nrg.xapi.rest.AbstractXnatRestApi;
 import org.nrg.xapi.rest.NotFoundException;
-import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.rest.AbstractXnatRestApi;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
@@ -16,7 +15,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.ArrayList;

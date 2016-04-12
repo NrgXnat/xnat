@@ -87,7 +87,7 @@ public class ProjectPipelineListResource extends SecureResource  {
 					            }
 					        }
 							//Send a 200 OK message back
-							//getResponse().setStatus(Status.SUCCESS_OK,"Pipeline has been removed from project " + proj.getId());
+							//getResponse().setStatus(Status.SUCCESS_OK,"Pipeline has been removed from project " + _project.getId());
 						}
 						}catch(Exception e) {
 							e.printStackTrace();

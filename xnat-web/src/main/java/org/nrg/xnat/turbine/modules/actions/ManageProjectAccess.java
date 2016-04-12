@@ -27,7 +27,7 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.exception.ItemNotFoundException;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.StringUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -67,9 +67,9 @@ public class ManageProjectAccess extends SecureAction {
         String members = ((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("members", data));
         String owners = ((String) org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("owners", data));
 
-        List<String> ownersL = StringUtils.CommaDelimitedStringToArrayList(owners);
-        List<String> membersL = StringUtils.CommaDelimitedStringToArrayList(members);
-        List<String> collaboratorsL = StringUtils.CommaDelimitedStringToArrayList(collaborators);
+        List<String> ownersL = XftStringUtils.CommaDelimitedStringToArrayList(owners);
+        List<String> membersL = XftStringUtils.CommaDelimitedStringToArrayList(members);
+        List<String> collaboratorsL = XftStringUtils.CommaDelimitedStringToArrayList(collaborators);
 
 
         if (owners != null) {

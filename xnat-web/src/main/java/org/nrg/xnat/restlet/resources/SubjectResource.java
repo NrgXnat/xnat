@@ -10,16 +10,12 @@
  */
 package org.nrg.xnat.restlet.resources;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
 import org.nrg.xdat.model.XnatProjectdataI;
 import org.nrg.xdat.model.XnatProjectparticipantI;
-import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatProjectdata;
-import org.nrg.xdat.om.XnatProjectparticipant;
-import org.nrg.xdat.om.XnatSubjectassessordata;
-import org.nrg.xdat.om.XnatSubjectdata;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.om.base.BaseXnatSubjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -34,8 +30,8 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.StringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResults;
+import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xnat.archive.Rename;
 import org.nrg.xnat.archive.Rename.DuplicateLabelException;
 import org.nrg.xnat.archive.Rename.FolderConflictException;
@@ -348,7 +344,7 @@ public class SubjectResource extends ItemResource {
                         sub.setProperty("xnat:subjectData/demographics[@xsi:type=xnat:demographicData]/gender", this.getQueryVariable("gender"));
                     }
 
-                    if (!StringUtils.IsEmpty(sub.getLabel()) && !StringUtils.IsAlphaNumericUnderscore(sub.getId())) {
+                    if (StringUtils.isNotBlank(sub.getLabel()) && !XftStringUtils.IsAlphaNumericUnderscore(sub.getId())) {
                         this.getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Invalid character in subject label.");
                         return;
                     }
@@ -560,7 +556,7 @@ public class SubjectResource extends ItemResource {
     public Representation representItem(XFTItem item, MediaType mt) {
         Representation representation = super.representItem(item, mt);
 
-        if (representation != null && proj != null && representation instanceof TurbineScreenRepresentation && StringUtils.HasContent(proj.getId())) {
+        if (representation != null && proj != null && representation instanceof TurbineScreenRepresentation && StringUtils.isNotBlank(proj.getId())) {
             // provides appropriate rendering if the caller is querying this subject in the context of a shared project
             ((TurbineScreenRepresentation) representation).setRunDataParameter("project", proj.getId());
         }

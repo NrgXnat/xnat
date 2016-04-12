@@ -11,7 +11,6 @@
 package org.nrg.xnat.restlet.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.google.common.collect.Maps;
 import com.noelios.restlet.http.HttpConstants;
 import org.apache.commons.beanutils.BeanUtils;
@@ -67,6 +66,7 @@ import org.nrg.xnat.restlet.representations.*;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
+import org.nrg.xnat.utils.SerializerService;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
@@ -137,8 +137,16 @@ public abstract class SecureResource extends Resource {
 
     protected String csrfToken = null;
 
+    private final SerializerService _serializer;
+
     public SecureResource(Context context, Request request, Response response) {
         super(context, request, response);
+
+        _serializer = XDAT.getContextService().getBean(SerializerService.class);
+        if (null == _serializer) {
+            getResponse().setStatus(Status.CLIENT_ERROR_FAILED_DEPENDENCY, "Serializer service was not properly initialized.");
+            throw new NrgServiceRuntimeException("ERROR: Serializer service was not properly initialized.");
+        }
 
         requested_format = getQueryVariable("format");
 
@@ -247,6 +255,9 @@ public abstract class SecureResource extends Resource {
         return convertFormToMap(getQueryVariableForm());
     }
 
+    protected SerializerService getSerializer() {
+        return _serializer;
+    }
 
     private Form _body;
     private MediaType _mediaType;
@@ -517,6 +528,10 @@ public abstract class SecureResource extends Resource {
         } else {
             return null;
         }
+    }
+
+    protected <T> String toJson(final T instance) throws IOException {
+        return getSerializer().toJson(instance);
     }
 
     public interface ItemHandlerI {
@@ -1522,7 +1537,7 @@ public abstract class SecureResource extends Resource {
         }
 
         try {
-            List<String> userResourceWhitelist = OBJECT_MAPPER.readValue(config, TYPE_REFERENCE_LIST_STRING);
+            List<String> userResourceWhitelist = getSerializer().deserializeJson(config, TYPE_REFERENCE_LIST_STRING);
             if (userResourceWhitelist != null) {
                 return userResourceWhitelist.contains(user.getUsername());
             }
@@ -1534,9 +1549,7 @@ public abstract class SecureResource extends Resource {
         return false;
     }
 
-    protected final static TypeReference<ArrayList<String>> TYPE_REFERENCE_LIST_STRING = new TypeReference<ArrayList<String>>() {
-    };
-    protected final static ObjectMapper OBJECT_MAPPER = new ObjectMapper();
+    protected final static TypeReference<ArrayList<String>> TYPE_REFERENCE_LIST_STRING = new TypeReference<ArrayList<String>>() {};
 
     private static Map<String, List<FilteredResourceHandlerI>> handlers = Maps.newConcurrentMap();
 

@@ -10,8 +10,8 @@
  */
 package org.nrg.xnat.turbine.modules.screens;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
@@ -64,12 +64,11 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                         try
                         {
                             context.put("forgot", true);
-                            data.getSession().setAttribute("forgot",new Boolean(true));
+                            data.getSession().setAttribute("forgot", true);
                             userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,Long.parseLong(secret));
                             if(userID!=null){
                                 user = Users.getUser(userID);
-                                boolean forcePasswordChange = true;
-                                XDAT.loginUser(data, user, forcePasswordChange);
+                                XDAT.loginUser(data, user, true);
                             }
                             else{
                                 invalidInformation(data, context, "Change password opportunity expired.  Change password requests can only be used once and expire after 24 hours.  Please restart the change password process.");
@@ -82,11 +81,11 @@ public class XDATScreen_UpdateUser extends SecureScreen {
 
                             AccessLogger.LogActionAccess(data, "Failed Login by alias '" + alias + "': " + e.getMessage());
 
-                            if(userID.toLowerCase().contains("script"))
-                            {
-                                e= new Exception("Illegal username &lt;script&gt; usage.");
-                                AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml(userID));
-                                log.error("",e);
+                            if (userID == null || userID.toLowerCase().contains("script")) {
+                                e = new Exception("Illegal username &lt;script&gt; usage.");
+                                final String message = userID == null ? "No user ID found." : StringEscapeUtils.escapeHtml4(userID);
+                                AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", message);
+                                log.error(message,e);
                                 data.setScreenTemplate("Error.vm");
                                 data.getParameters().setString("exception", e.toString());
                                 return;

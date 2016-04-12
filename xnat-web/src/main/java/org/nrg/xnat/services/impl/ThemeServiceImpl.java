@@ -12,8 +12,8 @@
 package org.nrg.xnat.services.impl;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import org.apache.commons.lang.ArrayUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.ArrayUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.configuration.ThemeConfig;
 import org.nrg.xnat.services.ThemeService;
 import org.nrg.xnat.utils.SerializerService;

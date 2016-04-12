@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.restlet.services;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.hibernate.PropertyNotFoundException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
@@ -42,6 +42,7 @@ import org.nrg.xnat.security.FilterSecurityInterceptorBeanPostProcessor;
 import org.nrg.xnat.security.XnatExpiredPasswordFilter;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.BuildDirScriptRunnerOutputAdapter;
+import org.nrg.xnat.utils.XnatHttpUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.resource.Representation;
@@ -133,7 +134,8 @@ public class SettingsRestlet extends SecureResource {
 
         settings.putAll(XDAT.getSiteConfiguration());
         settings.put("siteId", getSiteId());
-        settings.put("siteUrl", _arcSpec.getSiteUrl());
+        final String siteUrl = StringUtils.isBlank(_arcSpec.getSiteUrl()) ? XnatHttpUtils.getServerRoot(getHttpServletRequest()) : _arcSpec.getSiteUrl();
+        settings.put("siteUrl", siteUrl);
         settings.put("siteAdminEmail", _arcSpec.getSiteAdminEmail());
         settings.put("smtpHost", _arcSpec.getSmtpHost());
         settings.put("requireLogin", _arcSpec.getRequireLogin());

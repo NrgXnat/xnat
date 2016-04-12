@@ -17,7 +17,7 @@ import java.util.List;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.display.DisplayManager;

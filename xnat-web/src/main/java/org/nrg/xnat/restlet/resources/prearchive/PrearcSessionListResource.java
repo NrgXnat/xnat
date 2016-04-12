@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.restlet.resources.prearchive;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
 import org.nrg.xnat.helpers.prearchive.*;

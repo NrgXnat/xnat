@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.restlet.resources;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;

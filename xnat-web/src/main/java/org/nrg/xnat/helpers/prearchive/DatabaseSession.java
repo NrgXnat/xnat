@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.helpers.prearchive;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;

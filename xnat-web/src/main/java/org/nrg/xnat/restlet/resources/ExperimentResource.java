@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.restlet.resources;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.transaction.TransactionException;
 import org.nrg.xdat.base.BaseElement;

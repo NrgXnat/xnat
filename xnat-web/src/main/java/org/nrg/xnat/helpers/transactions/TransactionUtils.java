@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.helpers.transactions;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 
 public class TransactionUtils {
 	

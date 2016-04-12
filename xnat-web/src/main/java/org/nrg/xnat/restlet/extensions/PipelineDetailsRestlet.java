@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.restlet.extensions;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.pipeline.PipelineRepositoryManager;
 import org.nrg.pipeline.utils.PipelineFileUtils;
 import org.nrg.pipeline.xmlbeans.PipelineData;

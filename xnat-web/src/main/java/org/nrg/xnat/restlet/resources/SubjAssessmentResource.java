@@ -336,7 +336,7 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 					if(this.subject!=null){
 							expt.setSubjectId(this.subject.getId());
 					}else{
-						if(StringUtils.isBlank(expt.getSubjectId()) && org.apache.commons.lang.StringUtils.isNotEmpty(subID)){
+						if(StringUtils.isBlank(expt.getSubjectId()) && StringUtils.isNotEmpty(subID)){
 							expt.setSubjectId(subID);
 						}
 
@@ -528,18 +528,18 @@ public class SubjAssessmentResource extends SubjAssessmentAbst {
 						
 
 						//check for unexpected modifications of ID, Project and label
-						if(existing !=null && !org.apache.commons.lang.StringUtils.equals(existing.getId(),expt.getId())){
+						if(existing !=null && !StringUtils.equals(existing.getId(),expt.getId())){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"ID cannot be modified");
 							return;
 						}
 						
-						if(existing !=null && !org.apache.commons.lang.StringUtils.equals(existing.getProject(),expt.getProject())){
+						if(existing !=null && !StringUtils.equals(existing.getProject(),expt.getProject())){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Project must be modified through separate URI.");
 							return;
 						}
 						
 						//MATCHED
-						if(existing !=null && !org.apache.commons.lang.StringUtils.equals(existing.getLabel(),expt.getLabel())){
+						if(existing !=null && !StringUtils.equals(existing.getLabel(),expt.getLabel())){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Label must be modified through separate URI.");
 							return;
 						}

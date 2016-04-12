@@ -1,6 +1,6 @@
 package org.nrg.xnat.restlet.resources;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.DBPoolException;

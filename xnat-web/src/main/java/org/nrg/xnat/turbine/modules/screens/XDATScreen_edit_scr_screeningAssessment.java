@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.turbine.modules.screens;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.model.XnatImagescandataI;
@@ -97,12 +97,12 @@ public class XDATScreen_edit_scr_screeningAssessment extends org.nrg.xnat.turbin
         
         if (al.size()>0 || claimedIDs.size()>0){
             int count =al.size()+1;
-            String full = org.apache.commons.lang.StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
+            String full = StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
             temp_id = sessionLabel+labelExtension+ full;
 
             while (al.contains(temp_id) || claimedIDs.contains(temp_id)){
                 count++;
-                full =org.apache.commons.lang.StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
+                full =StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
                 temp_id = sessionLabel+labelExtension+ full;
             }
             
@@ -111,7 +111,7 @@ public class XDATScreen_edit_scr_screeningAssessment extends org.nrg.xnat.turbin
             return temp_id;
         }else{
             int count =1;
-            String full = org.apache.commons.lang.StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
+            String full = StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
             temp_id = sessionLabel+labelExtension+ full;
             return temp_id;
         }

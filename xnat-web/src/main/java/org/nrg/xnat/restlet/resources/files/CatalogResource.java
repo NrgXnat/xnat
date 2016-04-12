@@ -77,7 +77,7 @@ public class CatalogResource extends XNATCatalogTemplate {
         private void checkForNonEmptyFilePath(String remainingUrlPart) {
         	// we don't care about path separators or query parameters
         	// everything else will be rejected
-        	filePathIsEmpty = org.apache.commons.lang.StringUtils.isBlank(remainingUrlPart)
+        	filePathIsEmpty = StringUtils.isBlank(remainingUrlPart)
         		|| remainingUrlPart.matches("^/+") || remainingUrlPart.matches("^/*\\?.*");
         }
 	

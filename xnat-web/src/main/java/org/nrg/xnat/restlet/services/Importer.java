@@ -11,7 +11,7 @@
 package org.nrg.xnat.restlet.services;
 
 import org.apache.commons.fileupload.FileUploadException;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
 import org.nrg.framework.constants.PrearchiveCode;

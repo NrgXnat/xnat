@@ -14,7 +14,7 @@ import com.fasterxml.jackson.core.JsonFactory;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;

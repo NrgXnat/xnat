@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.helpers.prearchive;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.restlet.data.CharacterSet;
 import org.restlet.data.Form;
 import org.restlet.data.Reference;

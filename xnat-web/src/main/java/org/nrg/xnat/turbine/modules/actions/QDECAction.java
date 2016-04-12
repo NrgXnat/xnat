@@ -23,7 +23,7 @@ import java.util.Date;
 import java.util.Enumeration;
 import java.util.Hashtable;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.apache.xmlbeans.XmlOptions;
@@ -233,7 +233,7 @@ public class QDECAction extends ListingAction{
 		if (parts != null ) {
 			if (parts.length > 1) {
 				for (int i = 0; i < parts.length; i++) {
-					rtn += StringUtils.capitalise(parts[i]);
+					rtn += StringUtils.capitalize(parts[i]);
 				}
 			}else if (parts.length == 1) {
 				rtn = parts[0];

@@ -6,7 +6,7 @@ import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.framework.constants.Scope;

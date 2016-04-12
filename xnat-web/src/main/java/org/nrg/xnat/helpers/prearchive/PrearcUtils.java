@@ -13,7 +13,7 @@ package org.nrg.xnat.helpers.prearchive;
 import com.google.common.collect.Lists;
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.io.filefilter.DirectoryFileFilter;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;

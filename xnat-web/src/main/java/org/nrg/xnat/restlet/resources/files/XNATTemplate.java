@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.restlet.resources.files;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.XnatImageassessordataI;
 import org.nrg.xdat.om.*;
@@ -319,11 +320,7 @@ public class XNATTemplate extends SecureResource {
 	}
 
 	public boolean allowMultipleMatches(){
-		if(this instanceof FileList && this.getRequest().getMethod().equals(Method.GET)){
-			return true;
-		}else{
-			return false;
-		}
+		return this instanceof FileList && this.getRequest().getMethod().equals(Method.GET);
 	}
 	
 	public ItemI getSecurityItem(){
@@ -349,7 +346,7 @@ public class XNATTemplate extends SecureResource {
 	}
 
 	public boolean insertCatalag(XnatResourcecatalog catResource,EventMetaI ci)
-			throws InvalidArchiveStructure, Exception {
+			throws Exception {
 		java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat(
 				XNATRestConstants.PREARCHIVE_TIMESTAMP);
         String uploadID = formatter.format(Calendar.getInstance().getTime());
@@ -672,10 +669,8 @@ public class XNATTemplate extends SecureResource {
 						for (String resourceID : resourceIDs) {
 							if (c++ > 0)
 								query.append(" OR ");
-							if (org.apache.commons.lang.StringUtils
-									.isNumeric(resourceID)) {
-								query
-										.append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
+							if (StringUtils.isNumeric(resourceID)) {
+								query.append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
 								query.append(resourceID);
 								query.append(" OR abst.label='");
 								query.append(resourceID);
@@ -721,7 +716,7 @@ public class XNATTemplate extends SecureResource {
 						for (String resourceID : resourceIDs) {
 							if (c++ > 0)
 								query.append(" OR ");
-							if (org.apache.commons.lang.StringUtils
+							if (StringUtils
 									.isNumeric(resourceID)) {
 								query
 										.append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
@@ -769,7 +764,7 @@ public class XNATTemplate extends SecureResource {
 				for (String resourceID : resourceIDs) {
 					if (c++ > 0)
 						query.append(" OR ");
-					if (org.apache.commons.lang.StringUtils
+					if (StringUtils
 							.isNumeric(resourceID)) {
 						query.append(" (abst.xnat_abstractresource_id=");
 						query.append(resourceID);
@@ -826,7 +821,7 @@ public class XNATTemplate extends SecureResource {
 						for (String resourceID : resourceIDs) {
 							if (c++ > 0)
 								query.append(" OR ");
-							if (org.apache.commons.lang.StringUtils
+							if (StringUtils
 									.isNumeric(resourceID)) {
 								query
 										.append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
@@ -879,7 +874,7 @@ public class XNATTemplate extends SecureResource {
 						for (String resourceID : resourceIDs) {
 							if (c++ > 0)
 								query.append(" OR ");
-							if (org.apache.commons.lang.StringUtils
+							if (StringUtils
 									.isNumeric(resourceID)) {
 								query
 										.append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
@@ -1016,7 +1011,7 @@ public class XNATTemplate extends SecureResource {
 					for (String resourceID : resourceIDs) {
 						if (c++ > 0)
 							query.append(" OR ");
-						if (org.apache.commons.lang.StringUtils
+						if (StringUtils
 								.isNumeric(resourceID)) {
 							query.append(" (xnat_abstractresource_id=");
 							query.append(resourceID);
@@ -1062,7 +1057,7 @@ public class XNATTemplate extends SecureResource {
 					for (String resourceID : resourceIDs) {
 						if (c++ > 0)
 							query.append(" OR ");
-						if (org.apache.commons.lang.StringUtils
+						if (StringUtils
 								.isNumeric(resourceID)) {
 							query
 									.append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
@@ -1109,7 +1104,7 @@ public class XNATTemplate extends SecureResource {
 				for (String resourceID : resourceIDs) {
 					if (c++ > 0)
 						query.append(" OR ");
-					if (org.apache.commons.lang.StringUtils
+					if (StringUtils
 							.isNumeric(resourceID)) {
 						query
 								.append(" (map.xnat_abstractresource_xnat_abstractresource_id=");
@@ -1153,7 +1148,7 @@ public class XNATTemplate extends SecureResource {
 				for (String resourceID : resourceIDs) {
 					if (c++ > 0)
 						query.append(" OR ");
-					if (org.apache.commons.lang.StringUtils
+					if (StringUtils
 							.isNumeric(resourceID)) {
 						query
 								.append(" (map.xnat_abstractresource_xnat_abstractresource_id=");

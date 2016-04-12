@@ -196,7 +196,7 @@ public class ProjectResource extends ItemResource {
                             } else if (filepath.startsWith("prearchive_code/")) {
                                 String qc = filepath.substring(16);
                                 if (!qc.equals("")) {
-                                    if (XDAT.getBoolSiteConfigurationProperty("project.allow-auto-archive", true) || org.apache.commons.lang.StringUtils.equals(qc, "0")) {
+                                    if (XDAT.getBoolSiteConfigurationProperty("project.allow-auto-archive", true) || StringUtils.equals(qc, "0")) {
                                         ArcProject ap = project.getArcSpecification();
                                         try {
                                             Integer qcI = Integer.valueOf(qc);

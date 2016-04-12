@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.helpers.merge;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.bean.CatCatalogBean;
 import org.nrg.xdat.model.*;
 import org.nrg.xft.event.EventMetaI;

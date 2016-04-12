@@ -11,7 +11,7 @@
 package org.nrg.xnat.helpers.dicom;
 
 import com.google.common.collect.ImmutableMap;
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.dcm4che2.data.DicomElement;
 import org.dcm4che2.data.DicomObject;
 import org.dcm4che2.data.DicomObjectToStringParam;
@@ -130,7 +130,7 @@ public final class DicomHeaderDump {
     }
 
     public static String escapeHTML(String o){
-        return (o==null)?null: StringEscapeUtils.escapeHtml(o);
+        return (o==null)?null: StringEscapeUtils.escapeHtml4(o);
     }
 
     /**

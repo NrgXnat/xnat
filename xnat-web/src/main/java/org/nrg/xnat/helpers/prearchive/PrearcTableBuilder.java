@@ -14,7 +14,7 @@
  */
 package org.nrg.xnat.helpers.prearchive;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.bean.reader.XDATXMLReader;

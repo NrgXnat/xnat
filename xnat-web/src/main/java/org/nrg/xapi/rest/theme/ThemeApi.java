@@ -14,6 +14,7 @@ package org.nrg.xapi.rest.theme;
 
 import io.swagger.annotations.*;
 import org.apache.commons.io.FileUtils;
+import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.security.UserI;
@@ -34,7 +35,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Api(description = "XNAT Theme Management API")
-@RestController
+@XapiRestController
 @RequestMapping(value = "/theme")
 public class ThemeApi {
     private static final Logger _log = LoggerFactory.getLogger(ThemeApi.class);

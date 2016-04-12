@@ -6,7 +6,7 @@ src/generated
 gradle.properties
 /out
 /build
-InstanceSettings.xmldependencies.txt
+dependencies.txt
 /webapps
 /bin/
 .classpath

@@ -21,8 +21,8 @@ package org.nrg.xnat.turbine.modules.screens;/*
 
 import java.sql.SQLException;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
@@ -87,7 +87,7 @@ public class InactiveAccount extends VelocitySecureScreen {
                             if(userID.toLowerCase().contains("script"))
                             {
                                 e= new Exception("Illegal username &lt;script&gt; usage.");
-                                AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml(userID));
+                                AdminUtils.sendAdminEmail("Possible Cross-site scripting attempt blocked", StringEscapeUtils.escapeHtml4(userID));
                                 log.error("",e);
                                 data.setScreenTemplate("Error.vm");
                                 data.getParameters().setString("exception", e.toString());

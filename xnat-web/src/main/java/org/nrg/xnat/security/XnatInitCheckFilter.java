@@ -1,5 +1,5 @@
 /*
- * org.nrg.xnat.security.XnatArcSpecFilter
+ * org.nrg.xnat.security.XnatInitCheckFilter
  * XNAT http://www.xnat.org
  * Copyright (c) 2014, Washington University School of Medicine
  * All Rights Reserved
@@ -26,9 +26,10 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.nrg.xnat.utils.XnatHttpUtils;
 import org.springframework.web.filter.GenericFilterBean;
 
-public class XnatArcSpecFilter extends GenericFilterBean {
+public class XnatInitCheckFilter extends GenericFilterBean {
 
     @Override
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
@@ -70,12 +71,15 @@ public class XnatArcSpecFilter extends GenericFilterBean {
                 	// (NB: I tried putting this check up with the basic auth check, 
                 	// but you get this weird redirect with 2 login pages on the same screen.  Seems to work here).
                         chain.doFilter(req, res);
-                    } else if (Roles.isSiteAdmin(user)) {
-                        //Otherwise, if the user has administrative permissions, direct the user to the configuration page.
-                        response.sendRedirect(TurbineUtils.GetFullServerPath() + _configurationPath);
                     } else {
-                        //The arc spec is not set but the user does not have administrative permissions. Direct the user to an error page.
-                        response.sendRedirect(TurbineUtils.GetFullServerPath() + _nonAdminErrorPath);
+                        final String serverPath = XnatHttpUtils.getServerRoot(request);
+                        if (Roles.isSiteAdmin(user)) {
+                            //Otherwise, if the user has administrative permissions, direct the user to the configuration page.
+                            response.sendRedirect(serverPath + _configurationPath);
+                        } else {
+                            //The arc spec is not set but the user does not have administrative permissions. Direct the user to an error page.
+                            response.sendRedirect(serverPath + _nonAdminErrorPath);
+                        }
                     }
                 } catch (Exception e) {
                     logger.error("Error checking user role in the Arc Spec Filter.", e);
@@ -114,5 +118,5 @@ public class XnatArcSpecFilter extends GenericFilterBean {
     private String _initializationPath = "";
     private String _configurationPath = "";
     private String _nonAdminErrorPath = "";
-    private final List<String> _exemptedPaths = new ArrayList<String>();
+    private final List<String> _exemptedPaths = new ArrayList<>();
 }

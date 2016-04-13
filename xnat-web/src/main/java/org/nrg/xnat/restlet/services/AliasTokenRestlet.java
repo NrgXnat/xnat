@@ -17,7 +17,7 @@ import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xnat.restlet.resources.SecureResource;
-import org.nrg.xnat.utils.SerializerService;
+import org.nrg.framework.services.SerializerService;
 import org.restlet.Context;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;

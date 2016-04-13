@@ -1,5 +1,4 @@
 /*
- * org.nrg.xnat.turbine.modules.screens.ManageProtocol
  * XNAT http://www.xnat.org
  * Copyright (c) 2013, Washington University School of Medicine
  * All Rights Reserved
@@ -16,10 +15,10 @@ import io.swagger.annotations.*;
 import org.apache.commons.io.FileUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.NotFoundException;
+import org.nrg.xdat.entities.ThemeConfig;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.configuration.ThemeConfig;
-import org.nrg.xnat.services.ThemeService;
+import org.nrg.xdat.services.ThemeService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;

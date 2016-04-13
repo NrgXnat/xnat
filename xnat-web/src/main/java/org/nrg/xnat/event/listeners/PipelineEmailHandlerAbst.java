@@ -6,6 +6,7 @@ import com.google.common.collect.Maps;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlException;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.pipeline.xmlbeans.AllResolvedStepsDocument;
 import org.nrg.pipeline.xmlbeans.ParameterData;
 import org.nrg.xdat.XDAT;
@@ -19,7 +20,6 @@ import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.WorkflowStatusEvent;
 import org.nrg.xnat.notifications.NotifyProjectPipelineListeners;
-import org.nrg.xnat.utils.SerializerService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

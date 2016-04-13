@@ -22,6 +22,12 @@
 </script>
 #end
 
+#if ($theme)
+<script type="text/javascript">
+    XNAT.theme = $theme}";
+</script>
+#end
+
 <!-- load polyfills before ANY other JavaScript -->
 <script type="text/javascript" src="$content.getURI('scripts/polyfills.js')"></script>
 

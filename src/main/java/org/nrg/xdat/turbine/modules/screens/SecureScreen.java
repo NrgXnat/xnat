@@ -81,10 +81,10 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             c.put("popup","false");
         }
 
-        String systemName = TurbineUtils.GetSystemName();
+        c.put("user", XDAT.getUserDetails());
         c.put("turbineUtils",TurbineUtils.GetInstance());
     	c.put("displayManager", DisplayManager.GetInstance());
-        c.put("systemName",systemName);
+        c.put("systemName",TurbineUtils.GetSystemName());
         c.put("esc", new EscapeTool());
 
         c.put("showReason", XFT.getShowChangeJustification());

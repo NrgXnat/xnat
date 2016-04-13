@@ -27,6 +27,7 @@ import org.apache.turbine.modules.actions.VelocityAction;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.security.TurbineSecurityException;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -105,15 +106,14 @@ public class XDATLoginUser extends VelocityAction{
 				logger.error("",e1);
 			}
 
-			
+			XDAT.setUserDetails(user);
 			
 			HttpSession session = data.getSession();
-			session.setAttribute("user",user);
             session.setAttribute("loggedin",true);
-            
             session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
             AccessLogger.LogActionAccess(data, "Valid Login:"+user.getLogin());
+
             try{
             	doRedirect(data,context,user);
             }catch(Exception e){

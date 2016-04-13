@@ -25,6 +25,8 @@ import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.framework.exceptions.NrgRuntimeException;
+import org.nrg.framework.exceptions.NrgServiceError;
+import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.mail.api.NotificationType;
 import org.nrg.mail.services.MailService;
@@ -37,6 +39,9 @@ import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Roles;
+import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.security.user.exceptions.UserInitException;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -56,6 +61,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.springframework.jms.core.JmsTemplate;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.GrantedAuthority;
@@ -145,23 +151,43 @@ public class XDAT implements Initializable,Configurable{
 	}
 
 	public static boolean isAuthenticated() {
-		return SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
+		final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		return authentication != null && SecurityContextHolder.getContext().getAuthentication().isAuthenticated();
 	}
 
 	public static UserI getUserDetails() {
-		Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		final Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+		if (authentication == null || authentication instanceof AnonymousAuthenticationToken) {
+			return null;
+		}
 
-		if (authentication != null && authentication.getPrincipal() != null
-				&& authentication.getPrincipal() instanceof UserI) {
-			return (UserI) authentication.getPrincipal();
+		final Object principal = authentication.getPrincipal();
+		if (principal == null) {
+			return null;
+		}
+
+		if (principal instanceof UserI) {
+			return (UserI) principal;
+		}
+
+		if (principal instanceof String) {
+			if (StringUtils.isBlank((String) principal)) {
+				return null;
+			}
+			try {
+				return Users.getUser((String) principal);
+			} catch (UserInitException e) {
+				throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred trying to retrieve the user with login: " + principal, e);
+			} catch (UserNotFoundException e) {
+				return null;
+			}
 		}
 
 		return null;
 	}
 
 	public static void setUserDetails(UserI userDetails) {
-		Authentication authentication = new UsernamePasswordAuthenticationToken(
-				userDetails, null);
+		Authentication authentication = new UsernamePasswordAuthenticationToken(userDetails, null);
 		SecurityContextHolder.getContext().setAuthentication(authentication);
 	}
 
@@ -174,6 +200,8 @@ public class XDAT implements Initializable,Configurable{
 			user = Authenticator.Authenticate(new Authenticator.Credentials(
                     username, password));
 
+			XDAT.setUserDetails(user);
+
 			XFTItem item = XFTItem.NewItem("xdat:user_login", user);
 			Date today = java.util.Calendar.getInstance(TimeZone.getDefault()).getTime();
 			item.setProperty("xdat:user_login.user_xdat_user_id", user.getID());
@@ -183,9 +211,7 @@ public class XDAT implements Initializable,Configurable{
 			SaveItemHelper.authorizedSave(item, null, true, false, (EventMetaI)null);
 
 			HttpSession session = data.getSession();
-			session.setAttribute("user", user);
 			session.setAttribute("loggedin", true);
-
 			session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
 			AccessLogger.LogActionAccess(data, "Valid Login:" + user.getUsername());
@@ -570,11 +596,10 @@ public class XDAT implements Initializable,Configurable{
     	PopulateItem populator = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
     	ItemI found = populator.getItem();
     	String tempPass = data.getParameters().getString("xdat:user.primary_password");
-    	
-    	TurbineUtils.setUser(data, user);
+
+		setUserDetails(user);
 
         HttpSession session = data.getSession();
-        session.setAttribute("user",user);
         session.setAttribute("loggedin",true);
         session.setAttribute("forcePasswordChange",forcePasswordChange);
         session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());

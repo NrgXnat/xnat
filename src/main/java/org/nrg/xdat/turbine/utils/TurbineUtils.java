@@ -14,7 +14,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.collections.CollectionUtils;
 import org.apache.commons.collections.Predicate;
 import org.apache.commons.io.FilenameUtils;
-import org.apache.commons.lang3.ObjectUtils;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
@@ -32,6 +31,8 @@ import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.XdatStoredSearch;
+import org.nrg.xdat.security.helpers.Permissions;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
@@ -56,13 +57,17 @@ import org.xml.sax.InputSource;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import java.io.*;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.io.FilenameFilter;
+import java.io.StringReader;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.text.NumberFormat;
 import java.text.ParseException;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -152,7 +157,7 @@ public class TurbineUtils {
         final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
         if (searchField != null && searchValue != null) {
             final ItemSearch search = new ItemSearch();
-            search.setUser(TurbineUtils.getUser(data));
+            search.setUser(XDAT.getUserDetails());
 
             final String elementName = XftStringUtils.GetRootElementName(searchField);
 
@@ -210,7 +215,7 @@ public class TurbineUtils {
         final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
         if (searchField != null && searchValue != null) {
             final ItemSearch search = new ItemSearch();
-            search.setUser(TurbineUtils.getUser(data));
+            search.setUser(XDAT.getUserDetails());
 
             final String elementName = XftStringUtils.GetRootElementName(searchField);
 
@@ -243,7 +248,7 @@ public class TurbineUtils {
         final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
         if (searchField != null && searchValue != null) {
             final ItemSearch search = new ItemSearch();
-            search.setUser(TurbineUtils.getUser(data));
+            search.setUser(XDAT.getUserDetails());
 
             final String elementName = XftStringUtils.GetRootElementName(searchField);
 
@@ -303,7 +308,7 @@ public class TurbineUtils {
             String s = TurbineUtils.escapeParam(data.getParameters().getString("part_id"));
             if (s != null) {
                 try {
-                    final ItemCollection items = ItemSearch.GetItems("xnat:subjectData.ID", s, TurbineUtils.getUser(data), false);
+                    final ItemCollection items = ItemSearch.GetItems("xnat:subjectData.ID", s, XDAT.getUserDetails(), false);
                     if (items.size() > 0) {
                         return items.getFirst();
                     }
@@ -422,28 +427,63 @@ public class TurbineUtils {
         return Turbine.getContextPath();
     }
 
+    /**
+     * Sets the user details.
+     * @param data    The request run data.
+     * @deprecated Use {@link XDAT#getUserDetails()} instead.
+     */
+    @Deprecated
     public static UserI getUser(RunData data) {
-        if (data == null) {
-            return null;
-        }
-
-        UserI user;
-        if (data.getSession().getAttribute("user") == null) {
-            user = XDAT.getUserDetails();
-            data.getSession().setAttribute("user", user);
-        } else {
-            user = (UserI) data.getSession().getAttribute("user");
-        }
-        return user;
+        return data == null ? null : XDAT.getUserDetails();
     }
 
+    /**
+     * Sets the user details.
+     * @param data    The request run data.
+     * @param user    The user object.
+     * @throws Exception When something goes wrong.
+     * @deprecated Use {@link XDAT#setUserDetails(UserI)} instead.
+     */
     @SuppressWarnings("UnusedParameters")
+    @Deprecated
     public static void setUser(RunData data, UserI user) throws Exception {
         XDAT.setUserDetails(user);
     }
 
+    /**
+     * Sets user details for a new user.
+     * @param data    The request run data.
+     * @param user    The user object.
+     * @param context The request context.
+     * @throws Exception When something goes wrong.
+     * @deprecated Use {@link XDAT#setNewUserDetails(UserI, RunData, Context)} instead.
+     */
     public static void setNewUser(RunData data, UserI user, Context context) throws Exception {
         XDAT.setNewUserDetails(user, data, context);
+    }
+
+    public boolean checkRole(final UserI user, final String role) {
+        return user != null && StringUtils.isNotBlank(role) && Roles.checkRole(user, role);
+    }
+
+    public boolean isSiteAdmin(final UserI user) {
+        return user != null && Roles.isSiteAdmin(user);
+    }
+
+    public boolean isGuest(final UserI user) {
+        return user == null || StringUtils.equals("guest", user.getLogin());
+    }
+
+    public boolean canEdit(final UserI user, final XFTItem item) throws Exception {
+        return Permissions.canEdit(user, item);
+    }
+
+    public boolean canEdit(final UserI user, final String xmlPath, final Object item) throws Exception {
+        return Permissions.canEdit(user, xmlPath, item);
+    }
+
+    public boolean canDelete(final UserI user, final XFTItem item) throws Exception {
+        return Permissions.canDelete(user, item);
     }
 
     /**
@@ -470,7 +510,7 @@ public class TurbineUtils {
                 }
 
                 try {
-                    ds = UserHelper.getSearchHelperService().getSearchForUser(TurbineUtils.getUser(data), displayElement, "listing");
+                    ds = UserHelper.getSearchHelperService().getSearchForUser(XDAT.getUserDetails(), displayElement, "listing");
 
                     final String searchField = TurbineUtils.escapeParam(data.getParameters().getString("search_field"));
                     final Object searchValue = TurbineUtils.escapeParam(data.getParameters().getObject("search_value"));
@@ -488,7 +528,6 @@ public class TurbineUtils {
             return ds;
         }
     }
-
 
     /**
      * Findbugs says DisplaySearch should be serializable.  That is a good idea, but this code is only used
@@ -510,7 +549,7 @@ public class TurbineUtils {
             return null;
         }
 
-        final UserI user = TurbineUtils.getUser(data);
+        final UserI user = XDAT.getUserDetails();
 
         if (user != null) {
             if (data.getParameters().get("search_xml") != null) {
@@ -715,7 +754,6 @@ public class TurbineUtils {
         TurbineUtils.OutputSessionParameters(data);
     }
 
-
     public static boolean HasPassedParameter(String s, RunData data) {
         if (data.getParameters().get(s.toLowerCase()) != null) {
             final Object o = TurbineUtils.escapeParam(data.getParameters().get(s.toLowerCase()));
@@ -795,7 +833,7 @@ public class TurbineUtils {
                 TurbineUtils.setDataItem(data, o);
 
                 context.put("item", o);
-                context.put("element", org.nrg.xdat.schema.SchemaElement.GetElement(o.getXSIType()));
+                context.put("element", SchemaElement.GetElement(o.getXSIType()));
                 context.put("search_element", TurbineUtils.escapeParam(data.getParameters().getString("search_element")));
                 context.put("search_field", TurbineUtils.escapeParam(data.getParameters().getString("search_field")));
                 context.put("search_value", TurbineUtils.escapeParam(data.getParameters().getString("search_value")));
@@ -821,7 +859,7 @@ public class TurbineUtils {
     }
 
     public String formatDate(Date d, String pattern) {
-        final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat(pattern);
+        final SimpleDateFormat formatter = new SimpleDateFormat(pattern);
         return formatter.format(d);
     }
 
@@ -831,14 +869,14 @@ public class TurbineUtils {
         }
     }
 
-    private static java.text.SimpleDateFormat default_date_format = null;
+    private static SimpleDateFormat default_date_format = null;
 
-    public static java.text.SimpleDateFormat getDateFormatter() {
+    public static SimpleDateFormat getDateFormatter() {
         if (default_date_format == null) {
             try {
-                default_date_format = new java.text.SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.date-format", "MM/dd/yyyy"));
+                default_date_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.date-format", "MM/dd/yyyy"));
             } catch (ConfigServiceException e) {
-                default_date_format = new java.text.SimpleDateFormat("MM/dd/yyyy");
+                default_date_format = new SimpleDateFormat("MM/dd/yyyy");
             }
         }
         return default_date_format;
@@ -851,14 +889,14 @@ public class TurbineUtils {
         }
     }
 
-    private static java.text.SimpleDateFormat default_date_time_format = null;
+    private static SimpleDateFormat default_date_time_format = null;
 
-    public static java.text.SimpleDateFormat getDateTimeFormatter() {
+    public static SimpleDateFormat getDateTimeFormatter() {
         if (default_date_time_format == null) {
             try {
-                default_date_time_format = new java.text.SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.date-time-format", "MM/dd/yyyy HH:mm:ss"));
+                default_date_time_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.date-time-format", "MM/dd/yyyy HH:mm:ss"));
             } catch (ConfigServiceException e) {
-                default_date_time_format = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
+                default_date_time_format = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss");
             }
         }
         return default_date_time_format;
@@ -871,14 +909,14 @@ public class TurbineUtils {
         }
     }
 
-    private static java.text.SimpleDateFormat default_date_time_seconds_format = null;
+    private static SimpleDateFormat default_date_time_seconds_format = null;
 
-    public static java.text.SimpleDateFormat getDateTimeSecondsFormatter() {
+    public static SimpleDateFormat getDateTimeSecondsFormatter() {
         if (default_date_time_seconds_format == null) {
             try {
-                default_date_time_seconds_format = new java.text.SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.date-time-seconds-format", "MM/dd/yyyy HH:mm:ss.SSS"));
+                default_date_time_seconds_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.date-time-seconds-format", "MM/dd/yyyy HH:mm:ss.SSS"));
             } catch (ConfigServiceException e) {
-                default_date_time_seconds_format = new java.text.SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
+                default_date_time_seconds_format = new SimpleDateFormat("MM/dd/yyyy HH:mm:ss.SSS");
             }
         }
         return default_date_time_seconds_format;
@@ -891,20 +929,19 @@ public class TurbineUtils {
         }
     }
 
-    private static java.text.SimpleDateFormat default_time_format = null;
+    private static SimpleDateFormat default_time_format = null;
 
-    public static java.text.SimpleDateFormat getTimeFormatter() {
+    public static SimpleDateFormat getTimeFormatter() {
         if (default_time_format == null) {
             try {
-                default_time_format = new java.text.SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.time-format", "HH:mm:ss"));
+                default_time_format = new SimpleDateFormat(XDAT.getSiteConfigurationProperty("UI.time-format", "HH:mm:ss"));
             } catch (ConfigServiceException e) {
-                default_time_format = new java.text.SimpleDateFormat("HH:mm:ss");
+                default_time_format = new SimpleDateFormat("HH:mm:ss");
             }
         }
         return default_time_format;
     }
 
-    @SuppressWarnings("unused")
     public boolean resourceExists(String screen){
     	return Velocity.resourceExists(screen);
     }
@@ -1120,7 +1157,7 @@ public class TurbineUtils {
         return prop.containsKey(property) && (CollectionUtils.find(props, new Predicate() {
             @Override
             public boolean evaluate(Object arg0) {
-                return ((Properties) arg0).getProperty(property) != null && ObjectUtils.equals(prop.getProperty(property), ((Properties) arg0).getProperty(property));
+                return ((Properties) arg0).getProperty(property) != null && Objects.equals(prop.getProperty(property), ((Properties) arg0).getProperty(property));
             }
         }) != null);
     }
@@ -1201,7 +1238,7 @@ public class TurbineUtils {
 
     @SuppressWarnings("unused")
     public String formatNumber(Object o, int roundTo) {
-        final NumberFormat formatter = java.text.NumberFormat.getInstance();
+        final NumberFormat formatter = NumberFormat.getInstance();
         if (o == null) {
             return "";
         }
@@ -1226,7 +1263,7 @@ public class TurbineUtils {
     }
 
     public static String escapeParam(String o) {
-        return (o == null) ? null : StringEscapeUtils.escapeXml(o);
+        return (o == null) ? null : StringEscapeUtils.escapeXml11(o);
     }
 
     public static Object escapeParam(Object o) {
@@ -1271,7 +1308,7 @@ public class TurbineUtils {
     /**
      * Sets the Content-Disposition response header. The filename parameter indicates the name of the content.
      * This method specifies the content as an attachment. If you need to specify inline content (e.g. for MIME
-     * content in email or embedded content situations), use {@link #setContentDisposition(javax.servlet.http.HttpServletResponse, String, boolean)}.
+     * content in email or embedded content situations), use {@link #setContentDisposition(HttpServletResponse, String, boolean)}.
      *
      * @param response The servlet response on which the header should be set.
      * @param filename The suggested filename for downloaded content.
@@ -1316,7 +1353,7 @@ public class TurbineUtils {
 
             UserI guest= Users.getGuest();
             if (guest!=null) {
-                TurbineUtils.setUser(data, guest);
+                XDAT.setUserDetails(guest);
                 session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 
                 String Destination = data.getTemplateInfo().getScreenTemplate();
@@ -1324,7 +1361,7 @@ public class TurbineUtils {
                 if (!data.getAction().equalsIgnoreCase("")) {
                     data.getParameters().add("nextAction", data.getAction());
                 } else {
-                    data.getParameters().add("nextAction", org.apache.turbine.Turbine.getConfiguration().getString("action.login"));
+                    data.getParameters().add("nextAction", Turbine.getConfiguration().getString("action.login"));
                 }
             }
             return allowGuestAccess;

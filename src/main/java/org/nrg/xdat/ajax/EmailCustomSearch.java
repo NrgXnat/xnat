@@ -35,8 +35,7 @@ public class EmailCustomSearch {
     public void send(HttpServletRequest req, HttpServletResponse response,ServletConfig sc) throws IOException{
         String xmlString = req.getParameter("search_xml");
         
-        HttpSession session = req.getSession();
-        UserI user = ((UserI)session.getAttribute("user"));        
+        UserI user = XDAT.getUserDetails();
 
         String _return ="<DIV class=\"error\">Unknown Exception</DIV>";
 		if(XFT.getBooleanProperty("smtp.enabled", true)){

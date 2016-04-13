@@ -153,7 +153,6 @@ public class XDATScreen_pdf extends SecureScreen {
         } else {
             try {
                 context.put("item", item);
-                context.put("user", TurbineUtils.getUser(data));
 
                 context.put("element", org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
                 context.put("search_element", TurbineUtils.GetPassedParameter("search_element", data));

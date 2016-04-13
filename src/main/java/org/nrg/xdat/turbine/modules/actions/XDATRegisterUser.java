@@ -136,10 +136,9 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                     handleInvalid(data, context, "We are unable to send you the verification email. If you entered a valid email address, please contact our technical support.");
                                 }
                             } else {
-	                            TurbineUtils.setUser(data, found);
+	                            XDAT.setUserDetails(found);
 	
 	                            HttpSession session = data.getSession();
-			                    session.setAttribute("user",found);
 			                    session.setAttribute("loggedin",true);
 			                    data.setMessage("User registration complete.");
 			                    

@@ -31,7 +31,6 @@ public class XDATScreen_email_stored_search extends SecureScreen {
 		DisplaySearch search = TurbineUtils.getSearch(data);
 		
 		context.put("search",search);
-		context.put("user",TurbineUtils.getUser(data));
         this.setLayout(data, "NoMenu.vm");
 	}
 }

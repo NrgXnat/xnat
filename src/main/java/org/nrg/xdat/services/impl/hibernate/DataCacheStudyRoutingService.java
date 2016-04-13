@@ -12,7 +12,7 @@
 
 package org.nrg.xdat.services.impl.hibernate;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.datacache.DataCacheService;
 import org.nrg.xdat.services.StudyRoutingService;
 import org.slf4j.Logger;

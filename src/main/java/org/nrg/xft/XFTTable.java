@@ -26,7 +26,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringEscapeUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
 import org.json.JSONObject;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
@@ -34,7 +34,7 @@ import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "unused"})
 public class XFTTable implements XFTTableI {
     private static final Logger logger = LoggerFactory.getLogger(XFTTable.class);
     private String[] columns = null;
@@ -844,7 +844,7 @@ public class XFTTable implements XFTTableI {
                 if (i > 0) {
                     writer.write(",");
                 }
-                StringEscapeUtils.escapeCsv(writer, this.getColumns()[i]);
+                writer.write(StringEscapeUtils.escapeCsv(this.getColumns()[i]));
             }
             writer.write("\n");
             writer.flush();
@@ -854,7 +854,7 @@ public class XFTTable implements XFTTableI {
                     if (i > 0)
                         writer.write(",");
                     if (null != row[i]) {
-                        StringEscapeUtils.escapeCsv(writer, ValueParserNoNewline(row[i]));
+                        writer.write(StringEscapeUtils.escapeCsv(ValueParserNoNewline(row[i])));
                     }
                 }
                 writer.write("\n");

@@ -11,8 +11,8 @@ import java.util.Date;
 import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.lang.StringEscapeUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringEscapeUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.RawScreen;
 import org.apache.turbine.util.RunData;
 import org.nrg.xdat.presentation.CSVPresenter;

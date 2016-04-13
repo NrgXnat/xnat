@@ -11,6 +11,7 @@
 package org.nrg.xdat.display;
 
 import java.io.File;
+import java.io.IOException;
 import java.io.InputStream;
 import java.util.*;
 
@@ -35,11 +36,15 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
 import org.nrg.xft.utils.XMLUtils;
+import org.springframework.core.io.Resource;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.nrg.xft.utils.XftStringUtils;
 import org.w3c.dom.Document;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 import org.w3c.dom.NodeList;
+
+import com.google.common.collect.Lists;
 
 /**
  * @author Tim
@@ -423,40 +428,53 @@ public class DisplayManager {
     }
 
     public void init() {
-        Enumeration enumer = XFTManager.GetDataModels().elements();
-        List<String> processed = new ArrayList<>();
-        while (enumer.hasMoreElements()) {
-            XFTDataModel dm = (XFTDataModel) enumer.nextElement();
-            String location = FileUtils.AppendSlash(dm.getFileLocation());
+        List<String> loaded=Lists.newArrayList();
 
-            if (!processed.contains(location)) {
-                processed.add(location);
-                File folder = new File(location + "display");
-                if (folder.exists()) {
-                    File[] files = folder.listFiles();
-                    if (files != null) {
-                        for (final File file : files) {
-                            if (file.getName().endsWith("_display.xml")) {
-                                Document doc = XMLUtils.GetDOM(file);
-                                assignDisplays(doc);
-                            }
-                        }
-                    }
-                }
-            }
-        }
+//        Enumeration enumer = XFTManager.GetDataModels().elements();
+//        List<String> processed = Lists.newArrayList();
+//        while (enumer.hasMoreElements()) {
+//            XFTDataModel dm = (XFTDataModel) enumer.nextElement();
+//            String location = FileUtils.AppendSlash(dm.getFileLocation());
+//
+//            if (!processed.contains(location)) {
+//                processed.add(location);
+//                File folder = new File(location + "display");
+//                if (folder.exists()) {
+//                    File[] files = folder.listFiles();
+//                    if (files != null) {
+//                        for (final File file : files) {
+//                            if (file.getName().endsWith("_display.xml")) {
+//                                Document doc = XMLUtils.GetDOM(file);
+//                                assignDisplays(doc);
+//                            }
+//                        }
+//                    }
+//                }
+//            }
+//        }
 
-        for (DataModelDefinition annotation : XFTManager.discoverDataModelDefs()) {
-            for (String s : annotation.getDisplayDocs()) {
-                if (!StringUtils.isBlank(s)) {
-                    InputStream in = annotation.getClass().getClassLoader().getResourceAsStream(s);
-
+        final PathMatchingResourcePatternResolver resolver  = new PathMatchingResourcePatternResolver();
+        try {
+			final Resource[] resources = resolver.getResources("classpath*:schemas/*/display/*_display.xml");
+			logger.info("Discovered " + resources.length + " display documents on classpath.");
+			for (final Resource resource : resources) {
+				if(!loaded.contains(resource.getFilename())){
+					logger.info("Importing display document: " + resource.getFilename());
+			    	try {
+						InputStream in=resource.getInputStream();
                     if (in != null) {
                         Document doc = XMLUtils.GetDOM(in);
                         assignDisplays(doc);
+						    
+						    loaded.add(resource.getFilename());
+						}
+					} catch (IOException e) {
+						logger.error("Unable to parse display.xml from classpath: "+ resource.getFilename(),e);
                     }
                 }
             }
+		} catch (IOException e1) {
+			logger.error("Unable to discover display.xml's from classpath.",e1);
         }
 
         try {

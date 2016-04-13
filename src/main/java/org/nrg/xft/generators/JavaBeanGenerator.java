@@ -18,6 +18,7 @@ import java.util.Calendar;
 import java.util.Enumeration;
 import java.util.Hashtable;
 import java.util.Iterator;
+import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
 
@@ -76,6 +77,9 @@ public class JavaBeanGenerator {
            if (!ext.getXSIType().equals(e.getXSIType()))
             extensionName = getFormattedBean(ext);
         }
+        
+
+        sb.append("/*\n ******************************** \n * DO NOT MODIFY THIS FILE \n *\n ********************************/");
         
         sb.append("\n@SuppressWarnings({\"unchecked\",\"rawtypes\"})");
         
@@ -1537,63 +1541,42 @@ public class JavaBeanGenerator {
     }
     
 
-    public static void GenerateJavaFiles(String javalocation, boolean skipXDAT, String packag) throws Exception
+    public static void GenerateJavaFiles(String name, String javalocation, boolean skipXDAT, String packag, String propsLocation) throws Exception
     {
 
         JavaBeanGenerator generator = new JavaBeanGenerator();
         generator.setProject(packag);
-        ArrayList al = XFTMetaManager.GetElementNames();
-        Iterator iter = al.iterator();
+        List<String> al = XFTMetaManager.GetElementNames();
                 
-                
+        generator.generateJavaFiles(al, name, javalocation, packag, propsLocation);
+    }
+    
+    public void generateJavaFiles(List<String> elementList, String name, String javalocation, String packag, String propsLocation) throws Exception
+    {
         Hashtable<String,String> elements =new Hashtable<String,String>();
-        //SECOND PASS
-        iter = al.iterator();
-        while (iter.hasNext())
+    	for (String s: elementList)
         {
-            String s = (String)iter.next();
             GenericWrapperElement e = GenericWrapperElement.GetElement(s);
             if (e.getAddin().equalsIgnoreCase(""))
             {
-                elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getLocalXMLName(), packag + ".bean." +generator.getFormattedBean(e));
+                elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getLocalXMLName(), packag + ".bean." +this.getFormattedBean(e));
                 if (!e.getProperName().equals(e.getFullXMLName()))
                 {
-                    elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getProperName(), packag + ".bean." +generator.getFormattedBean(e));
+                    elements.put(e.getSchemaTargetNamespaceURI() + ":" + e.getProperName(), packag + ".bean." +this.getFormattedBean(e));
                 }
-                if ((!skipXDAT) || (!e.getSchemaTargetNamespacePrefix().equalsIgnoreCase("xdat")))
-                {
-                    generator.generateJavaBeanFile(e,javalocation);
-                    generator.generateJavaInterface(e,javalocation);
-                }
+                this.generateJavaBeanFile(e,javalocation);
+                this.generateJavaInterface(e,javalocation);
             }
         }
-        
+                
         StringBuffer sb = new StringBuffer();
         String packageName = packag + ".bean";
-        sb.append("\npackage " + packageName + ";");
-        //IMPORTS
-        sb.append("\nimport java.util.Hashtable;");
-        
-        sb.append("\n\npublic class ClassMapping{");
-        sb.append("\n\t").append("public Hashtable");
-        if (VERSION5)sb.append("<String,String>");
-        sb.append(" ELEMENTS = new Hashtable");
-        if (VERSION5)sb.append("<String,String>");
-        sb.append("();");
-        sb.append("\n\t").append("private final static ClassMapping mapping = new ClassMapping();");
-        sb.append("\n\n\t").append("private ClassMapping(){");
         for (Map.Entry<String, String> entry : elements.entrySet())
         {
-            sb.append("\n\t\t").append("ELEMENTS.put(\"" + entry.getKey() + "\",\"" + entry.getValue() + "\");");
+            sb.append("" + entry.getKey() + "=" + entry.getValue()).append("\n");
         }
-                
-        sb.append("\n\t").append("}");
-        sb.append("\n\n\t").append("public static ClassMapping GetInstance(){");
-        sb.append("\n\t\t").append("return mapping;");
-        sb.append("\n\t").append("}");
-        sb.append("}");
-        
-        outputToFile(javalocation,sb.toString(),"ClassMapping.java",packageName);
+          
+        outputToFile(propsLocation,sb.toString(),name+"-bean-definition.properties",packageName);
     }
     
     public static void outputToFile(String location,String contents, String fileName, String packageName){

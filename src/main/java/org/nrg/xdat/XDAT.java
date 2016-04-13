@@ -14,7 +14,7 @@ package org.nrg.xdat;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.configuration.Configuration;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.log4j.PropertyConfigurator;
 import org.apache.stratum.lifecycle.Configurable;

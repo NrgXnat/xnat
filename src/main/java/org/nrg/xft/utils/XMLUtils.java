@@ -29,6 +29,7 @@ import org.apache.xml.serialize.OutputFormat;
 import org.apache.xml.serialize.XMLSerializer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.core.io.Resource;
 import org.w3c.dom.Document;
 import org.w3c.dom.NamedNodeMap;
 import org.w3c.dom.Node;
@@ -192,6 +193,27 @@ public  class XMLUtils
 		}
 		
 		return writer;
+	}
+	
+	
+	/**********************************************************
+	 * Transforms a File into a XML DOM Document using DocumentBuilderFactory.
+	 * 
+	 * @param file File to be translated.
+	 * @return doc
+	 */
+	public static Document GetDOM(Resource file)
+	{
+		try{
+			DocumentBuilderFactory factory = DocumentBuilderFactory.newInstance();
+			DocumentBuilder builder = factory.newDocumentBuilder();
+			Document doc = builder.parse(file.getInputStream());
+			return doc;
+		}catch(Exception ex)
+		{
+		    RuntimeException e1 = new RuntimeException("Unable to load DOM document:" + file + "\n" + ex.getMessage());
+			throw e1;
+		}
 	}
 	
 	

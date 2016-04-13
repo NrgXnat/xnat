@@ -13,8 +13,8 @@ package org.nrg.xdat.security;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import org.apache.commons.lang.builder.EqualsBuilder;
-import org.apache.commons.lang.builder.HashCodeBuilder;
+import org.apache.commons.lang3.builder.EqualsBuilder;
+import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
@@ -409,7 +409,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
 		}
 
     	for (ItemI role: (List<ItemI>)this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
-    		if(org.apache.commons.lang.StringUtils.equals(role.getStringProperty("role_name"),dRole)){
+    		if(StringUtils.equals(role.getStringProperty("role_name"),dRole)){
     			PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user",this.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Removed " + dRole + " role"));
     			EventMetaI ci=wrk.buildEvent();
     			SaveItemHelper.unauthorizedRemoveChild(this.getItem(), "xdat:user/assigned_roles/assigned_role", role.getItem(), authenticatedUser,ci);
@@ -420,7 +420,7 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     	List<UserRole> roles =XDAT.getContextService().getBean(UserRoleService.class).findRolesForUser(this.getLogin());
         if(roles!=null){
         	for(final UserRole ur: roles){
-        		if(org.apache.commons.lang.StringUtils.equals(ur.getRole(), dRole)){
+        		if(StringUtils.equals(ur.getRole(), dRole)){
         			XDAT.getContextService().getBean(UserRoleService.class).delete(ur);
         			PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, authenticatedUser, "xdat:user",this.getStringProperty("xdat_user_id"),PersistentWorkflowUtils.ADMIN_EXTERNAL_ID, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_FORM, "Removed " + dRole + " role"));
         			PersistentWorkflowUtils.complete(wrk, wrk.buildEvent());

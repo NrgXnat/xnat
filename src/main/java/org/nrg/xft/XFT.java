@@ -21,7 +21,6 @@ import org.apache.log4j.spi.LoggerRepository;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.meta.XFTMetaManager;
 import org.nrg.xft.references.XFTPseudonymManager;
@@ -30,13 +29,15 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
-import org.nrg.xft.schema.design.SchemaFieldI;
-import org.nrg.xft.utils.FileUtils;
-import org.nrg.xft.utils.XftStringUtils;
 
 import java.io.File;
+import java.io.IOException;
 import java.text.NumberFormat;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Enumeration;
+import java.util.Iterator;
+import java.util.Random;
+
 public class XFT {
     private static String ADMIN_EMAIL = "nrgtech@nrg.wustl.edu";
     private static String ADMIN_EMAIL_HOST = "";
@@ -224,130 +225,6 @@ public class XFT {
         }
     }
 
-    public static String buildLogFileName(ItemI item) throws XFTInitException, ElementNotFoundException, FieldNotFoundException {
-        String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
-        if(!(new File(s)).exists())
-        {
-            (new File(s)).mkdir();
-        }
-
-        s += "inserts/";
-        if(!(new File(s)).exists())
-        {
-            (new File(s)).mkdir();
-        }
-
-        String fileName = item.getItem().getProperName();
-
-        Iterator iter = item.getItem().getGenericSchemaElement().getAllPrimaryKeys().iterator();
-        while (iter.hasNext())
-        {
-            SchemaFieldI sf = (SchemaFieldI)iter.next();
-            Object pk = item.getProperty(sf.getXMLPathString(item.getXSIType()));
-
-            fileName += "_" + pk;
-        }
-
-        if ((new File(s + fileName + ".sql")).exists())
-        {
-            int counter = 0;
-            while ((new File(s + fileName + "_" + counter + ".sql")).exists())
-            {
-                counter ++;
-            }
-            fileName = fileName+ "_" + counter;
-        }
-
-        fileName += ".sql";
-
-        return fileName;
-    }
-
-    public static void LogInsert(String message, String fileName)
-    {
-        if (!fileName.startsWith("xdat:"))
-        {
-            try {
-                 String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
-                 if(!(new File(s)).exists())
-                 {
-                     (new File(s)).mkdir();
-                 }
-
-                 s += "inserts/";
-                 if(!(new File(s)).exists())
-                 {
-                     (new File(s)).mkdir();
-                 }
-
-                 if ((new File(s + fileName + ".sql")).exists())
-                 {
-                     int counter = 0;
-                     while ((new File(s + fileName + "_" + counter + ".sql")).exists())
-                     {
-                         counter ++;
-                     }
-                     fileName = fileName+ "_" + counter;
-                 }
-
-                 fileName += ".sql";
-
-                 FileUtils.OutputToFile(message,s + fileName);
-             } catch (Exception e) {
-                 logger.error("",e);
-             }
-        }
-    }
-
-    public static void LogInsert(String message, ItemI item)
-    {
-        if (!item.getItem().getXSIType().startsWith("wrk:"))
-        {
-            try {
-                 String s =XFTManager.GetInstance().getSourceDir() + "/logs/";
-                 if(!(new File(s)).exists())
-                 {
-                     (new File(s)).mkdir();
-                 }
-
-                 s += "inserts/";
-                 if(!(new File(s)).exists())
-                 {
-                     (new File(s)).mkdir();
-                 }
-
-                 String fileName = item.getItem().getProperName();
-
-                 Iterator iter = item.getItem().getGenericSchemaElement().getAllPrimaryKeys().iterator();
-                 while (iter.hasNext())
-                 {
-                     SchemaFieldI sf = (SchemaFieldI)iter.next();
-                     Object pk = item.getProperty(sf.getXMLPathString(item.getXSIType()));
-
-                     fileName += "_" + pk;
-                 }
-                 
-                 fileName=fileName.replace(":", "_");
-
-                 if ((new File(s + fileName + ".sql")).exists())
-                 {
-                     int counter = 0;
-                     while ((new File(s + fileName + "_" + counter + ".sql")).exists())
-                     {
-                         counter ++;
-                     }
-                     fileName = fileName+ "_" + counter;
-                 }
-
-                 fileName += ".sql";
-
-                 FileUtils.OutputToFile(message,s + fileName);
-             } catch (Exception e) {
-                 e.printStackTrace();
-             }
-        }
-    }
-
     public static Character CreateRandomCharacter(Random randGen){
         int i = 111;
         while (i==111)
@@ -376,66 +253,6 @@ public class XFT {
         }
         return temp;
     }
-//
-//    public static String CreateGenericID()
-//    {
-//        String s = new String();
-//        Random randGen = new Random();
-//
-//        int i = 111;
-//        while (i==111)
-//        {
-//            i= randGen.nextInt(25) + 97;
-//        }
-//        s += new Character((char)i);
-//
-//        i = 111;
-//        while (i==111)
-//        {
-//            i= randGen.nextInt(25) + 97;
-//        }
-//        s += new Character((char)i);
-//
-//        i = 111;
-//        while (i==111)
-//        {
-//            i= randGen.nextInt(25) + 97;
-//        }
-//        s += new Character((char)i);
-//
-//        i= randGen.nextInt(8)+1;
-//        s += i;
-//
-//        i= randGen.nextInt(8)+1;
-//        s += i;
-//
-//        i= randGen.nextInt(8)+1;
-//        s += i;
-//
-//        return s;
-//    }
-//
-//    public static String CreateGenericID(String table, String id, String dbName, String login, String header){
-//        String newID= null;
-//        String query = "SELECT count(" + id + ") AS id_count FROM " + table +" WHERE " + id + "='";
-//        Long newIDCounter = null;
-//        try {
-//            Long idCOUNT= (Long)PoolDBUtils.ReturnStatisticQuery("SELECT count(" + id + ") AS id_count FROM " + table +";", "id_count", dbName,login);
-//            newIDCounter=idCOUNT;
-//            newID= header + idCOUNT;
-//            idCOUNT= (Long)PoolDBUtils.ReturnStatisticQuery(query + newID + "';", "id_count", dbName,login);
-//            while (idCOUNT > 0){
-//                newIDCounter++;
-//                newID= header + idCOUNT;
-//                idCOUNT= (Long)PoolDBUtils.ReturnStatisticQuery(query + newID + "';", "id_count", dbName,login);
-//            }
-//        } catch (Exception e) {
-//            logger.error("",e);
-//        }
-//
-//        return newID.toString();
-//    }
-
 
     private static String SITE_ID ="";
 
@@ -516,22 +333,21 @@ public class XFT {
         int counter = 0;
         while (schemas.hasNext())
         {
+            try {
             XFTSchema s = (XFTSchema)schemas.next();
-            if (counter++==0)
-            {
+				if (counter++>0)
+                {
+					sb.append(" ");
+                }
+
                 if (location==null)
                 {
-                    sb.append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.replace(s.getDataModel().getFullFileSpecification(), "\\", "/"));
+				    sb.append(s.getTargetNamespaceURI()).append(" ").append(s.getDataModel().getResource().getFile().getPath());
                 }else{
-                    sb.append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.replace(location, "\\", "/") + StringUtils.replace(s.getDataModel().getFolderName(), "\\", "/") + "/" + s.getDataModel().getFileName());
+				    sb.append(s.getTargetNamespaceURI()).append(" ").append(XFT.GetSiteURL()).append("/schemas/").append(s.getDataModel().getFileName());
                 }
-            }else{
-                if (location==null)
-                {
-                    sb.append(" ").append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.replace(s.getDataModel().getFullFileSpecification(), "\\", "/"));
-                }else{
-                    sb.append(" ").append(s.getTargetNamespaceURI()).append(" ").append(StringUtils.replace(location, "\\", "/") + StringUtils.replace(s.getDataModel().getFolderName(), "\\", "/") + "/" + s.getDataModel().getFileName());
-                }
+			} catch (IOException e) {
+				logger.error("",e);
             }
         }
 
@@ -593,7 +409,7 @@ public class XFT {
 
     public static void SetPrearchivePath(String s)
     {
-        XFT.PREARCHIVE_PATH=s.replace('\\', '/');;
+        XFT.PREARCHIVE_PATH=s.replace('\\', '/');
     }
 
     public static String GetCachePath()
@@ -614,38 +430,7 @@ public class XFT {
     {
         XFT.CACHE_PATH=s.replace('\\', '/');;
     }
-    /*
-    private static String THUMBNAIL_LOCATION = "";
-    public static String GetThumbnailPath()
-    {
-        if (!XFT.THUMBNAIL_LOCATION.endsWith(File.separator) && !XFT.THUMBNAIL_LOCATION.endsWith("/"))
-        {
-            XFT.THUMBNAIL_LOCATION = XFT.THUMBNAIL_LOCATION + File.separator;
-        }
-        return XFT.THUMBNAIL_LOCATION;
-    }
 
-    public static void SetThumbnailPath(String s)
-    {
-        XFT.THUMBNAIL_LOCATION=s;
-    }
-
-    private static String LORES_LOCATION = "";
-    public static String GetLoResPath()
-    {
-        if (!XFT.LORES_LOCATION.endsWith(File.separator) && !XFT.LORES_LOCATION.endsWith("/"))
-        {
-            XFT.LORES_LOCATION = XFT.LORES_LOCATION + File.separator;
-        }
-        return XFT.LORES_LOCATION;
-    }
-
-    public static void SetLoResPath(String s)
-    {
-        XFT.LORES_LOCATION=s;
-    }
-
-    */
     private static String PIPELINE_LOCATION = "";
     public static String GetPipelinePath()
     {

@@ -173,8 +173,8 @@
             <artifactId>httpclient</artifactId>
         </dependency>
         <dependency>
-            <groupId>commons-lang</groupId>
-            <artifactId>commons-lang</artifactId>
+            <groupId>org.apache.commons</groupId>
+            <artifactId>commons-lang3</artifactId>
         </dependency>
         <dependency>
             <groupId>commons-fileupload</groupId>
@@ -191,6 +191,14 @@
                 <exclusion>
                     <groupId>velocity</groupId>
                     <artifactId>velocity</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jamon</groupId>
+                    <artifactId>jamon</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>fulcrum</groupId>
+                    <artifactId>fulcrum-yaafi</artifactId>
                 </exclusion>
             </exclusions>
         </dependency>
@@ -209,6 +217,20 @@
         <dependency>
             <groupId>torque</groupId>
             <artifactId>torque</artifactId>
+            <exclusions>
+                <exclusion>
+                    <groupId>velocity</groupId>
+                    <artifactId>velocity</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>jamon</groupId>
+                    <artifactId>jamon</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>fulcrum</groupId>
+                    <artifactId>fulcrum-yaafi</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>commons-configuration</groupId>

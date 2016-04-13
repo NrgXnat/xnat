@@ -1,6 +1,6 @@
 package org.nrg.xdat.security.services.impl;
 
-import org.apache.commons.lang.BooleanUtils;
+import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;

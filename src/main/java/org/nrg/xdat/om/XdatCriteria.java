@@ -8,11 +8,11 @@
  *
  * Last modified 2/18/14 5:52 PM
  */
-
-
 package org.nrg.xdat.om;
+
 import java.util.Hashtable;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.collections.DisplayFieldCollection.DisplayFieldNotFoundException;
 import org.nrg.xdat.om.base.BaseXdatCriteria;
 import org.nrg.xdat.schema.SchemaElement;
@@ -116,7 +116,7 @@ public class XdatCriteria extends BaseXdatCriteria {
             String fieldName = XftStringUtils.GetFieldText(schema_field);
             final SchemaElement se = SchemaElement.GetElement(rootElement);
             final DisplayCriteria dc = new DisplayCriteria();
-            if(fieldName.indexOf("=")>-1){
+            if(fieldName.contains("=")){
     	    	dc.setWhere_value(fieldName.substring(fieldName.indexOf("=")+1));
     	    	fieldName=fieldName.substring(0,fieldName.indexOf("="));
     	    }
@@ -124,12 +124,12 @@ public class XdatCriteria extends BaseXdatCriteria {
             dc.setSearchFieldByDisplayField(rootElement,fieldName);
             dc.setComparisonType(comparison_type);
             dc.setValue(value,true);
-            dc.setOverrideDataFormatting(overrideValueFormatting.booleanValue());
+            dc.setOverrideDataFormatting(overrideValueFormatting);
             return dc;
         } catch (DisplayFieldNotFoundException e1) {
         	try {
                 final ElementCriteria ec = new ElementCriteria();
-                ec.setOverrideFormatting(overrideValueFormatting.booleanValue());
+                ec.setOverrideFormatting(overrideValueFormatting);
                 ec.setFieldWXMLPath(schema_field);
                 ec.setComparison_type(comparison_type);
                 ec.setValue(value);
@@ -177,7 +177,7 @@ public class XdatCriteria extends BaseXdatCriteria {
         // In the meantime, we can move this into separate methods to pinpoint which Criteria type should be tried first.
         try {
             final ElementCriteria ec = new ElementCriteria();
-            ec.setOverrideFormatting(overrideValueFormatting.booleanValue());
+            ec.setOverrideFormatting(overrideValueFormatting);
             ec.setFieldWXMLPath(schema_field);
             ec.setComparison_type(comparison_type);
             ec.setValue(value);
@@ -189,7 +189,7 @@ public class XdatCriteria extends BaseXdatCriteria {
             final SchemaElement se = SchemaElement.GetElement(rootElement);
             try {
                 final DisplayCriteria dc = new DisplayCriteria();
-                if(fieldName.indexOf("=")>-1){
+                if(fieldName.contains("=")){
         	    	dc.setWhere_value(fieldName.substring(fieldName.indexOf("=")+1));
         	    	fieldName=fieldName.substring(0,fieldName.indexOf("="));
         	    }
@@ -197,7 +197,7 @@ public class XdatCriteria extends BaseXdatCriteria {
                 dc.setSearchFieldByDisplayField(rootElement,fieldName);
                 dc.setComparisonType(comparison_type);
                 dc.setValue(value,true);
-                dc.setOverrideDataFormatting(overrideValueFormatting.booleanValue());
+                dc.setOverrideDataFormatting(overrideValueFormatting);
                 return dc;
             } catch (DisplayFieldNotFoundException e1) {
                 logger.error("",e1);
@@ -214,11 +214,11 @@ public class XdatCriteria extends BaseXdatCriteria {
         }
         if (anObject instanceof XdatCriteria) {
             XdatCriteria other = (XdatCriteria) anObject;
-            return org.apache.commons.lang.StringUtils.equals(this.getComparisonType(), other.getComparisonType()) &&
-                    org.apache.commons.lang.StringUtils.equals(this.getCustomSearch(), other.getCustomSearch()) &&
-                    org.apache.commons.lang.StringUtils.equals(this.getSchemaElementName(), other.getSchemaElementName()) &&
-                    org.apache.commons.lang.StringUtils.equals(this.getSchemaField(), other.getSchemaField()) &&
-                    org.apache.commons.lang.StringUtils.equals(this.getValue(), other.getValue());
+            return StringUtils.equals(this.getComparisonType(), other.getComparisonType()) &&
+                   StringUtils.equals(this.getCustomSearch(), other.getCustomSearch()) &&
+                   StringUtils.equals(this.getSchemaElementName(), other.getSchemaElementName()) &&
+                   StringUtils.equals(this.getSchemaField(), other.getSchemaField()) &&
+                   StringUtils.equals(this.getValue(), other.getValue());
         }
         return false;
     }

@@ -1205,7 +1205,7 @@ public class ElementSecurity extends ItemWrapper {
                                 }
                             }
 
-                            if (o != null && org.apache.commons.lang.StringUtils.isNotEmpty(o.toString())) {
+                            if (o != null && StringUtils.isNotEmpty(o.toString())) {
                                 if (valueString == "") {
                                     valueString = o.toString();
                                 } else {

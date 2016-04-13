@@ -13,6 +13,7 @@
 package org.nrg.xdat.security;
 
 import com.google.common.collect.Lists;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
@@ -556,7 +557,7 @@ public class UserGroupManager implements UserGroupServiceI{
 				if(values.size()!=1){
 					throw new InvalidValueException();
 				}
-				if(!org.apache.commons.lang.StringUtils.equals(values.get(0), tag)){
+				if(!StringUtils.equals(values.get(0), tag)){
 					throw new InvalidValueException();
 				}
 			}

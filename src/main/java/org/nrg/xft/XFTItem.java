@@ -2752,7 +2752,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
         {
             if (field.isMultiple())
             {
-                if (org.apache.commons.lang.StringUtils.isEmpty(xsiType))
+                if (StringUtils.isEmpty(xsiType))
                 {
                     setField(field.getId() + index,value);
                     value.setParent(this);
@@ -5361,7 +5361,7 @@ public class XFTItem extends GenericItemObject implements ItemI,Cloneable  {
     private java.util.ArrayList getChildItems(XFTFieldWrapper field, boolean allowDBAccess,boolean allowChildMultiples,String xsiType,UserI user,boolean loadHistory)throws XFTInitException,ElementNotFoundException,FieldNotFoundException
     {
         ArrayList all= getChildItems(field,allowDBAccess,allowChildMultiples,user,loadHistory,null);
-        if (org.apache.commons.lang.StringUtils.isEmpty(xsiType))
+        if (StringUtils.isEmpty(xsiType))
         {
             return all;
         }

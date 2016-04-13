@@ -11,7 +11,7 @@
 package org.nrg.xdat.om;
 
 import org.apache.commons.collections.CollectionUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.om.base.BaseXdatCriteriaSet;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.search.SQLClause;

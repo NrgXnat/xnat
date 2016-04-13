@@ -23,6 +23,7 @@ import java.util.Hashtable;
 import java.util.Iterator;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -96,8 +97,6 @@ public class DBAction {
             logger.debug("quarantine-sql: " + (Calendar.getInstance().getTimeInMillis() - localStartTime) + " ms");
             localStartTime = Calendar.getInstance().getTimeInMillis();
 
-            XFT.LogInsert(cache.getSQL(), item);
-
             PoolDBUtils con;
             String username = null;
             Integer xdat_user_id = null;
@@ -133,9 +132,7 @@ public class DBAction {
 
     }
 
-    public static void executeCache(final DBItemCache cache, final UserI user, final String db, final String logFileName) throws Exception {
-        XFT.LogInsert(cache.getSQL(), logFileName);
-
+    public static void executeCache(final DBItemCache cache, final UserI user, final String db) throws Exception {
         PoolDBUtils con;
         String username = null;
         Integer xdat_user_id = null;
@@ -817,7 +814,7 @@ public class DBAction {
                         Object newObject = oldHashClone.get(field);
                         if (!(newObject instanceof XFTItem)) {
                             final String newString = newObject.toString();
-                            if (org.apache.commons.lang.StringUtils.isBlank(newString)) {
+                            if (StringUtils.isBlank(newString)) {
                                 if (!oldI.getPkNames().contains(field)) {
                                     logger.info("NEW:NULL OLD:" + newString);
                                     return true;
@@ -836,7 +833,7 @@ public class DBAction {
                         if (e.getAddin().equals("")) {
                             if (!(newObject instanceof XFTItem)) {
                                 final String newString = newObject.toString();
-                                if (org.apache.commons.lang.StringUtils.isBlank(newString)) {
+                                if (StringUtils.isBlank(newString)) {
                                     if (!oldI.getPkNames().contains(field)) {
                                         logger.info("NEW:NULL OLD:" + newObject);
                                         return true;
@@ -858,7 +855,7 @@ public class DBAction {
                         }
                         if (!(newObject instanceof XFTItem)) {
                             final String newString = newObject.toString();
-                            if (org.apache.commons.lang.StringUtils.isBlank(newString)) {
+                            if (StringUtils.isBlank(newString)) {
                                 if (!oldI.getPkNames().contains(field)) {
                                     logger.info("NEW:NULL OLD:" + newObject);
                                     return true;
@@ -2430,8 +2427,6 @@ public class DBAction {
 
         PoolDBUtils con;
         if (!cache.getSQL().equals("") && !cache.getSQL().equals("[]")) {
-            XFT.LogInsert(cache.getSQL(), item);
-
             String username = null;
             Integer xdat_user_id = null;
             if (user != null) {
@@ -2897,8 +2892,6 @@ public class DBAction {
         DBItemCache cache = new DBItemCache(user, c);
         DeleteItem(item, user, cache, false, false);
 
-        XFT.LogInsert(cache.getSQL(), item);
-
         String username = null;
         Integer xdat_user_id = null;
         if (user != null) {
@@ -2926,8 +2919,6 @@ public class DBAction {
     public static void CleanDeleteItem(XFTItem item, UserI user, EventMetaI c) throws Exception {
         DBItemCache cache = new DBItemCache(user, c);
         DeleteItem(item, user, cache, true, false);
-
-        XFT.LogInsert(cache.getSQL(), item);
 
         PoolDBUtils con;
         String username = null;

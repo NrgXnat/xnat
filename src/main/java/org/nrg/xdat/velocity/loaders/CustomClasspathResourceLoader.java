@@ -12,7 +12,7 @@ package org.nrg.xdat.velocity.loaders;
 
 import com.google.common.collect.Lists;
 import org.apache.commons.collections.ExtendedProperties;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.exception.ResourceNotFoundException;
 import org.apache.velocity.runtime.resource.Resource;
 import org.apache.velocity.runtime.resource.loader.ResourceLoader;

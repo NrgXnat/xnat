@@ -206,9 +206,9 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 		    String savedPass = existing.getPassword();
 		 
 		    // check if the password is being updated
-		    if (StringUtils.isNotBlank(tempPass) && !org.apache.commons.lang.StringUtils.equals(tempPass, savedPass) && !org.apache.commons.lang.StringUtils.equals(new ShaPasswordEncoder(256).encodePassword(tempPass, user.getSalt()), savedPass)) {
+		    if (StringUtils.isNotBlank(tempPass) && !StringUtils.equals(tempPass, savedPass) && !StringUtils.equals(new ShaPasswordEncoder(256).encodePassword(tempPass, user.getSalt()), savedPass)) {
 		        String encrypted=(new ShaPasswordEncoder(256).encodePassword(tempPass, existing.getSalt()));
-			    if(!org.apache.commons.lang.StringUtils.equals(encrypted, savedPass)){
+			    if(!StringUtils.equals(encrypted, savedPass)){
 		    		PasswordValidatorChain validator = XDAT.getContextService().getBean(PasswordValidatorChain.class);
 		        	if(validator.isValid(tempPass, user)){
 	                    String salt = Users.createNewSalt();

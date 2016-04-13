@@ -4,3 +4,8 @@
 /target
 /build
 /.gradle
+/bin/
+/ide-bin/
+.classpath
+.project
+.settings/org.eclipse.jdt.core.prefs

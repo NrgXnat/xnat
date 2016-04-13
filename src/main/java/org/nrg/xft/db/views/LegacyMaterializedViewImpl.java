@@ -482,7 +482,7 @@ public class LegacyMaterializedViewImpl implements MaterializedViewI {
 			}
 		}
         if (badColumns.size() > 0) {
-            throw new Exception("Invalid column in request: " + org.apache.commons.lang.StringUtils.join(badColumns, ", "));
+            throw new Exception("Invalid column in request: " + StringUtils.join(badColumns, ", "));
         }
 	}
 

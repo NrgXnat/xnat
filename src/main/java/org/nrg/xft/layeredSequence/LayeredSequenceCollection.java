@@ -15,6 +15,7 @@ package org.nrg.xft.layeredSequence;
 
 import java.util.ArrayList;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xft.collections.ItemCollection;
 
 /**
@@ -47,9 +48,8 @@ public class LayeredSequenceCollection extends ItemCollection {
         }
         
         if (remove.size() > 0){
-            for (int i=0;i<remove.size();i++)
-            {
-                LayeredSequenceObjectI index = (LayeredSequenceObjectI)remove.get(i);
+            for (Object aRemove : remove) {
+                LayeredSequenceObjectI index = (LayeredSequenceObjectI) aRemove;
                 this.items().remove(index);
             }
         }
@@ -80,27 +80,27 @@ public class LayeredSequenceCollection extends ItemCollection {
     
     public static int Compare(String value1, String value2)
     {
-        if (org.apache.commons.lang.StringUtils.isEmpty(value1) && org.apache.commons.lang.StringUtils.isEmpty(value2))
+        if (StringUtils.isEmpty(value1) && StringUtils.isEmpty(value2))
   		{
   		    return 0;
-  		}else if(org.apache.commons.lang.StringUtils.isEmpty(value1))
+  		}else if(StringUtils.isEmpty(value1))
   		{
   		    return -1;
-  		}else if (org.apache.commons.lang.StringUtils.isEmpty(value2))
+  		}else if (StringUtils.isEmpty(value2))
   		{
   		    return 1;
   		}else{
-  		    if (value1.indexOf(".") ==-1 && value2.indexOf(".") ==-1)
+  		    if (!value1.contains(".") && !value2.contains("."))
   		    {
-  		        int i1 = Integer.valueOf(value1).intValue();
-  		        int i2 = Integer.valueOf(value2).intValue();
+  		        int i1 = Integer.valueOf(value1);
+  		        int i2 = Integer.valueOf(value2);
   		        
   		        return Compare(i1,i2);
-  		    }else if(value1.indexOf(".") ==-1){
-  		        int i1 = Integer.valueOf(value1).intValue();
+  		    }else if(!value1.contains(".")){
+  		        int i1 = Integer.valueOf(value1);
   		        
   		        String first2 = value2.substring(0,value2.indexOf("."));
-  		        int i2 = Integer.valueOf(first2).intValue();
+  		        int i2 = Integer.valueOf(first2);
   		        
   		        int compare = Compare(i1,i2);
   		        if (compare == 0)
@@ -109,11 +109,11 @@ public class LayeredSequenceCollection extends ItemCollection {
   		        }else{
   		            return compare;
   		        }
-  		    }else if(value2.indexOf(".") ==-1){
-  		      int i2 = Integer.valueOf(value2).intValue();
+  		    }else if(!value2.contains(".")){
+  		      int i2 = Integer.valueOf(value2);
 		        
 		        String first1 = value1.substring(0,value1.indexOf("."));
-		        int i1 = Integer.valueOf(first1).intValue();
+		        int i1 = Integer.valueOf(first1);
 		        
 		        int compare = Compare(i1,i2);
 		        if (compare == 0)
@@ -124,10 +124,10 @@ public class LayeredSequenceCollection extends ItemCollection {
 		        }
   		    }else{
 		        String first1 = value1.substring(0,value1.indexOf("."));
-		        int i1 = Integer.valueOf(first1).intValue();
+		        int i1 = Integer.valueOf(first1);
 
   		        String first2 = value2.substring(0,value2.indexOf("."));
-  		        int i2 = Integer.valueOf(first2).intValue();
+  		        int i2 = Integer.valueOf(first2);
   		        
   		        int compare = Compare(i1,i2);
   		        if (compare == 0)

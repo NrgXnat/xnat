@@ -10,6 +10,7 @@
  */
 package org.nrg.xdat.search;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.schema.SchemaElement;
@@ -150,7 +151,7 @@ public class DisplayCriteria implements SQLClause {
         } else if (getComparisonType().trim().equals("IN")) {
             String values = "";
             String[] tokens = v.split(",(?=([^\"]*\"[^\"]*\")*[^\"]*$)");
-            org.apache.commons.lang.StringUtils.stripAll(tokens, "'\"");
+            StringUtils.stripAll(tokens, "'\"");
             int c = 0;
             for (String t : tokens) {
                 if (c++ > 0) {
@@ -176,8 +177,8 @@ public class DisplayCriteria implements SQLClause {
             String v2 = v.substring(and + 5);
 
             //remove any user quotes from beginning and end
-            org.apache.commons.lang.StringUtils.strip(v1, "'\"");
-            org.apache.commons.lang.StringUtils.strip(v2, "'\"");
+            StringUtils.strip(v1, "'\"");
+            StringUtils.strip(v2, "'\"");
 
             if (!PoolDBUtils.HackCheck(v1) && !PoolDBUtils.HackCheck(v2)) {
                 return " (" + this.getSQLContent(df, qo) + " BETWEEN '" + v1 + "' AND '" + v2 + "')";//it appears to be OK to use quotes here even with numeric data

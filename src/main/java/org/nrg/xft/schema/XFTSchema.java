@@ -8,11 +8,7 @@
  *
  * Last modified 8/28/13 3:20 PM
  */
-
-
 package org.nrg.xft.schema;
-import java.io.File;
-import java.util.*;
 
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -21,17 +17,14 @@ import org.nrg.xft.references.XFTReferenceManager;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.XMLWriter;
 import org.nrg.xft.schema.design.XFTElementWrapper;
 import org.nrg.xft.schema.design.XFTFactoryI;
-import org.nrg.xft.utils.FileUtils;
 import org.nrg.xft.utils.NodeUtils;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.XMLUtils;
+import org.nrg.xft.utils.XftStringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.w3c.dom.Document;
-import org.w3c.dom.Element;
-import org.w3c.dom.NamedNodeMap;
-import org.w3c.dom.Node;
-import org.w3c.dom.NodeList;
+import org.w3c.dom.*;
+
+import java.util.*;
 public class XFTSchema {
 	private static final Logger          logger             = LoggerFactory.getLogger(XFTSchema.class);
 	private              XFTWebAppSchema webAppSchema       = null;
@@ -60,12 +53,11 @@ public class XFTSchema {
 	 * XFTDataModels. Every root level node of type element, group, complexType, and
 	 * attributeGroup will become a XFTElement if it contains more than a simple reference.
 	 * @param doc XML DOM Document
-	 * @param dir Directory of the xsd document
 	 * @param data parent
 	 * @throws XFTInitException
 	 * @throws ElementNotFoundException
 	 */
-	public XFTSchema(Document doc,String dir,XFTDataModel data) throws XFTInitException,ElementNotFoundException {
+	public XFTSchema(Document doc,XFTDataModel data) throws XFTInitException,ElementNotFoundException {
 		this.setDataModel(data);
 		final Element rootElement = doc.getDocumentElement();
 				
@@ -124,43 +116,44 @@ public class XFTSchema {
 				NodeWrapper.AddNode(NodeUtils.GetNodeName(element),null,this);
 			}
 		}
-
-        for (final Object object : NodeUtils.GetLevelNNodes(rootElement, getXMLNS() + ":include", 1)) {
-            final Node n = (Node) object;
-            String schemaLocal = NodeUtils.GetAttributeValue(n, "schemaLocation", "");
-            String tempDir;
-            if (!schemaLocal.contains(File.separator)) {
-                if (dir.endsWith(File.separator)) {
-                    tempDir = dir + schemaLocal;
-                } else {
-                    tempDir = dir + File.separator + schemaLocal;
-                }
-            } else {
-                tempDir = schemaLocal;
-            }
-            File f = new File(tempDir);
-            if (f.exists()) {
-                String fileName = XftStringUtils.GetFileName(tempDir);
-                if (XFTManager.GetDataModels().get(fileName) == null) {
-                    XFTDataModel model = new XFTDataModel();
-                    model.setFileName(fileName);
-                    model.setFileLocation(XftStringUtils.GetDirName(tempDir));
-                    model.setDb(this.getDataModel().getDb());
-
-                    XFTManager.GetDataModels().put(model.getFileName(), model);
-                    try {
-                        model.setSchema();
-                    } catch (XFTInitException e) {
-                        logger.error("An error occurred initializing XFT", e);
-                    } catch (ElementNotFoundException e) {
-                        logger.error("An element could not be found", e);
-                    }
-                }
-            }
-        }
+//
+//		REMOVED 3/30/16: Now that all schemas are automatically loaded from the classpath, we shouldn't need to follow include statements		
+//        for (final Object object : NodeUtils.GetLevelNNodes(rootElement, getXMLNS() + ":include", 1)) {
+//            final Node n = (Node) object;
+//            String schemaLocal = NodeUtils.GetAttributeValue(n, "schemaLocation", "");
+//            String tempDir;
+//            if (!schemaLocal.contains(File.separator)) {
+//                if (dir.endsWith(File.separator)) {
+//                    tempDir = dir + schemaLocal;
+//                } else {
+//                    tempDir = dir + File.separator + schemaLocal;
+//                }
+//            } else {
+//                tempDir = schemaLocal;
+//            }
+//            File f = new File(tempDir);
+//            if (f.exists()) {
+//                String fileName = StringUtils.GetFileName(tempDir);
+//                if (XFTManager.GetDataModels().get(fileName) == null) {
+//                    XFTDataModel model = new XFTDataModel();
+//                    model.setFileName(fileName);
+//                    model.setFileLocation(StringUtils.GetDirName(tempDir));
+//                    model.setDb(this.getDataModel().getDb());
+//
+//                    XFTManager.GetDataModels().put(model.getFileName(), model);
+//                    try {
+//                        model.setSchema();
+//                    } catch (XFTInitException e) {
+//                        logger.error("An error occurred initializing XFT", e);
+//                    } catch (ElementNotFoundException e) {
+//                        logger.error("An element could not be found", e);
+//                    }
+//                }
+//            }
+//        }
 		
 		int counter = 1;
-		logger.debug("Loading Schema '" + data.getFileName() +"' FROM '" + dir + "'...");		
+		logger.debug("Loading Schema '" + data.getFileName() +"'...");		
 		//Iterate through the nodes to build the XFTElements
 		for(int i =0; i<elements.getLength();i++)
 		{
@@ -595,15 +588,12 @@ public class XFTSchema {
 	/**
 	 * @return ArrayList of Strings
 	 */
-	public ArrayList getSortedElementNames()
+	public List<String> getSortedElementNames()
 	{
-		ArrayList al = new ArrayList();
-		Iterator temp = getSortedElements().iterator();
-		while (temp.hasNext())
-		{
-			al.add(((XFTElement)temp.next()).getName());
+		List<String> al = new ArrayList<>();
+        for (final Object temp : getSortedElements()) {
+			al.add(((XFTElement)temp).getName());
 		}
-		al.trimToSize();
 		return al;
 	}
 
@@ -653,24 +643,6 @@ public class XFTSchema {
 		return elementsBySQLName;
 	}
 	
-	/**
-	 * Writes schema to text file in the XFTManager's source directory called schema.txt.
-	 */
-	public static void OutputSchema()
-	{
-		try {
-			StringBuffer sb = new StringBuffer();
-			Enumeration enumer = XFTManager.GetDataModels().keys();
-			while(enumer.hasMoreElements())
-			{
-				sb.append(((XFTDataModel)XFTManager.GetDataModels().get(enumer.nextElement())).getSchema().toString());
-			}
-			FileUtils.OutputToFile(sb.toString(),XFTManager.GetInstance().getSourceDir() + "schema.txt");
-		} catch (Exception e) {
-			logger.error("",e);
-		}
-	}
-
 	/**
 	 * @return The XML namespace.
 	 */

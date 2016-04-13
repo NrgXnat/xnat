@@ -8,7 +8,7 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.utils.AppletConfig;
-import org.nrg.xnat.utils.SerializerService;
+import org.nrg.framework.services.SerializerService;
 
 /**
  * Contains basic methods used by upload applet screen classes.

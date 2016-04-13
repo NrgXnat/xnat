@@ -10,7 +10,6 @@
  */
 package org.nrg.xnat.helpers.prearchive;
 
-import com.fasterxml.jackson.core.JsonFactory;
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 import org.apache.commons.collections.CollectionUtils;
@@ -21,6 +20,7 @@ import org.nrg.automation.services.ScriptService;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.status.ListenerUtils;
 import org.nrg.status.StatusListenerI;
 import org.nrg.xdat.XDAT;
@@ -41,7 +41,7 @@ import org.nrg.xnat.restlet.XNATApplication;
 import org.nrg.xnat.restlet.actions.PrearcImporterA.PrearcSession;
 import org.nrg.xnat.restlet.services.Archiver;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.nrg.xnat.utils.SerializerService;
+
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.restlet.data.Status;
 import org.slf4j.Logger;

@@ -13,7 +13,7 @@
 				</TR>
 								<TR>
 					<TD align="left">User:					</TD>
-										<TD align="left">$data.getSession().getAttribute("user").getLastname(), $data.getSession().getAttribute("user").getFirstname()					</TD>
+										<TD align="left">$user.getLastname(), $user.getFirstname()					</TD>
 				</TR>
 												<TR>
 					<TD align="left">Status					:</TD>

@@ -1,6 +1,5 @@
 ## Screen is for XNAT-2408
 <form name="form1" method="post" action="$link.setAction("DeleteProjectData")" ONSUBMIT="return validateForm();">
-#set($user = $data.getSession().getAttribute("user"))
 #if($errMsg)
 	<p>$errMsg</p>
 	<br>

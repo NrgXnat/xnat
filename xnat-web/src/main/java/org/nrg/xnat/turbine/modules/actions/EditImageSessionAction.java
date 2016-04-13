@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.XDATUser;
 import org.nrg.xft.XFTItem;
 import org.slf4j.Logger;
@@ -33,7 +34,7 @@ public class EditImageSessionAction extends ModifySubjectAssessorData {
         try {
 
             // Migration: Is there a UserI-friendly version of XDATUser.clearBrowseableElementDisplays() and its kin?
-            ((XDATUser) data.getSession().getAttribute("user")).clearBrowseableElementDisplays();
+            ((XDATUser) XDAT.getUserDetails()).clearBrowseableElementDisplays();
 
             if (item.getProperty("note") == null) {
                 item.setProperty("note", "NULL");

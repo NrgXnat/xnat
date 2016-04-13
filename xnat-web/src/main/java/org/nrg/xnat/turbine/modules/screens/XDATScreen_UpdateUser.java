@@ -52,7 +52,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                     context.put("item", user);
                 }
             } else {
-                user = (UserI) data.getSession().getAttribute("user");
+                user = XDAT.getUserDetails();
 
                 // If the user isn't already logged in...
                 if(user == null || user.getUsername().equals("guest")) {

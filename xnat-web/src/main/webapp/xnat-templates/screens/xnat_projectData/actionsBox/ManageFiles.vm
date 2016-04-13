@@ -18,12 +18,12 @@
     obj.objectId = "$!om.getId()";
     obj.objectType = "project";
 
-        #if ($item.canEdit($data.getSession().getAttribute("user")))
+    #if ($turbineUtils.canEdit($user, $item))
 	      obj.canEdit=true;
     #else
 	      obj.canEdit=false;
 	#end
-  	#if ($item.canDelete($data.getSession().getAttribute("user")))
+    #if ($turbineUtils.canDelete($user, $item))
           obj.canDelete=true;
     #else
           obj.canDelete=false;

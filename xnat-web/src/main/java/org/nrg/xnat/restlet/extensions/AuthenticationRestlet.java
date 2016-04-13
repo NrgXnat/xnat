@@ -23,6 +23,7 @@ import org.restlet.resource.Variant;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
@@ -92,13 +93,14 @@ public class AuthenticationRestlet extends Resource {
         UsernamePasswordAuthenticationToken authRequest = manager.buildUPTokenForAuthMethod(_authMethod, _username, _password);
         Authentication authentication = manager.authenticate(authRequest);
         if (authentication.isAuthenticated()) {
-            succeed();
+            succeed(authentication);
         } else {
             fail();
         }
     }
 
-    private void succeed() {
+    private void succeed(final Authentication authentication) {
+        SecurityContextHolder.getContext().setAuthentication(authentication);
         getResponse().setStatus(Status.SUCCESS_OK, "OK");
     }
 

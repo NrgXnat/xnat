@@ -17,6 +17,7 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.Turbine;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -27,7 +28,7 @@ public class AcceptProjectAccess extends SecureAction {
 
 	@Override
 	public void doPerform(RunData data, Context context) throws Exception {
-		UserI user = TurbineUtils.getUser(data);
+		UserI user = XDAT.getUserDetails();
 		if (user == null) {
 			user = (UserI) context.get("user");
         }

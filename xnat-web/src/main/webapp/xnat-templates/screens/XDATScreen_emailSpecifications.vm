@@ -1,4 +1,4 @@
-#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+#if($turbineUtils.isSiteAdmin($user))
 
 <style type="text/css">
     #admin-email-configuration td { padding-top: 15px; padding-bottom: 15px; }

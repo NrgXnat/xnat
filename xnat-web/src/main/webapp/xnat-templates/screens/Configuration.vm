@@ -1,3 +1,4 @@
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 #* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
 #* @vtlvariable name="siteConfig" type="java.util.Properties" *#
 #* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
@@ -21,7 +22,7 @@
 ##<div id="tp_fm" style="display:none"></div>
             <div class="edit_header1">Configuration</div><br/>
 
-#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+#if($turbineUtils.isSiteAdmin($user))
             <script type="text/javascript" src="$content.getURI("scripts/yui/build/resize/resize-beta-min.js")"></script>
             <script type="text/javascript" src="$content.getURI("scripts/yui/build/layout/layout-beta-min.js")"></script>
             <script type="text/javascript" src="$content.getURI("scripts/search/tabManager.js")"></script>

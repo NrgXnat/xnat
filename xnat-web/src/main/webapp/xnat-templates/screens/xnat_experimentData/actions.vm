@@ -1,7 +1,14 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="last_login" type="java.util.Date" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 <script type="text/javascript" src="$content.getURI("scripts/BasePopup.js")"></script>
 <script type="text/javascript" src="$content.getURI("scripts/FileViewer.js")"></script>
 
-		#elementActionsBoxNoEnd($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+		#elementActionsBoxNoEnd($element $search_field $search_value $user $item)
 		
 		#addCustomScreens("$element" "actionsBox") 
 													      
@@ -59,12 +66,12 @@
     obj.objectId = "$!om.getId()";
     obj.objectType = "experiment";
 				
-    #if ($item.canEdit($data.getSession().getAttribute("user")))
+    #if ($turbineUtils.canEdit($user, $item))
     obj.canEdit = true;
     #else
     obj.canEdit = false;
     #end
-    #if ($item.canDelete($data.getSession().getAttribute("user")))
+    #if ($turbineUtils.canDelete($user, $item))
     obj.canDelete = true;
     #else
     obj.canDelete = false;

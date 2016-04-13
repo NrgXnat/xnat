@@ -1,4 +1,4 @@
-				#elementActionsBoxNoEnd($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+				#elementActionsBoxNoEnd($element $search_field $search_value $user $item)
 
 		#addCustomScreens("$element" "actionsBox") 
      </DIV>

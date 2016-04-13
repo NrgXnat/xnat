@@ -1640,15 +1640,15 @@ $!turbineUtils.escapeJS($s)
 	#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.debug-extension-points","false")))document.write("<div class='extension_js'>/templates/screens/$subFolder</div>")#end
 	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
-		#if($data.getSession().getAttribute("user").getUsername()=="guest")
+		#if($turbineUtils.isGuest($user))
 			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
 				#parse("/screens/$templateFileName")
 			#end
 		#elseif($screenProps.getProperty("adminOnly"))
-			#if($turbineUtils.toBoolean($data.getSession().getAttribute("user").checkRole("Administrator"),"false"))
+			#if($turbineUtils.isSiteAdmin($user))
 				#parse("/screens/$templateFileName")
 			#end
-		#elseif($data.getSession().getAttribute("user").getUsername())
+		#elseif($user.getUsername())
 				#parse("/screens/$templateFileName")
 		#end
 	#end
@@ -1659,15 +1659,15 @@ $!turbineUtils.escapeJS($s)
 	#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.debug-extension-points","false")))document.write("<div class='extension_js'>/templates/screens/$dataType/$subFolder</div>")#end
 	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
-		#if($data.getSession().getAttribute("user").getUsername()=="guest")
+		#if($turbineUtils.isGuest($user))
 			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
 				#parse("/screens/$templateFileName")
 			#end
 		#elseif($screenProps.getProperty("adminOnly"))
-			#if($turbineUtils.toBoolean($data.getSession().getAttribute("user").checkRole("Administrator"),"false"))
+			#if($turbineUtils.isSiteAdmin($user))
 				#parse("/screens/$templateFileName")
 			#end
-		#elseif($data.getSession().getAttribute("user").getUsername())
+		#elseif($user.getUsername())
 				#parse("/screens/$templateFileName")
 		#end
 	#end
@@ -1678,15 +1678,15 @@ $!turbineUtils.escapeJS($s)
 	#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.debug-extension-points","false")))<div class="extension">/templates/screens/$subFolder</div>#end
 	#foreach($screenProps in $turbineUtils.getTemplates($subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
-		#if($data.getSession().getAttribute("user").getUsername()=="guest")
+		#if($turbineUtils.isGuest($user))
 			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
 				#parse("/screens/$templateFileName")
 			#end
 		#elseif($screenProps.getProperty("adminOnly"))
-			#if($turbineUtils.toBoolean($data.getSession().getAttribute("user").checkRole("Administrator"),"false"))
+			#if($turbineUtils.isSiteAdmin($user))
 				#parse("/screens/$templateFileName")
 			#end
-		#elseif($data.getSession().getAttribute("user").getUsername())
+		#elseif($user.getUsername())
 				#parse("/screens/$templateFileName")
 		#end
 	#end
@@ -1697,15 +1697,15 @@ $!turbineUtils.escapeJS($s)
 	#if($turbineUtils.toBoolean($siteConfig.getProperty("UI.debug-extension-points","false")))<div class="extension">/templates/screens/$dataType/$subFolder</div>#end
 	#foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
 		#set($templateFileName=$screenProps.getProperty("path"))
-		#if($data.getSession().getAttribute("user").getUsername()=="guest")
+		#if($turbineUtils.isGuest($user))
 			#if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
 				#parse("/screens/$templateFileName")
 			#end
 		#elseif($screenProps.getProperty("adminOnly"))
-			#if($turbineUtils.toBoolean($data.getSession().getAttribute("user").checkRole("Administrator"),"false"))
+			#if($turbineUtils.isSiteAdmin($user))
 				#parse("/screens/$templateFileName")
 			#end
-		#elseif($data.getSession().getAttribute("user").getUsername())
+		#elseif($user.getUsername())
 				#parse("/screens/$templateFileName")
 		#end
 	#end
@@ -1715,15 +1715,15 @@ $!turbineUtils.escapeJS($s)
     #set($hasCustomScreens = false)
     #foreach($screenProps in $turbineUtils.getTemplates($dataType,$subFolder))
         #set($templateFileName=$screenProps.getProperty("path"))
-        #if($data.getSession().getAttribute("user").getUsername()=="guest")
+        #if($turbineUtils.isGuest($user))
             #if($turbineUtils.toBoolean($screenProps.getProperty("allowGuest","false")))
                 #set($hasCustomScreens = true)
             #end
         #elseif($screenProps.getProperty("adminOnly"))
-            #if($turbineUtils.toBoolean($data.getSession().getAttribute("user").checkRole("Administrator"),"false"))
+            #if($turbineUtils.isSiteAdmin($user))
                 #set($hasCustomScreens = true)
             #end
-        #elseif($data.getSession().getAttribute("user").getUsername())
+        #elseif($user.getUsername())
             #set($hasCustomScreens = true)
         #end
     #end

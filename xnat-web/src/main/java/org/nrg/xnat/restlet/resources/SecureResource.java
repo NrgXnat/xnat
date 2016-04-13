@@ -96,8 +96,6 @@ public abstract class SecureResource extends Resource {
 
     private static final String ACTION = "action";
 
-    public static final String USER_ATTRIBUTE = "user";
-
     public static final String HANDLER = "handler";
 
     public static Logger logger = Logger.getLogger(SecureResource.class);
@@ -152,7 +150,7 @@ public abstract class SecureResource extends Resource {
 
         // expects that the user exists in the session (either via traditional
         // session or set via the XnatSecureGuard
-        user = (UserI) getRequest().getAttributes().get(USER_ATTRIBUTE);
+        user = XDAT.getUserDetails();
 
         filepath = getRequest().getResourceRef().getRemainingPart();
         if (filepath != null) {

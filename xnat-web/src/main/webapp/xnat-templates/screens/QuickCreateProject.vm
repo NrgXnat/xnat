@@ -27,7 +27,7 @@
             <tr>
               <td width="200">Manager</td>
               <td width="345" valign="top" >
-              <input name="manager" type="text" size="40" value="$data.getSession().getAttribute("user").getEmail()"/></td>
+              <input name="manager" type="text" size="40" value="$user.getEmail()"/></td>
             </tr>
             <tr>
               <td valign="top">Primary Investigator</td>

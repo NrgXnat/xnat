@@ -11,8 +11,8 @@
 package org.nrg.xnat.security;
 
 import com.google.common.collect.Maps;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.UserHelper;
-import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.XFTItem;
@@ -25,7 +25,6 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
-import org.springframework.security.core.context.SecurityContext;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.crypto.codec.Base64;
 import org.springframework.security.web.AuthenticationEntryPoint;
@@ -37,8 +36,6 @@ import org.springframework.security.web.authentication.www.BasicAuthenticationFi
 import javax.inject.Inject;
 import javax.servlet.FilterChain;
 import javax.servlet.ServletException;
-import javax.servlet.ServletRequest;
-import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import java.io.IOException;
@@ -154,23 +151,7 @@ public class XnatBasicAuthenticationFilter extends BasicAuthenticationFilter {
     protected void onSuccessfulAuthentication(HttpServletRequest request, HttpServletResponse response,
                                               Authentication authResult) throws IOException {
         try {
-            SecurityContext securityContext = SecurityContextHolder.getContext();
-
-            UserI user = null;
-            Object principal = securityContext.getAuthentication().getPrincipal();
-
-            if (principal instanceof UserI) {
-                user = (UserI) principal;
-            } else if (principal instanceof String) {
-                user = Users.getUser((String) principal);
-            }
-
-            if (user == null) {
-                throw new RuntimeException("Unable to find user object for principal: " + principal);
-            }
-
-            request.getSession().setAttribute("user", user);
-
+            final UserI user = XDAT.getUserDetails();
             Object lock = locks.get(user.getID());
             if (lock == null) {
                 locks.put(user.getID(), new Object());

@@ -56,7 +56,7 @@ public class InactiveAccount extends VelocitySecureScreen {
                 context.put("topMessage", "Your account has been disabled due to inactivity.<br>" +
                         "Enter your email address to send a reactivation email.");
             } else {
-            	UserI user = (UserI) data.getSession().getAttribute("user");
+            	UserI user = XDAT.getUserDetails();
 
                 // If the user isn't already logged in...
                 if(user == null || user.getUsername().equals("guest")) {

@@ -12,7 +12,7 @@
     obj.categories={};
     obj.categories.ids=[];
     obj.canEdit=true;
-    #if (!$!item.hasPK() || $item.canDelete($data.getSession().getAttribute("user")))
+    #if (!$!item.hasPK() || $turbineUtils.canDelete($user, $item))
     obj.canDelete = true;
     #else
     obj.canDelete = false;
@@ -39,12 +39,6 @@
 #end
     window.currentLabel = "$!om.getLabel()";
 </script>
-
-#if($user)
-
-#else
-    #set($user=$data.getSession().getAttribute("user"))
-#end
 
 <style>
     /* custom styles for inline instances */

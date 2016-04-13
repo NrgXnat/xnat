@@ -57,7 +57,7 @@
     <tr>
         <td colspan="3">
 
-#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+#if($turbineUtils.isSiteAdmin($user))
     #if($error)
         <div id="error" class="error">There was an error, which isn't so good: $error.</div>
     #else

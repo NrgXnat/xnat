@@ -66,7 +66,7 @@ $page.setVlinkColor($ui.vlink)
                                 <td>
                                     <div id="project_placeholder">$!om.getProjectDisplayID()</div>
                                 </td>
-                                #if($!om.getPass() && $data.getSession().getAttribute("user").canDelete($om.getItem()))
+                                #if($!om.getPass() && $turbineUtils.canDelete($user, $om.getItem()))
                                     <td>
                                         <a onclick="modifyProject();"><img border="0" src="$content.getURI("images/e.gif")"/></a>
                                         <input type="hidden" id="$om.getXSIType()/project" name="$om.getXSIType()/project" value="$!om.getProject()"/>

@@ -1,3 +1,10 @@
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="page" type="org.apache.turbine.util.template.HtmlPageAttributes" *#
+#* @vtlvariable name="last_login" type="java.util.Date" *#
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
+#* @vtlvariable name="ui" type="org.apache.turbine.services.pull.util.UIManager" *#
+#* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 <!-- BEGIN NoninteractiveTop.vm -->
 $page.setBgColor($ui.bgcolor)
 
@@ -5,12 +12,13 @@ $page.setBgColor($ui.bgcolor)
     #if($last_login)
         <span id="last_login">Last login: $turbineUtils.formatDateTime($last_login)</span>
 	#end
-	#if($data.getSession().getAttribute("user"))
-        #if($data.getSession().getAttribute("user").getUsername()=="guest")
+	#if($user)
+        #set($username = $user.getUsername())
+        #if($turbineUtils.isGuest($user))
             <span id="user_info">Logged in as: <span style="color:red;">Guest</span>
-        #elseif($data.getSession().getAttribute("user").getUsername())
+        #elseif($username)
         ## use default timout value from web.xml as the starting text in the "timeLeft" element
-            <span id="user_info">Logged in as: &nbsp;<i>$!data.getSession().getAttribute("user").getUsername()</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
+            <span id="user_info">Logged in as: &nbsp;<i>$!username</i> <b>|</b> <a href="$link.setAction("LogoutUser")">Logout</a></span>
 		#end
 	#end
     <div class="clear"></div>

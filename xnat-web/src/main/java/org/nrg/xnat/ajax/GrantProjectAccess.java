@@ -22,6 +22,7 @@ import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.TurbineException;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -45,7 +46,7 @@ public class GrantProjectAccess {
             }
             RunData data = rundataService.getRunData(req, response, sc);
             Context context = TurbineVelocity.getContext(data);
-            UserI user = TurbineUtils.getUser(data);
+            UserI user = XDAT.getUserDetails();
     		
     		XnatProjectdata project = XnatProjectdata.getXnatProjectdatasById(projectID, user, false);
     		

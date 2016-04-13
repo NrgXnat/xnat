@@ -21,6 +21,7 @@ import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcArchivespecification;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -43,7 +44,7 @@ public class XnatInitCheckFilter extends GenericFilterBean {
             //If arc spec has already been set, do not redirect.
             chain.doFilter(req, res);
         } else {
-            final UserI user = (UserI) request.getSession().getAttribute("user");
+            final UserI user = XDAT.getUserDetails();
             final String uri = request.getRequestURI();
 
             if (user == null) {

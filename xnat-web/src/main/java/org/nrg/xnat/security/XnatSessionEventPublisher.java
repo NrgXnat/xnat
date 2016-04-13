@@ -11,11 +11,14 @@
 package org.nrg.xnat.security;
 
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.restlet.resources.SecureResource;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.ApplicationContext;
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.security.authentication.AnonymousAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContext;
+import org.springframework.security.web.context.HttpSessionSecurityContextRepository;
 import org.springframework.security.web.session.HttpSessionCreatedEvent;
 import org.springframework.security.web.session.HttpSessionDestroyedEvent;
 import org.springframework.web.context.support.WebApplicationContextUtils;
@@ -64,13 +67,20 @@ public class XnatSessionEventPublisher implements HttpSessionListener, ServletCo
         final Date   today     = Calendar.getInstance(TimeZone.getDefault()).getTime();
 
         try {
-            final UserI user = (UserI) event.getSession().getAttribute(SecureResource.USER_ATTRIBUTE);
-            if (user != null) {
-                final String    userId = user.getID().toString();
-                final Timestamp stamp  = new Timestamp(today.getTime());
-                //sessionId's aren't guaranteed to be unique forever. But, the likelihood of sessionId and userId not forming a unique combo with a null logout_date is slim.
-                //noinspection SqlDialectInspection,SqlNoDataSourceInspection,SqlResolve
-                _template.execute("UPDATE xdat_user_login SET logout_date='" + stamp + "' WHERE logout_date is null and session_id='" + sessionId + "' and user_xdat_user_id='" + userId + "';");
+            final Object contextCandidate = event.getSession().getAttribute(HttpSessionSecurityContextRepository.SPRING_SECURITY_CONTEXT_KEY);
+            if (contextCandidate != null && contextCandidate instanceof SecurityContext) {
+                final SecurityContext context = (SecurityContext) contextCandidate;
+                final Authentication authentication = context.getAuthentication();
+                if (authentication != null && !(authentication instanceof AnonymousAuthenticationToken)) {
+                    final Object userCandidate = authentication.getPrincipal();
+                    if (userCandidate != null && userCandidate instanceof UserI) {
+                        final String userId = ((UserI) userCandidate).getID().toString();
+                        final Timestamp stamp = new Timestamp(today.getTime());
+                        //sessionId's aren't guaranteed to be unique forever. But, the likelihood of sessionId and userId not forming a unique combo with a null logout_date is slim.
+                        //noinspection SqlDialectInspection,SqlNoDataSourceInspection,SqlResolve
+                        _template.execute("UPDATE xdat_user_login SET logout_date='" + stamp + "' WHERE logout_date is null and session_id='" + sessionId + "' and user_xdat_user_id='" + userId + "';");
+                    }
+                }
             }
         } catch (Exception e) {
             //remember, anonymous gets a session, too. Those won't be in the table. Fail silently.

@@ -9,6 +9,7 @@ import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.xdat.configuration.TestFeatureDefinitionServiceConfig;
 import org.nrg.xdat.entities.FeatureDefinition;
 import org.nrg.xdat.entities.GroupFeature;
 import org.springframework.test.context.ContextConfiguration;
@@ -16,7 +17,7 @@ import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = TestFeatureDefinitionServiceConfig.class)
 public class TestFeatureDefinitionService {
     @Test
     public void testServiceInstance() {

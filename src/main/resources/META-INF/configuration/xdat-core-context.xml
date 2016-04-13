@@ -22,4 +22,5 @@
     <context:component-scan base-package="org.nrg.xft.services" />
     <context:component-scan base-package="org.nrg.xft.daos" />
 
+
 </beans>

@@ -13,13 +13,14 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.xdat.configuration.TestGroupFeatureServiceConfig;
 import org.nrg.xdat.entities.GroupFeature;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = TestGroupFeatureServiceConfig.class)
 public class TestGroupFeatureService {
     @Test
     public void testServiceInstance() {

@@ -14,11 +14,12 @@ import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.xft.configuration.TestXftFieldExclusionServiceConfig;
 import org.nrg.xft.entities.XftFieldExclusion;
 import org.nrg.xft.entities.XftFieldExclusionScope;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
-import org.springframework.test.context.transaction.TransactionConfiguration;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
@@ -27,8 +28,8 @@ import java.util.List;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
-@TransactionConfiguration(defaultRollback = true)
+@ContextConfiguration(classes = TestXftFieldExclusionServiceConfig.class)
+@Rollback
 @Transactional
 public class TestXftFieldExclusionService {
     @Test

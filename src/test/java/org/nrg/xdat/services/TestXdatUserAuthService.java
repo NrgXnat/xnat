@@ -13,6 +13,7 @@ package org.nrg.xdat.services;
 import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.xdat.configuration.TestXdatUserAuthServiceConfig;
 import org.nrg.xdat.entities.UserAuthI;
 import org.nrg.xdat.entities.XdatUserAuth;
 import org.springframework.test.context.ContextConfiguration;
@@ -23,7 +24,7 @@ import javax.inject.Inject;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = TestXdatUserAuthServiceConfig.class)
 public class TestXdatUserAuthService {
     @Test
     public void testServiceInstance() {

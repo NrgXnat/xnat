@@ -22,6 +22,7 @@ import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.helpers.Users;
+import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
@@ -49,6 +50,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 	public final static Logger logger = LoggerFactory.getLogger(SecureScreen.class);
     private static Pattern _pattern = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
     List<String> _whitelistedIPs;
+    protected ThemeService themeService = XDAT.getContextService().getBean(ThemeService.class);
 
     @SuppressWarnings("unused")
     public String getReason(RunData data){
@@ -102,14 +104,21 @@ public abstract class SecureScreen extends VelocitySecureScreen {
      * @param data Turbine information.
      * @throws Exception When something goes wrong.
      */
-	protected void doBuildTemplate(RunData data)
-            throws Exception {
+	protected void doBuildTemplate(RunData data) throws Exception {
 	    try {
 	    	attemptToPreventBrowserCachingOfHTML(data.getResponse());
             Context c = TurbineVelocity.getContext(data);
             loadAdditionalVariables(data, c);
 
-            
+            String themedStyle = themeService.getThemePage("theme", "style");
+            if(themedStyle != null) {
+                c.put("themedStyle", themedStyle);
+            }
+            String themedScript = themeService.getThemePage("theme", "script");
+            if(themedScript != null) {
+                c.put("themedScript", themedScript);
+            }
+
             c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
             preserveVariables(data,c);
             

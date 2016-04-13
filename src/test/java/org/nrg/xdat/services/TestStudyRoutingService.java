@@ -13,28 +13,28 @@ package org.nrg.xdat.services;
 
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.xdat.configuration.TestStudyRoutingServiceConfig;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 import javax.inject.Inject;
-import javax.print.DocFlavor;
 import java.util.Map;
 
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = TestStudyRoutingServiceConfig.class)
 public class TestStudyRoutingService {
-    public static final String UID1 = "1.2.3.4.5.6.7";
-    public static final String UID2 = "2.3.4.5.6.7.8";
-    public static final String UID3 = "3.4.5.6.7.8.9";
-    public static final String UID4 = "4.5.6.7.8.9.0";
-    public static final String UID5 = "5.6.7.8.9.0.1";
-    public static final String PRJ1 = "prj1";
-    public static final String PRJ2 = "prj2";
-    public static final String USR1 = "user1";
-    public static final String USR2 = "user2";
-    public static final String USR3 = "user3";
+    private static final String UID1 = "1.2.3.4.5.6.7";
+    private static final String UID2 = "2.3.4.5.6.7.8";
+    private static final String UID3 = "3.4.5.6.7.8.9";
+    private static final String UID4 = "4.5.6.7.8.9.0";
+    private static final String UID5 = "5.6.7.8.9.0.1";
+    private static final String PRJ1 = "prj1";
+    private static final String PRJ2 = "prj2";
+    private static final String USR1 = "user1";
+    private static final String USR2 = "user2";
+    private static final String USR3 = "user3";
 
     @Test
     public void testServiceInstance() {

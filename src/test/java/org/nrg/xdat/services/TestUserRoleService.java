@@ -9,13 +9,14 @@ import javax.inject.Inject;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.nrg.xdat.configuration.TestUserRoleServiceConfig;
 import org.nrg.xdat.entities.UserRole;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = TestUserRoleServiceConfig.class)
 public class TestUserRoleService {
     @Test
     public void testServiceInstance() {

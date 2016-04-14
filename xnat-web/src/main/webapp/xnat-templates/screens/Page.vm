@@ -1,0 +1,51 @@
+#* @vtlvariable name="displayManager" type="org.nrg.xdat.display.DisplayManager" *#
+#* @vtlvariable name="par_count" type="java.lang.Integer" *#
+#* @vtlvariable name="data" type="org.apache.turbine.util.RunData" *#
+#* @vtlvariable name="turbineUtils" type="org.nrg.xdat.turbine.utils.TurbineUtils" *#
+#* @vtlvariable name="siteConfig" type="java.util.Properties" *#
+#* @vtlvariable name="content" type="org.apache.turbine.services.pull.tools.ContentTool" *#
+
+<!-- start xnat-templates/screens/Page.vm -->
+
+#set ($template = $data.getTemplateInfo())
+#set ($pg = $data.getParameters().getString('view'))
+#set ($pg_path = "/screens/pages/${pg}.vm")
+
+<script src="$content.getURI('/scripts/xnat/app/customPage.js')"></script>
+
+#if ($pg)
+
+    ## if there's a page at '*templates/pages/name.vm' then use that
+    #if ($turbineUtils.resourceExists($pg_path))
+        <div id="view-page">
+            #parse($pg_path)
+        </div>
+    #else
+
+    ## try to retrieve page content using the query string value
+    <div id="view-page"></div>
+    <script>
+        XNAT.app.customPage.getPage('${pg}', '#view-page');
+    </script>
+
+    #end
+
+#else
+
+    ## do stuff if there's no "view" query string param
+    <div id="view-page"></div>
+
+<script>
+
+    XNAT.app.customPage.container = $('#view-page');
+    XNAT.app.customPage.getPage();
+
+    window.onhashchange = function(){
+        XNAT.app.customPage.getPage();
+    }
+
+</script>
+
+#end
+
+<!-- end xnat-templates/screens/Page.vm -->

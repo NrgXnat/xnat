@@ -24,7 +24,7 @@
 
 #if ($theme)
 <script type="text/javascript">
-    XNAT.theme = $theme}";
+    XNAT.theme = "$theme";
 </script>
 #end
 

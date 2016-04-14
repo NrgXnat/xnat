@@ -123,6 +123,9 @@
                 <value>/scripts/**</value>
                 <value>/style/**</value>
                 <value>/themes/**</value>
+                <value>/files/**</value>
+                <value>/pages/**</value>
+                <value>/page/**</value>
                 <value>/applet/**</value>
             </list>
         </property>

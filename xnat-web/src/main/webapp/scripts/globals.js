@@ -48,6 +48,22 @@ function getParameterByName( name ){
     return getQueryStringValue(name)
 }
 
+// get the url hash string without the '#'
+function getUrlHashString(){
+    return window.location.hash.split('#')[1] || '';
+}
+
+// simplest function for getting
+// a value from the url hash
+function getUrlHashValue(start, end){
+    var part = '',
+        hash = window.location.hash;
+    if (!hash) { return '' }
+    part = hash.split(start||'#')[1]||'';
+    part = part.split(end||'/')[0]||'';
+    return part;
+}
+
 function firstDefined() {
     var undefined, i = -1;
     while (++i < arguments.length) {
@@ -256,6 +272,39 @@ function extendCopyDeep(){
 function cloneObject(obj){
     return extend(true, {}, obj);
 }
+
+// add child objects to 'obj' object from string
+// OVERWRITES PROPERTIES WITH MATCHING NAMES
+// setObject(foo, 'bar.baz', 123456)
+// -> foo: { bar: { baz: 123456 } }
+function setObject(obj, str, val) {
+    var parts, part;
+    if (typeof str != 'string' || !str.length) {
+        return {};
+    }
+    obj = getObject(obj);
+    parts = str.split('.');
+    while (parts.length > 1) {
+        part = parts.shift();
+        obj = getObject(obj);
+        if (!obj[part]) {
+            obj[part] = {};
+        }
+        obj = obj[part];
+    }
+    obj[parts[0]] = val || {};
+    return obj;
+}
+
+// add child objects to 'obj' object
+// OVERWRITES PROPERTIES WITH MATCHING NAMES
+function setExtendedObject(obj, str, val){
+    var newObj = {};
+    setObject(newObj, str, val);
+    newObj = extend(true, {}, obj, newObj);
+    return newObj;
+}
+
 
 // return the last item in an array-like object
 function getLast(arr){

@@ -21,6 +21,7 @@ import org.apache.velocity.tools.generic.EscapeTool;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
+import org.nrg.xdat.entities.ThemeConfig;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -50,7 +51,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 	public final static Logger logger = LoggerFactory.getLogger(SecureScreen.class);
     private static Pattern _pattern = Pattern.compile("\\A<!-- ([A-z_]+?): (.+) -->\\Z");
     List<String> _whitelistedIPs;
-    protected ThemeService themeService = XDAT.getContextService().getBean(ThemeService.class);
+    protected ThemeService themeService = XDAT.getThemeService();
 
     @SuppressWarnings("unused")
     public String getReason(RunData data){
@@ -110,13 +111,17 @@ public abstract class SecureScreen extends VelocitySecureScreen {
             Context c = TurbineVelocity.getContext(data);
             loadAdditionalVariables(data, c);
 
-            String themedStyle = themeService.getThemePage("theme", "style");
-            if(themedStyle != null) {
-                c.put("themedStyle", themedStyle);
-            }
-            String themedScript = themeService.getThemePage("theme", "script");
-            if(themedScript != null) {
-                c.put("themedScript", themedScript);
+            ThemeConfig themeConfig = themeService.getTheme();
+            if(themeConfig != null) {
+                c.put("theme", themeConfig.getName());
+                String themedStyle = themeService.getThemePage("theme", "style");
+                if (themedStyle != null) {
+                    c.put("themedStyle", themedStyle);
+                }
+                String themedScript = themeService.getThemePage("theme", "script");
+                if (themedScript != null) {
+                    c.put("themedScript", themedScript);
+                }
             }
 
             c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));

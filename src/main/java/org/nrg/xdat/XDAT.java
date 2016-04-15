@@ -42,6 +42,7 @@ import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.user.exceptions.UserInitException;
 import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
+import org.nrg.xdat.services.ThemeService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -89,6 +90,7 @@ public class XDAT implements Initializable,Configurable{
 	private static ContextService _contextService;
     private static DataSource _dataSource;
 	private static MailService _mailService;
+	private static ThemeService _themeService;
     private static NotificationService _notificationService;
 	private static XdatUserAuthService _xdatUserAuthService;
     private static ConfigService _configurationService;
@@ -406,6 +408,17 @@ public class XDAT implements Initializable,Configurable{
 	        _mailService = getContextService().getBean(MailService.class);
 	    }
 	    return _mailService;
+	}
+
+	/**
+	 * Returns an instance of the currently supported theme service.
+	 * @return An instance of the {@link ThemeService}.
+	 */
+	public static ThemeService getThemeService() {
+		if (_themeService == null) {
+			_themeService = getContextService().getBean(ThemeService.class);
+		}
+		return _themeService;
 	}
 
 	/**

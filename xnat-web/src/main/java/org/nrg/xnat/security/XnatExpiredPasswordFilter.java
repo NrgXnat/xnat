@@ -14,6 +14,7 @@ import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.config.services.SiteConfigurationService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.om.ArcArchivespecification;
@@ -65,7 +66,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
     public void doFilter(ServletRequest req, ServletResponse res, FilterChain chain) throws IOException, ServletException {
         final HttpServletRequest request = (HttpServletRequest) req;
         final HttpServletResponse response = (HttpServletResponse) res;
-        UserI user = (UserI) request.getSession().getAttribute("user");
+        UserI user = XDAT.getUserDetails();
         Object passwordExpired = request.getSession().getAttribute("expired");
         // MIGRATION: Need to remove arcspec.
         ArcArchivespecification _arcSpec = ArcSpecManager.GetInstance();

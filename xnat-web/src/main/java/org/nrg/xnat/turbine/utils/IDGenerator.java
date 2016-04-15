@@ -87,12 +87,12 @@ public class IDGenerator implements IDGeneratorI {
 	        
 	        if (al.size()>0 || claimedIDs.size()>0){
 	            int count =al.size()+1;
-	            String full = org.apache.commons.lang.StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
+	            String full = StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
 	            temp_id = site+ full;
 	
 	            while (al.contains(temp_id) || claimedIDs.contains(temp_id)){
 	                count++;
-	                full =org.apache.commons.lang.StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
+	                full =StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
 	                temp_id = site+ full;
 	            }
 	            
@@ -101,7 +101,7 @@ public class IDGenerator implements IDGeneratorI {
 	            return temp_id;
 	        }else{
 	            int count =1;
-	            String full = org.apache.commons.lang.StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
+	            String full = StringUtils.leftPad((new Integer(count)).toString(), digits, '0');
 	            temp_id = site+ full;
 	            return temp_id;
 	        }

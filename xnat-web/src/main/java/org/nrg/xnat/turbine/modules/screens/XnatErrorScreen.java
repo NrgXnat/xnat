@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.turbine.modules.screens;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.modules.screens.VelocityErrorScreen;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;

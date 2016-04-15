@@ -14,7 +14,7 @@ import java.io.StringWriter;
 import java.util.ArrayList;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.Template;

@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.restlet.extensions;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.turbine.utils.PopulateItem;

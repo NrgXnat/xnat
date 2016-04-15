@@ -3,6 +3,7 @@ package org.nrg.xapi.rest.dicomscp;
 import io.swagger.annotations.*;
 import org.nrg.dcm.DicomSCPManager;
 import org.nrg.dcm.preferences.DicomSCPInstance;
+import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.rest.AbstractXnatRestApi;
@@ -15,10 +16,8 @@ import org.springframework.web.bind.annotation.*;
 import javax.inject.Inject;
 import java.util.List;
 
-// @XnatRestlet({"/services/dicomscp", "/services/dicomscp/instance/{SCP_ID}", "/services/dicomscp/instance/{SCP_ID}/{ACTION}", "/services/dicomscp/{ACTION}"})
-
 @Api(description = "XNAT DICOM SCP management API")
-@RestController
+@XapiRestController
 @RequestMapping(value = "/dicomscp")
 public class DicomSCPApi extends AbstractXnatRestApi {
     private static final Logger _log = LoggerFactory.getLogger(DicomSCPApi.class);

@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.actions;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xdat.security.helpers.Groups;
@@ -86,7 +87,7 @@ public class ManageProjectAccess extends SecureAction {
                         PersistentWorkflowUtils.save(wrk2, c);
                     }
                     if (sendmail) {
-                        context.put("user", TurbineUtils.getUser(data));
+                        context.put("user", XDAT.getUserDetails());
                         context.put("server", TurbineUtils.GetFullServerPath());
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());
@@ -120,7 +121,7 @@ public class ManageProjectAccess extends SecureAction {
                         PersistentWorkflowUtils.complete(wrk2, c);
                     }
                     if (sendmail) {
-                        context.put("user", TurbineUtils.getUser(data));
+                        context.put("user", XDAT.getUserDetails());
                         context.put("server", TurbineUtils.GetFullServerPath());
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());
@@ -154,7 +155,7 @@ public class ManageProjectAccess extends SecureAction {
                         PersistentWorkflowUtils.complete(wrk2, c);
                     }
                     if (sendmail) {
-                        context.put("user", TurbineUtils.getUser(data));
+                        context.put("user", XDAT.getUserDetails());
                         context.put("server", TurbineUtils.GetFullServerPath());
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());

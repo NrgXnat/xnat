@@ -50,7 +50,7 @@ $page.setVlinkColor($ui.vlink)
 					</TD>
 					<TD valign="top" align="right">
 						<!-- actions box -->
-						#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+						#elementActionsBox($element $search_field $search_value $user $item)
 						<script type="text/javascript">
 							// hack to get rid of the "Edit" link on the "Workflow Details" page
                             jq('#actionsMenu').find('a[href*="/xdataction/edit/"]').closest('li').remove();

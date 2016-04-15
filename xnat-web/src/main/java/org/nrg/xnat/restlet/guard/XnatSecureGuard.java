@@ -10,12 +10,6 @@
  */
 package org.nrg.xnat.restlet.guard;
 
-import java.util.UUID;
-
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpSession;
-
-import org.apache.log4j.Logger;
 import org.apache.turbine.util.TurbineException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
@@ -26,23 +20,22 @@ import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.representations.RESTLoginRepresentation;
-import org.nrg.xnat.restlet.resources.SecureResource;
 import org.nrg.xnat.restlet.util.BrowserDetector;
 import org.nrg.xnat.restlet.util.BrowserDetectorI;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.restlet.Filter;
-import org.restlet.data.ChallengeRequest;
-import org.restlet.data.ChallengeResponse;
-import org.restlet.data.ChallengeScheme;
-import org.restlet.data.MediaType;
-import org.restlet.data.Request;
-import org.restlet.data.Response;
-import org.restlet.data.Status;
+import org.restlet.data.*;
 import org.restlet.resource.Representation;
 import org.restlet.resource.StringRepresentation;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpSession;
+import java.util.UUID;
 
 public class XnatSecureGuard extends Filter {
-	static org.apache.log4j.Logger logger = Logger.getLogger(XnatSecureGuard.class);
+	private static final Logger logger     = LoggerFactory.getLogger(XnatSecureGuard.class);
 	private static final String HTTP_REALM = "XNAT Protected Area";
 
 	/**
@@ -52,7 +45,7 @@ public class XnatSecureGuard extends Filter {
 	 */
 	@Override
 	protected int beforeHandle(Request request, Response response) {
-		if (authenticate(request, response)) {
+		if (authenticate(request)) {
 			return CONTINUE;
 		} else {
 			unauthorized(request, response);
@@ -96,69 +89,45 @@ public class XnatSecureGuard extends Filter {
         return _aliasTokenService;
     }
 
-	private boolean authenticate(Request request, Response response) {
+	private boolean authenticate(Request request) {
 		// THIS BREAKS THE TRADITIONAL REST MODEL
 		// But, if the user is already logged into the website and navigates
 		// to a REST GET, they shouldn't have to re-login , TO
 		final HttpServletRequest httpRequest = getHttpServletRequest(request);
-		final UserI sessionUser = getSessionUser(httpRequest);
+		final UserI sessionUser = XDAT.getUserDetails();
 		if (sessionUser != null) {
-				//Check for a CsrfToken if necessary.
-				try {
-					//isCsrfTokenOk either returns true or throws an exception...
-					SecureAction.isCsrfTokenOk(httpRequest,false);
-				} catch (Exception e){
-					throw new RuntimeException(e);//LOL.
+            //Check for a CsrfToken if necessary.
+            try {
+                //isCsrfTokenOk either returns true or throws an exception...
+                SecureAction.isCsrfTokenOk(httpRequest, false);
+            } catch (Exception e) {
+                throw new RuntimeException(e);//LOL.
+            }
+            return true;
+        } else {
+			UserI user;
+			final ChallengeResponse challengeResponse = request.getChallengeResponse();
+			if (challengeResponse != null) {
+				user = authenticateBasic(challengeResponse);
+				if (user != null) {
+					httpRequest.getSession().setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
+					return true;
 				}
-			
-			attachUser(request, sessionUser);
-			return true;
-		} else {
-			try {
-                UserI user = null;
-				final ChallengeResponse challengeResponse = request
-						.getChallengeResponse();
-				if (challengeResponse != null) {
-					user = authenticateBasic(challengeResponse);
-					if (user != null) {
-						attachUser(request, user);
-						httpRequest.getSession().setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
+			}
+			else if (!XFT.GetRequireLogin()) {
+				try {
+					HttpSession session = httpRequest.getSession();
+					session.removeAttribute("loggedin");
+					user=Users.getGuest();
+					if (user!=null) {
 						return true;
 					}
+				} catch (Exception e) {
+					logger.error("",e);
 				}
-                else if (!XFT.GetRequireLogin()) {
-                    try {
-                        HttpSession session = httpRequest.getSession();
-                        session.removeAttribute("loggedin");
-                        user=Users.getGuest();
-                        if (user!=null) {
-                            attachUser(request, user);
-                            return true;
-                        }
-                    } catch (Exception e) {
-                        logger.error("",e);
-                    }
-                }
-			} catch (RuntimeException e) {
-				// We let this return an error to cause a 500 to return to the user.  The only other
-				// option is to throw a 401.  But this wouldn't inform the user that there was an error.
-				throw e;
 			}
 		}
 		return false;
-	}
-
-	private UserI getSessionUser(HttpServletRequest httpRequest) {
-		if(XDAT.getUserDetails()!=null){
-			return XDAT.getUserDetails();
-		}
-		else{
-			return (UserI) httpRequest.getSession().getAttribute(SecureResource.USER_ATTRIBUTE);
-		}
-	}
-
-	private void attachUser(Request request, UserI user) {
-		request.getAttributes().put(SecureResource.USER_ATTRIBUTE, user);
 	}
 
 	private UserI authenticateBasic(ChallengeResponse challengeResponse) {

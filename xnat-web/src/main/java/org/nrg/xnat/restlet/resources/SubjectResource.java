@@ -365,12 +365,12 @@ public class SubjectResource extends ItemResource {
 						
 
 						//check for unexpected modifications of ID and Project
-						if(existing !=null && !org.apache.commons.lang.StringUtils.equals(existing.getId(),sub.getId())){
+						if(existing !=null && !StringUtils.equals(existing.getId(),sub.getId())){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"ID cannot be modified");
 							return;
 						}
 						
-						if(existing !=null && !org.apache.commons.lang.StringUtils.equals(existing.getProject(),sub.getProject())){
+						if(existing !=null && !StringUtils.equals(existing.getProject(),sub.getProject())){
 							this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Project must be modified through separate URI.");
 							return;
 						}                       

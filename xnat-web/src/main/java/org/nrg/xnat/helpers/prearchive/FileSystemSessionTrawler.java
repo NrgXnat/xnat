@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.helpers.prearchive;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.slf4j.Logger;

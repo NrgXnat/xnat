@@ -12,7 +12,7 @@ package org.nrg.xnat.utils;
 
 import com.google.common.collect.Lists;
 import com.twmacinta.util.MD5;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.constants.Scope;

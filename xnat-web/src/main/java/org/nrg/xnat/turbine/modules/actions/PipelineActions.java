@@ -19,6 +19,7 @@ import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -294,7 +295,7 @@ public class PipelineActions extends SecureAction{
             String key = (String)keys.next();
             if (key.startsWith(pattern)) {
                 if (replace != null)
-                    rtn.put(org.apache.commons.lang.StringUtils.replace(key,replace,""),((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(key,data)));
+                    rtn.put(StringUtils.replace(key, replace, ""), ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(key, data)));
                 else 
                     rtn.put(key,((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter(key,data)));
             }

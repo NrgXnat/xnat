@@ -1,5 +1,4 @@
 <h3>Pre-archive - Database Matches</h3><br>
-#set($user=$data.getSession().getAttribute("user"))
 #set($scanTypes=$data.getSession().getAttribute("userHelper").getQueryResultsAsArrayList("SELECT DISTINCT type FROM xnat_imagescandata ORDER BY type;"))
 <form method="post" action="$link.setAction("MatchPrearchiveSessions")">
 <input type="hidden" name="project" value="$!project"/>

@@ -14,7 +14,7 @@
  */
 package org.nrg.xnat.helpers.merge;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.bean.CatEntryBean;
 import org.nrg.xdat.model.CatCatalogI;
 import org.nrg.xdat.model.CatDcmentryI;

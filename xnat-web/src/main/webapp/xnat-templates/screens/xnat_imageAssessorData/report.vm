@@ -110,12 +110,12 @@ obj.categories={};
 obj.categories.ids=[];
 
     #if($item.isActive() || $item.isQuarantine())
-        #if ($item.canEdit($data.getSession().getAttribute("user")))
+        #if ($turbineUtils.canEdit($user, $item))
         obj.canEdit=true;
         #else
         obj.canEdit=false;
         #end
-        #if ($item.canDelete($data.getSession().getAttribute("user")))
+        #if ($turbineUtils.canDelete($user, $item))
         obj.canDelete=true;
         #else
         obj.canDelete=false;

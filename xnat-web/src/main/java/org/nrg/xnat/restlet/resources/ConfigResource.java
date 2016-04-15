@@ -12,7 +12,7 @@ package org.nrg.xnat.restlet.resources;
 
 import org.apache.commons.fileupload.FileUploadException;
 import org.apache.commons.io.IOUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;

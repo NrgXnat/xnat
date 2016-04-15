@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 
 import javax.servlet.http.Cookie;
@@ -32,4 +33,10 @@ public class XnatHttpUtils {
 	public static String getJSESSIONID(RunData runData) {
 		return getJSESSIONID(runData.getRequest());
 	}
+
+    public static String getServerRoot(final HttpServletRequest request) {
+        final String port = request.getServerPort() == 80 ? "" : ":" + request.getServerPort();
+        final String servletPath = StringUtils.defaultIfBlank(request.getContextPath(), "");
+        return String.format("%s://%s%s%s", request.getScheme(), request.getServerName(), port, servletPath);
+    }
 }

@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.utils;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.interfaces.SiteConfigurationPropertyChangedListener;
 
 public class ChecksumsSiteConfigurationListener implements SiteConfigurationPropertyChangedListener {

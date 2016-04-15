@@ -11,7 +11,7 @@
 package org.nrg.xnat.restlet;
 
 import com.google.common.base.Joiner;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;

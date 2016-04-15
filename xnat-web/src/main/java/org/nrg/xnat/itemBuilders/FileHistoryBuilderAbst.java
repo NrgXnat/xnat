@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.itemBuilders;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.om.XnatResourcecatalog;
 import org.nrg.xft.XFTItem;

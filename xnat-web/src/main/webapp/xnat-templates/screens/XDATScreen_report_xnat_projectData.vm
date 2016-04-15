@@ -1,7 +1,7 @@
 #set($project=$om)
 <script language="javascript">
     var server = "$content.getURI("images")/";
-    var user_email = "$data.getSession().getAttribute("user").getEmail()";
+    var user_email = "$user.getEmail()";
 </script>
 #set($subject_count=$project.getSubjectCount())
 #if($om.getStudyprotocol().size() >= 1)

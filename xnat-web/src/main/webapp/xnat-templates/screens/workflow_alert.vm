@@ -13,7 +13,7 @@
 						<td valign="middle"><b>$workflow.getOnlyPipelineName():</b>
 						</td><td valign="middle">$!workflow.getStatus()</td><td valign="middle">$!workflow.getPercentagecomplete()</td>
 						<td valign="middle">Start Time: $!workflow.getLaunchTime()</td>
-						#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+						#if($turbineUtils.isSiteAdmin($user))
 							<td valign="middle">
 								<a onclick="dismissNotification('$workflow.getWorkflowId()', 'Failed')">[Mark as Failed]</a>
 							</td>
@@ -52,7 +52,7 @@
 						<td valign="middle"><b>$workflow.getOnlyPipelineName():</b>
 						</td><td valign="middle">$!workflow.getStatus()</td><td valign="middle">$!workflow.getPercentagecomplete()</td>
 						<td valign="middle">Start Time: $!workflow.getLaunchTime()</td>
-						#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+						#if($turbineUtils.isSiteAdmin($user))
 							<td valign="middle">
 								<a onclick="dismissNotification('$workflow.getWorkflowId()', 'Failed (Dismissed)')">[Dismiss]</a>
 							</td>

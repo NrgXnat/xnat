@@ -165,7 +165,7 @@ public class ProjSubExptAsstList extends QueryOrganizerResource {
 							}
 							
 							if(!matched){
-								XnatExperimentdataShare pp= new XnatExperimentdataShare((UserI)user);
+								XnatExperimentdataShare pp= new XnatExperimentdataShare(user);
 								pp.setProject(this.proj.getId());
 								assessor.setSharing_share(pp);
 							}

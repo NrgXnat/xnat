@@ -10,7 +10,7 @@
  */
 package org.nrg.xnat.turbine.modules.actions;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.bean.CatCatalogBean;

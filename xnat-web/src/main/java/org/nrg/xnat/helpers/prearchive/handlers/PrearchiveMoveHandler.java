@@ -1,6 +1,6 @@
 package org.nrg.xnat.helpers.prearchive.handlers;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.bean.XnatImagesessiondataBean;
 import org.nrg.xdat.bean.XnatPetmrsessiondataBean;

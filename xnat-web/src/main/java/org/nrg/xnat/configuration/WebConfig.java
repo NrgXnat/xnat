@@ -1,5 +1,6 @@
 package org.nrg.xnat.configuration;
 
+import org.nrg.framework.annotations.XapiRestController;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
@@ -29,10 +30,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 public class WebConfig extends WebMvcConfigurerAdapter {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
-        registry.addResourceHandler("**/swagger-ui.html")
-                .addResourceLocations("classpath:/META-INF/resources/");
-        registry.addResourceHandler("/webjars/**")
-                .addResourceLocations("classpath:/META-INF/resources/webjars/");
+        registry.addResourceHandler("**/swagger-ui.html").addResourceLocations("classpath:/META-INF/resources/");
+        registry.addResourceHandler("/webjars/**").addResourceLocations("classpath:/META-INF/resources/webjars/");
     }
 
     @Bean
@@ -43,10 +42,10 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     @Bean
     public ViewResolver viewResolver() {
         return new InternalResourceViewResolver() {{
-                setViewClass(JstlView.class);
-                setPrefix("/WEB-INF/views/");
-                setSuffix(".jsp");
-            }};
+            setViewClass(JstlView.class);
+            setPrefix("/WEB-INF/views/");
+            setSuffix(".jsp");
+        }};
     }
 
     @Bean
@@ -59,23 +58,11 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     @Bean
     public Docket api() {
         _log.debug("Initializing the Swagger Docket object");
-        return new Docket(DocumentationType.SWAGGER_2)
-                .select()
-                .apis(RequestHandlerSelectors.basePackage("org.nrg.xapi.rest"))
-                .paths(PathSelectors.any())
-                .build()
-                .apiInfo(apiInfo());
+        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.withClassAnnotation(XapiRestController.class)).paths(PathSelectors.any()).build().apiInfo(apiInfo());
     }
 
     private ApiInfo apiInfo() {
-        return new ApiInfo(
-                "XNAT REST API",
-                "The XNAT REST API (XAPI) functions provide remote programmatic access to XNAT internal functions.",
-                "1.7.0",
-                "http://www.xnat.org",
-                "info@xnat.org",
-                "Simplified 2-Clause BSD",
-                "API license URL");
+        return new ApiInfo("XNAT REST API", "The XNAT REST API (XAPI) functions provide access to XNAT internal functions for remote clients.", "1.7.0", "http://www.xnat.org", "info@xnat.org", "Simplified 2-Clause BSD", "API license URL");
     }
 
     private static final Logger _log = LoggerFactory.getLogger(WebConfig.class);

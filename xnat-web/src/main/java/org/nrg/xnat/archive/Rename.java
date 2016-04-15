@@ -219,7 +219,7 @@ public class Rename  implements Callable<File>{
 				
 				this.updateStep(workflow, setStep(STEP.EXECUTE_SQL));
 				//Execute SQL
-				executeSQL(cache,user,XFT.buildLogFileName(i));
+				executeSQL(cache,user);
 
 				this.updateStep(workflow, setStep(STEP.DELETE_OLD_DIR));
 				//if successful, move old directory to cache)
@@ -407,8 +407,8 @@ public class Rename  implements Callable<File>{
 	 * @return
 	 * @throws Exception 
 	 */
-	protected static void executeSQL(final DBItemCache cache, final UserI user, final String logFileName) throws Exception{
-		DBAction.executeCache(cache, user, user.getDBName(), logFileName);
+	protected static void executeSQL(final DBItemCache cache, final UserI user) throws Exception{
+		DBAction.executeCache(cache, user, user.getDBName());
 	}
 	
 	/**

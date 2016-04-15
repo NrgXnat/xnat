@@ -15,7 +15,7 @@ import java.util.Map;
 
 import javax.servlet.http.HttpServletRequest;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xnat.restlet.resources.SecureResource;
 import org.restlet.data.MediaType;
 import org.restlet.data.Request;

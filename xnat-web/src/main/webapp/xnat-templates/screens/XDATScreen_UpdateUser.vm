@@ -7,7 +7,7 @@ $page.setTitle("My XNAT")
 <DIV class="error">$data.message</DIV><br>
 #end
 
-#if($data.getSession().getAttribute("user").getUsername()!="guest")
+#if(!$turbineUtils.isGuest($user))
 #if (!$expired && !$forgot)
 #parse("screens/XDATScreen_change_email.vm")
 <br /><br />

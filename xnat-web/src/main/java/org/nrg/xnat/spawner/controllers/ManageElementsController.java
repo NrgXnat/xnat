@@ -12,27 +12,53 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.servlet.ModelAndView;
 
 import javax.inject.Inject;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 @SuppressWarnings("SpringMVCViewInspection")
 @Controller
-@RequestMapping(value = "/spawner/elements", produces = "application/json")
+@RequestMapping(value = "/spawner/manage", produces = "application/json")
 public class ManageElementsController {
 
     @RequestMapping
-    public ModelAndView getAvailableElements() {
-        final List<SpawnerElement> elements = _service.getAll();
-        return new ModelAndView("spawner/elements", "elements", elements);
+    public ModelAndView getNamespaces() {
+        final List<String> namespaces = _service.getNamespaces();
+        return new ModelAndView("spawner/elements", "namespaces", namespaces);
     }
 
-    @RequestMapping(value = "{elementId}", method = RequestMethod.GET)
-    public ModelAndView getElement(@PathVariable final String elementId) {
-        final SpawnerElement element = _service.retrieve(elementId);
+    @RequestMapping("elements")
+    public ModelAndView getDefaultElements() {
+        return getNamespacedElements(SpawnerElement.DEFAULT_NAMESPACE);
+    }
+
+    @RequestMapping("elements/{namespace}")
+    public ModelAndView getNamespacedElements(@PathVariable("namespace") final String namespace) {
+        final Map<String, Object> models = new HashMap<>();
+        models.put("namespace", namespace);
+        models.put("namespaces", _service.getNamespaces());
+        models.put("elements", _service.getDefaultElements());
+        return new ModelAndView("spawner/elements", models);
+    }
+
+    @RequestMapping(value = "element/{elementId}", method = RequestMethod.GET)
+    public ModelAndView getDefaultElement(@PathVariable final String elementId) {
+        return getNamespacedElement(SpawnerElement.DEFAULT_NAMESPACE, elementId);
+    }
+
+    @RequestMapping(value = "element/{namespace}/{elementId}", method = RequestMethod.GET)
+    public ModelAndView getNamespacedElement(@PathVariable("namespace") final String namespace, @PathVariable final String elementId) {
+        final SpawnerElement element = _service.retrieve(namespace, elementId);
         return new ModelAndView("spawner/element", element == null ? "error" : "elementId", element == null ? "The ID element " + elementId + " was not found in the system." : elementId);
     }
 
-    @RequestMapping(value = "{elementId}", method = RequestMethod.PUT)
-    public ModelAndView setElement(@PathVariable final String elementId, @RequestBody final SpawnerElement element) {
+    @RequestMapping(value = "element/{elementId}", method = RequestMethod.PUT)
+    public ModelAndView setDefaultElement(@PathVariable final String elementId, @RequestBody final SpawnerElement element) {
+        return setNamespacedElement(SpawnerElement.DEFAULT_NAMESPACE, elementId, element);
+    }
+
+    @RequestMapping(value = "element/{namespace}/{elementId}", method = RequestMethod.PUT)
+    public ModelAndView setNamespacedElement(@PathVariable final String namespace, @PathVariable final String elementId, @RequestBody final SpawnerElement element) {
         if (element == null) {
             return new ModelAndView("spawner/element", "error", "No valid spawner element was found in your submitted data.");
         }

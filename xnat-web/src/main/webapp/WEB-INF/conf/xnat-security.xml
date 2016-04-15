@@ -80,7 +80,7 @@
         <security:custom-filter position="CHANNEL_FILTER" ref="channelProcessingFilter"/>
         <security:custom-filter before="FORM_LOGIN_FILTER" ref="customAuthenticationFilter"/>
         <security:custom-filter after="BASIC_AUTH_FILTER" ref="customBasicAuthenticationFilter"/>
-		<security:custom-filter before="REMEMBER_ME_FILTER" ref="arcSpecFilter"/>
+		<security:custom-filter before="REMEMBER_ME_FILTER" ref="xnatInitCheckFilter"/>
 		<security:custom-filter after="SECURITY_CONTEXT_FILTER" ref="expiredPasswordFilter"/>
         <security:custom-filter position="CONCURRENT_SESSION_FILTER" ref="concurrencyFilter" />
         <security:custom-filter position="LOGOUT_FILTER" ref="logoutFilter" />
@@ -123,6 +123,9 @@
                 <value>/scripts/**</value>
                 <value>/style/**</value>
                 <value>/themes/**</value>
+                <value>/files/**</value>
+                <value>/pages/**</value>
+                <value>/page/**</value>
                 <value>/applet/**</value>
             </list>
         </property>
@@ -218,7 +221,7 @@
         <property name="emailVerificationDestination" value="/data/services/sendEmailVerification"/>
     </bean>
 	
-	<bean id="arcSpecFilter" class="org.nrg.xnat.security.XnatArcSpecFilter">
+	<bean id="xnatInitCheckFilter" class="org.nrg.xnat.security.XnatInitCheckFilter">
         <property name="initializationPath" value="/services/settings/initialize"/>
         <property name="configurationPath" value="/app/template/Configuration.vm"/>
         <property name="nonAdminErrorPath" value="/app/template/Unconfigured.vm"/>

@@ -1,7 +1,5 @@
+#* @vtlvariable name="user" type="org.nrg.xft.security.UserI" *#
 <!-- start: screens/XDATScreen_search_wizard2.vm -->
-
-#set ($user = $data.getSession().getAttribute("user"))
-
 #if(!$user || !$ELEMENT_0)
 ## If $user or $ELEMENT_O is null, display a message explaining that the search data has expired.
 ## Fixes XNAT-2195

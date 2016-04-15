@@ -2,6 +2,7 @@ package org.nrg.xapi.rest.users;
 
 import io.swagger.annotations.*;
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.model.users.User;
 import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.rest.AbstractXnatRestApi;
@@ -21,7 +22,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Api(description = "The XNAT POC User Management API")
-@RestController
+@XapiRestController
 @RequestMapping(value = "/users")
 public class UsersApi extends AbstractXnatRestApi {
     private static final Logger _log = LoggerFactory.getLogger(UsersApi.class);
@@ -169,7 +170,7 @@ public class UsersApi extends AbstractXnatRestApi {
     }
 
     @ApiOperation(value = "Sets the user's verified state.", notes = "Sets the verified state of the user with the specified user ID to the value of the flag parameter.", response = Boolean.class)
-    @ApiResponses({@ApiResponse(code = 200, message = "User verified status successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to verify or unverify this user."), @ApiResponse(code = 404, message = "User not found."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @ApiResponses({@ApiResponse(code = 200, message = "User verified status successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to verify or un-verify this user."), @ApiResponse(code = 404, message = "User not found."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/{id}/verified/{flag}"}, produces = {"application/json"}, method = {RequestMethod.PUT})
     public ResponseEntity<Boolean> usersIdVerifiedFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("id") String id, @ApiParam(value = "The value to set for the verified status.", required = true) @PathVariable("flag") Boolean flag) {
         HttpStatus status = isPermitted(id);

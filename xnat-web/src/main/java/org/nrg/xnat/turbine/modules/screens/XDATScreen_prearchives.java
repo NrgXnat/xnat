@@ -12,33 +12,31 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xnat.turbine.utils.XNATUtils;
 
 import java.util.Hashtable;
 
+@SuppressWarnings("unused")
 public class XDATScreen_prearchives extends SecureScreen {
     /* (non-Javadoc)
      * @see org.apache.turbine.modules.screens.VelocityScreen#doBuildTemplate(org.apache.turbine.util.RunData, org.apache.velocity.context.Context)
      */
     protected void doBuildTemplate(final RunData data, final Context context) {
-	try {
-	    context.put("user", TurbineUtils.getUser(data).getUsername());
-	    final Hashtable hash = XNATUtils.getInvestigatorsForRead("xnat:mrSessionData",data);
-	    context.put("investigators", hash);
+        try {
+            final Hashtable hash = XNATUtils.getInvestigatorsForRead("xnat:mrSessionData", data);
+            context.put("investigators", hash);
 
-	    if (data.getParameters().containsKey("project")) {
-		    context.put("project", org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
-	    }
-        if(Roles.isSiteAdmin(TurbineUtils.getUser(data))){
-            context.put("role","admin");
+            if (data.getParameters().containsKey("project")) {
+                context.put("project", org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project", data));
+            }
+            if (Roles.isSiteAdmin(XDAT.getUserDetails())) {
+                context.put("role", "admin");
+            }
+        } catch (Exception e) {
+            log.error(e);
         }
-	} catch (Exception e) {
-	    log.error(e);
-	    e.printStackTrace();
-	}
     }
-
 }

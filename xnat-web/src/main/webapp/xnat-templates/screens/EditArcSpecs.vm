@@ -1,6 +1,6 @@
 #set ($template = $data.getTemplateInfo())
 $!template.setLayoutTemplate("NoMenu.vm")
-#if($data.getSession().getAttribute("user").checkRole("Administrator"))
+#if($turbineUtils.isSiteAdmin($user))
 <form name="form1" method="post" action="$link.setAction("SetArcSpecs")">
 <table>
  <TR>

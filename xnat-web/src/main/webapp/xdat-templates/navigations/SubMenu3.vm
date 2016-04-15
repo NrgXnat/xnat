@@ -1,10 +1,10 @@
 ##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
-#if ($data.getSession().getAttribute("user").getStoredSearches().size()>0)
+#if ($user.getStoredSearches().size()>0)
 <table align="left" valign="top">
 	<tr>
        <td>
            <b style="text-decoration:underline">Bundles</b><br>
-		${data.getSession().getAttribute("user").outputBundleHTMLMenu()}
+		${user.outputBundleHTMLMenu()}
 		
 	  </td>
 	</tr>

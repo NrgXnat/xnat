@@ -28,7 +28,7 @@
 
 <script type="text/javascript">
     var server = "$content.getURI("images")/";
-    var user_email = "$data.getSession().getAttribute("user").getEmail()";
+    var user_email = "$user.getEmail()";
     //build element_array
 
     window.lTV = new LeftBarTreeView({ treeview: "l_tv", module: "search_tab_module", tabs: "search_tabs" });

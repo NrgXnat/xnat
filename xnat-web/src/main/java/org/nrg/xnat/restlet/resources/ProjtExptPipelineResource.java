@@ -19,7 +19,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlOptions;
 import org.nrg.pipeline.XnatPipelineLauncher;
 import org.nrg.pipeline.utils.PipelineFileUtils;

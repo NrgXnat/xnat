@@ -11,7 +11,7 @@
 package org.nrg.xnat.turbine.modules.actions;
 
 import edu.sdsc.grid.io.GeneralFile;
-import org.apache.commons.lang.RandomStringUtils;
+import org.apache.commons.lang3.RandomStringUtils;
 import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;

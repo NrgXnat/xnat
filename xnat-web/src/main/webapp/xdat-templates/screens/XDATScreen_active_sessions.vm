@@ -12,7 +12,7 @@
 #foreach($session in $sessions)
 <tr>
  <td NOWRAP><A name="LINK${sessionCounter}" HREF="#LINK${sessionCounter}" onClick=" return blocking($sessionCounter);">
-			<img ID="IMG$sessionCounter" src="$content.getURI("images/plus.jpg")" border=0> $!session.getAttribute("user").getLogin()</A></td>
+			<img ID="IMG$sessionCounter" src="$content.getURI("images/plus.jpg")" border=0> $!user.getLogin()</A></td>
  <td>$!turbineUtils.formatDateTime($session.getCreationTime())</td>
  <td>$!turbineUtils.formatDateTime($session.getLastAccessedTime())</td>
  <td>

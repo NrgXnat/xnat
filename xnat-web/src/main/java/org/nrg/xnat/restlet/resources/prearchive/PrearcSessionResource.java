@@ -14,7 +14,7 @@ import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
 
 import org.apache.commons.io.FileUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.TurbineException;
 import org.nrg.action.ActionException;
 import org.nrg.action.ClientException;

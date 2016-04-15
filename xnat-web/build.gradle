@@ -1,7 +1,7 @@
 def vXnat = '1.7.0-SNAPSHOT'
 def vXnatPipeline = vXnat
 def vSpring = '4.2.5.RELEASE'
-def vSpringSecurity = '4.0.3.RELEASE'
+def vSpringSecurity = '4.0.4.RELEASE'
 def vSwagger = '2.3.1'
 def vHibernate = '4.3.11.Final'
 def vEhcache = '2.6.11'
@@ -34,19 +34,16 @@ buildscript {
         jcenter()
     }
     dependencies {
-        classpath "org.nrg.xnat.build:gradle-xnat-plugin:1.7.0-SNAPSHOT"
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.2"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.2.4"
     }
 }
 
-apply plugin: 'xnat'
 apply plugin: 'groovy'
 apply plugin: 'java'
 apply plugin: 'war'
 apply plugin: 'maven'
 apply plugin: 'maven-publish'
-apply plugin: 'ivy-publish'
 apply plugin: 'com.bmuschko.tomcat'
 apply plugin: 'com.bmuschko.cargo'
 apply plugin: 'idea'
@@ -82,7 +79,7 @@ configurations {
 if (hasProperty("archiveName")) {
     war.archiveName = archiveName.endsWith(".war") ? archiveName : "${archiveName}.war"
 } else {
-    war.baseName = "xnat-web"
+war.baseName = "xnat-web"
 }
 
 sourceSets {
@@ -238,6 +235,9 @@ configurations {
 dependencies {
     // NRG dependencies first.
     compile "org.nrg.xnat:spawner:${vXnat}"
+    compile("org.nrg.xnat:xnat-data-models:${vXnat}"){
+        transitive = false
+    }
     compile "org.nrg.xdat:core:${vXnat}"
     compile "org.nrg:framework:${vXnat}"
     compile "org.nrg:transaction:${vXnat}"

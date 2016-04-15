@@ -1,6 +1,6 @@
 package org.nrg.xnat.restlet.resources;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.automation.runners.ScriptRunner;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.xdat.XDAT;

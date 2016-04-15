@@ -19,6 +19,7 @@ import javax.servlet.http.HttpServletResponse;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AccessLogger;
@@ -45,19 +46,7 @@ public class OnXnatLogin extends SavedRequestAwareAuthenticationSuccessHandler {
         }
         
         try{
-        	SecurityContext securityContext = SecurityContextHolder.getContext();
-        	
-	        UserI user= null;
-	        Object principal = securityContext.getAuthentication().getPrincipal();
-	        
-	        if(principal instanceof UserI){
-	        	user = (UserI)principal;
-	        }
-	        else if (principal instanceof String){
-	        	user = Users.getUser((String)principal);
-	        }
-	        
-	        request.getSession().setAttribute("user", user);
+			final UserI user = XDAT.getUserDetails();
 	      	request.getSession().setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
 	      	
 	      	java.util.Date today = java.util.Calendar.getInstance(java.util.TimeZone.getDefault()).getTime();

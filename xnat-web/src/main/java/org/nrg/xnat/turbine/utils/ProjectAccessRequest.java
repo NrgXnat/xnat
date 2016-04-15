@@ -510,7 +510,7 @@ public class ProjectAccessRequest {
     	setUserId(user.getID());
 		setApproved(accept);
 		setApprovalDate(Calendar.getInstance().getTime());
-        if (!org.apache.commons.lang.StringUtils.equalsIgnoreCase(parEmail, user.getEmail())) {
+        if (!StringUtils.equalsIgnoreCase(parEmail, user.getEmail())) {
             setEmail(user.getEmail());
         }
         save(user);

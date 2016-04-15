@@ -57,7 +57,6 @@
 
         <!-- session fields -->
         <h4>$displayManager.getSingularDisplayNameForImageSession() Fields</h4>
-        #set($user=$data.getSession().getAttribute("user"))
 
         <div class="search-item">
             <h5>$displayManager.getSingularDisplayNameForImageSession() ID:</h5>

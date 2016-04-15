@@ -11,7 +11,7 @@
 package org.nrg.xnat.restlet.resources;
 
 import com.fasterxml.jackson.core.type.TypeReference;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import com.fasterxml.jackson.core.JsonFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.xdat.XDAT;

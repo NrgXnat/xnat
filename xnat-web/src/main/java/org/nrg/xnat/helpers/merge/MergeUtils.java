@@ -12,7 +12,7 @@ package org.nrg.xnat.helpers.merge;
 
 import com.google.common.base.Predicate;
 import com.google.common.collect.Iterables;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.model.XnatAbstractresourceI;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatResourceI;

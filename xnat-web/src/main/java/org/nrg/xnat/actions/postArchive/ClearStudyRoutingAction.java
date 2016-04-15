@@ -2,7 +2,7 @@ package org.nrg.xnat.actions.postArchive;
 
 import java.util.Map;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.services.StudyRoutingService;

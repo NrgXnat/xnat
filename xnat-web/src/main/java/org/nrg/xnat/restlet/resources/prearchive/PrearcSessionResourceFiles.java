@@ -15,7 +15,7 @@
 package org.nrg.xnat.restlet.resources.prearchive;
 
 import com.google.common.collect.Lists;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
 import org.nrg.dcm.Dcm2Jpg;
 import org.nrg.xdat.model.CatCatalogI;

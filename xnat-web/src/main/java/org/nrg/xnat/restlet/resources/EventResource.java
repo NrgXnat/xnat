@@ -1,6 +1,6 @@
 package org.nrg.xnat.restlet.resources;
 
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.http.NameValuePair;
 import org.apache.http.client.utils.URLEncodedUtils;
 import org.hibernate.HibernateException;

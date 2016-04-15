@@ -164,12 +164,6 @@ public abstract class PipelineScreen extends SecureReport {
 
 			    if(XFT.VERBOSE)System.out.println("Loaded item object (org.nrg.xft.ItemI) as context parameter 'item'.");
 
-			    context.put("user",TurbineUtils.getUser(data));
-
-			    if(XFT.VERBOSE)System.out.println("Loaded user object (org.nrg.xdat.security.UserI) as context parameter 'user'.");
-
-			    
-
             	context.put("element",org.nrg.xdat.schema.SchemaElement.GetElement(item.getXSIType()));
 
             	context.put("search_element",((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("search_element",data)));

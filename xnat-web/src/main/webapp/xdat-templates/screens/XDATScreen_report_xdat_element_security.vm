@@ -170,7 +170,7 @@ $page.setVlinkColor($ui.vlink)
 	</TR>
 						</TABLE>
 		<td valign="top" align="right">
-	   		#elementActionsBox($element $search_field $search_value $data.getSession().getAttribute("user") $item)
+	   		#elementActionsBox($element $search_field $search_value $user $item)
 	    </td>
 	    			</TR>
 	   			</TABLE>

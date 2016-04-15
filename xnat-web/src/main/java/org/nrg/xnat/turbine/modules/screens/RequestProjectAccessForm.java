@@ -12,6 +12,7 @@ package org.nrg.xnat.turbine.modules.screens;
 
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
@@ -23,8 +24,8 @@ public class RequestProjectAccessForm extends SecureScreen {
     private XnatProjectdata project = null;
     @Override
     protected void doBuildTemplate(RunData data, Context context) throws Exception {
-        String p = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("project",data));
-        UserI user = TurbineUtils.getUser(data);
+        String p = ((String) TurbineUtils.GetPassedParameter("project",data));
+        UserI user = XDAT.getUserDetails();
         if (project==null){
             project = XnatProjectdata.getXnatProjectdatasById(p, user, false);
         }
@@ -35,8 +36,8 @@ public class RequestProjectAccessForm extends SecureScreen {
             return;
         } 
         
-        String access_level = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("access_level",data));
-        Integer id = ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger("id",data));
+        String access_level = ((String) TurbineUtils.GetPassedParameter("access_level",data));
+        Integer id = TurbineUtils.GetPassedInteger("id", data);
         UserI other =Users.getUser(id);
         
         context.put("user", other);
@@ -48,7 +49,4 @@ public class RequestProjectAccessForm extends SecureScreen {
     public boolean allowGuestAccess() {
         return false;
     }
-
-    
-    
 }

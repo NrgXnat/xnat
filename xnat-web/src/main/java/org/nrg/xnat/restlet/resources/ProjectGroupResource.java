@@ -5,8 +5,8 @@ import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 
-import org.apache.commons.lang.NumberUtils;
-import org.apache.commons.lang.StringUtils;
+import org.apache.commons.lang3.math.NumberUtils;
+import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.ElementSecurity;

@@ -10,15 +10,10 @@
  */
 package org.nrg.xnat.restlet.extensions;
 
-import java.util.Date;
-import java.util.List;
-
-import org.apache.commons.lang.StringEscapeUtils;
 import org.nrg.mail.services.EmailRequestLogService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.XnatRestlet;
 import org.nrg.xnat.restlet.resources.SecureResource;
@@ -29,6 +24,9 @@ import org.restlet.data.Response;
 import org.restlet.data.Status;
 import org.restlet.resource.Resource;
 import org.restlet.resource.Variant;
+
+import java.util.Date;
+import java.util.List;
 
 @XnatRestlet(value = {"/services/sendEmailVerification"}, secure = false)
 public class SendEmailVerification extends Resource {
@@ -55,7 +53,7 @@ public class SendEmailVerification extends Resource {
              }
              
              // Send email and log request.
-             AdminUtils.sendNewUserVerificationEmail(getXDATUser(StringEscapeUtils.escapeSql(email)));
+             AdminUtils.sendNewUserVerificationEmail(getXDATUser(email));
              requests.logEmailRequest(email, new Date ());
           }
           catch(ExceededRequestsException e){

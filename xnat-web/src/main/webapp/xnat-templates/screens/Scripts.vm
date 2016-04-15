@@ -29,7 +29,7 @@
 
 ##    <div id="tp_fm" style="display:none"></div>
 
-    #if($data.getSession().getAttribute("user").checkRole("Administrator"))
+    #if($turbineUtils.isSiteAdmin($user))
 
         <style type="text/css">
             #automation-events-scripts .yui-content > div { padding: 2px; }

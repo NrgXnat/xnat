@@ -68,7 +68,7 @@ public class ExptAssessmentResource extends ItemResource {
 
 		String assessedID= (String)getParameter(request,"ASSESSED_ID");
 		if(assessedID!=null){
-			if(assesed==null && assessedID!=null){
+			if(assesed == null){
 				assesed = XnatExperimentdata.getXnatExperimentdatasById(assessedID, user, false);
 				if (assesed != null && (proj != null && !assesed.hasProject(proj.getId()))) {
 					assesed = null;
@@ -93,8 +93,8 @@ public class ExptAssessmentResource extends ItemResource {
 				this.getVariants().add(new Variant(MediaType.TEXT_HTML));
 				this.getVariants().add(new Variant(MediaType.TEXT_XML));
 			}
-		}else{
-			response.setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to find assessed experiment '" + TurbineUtils.escapeParam(assessedID) + "'");
+		} else {
+			response.setStatus(Status.CLIENT_ERROR_NOT_FOUND, "Unable to find assessed experiment, no ID submitted or found.");
 		}
 
 		this.fieldMapping.putAll(XMLPathShortcuts.getInstance().getShortcuts(XMLPathShortcuts.DERIVED_DATA,false));
@@ -108,15 +108,13 @@ public class ExptAssessmentResource extends ItemResource {
 
 	@Override
 	public void handlePut() {
-		XFTItem item = null;
-
 		try {
 			XFTItem template=null;
 			if (existing!=null && !this.isQueryVariableTrue("allowDataDeletion")){
 				template=existing.getItem().getCurrentDBVersion();
 			}
 
-			item=this.loadItem(null,true,template);
+			XFTItem item=this.loadItem(null,true,template);
 
 			if(item==null){
 				String xsiType=this.getQueryVariable("xsiType");
@@ -150,7 +148,7 @@ public class ExptAssessmentResource extends ItemResource {
 								if(pp.getProject().equals(newProject.getId())){
 									matched=(XnatExperimentdataShare)pp;
 									if(newLabel!=null && !pp.getLabel().equals(newLabel)){
-										((XnatExperimentdataShare)pp).setLabel(newLabel);
+										pp.setLabel(newLabel);
 										BaseXnatExperimentdata.SaveSharedProject((XnatExperimentdataShare)pp, assessor, user,newEventInstance(EventUtils.CATEGORY.DATA,(getAction()!=null)?getAction():EventUtils.RENAME_IN_SHARED_PROJECT));
 									}
 									break;
@@ -188,12 +186,12 @@ public class ExptAssessmentResource extends ItemResource {
 									}
 
 									if(Permissions.canCreate(user, assessor.getXSIType()+"/project", newProject.getId())){
-										XnatExperimentdataShare pp= new XnatExperimentdataShare((UserI)user);
+										XnatExperimentdataShare pp= new XnatExperimentdataShare(user);
 										pp.setProject(newProject.getId());
 										if(newLabel!=null)pp.setLabel(newLabel);
 										pp.setProperty("sharing_share_xnat_experimentda_id", assessor.getId());
 
-										BaseXnatExperimentdata.SaveSharedProject((XnatExperimentdataShare)pp, assessor, user,newEventInstance(EventUtils.CATEGORY.DATA,(getAction()!=null)?getAction():"Shared into additional project"));
+										BaseXnatExperimentdata.SaveSharedProject(pp, assessor, user, newEventInstance(EventUtils.CATEGORY.DATA, (getAction() != null) ? getAction() : "Shared into additional project"));
 									}else{
 										this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,"Specified user account has insufficient create privileges for experiments in the " + newProject.getId() + " project.");
 										return;
@@ -207,11 +205,9 @@ public class ExptAssessmentResource extends ItemResource {
 							this.returnDefaultRepresentation();
 						}else{
 							this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to identify project: " + newProjectS);
-							return;
 						}
 					}else{
 						this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
-						return;
 					}
 				}else{
 					if(assessor.getLabel()==null){
@@ -332,18 +328,18 @@ public class ExptAssessmentResource extends ItemResource {
 					}
 
 					//check for unexpected modifications of ID, Project and label
-					if(existing !=null && !org.apache.commons.lang.StringUtils.equals(existing.getId(),assessor.getId())){
+					if(existing !=null && !StringUtils.equals(existing.getId(),assessor.getId())){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"ID cannot be modified");
 						return;
 					}
 					
-					if(existing !=null && !org.apache.commons.lang.StringUtils.equals(existing.getProject(),assessor.getProject())){
+					if(existing !=null && !StringUtils.equals(existing.getProject(),assessor.getProject())){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Project must be modified through separate URI.");
 						return;
 					}
 					
 					//MATCHED
-					if(existing !=null && !org.apache.commons.lang.StringUtils.equals(existing.getLabel(),assessor.getLabel())){
+					if(existing !=null && !StringUtils.equals(existing.getLabel(),assessor.getLabel())){
 						this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST,"Label must be modified through separate URI.");
 						return;
 					}
@@ -361,7 +357,6 @@ public class ExptAssessmentResource extends ItemResource {
 			this.getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST);
 		} catch (ActionException e) {
 			this.getResponse().setStatus(e.getStatus(),e.getMessage());
-			return;
 		} catch (Exception e) {
 			this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 			logger.error("",e);
@@ -427,7 +422,6 @@ public class ExptAssessmentResource extends ItemResource {
 				if(msg!=null){
 					WorkflowUtils.fail(wrk, c);
 					this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,msg);
-					return;
 				}else{
 					WorkflowUtils.complete(wrk, c);
 				}
@@ -439,12 +433,10 @@ public class ExptAssessmentResource extends ItemResource {
 				}
 				logger.error("",e);
 				this.getResponse().setStatus(Status.SERVER_ERROR_INTERNAL,e.getMessage());
-				return;
 			}
 		} catch (EventRequirementAbsent e1) {
 			logger.error("",e1);
 			this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN,e1.getMessage());
-			return;
 		}
 	}
 
@@ -462,7 +454,7 @@ public class ExptAssessmentResource extends ItemResource {
 
 		if(assessor!=null){
 			String filepath = this.getRequest().getResourceRef().getRemainingPart();
-			if(filepath!=null && filepath.indexOf("?")>-1){
+			if(filepath!=null && filepath.contains("?")){
 				filepath = filepath.substring(0,filepath.indexOf("?"));
 		}
 
@@ -471,37 +463,37 @@ public class ExptAssessmentResource extends ItemResource {
 			}
 			if(filepath!=null && filepath.equals("status")){
 				return returnStatus(assessor,mt);
-			}else if(filepath!=null && filepath.startsWith("projects")){
+			}else if (filepath != null && filepath.startsWith("projects")) {
 				XFTTable t = new XFTTable();
-				ArrayList<String> al = new ArrayList<String>();
+				ArrayList<String> al = new ArrayList<>();
 				al.add("label");
 				al.add("ID");
 				al.add("Secondary_ID");
 				al.add("Name");
 				t.initTable(al);
 
-				Object[] row=new Object[4];
-				row[0]=assessor.getLabel();
+				Object[] row = new Object[4];
+				row[0] = assessor.getLabel();
 				XnatProjectdata primary = assessor.getPrimaryProject(false);
-				row[1]=primary.getId();
-				row[2]=primary.getSecondaryId();
-				row[3]=primary.getName();
+				row[1] = primary.getId();
+				row[2] = primary.getSecondaryId();
+				row[3] = primary.getName();
 				t.rows().add(row);
 
-				for(Map.Entry<XnatProjectdataI, String> entry: assessor.getProjectDatas().entrySet()){
-					row=new Object[4];
-					row[0]=entry.getValue();
-					row[1]=entry.getKey().getId();
-					row[2]=entry.getKey().getSecondaryId();
-					row[3]=entry.getKey().getName();
+				for (Map.Entry<XnatProjectdataI, String> entry : assessor.getProjectDatas().entrySet()) {
+					row = new Object[4];
+					row[0] = entry.getValue();
+					row[1] = entry.getKey().getId();
+					row[2] = entry.getKey().getSecondaryId();
+					row[3] = entry.getKey().getName();
 					t.rows().add(row);
 				}
 
-				Hashtable<String,Object> params=new Hashtable<String,Object>();
-				if(t!=null)params.put("totalRecords", t.size());
+				Hashtable<String, Object> params = new Hashtable<String, Object>();
+				params.put("totalRecords", t.size());
 				return representTable(t, mt, params);
-			}else{
-				return this.representItem(assessor.getItem(),mt);
+			} else {
+				return this.representItem(assessor.getItem(), mt);
 			}
 		}else{
 			this.getResponse().setStatus(Status.CLIENT_ERROR_NOT_FOUND,"Unable to find the specified experiment.");

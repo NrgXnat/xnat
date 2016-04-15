@@ -20,7 +20,7 @@ public class Login extends org.nrg.xdat.turbine.modules.screens.Login {
     public final static Logger logger = Logger.getLogger(XDATScreen_themes.class);
     @Override
     protected void doBuildTemplate(RunData data, Context c) throws Exception {
-        ThemeService themeService = XDAT.getContextService().getBean(ThemeService.class);
+        ThemeService themeService = XDAT.getThemeService();
         String themedRedirect = themeService.getThemePage("Login");
         if(themedRedirect != null) {
             c.put("themedRedirect", themedRedirect);

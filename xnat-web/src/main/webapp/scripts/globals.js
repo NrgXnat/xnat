@@ -49,7 +49,7 @@ function getParameterByName( name ){
 }
 
 // get the url hash string without the '#'
-function getUrlHashString(){
+function getUrlHash(){
     return window.location.hash.split('#')[1] || '';
 }
 

@@ -12,21 +12,21 @@
     else {
         return factory(NS);
     }
-}('app.customPage', function(NS, undefined){
+}('XNAT.app.customPage', function(NS, undefined){
 
     // setExtendedObject() hasn't been tested yet
     //var customPage = setExtendedObject(XNAT, NS);
 
-    var customPage = getObject(XNAT.app.customPage||{});
-    
+    var customPage = getObject(eval(NS)||{});
+
     customPage.getName = function(){
         var name = getQueryStringValue('view');
         name = name || getUrlHashValue('#view=');
-        name = name || getUrlHashString();
-        return name;
+        name = name || getUrlHash();
+        return customPage.name = name;
     };
 
-    customPage.name = customPage.getName();
+    customPage.getName();
 
     customPage.getPage = function(name, container){
 
@@ -38,14 +38,14 @@
         // don't even bother if there's no name
         if (!name) return;
 
-        var container$ = customPage.container || $$(container);
+        var $container = customPage.container || $$(container);
 
         function getPage(path){
             return XNAT.xhr.get({
                 url: XNAT.url.rootUrl(path),
                 dataType: 'html',
                 success: function(content){
-                    container$.html(content);
+                    $container.html(content);
                 }
             })
         }
@@ -59,21 +59,23 @@
             return paths;
         };
 
-        pagePaths = setPaths(name, ['/pages', '/page']);
+        pagePaths = setPaths(name, ['/pages']);
 
         // if we're using a theme, check that theme's folder
         if (XNAT.theme){
             themePaths = setPaths(name, [
                 '/themes/' + XNAT.theme,
-                '/themes/' + XNAT.theme + '/pages',
-                '/themes/' + XNAT.theme + '/page'
+                '/themes/' + XNAT.theme + '/pages'
             ]);
             pagePaths = themePaths.concat(pagePaths);
         }
 
         function lookForPage(i) {
+            var not_found = 'page not found';
             if (i === pagePaths.length){
-                console.log("couldn't do it");
+                not_found =  '<b>"' + customPage.getName() + '"</b> page not found';
+                $container.html(not_found);
+                // console.log("couldn't do it");
                 return false;
             }
             // recursively try to get pages at different places
@@ -87,6 +89,6 @@
 
     };
 
-    return customPage;
+    return XNAT.app.customPage = customPage;
 
 }));

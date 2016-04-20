@@ -1,12 +1,14 @@
 package org.nrg.xnat.configuration;
 
 import org.nrg.framework.annotations.XapiRestController;
+import org.nrg.xnat.spawner.configuration.SpawnerConfig;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.web.multipart.MultipartResolver;
 import org.springframework.web.multipart.support.StandardServletMultipartResolver;
@@ -26,7 +28,8 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 @Configuration
 @EnableWebMvc
 @EnableSwagger2
-@ComponentScan("org.nrg.xapi.rest")
+@Import(SpawnerConfig.class)
+@ComponentScan({"org.nrg.xapi.rest", "org.nrg.xnat.spawner.controllers"})
 public class WebConfig extends WebMvcConfigurerAdapter {
     @Override
     public void addResourceHandlers(ResourceHandlerRegistry registry) {
@@ -58,7 +61,7 @@ public class WebConfig extends WebMvcConfigurerAdapter {
     @Bean
     public Docket api() {
         _log.debug("Initializing the Swagger Docket object");
-        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.withClassAnnotation(XapiRestController.class)).paths(PathSelectors.any()).build().apiInfo(apiInfo());
+        return new Docket(DocumentationType.SWAGGER_2).select().apis(RequestHandlerSelectors.withClassAnnotation(XapiRestController.class)).paths(PathSelectors.any()).build().apiInfo(apiInfo()).pathMapping("/xapi");
     }
 
     private ApiInfo apiInfo() {

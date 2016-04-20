@@ -170,6 +170,7 @@ publishing {
         }
     }
     repositories {
+        mavenLocal()
         maven {
             credentials {
                 // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command

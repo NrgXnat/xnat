@@ -445,7 +445,7 @@ function toNumber( val, strip, force, dec ){
 
         // chop off after 2nd decimal, if present
         val = val.split('.');
-        val = val[0]+ '.' +val[1];
+        val = (val.length === 1) ? val[0] : val[0]+ '.' +val[1];
 
     }
 

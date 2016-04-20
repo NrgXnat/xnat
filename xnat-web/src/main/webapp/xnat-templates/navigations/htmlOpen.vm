@@ -8,17 +8,15 @@
 ##<!-- the "no-js" class is for Modernizr - are we even using that? -->
 
 <head>
-#if ($themedRedirect) <!-- Reload the appropriate page if a global theme style specifies a redirect -->
-    <script type="text/javascript">
-        window.location = "$content.getURI("")$themedRedirect";
-    </script>
-#end
-
-#if ($theme)
-    <script type="text/javascript">
-        XNAT.theme = "$theme";
-    </script>
-#end
+<script type="text/javascript">
+    var XNAT = {};
+    #if ($themedRedirect) <!-- Reload the appropriate page if a global theme style specifies a redirect -->
+    window.location = "$content.getURI("")$themedRedirect";
+    #end
+    #if ($theme)
+    XNAT.theme = "$theme";
+    #end
+</script>
 
 <!-- path: xnat-templates/navigations/htmlOpen -->
     <title>$!systemName</title>

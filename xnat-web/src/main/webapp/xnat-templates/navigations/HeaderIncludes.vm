@@ -21,7 +21,6 @@
 <!-- set global vars that are used often -->
 <script type="text/javascript">
 
-    var XNAT = {};
     var serverRoot = "$content.getURI('')";
     var csrfToken = "$!data.getSession().getAttribute("XNAT_CSRF")";
     var showReason = typeof $showReason != 'undefined' ? $showReason : null;

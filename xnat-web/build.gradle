@@ -71,26 +71,13 @@ repositories {
     jcenter()
 }
 
-configurations {
-    sourceCompatibility = 1.7
-    targetCompatibility = 1.7
-}
+sourceCompatibility = 1.7
+targetCompatibility = 1.7
 
 if (hasProperty("archiveName")) {
     war.archiveName = archiveName.endsWith(".war") ? archiveName : "${archiveName}.war"
 } else {
 war.baseName = "xnat-web"
-}
-
-sourceSets {
-    main {
-        java {
-            srcDirs 'src/main/java', 'src/generated/java'
-        }
-        resources {
-            srcDir 'src/generated/resources'
-        }
-    }
 }
 
 tomcatRun.contextPath = '/'

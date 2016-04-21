@@ -2,6 +2,7 @@ package org.nrg.xnat.configuration;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;
+import org.python.google.common.base.Joiner;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Bean;
@@ -25,21 +26,25 @@ import java.util.List;
  */
 @Configuration
 @PropertySources({
-        @PropertySource(value = "file:${xnat.home}/config/services.properties", ignoreResourceNotFound = true),
-        @PropertySource(value = "file:${xnat.config.home}/services.properties", ignoreResourceNotFound = true),
-        @PropertySource(value = "file:${xnat.config}", ignoreResourceNotFound = true)})
+     @PropertySource(value = PropertiesConfig.XNAT_HOME_URL, ignoreResourceNotFound = true),
+     @PropertySource(value = PropertiesConfig.XNAT_CONFIG_HOME_URL, ignoreResourceNotFound = true),
+     @PropertySource(value = PropertiesConfig.XNAT_CONFIG_URL, ignoreResourceNotFound = true)})
 public class PropertiesConfig {
 
-    public static final String ENV_HOME = "HOME";
-    public static final String ENV_XNAT_HOME = "XNAT_HOME";
-    public static final String JAVA_XNAT_HOME = "xnat.home";
+    public static final String ENV_HOME              = "HOME";
+    public static final String ENV_XNAT_HOME         = "XNAT_HOME";
+    public static final String JAVA_XNAT_HOME        = "xnat.home";
     public static final String JAVA_XNAT_CONFIG_HOME = "xnat.config.home";
-    public static final String JAVA_XNAT_CONFIG = "xnat.config";
-    public static final List<String> CONFIG_LOCATIONS = Collections.unmodifiableList(Arrays.asList(JAVA_XNAT_CONFIG, JAVA_XNAT_CONFIG_HOME, JAVA_XNAT_HOME, ENV_XNAT_HOME, ENV_HOME, ENV_HOME));
-    public static final List<String> CONFIG_PATHS = Collections.unmodifiableList(Arrays.asList("", "services.properties", "config/services.properties", "config/services.properties", "xnat/config/services.properties", "config/services.properties"));
+    public static final String JAVA_XNAT_CONFIG      = "xnat.config";
+    public static final String XNAT_CONF_FILE        = "xnat-conf.properties";
+    public static final String BASE_CONF_FOLDER      = "config";
+    public static final String EXT_CONF_FOLDER       = "xnat/config";
+    public static final String XNAT_HOME_URL         = "file:${" + JAVA_XNAT_HOME + "}/" + BASE_CONF_FOLDER + "/" + XNAT_CONF_FILE;
+    public static final String XNAT_CONFIG_HOME_URL  = "file:${" + JAVA_XNAT_CONFIG_HOME + "}/" + XNAT_CONF_FILE;
+    public static final String XNAT_CONFIG_URL       = "file:${" + JAVA_XNAT_CONFIG + "}";
 
-    // TODO: The lines above should be combined into a list of expressions below. I can't get the SpEL expressions to evaluate correctly against the environment variables though.
-    // private static final List<String> CONFIG_EXPRESSIONS = Collections.unmodifiableList(Arrays.asList("${xnat.config}", "${xnat.config.home}/services.properties", "${XNAT_HOME}/config/services.properties", "${xnat.home}/config/services.properties", "${HOME}/xnat/config/services.properties"));
+    public static final List<String> CONFIG_LOCATIONS = Collections.unmodifiableList(Arrays.asList(JAVA_XNAT_CONFIG, JAVA_XNAT_CONFIG_HOME, JAVA_XNAT_HOME, ENV_XNAT_HOME, ENV_HOME, ENV_HOME));
+    public static final List<String> CONFIG_PATHS     = Collections.unmodifiableList(Arrays.asList("", XNAT_CONF_FILE, Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(EXT_CONF_FOLDER, XNAT_CONF_FILE).toString(), Paths.get(BASE_CONF_FOLDER, XNAT_CONF_FILE).toString()));
 
     @Bean
     public static PropertySourcesPlaceholderConfigurer properties(final Environment environment) throws ConfigurationException {
@@ -92,7 +97,7 @@ public class PropertiesConfig {
                 }
             }
             if (_configFolderPaths.size() == 0) {
-                throw new RuntimeException("No XNAT home specified in any of the accepted locations.");
+                throw new RuntimeException("No XNAT home specified in any of the accepted locations: " + Joiner.on(", ").join(CONFIG_URLS));
             }
         }
         return _configFolderPaths;
@@ -104,7 +109,7 @@ public class PropertiesConfig {
             if (path.toFile().exists() && path.toFile().isFile()) {
                 return path.toFile();
             }
-            final File candidate = path.resolve("services.properties").toFile();
+            final File candidate = path.resolve(XNAT_CONF_FILE).toFile();
             if (candidate.exists()) {
                 return candidate;
             }
@@ -124,14 +129,18 @@ public class PropertiesConfig {
             }
         }
         if (configFolderPaths.size() == 0) {
-            throw new RuntimeException("No XNAT home specified in any of the accepted locations.");
+            throw new RuntimeException("No XNAT home specified in any of the accepted locations: " + Joiner.on(", ").join(CONFIG_URLS));
         }
         return configFolderPaths;
     }
 
     private static Path getConfigFolder(final Environment environment, final String variable, final String relative) {
+        final String url = "${" + variable + "}/" + relative;
+        if (!CONFIG_URLS.contains(url)) {
+            CONFIG_URLS.add(url);
+        }
         if (_log.isDebugEnabled()) {
-            _log.debug("Testing path suggested by environment variable {} for XNAT home candidate.", variable);
+            _log.debug("Testing path for XNAT home candidate: {}", url);
         }
         final String value = environment.getProperty(variable);
         if (StringUtils.isBlank(value)) {
@@ -141,7 +150,7 @@ public class PropertiesConfig {
             return null;
         }
         final Path candidate = Paths.get(value, relative);
-        final File file = candidate.toFile();
+        final File file      = candidate.toFile();
         if (file.exists()) {
             // If it's a directory...
             if (file.isDirectory()) {
@@ -152,7 +161,7 @@ public class PropertiesConfig {
                 return candidate;
             } else {
                 // If it's a file, then the parent is probably a config folder, so if this is services.properties (the default) or the specific file identified by xnat.config...
-                if (file.getName().equals("services.properties") || StringUtils.equals(candidate.toString(), environment.getProperty("xnat.config"))) {
+                if (file.getName().equals(XNAT_CONF_FILE) || StringUtils.equals(candidate.toString(), environment.getProperty(JAVA_XNAT_CONFIG))) {
                     // So its parent is a config folder, QED.
                     return candidate.getParent();
                 }
@@ -164,17 +173,13 @@ public class PropertiesConfig {
     }
 
     private static final Logger _log = LoggerFactory.getLogger(PropertiesConfig.class);
-    private static final List<String> CONFIG_CANDIDATES = Arrays.asList("${HOME}/config/services.properties",
-            "${HOME}/xnat/config/services.properties",
-            "${XNAT_HOME}/config/services.properties",
-            "${xnat.home}/config/services.properties",
-            "${xnat.config.home}/services.properties",
-            "${xnat.config}");
+
+    private static final List<String> CONFIG_URLS = new ArrayList<>();
 
     @Inject
     private Environment _environment;
 
-    private final List<Path> _configFolderPaths = new ArrayList<>();
+    private final List<Path>   _configFolderPaths     = new ArrayList<>();
     private final List<String> _configFolderLocations = new ArrayList<>();
     private Path _xnatHome;
 }

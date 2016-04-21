@@ -17,9 +17,8 @@ import org.springframework.jdbc.core.JdbcTemplate;
 import javax.sql.DataSource;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-public class ClearExpiredAliasTokens implements Callable<Void> {
+public class ClearExpiredAliasTokens implements Runnable {
     public ClearExpiredAliasTokens(final DataSource dataSource, final String timeout) {
         if (_log.isDebugEnabled()) {
             _log.debug("Initializing the alias token sweeper job with an interval of: " + timeout);
@@ -32,7 +31,7 @@ public class ClearExpiredAliasTokens implements Callable<Void> {
     /**
      */
     @Override
-    public Void call() {
+    public void run() {
         if (_log.isDebugEnabled()) {
             _log.debug("Executing alias token sweep function");
         }
@@ -44,14 +43,13 @@ public class ClearExpiredAliasTokens implements Callable<Void> {
             }
             template.execute(query);
         }
-        return null;
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(ClearExpiredAliasTokens.class);
-    private static final String QUERY_DELETE_TOKEN_IP_ADDRESSES = "DELETE FROM xhbm_alias_token_validipaddresses WHERE alias_token in (SELECT id FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s')";
-    private static final String QUERY_DELETE_ALIAS_TOKENS = "DELETE FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s'";
-    private static final List<String> ALIAS_TOKEN_QUERIES = Arrays.asList(QUERY_DELETE_TOKEN_IP_ADDRESSES, QUERY_DELETE_ALIAS_TOKENS);
+    private static final Logger       _log                            = LoggerFactory.getLogger(ClearExpiredAliasTokens.class);
+    private static final String       QUERY_DELETE_TOKEN_IP_ADDRESSES = "DELETE FROM xhbm_alias_token_validipaddresses WHERE alias_token in (SELECT id FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s')";
+    private static final String       QUERY_DELETE_ALIAS_TOKENS       = "DELETE FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s'";
+    private static final List<String> ALIAS_TOKEN_QUERIES             = Arrays.asList(QUERY_DELETE_TOKEN_IP_ADDRESSES, QUERY_DELETE_ALIAS_TOKENS);
 
     private final DataSource _dataSource;
-    private final String _timeout;
+    private final String     _timeout;
 }

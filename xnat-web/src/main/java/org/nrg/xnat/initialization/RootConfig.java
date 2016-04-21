@@ -1,61 +1,48 @@
 package org.nrg.xnat.initialization;
 
+import org.nrg.config.exceptions.SiteConfigurationException;
+import org.nrg.framework.configuration.FrameworkConfig;
 import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.security.HistoricPasswordValidator;
 import org.nrg.xdat.security.PasswordValidatorChain;
 import org.nrg.xdat.security.RegExpValidator;
-import org.nrg.xnat.utils.XnatUserProvider;
 import org.nrg.xnat.event.conf.EventPackages;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
-import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.ImportResource;
+import org.nrg.xnat.utils.XnatUserProvider;
+import org.springframework.context.annotation.*;
 
+import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.List;
 
 @Configuration
-@ComponentScan({"org.nrg.framework.datacache.impl.hibernate",
-                "org.nrg.framework.services.impl",
-                "org.nrg.xdat.daos",
-                "org.nrg.xnat.daos",
-                "org.nrg.xnat.services.impl.hibernate",
-                "org.nrg.xdat.services",
-                "org.nrg.xft.daos",
-                "org.nrg.xft.services",
-                "org.nrg.xapi.configuration",
-                "org.nrg.xnat.helpers.merge",
-                "org.nrg.xnat.configuration",
-                "org.nrg.xnat.services",
-                "org.nrg.prefs.repositories",
-                "org.nrg.prefs.services.impl.hibernate",
-                "org.nrg.dicomtools.filters"})
+@ComponentScan({"org.nrg.xdat.daos", "org.nrg.xnat.daos", "org.nrg.xnat.services.impl.hibernate", "org.nrg.xdat.services", "org.nrg.xft.daos", "org.nrg.xft.services", "org.nrg.xnat.helpers.merge", "org.nrg.xnat.configuration", "org.nrg.xnat.services", "org.nrg.dicomtools.filters"})
+@Import(FrameworkConfig.class)
 @ImportResource({"WEB-INF/conf/xnat-security.xml", "WEB-INF/conf/mq-context.xml"})
 public class RootConfig {
 
-    public static final List<String> DEFAULT_ENTITY_PACKAGES = Arrays.asList("org.nrg.framework.datacache", "org.nrg.xft.entities", "org.nrg.xft.event.entities", "org.nrg.xdat.entities",
-                                                                              "org.nrg.xnat.entities", "org.nrg.xnat.event.entities", "org.nrg.prefs.entities", "org.nrg.config.entities");
+    public static final List<String> DEFAULT_ENTITY_PACKAGES = Arrays.asList("org.nrg.xft.entities", "org.nrg.xft.event.entities", "org.nrg.xdat.entities", "org.nrg.xnat.entities", "org.nrg.xnat.event.entities", "org.nrg.config.entities");
 
     @Bean
-    public String siteId() {
-        return _siteId;
+    public InitializerSiteConfiguration initializerSiteConfiguration() {
+        return new InitializerSiteConfiguration();
     }
 
     @Bean
-    public RegExpValidator regexValidator(@Value("${security.password_complexity:^.*$}") final String complexityExpression,
-                                          @Value("${security.password_complexity_message:Password is not sufficiently complex.}") final String complexityMessage) {
+    public RegExpValidator regexValidator() throws SiteConfigurationException {
+        final String complexityExpression = _preferences.getPasswordComplexity();
+        final String complexityMessage = _preferences.getPasswordComplexityMessage();
         return new RegExpValidator(complexityExpression, complexityMessage);
     }
 
     @Bean
-    public HistoricPasswordValidator historicPasswordValidator(@Value("${security.password_history:365}") final int durationInDays) {
+    public HistoricPasswordValidator historicPasswordValidator() throws SiteConfigurationException {
+        final int durationInDays = _preferences.getPasswordHistoryDuration();
         return new HistoricPasswordValidator(durationInDays);
     }
 
@@ -81,24 +68,25 @@ public class RootConfig {
     }
 
     @Bean
-    public XnatUserProvider receivedFileUserProvider(@Value("${services.dicom.scp.receivedfileuser:admin}") final String receivedFileUser) {
+    public XnatUserProvider receivedFileUserProvider() throws SiteConfigurationException {
+        final String receivedFileUser = _preferences.getReceivedFileUser();
         return new XnatUserProvider(receivedFileUser);
     }
 
     @Bean
     public XnatRestletExtensions xnatRestletExtensions() {
-		return new XnatRestletExtensions(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.extensions"})));
+        return new XnatRestletExtensions(new HashSet<>(Arrays.asList(new String[]{"org.nrg.xnat.restlet.extensions"})));
     }
 
     @Bean
     public ImporterHandlerPackages importerHandlerPackages() {
-		return new ImporterHandlerPackages(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.actions","org.nrg.xnat.archive"})));
+        return new ImporterHandlerPackages(new HashSet<>(Arrays.asList(new String[]{"org.nrg.xnat.restlet.actions", "org.nrg.xnat.archive"})));
     }
 
     @Bean
     public EventPackages eventPackages() {
-    	// NOTE:  These should be treated as parent packages.  All sub-packages should be searched 
-		return new EventPackages(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.event","org.nrg.xft.event","org.nrg.xdat.event"})));
+        // NOTE:  These should be treated as parent packages.  All sub-packages should be searched
+        return new EventPackages(new HashSet<>(Arrays.asList(new String[]{"org.nrg.xnat.event", "org.nrg.xft.event", "org.nrg.xdat.event"})));
     }
 
     @Bean
@@ -106,6 +94,6 @@ public class RootConfig {
         return new SerializerRegistry();
     }
 
-    @Value("${site.title:XNAT}")
-    private String _siteId;
+    @Inject
+    private InitializerSiteConfiguration _preferences;
 }

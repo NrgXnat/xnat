@@ -25,9 +25,8 @@ import java.io.IOException;
 import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.List;
-import java.util.concurrent.Callable;
 
-public class SessionXMLRebuilder implements Callable<Void> {
+public class SessionXMLRebuilder implements Runnable {
     public SessionXMLRebuilder(final Provider<UserI> provider, final double interval, final JmsTemplate jmsTemplate) {
         _provider = provider;
         _interval = interval;
@@ -35,11 +34,11 @@ public class SessionXMLRebuilder implements Callable<Void> {
     }
 
     @Override
-    public Void call() {
+    public void run() {
         final UserI user = _provider.get();
         logger.trace("Running prearc job as {}", user.getLogin());
         List<SessionData> sds = null;
-        long now = Calendar.getInstance().getTimeInMillis();
+        long              now = Calendar.getInstance().getTimeInMillis();
         try {
             if (PrearcDatabase.ready) {
                 sds = PrearcDatabase.getAllSessions();
@@ -55,15 +54,15 @@ public class SessionXMLRebuilder implements Callable<Void> {
             logger.error("", e);
         }
         int updated = 0;
-        int total = 0;
+        int total   = 0;
         if (sds != null && sds.size() > 0) {
             for (final SessionData sessionData : sds) {
                 total++;
                 if (sessionData.getStatus().equals(PrearcUtils.PrearcStatus.RECEIVING) && !sessionData.getPreventAutoCommit() && !StringUtils.trimToEmpty(sessionData.getSource()).equals("applet")) {
                     try {
-                        final File sessionDir = PrearcUtils.getPrearcSessionDir(user, sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), false);
-                        final long then = sessionData.getLastBuiltDate().getTime();
-                        final double diff = diffInMinutes(then, now);
+                        final File   sessionDir = PrearcUtils.getPrearcSessionDir(user, sessionData.getProject(), sessionData.getTimestamp(), sessionData.getFolderName(), false);
+                        final long   then       = sessionData.getLastBuiltDate().getTime();
+                        final double diff       = diffInMinutes(then, now);
                         if (diff >= _interval && !PrearcUtils.isSessionReceiving(sessionData.getSessionDataTriple())) {
                             updated++;
                             try {
@@ -92,7 +91,6 @@ public class SessionXMLRebuilder implements Callable<Void> {
             }
         }
         logger.info("Built {} of {}", updated, total);
-        return null;
     }
 
     public static double diffInMinutes(long start, long end) {
@@ -103,6 +101,6 @@ public class SessionXMLRebuilder implements Callable<Void> {
     private static final Logger logger = LoggerFactory.getLogger(SessionXMLRebuilder.class);
 
     private final Provider<UserI> _provider;
-    private final double _interval;
-    private final JmsTemplate _jmsTemplate;
+    private final double          _interval;
+    private final JmsTemplate     _jmsTemplate;
 }

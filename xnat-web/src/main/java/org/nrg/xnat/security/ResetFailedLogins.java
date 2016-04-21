@@ -18,18 +18,17 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.util.concurrent.Callable;
 
-public class ResetFailedLogins implements Callable<Void> {
+public class ResetFailedLogins implements Runnable {
 
     public ResetFailedLogins(final DataSource dataSource) {
         _dataSource = dataSource;
     }
 
     @Override
-    public Void call() {
+    public void run() {
         JdbcTemplate template = new JdbcTemplate(_dataSource);
         template.execute("UPDATE xhbm_xdat_user_auth SET failed_login_attempts=0");
         _log.info("Reset all failed login attempts.");
-        return null;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(ResetFailedLogins.class);

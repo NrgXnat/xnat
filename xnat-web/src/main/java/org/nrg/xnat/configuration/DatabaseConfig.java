@@ -6,6 +6,7 @@ import org.hibernate.cfg.ImprovedNamingStrategy;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
+import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy;
 import org.nrg.framework.utilities.Beans;
 import org.postgresql.Driver;
@@ -26,6 +27,7 @@ import javax.inject.Inject;
 import javax.sql.DataSource;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
+import java.util.List;
 import java.util.Properties;
 
 /**
@@ -95,9 +97,10 @@ public class DatabaseConfig {
     }
 
     @Bean
-    public LocalSessionFactoryBean sessionFactory() throws NrgServiceException {
+    public LocalSessionFactoryBean sessionFactory(final List<HibernateEntityPackageList> packageLists) throws NrgServiceException {
         try {
             final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean();
+            bean.setEntityPackageLists(packageLists);
             bean.setDataSource(dataSource());
             bean.setCacheRegionFactory(regionFactory());
             bean.setHibernateProperties(hibernateProperties().getObject());
@@ -109,8 +112,8 @@ public class DatabaseConfig {
     }
 
     @Bean
-    public PlatformTransactionManager transactionManager() throws NrgServiceException {
-        return new HibernateTransactionManager(sessionFactory().getObject());
+    public PlatformTransactionManager transactionManager(final List<HibernateEntityPackageList> packageLists) throws NrgServiceException {
+        return new HibernateTransactionManager(sessionFactory(packageLists).getObject());
     }
 
     private static Properties setDefaultDatasourceProperties(final Properties properties) {

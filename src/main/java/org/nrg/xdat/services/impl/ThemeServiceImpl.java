@@ -29,6 +29,7 @@ import java.util.zip.ZipInputStream;
 
 @Service
 public class ThemeServiceImpl implements ThemeService {
+    private static String webRelativePath;
     private static String webRelativeThemePath="themes";
     private static String themesPath;
     private static ThemeConfig themeConfig = null;
@@ -43,18 +44,16 @@ public class ThemeServiceImpl implements ThemeService {
 
     @PostConstruct
     public void postServiceConstruction(){
-
 //        File catalinaBase = new File( System.getProperty( "catalina.base" ) ).getAbsoluteFile();
 //        themesPath = catalinaBase.getAbsolutePath() + File.separator + webRelativeThemePath;
-
-        themesPath = servletContext.getRealPath(File.separator)+webRelativeThemePath;
-        themeFile = new File(themesPath + File.separator + "theme.json");
+        webRelativePath = servletContext.getRealPath(File.separator);
+        themesPath = webRelativePath+webRelativeThemePath;
+        themeFile = new File(webRelativePath+"theme.json");
         File checkThemesPath = new File(themesPath);
         if (!checkThemesPath.exists()) {
             checkThemesPath.mkdir();
         }
-System.out.println("Theme Path: "+themeFile);
-        servletContext.setAttribute("ThemeService", this);  // This is probably a terrible way to attempt to do this. We would ideally add an instance of ThemeService to the XDAT class
+        servletContext.setAttribute("ThemeService", this);
     }
 
     public String getThemesPath() {

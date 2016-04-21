@@ -36,6 +36,11 @@ var XNAT = getObject(XNAT||{});
         return this;
     };
 
+    Click.fn.ctrlAlt = Click.fn.altCtrl = function(fn){
+        this.ctrlAltAction = fn;
+        return this;
+    };
+
     Click.fn.metaShift = Click.fn.shiftMeta = function(fn){
         this.metaShiftAction = fn;
         return this;
@@ -82,6 +87,10 @@ var XNAT = getObject(XNAT||{});
                     e.preventDefault();
                 });
                 action = 'ctrlShiftAction';
+            }
+            // ctrl-alt click
+            else if (e.ctrlKey && e.altKey) {
+                action = 'ctrlAltAction';
             }
             // shift-command/windows(meta) click
             else if (e.shiftKey && e.metaKey) {

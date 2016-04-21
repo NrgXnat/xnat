@@ -274,6 +274,17 @@ var XNAT = getObject(XNAT||{});
         return this;
 
     };
+    
+    Table.p.render = function(element){
+        if (element){
+            $$(element).empty().append(this.table);
+        }
+        return this.table;
+    };
+
+    Table.p.html = function(){
+        return this.table.outerHTML;
+    };
 
     table = function(data, opts){
         if (!opts){

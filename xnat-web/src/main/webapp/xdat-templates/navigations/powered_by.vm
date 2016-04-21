@@ -9,6 +9,7 @@
 
         // shift-click the header or footer XNAT logo to ENABLE debug mode
         // alt-shift-click to DISABLE debug mode
+        // ctrl-alt-click to open the Swagger page in a new window
         XNAT.event.click('#header_logo, #xnat_power > a')
             .shiftKey(function(e){
                 e.preventDefault();
@@ -19,6 +20,10 @@
                 e.preventDefault();
                 window.location.hash = 'debug=off'
                 window.location.reload();
+            })
+            .ctrlAlt(function(e){
+                e.preventDefault();
+                XNAT.ui.popup('/xapi/swagger-ui.html');
             });
 
     })

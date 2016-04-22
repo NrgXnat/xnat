@@ -1,6 +1,6 @@
 package org.nrg.xft.event.listeners;
 
-import static reactor.bus.selector.Selectors.$;
+import static reactor.bus.selector.Selectors.type;
 
 import javax.inject.Inject;
 
@@ -34,7 +34,7 @@ public class XftItemEventListener implements Consumer<Event<XftItemEvent>> {
 	 * @param eventBus the event bus
 	 */
 	@Inject public XftItemEventListener( EventBus eventBus ){
-		eventBus.on($(XftItemEvent.class.getName()), this);
+		eventBus.on(type(XftItemEvent.class), this);
 	}
 	
 	/**

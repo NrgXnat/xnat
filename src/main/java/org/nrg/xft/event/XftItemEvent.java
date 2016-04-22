@@ -1,12 +1,10 @@
 // Copyright 2010 Washington University School of Medicine All Rights Reserved
 package org.nrg.xft.event;
 
-import java.io.Serializable;
-
 /**
  * The Class XftItemEvent.
  */
-public class XftItemEvent implements Serializable {
+public class XftItemEvent implements EventI {
 	
 	/** The Constant serialVersionUID. */
 	private static final long serialVersionUID = 199850020591951620L;

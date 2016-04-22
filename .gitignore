@@ -4,6 +4,7 @@
 /target
 /build
 /.gradle
+/.settings
 /bin/
 /ide-bin/
 .classpath

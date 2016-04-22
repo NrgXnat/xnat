@@ -18,7 +18,7 @@ import org.nrg.xdat.om.XnatSubjectassessordata;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.db.PoolDBUtils;
-import org.nrg.xnat.event.entities.WorkflowStatusEvent;
+import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xnat.notifications.NotifyProjectPipelineListeners;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

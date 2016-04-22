@@ -2,6 +2,8 @@ package org.nrg.automation.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.google.common.collect.Maps;
+
 import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
@@ -10,6 +12,7 @@ import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceException;
+import org.python.google.common.collect.Lists;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TransactionConfiguration;
@@ -53,7 +56,20 @@ public class TestScriptRunnerService {
     public static final String SCRIPT_ID_1 = "one";
     public static final String SCRIPT_ID_2 = "two";
     public static final String SCRIPT_ID_3 = "three";
-
+    public static final String EVENT_CLASS = "org.nrg.xnat.event.entities.WorkflowStatusEvent";
+	public static final Map<String,List<String>> EVENT_FILTERS;
+	public static final Map<String,String> EVENT_FILTER;
+	public static final String STATUS_COMPLETE = "Complete";
+	
+	static {
+	 	EVENT_FILTERS = Maps.newHashMap();
+	 	EVENT_FILTER = Maps.newHashMap();
+		final List<String> filterValues = Lists.newArrayList(); 
+		filterValues.add(STATUS_COMPLETE);
+		EVENT_FILTERS.put("status", filterValues);
+		EVENT_FILTER.put("status", STATUS_COMPLETE);
+	}
+    
     @Test
     public void testRunnerSerialization() throws JsonProcessingException {
         final ObjectMapper mapper = new ObjectMapper();
@@ -64,9 +80,9 @@ public class TestScriptRunnerService {
 
     @Test
     public void addRetrieveAndRunSiteScriptTests() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, GROOVY_HELLO_WORLD, Scope.Site, null, "EVENT1");
-        _service.setScript(SCRIPT_ID_2, JS_HELLO_WORLD, Scope.Site, null, "EVENT2", "JavaScript");
-        _service.setScript(SCRIPT_ID_3, PYTHON_HELLO_WORLD, Scope.Site, null, "EVENT3", "Python");
+        _service.setScript(SCRIPT_ID_1, GROOVY_HELLO_WORLD, Scope.Site, null, EVENT_CLASS, "EVENT1", EVENT_FILTERS);
+        _service.setScript(SCRIPT_ID_2, JS_HELLO_WORLD, Scope.Site, null, EVENT_CLASS, "EVENT2", EVENT_FILTERS, "JavaScript");
+        _service.setScript(SCRIPT_ID_3, PYTHON_HELLO_WORLD, Scope.Site, null, EVENT_CLASS, "EVENT3", EVENT_FILTERS, "Python");
 
         final Script script1 = _service.getScript(SCRIPT_ID_1);
         assertNotNull(script1);
@@ -186,12 +202,14 @@ public class TestScriptRunnerService {
         final String description = "";
         final Scope scope = Scope.Project;
         final String entityId = "";
+        final String eventClass = "";
         final String event = "";
+        final Map<String,List<String>> eventFilters = Maps.newHashMap();
         _service.setScript(scriptId, content, description);
-        _service.setScript(scriptId, content, scope, entityId, event);
+        _service.setScript(scriptId, content, scope, entityId, eventClass, event, eventFilters);
         _service.setScript(scriptId, content, description, scope, entityId);
-        _service.setScript(scriptId, content, description, scope, entityId, event);
-        _service.setScript(script, scope, entityId, event);
+        _service.setScript(scriptId, content, description, scope, entityId, eventClass, event, eventFilters);
+        _service.setScript(script, scope, entityId, eventClass, event, eventFilters);
     }
 
     @Inject

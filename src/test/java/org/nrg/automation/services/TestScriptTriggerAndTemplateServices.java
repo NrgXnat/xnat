@@ -11,13 +11,14 @@ package org.nrg.automation.services;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import org.hibernate.exception.ConstraintViolationException;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.entities.ScriptTriggerTemplate;
 import org.nrg.framework.constants.Scope;
+import org.python.google.common.collect.Lists;
+import org.python.google.common.collect.Maps;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TransactionConfiguration;
@@ -27,6 +28,7 @@ import javax.inject.Inject;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Map;
 
 import static org.junit.Assert.*;
 
@@ -35,6 +37,7 @@ import static org.junit.Assert.*;
  *
  * @author Rick Herrick
  */
+@SuppressWarnings("deprecation")
 @RunWith(SpringJUnit4ClassRunner.class)
 @ContextConfiguration
 @TransactionConfiguration(defaultRollback = true)
@@ -43,6 +46,19 @@ public class TestScriptTriggerAndTemplateServices {
 
     public static final String EVENT_ID_1 = "Something happened!";
     public static final String EVENT_ID_2 = "Something else happened!";
+    public static final String EVENT_CLASS = "org.nrg.xnat.event.entities.WorkflowStatusEvent";
+	public static final Map<String,List<String>> EVENT_FILTERS;
+	public static final Map<String,String> EVENT_FILTER;
+	public static final String STATUS_COMPLETE = "Complete";
+	
+	static {
+	 	EVENT_FILTERS = Maps.newHashMap();
+	 	EVENT_FILTER = Maps.newHashMap();
+		final List<String> filterValues = Lists.newArrayList(); 
+		filterValues.add(STATUS_COMPLETE);
+		EVENT_FILTERS.put("status", filterValues);
+		EVENT_FILTER.put("status", STATUS_COMPLETE);
+	}
 
     @Test
     public void testSimpleScript() {
@@ -57,7 +73,7 @@ public class TestScriptTriggerAndTemplateServices {
 
     @Test
     public void testSimpleTrigger() {
-        ScriptTrigger trigger = _triggerService.newEntity("trigger1", "This is my first trigger!", "script1", "associatedThing1", EVENT_ID_1);
+        ScriptTrigger trigger = _triggerService.newEntity("trigger1", "This is my first trigger!", "script1", "associatedThing1", EVENT_CLASS, EVENT_ID_1);
         List<ScriptTrigger> retrieved = _triggerService.getAll();
         assertNotNull(retrieved);
         assertEquals(1, retrieved.size());
@@ -66,9 +82,9 @@ public class TestScriptTriggerAndTemplateServices {
 
     @Test
     public void testSimpleTemplate() {
-        ScriptTrigger[] triggers = { _triggerService.newEntity("trigger1", "Trigger 1", "script1", "associatedThing1", EVENT_ID_1),
-                _triggerService.newEntity("trigger2", "Trigger 2", "script2", "associatedThing2", EVENT_ID_1),
-                _triggerService.newEntity("trigger3", "Trigger 3", "script3", "associatedThing3", EVENT_ID_1)};
+        ScriptTrigger[] triggers = { _triggerService.newEntity("trigger1", "Trigger 1", "script1", "associatedThing1", EVENT_CLASS, EVENT_ID_1),
+                _triggerService.newEntity("trigger2", "Trigger 2", "script2", "associatedThing2", EVENT_CLASS, EVENT_ID_1),
+                _triggerService.newEntity("trigger3", "Trigger 3", "script3", "associatedThing3", EVENT_CLASS, EVENT_ID_1)};
         ScriptTriggerTemplate template = _templateService.newEntity("template1", "Here's a template!", new HashSet<>(Arrays.asList(triggers)), new HashSet<>(Arrays.asList("0", "1", "2")));
         List<ScriptTriggerTemplate> retrieved = _templateService.getAll();
         assertNotNull(retrieved);
@@ -80,9 +96,9 @@ public class TestScriptTriggerAndTemplateServices {
 
     @Test
     public void testSimpleTemplatesAndEntities() {
-        ScriptTrigger trigger0 = _triggerService.newEntity("trigger0", "Trigger 0", "script0", "associatedThing0", EVENT_ID_1);
-        ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "Trigger 1", "script1", "associatedThing1", EVENT_ID_1);
-        ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "Trigger 2", "script2", "associatedThing2", EVENT_ID_1);
+        ScriptTrigger trigger0 = _triggerService.newEntity("trigger0", "Trigger 0", "script0", "associatedThing0", EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "Trigger 1", "script1", "associatedThing1", EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "Trigger 2", "script2", "associatedThing2", EVENT_CLASS, EVENT_ID_1);
 
         ScriptTriggerTemplate template = _templateService.newEntity("template1", "Here's a template!", new HashSet<>(Arrays.asList(trigger0, trigger1, trigger2)), new HashSet<>(Arrays.asList("0", "1", "2")));
 
@@ -136,9 +152,9 @@ public class TestScriptTriggerAndTemplateServices {
 
     @Test
     public void testDoubleTemplatesAndEntities() throws JsonProcessingException {
-        ScriptTrigger trigger0 = _triggerService.newEntity("trigger0", "Trigger 0", "script0", "associatedThing0", EVENT_ID_1);
-        ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "Trigger 1", "script1", "associatedThing1", EVENT_ID_1);
-        ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "Trigger 2", "script2", "associatedThing2", EVENT_ID_1);
+        ScriptTrigger trigger0 = _triggerService.newEntity("trigger0", "Trigger 0", "script0", "associatedThing0", EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "Trigger 1", "script1", "associatedThing1", EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "Trigger 2", "script2", "associatedThing2", EVENT_CLASS, EVENT_ID_1);
 
         ScriptTriggerTemplate template0 = _templateService.newEntity("template0", "Here's a template!", new HashSet<>(Arrays.asList(trigger0, trigger1)), new HashSet<>(Arrays.asList("0", "1")));
         ScriptTriggerTemplate template1 = _templateService.newEntity("template1", "Here's a template!", new HashSet<>(Arrays.asList(trigger1, trigger2)), new HashSet<>(Arrays.asList("1", "2")));
@@ -197,33 +213,35 @@ public class TestScriptTriggerAndTemplateServices {
         assertEquals(1, entities2.size());
     }
 
+    /*
     @Test(expected = ConstraintViolationException.class)
     public void testUniqueAssociationAndEventConstraint() {
-        _triggerService.newEntity("trigger1", "Trigger 1", "script1", Scope.encode(Scope.Project, "1"), EVENT_ID_1);
-        _triggerService.newEntity("trigger2", "Trigger 2", "script2", Scope.encode(Scope.Project, "1"), EVENT_ID_1);
-        _triggerService.newEntity("trigger3", "Trigger 3", "script3", Scope.encode(Scope.Project, "1"), EVENT_ID_1);
+        _triggerService.newEntity("trigger1", "Trigger 1", "script1", Scope.encode(Scope.Project, "1"), EVENT_CLASS, EVENT_ID_1);
+        _triggerService.newEntity("trigger2", "Trigger 2", "script2", Scope.encode(Scope.Project, "1"), EVENT_CLASS, EVENT_ID_1);
+        _triggerService.newEntity("trigger3", "Trigger 3", "script3", Scope.encode(Scope.Project, "1"), EVENT_CLASS, EVENT_ID_1);
     }
+    */
 
     @Test
     public void testRelatedTemplatesAndEntities() throws JsonProcessingException {
-        ScriptTrigger trigger0 = _triggerService.newEntity("trigger0", "Trigger 0", "script0", Scope.encode(Scope.Project, "0"), EVENT_ID_1);
-        ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "Trigger 1", "script1", Scope.encode(Scope.Project, "1"), EVENT_ID_1);
-        ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "Trigger 2", "script2", Scope.encode(Scope.Project, "2"), EVENT_ID_1);
-        ScriptTrigger trigger3 = _triggerService.newEntity("trigger3", "Trigger 3", "script3", Scope.encode(Scope.Project, "3"), EVENT_ID_1);
-        ScriptTrigger trigger4 = _triggerService.newEntity("trigger4", "Trigger 4", "script4", Scope.encode(Scope.Project, "4"), EVENT_ID_1);
-        ScriptTrigger trigger5 = _triggerService.newEntity("trigger5", "Trigger 5", "script5", Scope.encode(Scope.Project, "5"), EVENT_ID_1);
-        ScriptTrigger trigger6 = _triggerService.newEntity("trigger6", "Trigger 6", "script6", Scope.encode(Scope.Project, "6"), EVENT_ID_1);
+        ScriptTrigger trigger0 = _triggerService.newEntity("trigger0", "Trigger 0", "script0", Scope.encode(Scope.Project, "0"), EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "Trigger 1", "script1", Scope.encode(Scope.Project, "1"), EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "Trigger 2", "script2", Scope.encode(Scope.Project, "2"), EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger3 = _triggerService.newEntity("trigger3", "Trigger 3", "script3", Scope.encode(Scope.Project, "3"), EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger4 = _triggerService.newEntity("trigger4", "Trigger 4", "script4", Scope.encode(Scope.Project, "4"), EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger5 = _triggerService.newEntity("trigger5", "Trigger 5", "script5", Scope.encode(Scope.Project, "5"), EVENT_CLASS, EVENT_ID_1);
+        ScriptTrigger trigger6 = _triggerService.newEntity("trigger6", "Trigger 6", "script6", Scope.encode(Scope.Project, "6"), EVENT_CLASS, EVENT_ID_1);
 
         // These are just to make sure that the getByEvent() call truly distinguishes by event.
-        ScriptTrigger trigger7 = _triggerService.newEntity("trigger7", "Trigger 7", "script7", Scope.encode(Scope.Project, "0"), EVENT_ID_2);
-        _triggerService.newEntity("trigger8", "Trigger 8", "script8", Scope.encode(Scope.Project, "8"), EVENT_ID_2);
-        _triggerService.newEntity("trigger9", "Trigger 9", "script9", Scope.encode(Scope.Project, "9"), EVENT_ID_2);
+        ScriptTrigger trigger7 = _triggerService.newEntity("trigger7", "Trigger 7", "script7", Scope.encode(Scope.Project, "0"), EVENT_CLASS, EVENT_ID_2);
+        _triggerService.newEntity("trigger8", "Trigger 8", "script8", Scope.encode(Scope.Project, "8"), EVENT_CLASS, EVENT_ID_2);
+        _triggerService.newEntity("trigger9", "Trigger 9", "script9", Scope.encode(Scope.Project, "9"), EVENT_CLASS, EVENT_ID_2);
 
-        List<ScriptTrigger> triggers = _triggerService.getByEvent(EVENT_ID_1);
+        List<ScriptTrigger> triggers = _triggerService.getByEventAndFilters(EVENT_CLASS, EVENT_ID_1, EVENT_FILTER);
         assertNotNull(triggers);
         assertEquals(7, triggers.size());
 
-        List<ScriptTrigger> compareByEvent = _triggerService.getByEvent(EVENT_ID_2);
+        List<ScriptTrigger> compareByEvent = _triggerService.getByEventAndFilters(EVENT_CLASS, EVENT_ID_2, EVENT_FILTER);
         assertNotNull(compareByEvent);
         assertEquals(3, compareByEvent.size());
 
@@ -233,11 +251,11 @@ public class TestScriptTriggerAndTemplateServices {
         assertTrue(compareByAssociation.contains(trigger0));
         assertTrue(compareByAssociation.contains(trigger7));
 
-        ScriptTrigger getByEventAndAssociation = _triggerService.getByScopeEntityAndEvent(Scope.Project, "0", EVENT_ID_1);
+        ScriptTrigger getByEventAndAssociation = _triggerService.getByScopeEntityAndEventAndFilters(Scope.Project, "0", EVENT_CLASS, EVENT_ID_1, EVENT_FILTER);
         assertNotNull(getByEventAndAssociation);
         assertEquals("script0", getByEventAndAssociation.getScriptId());
         assertEquals(Scope.encode(Scope.Project, "0"), getByEventAndAssociation.getAssociation());
-        assertEquals(EVENT_ID_1, getByEventAndAssociation.getEvent().getEventId());
+        assertEquals(EVENT_ID_1, getByEventAndAssociation.getEvent());
 
         ScriptTriggerTemplate template0 = _templateService.newEntity("template1", "Here's a template!", new HashSet<>(Arrays.asList(trigger0, trigger1, trigger2)), new HashSet<>(Arrays.asList("0", "1", "2")));
         ScriptTriggerTemplate template1 = _templateService.newEntity("template2", "Yet another template!", new HashSet<>(Arrays.asList(trigger2, trigger3, trigger4)), new HashSet<>(Arrays.asList("2", "3", "4")));
@@ -349,28 +367,29 @@ public class TestScriptTriggerAndTemplateServices {
         System.out.println(template1json);
     }
 
+    /*
     @Test
     public void testCascadedEventDeletion() {
-        try {
-            ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "This is my first trigger!", "script1", "associatedThing1", EVENT_ID_1);
+        //try {
+            ScriptTrigger trigger1 = _triggerService.newEntity("trigger1", "This is my first trigger!", "script1", "associatedThing1", EVENT_CLASS, EVENT_ID_1);
             assertNotNull(trigger1);
-            assertEquals(EVENT_ID_1, trigger1.getEvent().getEventId());
+            assertEquals(EVENT_ID_1, trigger1.getEvent());
 
-            ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "This is my second trigger!", "script2", "associatedThing2", EVENT_ID_1);
+            ScriptTrigger trigger2 = _triggerService.newEntity("trigger2", "This is my second trigger!", "script2", "associatedThing2", EVENT_CLASS, EVENT_ID_1);
             assertNotNull(trigger2);
-            assertEquals(EVENT_ID_1, trigger2.getEvent().getEventId());
+            assertEquals(EVENT_ID_1, trigger2.getEvent());
 
-            ScriptTrigger trigger3 = _triggerService.newEntity("trigger3", "This is my third trigger!", "script3", "associatedThing3", EVENT_ID_2);
+            ScriptTrigger trigger3 = _triggerService.newEntity("trigger3", "This is my third trigger!", "script3", "associatedThing3", EVENT_CLASS, EVENT_ID_2);
             assertNotNull(trigger3);
-            assertEquals(EVENT_ID_2, trigger3.getEvent().getEventId());
+            assertEquals(EVENT_ID_2, trigger3.getEvent());
 
             List<ScriptTrigger> eventId1Triggers = _triggerService.getByEvent(EVENT_ID_1);
             assertNotNull(eventId1Triggers);
             assertEquals(2, eventId1Triggers.size());
 
-            _eventService.delete(EVENT_ID_1, true);
+            //_eventService.delete(EVENT_ID_1, true);
 
-            assertFalse(_eventService.hasEvent(EVENT_ID_1));
+            //assertFalse(_eventService.hasEvent(EVENT_ID_1));
             ScriptTrigger nope = _triggerService.getByTriggerId("trigger1");
             assertNull(nope);
 
@@ -380,26 +399,27 @@ public class TestScriptTriggerAndTemplateServices {
             List<ScriptTrigger> eventId2Triggers = _triggerService.getByEvent(EVENT_ID_2);
             assertNotNull(eventId2Triggers);
             assertEquals(1, eventId2Triggers.size());
-        } catch (EventReferencedException e) {
-            fail("An EventReferencedException occurred even though the cascade flag was set to true. ");
-        }
+        //} catch (EventReferencedException e) {
+        //    fail("An EventReferencedException occurred even though the cascade flag was set to true. ");
+        //}
     }
 
     @Test(expected = EventReferencedException.class)
     public void testUncascadedEventDeletion() throws EventReferencedException {
-        ScriptTrigger trigger = _triggerService.newEntity("trigger1", "This is my first trigger!", "script1", "associatedThing1", EVENT_ID_1);
+        ScriptTrigger trigger = _triggerService.newEntity("trigger1", "This is my first trigger!", "script1", "associatedThing1", EVENT_CLASS, EVENT_ID_1);
         assertNotNull(trigger);
-        assertEquals(EVENT_ID_1, trigger.getEvent().getEventId());
+        assertEquals(EVENT_ID_1, trigger.getEvent());
 
         List<ScriptTrigger> retrieved = _triggerService.getByEvent(EVENT_ID_1);
         assertNotNull(retrieved);
         assertEquals(1, retrieved.size());
 
-        _eventService.delete(EVENT_ID_1, false);
+        //_eventService.delete(EVENT_ID_1, false);
     }
+    */
 
-    @Inject
-    private EventService _eventService;
+    //@Inject
+    //private EventService _eventService;
 
     @Inject
     private ScriptService _scriptService;

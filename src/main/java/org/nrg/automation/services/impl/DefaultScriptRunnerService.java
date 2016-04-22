@@ -29,6 +29,7 @@ import javax.script.ScriptEngine;
 import java.lang.reflect.Constructor;
 import java.lang.reflect.InvocationTargetException;
 import java.util.*;
+import java.util.Map.Entry;
 
 @Service
 public class DefaultScriptRunnerService implements ScriptRunnerService, InitializingBean {
@@ -107,20 +108,40 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * just returns the script. You can get @{link Script scripts} for particular scopes or events by calling {@link
      * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String)}.
      *
-     * @param scriptId The ID of the script to locate.
-     * @param scope    The scope for the script.
-     * @param entityId The associated entity for the script.
-     * @param event    The event for the script.
+     * @param scriptId     The ID of the script to locate.
+     * @param scope        The scope for the script.
+     * @param entityId     The associated entity for the script.
+     * @param entityClass  The eventClass for the event
+     * @param event        The event for the script.
+     * @param eventFilters the eventFilters for the ScriptTrigger
      *
      * @return The {@link Script} object if a script with the indicated script ID and association is found, <b>null</b>
      * otherwise.
      */
     @Override
     @Transactional
-    public Script getScript(final String scriptId, final Scope scope, final String entityId, final String event) {
-        final ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
+    public Script getScript(final String scriptId, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,String> filterMap) {
+        final List<ScriptTrigger> triggers = _triggerService.getByScopeEntityAndEvent(scope, entityId, eventClass, event);
+        ScriptTrigger trigger = null;
+        if (triggers != null) {
+        	outerloop:
+        	for (final ScriptTrigger currTrigger : triggers) {
+        		final Map<String, List<String>> eventFiltersMap = currTrigger.getEventFiltersAsMap();
+        		for (final Entry<String, List<String>> entry : eventFiltersMap.entrySet()) {
+        			final String key = entry.getKey();
+        			final List<String> value = entry.getValue();
+        			if (value == null || value.isEmpty()) {
+        				continue;
+        			}
+        			if (!filterMap.containsKey(key) || !value.contains(filterMap.get(key))) {
+        				continue outerloop;
+        			}
+        		}
+        		trigger = currTrigger;
+        	}
+        }
         if (trigger == null) {
-            return null;
+        	return null;
         }
         return _scriptService.getByScriptId(scriptId);
     }
@@ -141,8 +162,10 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
             throw new NrgServiceException(NrgServiceError.UnknownEntity, "Can't find script with script ID: " + scriptId);
         }
         final List<ScriptTrigger> triggers = _triggerService.getByScriptId(scriptId);
-        for (final ScriptTrigger trigger : triggers) {
-            _triggerService.delete(trigger);
+        if (triggers != null) {
+        	for (final ScriptTrigger trigger : triggers) {
+        		_triggerService.delete(trigger);
+        	}
         }
         _scriptService.delete(script);
     }
@@ -183,20 +206,38 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * otherwise.
      */
     @Override
-    public Script getScript(final Scope scope, final String entityId, final String event) {
-        final ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, event);
+    public Script getScript(final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,String> filterMap) {
+        final List<ScriptTrigger> triggers = _triggerService.getByScopeEntityAndEvent(scope, entityId, eventClass, event);
+        ScriptTrigger trigger = null;
+        if (triggers != null) {
+        	outerloop:
+        	for (final ScriptTrigger currTrigger : triggers) {
+        		final Map<String, List<String>> eventFiltersMap = currTrigger.getEventFiltersAsMap();
+        		for (final Entry<String, List<String>> entry : eventFiltersMap.entrySet()) {
+        			final String key = entry.getKey();
+        			final List<String> value = entry.getValue();
+        			if (value == null || value.isEmpty()) {
+        				continue;
+        			}
+        			if (!filterMap.containsKey(key) || !value.contains(filterMap.get(key))) {
+        				continue outerloop;
+        			}
+  				}
+        		trigger = currTrigger;
+        	}
+        }
         if (trigger == null) {
             if (_log.isDebugEnabled()) {
-                _log.debug("Found no script triggers associated with scope {}, entity ID {}, and event {}.", scope, entityId, event);
+                _log.debug("Found no script triggers associated with scope {}, entity ID {}, event class {}, event {} and filters {}.", scope, entityId, eventClass, event, filterMap);
             }
             return null;
         }
         final Script script = _scriptService.getByScriptId(trigger.getScriptId());
         if (_log.isDebugEnabled()) {
             if (script == null) {
-                _log.debug("Found no script associated with scope {}, entity ID {}, and event {}.", scope, entityId, event);
+                _log.debug("Found no script associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", scope, entityId, eventClass, event, filterMap);
             } else {
-                _log.debug("Found script {} associated with scope {}, entity ID {}, and event {}.", script.getScriptId(), scope, entityId, event);
+                _log.debug("Found script {} associated with scope {}, entity ID {}, event class {}, event {}, and filters {}.", script.getScriptId(), scope, entityId, eventClass, event, filterMap);
             }
         }
         return script;
@@ -222,7 +263,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public void setScript(final String scriptId, final String content) {
-        setScriptImpl(scriptId, content, null, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE);
+        setScriptImpl(scriptId, content, null, Scope.Site, null, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -236,7 +277,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public void setScript(final String scriptId, final String content, final String description) {
-        setScriptImpl(scriptId, content, description, Scope.Site, null, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE);
+        setScriptImpl(scriptId, content, description, Scope.Site, null, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -250,7 +291,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public void setScript(final String scriptId, final String content, final Scope scope, final String entityId) {
-        setScriptImpl(scriptId, content, null, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE);
+        setScriptImpl(scriptId, content, null, scope, entityId, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -264,8 +305,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param event    The event for the script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event) {
-        setScriptImpl(scriptId, content, null, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE);
+    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters) {
+        setScriptImpl(scriptId, content, null, scope, entityId, eventClass, event, eventFilters, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -280,8 +321,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param language The script language for this script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String event, final String language) {
-        setScriptImpl(scriptId, content, null, scope, entityId, event, language);
+    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
+        setScriptImpl(scriptId, content, null, scope, entityId, eventClass, event, eventFilters, language);
     }
 
     /**
@@ -296,7 +337,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId) {
-        setScriptImpl(scriptId, content, description, scope, entityId, ScriptTrigger.DEFAULT_EVENT, ScriptRunner.DEFAULT_LANGUAGE);
+        setScriptImpl(scriptId, content, description, scope, entityId, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -311,8 +352,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param event       The event for the script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event) {
-        setScriptImpl(scriptId, content, description, scope, entityId, event, ScriptRunner.DEFAULT_LANGUAGE);
+    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters) {
+        setScriptImpl(scriptId, content, description, scope, entityId, eventClass, event, eventFilters, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -328,8 +369,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param language    The script language for this script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language) {
-        setScriptImpl(scriptId, content, description, scope, entityId, event, language);
+    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
+        setScriptImpl(scriptId, content, description, scope, entityId, eventClass, event, eventFilters, language);
     }
 
     /**
@@ -342,11 +383,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param event    The event for the script.
      */
     @Override
-    public void setScript(final Script script, final Scope scope, final String entityId, final String event) {
+    public void setScript(final Script script, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>>eventFilters) {
         final String resolved = StringUtils.isBlank(event) ? ScriptTrigger.DEFAULT_EVENT : event;
-        String triggerName = _triggerService.getDefaultTriggerName(script.getScriptId(), scope, entityId, resolved);
-        String triggerDescription = getDefaultTriggerDescription(script.getScriptId(), scope, entityId, resolved);
-        final ScriptTrigger trigger = _triggerService.create(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), resolved);
+        final String triggerName = _triggerService.getDefaultTriggerName(script.getScriptId(), scope, entityId, eventClass, resolved, eventFilters);
+        final String triggerDescription = getDefaultTriggerDescription(script.getScriptId(), scope, entityId, resolved);
+        final ScriptTrigger trigger = _triggerService.create(triggerName, triggerDescription, script.getScriptId(), Scope.encode(scope, entityId), eventClass, resolved, eventFilters);
         setScript(script, trigger);
     }
 
@@ -372,6 +413,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public void setScript(final String scriptId, final Properties properties) throws NrgServiceException {
+    	// TODO:  THIS METHOD MAY NEED WORK.  The passing of ScriptTrigger.DEFAULT_FILTERS COULD be problematic.
         if (StringUtils.isBlank(scriptId)) {
             throw new NrgServiceException(NrgServiceError.Unknown, "You must specify the script ID to use this method.");
         }
@@ -381,10 +423,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         final Scope scope = properties.containsKey("scope") ? Scope.getScope(properties.getProperty("scope")) : null;
         final String entityId = properties.getProperty("entityId");
         final String event = properties.getProperty("event", ScriptTrigger.DEFAULT_EVENT);
+        final String eventClass = properties.getProperty("srcEventClass", ScriptTrigger.DEFAULT_CLASS);
         final String language = properties.getProperty("language", ScriptRunner.DEFAULT_LANGUAGE);
-        setScript(scriptId, content, description, scope, entityId, event, language);
+        setScript(scriptId, content, description, scope, entityId, eventClass, event, ScriptTrigger.DEFAULT_FILTERS, language);
     }
-
+    
     /**
      * This attempts to run the submitted script. Note that this method does no checking of the scope, associated
      * entity, or event, but just executes the script. You can get @{link Script scripts} for particular scopes by
@@ -577,7 +620,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         return runner.getAnnotation(Supports.class).value();
     }
 
-    private void setScriptImpl(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String event, final String language) {
+    private void setScriptImpl(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
         if (StringUtils.isBlank(scriptId)) {
             throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save a script with an empty script ID!");
         }
@@ -590,27 +633,30 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         script.setDescription(StringUtils.isNotBlank(description) ? description : getDefaultScriptDescription(script));
         script.setLanguage(StringUtils.isNotBlank(language) ? language : ScriptRunner.DEFAULT_LANGUAGE);
         script.setContent(content);
-
         if (scope == null) {
             saveScript(script);
         } else {
             final String resolvedEvent = StringUtils.isNotBlank(event) ? event : ScriptTrigger.DEFAULT_EVENT;
-            ScriptTrigger trigger = _triggerService.getByScopeEntityAndEvent(scope, entityId, resolvedEvent);
+            final List<ScriptTrigger> triggers = _triggerService.getByScopeEntityAndEvent(scope, entityId, eventClass, resolvedEvent);
+            ScriptTrigger trigger = null;
+            if (triggers != null) {
+            	for (final ScriptTrigger thisTrigger : triggers) {
+            		if (eventFilters.equals(thisTrigger.getEventFilters())) {
+            			trigger = thisTrigger;
+            	    }
+            	}
+            }
             if (trigger == null) {
                 trigger = new ScriptTrigger();
-                trigger.setTriggerId(_triggerService.getDefaultTriggerName(scriptId, scope, entityId, resolvedEvent));
+                trigger.setTriggerId(_triggerService.getDefaultTriggerName(scriptId, scope, entityId, eventClass, resolvedEvent, eventFilters));
             }
             trigger.setDescription(getDefaultTriggerDescription(scriptId, scope, entityId, resolvedEvent));
             trigger.setScriptId(scriptId);
             trigger.setAssociation(Scope.encode(scope, entityId));
-            trigger.setEvent(getEvent(resolvedEvent));
+            trigger.setEvent(resolvedEvent);
 
             setScript(script, trigger);
         }
-    }
-
-    private Event getEvent(final String eventId) {
-        return _eventService.hasEvent(eventId) ? _eventService.getByEventId(eventId) : _eventService.create(eventId, eventId);
     }
 
     private void saveScript(final Script script) {
@@ -649,8 +695,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
             _triggerService.create(trigger);
         } else {
             boolean isDirty = false;
-            String existingDescription = existingTrigger.getDescription();
-            String description = trigger.getDescription();
+            final String existingDescription = existingTrigger.getDescription();
+            final String description = trigger.getDescription();
             if (!existingDescription.equals(description)) {
                 existingTrigger.setDescription(description);
                 isDirty = true;
@@ -681,9 +727,6 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     }
 
     private static final Logger _log = LoggerFactory.getLogger(DefaultScriptRunnerService.class);
-
-    @Inject
-    private EventService _eventService;
 
     @Inject
     private ScriptService _scriptService;

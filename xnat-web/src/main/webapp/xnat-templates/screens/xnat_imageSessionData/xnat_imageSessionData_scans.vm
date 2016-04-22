@@ -68,7 +68,7 @@
                 #else
                     #renderEmptyResourceCount()
                 #end
-                #if($user.canEdit($om))
+    		#if ($data.getSession().getAttribute("userHelper").canEdit($item))
                     <a class='uploadLink' style='display:none' href='' onclick='return false;' data-type='xnat:imageScanData' data-props='$!scan.getType()' data-uri='$content.getURI("/data/experiments/$om.getId()/scans/$scan.getId()")'>Upload</a>
                 #end
             </td>

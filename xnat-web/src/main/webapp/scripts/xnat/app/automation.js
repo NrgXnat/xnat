@@ -59,6 +59,7 @@ XNAT.app.automation = {};
         //return XNAT.url.restUrl('/scripts/xnat/app/automation-workflows.json');
     }
 
+    /*
     function eventsURL(part, params, cacheit){
         part = isDefined(part) ? part : '';
         // return events URL with CSRF and unique cache-busting paramater
@@ -69,6 +70,7 @@ XNAT.app.automation = {};
         automation.events = [];
         return xhr.getJSON(eventsURL(), callback)
     }
+    */
 
     function createEventRows(events){
         var rows = '';
@@ -111,6 +113,7 @@ XNAT.app.automation = {};
 
 
     // initialize the Events display
+    /*
     automation.initEvents = function(){
         // make sure things are hidden first
         $eventsTable.hide();
@@ -122,6 +125,7 @@ XNAT.app.automation = {};
         });
 
     };
+    */
 
     function getWorkflows(callback){
         //automation.workflows = {}; // reset workflows
@@ -208,6 +212,7 @@ XNAT.app.automation = {};
 
     }
 
+    /*
     automation.saveEvent = function(data){
         if (!data || !data.event_id){
             xmodal.loading.closeAll();
@@ -239,6 +244,7 @@ XNAT.app.automation = {};
             }
         });
     };
+    */
 
     function toggleDisabled($els, disabled){
 
@@ -342,6 +348,7 @@ XNAT.app.automation = {};
         })
     }
 
+    /*
     automation.deleteEvent = function(id, label){
         var _url =  eventsURL('', '?XNAT_CSRF=' + window.csrfToken + '&cascade=true', false);
         xmodal.confirm({
@@ -369,10 +376,11 @@ XNAT.app.automation = {};
             }
         });
     };
+    */
 
 
     // INITIALIZE
-    automation.initEvents();
+    //automation.initEvents();
 
 
     // click the "Define Event" button

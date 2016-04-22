@@ -91,9 +91,14 @@
             }
 
             #pResource_exist dd.col1 {
-                width: 60px;
+                width: 40px;
                 padding: 0px;
                 margin-left: 10px
+            }
+
+            dd.col1 button {
+                padding: 2px;
+                font-size: 11px;
             }
 
             #pResource_exist dd.col2 {
@@ -101,11 +106,11 @@
             }
 
             #pResource_exist dd.col3 {
-                width: 70px;
+                width: 85px;
             }
 
             #pResource_exist dd.col4 {
-                width: 70px;
+                width: 85px;
             }
 
             #pResource_exist dd.col5 {
@@ -113,7 +118,7 @@
             }
 
             #pResource_exist dd.col6 {
-                width: 50px;
+                width: 40px;
             }
 
             #pResource_exist dd.col7 {

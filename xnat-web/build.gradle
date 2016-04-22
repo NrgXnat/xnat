@@ -306,6 +306,7 @@ dependencies {
     compile "org.hibernate:hibernate-core:${vHibernate}"
     compile "org.hibernate:hibernate-ehcache:${vHibernate}"
     compile "org.hibernate:hibernate-validator:4.3.2.Final"
+    compile "org.hibernate:hibernate-envers:4.3.11.Final"
     compile "net.sf.ehcache:ehcache-core:${vEhcache}"
 
     compile "com.noelios.restlet:com.noelios.restlet:1.1.10"
@@ -361,6 +362,7 @@ dependencies {
     compile "log4j:log4j:${vLog4j}"
     compile "javax.servlet:jstl:1.2"
     compile "javax.mail:javax.mail-api:1.5.5"
+    compile 'com.google.code.gson:gson:2.6.2'
 
     runtime "org.apache.activemq:activemq-core:5.7.0"
     runtime "ant:ant:1.6.5"

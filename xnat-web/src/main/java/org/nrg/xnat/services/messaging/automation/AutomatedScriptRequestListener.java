@@ -1,6 +1,5 @@
 package org.nrg.xnat.services.messaging.automation;
 
-import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -16,7 +15,6 @@ import java.util.Map;
 
 public class AutomatedScriptRequestListener {
 
-    @SuppressWarnings("unused")
     public void onRequest(final AutomatedScriptRequest request) throws Exception {
         final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(request.getUser(), request.getScriptWorkflowId());
         workflow.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
@@ -26,16 +24,21 @@ public class AutomatedScriptRequestListener {
         parameters.put("user", request.getUser());
         parameters.put("scriptId", request.getScriptId());
         parameters.put("event", request.getEvent());
-        parameters.put("srcWorkflowId", request.getSrcWorkflowId());
+        parameters.put("srcEventId", request.getSrcEventId());
+        final String srcEventClass = request.getSrcEventClass();
+        parameters.put("srcEventClass", srcEventClass);
+        // For backwards compatibility
+        if (srcEventClass.contains("WorkflowStatusEvent") || srcEventClass.contains("WrkWorkflowdata")) {
+        	parameters.put("srcWorkflowId", request.getArgumentMap().get("wrkWorkflowId"));
+        }
         parameters.put("scriptWorkflowId", request.getScriptWorkflowId());
         parameters.put("dataType", request.getDataType());
         parameters.put("dataId", request.getDataId());
         parameters.put("externalId", request.getExternalId());
         parameters.put("workflow", workflow);
-
+        parameters.put("arguments", request.getArgumentJson());
         try {
             _service.runScript(_service.getScript(request.getScriptId()), parameters);
-
             if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
                 WorkflowUtils.complete(workflow, workflow.buildEvent());
             }

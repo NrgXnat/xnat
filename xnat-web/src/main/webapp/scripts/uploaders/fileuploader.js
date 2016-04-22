@@ -1,7 +1,9 @@
 
-//
-// Helper functions
-//
+/**
+ * Copyright 2015 Washington University
+ * File uploader
+ * Author:  Mike Hodge (hodgem@wustl.edu)
+ */
 
 var abu = abu || {};
 
@@ -16,6 +18,7 @@ abu.FileUploader = function(o){
 	// Leave this set to 1 if the uploader supports uploading directly to resources.
 	this.MAX_CONCURRENT_UPLOADS = 1;
 	this.ALLOW_DRAG_AND_DROP = true;
+	this.DRAG_AND_DROP_ON = true;
 	this.uploadsInProgress = 0;
 	this.uploadsStarted = 0;
 	$(this._options.element).html(""); 
@@ -23,7 +26,7 @@ abu.FileUploader = function(o){
 	this.buildUploaderDiv = function() {
 		$(this._options.element).append(
 			'<div class="abu-uploader">' +
-				'<div id="abu-files-processing" class="abu-files-processing">        Processing uploaded files..... </div>' +
+				'<div id="abu-files-processing" class="abu-files-processing">        Processing...... </div>' +
 				'<a id="file-uploader-instructions-sel" class="abu-uploader-instructions-sel" onclick="abu._fileUploader.uploaderHelp()">?</a>' +
 				'<div class="abu-upload-drop-area" style="display: none;"><span>Drop files here to upload</span></div>' +
 				'<div class="abu-xnat-interactivity-area">' +
@@ -46,10 +49,16 @@ abu.FileUploader = function(o){
 				'</div>' : 
 				'<div class="abu-extract-zip"><input id="extractRequestBox" type="hidden" value="1"/></div>'
 			) +
-			((this._options.showEmailOption) ?
+			((this._options.showCloseOption) ?
 				'<div class="abu-options-cb" title = "Close window upon submit and send e-mail upon completion">' +
-					'<input id="emailBox" type="checkbox" value="1">' +
+					'<input id="closeBox" type="checkbox" value="1">' +
 					'Close window upon submit' +
+				'</div>' : "" 
+			) +
+			((this._options.showEmailOption) ?
+				'<div class="abu-options-cb" title = "Send e-mail upon completion">' +
+					'<input id="emailBox" type="checkbox" value="1">' +
+					'Send e-mail upon completion' +
 				'</div>' : "" 
 			) +
 			((this._options.showUpdateOption) ?
@@ -77,13 +86,26 @@ abu.FileUploader = function(o){
 		$("#abu-process-button").click(this._options.processFunction);
 		$("#abu-process-button").mouseenter(function() { $(this).addClass("abu-process-button-hover"); });
 		$("#abu-process-button").mouseleave(function() { $(this).removeClass("abu-process-button-hover"); });
+		$('#closeBox').change(function(){ 
+			if ($('#closeBox').is(':checked')) { 
+				$('#emailBox').prop('checked', true);
+				$('#emailBox').attr('disabled', true);
+			} else {
+				$('#emailBox').attr('disabled', false);
+			}
+		 });
+
 		if (this.ALLOW_DRAG_AND_DROP) {
 			$(".abu-upload-drop-area").on('dragover',function(e) {
-					this.activateUploadArea(e);
+					if (this.DRAG_AND_DROP_ON) {
+						this.activateUploadArea(e);
+					}
 				}.bind(this)
 			);
 			$(".abu-upload-drop-area").on('dragenter',function(e) {
-					this.activateUploadArea(e);
+					if (this.DRAG_AND_DROP_ON) {
+						this.activateUploadArea(e);
+					}
 				}.bind(this)
 			);
 			$(".abu-upload-drop-area").on('drop',function(e) {
@@ -99,11 +121,15 @@ abu.FileUploader = function(o){
 				}.bind(this)
 			);
 			$(this._options.element).on('dragover',function(e) {
-					this.activateUploadArea(e);
+					if (this.DRAG_AND_DROP_ON) {
+						this.activateUploadArea(e);
+					}
 				}.bind(this)
 			).bind(this);
 			$(this._options.element).on('dragenter',function(e) {
-					this.activateUploadArea(e);
+					if (this.DRAG_AND_DROP_ON) {
+						this.activateUploadArea(e);
+					}
 				}.bind(this)
 			);
 		}	
@@ -132,7 +158,7 @@ abu.FileUploader = function(o){
 			var cFile = fileA[i];
 			var adj_i = i + start_i;
 			$(".abu-upload-list").append(
-				'<form id="file-upload-form-' + adj_i + '" action="' + this._currentAction +
+				'<form id="file-upload-form-' + adj_i + '" action="' + this._currentAction.replace("##FILENAME_REPLACE##",cFile.name) +
 					 (($("#extractRequestBox").length>0) ? (($("#extractRequestBox").is(':checked')) ? "&extract=true" : "&extract=false") : "") +
 					 (($("#emailBox").length>0) ? (($("#emailBox").is(':checked')) ? "&sendemail=true" : "&sendemail=false") : "") +
 					 (($("#verboseBox").length>0) ? (($("#verboseBox").is(':checked')) ? "&verbose=true" : "&verbose=false") : "") +
@@ -207,10 +233,24 @@ abu.FileUploader = function(o){
 					bar.width(percentVal)
 					percent.html(percentVal);
 					// Don't create results link if we're just returning the build path
-					if (typeof result.status !== 'undefined' || result.length > 150) {
-			 			status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-complete abu-upload-complete-text">Upload complete</a>');
+					// check for duplicates
+					var isDuplicate = false;
+					try {
+						var resultObj = JSON.parse(result);
+						if (typeof resultObj.duplicates !== 'undefined' && resultObj.duplicates.length==1) {
+							isDuplicate = true;
+						} 
+					} catch(e) {
+						// Do nothing for now
+					} 
+					if (!isDuplicate) {
+						if (typeof result.status !== 'undefined' || result.length > 150) {
+				 			status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-complete abu-upload-complete-text">Upload complete</a>');
+						} else {
+				 			status.html('<span class="abu-upload-complete abu-upload-complete-text">Upload complete</span>');
+						}
 					} else {
-			 			status.html('<span class="abu-upload-complete abu-upload-complete-text">Upload complete</span>');
+			 			status.html('<a href="javascript:abu._fileUploader.showReturnedText(\'' + $(status).attr('id') + '\')" class="underline abu-upload-fail">Duplicate file and overwrite=false.  Not uploaded.</a>');
 					}
 			 		status.css("display","inline-block");
 			 		$(infoSelector).find(".abu-progress").css("display","none");

@@ -3,6 +3,7 @@ package org.nrg.dcm.id;
 import org.apache.commons.lang3.StringUtils;
 import org.dcm4che2.data.DicomObject;
 import org.nrg.automation.entities.Script;
+import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.dcm.ChainExtractor;
 import org.nrg.dcm.Extractor;
@@ -136,7 +137,8 @@ public class ScriptedSessionAssignmentExtractor extends ChainExtractor implement
 
     private Script getScript(final String projectId) {
         final boolean hasEntity = StringUtils.isNotBlank(projectId);
-        final Script script = _service.getScript(hasEntity ? Scope.Project : Scope.Site, projectId, _event);
+        final Script script = _service.getScript(hasEntity ? Scope.Project : Scope.Site, projectId, ScriptTrigger.DEFAULT_CLASS, _event, ScriptTrigger.DEFAULT_FILTER);
+
         // If we didn't find a script for the indicated scope but we have an entity ID, then fail up to the site level.
         if (script == null && hasEntity) {
             return getScript(null);

@@ -1,0 +1,38 @@
+XNAT:
+    siteAdmin:
+        type: tabs
+        #name: siteAdmin
+        title: XNAT Site Administration
+        url: /data/admin
+
+        groups:
+            dashboard: Dashboard
+            xnatSetup: XNAT Setup
+            manageAccess: Manage Access
+            manageData: Manage Data
+            processing: Processing
+            projectCustomization: Project Customization
+            advanced: Advanced
+
+        children:
+
+            xnatSetup:
+                type: tab
+#                name: xnatSetup
+                label: XNAT Setup
+                children:
+
+                    siteSetup:
+                        type: tab
+#                        name: siteSetup
+#                        group: xnatSetup
+                        id: site-setup
+                        label: Site Setup
+                        url: /data/admin/site-setup
+                        classes: selected active
+                        children:
+
+
+
+
+

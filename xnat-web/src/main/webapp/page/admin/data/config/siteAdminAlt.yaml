@@ -1,0 +1,139 @@
+XNAT:
+    siteAdmin:
+        _meta:
+            type: meta
+            groups:
+                dashboard:      Dashboard
+                xnatSetup:      XNAT Setup
+                manageAccess:   Manage Access
+                manageData:     Manage Data
+                processing:     Processing
+                customize:      Project Customization
+                advanced:       Advanced XNAT Settings
+
+        _self:
+            type: tabs
+            title: XNAT Site Administration
+            url: /data/admin
+
+        xnatSetup:
+            _self:
+                type: tabGroup
+                label: XNAT Setup
+                
+            siteSetup:
+                _self:
+                    type: tab
+                    id: site-setup
+                    label: Site Setup
+                    group: xnatSetup
+                    url: /data/admin/site-setup
+                    classes: selected active
+
+                siteInfo:
+                    _self:
+                        type: panel
+                        name: siteInfo
+                        id: site-info
+                        label: Site Information
+
+                    siteId_:
+                        _self:
+                            type: xnatId  # conforms to format required to be used as an ID in XNAT
+                            tag: input|type=text
+                            name: siteId
+                            id: site-id
+                            label: Site ID
+                            value: XNAT
+                            description: >
+                                The id used to refer to this site (also used to generate database ids). No spaces or
+                                non-alphanumeric characters. It should be a short, one-word name or acronym which
+                                describes your site.
+                            tooltip: >
+                                Site ID accepts letters, numbers, and underscores
+                            validation:
+                                - required      # duh
+                                - stringStrict  # 'strict' validation accepts only letters, numbers, and _
+                                - stringSafe    # 'safe' validation accepts letters, numbers, _, and -.
+                                - allowSpace
+                                - number        # any number - integer, float, etc.
+                                - integer       # must be a whole integer
+                                - float         # float
+                                - date          # any valid date string
+
+                    siteUrl:
+                        _self:
+                            type: url
+                            name: siteUrl
+                            id: site-url
+                            label: Site URL
+                            value: https://cnda.wustl.edu
+                            description: '-'
+                            tooltip: '-'
+                            validation:
+                                - required
+                                - fullUrl     # full url with protocol and FQDN
+                                - siteUrl     # site-relative url (starts with "/")
+                                - relUrl      # relative url (maybe not necessary)
+
+                    siteDescription:
+                        _self:
+                            type: elementGroup
+                            name: siteDescription
+                            id: site-description
+
+                        elements:  # some item types get containers for child properties/elements
+
+                            siteDescriptionToggle:
+                                _self:
+                                    type: jsFunction
+                                    value: foo
+
+                            siteDescriptionType:
+                                _self:
+                                    type: input.hidden
+                                    name: siteDescriptionType
+                                    value: page
+
+                            siteDescriptionTypes:
+                                _self:
+                                    type: radioButtonGroup
+                                    layout: horizontal
+                                    onchange:
+                                        - [XNAT.event.radioChange.toggleShow]
+                                        - [XNAT.event.radioChange.copyValueTo, ?siteDescriptionType]
+                                        # XNAT.event.radioChange.copyValueTo function copies value
+                                        # from checked radio button to element specified in the argument
+
+                                siteDescriptionPage:
+                                    _self:
+                                        type: input.radio
+                                        name: siteDescriptionTypes
+                                        label: Page
+                                        value: page
+                                        checked: true
+                                        hides: ?siteDescriptionTextInput
+                                        shows: ?siteDescriptionPageInput
+
+                                siteDescriptionText:
+                                    _self:
+                                        type: input.radio
+                                        name: siteDescriptionTypes
+                                        label: Text (Markdown)
+                                        value: text
+                                        hides: ?siteDescriptionPageInput
+                                        shows: ?siteDescriptionTextInput
+
+                            siteDescriptionPageInput:
+                                _self:
+                                    type: input.text
+                                    show: true
+                                    name: siteDescriptionPageInput
+                                    value: /screens/site_description.vm
+
+                            siteDescriptionTextInput:
+                                _self:
+                                    type: textarea
+                                    show: false
+                                    name: siteDescriptionTextInput
+                                    value: Site description text goes here.

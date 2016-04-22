@@ -1,0 +1,689 @@
+{
+    "Result": [
+        {
+            "kind": "meta",
+            "name": "meta",
+            "meta": {
+                "url": "/data/admin"
+            },
+            "layout": "left",
+            "groupList": [
+                ["dashboard", "Dashboard"],
+                ["xnatSetup", "XNAT Setup"],
+                ["manageAccess", "Manage Access"],
+                ["manageData", "Manage Data"],
+                ["processing", "Processing"],
+                ["projectCustomization", "Project Customization"],
+                ["advanced", "Advanced XNAT Settings"]
+            ],
+            "groups_": [
+                { "name": "dashboard",            "label": "Dashboard" },
+                { "name": "xnatSetup",            "label": "XNAT Setup" },
+                { "name": "manageAccess",         "label": "Manage Access" },
+                { "name": "manageData",           "label": "Manage Data" },
+                { "name": "processing",           "label": "Processing" },
+                { "name": "projectCustomization", "label": "Project Customization" },
+                { "name": "advanced",             "label": "Advanced XNAT Settings" }
+            ],
+            "groups": {
+                "dashboard": "Dashboard",
+                "xnatSetup": "XNAT Setup",
+                "manageAccess": "Manage Access",
+                "manageData": "Manage Data",
+                "processing": "Processing",
+                "projectCustomization": "Project Customization",
+                "advanced": "Advanced XNAT Settings"
+            }
+        },
+        {
+            "kind": "tab",
+            "group": "dashboard",
+            "name": "siteDashboard",
+            "id": "site-dashboard",
+            "label": "Site Dashboard",
+            "isDefault": false,
+            "contents/items": {
+                "siteMonitoring": {
+                    "meta": {
+                        "kind": "panelForm",
+                        "name": "siteMonitoring",
+                        "label": "Site Monitoring",
+                        "id": "site-monitoring"
+                    },
+                    "contents/items": {
+                        "serverResponse": {
+                            "kind": "graph",
+                            "name": "serverResponse",
+                            "label": "Server Response Time",
+                            "data": "/data/site/response",
+                            "opts": {
+                                "display": "inline",
+                                "editable": true
+                            }
+                        },
+                        "uptime": {
+                            "kind": "graph",
+                            "name": "uptime",
+                            "label": "Uptime",
+                            "data/url": "/data/site/uptime",
+                            "opts": {
+                                "display": "inline",
+                                "editable": true
+                            }
+                        }
+                    }
+                }
+            }
+        },
+        {
+            "kind": "tab",
+            "group": "xnatSetup",
+            "name": "siteSetup",
+            "id": "site-setup",
+            "label": "Site Setup",
+            "url": "/data/admin/site-setup",
+            "isDefault": true,
+            "contents": [
+                {
+                    "kind": "panel",
+                    "name": "siteInfo",
+                    "id": "site-information",
+                    "label": "Site Information",
+                    "url-example": "/data/admin/site-setup/site-information",
+                    "elements": [
+                        {
+                            "kind": "input",
+                            "type": "text",
+                            "name": "siteId",
+                            "label": "Site ID",
+                            "id": "site-id",
+                            "description": "The id used to refer to this site (also used to generate database ids). No spaces or non-alphanumeric characters. It should be a short, one-word name or acronym which describes your site.",
+                            "info": "Site ID accepts letters, numbers, and underscores",
+                            "value": "XNAT",
+                            "validation": {
+                                "required": true,
+                                "type": "id-strict"
+                            }
+                        },
+                        {
+                            "kind": "input",
+                            "type": "text",
+                            "name": "siteURL",
+                            "label": "Site Url",
+                            "id": "site-url",
+                            "description": "",
+                            "info": "",
+                            "value": "https://cnda.wustl.edu",
+                            "validation": {
+                                "required": true,
+                                "type": "url"
+                            }
+                        },
+                        {
+                            "kind": "element-group",
+                            "tag_": "",
+                            "type_": "radio",
+                            "name": "siteDescription",
+                            "label": "Site Description",
+                            "id": "site-description",
+                            "value": "text",
+                            "description": "",
+                            "info": "",
+                            "elements": [
+                                {
+                                    "kind": "hidden-input",
+                                    "tag": "input",
+                                    "type": "hidden",
+                                    "name": "siteDescriptionType",
+                                    "value": "page"
+                                },
+                                {
+                                    "kind": "radio",
+                                    "tag": "input",
+                                    "type": "radio",
+                                    "name": "siteDescription",
+                                    "id": "site-description-page",
+                                    "label": "",
+                                    "value": "page",
+                                    "checked": true,
+                                    "after": [
+                                        ["label", {
+                                            "attr": {
+                                                "for": "site-description-page-input"
+                                            }
+                                        }, " Page"],
+                                        ["br"],
+                                        ["input", {
+                                            "id": "site-description-page-input",
+                                            "type": "text",
+                                            "name": "siteDescriptionPage",
+                                            "value": "/screens/site_description.vm",
+                                            "data":{
+                                                "value": "/screens/site_description.vm",
+                                                "validate": "url"
+                                            }
+                                        }]
+                                    ],
+                                    "data": {
+                                        "modify": [
+                                            "set.value: ?siteDescriptionType; ",
+                                            "show: #site-description-page-input; ",
+                                            "hide: #site-description-text-input"
+                                        ]
+                                    },
+                                    "related": "?siteDescriptionType"
+                                },
+                                {
+                                    "kind": "radio",
+                                    "tag": "input",
+                                    "type": "radio",
+                                    "name": "siteDescription",
+                                    "id": "site-description-text",
+                                    "label": "",
+                                    "value": "text",
+                                    "after": [
+                                        ["label", {
+                                            "attr": {
+                                                "for": "site-description-text-input"
+                                            }
+                                        }, " Text (Markdown)"],
+                                        ["br"],
+                                        ["textarea.hidden", {
+                                            "id": "site-description-text-input",
+                                            "name": "siteDescriptionText",
+                                            "value": "Foo",
+                                            "html": "foo."
+                                        }]
+                                    ],
+                                    "data": {
+                                        "modify": [
+                                            "set.value: ?siteDescriptionType; ",
+                                            "hide: #site-description-page-input; ",
+                                            "show: #site-description-text-input"
+                                        ]
+
+                                    },
+                                    "related": "?siteDescriptionType"
+                                }
+                            ],
+                            "elements_": [
+
+                                ["label", [
+                                    ["input|type=radio", {
+                                        "name": "siteDescription",
+                                        "value": "page"
+                                    }],
+                                    " Page"
+                                ]],
+
+                                ["br"],
+
+                                ["input|type=text", {
+                                    "name": "siteDescriptionPage",
+                                    "value": "/screens/site_description.vm"
+                                }],
+
+                                ["br"],
+
+                                ["label", [
+                                    ["input|type=radio", {
+                                        "name": "siteDescription",
+                                        "value": "text",
+                                        "$": {
+                                            "after": " Text (Markdown)"
+                                        }
+                                    }],
+                                    " Text (Markdown)"
+                                ]],
+
+                                ["br"],
+
+                                ["textarea", {
+                                    "value": "",
+                                    "html": ""
+                                }]
+
+                            ],
+                            "options": [
+                                {
+                                    "label": "Page",
+                                    "value": "page",
+                                    "toggle": {
+                                        "show": "page",
+                                        "hide": "text"
+                                    },
+                                    "description": ""
+                                },
+                                {
+                                    "label": "Text (Markdown)",
+                                    "value": "text",
+                                    "toggle": {
+                                        "show": "text",
+                                        "hide": "page"
+                                    },
+                                    "description": "XNAT allows you to use GitHub-flavored Markdown to create and format your own site description. <a href='/link/to/tutorial'>&gt;&gt; View Tutorial</a>"
+                                }
+                            ],
+                            "related": {
+                                "page": {
+                                    "parent": "/.xnatSetup.siteInfo.siteDescription.page",
+                                    "kind": "input",
+                                    "type": "text",
+                                    "name": "descriptionPage",
+                                    "id": "description-page",
+                                    "value": "/screens/site_description.vm",
+                                    "description": "",
+                                    "info": ""
+                                },
+                                "text": {
+                                    "parent": "/.xnatSetup.siteInfo.siteDescription.text",
+                                    "kind": "textarea",
+                                    "name": "descriptionText",
+                                    "id": "description-text",
+                                    "value": "",
+                                    "description": "XNAT allows you to use GitHub-flavored Markdown to create and format your own site description. <a href='/link/to/tutorial'>&gt;&gt; View Tutorial</a>",
+                                    "info": ""
+                                }
+                            },
+                            "related_": [
+                                {
+                                    "kind": "input",
+                                    "type": "text",
+                                    "value": ""
+                                }
+                            ],
+                            "validation": {
+                                "required": true,
+                                "type": "url"
+                            }
+                        },
+                        {
+                            "kind": "hidden",
+                            "tag": "input",
+                            "type": "hidden",
+                            "name": "homePage",
+                            "id": "home-page",
+                            "value": "/screens/QuickSearch.vm"
+                        },
+                        {
+                            "kind": "input",
+                            "type": "text",
+                            "name": "landingPage",
+                            "label": "Landing Page",
+                            "id": "landing-page",
+                            "before": "",
+                            "after": [
+                                [ "span.after", [
+                                    ["label.small", [
+                                        ["input#toggle-home-page", {
+                                            "type": "checkbox",
+                                            "name": "setHomePage",
+                                            "checked": false,
+                                            "data": {
+                                                "state": "unchecked",
+                                                "modify": [
+                                                    "toggle.value: [name='homePageInput'], [name='landingPage']; ",
+                                                    "toggle.value: ?homePage, ?landingPage; ",
+                                                    "toggle.disabled: ?homePageInput"
+                                                ]
+                                            }
+                                        }],
+                                        " Use This As My Home Page"
+                                    ]]
+                                ]]
+                            ],
+                            "after_": "<label class='small'><input type='checkbox' id='toggle-home-page' name='useForHome' data-modify='toggle.disable:?homePage,toggle.hide:?siteId'> Use This As My Home Page</label>",
+                            "description": "",
+                            "info": "",
+                            "value": "/screens/SplashPage.vm"
+                        },
+                        {
+                            "kind": "input",
+                            "type": "text",
+                            "name": "homePageInput",
+                            "label": "Home Page",
+                            "id": "home-page-input",
+                            "description": "",
+                            "info": "",
+                            "value": "",
+                            "after": [
+                                ["script", "XNAT.element.copyValue('?homePageInput', '?homePage')"]
+                            ]
+                        }
+                    ]
+                },
+                {
+                    "kind": "panelForm",
+                    "name": "adminInfo",
+                    "id": "admin-information",
+                    "label": "Admin Information",
+                    "description": "",
+                    "info": "",
+                    "elements": [
+                        {
+                            "kind": "input",
+                            "type": "text",
+                            "name": "siteAdminEmail",
+                            "label": "Site Admin Email",
+                            "id": "site-admin-email",
+                            "after_": [
+                                ["br"],
+                                ["p", [
+                                    ["a", {
+                                        "href": "/path/to/notification-options",
+                                        "html": "&gt;&gt; Set Email Notification Options"
+                                    }]
+                                ]],
+                                ["p", [
+                                    ["a", {
+                                        "href": "/path/to/email-server-config",
+                                        "html": "&gt;&gt; Setup XNAT Email Server"
+                                    }]
+                                ]]
+                            ],
+                            "description": [
+                                "<p><a href='/path/to/notification-options'>&gt;&gt; Set Email Notification Options</a>",
+                                "<p><a href='/path/to/email-server-config'>&gt;&gt; Setup XNAT Email Server</a>"
+                            ],
+                            "value": "cnda-ops.wustl.edu",
+                            "on": {
+                                "render": "XNAT.admin.siteAdminEmail.render",
+                                "change": "XNAT.admin.siteAdminEmail.change"
+                            }
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "kind": "tab",
+            "group": "xnatSetup",
+            "name": "security",
+            "id": "security",
+            "label": "Security",
+            "url": "/data/admin/security",
+            "contents": [
+                {
+                    "kind": "panelForm",
+                    "name": "siteSecurity",
+                    "id": "site-security",
+                    "label": "General Site Security Settings",
+                    "elements": [
+                        {
+                            "kind": "select",
+                            "name": "securityChannel",
+                            "id": "security-channel",
+                            "label": "Security Channel",
+                            "value": "http",
+                            "options": [
+                                {
+                                    "label": "http",
+                                    "value": "http"
+                                },
+                                {
+                                    "label": "https",
+                                    "value": "https"
+                                }
+                            ]
+                        },
+                        {
+                            "kind": "checkbox",
+                            "name": "requireLogin",
+                            "id": "require-login",
+                            "checked": true,
+                            "label": "Require User Login?",
+                            "description": "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
+                        }
+                    ]
+                },
+                {
+                    "kind": "panelForm",
+                    "name": "loginSessionControls",
+                    "id": "login-session-controls",
+                    "label": "User Logins / Session Controls",
+                    "elements": [
+                        {
+                            "kind": "input",
+                            "name": "sessionTimeout",
+                            "id": "session-timeout-input",
+                            "label": "Session Timeout",
+                            "value": "15",
+                            "attr": {
+                                "size": "3"
+                            },
+                            "description": "Interval for timing out alias tokens. Uses PostgreSQL interval notation: http://www.postgresql.org/docs/9.0/static/functions-datetime.html"
+                        },
+                        {
+                            "kind": "textarea",
+                            "name": "sessionTimeoutMessage",
+                            "id": "session-timeout-message",
+                            "label": "Session Timeout Message",
+                            "value": "You timed out, bro.",
+                            "description": "Alert message provided to users after a session timeout and logout."
+                        },
+                        {
+                            "kind": "checkbox",
+                            "name": "sessionAllowResume",
+                            "id": "session-allow-resume",
+                            "label": "Allow Resume on Next Login?",
+                            "checked": true,
+                            "value": "true",
+                            "description": "Allow user to resume where they left off, if logging back in after a session timeout?"
+                        },
+                        {
+                            "kind": "input",
+                            "type": "text",
+                            "name": "maxSessions",
+                            "id": "max-sessions",
+                            "label": "Maximum Concurrent Sessions",
+                            "value": "5",
+                            "attr":{
+                                "size": "3"
+                            },
+                            "description": "The maximum number of permitted sessions a user can have open simultaneously"
+                        },
+                        {
+                            "kind": "textarea",
+                            "name": "loginFailureMessage",
+                            "id": "login-failure-message",
+                            "label": "Login Failure Message",
+                            "value": "No dice dude.",
+                            "description": "Text to show when a user fails to login"
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "kind":"tab",
+            "group": "advanced",
+            "name":"dicomScpReceivers",
+            "label": "DICOM SCP Receivers",
+            "contents": [
+                {
+                    "kind":"panelForm",
+                    "name": "receivers",
+                    "label": "Receivers",
+                    "elements": [
+                        {
+                            "kind": "inputTable",
+                            "name": "receiverList",
+                            "id": "receiver-list",
+                            "label": "Receiver List",
+                            "tableData": [
+                                [
+                                    {
+                                        "name": "fooInput",
+                                        "value": "Value 1"
+                                    },
+                                    "Text",
+                                    "Foo",
+                                    "Bar"
+                                ],
+                                [["barInput", "1"], "2", "3", "4"],
+                                [["bazInput", "5"], "6", "7", "8"]
+                            ],
+                            "after": [
+                                ["script", [
+                                    "$('#receiver-list').addClass('foo');"
+                                ]]
+                            ]
+                        }
+                    ]
+                }
+            ]
+        },
+        {
+            "kind": "tab",
+            "group": "xnatSetup",
+            "name": "emailServer",
+            "id": "email-server",
+            "label": "Email Server",
+            "url": "/data/admin/email-server",
+            "contents": [
+                {
+                    "kind": "panelForm",
+                    "name": "emailServerConfig",
+                    "id": "email-server-config",
+                    "label": "Email Server Configuration",
+                    "elements": [
+                        {
+                            "kind": "input",
+                            "name": "xdat.mail.server",
+                            "label": "Mail Server Host"
+                        },
+                        {
+                            "kind": "input",
+                            "name": "xdat.mail.port",
+                            "label": "Mail Server Port",
+                            "attr": {
+                                "size": 5
+                            },
+                            "validate": ["integer"]
+                        },
+                        {
+                            "kind": "input",
+                            "name": "xdat.mail.username",
+                            "label": "Mail Server Username"
+                        },
+                        {
+                            "kind": "input",
+                            "type": "password",
+                            "name": "xdat.mail.password",
+                            "label": "Mail Server Password"
+                        }
+                    ],
+                    "footer": false
+                }
+            ]
+        },
+        {
+            "kind": "tab",
+            "group": "xnatSetup",
+            "name": "notifications",
+            "id": "notifications",
+            "label": "Notifications",
+            "url": "/data/admin/notifications"
+        },
+        {
+            "kind": "tab",
+            "group": "xnatSetup",
+            "name": "features",
+            "id": "features",
+            "label": "Themes &amp; Features",
+            "url": "/data/admin/features",
+						"contents": [
+                {
+                    "kind": "panel",
+                    "name": "themeConfig",
+                    "id": "theme-config",
+                    "label": "Theme Management",
+                    "elements": [
+												{
+														"tag": "script",
+														"type": "text/javascript",
+														"attr": {
+																"src": "../../scripts/themeManagement.js"
+														}
+												},
+                        {
+                            "tag": "span",
+														"html": "None",
+                            "name": "xnat.theme.active",
+                            "label": "Current theme"
+												},
+                        {
+                            "kind": "select",
+														"id": "themeSelection",
+                            "name": "xnat.theme.available",
+                            "label": "Select an existing theme",
+                            "options": [
+                                {
+                                    "label": "None",
+                                    "value": "null"
+                                },
+                                {
+                                    "label": "Modern UI",
+                                    "value": "Modern UI"
+                                },
+                                {
+                                    "label": "Green XNAT Theme",
+                                    "value": "Green XNAT Theme"
+                                },
+                                {
+                                    "label": "Red XNAT Theme",
+                                    "value": "Red XNAT Theme"
+                                }
+                            ],
+														"after": [
+                                "&nbsp;<!--button id=\"submitThemeButton\" onclick=\"setTheme();\">Set Theme</button-->&nbsp;&nbsp;<button id=\"removeThemeButton\" onclick=\"removeTheme();\">Remove Theme</button>"
+                            ]														
+                        },
+                        {
+                            "kind": "file",
+                            "name": "xnat.theme.upload",
+                            "label": "Upload a theme package",
+														"after": [
+                                "<form id=\"uploadThemeForm\" method=\"POST\" class=\"optOutOfXnatDefaultFormValidation\"><span class=\"label bold\">Upload a theme package: </span><input type=\"file\" id=\"themeFileUpload\" name=\"themeFileUpload\" multiple style=\"width: 270px; display: inline; float: left;\"/><button type=\"submit\" id=\"submitThemeUploadButton\" style=\"position: relative; top:-15px;\">Upload</button></form>"
+                            ]
+                        }
+                    ],
+                    "footer": false
+                }
+            ]
+        },
+        {
+            "kind": "tab",
+            "group": "manageAccess",
+            "name": "authentication",
+            "id": "authentication",
+            "label": "Authentication Methods",
+            "url": "/data/admin/authentication"
+        },
+        {
+            "kind": "tab",
+            "group": "manageAccess",
+            "name": "users",
+            "id": "users",
+            "label": "Users",
+            "url": "/data/admin/users"
+        },
+        {
+            "kind": "tab",
+            "group": "manageAccess",
+            "name": "userRoles",
+            "id": "user-roles",
+            "label": "User Roles",
+            "url": "/data/admin/user-roles"
+        },
+        {
+            "kind": "tab",
+            "group": "manageAccess",
+            "name": "registration",
+            "id": "registration",
+            "label": "Registration Options",
+            "url": "/data/admin/registration"
+        }
+
+    ]
+}

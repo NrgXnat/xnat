@@ -92,10 +92,10 @@ ad
 .abu-return-floatmessage {position:absolute;z-index:10001;width:auto;cursor:pointer;background-color:#FFFFCC; }
 .abu-return-message {width:auto;cursor:pointer;background-color:#FFFFCC; }
 
-.abu-options-div { position: relative; float: left; }
+.abu-options-div { position: relative; float: left; width: 430px; margin-left: 10px; }
 .abu-options-cb {
     display:block; /* or inline-block */
-    width: auto; padding: 7px 0; text-align:center; margin-left:10px; float:left;    
+    width: auto; padding: 7px 0; text-align:center; margin-left:10px; float:left; padding-top: 0px; padding-bottom: 0px;    
 }
 
 .abu-progress { position:relative; display:inline-block; width:250px; height:15px; border: 1px solid #ddd; padding: 0px; border-radius: 0px; margin-left: 10px; }

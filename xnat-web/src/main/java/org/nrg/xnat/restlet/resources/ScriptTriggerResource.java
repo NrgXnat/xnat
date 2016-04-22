@@ -3,13 +3,14 @@ package org.nrg.xnat.restlet.resources;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
+import org.nrg.automation.entities.EventFilters;
 import org.nrg.automation.entities.ScriptTrigger;
-import org.nrg.automation.services.EventService;
 import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.XFTTable;
+import org.python.google.common.collect.Sets;
 import org.restlet.Context;
 import org.restlet.data.*;
 import org.restlet.resource.Representation;
@@ -18,6 +19,9 @@ import org.restlet.resource.StringRepresentation;
 import org.restlet.resource.Variant;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import com.google.gson.Gson;
+import com.google.gson.GsonBuilder;
 
 import java.io.IOException;
 import java.util.*;
@@ -32,22 +36,23 @@ public class ScriptTriggerResource extends AutomationResource {
         getVariants().add(new Variant(MediaType.TEXT_XML));
         getVariants().add(new Variant(MediaType.TEXT_PLAIN));
 
-        _eventService = XDAT.getContextService().getBean(EventService.class);
         _scriptTriggerService = XDAT.getContextService().getBean(ScriptTriggerService.class);
 
         _eventId = (String) getRequest().getAttributes().get(EVENT_ID);
         final String triggerId = (String) getRequest().getAttributes().get(TRIGGER_ID);
+        final String Id = (String) getRequest().getAttributes().get(ID);
 
         final boolean hasEvent = StringUtils.isNotBlank(_eventId);
         final boolean hasTriggerId = StringUtils.isNotBlank(triggerId);
+        final boolean hasId = StringUtils.isNotBlank(Id);
 
         final String projectId;
-        if (!hasTriggerId && !hasEvent) {
+        if (!hasTriggerId && !hasEvent && !hasId) {
             projectId = getProjectId();
             _trigger = null;
         } else {
-            if (hasTriggerId) {
-                _trigger = _scriptTriggerService.getByTriggerId(triggerId);
+            if (hasId || hasTriggerId) {
+            	_trigger = (hasId) ? _scriptTriggerService.getById(Id) : _scriptTriggerService.getByTriggerId(triggerId);
                 if (_trigger == null) {
                     throw new ResourceException(Status.CLIENT_ERROR_NOT_FOUND, "Can't find script trigger with ID: " + triggerId);
                 }
@@ -59,10 +64,14 @@ public class ScriptTriggerResource extends AutomationResource {
                 }
             } else if (hasProjectId()) {
                 projectId = getProjectId();
-                _trigger = _scriptTriggerService.getByAssociationAndEvent(Scope.encode(Scope.Project, projectId), _eventId);
+                _trigger = null;
+                // TODO: For these to make sense now, we need to pass at minimum an event class, but really we would need filters    
+                //_trigger = _scriptTriggerService.getByAssociationAndEvent(Scope.encode(Scope.Project, projectId), _eventId);
             } else {
                 projectId = null;
-                _trigger = _scriptTriggerService.getByAssociationAndEvent(Scope.Site.code(), _eventId);
+                _trigger = null;
+                // TODO: For these to make sense now, we need to pass at minimum an event class, but really we would need filters    
+                //_trigger = _scriptTriggerService.getByAssociationAndEvent(Scope.Site.code(), _eventId);
             }
         }
 
@@ -101,7 +110,7 @@ public class ScriptTriggerResource extends AutomationResource {
 
     @Override
     protected String getResourceId() {
-        return _trigger == null ? null : _trigger.getEvent().getEventId();
+        return _trigger == null ? null : _trigger.getEvent();
     }
 
     @Override
@@ -158,10 +167,11 @@ public class ScriptTriggerResource extends AutomationResource {
         final Map<String, String> association = Scope.decode(trigger.getAssociation());
 
         final Map<String, String> properties = new HashMap<>();
+        properties.put("id", String.valueOf(trigger.getId()));
         properties.put("triggerId", trigger.getTriggerId());
         properties.put("scope", association.get("scope"));
         properties.put("entityId", association.get("entityId"));
-        properties.put("event", trigger.getEvent().getEventId());
+        properties.put("event", trigger.getEvent());
         properties.put("scriptId", trigger.getScriptId());
         properties.put("description", trigger.getDescription());
 
@@ -192,10 +202,13 @@ public class ScriptTriggerResource extends AutomationResource {
         }
 
         ArrayList<String> columns = new ArrayList<>();
+        columns.add("id");
         columns.add("triggerId");
         columns.add("scope");
         columns.add("entityId");
+        columns.add("srcEventClass");
         columns.add("event");
+        columns.add("eventFilters");
         columns.add("scriptId");
         columns.add("description");
 
@@ -215,10 +228,14 @@ public class ScriptTriggerResource extends AutomationResource {
             final Map<String, String> atoms = Scope.decode(trigger.getAssociation());
             final String scope = atoms.get("scope");
             final String entityId = scope.equals(Scope.Site.code()) ? "" : atoms.get("entityId");
-            table.insertRowItems(trigger.getTriggerId(),
+            table.insertRowItems(
+            		String.valueOf(trigger.getId()),
+            		trigger.getTriggerId(),
                     scope,
                     entityId,
-                    trigger.getEvent().getEventId(),
+                    trigger.getSrcEventClass(),
+                    trigger.getEvent(),
+            		trigger.getEventFiltersAsMap(),
                     trigger.getScriptId(),
                     trigger.getDescription());
         }
@@ -238,60 +255,88 @@ public class ScriptTriggerResource extends AutomationResource {
         }
 
         MediaType mediaType = entity.getMediaType();
-        if (!mediaType.equals(MediaType.APPLICATION_WWW_FORM) && !mediaType.equals(MediaType.APPLICATION_JSON)) {
-            throw new ClientException(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, "This function currently only supports " + MediaType.APPLICATION_WWW_FORM + " and " + MediaType.APPLICATION_JSON);
+        if (!mediaType.equals(MediaType.APPLICATION_JSON)) {
+            throw new ClientException(Status.CLIENT_ERROR_UNSUPPORTED_MEDIA_TYPE, "This function currently only supports " + MediaType.APPLICATION_JSON);
         }
-
-        final Properties properties = decodeProperties(entity, mediaType);
+                
+        //final Properties properties;
+        JsonResults jsonResults;
+        try {
+            final String text = entity.getText();
+            final String jsonString = text;
+            final GsonBuilder builder = new GsonBuilder(); 
+            final Gson gson = builder.create();
+            jsonResults = gson.fromJson(jsonString,JsonResults.class);
+        } catch (IOException e) {
+            throw new ServerException(Status.SERVER_ERROR_INTERNAL, "An error occurred processing the script properties", e);
+        }
 
         // TODO: These remove definitions of scope, entity ID, and script ID that may be passed in on the API call.
         // TODO: We may consider throwing an exception if something in the body parameters contradicts the URI
         // TODO: parameters. For example, if the URL indicates site scope, but the body parameters specify project and
         // TODO: ID, it may be worth throwing an exception and indicating that you should only specify that stuff in the
         // TODO: URL. For now, though, we'll just ignore the payload parameters for simplicity.
+        /*
+        final String scope;
+        final String entityId;
         if (getScope() == Scope.Project) {
-            properties.setProperty("scope", Scope.Project.code());
-            properties.setProperty("entityId", getProjectId());
+            scope = Scope.Project.code();
+            entityId = getProjectId();
         } else {
-            properties.setProperty("scope", Scope.Site.code());
-            properties.remove("entityId");
+            scope = Scope.Site.code();
+            entityId = null;
         }
+        */
 
         if (_trigger == null) {
-            if (!properties.containsKey("event")) {
+        	if (jsonResults.getEvent() == null || jsonResults.getEvent().length()<1) {
                 throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify the event for your new script trigger.");
             }
-            if (!properties.containsKey("scriptId")) {
+        	if (jsonResults.getScriptId() == null || jsonResults.getScriptId().length()<1) {
                 throw new ClientException(Status.CLIENT_ERROR_BAD_REQUEST, "You must specify the script ID for your new script trigger.");
             }
             if (_log.isDebugEnabled()) {
                 _log.debug("Creating new script trigger");
             }
-            final String scriptId = properties.getProperty("scriptId");
-            final String event = properties.getProperty("event");
-            final String triggerId = properties.getProperty("triggerId", _scriptTriggerService.getDefaultTriggerName(scriptId, getScope(), getProjectId(), event));
-            final String description = properties.getProperty("description", null);
-            final ScriptTrigger trigger = _scriptTriggerService.newEntity(triggerId, description, scriptId, getAssociation(), event);
+            final String scriptId = jsonResults.getScriptId();
+            final String event = jsonResults.getEvent();
+            final String description = jsonResults.getDescription();
+            final String eventClass = jsonResults.getEventClass();
+            final Map<String,List<String>> eventFilters = jsonResults.getFilters();
+            final String triggerId = _scriptTriggerService.getDefaultTriggerName(scriptId, getScope(), getProjectId(), eventClass, event, eventFilters);
+            final ScriptTrigger trigger = _scriptTriggerService.newEntity(triggerId, description, scriptId, getAssociation(), eventClass, event, eventFilters);
             if (_log.isInfoEnabled()) {
                 _log.info("Created a new trigger: " + trigger.toString());
             }
             recordAutomationEvent(triggerId, getAssociation(), "Create", ScriptTrigger.class);
+            // Return thie trigger ID in the response test.  The upload UI needs it
+            this.getResponse().setEntity(new StringRepresentation(triggerId));
         } else {
-            final String scriptId = properties.getProperty("scriptId");
-            final String event = properties.getProperty("event");
-            final String triggerId = properties.getProperty("triggerId");
-            final String description = properties.getProperty("description", null);
+            final String scriptId = jsonResults.getScriptId();
+            final String event = jsonResults.getEvent();
+            final String description = jsonResults.getDescription();
+            final String eventClass = jsonResults.getEventClass();
+            final Map<String,List<String>> eventFilters = jsonResults.getFilters();
+            final String triggerId = _scriptTriggerService.getDefaultTriggerName(scriptId, getScope(), getProjectId(), eventClass, event, eventFilters);
             boolean isDirty = false;
             if (StringUtils.isNotBlank(scriptId) && !scriptId.equals(_trigger.getScriptId())) {
                 _trigger.setScriptId(scriptId);
                 isDirty = true;
             }
-            if (StringUtils.isNotBlank(event) && !event.equals(_trigger.getEvent().getEventId())) {
-                _trigger.setEvent(_eventService.getByEventId(event));
+            if (StringUtils.isNotBlank(event) && !event.equals(_trigger.getEvent())) {
+                _trigger.setEvent(event);
                 isDirty = true;
             }
             if (StringUtils.isNotBlank(triggerId) && !triggerId.equals(_trigger.getTriggerId())) {
                 _trigger.setTriggerId(triggerId);
+                isDirty = true;
+            }
+            if (StringUtils.isNotBlank(eventClass) && !eventClass.equals(_trigger.getSrcEventClass())) {
+                _trigger.setSrcEventClass(eventClass);
+                isDirty = true;
+            }
+            if (eventFilters != null && !eventFilters.equals(_trigger.getEventFiltersAsMap())) {
+                _trigger.setEventFiltersAsMap(eventFilters);
                 isDirty = true;
             }
             // Description is a little different because you could specify an empty description.
@@ -306,11 +351,23 @@ public class ScriptTriggerResource extends AutomationResource {
             if (isDirty) {
                 _scriptTriggerService.update(_trigger);
                 recordAutomationEvent(triggerId, getAssociation(), "Update", ScriptTrigger.class);
+                // Return thie trigger ID in the response test.  The upload UI needs it
+                this.getResponse().setEntity(new StringRepresentation(triggerId));
             }
         }
     }
 
-    private String formatScopeEntityIdAndEvent() {
+    @SuppressWarnings("unused")
+	private Set<EventFilters> getEventFilters(Map<String, List<String>> filters) {
+    	final Set<EventFilters> eventSet = Sets.newHashSet();
+    	for (final String filterKey : filters.keySet()) {
+    		EventFilters ef = new EventFilters(filterKey,filters.get(filterKey));
+    		eventSet.add(ef);
+    	}
+    	return eventSet;
+	}
+
+	private String formatScopeEntityIdAndEvent() {
         final StringBuilder buffer = new StringBuilder();
         if (_trigger != null) {
             final Map<String, String> atoms = Scope.decode(_trigger.getAssociation());
@@ -320,7 +377,7 @@ public class ScriptTriggerResource extends AutomationResource {
                 buffer.append("project ").append(atoms.get("entityId"));
             }
             if (_trigger.getEvent() != null) {
-                buffer.append(" and event ").append(_trigger.getEvent().getEventId());
+                buffer.append(" and event ").append(_trigger.getEvent());
             } else {
                 buffer.append(", no event");
             }
@@ -338,13 +395,63 @@ public class ScriptTriggerResource extends AutomationResource {
         }
         return buffer.toString();
     }
+    
+	@SuppressWarnings("unused")
+    private class JsonResults {
+    	private String event;
+		private String eventClass;
+		private String scriptId;
+		private String description;
+    	private Map<String,List<String>> filters;
+    	
+    	public String getEvent() {
+			return event;
+		}
+    	
+		public void setEvent(String event) {
+			this.event = event;
+		}
+		
+    	public String getEventClass() {
+			return eventClass;
+		}
+    	
+		public void setEventClass(String eventClass) {
+			this.eventClass = eventClass;
+		}
+		
+		public String getScriptId() {
+			return scriptId;
+		}
+		
+		public void setScriptId(String scriptId) {
+			this.scriptId = scriptId;
+		}
+		
+    	public String getDescription() {
+			return description;
+		}
+    	
+		public void setDescription(String description) {
+			this.description = description;
+		}
+		
+		public Map<String, List<String>> getFilters() {
+			return filters;
+		}
+		
+		public void setFilters(Map<String, List<String>> filters) {
+			this.filters = filters;
+		}
+    	
+    }
 
     private static final Logger _log = LoggerFactory.getLogger(ScriptTriggerResource.class);
 
     private static final String EVENT_ID = "EVENT_ID";
     private static final String TRIGGER_ID = "TRIGGER_ID";
+    private static final String ID = "ID";
 
-    private final EventService _eventService;
     private final ScriptTriggerService _scriptTriggerService;
 
     private final String _eventId;

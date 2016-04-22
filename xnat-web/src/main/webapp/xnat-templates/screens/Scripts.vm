@@ -8,6 +8,112 @@
 #* @vtlvariable name="script" type="org.nrg.automation.entities.Script" *#
 #* @vtlvariable name="link" type="org.apache.turbine.services.pull.tools.TemplateLink" *#
 #* @vtlvariable name="error" type="java.lang.String" *#
+<style type="text/css">
+
+            #events_table .item, #events_table .header, #events_manage_table .item, #events_manage_table .header {
+                border-bottom: 1px solid #888;
+                font: 11px Arial, Helvetica, sans-serif;
+                margin-top: 0;
+                margin-bottom: 0;
+                padding: 4px;
+                overflow: auto;
+            }
+
+            dl.item, item.item {
+                display: block;
+            }
+
+            #events_table dl dl, #events_manage_table dl dl {
+                margin: 1px 0;
+            }
+
+            #events_table .header, #events_manage_table .header {
+                background-color: #ccc;
+                font-weight: bold;
+            }
+
+            #events_table dl dt, #events_table dl dd, #events_manage_table dl dt, #events_manage_table dl dd {
+                display: block;
+                float: left;
+                padding: 4px 0;
+            }
+
+            #events_table .item:hover {
+                background-color: #fff;
+            }
+
+            #events_manage_table .item:hover {
+                background-color: #fff;
+            }
+
+            #events_table dd, #events_manage_table dd {
+                margin-left: 20px;
+            }
+
+            #events_table dd.col1, #events_manage_table dd.col1 {
+                width: 140px;
+                margin-left: 10px
+            }
+
+            #events_table dd.col2, #events_manage_table dd.col2 {
+                width: 115px;
+            }
+
+            #events_table dd.col3, #events_manage_table dd.col3 {
+                width: 230px;
+            }
+
+            #events_table dd.col4, #events_manage_table dd.col4 {
+                width: 40px;
+            }
+
+            #events_table dd.col5, #events_manage_table dd.col5 {
+                width: 105px;
+            }
+
+            #events_table dd.col6, #events_manage_table dd.col6 {
+                width: 50px;
+            }
+
+            #events_table dd.col7, #events_manage_table dd.col7 {
+                width: 130px;
+            }
+
+            #events_table dd.colX, #events_manage_table dd.colX {
+                width: 90%;
+                padding-left: 70px;
+            }
+            #events_table dd.colC, #events_manage_table dd.colC {
+                width: 90%;
+                padding-left: 10px;
+                padding-top: 2px;
+                padding-bottom: 2px;
+            }
+
+            #events_table dd.colEx, #events_manage_table dd.colEx {
+                position: relative;
+            }
+
+            #events_table_title #events_manage_table_title {
+                font-weight: 700;
+            }
+            button.event-handler-button {
+                font: 11px Arial, Helvetica, sans-serif;
+                padding: 3px;
+                margin: -3px;
+            }
+
+            div.row3 {
+                float: right;
+                margin-top: 8px;
+            }
+
+            div.row4 {
+                clear: both;
+                margin-top: 8px;
+            }
+
+</style>
 
 
 <h3 style="margin:0 0 15px 0;">Automation</h3>
@@ -48,8 +154,16 @@
         <div id="addEventHandler" class="html-template">
             <table>
                 <tr>
-                    <td><label for="event" class="required"><strong>Event:</strong><i>*</i></label></td>
-                    <td><select id="select_event" name="event" class="event"></select></td>
+                    <td><label for="eventClass" class="required"><strong>Event Type:</strong><i>*</i></label></td>
+                    <td><select id="select_eventClass" name="eventClass" class="eventClass"></select></td>
+                </tr>
+                <tr>
+                    <td><label for="event" class="required"><strong>Event ID:</strong><i>*</i></label></td>
+                    <td><select id="select_event" name="event" class="event"></select> <input type="text" id="select_input" class="event" style="display:none" size="15"/> <button class="customButton">Custom Value</button></div></td>
+                </tr>
+                <tr id="filterRow">
+                    <td><label for="filters"><strong>Filters:</strong></label></td>
+                    <td><div id="filterDiv"></div></td>
                 </tr>
                 <tr>
                     <td><label for="scriptId" class="required"><strong>Script ID:</strong><i>*</i></label></td>
@@ -108,7 +222,7 @@
             <div class="yui-navset yui-navset-top bogus-tabs">
                 <ul class="yui-nav">
                     <li class="first selected"><a href="#automationEventHandlers"><em>Site Event Handlers</em></a></li>
-                    <li><a href="#automationEvents"><em>Events</em></a></li>
+                    ##<li><a href="#automationEvents"><em>Events</em></a></li>
                     <li><a href="#automationScripts"><em>Scripts</em></a></li>
                 </ul>
                 <div class="yui-content">
@@ -121,6 +235,7 @@
                         <div id="events_list">
 ##                            <p id="no_events_defined" style="display:none;padding:20px;">There are no events currently defined for this site.</p>
                             <p id="no_event_handlers" style="display:none;padding:20px;">There are no event handlers currently configured for this site.</p>
+                            <!--
                             <table id="events_table" class="xnat-table" style="display:none;width:100%;">
                                 <thead>
                                 <th>Event</th>
@@ -131,6 +246,9 @@
                                 ## content populated with XNAT.app.eventsManager.initEventsTable()
                                 </tbody>
                             </table>
+                            -->
+                            <div id="events_table" class="xnat-table" style="display:none;width:100%;">
+                            </div>
                             <br>
                             <b style="padding:0 8px;">Create a site-wide Event Handler: </b>
     <button type="button" id="add_event_handler" class="btn1" style="font-size:12px;" title="add an event handler">Add Event Handler</button>
@@ -139,39 +257,39 @@
 
                     </div>
 
-                    <!-- Events -->
-                    <div id="automationEvents" class="yui-hidden">
-
-                        <div id="events-container">
-
-                            <p id="no-events" style="display:none;">There are no Events defined for this site.</p>
-
-                            <table id="events-table" class="xnat-table" style="display:none;width:100%;">
-
-                                <thead>
-                                <th width="40%">Event ID</th>
-                                <th width="40%">Event Label</th>
+##                    <!-- Events -->
+##                    <div id="automationEvents" class="yui-hidden">
+##
+##                        <div id="events-container">
+##
+##                            <p id="no-events" style="display:none;">There are no Events defined for this site.</p>
+##
+##                            <table id="events-table" class="xnat-table" style="display:none;width:100%;">
+##
+##                                <thead>
+##                                <th width="40%">Event ID</th>
+##                                <th width="40%">Event Label</th>
 ##                                <th>Workflow</th>
-                                <th width="20%">&nbsp;</th>
-                                </thead>
-
-                                <tbody>
-
-                                ## events list inserted here via AJAX
-
-                                </tbody>
-
-                            </table>
-
-                            <br>
-
-                            <b style="padding:0 8px;">Define an Event from existing Workflows or create a new Event:</b>
-
-                            <button type="button" id="define-event-button" class="btn1" style="font-size:12px;" title="define an event">Define Event</button>
-
-                        </div>
-
-                    </div>
+##                                <th width="20%">&nbsp;</th>
+##                                </thead>
+##
+##                                <tbody>
+##
+##                                ## events list inserted here via AJAX
+##
+##                                </tbody>
+##
+##                            </table>
+##
+##                            <br>
+##
+##                            <b style="padding:0 8px;">Define an Event from existing Workflows or create a new Event:</b>
+##
+##                            <button type="button" id="define-event-button" class="btn1" style="font-size:12px;" title="define an event">Define Event</button>
+##
+##                        </div>
+##
+##                    </div>
 
                     <!-- Scripts -->
                     <div id="automationScripts" class="yui-hidden">

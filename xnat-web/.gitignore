@@ -10,3 +10,4 @@ gradle.properties
 .classpath
 .project
 .settings/
+InstanceSettings.xml

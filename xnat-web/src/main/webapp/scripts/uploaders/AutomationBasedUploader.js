@@ -1,5 +1,8 @@
-//Copyright 2015 Washington University
-//Author: Mike Hodge <hodgem@mir.wustl.edu>
+/** 
+  * Copyright 2015 Washington University
+  * Automation Based Uploader
+  * Author: Mike Hodge <hodgem@mir.wustl.edu>
+  */
 
 /* 
  * resource dialog is used to upload resources at any level
@@ -270,6 +273,7 @@ XNAT.app.abu.eventHandlerChange = function(){
 	} else if ((XNAT.app.abu.usageSelect=='Launch') || (abu._fileUploader._uploadStarted && abu._fileUploader._filesInProgress<1)) {
 		$("#abu-process-button").removeClass("abu-button-disabled");
 	}
+	XNAT.app.abu.filesProcessed = false;
 }
 
 XNAT.app.abu.initUploaderConfig = function(){
@@ -285,6 +289,13 @@ XNAT.app.abu.initUploaderConfig = function(){
 	uploaderConfigAjax.done( function( data, textStatus, jqXHR ) {
 
 		if (typeof data !== 'undefined' && $.isArray(data)) {
+			// Configurations must have trigger IDs (remove old-style (pre XNAT 1.7) configurations)
+			for (var i = data.length -1; i >= 0 ; i--) {
+				var triggerId = data[i].eventTriggerId;
+				if (typeof triggerId == 'undefined' || triggerId.length<1) {
+					data.splice(i,1);
+				}
+			}
 			XNAT.app.abu.uploaderConfig = data;
 		} else {
 			XNAT.app.abu.uploaderConfig = [];
@@ -299,6 +310,13 @@ XNAT.app.abu.initUploaderConfig = function(){
 		 });
 		uploaderSiteConfigAjax.done( function( data, textStatus, jqXHR ) {
 			if (typeof data !== 'undefined' && $.isArray(data) && data.length>0) {
+				// Configurations must have trigger IDs (remove old-style (pre XNAT 1.7) configurations)
+				for (var i = data.length -1; i >= 0 ; i--) {
+					var triggerId = data[i].eventTriggerId;
+					if (typeof triggerId == 'undefined' || triggerId.length<1) {
+						data.splice(i,1);
+					}
+				}
 				Array.prototype.push.apply(XNAT.app.abu.uploaderConfig,data);
 			}
 		});
@@ -355,7 +373,7 @@ XNAT.app.abu.populateEventHandlerSelect = function(){
 			var currEvent = events[i];
 			for (var j=0; j<uploaderConfig.length; j++) {
 				var currConfig = uploaderConfig[j];
-				if (currEvent.event==currConfig.event && currEvent.scope==currConfig.eventScope) {
+				if (currEvent.triggerId==currConfig.eventTriggerId && currEvent.scope==currConfig.eventScope) {
 					var doAssign = true;
 					if (usageSelect == 'Upload' && resourceSelect==XNAT.app.abu.cacheConstant && !currConfig.launchFromCacheUploads) {
 						doAssign = false;
@@ -364,7 +382,8 @@ XNAT.app.abu.populateEventHandlerSelect = function(){
 					} else if (usageSelect == 'Upload' && resourceSelect != XNAT.app.abu.cacheConstant) {
 						if (!currConfig.launchFromResourceUploads) {
 							doAssign = false;
-						} else if (currConfig.resourceConfigs.length>0 && $.inArray(resourceSelect,currConfig.resourceConfigs)<0) {
+						} else if ((typeof currConfig.resourceConfigs === 'undefined') ||
+								 (currConfig.resourceConfigs.length>0 && $.inArray(resourceSelect,currConfig.resourceConfigs)<0)) {
 							doAssign = false;
 						}
 					}
@@ -372,14 +391,15 @@ XNAT.app.abu.populateEventHandlerSelect = function(){
 						doAssign = false;
 					}
 					if (doAssign) {
-						$('#eventHandlerSelect').append('<option value="' + currEvent.event + '" class="' + currEvent.scope + '">' +
+						$('#eventHandlerSelect').append('<option value="' + currEvent.triggerId + '" class="' + currEvent.scope + '">' +
 						 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
 					}
 					continue outerLoop;
 				}
 			}
-			$('#eventHandlerSelect').append('<option value="' + currEvent.event + '" class="' + currEvent.scope + '">' +
-				 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
+			// We now don't want to include event handlers with no upload configuration in the display.  The default for handlers is to not use the uploader.
+			//$('#eventHandlerSelect').append('<option value="' + currEvent.triggerId + '" class="' + currEvent.scope + '">' +
+			//	 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
 		}
 		if ($('#eventHandlerSelect').find('option').length==1) {
 			$('#handlerDefaultOption').html('NONE DEFINED'); 
@@ -400,6 +420,8 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 	var uploaderConfig = XNAT.app.abu.uploaderConfig;
 	var usageSelect = $('#usageSelect').val();
 	var resourceSelect = $('#resourceSelect').val();
+	$('#whatToDoSelect').append('<option id="handlerDefaultOption" value="">' + 
+		((usageSelect=='Launch' || resourceSelect==XNAT.app.abu.cacheConstant) ?  'SELECT' : 'DEFAULT') + '</option>'); 
 	if (XNAT.app.abu.contextResourceConfigs!=undefined && XNAT.app.abu.contextResourceConfigs.length>0) {
 		for (var h=0; h<resourceConfigs.length; h++) {
 			var resourceMatch = false;
@@ -410,7 +432,7 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 					if (currEvent.event == ("Uploaded " + resourceConfigs[h].name)) {
 						for (var j=0; j<uploaderConfig.length; j++) {
 							var currConfig = uploaderConfig[j];
-							if (currEvent.event==currConfig.event && currEvent.scope==currConfig.eventScope) {
+							if (currEvent.triggerId==currConfig.eventTriggerId && currEvent.scope==currConfig.eventScope) {
 								var doAssign = true;
 								if ((usageSelect == 'Launch') ||
 								   (!(currConfig.launchFromResourceUploads)) ||
@@ -418,7 +440,7 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 									doAssign = false;
 								}
 								if (doAssign) {
-									$('#whatToDoSelect').append('<option value="resource- ' + resourceConfigs[h].name + ':launch-' + currEvent.event + '" class="' + currEvent.scope + '">' + 
+									$('#whatToDoSelect').append('<option value="resource- ' + resourceConfigs[h].name + ':launch-' + currEvent.triggerId + '" class="' + currEvent.scope + '">' + 
 				                                                ((typeof resourceConfigs[h].description !== 'undefined' && resourceConfigs[h].description.length>0) ? resourceConfigs[h].description : resourceConfigs[h].name) + " --> " + 
 									 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
 									resourceMatch = true;
@@ -426,10 +448,11 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 								continue outerLoop;
 							}
 						}
-						$('#whatToDoSelect').append('<option value="resource-' + resourceConfigs[h].name + ':launch-' + currEvent.event + '" class="' + currEvent.scope + '">' + 
-				                                ((typeof resourceConfigs[h].description !== 'undefined' && resourceConfigs[h].description.length>0) ? resourceConfigs[h].description : resourceConfigs[h].name) + " --> " + 
-							 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
-						resourceMatch = true;
+						// We now don't want to include event handlers with no upload configuration in the display.  The default for handlers is to not use the uploader.
+						//$('#whatToDoSelect').append('<option value="resource-' + resourceConfigs[h].name + ':launch-' + currEvent.triggerId + '" class="' + currEvent.scope + '">' + 
+				                //                ((typeof resourceConfigs[h].description !== 'undefined' && resourceConfigs[h].description.length>0) ? resourceConfigs[h].description : resourceConfigs[h].name) + " --> " + 
+						//	 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
+						//resourceMatch = true;
 					}
 				}
 			} 
@@ -444,7 +467,7 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 			var currEvent = events[i];
 			for (var j=0; j<uploaderConfig.length; j++) {
 				var currConfig = uploaderConfig[j];
-				if (currEvent.event==currConfig.event && currEvent.scope==currConfig.eventScope) {
+				if (currEvent.triggerId==currConfig.eventTriggerId && currEvent.scope==currConfig.eventScope) {
 					var doAssign = true;
 					if ((usageSelect == 'Launch') ||
 					   (!(currConfig.launchFromCacheUploads)) ||
@@ -452,16 +475,22 @@ XNAT.app.abu.populateWhatToDoSelect = function(){
 						doAssign = false;
 					}
 					if (doAssign) {
-						$('#whatToDoSelect').append('<option value="resource-' + XNAT.app.abu.cacheConstant + ':launch-' + currEvent.event + '" class="' + currEvent.scope + '">' + "Upload --> " + 
+						$('#whatToDoSelect').append('<option value="resource-' + XNAT.app.abu.cacheConstant + ':launch-' + currEvent.triggerId + '" class="' + currEvent.scope + '">' + /*"Upload --> " +*/ 
 						 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
 					}
 					continue outerLoop;
 				}
 			}
-			$('#whatToDoSelect').append('<option value="resource-' + XNAT.app.abu.cacheConstant + ':launch-' + currEvent.event + '" class="' + currEvent.scope + '">' + "Upload --> " + 
-				 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
+			// We now don't want to include event handlers with no upload configuration in the display.  The default for handlers is to not use the uploader.
+			//$('#whatToDoSelect').append('<option value="resource-' + XNAT.app.abu.cacheConstant + ':launch-' + currEvent.triggerId + '" class="' + currEvent.scope + '">' + "Upload --> " + 
+			//	 ((typeof(currEvent.description) !== 'undefined' && currEvent.description.length>0) ? currEvent.description : currEvent.scriptId) + '</option>');
 		}
 	} 
+	if ($('#whatToDoSelect').find('option').length==1) {
+		$('#whatToDoOption').html('NONE DEFINED'); 
+	} else if ($('#whatToDoSelect').find('option').length==2) {
+		$('#whatToDoSelect').find('option').get(0).remove();
+	}
 	XNAT.app.abu.whatToDoChange();
 }
 
@@ -524,9 +553,17 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 			debug:true,
 			doneFunction:function(){
 					// Since we're using the update-stats=false parameter for resource uploads, we need to call catalog refresh when we're finished uploading.
-					XNAT.app.abu.updateResourceStats();
-					XNAT.app.abu.sendWorkflowWhenDone();
+					if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
+						XNAT.app.abu.updateResourceStats();
+						// Create workflow if we just uploaded files without any script processing (otherwise, workflow will have been generated there)
+						if (!XNAT.app.abu.filesProcessed) {
+							XNAT.app.abu.sendWorkflowWhenDone();
+						}
+					}
 					xModalCloseNew(XNAT.app.abu.abuConfigs.modalOpts.id);
+					//if (abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
+					//	window.location.reload(true);
+					//}
 				},
 			uploadStartedFunction:function(){
 					if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)>=0 && (typeof(XNAT.app.abu.buildPath) == 'undefined' || XNAT.app.abu.buildPath == '')) {
@@ -538,7 +575,9 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 						$("#abu-done-button").addClass("abu-button-disabled");
 					}
 					$("#resourceSelect").prop('disabled','disabled');
-					$("#whatToDoSelect").prop('disabled','disabled');
+					if ($("#whatToDoSelect").val() != "") {
+						$("#whatToDoSelect").prop('disabled','disabled');
+					}
 					$("#usageSelect").prop('disabled','disabled');
 				},
 			uploadCompletedFunction:function(){
@@ -554,6 +593,7 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 					XNAT.app.abu.processFiles();
 				},
 			showEmailOption:true,
+			showCloseOption:true,
 			showExtractOption:(usageType !== 'launch'),
 			showVerboseOption:false,
 			showUpdateOption:false,
@@ -575,11 +615,20 @@ XNAT.app.abu.initializeAbuUploader = function(usageType){
 				$(".upload-area").css("display","none");
 				$(".whattodo-area").css("display","none");
 				$("#abu-upload-button").addClass("abu-button-disabled");
+				abu._fileUploader.DRAG_AND_DROP_ON = false;
 				$("#abu-upload-button").css("display","none");
 				$("#abu-process-button-text").html("Run script");
+				$("#abu-done-button-text").html("Cancel");
+				if ($('#eventHandlerSelect option').size()>1 && $('#eventHandlerSelect').val()=="") {
+					$("#abu-process-button").addClass("abu-button-disabled");
+				} 
 				$("#file-uploader-instructions-sel").css("display","none");
 			} else {
 				XNAT.app.abu.populateWhatToDoSelect();
+				if ($('#whatToDoSelect option').size()>1 && $('#whatToDoSelect').val()=="") {
+					$("#abu-upload-button").addClass("abu-button-disabled");
+					abu._fileUploader.DRAG_AND_DROP_ON = false;
+				} 
 				$("#abu-process-button").addClass("abu-button-disabled");
 				$(".upload-area").css("display","none");
 				$(".eventhandler-area").css("display","none");
@@ -604,6 +653,7 @@ XNAT.app.abu.usageSelectAction = function(){
 		XNAT.app.abu.populateEventHandlerSelect();
 		$("#abu-done-button").removeClass("abu-button-disabled");
 		$("#abu-upload-button").removeClass("abu-button-disabled");
+		abu._fileUploader.DRAG_AND_DROP_ON = true;
 		$("#abu-process-button").addClass("abu-button-disabled");
 		$("#script-select-text").html("Post-upload processing script:");
 		$("#abu-process-button-text").html("Process files");
@@ -613,6 +663,7 @@ XNAT.app.abu.usageSelectAction = function(){
 		XNAT.app.abu.populateEventHandlerSelect();
 		$("#abu-done-button").removeClass("abu-button-disabled");
 		$("#abu-upload-button").addClass("abu-button-disabled");
+		abu._fileUploader.DRAG_AND_DROP_ON = false;
 		var eventHandler = $('#eventHandlerSelect').val();
 		if (eventHandler != undefined && eventHandler != null && eventHandler.length>0) {
 			$("#abu-process-button").removeClass("abu-button-disabled");
@@ -636,7 +687,9 @@ XNAT.app.abu.updateModalAction = function(){
 			for (var i=0; i<resourceConfigs.length; i++) {
 				if (XNAT.app.abu.configuredResource==resourceConfigs[i].name) {
 					// NOTE:  Setting update-stats=false (no workflow entry for individual files).  The process step will create a workflow entry for the entire upload.
-					abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files" + resourceConfigs[i].subdir + "?overwrite=" + resourceConfigs[i].overwrite + "&update-stats=false&XNAT_CSRF=" + window.csrfToken;
+					var subdir = resourceConfigs[i].subdir;
+					subdir = (typeof subdir !== 'undefined' && subdir.length > 0) ? "/" + subdir : subdir;
+					abu._fileUploader._currentAction = $(XNAT.app.abu.currentLink).attr("data-uri") + "/resources/" + resourceConfigs[i].label + "/files" + subdir + "/##FILENAME_REPLACE##?overwrite=" + resourceConfigs[i].overwrite + "&update-stats=false&XNAT_CSRF=" + window.csrfToken;
 					XNAT.app.abu.populateEventHandlerSelect();
 					return;
 				}
@@ -654,6 +707,17 @@ XNAT.app.abu.whatToDoChange = function(){
 	$('#resourceSelect').val(resourceSelect);
 	XNAT.app.abu.updateModalAction();
 	$('#eventHandlerSelect').val(launchSelect);
+	if (typeof abu !== 'undefined' && abu._fileUploader.uploadsStarted>0 && abu._fileUploader.uploadsInProgress==0) {
+		$("#abu-process-button").removeClass("abu-button-disabled");
+	}
+	if (XNAT.app.abu.usageSelect == 'Upload' && $('#whatToDoSelect option').size()>1 && $('#whatToDoSelect').val()=="") {
+		$("#abu-upload-button").addClass("abu-button-disabled");
+		abu._fileUploader.DRAG_AND_DROP_ON = false;
+	} else if (typeof abu == 'undefined' || abu._fileUploader.uploadsStarted==0) {
+		$("#abu-upload-button").removeClass("abu-button-disabled");
+		abu._fileUploader.DRAG_AND_DROP_ON = true;
+	} 
+	XNAT.app.abu.filesProcessed = false;
 }
 
 XNAT.app.abu.initializeBuildPath = function(){
@@ -710,8 +774,8 @@ XNAT.app.abu.updateResourceStats=function() {
 	if (XNAT.app.abu.usageSelect !== 'Launch') {
 		if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)<0) {
 			var updateStatsUrl = "/data/services/refresh/catalog?resource=" + 
-				abu._fileUploader._currentAction.replace(/\/files[?].*$/i,'').replace(/^\/data\//i,"/archive/").replace(/^\/REST\//i,"/archive/" +
-				"&options=populateStats");
+				abu._fileUploader._currentAction.replace(/\/files[\/?].*$/i,'').replace(/^\/data\//i,"/archive/").replace(/^\/REST\//i,"/archive/" +
+				"&options=populateStats") + "&XNAT_CSRF=" + window.csrfToken;
 			var updateStatsAjax = $.ajax({
 				type : "POST",
 				url:serverRoot+updateStatsUrl,
@@ -733,14 +797,51 @@ XNAT.app.abu.updateResourceStats=function() {
 XNAT.app.abu.sendWorkflowWhenDone=function() {
 	if (XNAT.app.abu.usageSelect !== 'Launch') {
 		if (abu._fileUploader._currentAction.indexOf("import-handler=" + XNAT.app.abu.importHandler)<0) {
-			// TO DO:  Implement this
+			var params = {};
+			params['project'] = XNAT.data.context.projectID;
+			params['process'] = 'true';
+			if (typeof(XNAT.app.abu.configuredResource)!=='undefined' && XNAT.app.abu.configuredResource!=null) {
+				params['configuredResource'] = XNAT.app.abu.configuredResource;
+			}
+			params['XNAT_CSRF'] = window.csrfToken;
+			if (XNAT.data.context.isSubject) {
+				params['subject'] = XNAT.data.context.subjectID;
+			}
+			if (XNAT.data.context.isExperiment || XNAT.data.context.isImageAssessor || XNAT.data.context.isImageSession || XNAT.data.context.isSubjectAssessor) {
+				params['experiment'] = XNAT.data.context.ID;
+			}
+			params['xsiType'] = XNAT.data.context.xsiType;
+			var queryParams = "?import-handler=" + XNAT.app.abu.importHandler + "&" + $.param(params);
+			var processAjax = $.ajax({
+				type : "POST",
+				url:serverRoot+"/REST/services/import" + queryParams,
+				cache: false,
+				async: true,
+				/*
+				data: JSON.stringify(this.paramData),
+				contentType: "application/json; charset=utf-8",
+				data: this.paramData,
+				contentType: "application/x-www-form-urlencoded",
+				encode: true,
+				*/
+				context: this,
+				dataType: 'text'
+			  });
+			processAjax.done( function( data, textStatus, jqXHR ) {
+				console.log(XNAT.app.abu.processReturnedText(data,true));
+			});
+			processAjax.fail( function( data, textStatus, jqXHR ) {
+				console.log(XNAT.app.abu.processReturnedText(data,true));
+			});
 		}
 	}
 }
 
 XNAT.app.abu.processFiles=function() {
 
-		$(".abu-files-processing").css("display","inline");
+		XNAT.app.abu.filesProcessed = true;
+
+		$(".abu-files-processing").css("display","block");
 
 		// Since we're using the update-stats=false parameter, we need to call catalog refresh when we're finished uploading.
 		XNAT.app.abu.updateResourceStats();
@@ -751,8 +852,9 @@ XNAT.app.abu.processFiles=function() {
 			var eventHandlerScope = eventHandlerElement.className;
 		}
 
+		this.paramsToPass = undefined;
 		for (var i=0;i<this.uploaderConfig.length;i++) {
-			if (this.uploaderConfig[i].event==eventHandler && this.uploaderConfig[i].eventScope==eventHandlerScope &&
+			if (this.uploaderConfig[i].eventTriggerId==eventHandler && this.uploaderConfig[i].eventScope==eventHandlerScope &&
 			 	(this.uploaderConfig[i].parameters!=undefined && this.uploaderConfig[i].parameters!=null && this.uploaderConfig[i].parameters.length>0)) {
 				this.paramsToPass = this.uploaderConfig[i].parameters;
 				break;
@@ -837,7 +939,9 @@ XNAT.app.abu.continueProcessing=function() {
 			type : "POST",
 			url:serverRoot+"/REST/services/import" + queryParams +
 					 (($("#extractRequestBox").length>0) ? (($("#extractRequestBox").is(':checked')) ? "&extract=true" : "&extract=false") : "") +
-					 (($("#emailBox").length>0) ? (($("#emailBox").is(':checked')) ? "&sendemail=true" : "&sendemail=false") : "") +
+					 (($("#closeBox").length>0) ? ($("#closeBox").is(':checked')) ? "&sendemail=true" : 
+					    (($("#emailBox").length>0) ? (($("#emailBox").is(':checked')) ? "&sendemail=true" : "&sendemail=false") : "") :
+					    (($("#emailBox").length>0) ? (($("#emailBox").is(':checked')) ? "&sendemail=true" : "&sendemail=false") : "")) +
 					 (($("#verboseBox").length>0) ? (($("#verboseBox").is(':checked')) ? "&verbose=true" : "&verbose=false") : "") +
 					 (($("#updateBox").length>0) ? (($("#updateBox").is(':checked')) ? "&update=true" : "&update=false") : "") 
 			,
@@ -894,7 +998,7 @@ XNAT.app.abu.continueProcessing=function() {
 		});
 		$("#abu-done-button").removeClass("abu-button-disabled");
 		setTimeout(function(){
-			if (document.getElementById("emailBox")!=null && document.getElementById("emailBox").checked) {
+			if (document.getElementById("closeBox")!=null && document.getElementById("closeBox").checked) {
 				xModalMessage('Notice',"You will be sent an e-mail upon completion");
 				xModalCloseNew(XNAT.app.abu.abuConfigs.modalOpts.id);
 			}
@@ -920,11 +1024,12 @@ XNAT.app.abu.removeUploaderConfiguration=function(configEvent,scope) {
 	}
 }
 
-XNAT.app.abu.saveUploaderConfiguration=function(configEvent,scope) {
-	var newConfigObj = { event: configEvent, eventScope: scope };
+XNAT.app.abu.saveUploaderConfiguration=function(configTriggerId, configEvent, scope) {
+	var newConfigObj = { eventTriggerId: configTriggerId, event: configEvent, eventScope: scope };
 	newConfigObj.launchFromCacheUploads = $('#ULC_RB_launchFromCacheUploads').is(':checked');
 	newConfigObj.launchFromResourceUploads = $('#ULC_RB_launchFromResourceUploads').is(':checked');
 	newConfigObj.launchWithoutUploads = $('#ULC_RB_launchWithoutUploads').is(':checked');
+	newConfigObj.doNotUseUploader = $('#ULC_RB_doNotUseUploader').is(':checked');
 	newConfigObj.parameters = undefined;
 	$(".ULC_parametersDiv").each(function() {
 		var parameterField = $(this).find(".ULC_parametersField").val();
@@ -1046,7 +1151,7 @@ XNAT.app.abu.validateUploaderConfiguration=function() {
 	return true;
 }
 
-XNAT.app.abu.configureUploaderForEventHandler=function(configEvent,scope) {
+XNAT.app.abu.configureUploaderForEventHandler=function(configTriggerId, configEvent, scope) {
 
 	var uploaderConfig = XNAT.app.abu.uploaderConfig;
 	if (typeof(uploaderConfig) === 'undefined' || uploaderConfig == null) {
@@ -1056,16 +1161,17 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configEvent,scope) {
 	var configObj;
 	for (var i=0;i<uploaderConfig.length;i++) {
 		var objI = uploaderConfig[i];
-		if (objI.eventScope == scope && objI.event == configEvent) {
+		if (objI.eventScope == scope && objI.eventTriggerId == configTriggerId) {
 			// Clone the object because we may modify it (fill in context values).
 			configObj = jQuery.extend(true, {}, objI);
 		}
 	}
 	if (typeof(configObj) === 'undefined' || configObj == null) {
 		configObj = {};
-		configObj.launchFromCacheUploads = true;
-		configObj.launchFromResourceUploads = true;
-		configObj.launchWithoutUploads = true;
+		configObj.launchFromCacheUploads = false;
+		configObj.launchFromResourceUploads = false;
+		configObj.launchWithoutUploads = false;
+		configObj.doNotUseUploader = true;
 		// best to leave these undefined, I think
 		//configObj.parameters = [  ];
 		//configObj.contexts = [ 'xnat:projectData','xnat:subjectAssessorData','xnat:imageAssessorData','xnat:imageSessionData','xnat:imageScanData','xnat:subjectData' ];
@@ -1083,7 +1189,7 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configEvent,scope) {
 				close: false,
 				action: function( obj ){
 					if (XNAT.app.abu.validateUploaderConfiguration()) {
-						XNAT.app.abu.saveUploaderConfiguration(configEvent,scope);
+						XNAT.app.abu.saveUploaderConfiguration(configTriggerId, configEvent, scope);
 						obj.close();
 					}
 				}
@@ -1107,6 +1213,8 @@ XNAT.app.abu.configureUploaderForEventHandler=function(configEvent,scope) {
 				 ((configObj.launchFromResourceUploads) ? ' checked' : '') + '> <b> Use for configured resource uploads </b> </div>';
 	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_launchWithoutUploads" name="ULC_RB" value="launchWithoutUploads"' +
 				 ((configObj.launchWithoutUploads) ? ' checked' : '') + '> <b> Trigger without uploads </b> </div>';
+	configHtml+='<div style="margin-left:20px;width:100%"><input type="radio" id="ULC_RB_doNotUseUploader" name="ULC_RB" value="doNotUseUploader"' +
+				 ((configObj.doNotUseUploader) ? ' checked' : '') + '> <b> Do not use uploader </b> </div>';
 	configHtml+='</div></p>';
 	configHtml+='<p>';
 	configHtml+='<div style="margin-left:20px;width:100%"><p><b>User Supplied Parameters:</b><p><div id="ULC_parameters">';

@@ -12,57 +12,64 @@ package org.nrg.xnat.restlet.actions;
  */
 
 import java.io.File;
+import java.io.IOException;
+import java.io.StringWriter;
 import java.io.UnsupportedEncodingException;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
+import java.lang.reflect.Type;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Date;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.gson.Gson;
+import com.google.gson.JsonParseException;
+import com.google.gson.reflect.TypeToken;
 
 import java.util.concurrent.Callable;
 
-import org.apache.commons.lang3.StringUtils;
-import org.apache.commons.lang3.exception.ExceptionUtils;
+import org.apache.commons.lang.StringEscapeUtils;
 import org.apache.log4j.Logger;
+import org.json.JSONObject;
+import org.json.JSONArray;
+import org.json.JSONException;
+import org.json.JSONTokener;
+
 import org.nrg.action.ClientException;
 import org.nrg.action.ServerException;
-import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
-import org.nrg.automation.services.ScriptRunnerService;
+import org.nrg.automation.entities.ScriptTrigger;
+import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.framework.constants.Scope;
-import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.xdat.XDAT;
-import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.XnatSubjectdata;
-import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xnat.event.entities.WorkflowStatusEvent;
+import org.nrg.xnat.event.listeners.AutomationCompletionEventListener;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandler;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerA;
 import org.nrg.xnat.restlet.files.utils.RestFileUtils;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
-import org.nrg.xnat.services.messaging.automation.AutomatedScriptRequest;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.nrg.xnat.utils.WorkflowUtils;
-import org.json.JSONArray;
-import org.json.JSONException;
-//import net.sf.json.JSONObject;
-import org.json.JSONObject;
-import org.json.JSONTokener;
 
 import java.util.zip.ZipOutputStream;
 
+import org.nrg.xft.event.AutomationEventImplementerI;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.EventUtils.CATEGORY;
 import org.nrg.xft.event.EventUtils.TYPE;
+import org.nrg.xft.event.XftEventService;
+import org.nrg.xft.event.Filterable;
+import org.nrg.xft.event.entities.AutomationCompletionEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
@@ -71,50 +78,81 @@ import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 
-
 /**
- * @author Mike Hodge <hodgem@mir.wustl.edu>
+ * The Class AutomationBasedImporter.
  *
+ * @author Mike Hodge <hodgem@mir.wustl.edu>
  */
 @ImporterHandler(handler = "automation", allowCallsWithoutFiles = true, callPartialUriWrap = false)
 public class AutomationBasedImporter extends ImporterHandlerA implements Callable<List<String>> {
- 	
-    private final ScriptRunnerService _service = XDAT.getContextService().getBean(ScriptRunnerService.class);
 
-	static final String[] ZIP_EXT={".zip",".jar",".rar",".ear",".gar",".xar"};
-
+	/** The Constant ZIP_EXT. */
+	static final String[] ZIP_EXT = { ".zip", ".jar", ".rar", ".ear", ".gar", ".xar" };
+	
 	private static final String STATUS_COMPLETE = "Complete";
-	private static final String CACHE_CONSTANT = "_CACHE_";
-	private static final String CONFIG_TOOL = "resource_config";
-	private static final String CONFIG_SCRIPT_PATH = "script";
-	private static final String EMAIL_SUBJECT = "AutomationBasedImporter results";
 
+	/** The Constant CACHE_CONSTANT. */
+	private static final String CACHE_CONSTANT = "_CACHE_";
+
+	/** The Constant CONFIG_TOOL. */
+	private static final String CONFIG_TOOL = "resource_config";
+
+	/** The Constant CONFIG_SCRIPT_PATH. */
+	private static final String CONFIG_SCRIPT_PATH = "script";
+
+	/** The Constant EMAIL_SUBJECT. */
+	// private static final String EMAIL_SUBJECT = "AutomationBasedImporter
+	// results";
+
+	/** The Constant TIMEOUT_SECONDS. */
+	private static final int TIMEOUT_SECONDS = 900;
+
+	/** The logger. */
 	static Logger logger = Logger.getLogger(AutomationBasedImporter.class);
-	
+
+	/** The fw. */
 	private final FileWriterWrapperI fw;
+
+	/** The user. */
 	private final UserI user;
-	final Map<String,Object> params;
+
+	/** The params. */
+	final Map<String, Object> params;
+
+	/** The return list. */
 	private final List<String> returnList = new ArrayList<String>();;
-	private String configuredResource; 
-	// Is this useful?  Do we want it to be configurable?
-	private boolean sendAdminEmail = false;
-	
+
+	/** The configured resource. */
+	private String configuredResource;
+
+	/** The send admin email. */
+	// Is this useful? Do we want it to be configurable?
+	// private boolean sendAdminEmail = false;
+
 	/**
-	 * 
+	 * Instantiates a new automation based importer.
+	 *
 	 * @param listenerControl
+	 *            the listener control
 	 * @param u
-	 * @param session
-	 * @param overwrite:   'append' means overwrite, but preserve un-modified content (don't delete anything)
-	 *                      'delete' means delete the pre-existing content.
-	 * @param additionalValues: should include project (subject and experiment are expected to be found in the archive)
+	 *            the u
+	 * @param fw
+	 *            the fw
+	 * @param params
+	 *            the params
 	 */
 	public AutomationBasedImporter(Object listenerControl, UserI u, FileWriterWrapperI fw, Map<String, Object> params) {
 		super(listenerControl, u, fw, params);
-		this.user=u;
-		this.fw=fw;
-		this.params=params;
+		this.user = u;
+		this.fw = fw;
+		this.params = params;
 	}
 
+	/*
+	 * (non-Javadoc)
+	 * 
+	 * @see org.nrg.xnat.restlet.actions.importer.ImporterHandlerA#call()
+	 */
 	@SuppressWarnings("deprecation")
 	@Override
 	public List<String> call() throws ClientException, ServerException {
@@ -123,150 +161,317 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 			this.completed("Success");
 			return returnList;
 		} catch (ClientException e) {
-			logger.error("",e);
+			logger.error("", e);
 			this.failed(e.getMessage());
 			throw e;
 		} catch (ServerException e) {
-			logger.error("",e);
+			logger.error("", e);
 			this.failed(e.getMessage());
 			throw e;
 		} catch (Throwable e) {
-			logger.error("",e);
-			throw new ServerException(e.getMessage(),new Exception());
+			logger.error("", e);
+			throw new ServerException(e.getMessage(), new Exception());
 		}
 	}
 
-	/*
-	@SuppressWarnings("deprecation")
-	private void clientFailed(final String fmsg) throws ClientException {
-		this.failed(fmsg);
-		throw new ClientException(fmsg,new Exception());
-	}
-	*/
+	/**
+	 * Process upload.
+	 *
+	 * @throws ClientException
+	 *             the client exception
+	 * @throws ServerException
+	 *             the server exception
+	 */
+	private void processUpload() throws ClientException, ServerException {
 
-	private void processUpload() throws ClientException,ServerException {
-		
 		String cachePath = ArcSpecManager.GetInstance().getGlobalCachePath();
-		
+
 		final Object processParam = params.get("process");
 		final Object configuredResourceParam = params.get("configuredResource");
 		final Object buildPathParam = params.get("buildPath");
-		final Object sendemailParam = params.get("sendemail");
-		final boolean doProcess = processParam!=null && processParam.toString().equalsIgnoreCase("true");
-		configuredResource = (configuredResourceParam!=null) ? configuredResourceParam.toString() : CACHE_CONSTANT;
-		
-		// Uploads to configured resources are handled on the client side.  Only the workflow is generated by this resource
+		final Object eventHandlerParam = params.get("eventHandler");
+		// final Object sendemailParam = params.get("sendemail");
+		final boolean doProcess = processParam != null && processParam.toString().equalsIgnoreCase("true");
+		configuredResource = (configuredResourceParam != null) ? configuredResourceParam.toString() : CACHE_CONSTANT;
+
+		// Uploads to configured resources are handled on the client side. Only
+		// the workflow is generated by this resource
+		if (doProcess && !configuredResource.equalsIgnoreCase(CACHE_CONSTANT) && eventHandlerParam == null) {
+			createWorkflowEntry(configuredResourceParam.toString());
+			return;
+		}
 		if (doProcess && !configuredResource.equalsIgnoreCase(CACHE_CONSTANT)) {
 			doAutomation();
 			return;
 		}
-		
-		// Multiple uploads are allowed to same space (processing will take place when process parameter=true).  Use specified build path when
+
+		// Multiple uploads are allowed to same space (processing will take
+		// place when process parameter=true). Use specified build path when
 		// one is given, otherwise create new one
-		String specPath=null;
+		String specPath = null;
 		String buildPath = null;
-		if (buildPathParam!=null) {
+		if (buildPathParam != null) {
 			// If buildpath parameter is specified and valid, use it
-			specPath=buildPathParam.toString();
-			if (specPath.indexOf(cachePath)>=0 && specPath.indexOf("user_uploads")>=0 &&
-					specPath.indexOf(File.separator + user.getID() + File.separator)>=0 && new File(specPath).isDirectory()) {
-				buildPath=specPath;
+			specPath = buildPathParam.toString();
+			if (specPath.indexOf(cachePath) >= 0 && specPath.indexOf("user_uploads") >= 0
+					&& specPath.indexOf(File.separator + user.getID() + File.separator) >= 0
+					&& new File(specPath).isDirectory()) {
+				buildPath = specPath;
 			} else {
 				throw new ClientException("ERROR:  Specified build path is invalid or directory does not exist.");
 			}
-		} else  if (specPath==null && !(fw==null && doProcess)) {
+		} else if (specPath == null && !(fw == null && doProcess)) {
 			final Date d = Calendar.getInstance().getTime();
-			final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat ("yyyyMMdd_HHmmss");
+			final java.text.SimpleDateFormat formatter = new java.text.SimpleDateFormat("yyyyMMdd_HHmmss");
 			final String uploadID = formatter.format(d);
 			// Save input files to cache space
 			buildPath = cachePath + "user_uploads/" + user.getID() + "/" + uploadID + "/";
-		} 
-		
+		}
+
 		File cacheLoc = null;
-		if (buildPath!=null) {
+		if (buildPath != null) {
 			cacheLoc = new File(buildPath);
 			cacheLoc.mkdirs();
 		}
-		
+
 		// If uploading a file, process it.
-		if (fw!=null && cacheLoc!=null) {
+		if (fw != null && cacheLoc != null) {
 			processFile(cacheLoc, specPath);
-		} 
-		
-		// Conditionally process cache location files, otherwise return cache location
+		}
+
+		// Conditionally process cache location files, otherwise return cache
+		// location
 		if (doProcess) {
 			doAutomation();
-			if (sendemailParam!=null && sendemailParam.toString().equalsIgnoreCase("true")) {
-				sendUserEmail(sendAdminEmail);
-			} else if (sendAdminEmail) {
-				sendAdminEmail();
-			}
-		} else if (buildPath!=null) {
+			/*
+			 * if (sendemailParam!=null &&
+			 * sendemailParam.toString().equalsIgnoreCase("true")) {
+			 * sendUserEmail(sendAdminEmail); } else if (sendAdminEmail) {
+			 * sendAdminEmail(); }
+			 */
+		} else if (buildPath != null) {
 			returnList.add(buildPath);
+		}
+
+	}
+
+	/**
+	 * Return list to html string.
+	 *
+	 * @return the string
+	 */
+	/*
+	 * private String returnListToHtmlString() { final StringBuilder sb = new
+	 * StringBuilder("<br/>"); for (final String s : returnList) {
+	 * sb.append(s).append("<br/>\t"); } return sb.toString(); }
+	 */
+
+	/**
+	 * Send user email.
+	 *
+	 * @param ccAdmin
+	 *            the cc admin
+	 */
+	/*
+	 * private void sendUserEmail(boolean ccAdmin) {
+	 * AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, returnListToHtmlString(),
+	 * ccAdmin, new String[] { user.getEmail() }); }
+	 */
+
+	/**
+	 * Send admin email.
+	 */
+	/*
+	 * private void sendAdminEmail() {
+	 * AdminUtils.sendAdminEmail(user,EMAIL_SUBJECT, returnListToHtmlString());
+	 * }
+	 */
+
+	private void createWorkflowEntry(String string) {
+		
+		final Map<String, Object> passMap = Maps.newHashMap();
+		final Object projectParam = params.get("project");
+		final Object subjectParam = params.get("subject");
+		final Object experimentParam = params.get("experiment");
+		final Object passedParametersParam = params.get("passedParameters");
+		String eventText = null; 
+
+		@SuppressWarnings("rawtypes")
+		Class clazz;
+		Object eventObj;
+		String eventClass = WorkflowStatusEvent.class.getName();
+		try {
+			clazz = WorkflowStatusEvent.class;
+			eventObj = clazz.newInstance();
+		} catch (InstantiationException | IllegalAccessException e) {
+			returnList.add("ERROR: Could not instantiate event (" + eventClass + "). <br>" + e.toString());
+			return;
+		}
+		if (!(eventObj instanceof AutomationEventImplementerI)) {
+			returnList.add("ERROR: Event (" + eventClass + ") is not an AutomationEventImplementer.");
+		}
+		final AutomationEventImplementerI automationEvent = (AutomationEventImplementerI) eventObj;
+		final String entityId;
+		final String entityType;
+		if (experimentParam == null && subjectParam == null) {
+			entityId = projectParam.toString();
+			entityType = XnatProjectdata.SCHEMA_ELEMENT_NAME;
+		} else if (experimentParam == null && subjectParam != null) {
+			entityId = subjectParam.toString();
+			entityType = XnatSubjectdata.SCHEMA_ELEMENT_NAME;
+		} else if (experimentParam != null) {
+			entityId = experimentParam.toString();
+			final XnatExperimentdata experimentData = XnatExperimentdata.getXnatExperimentdatasById(experimentParam,
+					user, false);
+			entityType = experimentData.getXSIType();
+		} else {
+			entityId = null;
+			entityType = null;
+		}
+		if (entityId == null) {
+			returnList.add("ERROR: Entity type could not be determined");
+			return;
+		}
+		automationEvent.setEntityId(entityId);
+		automationEvent.setEntityType(entityType);
+		automationEvent.setExternalId(projectParam.toString());
+		automationEvent.setSrcEventClass(eventClass);
+		automationEvent.setUserId(user.getID());
+		automationEvent.setEventId(null);
+		// Create parameter map
+		XnatProjectdata proj = null;
+		XnatSubjectdata subj = null;
+		XnatExperimentdata exp = null;
+		if (projectParam != null && projectParam.toString().length() > 0) {
+			proj = XnatProjectdata.getXnatProjectdatasById(projectParam, user, false);
+			if (proj != null) {
+				passMap.put("project", proj.getId());
+			}
+		}
+		if (subjectParam != null && subjectParam.toString().length() > 0) {
+			subj = XnatSubjectdata.getXnatSubjectdatasById(subjectParam.toString(), user, false);
+			if (subj == null) {
+				subj = XnatSubjectdata.GetSubjectByProjectIdentifier(proj.getId(), subjectParam.toString(), user,
+						false);
+			}
+			if (subj != null) {
+				passMap.put("subject", subj.getId());
+			}
+		}
+		if (experimentParam != null && experimentParam.toString().length() > 0) {
+			exp = XnatExperimentdata.getXnatExperimentdatasById(experimentParam.toString(), user, false);
+			if (exp == null) {
+				exp = XnatExperimentdata.GetExptByProjectIdentifier(proj.getId(), experimentParam.toString(), user,
+						false);
+			}
+			if (exp != null) {
+				passMap.put("experiment", exp.getId());
+			}
+		}
+		if (passedParametersParam != null && passedParametersParam.toString().length() > 0) {
+			String passedParametersJsonStr = null;
+			try {
+				passedParametersJsonStr = URLDecoder.decode(passedParametersParam.toString(), "UTF-8");
+			} catch (UnsupportedEncodingException e1) {
+				returnList.add("WARNING: Could not parse passed parameters");
+			}
+			if (passedParametersJsonStr != null) {
+				try {
+					Type type = new TypeToken<Map<String, String>>() {
+					}.getType();
+					Map<String, String> gsonMap = new Gson().fromJson(passedParametersJsonStr, type);
+					passMap.putAll(gsonMap);
+				} catch (JsonParseException e) {
+					returnList.add("WARNING: Could not parse passed parameters");
+				}
+			}
+		}
+		if (!(configuredResource == null || configuredResource.equalsIgnoreCase(CACHE_CONSTANT))) {
+			eventText = getEventTextFromConfiguredResourceConfig(proj, subj, exp, configuredResource);
+			passMap.put("configuredResource", configuredResource);
+
+		}
+		if (eventText!=null) {
+			buildWorkflow(proj,subj,exp,passMap,eventText);
 		}
 		
 	}
-	
-	private String returnListToHtmlString() {
-		final StringBuilder sb = new StringBuilder("<br/>");
-		for (final String s : returnList) {
-			sb.append(s).append("<br/>\t");
-		}
-		return sb.toString();
-	}
-	
-	private void sendUserEmail(boolean ccAdmin) {
-			AdminUtils.sendUserHTMLEmail(EMAIL_SUBJECT, returnListToHtmlString(), ccAdmin, new String[] { user.getEmail() });
-	}
-	
-	private void sendAdminEmail() {
-			AdminUtils.sendAdminEmail(user,EMAIL_SUBJECT, returnListToHtmlString());
-	}
 
-	private void processFile(final File cacheLoc,final  String specPath) throws ClientException {
+	/**
+	 * Process file.
+	 *
+	 * @param cacheLoc
+	 *            the cache loc
+	 * @param specPath
+	 *            the spec path
+	 * @throws ClientException
+	 *             the client exception
+	 */
+	private void processFile(final File cacheLoc, final String specPath) throws ClientException {
 		final String fileName;
 		try {
-			fileName = URLDecoder.decode(fw.getName(),"UTF-8");
+			fileName = URLDecoder.decode(fw.getName(), "UTF-8");
 		} catch (UnsupportedEncodingException e1) {
-			throw new ClientException("Could not decode file name.",e1);
+			throw new ClientException("Could not decode file name.", e1);
 		}
 		final Object extractParam = params.get("extract");
-		if (extractParam!=null && extractParam.toString().equalsIgnoreCase("true") && isZipFileName(fileName)) {
+		if (extractParam != null && extractParam.toString().equalsIgnoreCase("true") && isZipFileName(fileName)) {
 			final ZipI zipper = getZipper(fileName);
 			try {
-				zipper.extract(fw.getInputStream(),cacheLoc.getAbsolutePath());
+				zipper.extract(fw.getInputStream(), cacheLoc.getAbsolutePath());
 			} catch (Exception e) {
 				throw new ClientException("Archive file is corrupt or not a valid archive file type.");
 			}
 		} else {
-			final File cacheFile = new File(cacheLoc,fileName);
+			final File cacheFile = new File(cacheLoc, fileName);
 			try {
 				fw.write(cacheFile);
-				// Uploading directories via linux (and likely Mac) will not fail due to "Everything is a file".  In such cases we wind 
-				// up with a "file" generated.  Check for these "files".  Remove them, and thrown an exception.
-				// Windows uploads of directories should fail before hitting this class.
+				// Uploading directories via linux (and likely Mac) will not
+				// fail due to "Everything is a file". In such cases we wind
+				// up with a "file" generated. Check for these "files". Remove
+				// them, and thrown an exception.
+				// Windows uploads of directories should fail before hitting
+				// this class.
 				removeAndThrowExceptionIfDirectory(cacheFile);
 			} catch (ClientException e) {
 				throw e;
 			} catch (Exception e) {
-				throw new ClientException("Could not write uploaded file.",e);
+				throw new ClientException("Could not write uploaded file.", e);
 			}
 		}
 	}
-	
+
+	/**
+	 * Removes the and throw exception if directory.
+	 *
+	 * @param file
+	 *            the file
+	 * @throws ClientException
+	 *             the client exception
+	 */
 	private void removeAndThrowExceptionIfDirectory(File file) throws ClientException {
 		if (RestFileUtils.isFileRepresentationOfDirectory(file)) {
 			if (file.delete()) {
-				throw new ClientException("Upload of directories is not currently supported.  To upload a directory, please create a zip archive.");
-			};
+				throw new ClientException(
+						"Upload of directories is not currently supported.  To upload a directory, please create a zip archive.");
+			}
 		}
 	}
 
+	/**
+	 * Do automation.
+	 *
+	 * @throws ClientException
+	 *             the client exception
+	 * @throws ServerException
+	 *             the server exception
+	 */
+	@SuppressWarnings({ "rawtypes", "static-access" })
 	private void doAutomation() throws ClientException, ServerException {
-		
-		returnList.add("<b>BEGIN PROCESSING UPLOADED FILES</b><br>");
-		
-		final Map<String,Object> passMap = Maps.newHashMap();
+
+		returnList.add("<b>BEGIN PROCESSING UPLOADED FILES</b>");
+
+		final Map<String, Object> passMap = Maps.newHashMap();
 		final Object eventHandlerParam = params.get("eventHandler");
 		final Object projectParam = params.get("project");
 		final Object subjectParam = params.get("subject");
@@ -274,86 +479,236 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 		final Object buildPathParam = params.get("buildPath");
 		final Object passedParametersParam = params.get("passedParameters");
 		String eventText = null; 
+
+		final ScriptTriggerService scriptTriggerService = XDAT.getContextService().getBean(ScriptTriggerService.class);
+		if (scriptTriggerService == null) {
+			returnList.add("ERROR: Could not obtain event handler service.");
+			return;
+		}
+		final ScriptTrigger scriptTrigger = scriptTriggerService.getByTriggerId(eventHandlerParam.toString());
+		if (scriptTrigger == null) {
+			returnList.add("ERROR: Could not obtain event handler.");
+			return;
+		}
+		final String eventClass = scriptTrigger.getSrcEventClass();
+		final Map<String, List<String>> eventFilters = scriptTrigger.getEventFiltersAsMap();
+		Class clazz;
+		Object eventObj;
+		try {
+			clazz = Class.forName(eventClass);
+			eventObj = clazz.newInstance();
+		} catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
+			returnList.add("ERROR: Could not instantiate event (" + eventClass + "). <br>" + e.toString());
+			return;
+		}
+		if (!(eventObj instanceof AutomationEventImplementerI)) {
+			returnList.add("ERROR: Event (" + eventClass + ") is not an AutomationEventImplementer.");
+		}
+		final AutomationEventImplementerI automationEvent = (AutomationEventImplementerI) eventObj;
+		final String entityId;
+		final String entityType;
+		if (experimentParam == null && subjectParam == null) {
+			entityId = projectParam.toString();
+			entityType = XnatProjectdata.SCHEMA_ELEMENT_NAME;
+		} else if (experimentParam == null && subjectParam != null) {
+			entityId = subjectParam.toString();
+			entityType = XnatSubjectdata.SCHEMA_ELEMENT_NAME;
+		} else if (experimentParam != null) {
+			entityId = experimentParam.toString();
+			final XnatExperimentdata experimentData = XnatExperimentdata.getXnatExperimentdatasById(experimentParam,
+					user, false);
+			entityType = experimentData.SCHEMA_ELEMENT_NAME;
+		} else {
+			entityId = null;
+			entityType = null;
+		}
+		if (entityId == null) {
+			returnList.add("ERROR: Entity type could not be determined");
+			return;
+		}
+		automationEvent.setEntityId(entityId);
+		automationEvent.setEntityType(entityType);
+		automationEvent.setExternalId(projectParam.toString());
+		automationEvent.setSrcEventClass(eventClass);
+		automationEvent.setUserId(user.getID());
+		automationEvent.setEventId(scriptTrigger.getEvent());
+		final List<Method> setters = Lists.newArrayList();
+		for (final Method method : Arrays.asList(automationEvent.getClass().getMethods())) {
+			if (method.isAnnotationPresent(Filterable.class)
+					&& method.getName().substring(0, 3).equalsIgnoreCase("get")) {
+				final char c[] = method.getName().substring(3).toCharArray();
+				c[0] = Character.toLowerCase(c[0]);
+				final String column = new String(c);
+				for (final String filterKey : eventFilters.keySet()) {
+					if (filterKey.equals(column)) {
+						Method setter;
+						try {
+							setter = automationEvent.getClass().getMethod(method.getName().replaceFirst("get", "set"),
+									String.class);
+						} catch (NoSuchMethodException | SecurityException e) {
+							continue;
+						}
+						if (setter.getName().substring(0, 3).equals("set")) {
+							List<String> filterList = eventFilters.get(filterKey);
+							setters.add(setter);
+							if (filterList != null && filterList.size() > 0) {
+								try {
+									setter.invoke(automationEvent, filterList.get(0));
+								} catch (IllegalAccessException | IllegalArgumentException
+										| InvocationTargetException e) {
+									returnList.add("ERROR: Could not set values for filters");
+									return;
+								}
+							}
+						}
+					}
+				}
+
+			}
+		}
+		if (!(setters.size() >= eventFilters.keySet().size())) {
+			returnList.add("ERROR: Could not set values for filters");
+			return;
+		}
+		// Create parameter map
 		XnatProjectdata proj = null;
 		XnatSubjectdata subj = null;
 		XnatExperimentdata exp = null;
-		if (projectParam!=null && projectParam.toString().length()>0) {
+		if (projectParam != null && projectParam.toString().length() > 0) {
 			proj = XnatProjectdata.getXnatProjectdatasById(projectParam, user, false);
 			if (proj != null) {
 				passMap.put("project", proj.getId());
 			}
 		}
-		if (subjectParam!=null && subjectParam.toString().length()>0) {
+		if (subjectParam != null && subjectParam.toString().length() > 0) {
 			subj = XnatSubjectdata.getXnatSubjectdatasById(subjectParam.toString(), user, false);
-			if (subj == null) {		
-				subj = XnatSubjectdata.GetSubjectByProjectIdentifier(proj.getId(), subjectParam.toString(), user, false);
+			if (subj == null) {
+				subj = XnatSubjectdata.GetSubjectByProjectIdentifier(proj.getId(), subjectParam.toString(), user,
+						false);
 			}
-			if (subj != null) {		
+			if (subj != null) {
 				passMap.put("subject", subj.getId());
 			}
 		}
-		if (experimentParam!=null && experimentParam.toString().length()>0) {
+		if (experimentParam != null && experimentParam.toString().length() > 0) {
 			exp = XnatExperimentdata.getXnatExperimentdatasById(experimentParam.toString(), user, false);
 			if (exp == null) {
-				exp = XnatExperimentdata.GetExptByProjectIdentifier(proj.getId(), experimentParam.toString(), user, false);
+				exp = XnatExperimentdata.GetExptByProjectIdentifier(proj.getId(), experimentParam.toString(), user,
+						false);
 			}
 			if (exp != null) {
 				passMap.put("experiment", exp.getId());
 			}
 		}
-		if (passedParametersParam!=null && passedParametersParam.toString().length()>0) {
+		if (passedParametersParam != null && passedParametersParam.toString().length() > 0) {
+			String passedParametersJsonStr = null;
 			try {
-				final String passedParametersJsonStr = URLDecoder.decode(passedParametersParam.toString(),"UTF-8");
-				final JSONObject json = new JSONObject(passedParametersJsonStr);
-				passMap.put("passedParameters", json);
-			} catch(UnsupportedEncodingException | JSONException e) {
+				passedParametersJsonStr = URLDecoder.decode(passedParametersParam.toString(), "UTF-8");
+			} catch (UnsupportedEncodingException e1) {
+				returnList.add("WARNING: Could not parse passed parameters");
+			}
+			if (passedParametersJsonStr != null) {
+				try {
+					Type type = new TypeToken<Map<String, String>>() {
+					}.getType();
+					Map<String, String> gsonMap = new Gson().fromJson(passedParametersJsonStr, type);
+					passMap.putAll(gsonMap);
+				} catch (JsonParseException e) {
+					returnList.add("WARNING: Could not parse passed parameters");
+				}
+			}
+		}
+		if (!(configuredResource == null || configuredResource.equalsIgnoreCase(CACHE_CONSTANT))) {
+			eventText = getEventTextFromConfiguredResourceConfig(proj, subj, exp, configuredResource);
+			passMap.put("configuredResource", configuredResource);
+
+		}
+		if (eventText!=null) {
+			buildWorkflow(proj,subj,exp,passMap,eventText);
+		}
+		if (buildPathParam != null) {
+			passMap.put("BuildPath", buildPathParam);
+		}
+		automationEvent.setParameterMap(passMap);
+		// Create automationCompletionEvent and launch automation
+		final String automationId = String.valueOf(System.currentTimeMillis()).concat("-")
+				.concat(String.valueOf(this.hashCode()));
+		final AutomationCompletionEvent automationCompletionEvent = new AutomationCompletionEvent(automationId);
+		final Object sendemailParam = params.get("sendemail");
+		if (sendemailParam != null && sendemailParam.toString().equalsIgnoreCase("true")) {
+			automationCompletionEvent.addNotificationEmailAddr(user.getEmail());
+		}
+		automationEvent.setAutomationCompletionEvent(automationCompletionEvent);
+		XftEventService eventService = XftEventService.getService();
+		if (eventService == null) {
+			returnList.add("ERROR: Could retrieve event service");
+			return;
+		}
+		eventService.triggerEvent(automationEvent);
+		final AutomationCompletionEventListener completionService = AutomationCompletionEventListener.getService();
+		List<ScriptOutput> scriptOutputs = null;
+		for (int i = 1; i < TIMEOUT_SECONDS; i++) {
+			try {
+				Thread.sleep(1000);
+				final AutomationCompletionEvent ace = completionService.getEvent(automationId);
+				if (ace != null) {
+					scriptOutputs = ace.getScriptOutputs();
+					break;
+				} else if (i == TIMEOUT_SECONDS) {
+					returnList.add("<br><b>TIMEOUT WAITING FOR SCRIPT TO RETURN.<b></br>");
+				}
+			} catch (InterruptedException e) {
 				// Do nothing for now.
 			}
 		}
-		if (!(configuredResource==null || configuredResource.equalsIgnoreCase(CACHE_CONSTANT))) {
-			eventText = getEventTextFromConfiguredResourceConfig(proj, subj, exp, configuredResource);
-			passMap.put("configuredResource", configuredResource);
-			
-		}
-		if (buildPathParam!=null) {
-			passMap.put("BuildPath", buildPathParam);
-		}
-		if (eventHandlerParam!=null && eventHandlerParam.toString().length()>0) {
-			eventText = eventHandlerParam.toString();
-		}	
-		if (eventText!=null) {
-			PersistentWorkflowI wrk = buildWorkflow(proj,passMap,eventText);
-			// Launch automation script for workflow handler
-			if (wrk instanceof WrkWorkflowdata) {
-				ScriptOutput scriptOut = launchScript((WrkWorkflowdata)wrk);
-				if (scriptOut!=null) {
-					returnList.add("<br><b>SCRIPT EXECUTION RESULTS</b>");
-					returnList.add("<br><b>FINAL STATUS:  " + scriptOut.getStatus() + "</b>");
-					if (scriptOut.getStatus().equals(Status.ERROR) && scriptOut.getResults()!=null && scriptOut.getResults().toString().length()>0) {
-						returnList.add("<br><b>SCRIPT RESULTS</b>");
+		if (scriptOutputs != null && scriptOutputs.size() > 0) {
+			for (ScriptOutput scriptOut : scriptOutputs) {
+				returnList.add("<br><b>SCRIPT EXECUTION RESULT</b>");
+				returnList.add("<br><b>FINAL STATUS:  " + scriptOut.getStatus() + "</b>");
+				StringWriter writer = new StringWriter();
+				if (scriptOut.getStatus().equals(Status.ERROR) && scriptOut.getResults() != null
+						&& scriptOut.getResults().toString().length() > 0) {
+					returnList.add("<br><b>SCRIPT RESULTS</b><br>");
+					try {
+						StringEscapeUtils.escapeHtml(writer, scriptOut.getResults().toString());
+						returnList.add(writer.toString().replace("\n", "<br>"));
+						writer.close();
+					} catch (IOException e) {
 						returnList.add(scriptOut.getResults().toString().replace("\n", "<br>"));
 					}
-					if (scriptOut.getOutput()!=null && scriptOut.getOutput().length()>0) {
-						returnList.add("<br><b>SCRIPT STDOUT</b>");
+				}
+				if (scriptOut.getOutput() != null && scriptOut.getOutput().length() > 0) {
+					returnList.add("<br><b>SCRIPT STDOUT</b><br>");
+					try {
+						StringEscapeUtils.escapeHtml(writer, scriptOut.getOutput());
+						returnList.add(writer.toString().replace("\n", "<br>"));
+						writer.close();
+					} catch (IOException e) {
 						returnList.add(scriptOut.getOutput().replace("\n", "<br>"));
 					}
-					if (scriptOut.getErrorOutput()!=null && scriptOut.getErrorOutput().length()>0) {
-						returnList.add("<br><b>SCRIPT STDERR/EXCEPTION</b>");
+				}
+				if (scriptOut.getErrorOutput() != null && scriptOut.getErrorOutput().length() > 0) {
+					returnList.add("<br><b>SCRIPT STDERR/EXCEPTION</b><br>");
+					try {
+						StringEscapeUtils.escapeHtml(writer, scriptOut.getErrorOutput());
+						returnList.add(writer.toString().replace("\n", "<br>"));
+						writer.close();
+					} catch (IOException e) {
 						returnList.add(scriptOut.getErrorOutput().replace("\n", "<br>"));
 					}
 				}
 			}
+			returnList.add("<br><b>FINISHED PROCESSING");
 		}
-		
-		returnList.add("<br><b>FINISHED PROCESSING");
-		
 	}
+	
 
- 	private PersistentWorkflowI buildWorkflow(XnatProjectdata proj,Map<String, Object> passMap,String eventText) {
+ 	private PersistentWorkflowI buildWorkflow(XnatProjectdata proj,XnatSubjectdata subj,XnatExperimentdata exp, Map<String, Object> passMap,String eventText) {
 		final PersistentWorkflowI wrk;
 		try {
 			returnList.add("Building workflow entry for configured resource / event handler - " + eventText);
-			wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, params.get("xsiType").toString(), proj.getId(), proj.getId(),
+			wrk = PersistentWorkflowUtils.buildOpenWorkflow(user, params.get("xsiType").toString(),
+					(exp.getId()!=null) ? exp.getId() : (subj.getId()!=null) ? subj.getId() : proj.getId(), proj.getId(),
 			EventUtils.newEventInstance(CATEGORY.DATA, TYPE.WEB_SERVICE, eventText, "Automation-based upload", null));
 			wrk.setStatus(STATUS_COMPLETE);
 			//wrk.setDetails(JSONObject.fromObject(passMap).toString());
@@ -374,122 +729,54 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 		return null;
 	}
 
-    public ScriptOutput launchScript(WrkWorkflowdata wrk) {
-        if (StringUtils.equals(PersistentWorkflowUtils.COMPLETE, wrk.getStatus()) && !StringUtils.equals(wrk.getExternalid(), PersistentWorkflowUtils.ADMIN_EXTERNAL_ID)) {
-            //check to see if this has been handled before
-        	ScriptOutput scriptOut = null;
-            for (final Script script : getScripts(wrk.getExternalid(), wrk.getPipelineName())) {
-                try {
-                    //create a queued workflow to track this script
-                    final String action = "Executed script " + script.getScriptId();
-                    final String justification = wrk.getJustification();
-                    final String comment = "Executed script " + script.getScriptId() + " triggered by event " + wrk.getPipelineName();
-                    final PersistentWorkflowI scriptWrk = PersistentWorkflowUtils.buildOpenWorkflow(wrk.getUser(), wrk.getDataType(), wrk.getId(), wrk.getExternalid(),
-                    		EventUtils.newEventInstance(EventUtils.CATEGORY.DATA, EventUtils.TYPE.PROCESS, action, StringUtils.isNotBlank(justification) ? justification : "Automated execution: " + comment, comment));
-                    assert scriptWrk != null;
-                    scriptWrk.setStatus(PersistentWorkflowUtils.QUEUED);
-                    WorkflowUtils.save(scriptWrk, scriptWrk.buildEvent());
-                    final AutomatedScriptRequest request = new AutomatedScriptRequest(wrk.getWrkWorkflowdataId().toString(), wrk.getUser(), script.getScriptId(), 
-                    		wrk.getPipelineName(), scriptWrk.getWorkflowId().toString(), wrk.getDataType(), wrk.getId(), wrk.getExternalid());
-                    scriptOut = executeScriptRequest(request);
-                    return scriptOut;	
-                } catch (Exception e1) {
-                	if (scriptOut == null) {
-                		scriptOut = new ScriptOutput();
-                	}
-                	scriptOut.setErrorOutput((scriptOut.getErrorOutput()!=null) ? scriptOut.getErrorOutput() +
-                			ExceptionUtils.getStackTrace(e1) : ExceptionUtils.getStackTrace(e1));
-                	scriptOut.setOutput((scriptOut.getOutput()!=null) ? scriptOut.getOutput() : "");
-                    logger.error("", e1);
-                    return scriptOut;
-                }
-            }
-        }
-		return null;
-    }
 
-    private ScriptOutput executeScriptRequest(AutomatedScriptRequest request) throws Exception {
-    	
-        final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(request.getUser(), request.getScriptWorkflowId());
-        workflow.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
-        WorkflowUtils.save(workflow, workflow.buildEvent());
 
-        final Map<String, Object> parameters = new HashMap<>();
-        parameters.put("user", request.getUser());
-        parameters.put("scriptId", request.getScriptId());
-        parameters.put("event", request.getEvent());
-        parameters.put("srcWorkflowId", request.getSrcWorkflowId());
-        parameters.put("scriptWorkflowId", request.getScriptWorkflowId());
-        parameters.put("dataType", request.getDataType());
-        parameters.put("dataId", request.getDataId());
-        parameters.put("externalId", request.getExternalId());
-        parameters.put("workflow", workflow);
-
-        ScriptOutput scriptOut = null;
-        try {
-            scriptOut = _service.runScript(_service.getScript(request.getScriptId()), null, parameters, false);
-            if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
-                WorkflowUtils.complete(workflow, workflow.buildEvent());
-            }
-        } catch (NrgServiceException e) {
-            final String message = String.format("Failed running the script %s by user %s for event %s on data type %s instance %s from project %s",
-                    request.getScriptId(),
-                    request.getUser().getLogin(),
-                    request.getEvent(),
-                    request.getDataType(),
-                    request.getDataId(),
-                    request.getExternalId());
-            AdminUtils.sendAdminEmail("Script execution failure", message);
-            logger.error(message, e);
-            if (PersistentWorkflowUtils.IN_PROGRESS.equals(workflow.getStatus())) {
-                WorkflowUtils.fail(workflow, workflow.buildEvent());
-            }
-        }
-        return scriptOut;
-        
-	}
-
-	private List<Script> getScripts(final String projectId, final String event) {
-        final List<Script> scripts = Lists.newArrayList();
-
-        //project level scripts
-        if (StringUtils.isNotBlank(projectId)) {
-            final Script script = _service.getScript(Scope.Project, projectId, event);
-            if (script != null) {
-                scripts.add(script);
-            }
-        }
-
-        //site level scripts
-        final Script script = _service.getScript(Scope.Site, null, event);
-        if (script != null) {
-            scripts.add(script);
-        }
-
-        return scripts;
-    }
- 	
-
-	// TODO:  Configured Resource configuration should be updated to store EVENT, rather than using this "Uploaded {label}" event. 
-	private String getEventTextFromConfiguredResourceConfig(XnatProjectdata proj, XnatSubjectdata subj, XnatExperimentdata exp, String configuredResource) {
-		final Scope scope = (exp!=null) ? Scope.Experiment : (subj!=null) ? Scope.Subject : Scope.Project; 
-		final String crConfig = XDAT.getConfigService().getConfigContents(CONFIG_TOOL,CONFIG_SCRIPT_PATH,scope,proj.getId());
-		if (crConfig!=null && crConfig.length()>0) {
+	/**
+	 * Gets the event text from configured resource config.
+	 *
+	 * @param proj
+	 *            the proj
+	 * @param subj
+	 *            the subj
+	 * @param exp
+	 *            the exp
+	 * @param configuredResource
+	 *            the configured resource
+	 * @return the event text from configured resource config
+	 */
+	// TODO: Configured Resource configuration should be updated to store EVENT,
+	// rather than using this "Uploaded {label}" event.
+	private String getEventTextFromConfiguredResourceConfig(XnatProjectdata proj, XnatSubjectdata subj,
+			XnatExperimentdata exp, String configuredResource) {
+		// Do we need to handle scope differently?  I don't think site configured uploads will pass through this method.
+		// It's really only for configured resources, which should always be scoped at the project level, I think.
+		final Scope scope = (exp != null) ? Scope.Project : (subj != null) ? Scope.Project : (proj != null ) ? Scope.Project : Scope.Site;
+		final String crConfig = XDAT.getConfigService().getConfigContents(CONFIG_TOOL, CONFIG_SCRIPT_PATH, scope,
+				proj.getId());
+		if (crConfig != null && crConfig.length() > 0) {
 			try {
 				final JSONArray jsonArray = new JSONArray(new JSONTokener(crConfig));
-				for (int i=0;i<jsonArray.length();i++) {
+				for (int i = 0; i < jsonArray.length(); i++) {
 					final JSONObject jsonObj = jsonArray.getJSONObject(i);
 					if (jsonObj.getString("name").equals(configuredResource)) {
 						return "Uploaded " + jsonObj.getString("label");
 					}
 				}
 			} catch (JSONException e) {
-				logger.warn("WARNING:  Could not parse resource_config json results (PROJECT=" + proj.getId() + ",CONFIG_TOOL=" + CONFIG_TOOL + ",CONFIG_PATH=" + CONFIG_SCRIPT_PATH);
+				logger.warn("WARNING:  Could not parse resource_config json results (PROJECT=" + proj.getId()
+						+ ",CONFIG_TOOL=" + CONFIG_TOOL + ",CONFIG_PATH=" + CONFIG_SCRIPT_PATH);
 			}
 		}
 		return null;
 	}
 
+	/**
+	 * Checks if is zip file name.
+	 *
+	 * @param fileName
+	 *            the file name
+	 * @return true, if is zip file name
+	 */
 	private boolean isZipFileName(final String fileName) {
 		for (final String ext : ZIP_EXT) {
 			if (fileName.toLowerCase().endsWith(ext)) {
@@ -499,11 +786,18 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 		return false;
 	}
 
+	/**
+	 * Gets the zipper.
+	 *
+	 * @param fileName
+	 *            the file name
+	 * @return the zipper
+	 */
 	private ZipI getZipper(final String fileName) {
-		
+
 		// Assume file name represents correct compression method
 		String file_extension = null;
-		if (fileName!=null && fileName.indexOf(".")!=-1) {
+		if (fileName != null && fileName.indexOf(".") != -1) {
 			file_extension = fileName.substring(fileName.lastIndexOf(".")).toLowerCase();
 			if (Arrays.asList(ZIP_EXT).contains(file_extension)) {
 				return new ZipUtils();
@@ -517,8 +811,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 		}
 		// Assume zip-compression for unnamed inbody files
 		return new ZipUtils();
-		
+
 	}
 
 }
-

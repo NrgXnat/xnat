@@ -8,8 +8,26 @@
 ##<!-- the "no-js" class is for Modernizr - are we even using that? -->
 
 <head>
+<script type="text/javascript">
+    var XNAT = {};
+    #if ($themedRedirect) <!-- Reload the appropriate page if a global theme style specifies a redirect -->
+    window.location = "$content.getURI("")$themedRedirect";
+    #end
+    #if ($theme)
+    XNAT.theme = "$theme";
+    #end
+</script>
+
 <!-- path: xnat-templates/navigations/htmlOpen -->
     <title>$!systemName</title>
     <!-- HeaderIncludes -->
     $navigation.setTemplate("/HeaderIncludes.vm")
     <!-- /HeaderIncludes -->
+
+#if ($themedScript) <!-- Load active global theme script -->
+    <script type="text/javascript" src="$content.getURI("")$themedScript"></script>
+#end
+
+#if ($themedStyle) <!-- Load active global theme style -->
+    <link rel="stylesheet" type="text/css" href="$content.getURI("")$themedStyle">
+#end

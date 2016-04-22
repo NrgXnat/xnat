@@ -7,6 +7,7 @@ import org.nrg.xdat.security.HistoricPasswordValidator;
 import org.nrg.xdat.security.PasswordValidatorChain;
 import org.nrg.xdat.security.RegExpValidator;
 import org.nrg.xnat.utils.XnatUserProvider;
+import org.nrg.xnat.event.conf.EventPackages;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
 import org.springframework.beans.factory.annotation.Value;
@@ -39,8 +40,8 @@ import java.util.List;
 @ImportResource({"WEB-INF/conf/xnat-security.xml", "WEB-INF/conf/mq-context.xml"})
 public class RootConfig {
 
-    private static final List<String> DEFAULT_ENTITY_PACKAGES = Arrays.asList("org.nrg.framework.datacache", "org.nrg.xft.entities", "org.nrg.xdat.entities",
-                                                                              "org.nrg.xnat.entities", "org.nrg.prefs.entities", "org.nrg.config.entities");
+    public static final List<String> DEFAULT_ENTITY_PACKAGES = Arrays.asList("org.nrg.framework.datacache", "org.nrg.xft.entities", "org.nrg.xft.event.entities", "org.nrg.xdat.entities",
+                                                                              "org.nrg.xnat.entities", "org.nrg.xnat.event.entities", "org.nrg.prefs.entities", "org.nrg.config.entities");
 
     @Bean
     public String siteId() {
@@ -92,6 +93,12 @@ public class RootConfig {
     @Bean
     public ImporterHandlerPackages importerHandlerPackages() {
 		return new ImporterHandlerPackages(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.actions","org.nrg.xnat.archive"})));
+    }
+
+    @Bean
+    public EventPackages eventPackages() {
+    	// NOTE:  These should be treated as parent packages.  All sub-packages should be searched 
+		return new EventPackages(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.event","org.nrg.xft.event","org.nrg.xdat.event"})));
     }
 
     @Bean

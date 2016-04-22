@@ -155,6 +155,8 @@ XNAT.app.pResources={
 				if (scriptToRun == XNAT.app.pResources.scripts[i]["Script ID"]) {
 					var eventData = { event: ("Uploaded " + props.name),
 					      			scriptId: scriptToRun,
+					      			eventClass: "org.nrg.xnat.event.entities.WorkflowStatusEvent",
+					      			filters: { "status":["Complete"] },
 					      			description: "Run " + scriptToRun + " upon " + props.name + " upload." };
 					var eventHandlerAjax = $.ajax({
 						type : "PUT",
@@ -167,6 +169,7 @@ XNAT.app.pResources={
 					});
 					eventHandlerAjax.done( function( data, textStatus, jqXHR ) {
 						console.log("NOTE:  Event handler added for " + props.name + " upload");
+						props.triggerId = jqXHR.responseText;
 						// Configure uploader
 						var getUploadConfigAjax = $.ajax({
 							type : "GET",
@@ -195,10 +198,12 @@ XNAT.app.pResources={
 								}
 								var newHandlerObj = {
 									event:NEW_HANDLER,
+									eventTriggerId:props.triggerId,
 									eventScope:"prj",
 									launchFromResourceUploads:true,
 									launchFromCacheUploads:false,
 									launchWithoutUploads:false,
+									doNotUseUploader:false,
 									contexts:[props.type],
 									resourceConfigs:[props.name]
 								};

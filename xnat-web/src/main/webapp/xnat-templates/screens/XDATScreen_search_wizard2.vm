@@ -24,7 +24,7 @@
     <ol class="steps">
 
         <li class="step1">
-            <h3>Pivot Data-type: $user.getElementSecurity($ELEMENT_0).getPluralDescription()</h3>
+            <h3>Pivot Data-type: $pivot_description</h3>
             <input type="hidden" name="ELEMENT_0" value="$ELEMENT_0">
         </li>
 
@@ -36,7 +36,7 @@
                     #foreach ($key in $additional_types.keySet())
                         <tr>
                             <td>
-                                <b>$user.getElementSecurity($key).getPluralDescription()</b>
+                                <b>$additional_descriptions.get($key)</b>
                             </td>
                             <td nowrap>
                                 $additional_types.get($key)
@@ -68,24 +68,24 @@
             <div id="super_search" class="yui-navset" style="max-width:800px !important;margin-top:30px;margin-left:-40px;">
                 <ul class="yui-nav" style="">
                     <li class="selected">
-                        <a href="#$ELEMENT_0"><em>$user.getElementSecurity($ELEMENT_0).getPluralDescription()</em></a>
+                        <a href="#$ELEMENT_0"><em>$pivot_description</em></a>
                     </li>
-                    #foreach ($key in $additional_types.keySet())
+                    #foreach ($key in $additional_descriptions.keySet())
                         #if(!$key.equals($ELEMENT_0))
                             <li>
-                                <a href="#$key"><em>$user.getElementSecurity($key).getPluralDescription()</em></a>
+                                <a href="#$key"><em>$additional_descriptions.get($key)</em></a>
                             </li>
                         #end
                     #end
                 </ul>
                 <div class="yui-content">
                     <div id="$ELEMENT_0">
-                        <p>#xdatSearchElement($user.getElementSecurity($ELEMENT_0).getSchemaElement() 3)</p>
+                        <p>#xdatSearchElement($pivot_schema_element 3)</p>
                     </div>
-                    #foreach ($key in $additional_types.keySet())
+                    #foreach ($key in $additional_schema_elements.keySet())
                         #if(!$key.equals($ELEMENT_0))
                             <div id="$key">
-                                <p>#xdatSearchElement($user.getElementSecurity($key).getSchemaElement() 3)</p>
+                                <p>#xdatSearchElement($additional_schema_elements.get($key) 3)</p>
                             </div>
                         #end
                     #end

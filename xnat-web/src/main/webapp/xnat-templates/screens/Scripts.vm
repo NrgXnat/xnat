@@ -166,7 +166,7 @@
                     <td><div id="filterDiv"></div></td>
                 </tr>
                 <tr>
-                    <td><label for="scriptId" class="required"><strong>Script ID:</strong><i>*</i></label></td>
+                    <td><label for="scriptId" class="required"><strong>Script:</strong><i>*</i></label></td>
                     <td><select id="select_scriptId" name="scriptId" class="scriptId"></select></td>
                 </tr>
                 <tr>
@@ -239,7 +239,7 @@
                             <table id="events_table" class="xnat-table" style="display:none;width:100%;">
                                 <thead>
                                 <th>Event</th>
-                                <th>Script ID</th>
+                                <th>Script</th>
                                 <th>Description</th>
                                 </thead>
                                 <tbody>
@@ -426,6 +426,12 @@
                     <td>
                         <b class="script-id-text"></b>
                         <input type="text" name="script-id-input" class="script-id-input" size="30" value="">
+                    </td>
+                </tr>
+                <tr>
+                    <td><b>Script Label: </b>&nbsp;</td>
+                    <td>
+                        <input type="text" name="scriptLabel" class="scriptLabel" size="80" value="">
                     </td>
                 </tr>
                 <tr>

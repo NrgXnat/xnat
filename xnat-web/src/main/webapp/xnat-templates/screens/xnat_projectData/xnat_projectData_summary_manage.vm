@@ -173,7 +173,7 @@
             <td><div id="filterDiv"></div></td>
         </tr>
         <tr>
-            <td><label for="scriptId" class="required"><strong>Script ID:</strong><i>*</i></label></td>
+            <td><label for="scriptId" class="required"><strong>Script:</strong><i>*</i></label></td>
             <td><select id="select_scriptId" name="scriptId" class="scriptId"></select></td>
         </tr>
         <tr>
@@ -480,7 +480,7 @@
         <table id="events_table" class="xnat-table" style="display:none;width:100%;">
             <thead>
             <th>Event</th>
-            <th>Script ID</th>
+            <th>Script</th>
             <th>Description</th>
             </thead>
             <tbody>

@@ -29,7 +29,8 @@
     function saveScript() {
         // TODO: check script ID, warn and stop if blank or invalid.
         var url = serverRoot + "/data/automation/scripts/" + jq('#scriptId').val() + "?XNAT_CSRF=$!XNAT_CSRF";
-        var data = { content: ace.edit("editor").getSession().getValue(),
+        var data = { scriptLabel: jq('#scriptLabel').val(),
+                content: ace.edit("editor").getSession().getValue(),
                 description: jq('#description').val() };
         jQuery.ajax({
             type: 'PUT',
@@ -66,6 +67,9 @@
             <table border="0">
                 <tr>
                     <td><label for="scriptId"><strong>Script ID:</strong></label></td><td><input type="text" name="scriptId" id="scriptId" value="$!script.scriptId"/></td>
+                </tr>
+                <tr>
+                    <td><label for="scriptLabel"><strong>Script Label:</strong></label></td><td><input type="text" name="scriptLabel" id="scriptLabel" size="80" value="$!script.scriptLabel"/></td>
                 </tr>
                 <tr>
                     <td><label for="scriptVersion"><strong>Version:</strong></label></td><td><input type="text" name="scriptVersion" id="scriptVersion" size="80" value="$!script.scriptVersion" readonly/></td>

@@ -161,6 +161,7 @@ public class ScriptResource extends AutomationResource {
 
         ArrayList<String> columns = new ArrayList<>();
         columns.add("Script ID");
+        columns.add("Script Label");
         columns.add("Language");
         columns.add("Description");
         //columns.add("Version");
@@ -171,6 +172,7 @@ public class ScriptResource extends AutomationResource {
         final List<Script> scripts = _scriptService.getAll();
         for (final Script script : scripts) {
             table.insertRowItems(script.getScriptId(),
+                    script.getScriptLabel(),
                     script.getLanguage(),
                     script.getDescription());
                     //script.getScriptVersion());

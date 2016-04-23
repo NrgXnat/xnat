@@ -85,6 +85,7 @@ public final class PrearcDatabase {
             "}\n";
 
     public static final Script DEFAULT_SPLIT_PETMR_SESSION_SCRIPT = new Script(SPLIT_PETMR_SESSION_ID,
+            "Split PET/MR script",
             "Default implementation of the split PET/MR session script.",
             "groovy", "", DEFAULT_SPLIT_PETMR_SESSION_FILTER);
 

@@ -227,6 +227,12 @@
                     </td>
                 </tr>
                 <tr>
+                    <td><b>Script Label: </b>&nbsp;</td>
+                    <td>
+                        <input type="text" name="scriptLabel" class="scriptLabel" size="80" value="">
+                    </td>
+                </tr>
+                <tr>
                     <td><b>Description: </b>&nbsp;</td>
                     <td><input type="text" name="script-description" class="script-description" size="80" value=""></td>
                 </tr>

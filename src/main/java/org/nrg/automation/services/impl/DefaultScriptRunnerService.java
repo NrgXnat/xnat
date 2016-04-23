@@ -259,11 +259,12 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * site-wide script that can be run on demand.
      *
      * @param scriptId The ID of the script to set.
+     * @param scriptLabel The Label of the script to set.
      * @param content  The content to set for the script.
      */
     @Override
-    public void setScript(final String scriptId, final String content) {
-        setScriptImpl(scriptId, content, null, Scope.Site, null, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
+    public void setScript(final String scriptId, final String scriptLabel, final String content) {
+        setScriptImpl(scriptId, scriptLabel, content, null, Scope.Site, null, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -272,12 +273,13 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * site-wide script that can be run on demand.
      *
      * @param scriptId    The ID of the script to set.
+     * @param scriptLabel The Label of the script to set.
      * @param content     The content to set for the script.
      * @param description The description of the script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final String description) {
-        setScriptImpl(scriptId, content, description, Scope.Site, null, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
+    public void setScript(final String scriptId, final String scriptLabel, final String content, final String description) {
+        setScriptImpl(scriptId, scriptLabel, content, description, Scope.Site, null, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -285,13 +287,14 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * sets the event, language, and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
+     * @param scriptLabel The Label of the script to set.
      * @param content  The content to set for the script.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId) {
-        setScriptImpl(scriptId, content, null, scope, entityId, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
+    public void setScript(final String scriptId, final String scriptLabel, final String content, final Scope scope, final String entityId) {
+        setScriptImpl(scriptId, scriptLabel, content, null, scope, entityId, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -299,14 +302,15 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * sets the language and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
+     * @param scriptLabel The Label of the script to set.
      * @param content  The content to set for the script.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
      * @param event    The event for the script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters) {
-        setScriptImpl(scriptId, content, null, scope, entityId, eventClass, event, eventFilters, ScriptRunner.DEFAULT_LANGUAGE);
+    public void setScript(final String scriptId, final String scriptLabel, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters) {
+        setScriptImpl(scriptId, scriptLabel, content, null, scope, entityId, eventClass, event, eventFilters, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -314,6 +318,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * sets the description to the default value.
      *
      * @param scriptId The ID of the script to set.
+     * @param scriptLabel The Label of the script to set.
      * @param content  The content to set for the script.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
@@ -321,8 +326,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param language The script language for this script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
-        setScriptImpl(scriptId, content, null, scope, entityId, eventClass, event, eventFilters, language);
+    public void setScript(final String scriptId, final String scriptLabel, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
+        setScriptImpl(scriptId, scriptLabel, content, null, scope, entityId, eventClass, event, eventFilters, language);
     }
 
     /**
@@ -330,14 +335,15 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * sets the event, language, and language version arguments to default values.
      *
      * @param scriptId    The ID of the script to set.
+     * @param scriptLabel The Label of the script to set.
      * @param content     The content to set for the script.
      * @param description The description of the script.
      * @param scope       The scope for the script.
      * @param entityId    The associated entity for the script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId) {
-        setScriptImpl(scriptId, content, description, scope, entityId, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
+    public void setScript(final String scriptId, final String scriptLabel, final String content, final String description, final Scope scope, final String entityId) {
+        setScriptImpl(scriptId, scriptLabel, content, description, scope, entityId, ScriptTrigger.DEFAULT_CLASS, ScriptTrigger.DEFAULT_EVENT, ScriptTrigger.DEFAULT_FILTERS, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -345,6 +351,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * sets the language and language version arguments to default values.
      *
      * @param scriptId    The ID of the script to set.
+     * @param scriptLabel The Label of the script to set.
      * @param content     The content to set for the script.
      * @param description The description of the script.
      * @param scope       The scope for the script.
@@ -352,8 +359,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param event       The event for the script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters) {
-        setScriptImpl(scriptId, content, description, scope, entityId, eventClass, event, eventFilters, ScriptRunner.DEFAULT_LANGUAGE);
+    public void setScript(final String scriptId, final String scriptLabel, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters) {
+        setScriptImpl(scriptId, scriptLabel, content, description, scope, entityId, eventClass, event, eventFilters, ScriptRunner.DEFAULT_LANGUAGE);
     }
 
     /**
@@ -361,6 +368,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * with the same unique constraints already exist, they will be retrieved then updated.
      *
      * @param scriptId    The ID of the script to set.
+     * @param scriptLabel The Label of the script to set.
      * @param content     The content to set for the script.
      * @param description The description of the script.
      * @param scope       The scope for the script.
@@ -369,8 +377,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param language    The script language for this script.
      */
     @Override
-    public void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
-        setScriptImpl(scriptId, content, description, scope, entityId, eventClass, event, eventFilters, language);
+    public void setScript(final String scriptId, final String scriptLabel, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
+        setScriptImpl(scriptId, scriptLabel, content, description, scope, entityId, eventClass, event, eventFilters, language);
     }
 
     /**
@@ -417,6 +425,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         if (StringUtils.isBlank(scriptId)) {
             throw new NrgServiceException(NrgServiceError.Unknown, "You must specify the script ID to use this method.");
         }
+        final String scriptLabel = properties.getProperty("scriptLabel");
         final String content = properties.getProperty("content");
         final String description = properties.getProperty("description");
         //final String scriptVersion = properties.getProperty("scriptVersion");
@@ -425,7 +434,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         final String event = properties.getProperty("event", ScriptTrigger.DEFAULT_EVENT);
         final String eventClass = properties.getProperty("srcEventClass", ScriptTrigger.DEFAULT_CLASS);
         final String language = properties.getProperty("language", ScriptRunner.DEFAULT_LANGUAGE);
-        setScript(scriptId, content, description, scope, entityId, eventClass, event, ScriptTrigger.DEFAULT_FILTERS, language);
+        setScript(scriptId, scriptLabel, content, description, scope, entityId, eventClass, event, ScriptTrigger.DEFAULT_FILTERS, language);
     }
     
     /**
@@ -620,15 +629,19 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         return runner.getAnnotation(Supports.class).value();
     }
 
-    private void setScriptImpl(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
+    private void setScriptImpl(final String scriptId, final String scriptLabel, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
         if (StringUtils.isBlank(scriptId)) {
             throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save a script with an empty script ID!");
         }
+        if (StringUtils.isBlank(scriptLabel)) {
+            throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save the script " + scriptId + " with an empty script label!");
+        }
         if (StringUtils.isBlank(content)) {
-            throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save the script " + scriptId + " with an empty script ID!");
+            throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save the script " + scriptId + " with an empty script content!");
         }
         final Script script = new Script();
         script.setScriptId(scriptId);
+        script.setScriptLabel(scriptLabel);
         //script.setScriptVersion(StringUtils.isNotBlank(scriptVersion) ? scriptVersion : "1");
         script.setDescription(StringUtils.isNotBlank(description) ? description : getDefaultScriptDescription(script));
         script.setLanguage(StringUtils.isNotBlank(language) ? language : ScriptRunner.DEFAULT_LANGUAGE);
@@ -665,6 +678,12 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
             _scriptService.create(script);
         } else {
             boolean isDirty = false;
+            final String existingScriptLabel = existingScript.getScriptLabel();
+            final String scriptLabel = script.getScriptLabel();
+            if (!StringUtils.equals(existingScriptLabel, scriptLabel)) {
+                existingScript.setScriptLabel(scriptLabel);
+                isDirty = true;
+            }
             final String existingContent = existingScript.getContent();
             final String content = script.getContent();
             if (!StringUtils.equals(existingContent, content)) {

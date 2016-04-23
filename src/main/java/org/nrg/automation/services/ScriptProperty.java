@@ -7,6 +7,7 @@ import java.util.concurrent.ConcurrentHashMap;
 
 public enum ScriptProperty {
     ScriptId("scriptId"),
+    ScriptLabel("scriptLabel"),
     Description("description"),
     Script("script"),
     Language("language", "groovy"),

@@ -5,7 +5,6 @@ import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
 import org.nrg.framework.constants.Scope;
-import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.NrgService;
 
@@ -31,21 +30,21 @@ public interface ScriptRunnerService extends NrgService {
 
     List<Script> getScripts(final String scriptId);
 
-    void setScript(final String scriptId, final String content);
+    void setScript(final String scriptId, final String scriptLabel, final String content);
 
-    void setScript(final String scriptId, final String content, final String description);
+    void setScript(final String scriptId, final String scriptLabel, final String content, final String description);
 
-    void setScript(final String scriptId, final String content, final Scope scope, final String entityId);
+    void setScript(final String scriptId, final String scriptLabel, final String content, final Scope scope, final String entityId);
 
-    void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters);
+    void setScript(final String scriptId, final String scriptLabel, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters);
 
-    void setScript(final String scriptId, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language);
+    void setScript(final String scriptId, final String scriptLabel, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language);
 
-    void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId);
+    void setScript(final String scriptId, final String scriptLabel, final String content, final String description, final Scope scope, final String entityId);
 
-    void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters);
+    void setScript(final String scriptId, final String scriptLabel, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters);
 
-    void setScript(final String scriptId, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language);
+    void setScript(final String scriptId, final String scriptLabel, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language);
 
     void setScript(final Script script, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters);
 

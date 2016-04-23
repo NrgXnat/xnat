@@ -54,8 +54,11 @@ public class TestScriptRunnerService {
     public static final String PYTHON_HELLO_WORLD = "print '" + PYTHON_HELLO_PAYLOAD + "'";
     public static final String ID_PROJECT_1 = "1";
     public static final String SCRIPT_ID_1 = "one";
+    public static final String SCRIPT_LABEL_1 = "label one";
     public static final String SCRIPT_ID_2 = "two";
+    public static final String SCRIPT_LABEL_2 = "label two";
     public static final String SCRIPT_ID_3 = "three";
+    public static final String SCRIPT_LABEL_3 = "label three";
     public static final String EVENT_CLASS = "org.nrg.xnat.event.entities.WorkflowStatusEvent";
 	public static final Map<String,List<String>> EVENT_FILTERS;
 	public static final Map<String,String> EVENT_FILTER;
@@ -80,9 +83,9 @@ public class TestScriptRunnerService {
 
     @Test
     public void addRetrieveAndRunSiteScriptTests() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, GROOVY_HELLO_WORLD, Scope.Site, null, EVENT_CLASS, "EVENT1", EVENT_FILTERS);
-        _service.setScript(SCRIPT_ID_2, JS_HELLO_WORLD, Scope.Site, null, EVENT_CLASS, "EVENT2", EVENT_FILTERS, "JavaScript");
-        _service.setScript(SCRIPT_ID_3, PYTHON_HELLO_WORLD, Scope.Site, null, EVENT_CLASS, "EVENT3", EVENT_FILTERS, "Python");
+        _service.setScript(SCRIPT_ID_1, SCRIPT_LABEL_1, GROOVY_HELLO_WORLD, Scope.Site, null, EVENT_CLASS, "EVENT1", EVENT_FILTERS);
+        _service.setScript(SCRIPT_ID_2, SCRIPT_LABEL_2, JS_HELLO_WORLD, Scope.Site, null, EVENT_CLASS, "EVENT2", EVENT_FILTERS, "JavaScript");
+        _service.setScript(SCRIPT_ID_3, SCRIPT_LABEL_3, PYTHON_HELLO_WORLD, Scope.Site, null, EVENT_CLASS, "EVENT3", EVENT_FILTERS, "Python");
 
         final Script script1 = _service.getScript(SCRIPT_ID_1);
         assertNotNull(script1);
@@ -120,13 +123,14 @@ public class TestScriptRunnerService {
 
     @Test
     public void addRetrieveAndRunProjectScriptTest() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, GROOVY_HELLO_PROJECT, Scope.Project, ID_PROJECT_1);
+        _service.setScript(SCRIPT_ID_1, SCRIPT_LABEL_1, GROOVY_HELLO_PROJECT, Scope.Project, ID_PROJECT_1);
         final List<Script> scripts = _service.getScripts(Scope.Project, ID_PROJECT_1);
         assertNotNull(scripts);
         assertEquals(1, scripts.size());
 
         final Script script = scripts.get(0);
         assertEquals(SCRIPT_ID_1, script.getScriptId());
+        assertEquals(SCRIPT_LABEL_1, script.getScriptLabel());
         assertEquals(GROOVY_HELLO_PROJECT, script.getContent());
 
         final Map<String, Object> parameters = new HashMap<>();
@@ -143,7 +147,7 @@ public class TestScriptRunnerService {
 
     @Test
     public void useImportedClassTest() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, GROOVY_IMPORT);
+        _service.setScript(SCRIPT_ID_1, SCRIPT_LABEL_1, GROOVY_IMPORT);
         final Script script = _service.getScript(SCRIPT_ID_1);
         assertNotNull(script);
         assertEquals(SCRIPT_ID_1, script.getScriptId());
@@ -156,7 +160,7 @@ public class TestScriptRunnerService {
 
     @Test
     public void returnComplexObject() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, GROOVY_OBJECT);
+        _service.setScript(SCRIPT_ID_1, SCRIPT_LABEL_1, GROOVY_OBJECT);
 
         final Script script = _service.getScript(SCRIPT_ID_1);
         assertNotNull(script);
@@ -177,7 +181,7 @@ public class TestScriptRunnerService {
 
     @Test
     public void passVariablesTest() throws NrgServiceException {
-        _service.setScript(SCRIPT_ID_1, GROOVY_VARIABLE);
+        _service.setScript(SCRIPT_ID_1, SCRIPT_LABEL_1, GROOVY_VARIABLE);
 
         final Script script = _service.getScript(SCRIPT_ID_1);
         assertNotNull(script);
@@ -198,6 +202,7 @@ public class TestScriptRunnerService {
     public void callOtherSetScriptFunctions() {
         final Script script = new Script();
         final String scriptId = "";
+        final String scriptLabel = "";
         final String content = "";
         final String description = "";
         final Scope scope = Scope.Project;
@@ -205,10 +210,10 @@ public class TestScriptRunnerService {
         final String eventClass = "";
         final String event = "";
         final Map<String,List<String>> eventFilters = Maps.newHashMap();
-        _service.setScript(scriptId, content, description);
-        _service.setScript(scriptId, content, scope, entityId, eventClass, event, eventFilters);
-        _service.setScript(scriptId, content, description, scope, entityId);
-        _service.setScript(scriptId, content, description, scope, entityId, eventClass, event, eventFilters);
+        _service.setScript(scriptId, scriptLabel, content, description);
+        _service.setScript(scriptId, scriptLabel, content, scope, entityId, eventClass, event, eventFilters);
+        _service.setScript(scriptId, scriptLabel, content, description, scope, entityId);
+        _service.setScript(scriptId, scriptLabel, content, description, scope, entityId, eventClass, event, eventFilters);
         _service.setScript(script, scope, entityId, eventClass, event, eventFilters);
     }
 

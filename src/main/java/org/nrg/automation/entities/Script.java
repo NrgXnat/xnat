@@ -31,16 +31,17 @@ public class Script extends AbstractHibernateEntity {
         }
     }
 
-    public Script(final String scriptId, final String description, final String language, final String languageVersion, final String content) {
+    public Script(final String scriptId, final String scriptLabel, final String description, final String language, final String languageVersion, final String content) {
         if (_log.isDebugEnabled()) {
-            _log.debug("Creating Script object with parameters:\n * Script ID: " + scriptId + "\n * Description: " + description + "\n" +
+            _log.debug("Creating Script object with parameters:\n * Script ID: " + scriptId + "\n" +
+                    " * Script Label: \" + scriptLabel + \"\n * Description: " + description + "\n" +
                     " * Language: " + language + "\n * Language version: " + languageVersion);
         }
         setScriptId(scriptId);
+        setScriptLabel(scriptLabel);
         setDescription(description);
         setLanguage(language);
         setContent(content);
-        //setScriptVersion(version);
     }
 
     public String getScriptId() {
@@ -49,6 +50,14 @@ public class Script extends AbstractHibernateEntity {
 
     public void setScriptId(final String scriptId) {
         _scriptId = scriptId;
+    }
+
+    public String getScriptLabel() {
+        return _scriptLabel;
+    }
+
+    public void setScriptLabel(final String scriptLabel) {
+        _scriptLabel = scriptLabel;
     }
 
     public String getDescription() {
@@ -76,33 +85,21 @@ public class Script extends AbstractHibernateEntity {
         _content = content;
     }
 
-//    public String getScriptVersion() {
-//        return _scriptVersion;
-//    }
-//
-//    public void setScriptVersion(final String version) {
-//        _scriptVersion = version;
-////    }
-//
-//    public List<String> getVersions(){
-//        return new ArrayList<String>();
-//    }
-
     public Properties toProperties() {
         final Properties properties = new Properties();
         properties.setProperty(ScriptProperty.ScriptId.key(), _scriptId);
+        properties.setProperty(ScriptProperty.ScriptLabel.key(), _scriptLabel);
         properties.setProperty(ScriptProperty.Description.key(), _description);
         properties.setProperty(ScriptProperty.Language.key(), _language);
         properties.setProperty(ScriptProperty.Script.key(), _content);
-        //properties.setProperty(ScriptProperty.ScriptVersion.key(), _scriptVersion);
         return properties;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(Script.class);
 
     private String _scriptId;
+    private String _scriptLabel;
     private String _description;
     private String _language;
     private String _content;
-    //private String _scriptVersion;
 }

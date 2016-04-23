@@ -62,7 +62,7 @@ public class TestScriptTriggerAndTemplateServices {
 
     @Test
     public void testSimpleScript() {
-        Script script = _scriptService.newEntity("script1", "This is my first script!", "groovy", "2.3.6", "println \"Hello world!\"");
+        Script script = _scriptService.newEntity("script1", "script1 label", "This is my first script!", "groovy", "2.3.6", "println \"Hello world!\"");
         List<Script> retrieved = _scriptService.getAll();
         assertNotNull(retrieved);
         assertEquals(1, retrieved.size());

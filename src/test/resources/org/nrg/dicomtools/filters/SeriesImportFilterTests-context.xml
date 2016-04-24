@@ -2,27 +2,14 @@
 <beans xmlns="http://www.springframework.org/schema/beans"
        xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
        xmlns:context="http://www.springframework.org/schema/context"
-       xmlns:util="http://www.springframework.org/schema/util"
        xsi:schemaLocation="http://www.springframework.org/schema/beans http://www.springframework.org/schema/beans/spring-beans.xsd
-                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd
-                           http://www.springframework.org/schema/util http://www.springframework.org/schema/util/spring-util.xsd">
-
-    <context:component-scan base-package="org.nrg.config.daos" />
-
-    <bean class="org.nrg.config.services.impl.DefaultConfigService"/>
-    <bean id="nrgConfigEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
-        <property name="items">
-            <util:list>
-                <value>org.nrg.config.entities</value>
-            </util:list>
-        </property>
-    </bean>
+                           http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
 
     <import resource="classpath:/META-INF/configuration/nrg-automation-context.xml" />
-    <import resource="classpath:/META-INF/configuration/nrg-automation-orm-default-context.xml" />
     <import resource="classpath:/META-INF/configuration/nrg-dicomtools-context.xml" />
-    <import resource="classpath:/org/nrg/dicomtools/filters/TestDataSource-context.xml" />
 
     <context:property-placeholder location="org/nrg/dicomtools/filters/filter-definitions.properties"/>
+
+    <bean class="org.nrg.dicomtools.configuration.SeriesImportFilterTestsConfiguration"/>
 
 </beans>

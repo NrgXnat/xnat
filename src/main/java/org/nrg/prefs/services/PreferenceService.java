@@ -37,18 +37,22 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * Gets the preference object for the specified tool and name. This retrieves the preference for the {@link
      * Scope#Site site scope}. If you need to retrieve the preference for a particular entity, use the {@link
      * #getPreference(String, String, Scope, String)} form of this method.
-     * @param toolId            The tool ID for the preference object.
-     * @param preferenceName    The name of the preference object.
+     *
+     * @param toolId         The tool ID for the preference object.
+     * @param preferenceName The name of the preference object.
+     *
      * @return The resulting preference object if it exists in the default scope.
      */
     Preference getPreference(String toolId, String preferenceName);
 
     /**
      * Gets the preference object for the specified tool, name, scope, and entity ID.
-     * @param toolId            The tool ID for the preference object.
-     * @param preferenceName    The name of the preference object.
-     * @param scope             The specified scope for the preference.
-     * @param entityId          The specified scope for the preference.
+     *
+     * @param toolId         The tool ID for the preference object.
+     * @param preferenceName The name of the preference object.
+     * @param scope          The specified scope for the preference.
+     * @param entityId       The specified scope for the preference.
+     *
      * @return The resulting preference object if it exists in the default scope.
      */
     Preference getPreference(String toolId, String preferenceName, final Scope scope, final String entityId);
@@ -57,19 +61,25 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * Sets the value of the preference object for the specified tool and name. This sets the preference for the {@link
      * Scope#Site site scope}. If you need to set the preference for a particular entity, use the {@link
      * #setPreference(String, String, Scope, String, String)} form of this method.
-     * @param toolId            The tool ID for the preference object.
-     * @param preferenceName    The name of the preference object.
-     * @param value             The value to set for the preference.
+     *
+     * @param toolId         The tool ID for the preference object.
+     * @param preferenceName The name of the preference object.
+     * @param value          The value to set for the preference.
+     *
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void setPreference(final String toolId, final String preferenceName, final String value) throws InvalidPreferenceName;
 
     /**
      * Sets the value of the preference object for the specified tool, name, scope, and entity ID.
-     * @param toolId            The tool ID for the preference object.
-     * @param preferenceName    The name of the preference object.
-     * @param scope             The specified scope for the preference.
-     * @param entityId          The specified scope for the preference.
-     * @param value             The value to set for the preference.
+     *
+     * @param toolId         The tool ID for the preference object.
+     * @param preferenceName The name of the preference object.
+     * @param scope          The specified scope for the preference.
+     * @param entityId       The specified scope for the preference.
+     * @param value          The value to set for the preference.
+     *
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void setPreference(final String toolId, final String preferenceName, final Scope scope, final String entityId, final String value) throws InvalidPreferenceName;
 
@@ -77,26 +87,31 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * Deletes the preference object for the specified tool and name. This deletes the preference for the {@link
      * Scope#Site site scope}. If you need to delete the preference for a particular entity, use the {@link
      * #delete(String, String, Scope, String)} form of this method.
-     * @param toolId            The tool ID for the preference object.
-     * @param preferenceName    The name of the preference object.
+     *
+     * @param toolId         The tool ID for the preference object.
+     * @param preferenceName The name of the preference object.
      */
     void delete(final String toolId, final String preferenceName) throws InvalidPreferenceName;
 
     /**
      * Deletes the preference object for the specified tool, name, scope, and entity ID.
-     * @param toolId            The tool ID for the preference object.
-     * @param preferenceName    The name of the preference object.
-     * @param scope             The specified scope for the preference.
-     * @param entityId          The specified scope for the preference.
+     *
+     * @param toolId         The tool ID for the preference object.
+     * @param preferenceName The name of the preference object.
+     * @param scope          The specified scope for the preference.
+     * @param entityId       The specified scope for the preference.
+     *
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void delete(final String toolId, final String preferenceName, final Scope scope, final String entityId) throws InvalidPreferenceName;
 
     /**
      * Returns all of the properties for the selected tool at the indicated scope.
      *
-     * @param toolId    The ID of the tool.
-     * @param scope     The scope for which properties should be retrieved.
-     * @param entityId  The entity for which properties should be retrieved.
+     * @param toolId   The ID of the tool.
+     * @param scope    The scope for which properties should be retrieved.
+     * @param entityId The entity for which properties should be retrieved.
+     *
      * @return All of the properties for the selected tool at the indicated scope, returned as a Java properties object.
      */
     Properties getToolProperties(final String toolId, final Scope scope, final String entityId);

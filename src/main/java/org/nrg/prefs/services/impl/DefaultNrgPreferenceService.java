@@ -1,4 +1,4 @@
-package org.nrg.prefs.services.impl.hibernate;
+package org.nrg.prefs.services.impl;
 
 import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -6,6 +6,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
@@ -18,10 +19,11 @@ import org.nrg.prefs.services.ToolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeansException;
-import org.springframework.beans.factory.InitializingBean;
 import org.springframework.beans.factory.NoSuchBeanDefinitionException;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
 import org.springframework.context.ApplicationContextAware;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -29,7 +31,7 @@ import java.util.*;
 
 @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 @Service
-public class DefaultNrgPreferenceService implements NrgPreferenceService, ApplicationContextAware, InitializingBean {
+public class DefaultNrgPreferenceService implements NrgPreferenceService, ApplicationContextAware {
     /**
      * {@inheritDoc}
      */
@@ -58,6 +60,28 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
      * {@inheritDoc}
      */
     @Override
+    public void create(final String toolId, final String namespacedPropertyId, final String value) {
+        create(toolId, namespacedPropertyId, EntityId.Default.getScope(), EntityId.Default.getEntityId(), value);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public void create(final String toolId, final String namespacedPropertyId, final Scope scope, final String entityId, final String value) {
+        final Preference preference = new Preference();
+        preference.setTool(_toolService.getByToolId(toolId));
+        preference.setName(namespacedPropertyId);
+        preference.setScope(scope);
+        preference.setEntityId(entityId);
+        preference.setValue(value);
+        _preferenceService.create(preference);
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
     public boolean hasPreference(final String toolId, final String preference) {
         return _preferenceService.hasPreference(toolId, preference);
     }
@@ -75,7 +99,7 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
      */
     @Override
     public Preference getPreference(final String toolId, final String preferenceName) throws UnknownToolId {
-        return getPreference(toolId, preferenceName, Scope.Site, null);
+        return getPreference(toolId, preferenceName, EntityId.Default.getScope(), EntityId.Default.getEntityId());
     }
 
     /**
@@ -117,13 +141,12 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
      */
     @Override
     public void setPreferenceValue(final String toolId, final String preferenceName, final Scope scope, final String entityId, final String value) throws UnknownToolId, InvalidPreferenceName {
-        final Tool tool = getTool(toolId);
         final Preference preference = getPreference(toolId, preferenceName, scope, entityId);
         if (preference != null) {
             preference.setValue(value);
             _preferenceService.update(preference);
         } else {
-            _preferenceService.setPreference(tool.getToolId(), preferenceName, scope, entityId, value);
+            _preferenceService.setPreference(toolId, preferenceName, scope, entityId, value);
         }
     }
 
@@ -183,36 +206,22 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
         _context = context;
     }
 
-    /**
-     * {@inheritDoc}
-     */
-    @Override
-    public void afterPropertiesSet() throws Exception {
-        if (_resolvers == null) {
+    @Inject
+    public void setResolvers(final Map<String, PreferenceEntityResolver> resolvers) {
+        if (resolvers == null || resolvers.size() == 0) {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You must have at least one preferences entity resolver instance available.");
         }
-        final PreferenceEntityResolver defaultResolver = _context.getBean("defaultResolver", PreferenceEntityResolver.class);
+        final PreferenceEntityResolver defaultResolver = resolvers.get("defaultResolver");
         if (defaultResolver != null) {
             _defaultResolver = defaultResolver;
-        } else if (_resolvers.size() == 1) {
-            _defaultResolver = _resolvers.get(0);
+        } else if (resolvers.size() == 1) {
+            _defaultResolver = new ArrayList<>(resolvers.values()).get(0);
         } else {
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You must have at least one preferences entity resolver instance marked as the default resolver for the application.");
         }
         // Make sure all of our preferences are initialized.
-        for (final PreferenceEntityResolver resolver : _resolvers) {
+        for (final PreferenceEntityResolver resolver : resolvers.values()) {
             _resolversByClass.put(resolver.getClass(), resolver);
-        }
-        final Map<String, PreferenceBean> preferenceBeans = _context.getBeansOfType(PreferenceBean.class);
-        if (preferenceBeans != null) {
-            for (final PreferenceBean bean : preferenceBeans.values()) {
-                final String toolId = bean.getToolId();
-                if (!getToolIds().contains(toolId)) {
-                    createTool(bean);
-                }
-                _beansByToolId.put(toolId, bean.initialize(this));
-                getResolverByClass(toolId, bean.getResolver());
-            }
         }
     }
 
@@ -232,14 +241,18 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
 
         // If it's not cached by tool ID, then let's get the tool and find the preferred resolver ID from that.
         // TODO: If the context ID could be set to the tool ID implicitly, we might be able to get all of this from the application context.
+        final Class<? extends PreferenceEntityResolver> resolverClass;
         final Tool tool = _toolService.getByToolId(toolId);
-        if (tool == null) {
+        if (tool != null) {
+            // Get the resolver ID from the tool.
+             resolverClass = tool.getResolver();
+        } else if (getBeansByToolId().containsKey(toolId)) {
+            resolverClass = getBeansByToolId().get(toolId).getResolver();
+        } else {
             // What?!
             throw new UnknownToolId(toolId);
         }
 
-        // Get the resolver ID from the tool.
-        final Class<? extends PreferenceEntityResolver> resolverClass = tool.getResolver();
         return getResolverByClass(toolId, resolverClass);
     }
 
@@ -285,6 +298,19 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
         return tool;
     }
 
+    private Map<String, PreferenceBean> getBeansByToolId() {
+        if (_beansByToolId.size() == 0) {
+            final Map<String, PreferenceBean> beans = _context.getBeansOfType(PreferenceBean.class);
+            for (final PreferenceBean bean : beans.values()) {
+                if (bean.getClass().isAnnotationPresent(NrgPreferenceBean.class)) {
+                    final String toolId = bean.getClass().getAnnotation(NrgPreferenceBean.class).toolId();
+                    _beansByToolId.put(toolId, bean);
+                }
+            }
+        }
+        return _beansByToolId;
+    }
+
     private static final Scope  DEFAULT_SCOPE     = EntityId.Default.getScope();
     private static final String DEFAULT_ENTITY_ID = EntityId.Default.getEntityId();
 
@@ -295,20 +321,18 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
         _mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
     }
 
-    @Inject
-    private ToolService _toolService;
-
-    @Inject
+    @Autowired
+    @Lazy
+    private ToolService       _toolService;
+    @Autowired
+    @Lazy
     private PreferenceService _preferenceService;
-
-    @Inject
-    private List<PreferenceEntityResolver> _resolvers;
 
     private final Map<String, PreferenceEntityResolver>                                    _resolversByToolId = new HashMap<>();
     private final Map<Class<? extends PreferenceEntityResolver>, PreferenceEntityResolver> _resolversByClass  = new HashMap<>();
-
-    private final Map<String, PreferenceBean> _beansByToolId = new HashMap<>();
+    private final Map<String, PreferenceBean>                                              _beansByToolId     = new HashMap<>();
 
     private ApplicationContext       _context;
+
     private PreferenceEntityResolver _defaultResolver;
 }

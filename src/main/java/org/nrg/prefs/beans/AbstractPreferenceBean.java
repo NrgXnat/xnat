@@ -17,7 +17,6 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
-import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.PreferenceInfo;
@@ -25,25 +24,35 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 import org.nrg.prefs.services.NrgPreferenceService;
-import org.reflections.ReflectionUtils;
+import org.nrg.prefs.services.PreferenceBeanHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.BeanUtils;
 
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
 import java.io.IOException;
-import java.lang.reflect.*;
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.*;
-import java.util.regex.Pattern;
 
 import static com.google.common.base.Predicates.*;
-import static org.reflections.ReflectionUtils.withAnnotation;
 
 public abstract class AbstractPreferenceBean implements PreferenceBean {
 
-    @Override
-    public PreferenceBean initialize(final NrgPreferenceService service) {
-        _service = service;
-        getDefaultPreferences();
+    /**
+     * Default constructor initializes default preferences for the bean.
+     */
+    protected AbstractPreferenceBean() {
+        _preferences.clear();
+        _preferences.putAll(PreferenceBeanHelper.getPreferenceInfoMap(getClass()));
+    }
+
+    @PostConstruct
+    public PreferenceBean initialize() {
+        if (_service == null) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Uninitialized, "The NrgPreferenceService instance must be configured and wired before this preference bean can be initialized.");
+        }
         processDefaultPreferences();
         return this;
     }
@@ -99,6 +108,90 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     @Override
+    public Boolean getBooleanValue(final String key, final String... subkeys) throws UnknownToolId {
+        return getBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
+    }
+
+    @Override
+    public Boolean getBooleanValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
+        final String value = getValue(scope, entityId, key, subkeys);
+        if (value == null) {
+            return null;
+        }
+        return Boolean.parseBoolean(value);
+    }
+
+    @Override
+    public Integer getIntegerValue(final String key, final String... subkeys) throws UnknownToolId {
+        return getIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
+    }
+
+    @Override
+    public Integer getIntegerValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
+        final String value = getValue(scope, entityId, key, subkeys);
+        if (value == null) {
+            return null;
+        }
+        return Integer.parseInt(value);
+    }
+
+    @Override
+    public Long getLongValue(final String key, final String... subkeys) throws UnknownToolId {
+        return getLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
+    }
+
+    @Override
+    public Long getLongValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
+        final String value = getValue(scope, entityId, key, subkeys);
+        if (value == null) {
+            return null;
+        }
+        return Long.parseLong(value);
+    }
+
+    @Override
+    public Float getFloatValue(final String key, final String... subkeys) throws UnknownToolId {
+        return getFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
+    }
+
+    @Override
+    public Float getFloatValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
+        final String value = getValue(scope, entityId, key, subkeys);
+        if (value == null) {
+            return null;
+        }
+        return Float.parseFloat(value);
+    }
+
+    @Override
+    public Double getDoubleValue(final String key, final String... subkeys) throws UnknownToolId {
+        return getDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
+    }
+
+    @Override
+    public Double getDoubleValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
+        final String value = getValue(scope, entityId, key, subkeys);
+        if (value == null) {
+            return null;
+        }
+        return Double.parseDouble(value);
+    }
+
+    @Override
+    public Date getDateValue(final String key, final String... subkeys) throws UnknownToolId {
+        return getDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
+    }
+
+    @Override
+    public Date getDateValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
+        final String value = getValue(scope, entityId, key, subkeys);
+        if (value == null) {
+            return null;
+        }
+        return new Date(Long.getLong(value));
+    }
+
+    @Override
     public <T> Map<String, T> getMapValue(final String preferenceName) throws UnknownToolId {
         return getMapValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName);
     }
@@ -109,7 +202,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         @SuppressWarnings("unchecked") final MapType mapType = getTypeFactory().constructMapType((Class<? extends Map>) info.getValueType(), String.class, info.getItemType());
         try {
             final Map<String, Object> map = deserialize("{}", mapType);
-            final Set<String> propertyNames = Sets.filter(_service.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + "\\.")));
+            final Set<String> propertyNames = Sets.filter(_service.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + NAMESPACE_DELIMITER)));
             for (final String propertyName : propertyNames) {
                 final String value = _service.getPreferenceValue(getToolId(), propertyName);
                 @SuppressWarnings("unchecked") final Object item = deserialize(value, info.getItemType());
@@ -137,7 +230,7 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                 return deserialize(value, listType);
             } else {
                 final List<T> list = deserialize("[]", listType);
-                final Set<String> propertyNames = Sets.filter(_service.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + "\\.")));
+                final Set<String> propertyNames = Sets.filter(_service.getToolPropertyNames(getToolId()), or(equalTo(preferenceName), containsPattern("^" + preferenceName + NAMESPACE_DELIMITER)));
                 for (final String propertyName : propertyNames) {
                     final String value = _service.getPreferenceValue(getToolId(), propertyName);
                     @SuppressWarnings("unchecked") final T item = deserialize(value, (Class<? extends T>) info.getItemType());
@@ -163,6 +256,16 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     @Override
+    public void create(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        _service.create(getToolId(), getNamespacedPropertyId(key, subkeys), value);
+    }
+
+    @Override
+    public void create(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        _service.create(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId, value);
+    }
+
+    @Override
     public void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(key, subkeys), value);
     }
@@ -173,40 +276,108 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     @Override
-    public <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId {
+    public void setBooleanValue(final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        setBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+    }
+
+    @Override
+    public void setBooleanValue(final Scope scope, final String entityId, final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        set(scope, entityId, value.toString(), key, subkeys);
+    }
+
+    @Override
+    public void setIntegerValue(final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        setIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+    }
+
+    @Override
+    public void setIntegerValue(final Scope scope, final String entityId, final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        set(scope, entityId, value.toString(), key, subkeys);
+    }
+
+    @Override
+    public void setLongValue(final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        setLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+    }
+
+    @Override
+    public void setLongValue(final Scope scope, final String entityId, final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        set(scope, entityId, value.toString(), key, subkeys);
+    }
+
+    @Override
+    public void setFloatValue(final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        setFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+    }
+
+    @Override
+    public void setFloatValue(final Scope scope, final String entityId, final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        set(scope, entityId, value.toString(), key, subkeys);
+    }
+
+    @Override
+    public void setDoubleValue(final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        setDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+    }
+
+    @Override
+    public void setDoubleValue(final Scope scope, final String entityId, final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        set(scope, entityId, value.toString(), key, subkeys);
+    }
+
+    @Override
+    public void setDateValue(final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        setDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
+    }
+
+    @Override
+    public void setDateValue(final Scope scope, final String entityId, final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
+        set(scope, entityId, Long.toString(value.getTime()), key, subkeys);
+    }
+
+    @Override
+    public <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
         setMapValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, map);
     }
 
     @Override
-    public <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId {
+    public <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
         for (final String key : map.keySet()) {
             final String id = getNamespacedPropertyId(preferenceName, key);
             try {
                 set(scope, entityId, serialize(map.get(key)), id);
             } catch (IOException e) {
                 throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", e);
-            } catch (InvalidPreferenceName e) {
-                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "An error occurred trying to set the preference: couldn't find the preference identified by the ID " + id);
             }
         }
     }
 
     @Override
-    public <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId {
+    public <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
         setListValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, list);
     }
 
     @Override
-    public <T> void setListValue(final Scope scope, final String entityId, final String preferenceName, List<T> list) throws UnknownToolId {
+    public <T> void setListValue(final Scope scope, final String entityId, final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
+        try {
+            set(scope, entityId, preferenceName, serialize(list));
+        } catch (IOException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", e);
+        }
     }
 
     @Override
-    public <T> void setArrayValue(final String preferenceName, T[] array) throws UnknownToolId {
+    public <T> void setArrayValue(final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
         setArrayValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, array);
     }
 
     @Override
-    public <T> void setArrayValue(final Scope scope, final String entityId, final String preferenceName, T[] array) throws UnknownToolId {
+    public <T> void setArrayValue(final Scope scope, final String entityId, final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
+        try {
+            set(scope, entityId, preferenceName, serialize(array));
+        } catch (IOException e) {
+            throw new NrgServiceRuntimeException(NrgServiceError.Unknown, "An error occurred during serialization/deserialization", e);
+        }
     }
 
     @Override
@@ -221,9 +392,6 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     @Override
     public Map<String, PreferenceInfo> getDefaultPreferences() {
-        if (_preferences.isEmpty()) {
-            initializeDefaultPreferences();
-        }
         return _preferences;
     }
 
@@ -247,86 +415,17 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return _typeFactory;
     }
 
-    private void initializeDefaultPreferences() {
-        _preferences.clear();
-        @SuppressWarnings("unchecked") final Set<Method> properties = ReflectionUtils.getAllMethods(getClass(), withAnnotation(NrgPreference.class));
-        for (final Method method : properties) {
-            final NrgPreference annotation = method.getAnnotation(NrgPreference.class);
-            final String name;
-            final Class<?> type;
-            final Type genericType;
-            if (isGetter(method)) {
-                name = propertize(method.getName(), "get");
-                type = method.getReturnType();
-                genericType = method.getGenericReturnType();
-            } else if (isSetter(method)) {
-                final Class<?>[] parameterTypes = method.getParameterTypes();
-                if (parameterTypes.length != 1) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "You can't annotate the " + method.getName() + "() method with " + parameterTypes.length + " parameters: it must have one and only one parameter.");
-                }
-                name = propertize(method.getName(), "set");
-                type = parameterTypes[0];
-                genericType = method.getGenericParameterTypes()[0];
-            } else {
-                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The" + method.getName() + "() method doesn't appear to be a getter or a setter, but is annotated anyway. Only getter and setter methods should be annotated.");
-            }
-
-            final boolean isArray = type.isArray();
-            final boolean isList = List.class.isAssignableFrom(type);
-            final boolean isMap = Map.class.isAssignableFrom(type);
-
-            // If this is a list or a map, then the type should be the type of map and the generic type should be the
-            // parameterized type. If they're equal, that means it's just a List or Map with no type set, which means we
-            // can't determine what type of object is inside the list or map.
-            if ((isList || isMap) && type.equals(genericType)) {
-                throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method must use a parameterized " + (isList ? "list" : "map") + " type so that I can determine the type of preference in the collection.");
-            }
-
-            final PreferenceInfo info = new PreferenceInfo();
-            info.setName(name);
-            info.setValueType(type);
-            info.setKey(annotation.key());
-            info.setDefaultValue(annotation.defaultValue());
-
-            if (isArray || isList) {
-                final Class<?> itemType;
-                try {
-                    itemType = isArray ? type.getComponentType() : getClassesFromParameterizedType(genericType).get(0);
-                } catch (NotParameterizedTypeException e) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a list that is not parameterized, i.e. is just a List rather than List<String>. This is not currently supported.");
-                } catch (NotConcreteTypeException e) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a list that is parameterized to contain a parameterized type, e.g. List<List<String>>. This is not currently supported.");
-                }
-                if (!BeanUtils.isSimpleValueType(itemType) && StringUtils.isBlank(annotation.key())) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "When specifying an array or list of complex types as a preference setting, you must also specify the key property on the complex type to use to store the preference data, e.g. 'key=\"id\", where 'id' corresponds to a 'getId()' method on the complex type.");
-                }
-                info.setItemType(itemType);
-            } else if (isMap) {
-                final List<Class<?>> classes;
-                try {
-                    classes = getClassesFromParameterizedType(genericType);
-                } catch (NotParameterizedTypeException e) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that is not parameterized, i.e. is just a Map rather than Map<String, String>. This is not currently supported.");
-                } catch (NotConcreteTypeException e) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that is parameterized to contain a parameterized type, e.g. Map<String, List<String>>. This is not currently supported.");
-                }
-                final Class<?> keyType = classes.get(0);
-                if (!keyType.equals(String.class)) {
-                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method has a map that uses a non-String key type. This is not currently supported.");
-                }
-                final Class<?> valueType = classes.get(1);
-                info.setItemType(valueType);
-            } else {
-                info.setItemType(null);
-            }
-            _preferences.put(name, info);
-        }
-    }
-
     private void processDefaultPreferences() {
+        if (!_service.getToolIds().contains(getToolId())) {
+            try {
+                _service.createTool(this);
+            } catch (InvalidPreferenceName invalidPreferenceName) {
+                _log.error("Invalid preference name error", invalidPreferenceName);
+            }
+        }
         if (!_preferences.isEmpty()) {
-            if (_log.isDebugEnabled()) {
-                _log.debug("Found {} default values to add to tool {}", _preferences.size(), getToolId());
+            if (_log.isInfoEnabled()) {
+                _log.info("Found {} default values to add to tool {}", _preferences.size(), getToolId());
             }
             for (final String preference : _preferences.keySet()) {
                 final PreferenceInfo info = _preferences.get(preference);
@@ -355,25 +454,25 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                                 try {
                                     getter = itemType.getMethod(getterName);
                                 } catch (NoSuchMethodException e) {
-                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preference " + info.getName() + " specifies a key " + key + " that doesn't exist on the object type.");
+                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preference " + info + " specifies a key " + key + " that doesn't exist on the object type.");
                                 }
                                 for (final Object item : list) {
                                     final String keyValue = getter.invoke(item).toString();
-                                    final String propertyId = getNamespacedPropertyId(info.getName(), keyValue);
+                                    final String propertyId = getNamespacedPropertyId(info.getProperty(), keyValue);
                                     if (!_service.hasPreference(getToolId(), propertyId)) {
                                         try {
-                                            set(_mapper.writeValueAsString(item), propertyId);
+                                            create(_mapper.writeValueAsString(item), propertyId);
                                         } catch (InvalidPreferenceName invalidPreferenceName) {
                                             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + propertyId + " preference for the " + getToolId() + " tool.");
                                         }
                                     }
                                 }
                             } else {
-                                if (!_service.hasPreference(getToolId(), info.getName())) {
+                                if (!_service.hasPreference(getToolId(), info.getProperty())) {
                                     try {
-                                        set(defaultValue, info.getName());
+                                        create(defaultValue, info.getProperty());
                                     } catch (InvalidPreferenceName invalidPreferenceName) {
-                                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + info.getName() + " preference for the " + getToolId() + " tool.");
+                                        throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + info + " preference for the " + getToolId() + " tool.");
                                     }
                                 }
                             }
@@ -388,25 +487,25 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
                                 try {
                                     itemType.getMethod(getterName);
                                 } catch (NoSuchMethodException e) {
-                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preference " + info.getName() + " specifies a key " + key + " that doesn't exist on the object type.");
+                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preference " + info + " specifies a key " + key + " that doesn't exist on the object type.");
                                 }
                             }
                             for (final String mapKey : map.keySet()) {
-                                final String propertyId = getNamespacedPropertyId(info.getName(), mapKey);
+                                final String propertyId = getNamespacedPropertyId(info.getProperty(), mapKey);
                                 if (!_service.hasPreference(getToolId(), propertyId)) {
                                     try {
-                                        set(_mapper.writeValueAsString(map.get(mapKey)), propertyId);
+                                        create(_mapper.writeValueAsString(map.get(mapKey)), propertyId);
                                     } catch (InvalidPreferenceName invalidPreferenceName) {
                                         throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + propertyId + " preference for the " + getToolId() + " tool.");
                                     }
                                 }
                             }
                         } else {
-                            if (!_service.hasPreference(getToolId(), info.getName())) {
+                            if (!_service.hasPreference(getToolId(), info.getProperty())) {
                                 try {
-                                    set(defaultValue, info.getName());
+                                    create(defaultValue, info.getProperty());
                                 } catch (InvalidPreferenceName invalidPreferenceName) {
-                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + info.getName() + " preference for the " + getToolId() + " tool.");
+                                    throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Something went wrong trying to create the " + info + " preference for the " + getToolId() + " tool.");
                                 }
                             }
                         }
@@ -435,71 +534,30 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
-    private List<Class<?>> getClassesFromParameterizedType(final Type type) throws NotParameterizedTypeException, NotConcreteTypeException {
-        if (!(type instanceof ParameterizedType)) {
-            throw new NotParameterizedTypeException("The type " + type.toString() + " is not a parameterized type");
-        }
-        final List<Class<?>> classes = new ArrayList<>();
-        final ParameterizedType parameterizedType = (ParameterizedType) type;
-        for (final Type subtype : parameterizedType.getActualTypeArguments()) {
-            if (subtype instanceof ParameterizedType) {
-                throw new NotParameterizedTypeException("The type " + type.toString() + " can not be a parameterized type");
-            }
-            classes.add((Class<?>) subtype);
-        }
-        return classes;
-    }
-
     protected String getNamespacedPropertyId(final String key, final String... names) {
-        return Joiner.on(".").join(Lists.asList(key, names));
-    }
-
-    private static String propertize(final String name, final String type) {
-        return StringUtils.uncapitalize(name.replace(type, ""));
-    }
-
-    private static boolean isGetter(final Method method) {
-        return Modifier.isPublic(method.getModifiers()) && PATTERN_GETTER.matcher(method.getName()).matches() && method.getParameterTypes().length == 0;
-    }
-
-    private static boolean isSetter(final Method method) {
-        return Modifier.isPublic(method.getModifiers()) && PATTERN_SETTER.matcher(method.getName()).matches() && method.getParameterTypes().length == 1;
+        return Joiner.on(NAMESPACE_DELIMITER).join(Lists.asList(key, names));
     }
 
     private static String getPreferenceSubkey(final String preferenceName) {
         if (StringUtils.isBlank(preferenceName)) {
             return "";
         }
-        final String[] atoms = preferenceName.split("\\.", 2);
+        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
         return atoms.length == 1 ? "" : atoms[1];
     }
 
-    private class NotParameterizedTypeException extends Throwable {
-        NotParameterizedTypeException(final String message) {
-            super(message);
-        }
-    }
-
-    private class NotConcreteTypeException extends Throwable {
-        public NotConcreteTypeException(final String message) {
-            super(message);
-        }
-    }
-
-    private static final Logger       _log         = LoggerFactory.getLogger(AbstractPreferenceBean.class);
-    private static final ObjectMapper _mapper      = new ObjectMapper() {{
+    private static final Logger       _log    = LoggerFactory.getLogger(AbstractPreferenceBean.class);
+    private static final ObjectMapper _mapper = new ObjectMapper() {{
         configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
         setSerializationInclusion(JsonInclude.Include.NON_DEFAULT);
     }};
-    private static final TypeFactory  _typeFactory = _mapper.getTypeFactory();
 
-    private static final Pattern PATTERN_GETTER = Pattern.compile("^get[A-Z][A-z]+");
+    private static final TypeFactory _typeFactory = _mapper.getTypeFactory();
 
-    private static final Pattern PATTERN_SETTER = Pattern.compile("^set[A-Z][A-z]+");
-
+    @Inject
     private NrgPreferenceService _service;
-    private final Map<String, PreferenceInfo> _preferences = new HashMap<>();
 
+    private final Map<String, PreferenceInfo> _preferences = new HashMap<>();
     private String _toolId;
     private boolean _resolverInitialized = false;
     private Class<? extends PreferenceEntityResolver> _resolver;

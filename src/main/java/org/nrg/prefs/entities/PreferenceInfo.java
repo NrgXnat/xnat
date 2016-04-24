@@ -1,25 +1,30 @@
 package org.nrg.prefs.entities;
 
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.prefs.annotations.NrgPreference;
+
 public class PreferenceInfo {
     private String   _name;
+    private String   _property;
     private String   _defaultValue;
     private Class<?> _valueType;
     private Class<?> _itemType;
     private String   _key;
 
-    @SuppressWarnings("unused")
     public PreferenceInfo() {
-        // Need to provide default constructor for serialization.
+        this(null, null, null, null, null);
     }
 
     public PreferenceInfo(final String name, final String defaultValue) {
-        this(name, defaultValue, String.class);
+        this(name, null, defaultValue, null, String.class);
     }
 
-    public PreferenceInfo(final String name, final String defaultValue, final Class<?> valueType) {
-        _name = name;
-        _defaultValue = defaultValue;
-        _valueType = valueType;
+    public PreferenceInfo(final String name, final String property, final String defaultValue, final String key, final Class<?> valueType) {
+        setName(name);
+        setProperty(property);
+        setDefaultValue(defaultValue);
+        setKey(key);
+        setValueType(valueType);
     }
 
     /**
@@ -38,6 +43,27 @@ public class PreferenceInfo {
      */
     public void setName(final String name) {
         _name = name;
+    }
+
+    /**
+     * Gets the property name to use for storing the preference in the service store. If the property name hasn't been
+     * set by calling {@link #setProperty(String)}, the {@link #getName() preference name} is used. See {@link
+     * NrgPreference#property()} for more information on the purpose of this setting.
+     *
+     * @return The property name to use for storing the preference.
+     */
+    public String getProperty() {
+        return StringUtils.defaultIfBlank(_property, _name);
+    }
+
+    /**
+     * Sets the property name to use for storing the preference in the service store. If the property name isn't set,
+     * the {@link #getName() preference name} is used.
+     *
+     * @param property    The property name to use for storing the preference.
+     */
+    public void setProperty(final String property) {
+        _property = property;
     }
 
     /**
@@ -113,5 +139,10 @@ public class PreferenceInfo {
      */
     public void setKey(final String key) {
         _key = key;
+    }
+
+    @Override
+    public String toString() {
+        return _name + (StringUtils.isNotBlank(_property) ? " (stored as " + _property + ")" : "");
     }
 }

@@ -10,6 +10,7 @@ import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.tools.basic.BasicTestTool;
 import org.nrg.prefs.tools.beans.BeanPrefsTool;
 import org.nrg.prefs.tools.beans.BeanPrefsToolPreference;
+import org.nrg.prefs.tools.properties.PropertiesPrefsTool;
 import org.nrg.prefs.tools.relaxed.RelaxedPrefsTool;
 import org.nrg.prefs.tools.strict.StrictPrefsTool;
 import org.springframework.test.annotation.Rollback;
@@ -43,6 +44,17 @@ public class NrgPrefsServiceTests {
         _basicPrefsTool.setPrefB("valueBMod");
         assertEquals("valueAMod", _basicPrefsTool.getPrefA());
         assertEquals("valueBMod", _basicPrefsTool.getPrefB());
+    }
+
+    @Test
+    public void testPropertiesTestTool() throws InvalidPreferenceName {
+        assertNotNull(_propertiesPrefsTool);
+        assertEquals("valueA", _propertiesPrefsTool.getPropertyA());
+        assertEquals("valueB", _propertiesPrefsTool.getPropertyB());
+        _propertiesPrefsTool.setPropertyA("valueAMod");
+        _propertiesPrefsTool.setPropertyB("valueBMod");
+        assertEquals("valueAMod", _propertiesPrefsTool.getPropertyA());
+        assertEquals("valueBMod", _propertiesPrefsTool.getPropertyB());
     }
 
     @Test
@@ -217,6 +229,9 @@ public class NrgPrefsServiceTests {
 
     @Inject
     private BasicTestTool _basicPrefsTool;
+
+    @Inject
+    private PropertiesPrefsTool _propertiesPrefsTool;
 
     @Inject
     private RelaxedPrefsTool _relaxedPrefsTool;

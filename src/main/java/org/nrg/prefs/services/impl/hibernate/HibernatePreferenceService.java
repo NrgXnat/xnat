@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
@@ -22,7 +23,6 @@ import java.util.*;
 
 @Service
 public class HibernatePreferenceService extends AbstractHibernateEntityService<Preference, PreferenceRepository> implements PreferenceService {
-
     /**
      * {@inheritDoc}
      */
@@ -103,22 +103,10 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
         return properties;
     }
 
-    @Override
-    public void afterPropertiesSet() {
-        super.afterPropertiesSet();
-        if (_preferenceBeans != null) {
-            for (final PreferenceBean bean : _preferenceBeans) {
-                _beansById.put(bean.getToolId(), bean);
-            }
-        } else {
-            _preferenceBeans = new ArrayList<>();
-        }
-    }
-
     private void createOrUpdatePreference(final Tool tool, final String preferenceName, final Scope scope, final String entityId, final String value, Preference preference) throws InvalidPreferenceName {
         final String resolvedEntityId = resolveEntityId(entityId);
         if (preference == null) {
-            if (tool.isStrict() && !isValidPreference(tool, getPreferenceKey(preferenceName))) {
+            if (tool.isStrict() && !isValidPreference(tool, preferenceName)) {
                 throw new InvalidPreferenceName("The tool " + tool.getToolId() + " doesn't support the preference " + preferenceName + " and is set to use a strict preferences list.");
             }
             if (_log.isDebugEnabled()) {
@@ -136,7 +124,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
     }
 
     private static String getPreferenceKey(final String preferenceName) {
-        return StringUtils.isBlank(preferenceName) ? "" : preferenceName.split("\\.", 2)[0];
+        return StringUtils.isBlank(preferenceName) ? "" : preferenceName.split(PreferenceBean.NAMESPACE_DELIMITER, 2)[0];
     }
 
     private static String resolveEntityId(final String entityId) {
@@ -145,17 +133,34 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
 
     private boolean isValidPreference(final Tool tool, final String preferenceName) {
         // TODO: Should maybe throw an exception when beans don't include tool ID, but this may be a valid situation?
-        return _beansById.containsKey(tool.getToolId()) && _beansById.get(tool.getToolId()).getDefaultPreferences().containsKey(preferenceName);
+        final String toolId = tool.getToolId();
+        if (!getBeansById().containsKey(toolId)) {
+            if (_log.isInfoEnabled()) {
+                _log.info("Checked for the preference setting {} in a non-existent tool {}.", preferenceName, toolId);
+            }
+            return false;
+        }
+        return getBeansById().get(toolId).getDefaultPreferences().containsKey(preferenceName) || getBeansById().get(toolId).getDefaultPreferences().containsKey(getPreferenceKey(preferenceName));
+    }
+
+    private Map<String, PreferenceBean> getBeansById() {
+        if (_beansById.size() == 0) {
+            final Map<String, PreferenceBean> beans = getContext().getBeansOfType(PreferenceBean.class);
+            for (final PreferenceBean bean : beans.values()) {
+                final Class<? extends PreferenceBean> clazz = bean.getClass();
+                if (clazz.isAnnotationPresent(NrgPreferenceBean.class)) {
+                    final String toolId = clazz.getAnnotation(NrgPreferenceBean.class).toolId();
+                    _beansById.put(toolId, bean);
+                }
+            }
+        }
+        return _beansById;
     }
 
     private static final Logger _log = LoggerFactory.getLogger(HibernatePreferenceService.class);
 
     @Inject
     private ToolService _toolService;
-
-    @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
-    @Autowired(required = false)
-    private List<PreferenceBean> _preferenceBeans;
 
     private Map<String, PreferenceBean> _beansById = new HashMap<>();
 }

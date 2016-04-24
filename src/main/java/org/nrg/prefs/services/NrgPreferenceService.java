@@ -32,7 +32,10 @@ public interface NrgPreferenceService extends NrgService {
      * {@link NrgPreferenceBean NrgPreferenceBean annotation}.
      *
      * @param bean The bean object.
+     *
      * @return The object representing the persisted tool definition.
+     *
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     Tool createTool(final PreferenceBean bean) throws InvalidPreferenceName;
 
@@ -41,9 +44,16 @@ public interface NrgPreferenceService extends NrgService {
      * This tool works without a dedicated {@link AbstractPreferenceBean preferences bean object}.
      *
      * @param tool The tool to create.
+     *
      * @return The newly created tool object.
+     *
+     * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     Tool createTool(final Tool tool) throws InvalidPreferenceName;
+
+    void create(String toolId, String namespacedPropertyId, String value);
+
+    void create(String toolId, String namespacedPropertyId, Scope scope, String entityId, String value);
 
     /**
      * Checks whether the preference exists for the indicated tool. This checks at the {@link Scope#Site site scope}. If
@@ -76,6 +86,7 @@ public interface NrgPreferenceService extends NrgService {
      *
      * @param toolId     The unique tool ID.
      * @param preference The preference name.
+     *
      * @return The {@link Preference preference} for the indicated tool and preference name.
      */
     Preference getPreference(final String toolId, final String preference) throws UnknownToolId;
@@ -87,7 +98,9 @@ public interface NrgPreferenceService extends NrgService {
      * @param preference The preference name.
      * @param scope      The scope of the object identified by the entityId parameter.
      * @param entityId   The ID of the particular object associated with the preference.
+     *
      * @return The {@link Preference preference} for the corresponding tool and entity.
+     *
      * @throws UnknownToolId When the system can't find a tool with the indicated ID.
      */
     Preference getPreference(final String toolId, final String preference, final Scope scope, final String entityId) throws UnknownToolId;
@@ -101,6 +114,7 @@ public interface NrgPreferenceService extends NrgService {
      *
      * @param toolId     The unique tool ID.
      * @param preference The preference name.
+     *
      * @return The string value for the indicated preference.
      */
     String getPreferenceValue(final String toolId, final String preference) throws UnknownToolId;
@@ -113,7 +127,9 @@ public interface NrgPreferenceService extends NrgService {
      * @param preference The preference name.
      * @param scope      The scope of the object identified by the entityId parameter.
      * @param entityId   The ID of the particular object associated with the preference.
+     *
      * @return The string value for the indicated preference.
+     *
      * @throws UnknownToolId When the system can't find a tool with the indicated ID.
      */
     String getPreferenceValue(final String toolId, final String preference, final Scope scope, final String entityId) throws UnknownToolId;
@@ -127,6 +143,7 @@ public interface NrgPreferenceService extends NrgService {
      * @param toolId     The unique tool ID.
      * @param preference The preference name.
      * @param value      The value to set for the preference.
+     *
      * @throws UnknownToolId         When the system can't find a tool with the indicated ID.
      * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
@@ -141,6 +158,7 @@ public interface NrgPreferenceService extends NrgService {
      * @param scope      The scope of the object identified by the entityId parameter.
      * @param entityId   The ID of the particular object associated with the preference.
      * @param value      The value to set for the preference.
+     *
      * @throws UnknownToolId         When the system can't find a tool with the indicated ID.
      * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
@@ -153,6 +171,7 @@ public interface NrgPreferenceService extends NrgService {
      *
      * @param toolId     The unique tool ID.
      * @param preference The preference name.
+     *
      * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void deletePreference(final String toolId, final String preference) throws InvalidPreferenceName;
@@ -164,6 +183,7 @@ public interface NrgPreferenceService extends NrgService {
      * @param preference The preference name.
      * @param scope      The scope of the object identified by the entityId parameter.
      * @param entityId   The ID of the particular object associated with the preference.
+     *
      * @throws InvalidPreferenceName When the system can't find a preference with the indicated name associated with the tool with the indicated ID.
      */
     void deletePreference(final String toolId, final String preference, final Scope scope, final String entityId) throws InvalidPreferenceName;
@@ -186,6 +206,7 @@ public interface NrgPreferenceService extends NrgService {
      * Gets a list of all of the property names associated with the indicated {@link Tool tool}.
      *
      * @param toolId The unique tool ID.
+     *
      * @return A list of all of the property names for the indicated tool.
      */
     @SuppressWarnings("unused")
@@ -196,6 +217,7 @@ public interface NrgPreferenceService extends NrgService {
      * properties object.
      *
      * @param toolId The unique tool ID.
+     *
      * @return All of the properties for the indicated tool.
      */
     Properties getToolProperties(final String toolId);

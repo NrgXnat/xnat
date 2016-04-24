@@ -33,13 +33,13 @@ public class Tool extends AbstractHibernateEntity {
     }
 
     public Tool(final PreferenceBean bean) {
-
         final Class<? extends PreferenceBean> beanClass = bean.getClass();
         final NrgPreferenceBean annotation = beanClass.getAnnotation(NrgPreferenceBean.class);
         if (annotation == null) {
             // TODO: We might be able to use bean properties to extrapolate some of the info in the annotation and allow configuration that way as well.
             throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preferences bean class " + beanClass.getName() + " must be annotated with the NrgPreferenceBean annotation.");
         }
+
         setToolId(annotation.toolId());
         setToolName(annotation.toolName());
         setToolDescription(annotation.description());

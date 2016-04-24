@@ -18,6 +18,7 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.prefs.configuration.PreferenceServiceTestsConfiguration;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.services.NrgPreferenceService;
@@ -41,7 +42,7 @@ import static org.junit.Assert.*;
  * management. All end-use operations should use an implementation of the {@link NrgPreferenceService} interface.
  */
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = PreferenceServiceTestsConfiguration.class)
 @Rollback
 @Transactional
 public class PreferenceServiceTests {
@@ -67,10 +68,11 @@ public class PreferenceServiceTests {
         _toolService.create(tool);
 
         final List<Tool> tools = _toolService.getAll();
+        final Tool retrieved = _toolService.retrieve(tool.getId());
         assertNotNull(tools);
-        assertEquals(1, tools.size());
-        assertEquals("tool1", tools.get(0).getToolId());
-        assertEquals("Tool 1", tools.get(0).getToolName());
+        assertNotNull(retrieved);
+        assertEquals("tool1", retrieved.getToolId());
+        assertEquals("Tool 1", retrieved.getToolName());
 
         final Preference preference = _prefService.newEntity();
         preference.setTool(tool);
@@ -79,19 +81,14 @@ public class PreferenceServiceTests {
         _prefService.create(preference);
 
         final List<Preference> all = _prefService.getAll();
-
+        final Preference retrievedPreference = _prefService.retrieve(preference.getId());
         assertNotNull(all);
-        assertEquals(1, all.size());
-        assertEquals(tool, preference.getTool());
-        assertEquals("Preference 1", all.get(0).getName());
-        assertEquals("Value 1", all.get(0).getValue());
+        assertEquals(tool, retrievedPreference.getTool());
+        assertEquals("Preference 1", retrievedPreference.getName());
+        assertEquals("Value 1", retrievedPreference.getValue());
 
         final Properties properties = _prefService.getToolProperties("tool1", EntityId.Default.getScope(), EntityId.Default.getEntityId());
         assertNotNull(properties);
-        assertEquals(1, properties.size());
-        for (final String key : properties.stringPropertyNames()) {
-            System.out.println(key);
-        }
         assertTrue(properties.containsKey("Preference 1"));
         assertEquals("Value 1", properties.getProperty("Preference 1"));
     }

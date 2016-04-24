@@ -8,11 +8,12 @@ import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
 import org.nrg.prefs.services.NrgPreferenceService;
 
+import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
 public interface PreferenceBean {
-    PreferenceBean initialize(final NrgPreferenceService service);
+    String NAMESPACE_DELIMITER = ":";
 
     String getToolId();
 
@@ -26,6 +27,30 @@ public interface PreferenceBean {
 
     String getValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
 
+    Boolean getBooleanValue(final String key, final String... subkeys) throws UnknownToolId;
+
+    Boolean getBooleanValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
+
+    Integer getIntegerValue(final String key, final String... subkeys) throws UnknownToolId;
+
+    Integer getIntegerValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
+
+    Long getLongValue(final String key, final String... subkeys) throws UnknownToolId;
+
+    Long getLongValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
+
+    Float getFloatValue(final String key, final String... subkeys) throws UnknownToolId;
+
+    Float getFloatValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
+
+    Double getDoubleValue(final String key, final String... subkeys) throws UnknownToolId;
+
+    Double getDoubleValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
+
+    Date getDateValue(final String key, final String... subkeys) throws UnknownToolId;
+
+    Date getDateValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
+
     <T> Map<String, T> getMapValue(final String preferenceName) throws UnknownToolId;
 
     <T> Map<String, T> getMapValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId;
@@ -38,21 +63,49 @@ public interface PreferenceBean {
 
     <T> T[] getArrayValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId;
 
+    void create(String value, String key, String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    void create(Scope scope, String entityId, String value, String key, String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
     void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
     void set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
-    <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId;
+    void setBooleanValue(final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
-    <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId;
+    void setBooleanValue(final Scope scope, final String entityId, final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
-    <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId;
+    void setIntegerValue(final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
-    <T> void setListValue(final Scope scope, final String entityId, final String preferenceName, List<T> list) throws UnknownToolId;
+    void setIntegerValue(final Scope scope, final String entityId, final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
-    <T> void setArrayValue(final String preferenceName, T[] array) throws UnknownToolId;
+    void setLongValue(final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
 
-    <T> void setArrayValue(final Scope scope, final String entityId, final String preferenceName, T[] array) throws UnknownToolId;
+    void setLongValue(final Scope scope, final String entityId, final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    void setFloatValue(final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    void setFloatValue(final Scope scope, final String entityId, final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    void setDoubleValue(final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    void setDoubleValue(final Scope scope, final String entityId, final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    void setDateValue(final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    void setDateValue(final Scope scope, final String entityId, final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName;
+
+    <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName;
+
+    <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName;
+
+    <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName;
+
+    <T> void setListValue(final Scope scope, final String entityId, final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName;
+
+    <T> void setArrayValue(final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName;
+
+    <T> void setArrayValue(final Scope scope, final String entityId, final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName;
 
     void delete(final String key, final String... subkeys) throws InvalidPreferenceName;
 

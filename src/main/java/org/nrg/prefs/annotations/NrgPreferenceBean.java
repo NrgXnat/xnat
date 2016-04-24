@@ -67,6 +67,17 @@ public @interface NrgPreferenceBean {
     boolean strict() default true;
 
     /**
+     * Specifies the URI for a properties resource that can be used to initialize the values for the preference bean.
+     * This can work in conjunction with or in place of initializing preference values using the {@link
+     * NrgPreference#defaultValue()} attribute. Note that the property keys in the specified resource should match
+     * either the "propertized" name of the property method (e.g. the property for setting <b>getFoo()</b> would just be
+     * <b>foo</b>) or the value for the annotation's {@link NrgPreference#property()} attribute.
+     *
+     * @return The URI path for the initializing properties file. This is a blank string if a resource isn't specified.
+     */
+    String properties() default "";
+
+    /**
      * Indicates the ID of the tool's {@link PreferenceEntityResolver entity resolver}. This allows the resolver to be
      * injected at run-time.
      *

@@ -16,13 +16,18 @@ import org.nrg.prefs.services.NrgPreferenceService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.web.context.ServletContextAware;
 
 import javax.annotation.Resource;
 import javax.inject.Inject;
 import javax.servlet.ServletContext;
 import java.io.*;
+import java.sql.ResultSet;
+import java.sql.SQLException;
 import java.util.*;
 import java.util.regex.Pattern;
 
@@ -168,6 +173,41 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
         return StringUtils.isBlank(value) ? _default : BooleanUtils.toBoolean(value);
     }
 
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Integer getIntegerSiteConfigurationProperty(final String property) throws SiteConfigurationException {
+        final String value = getSiteConfigurationProperty(property);
+        return StringUtils.isNotBlank(value) ? Integer.parseInt(value) : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Long getLongSiteConfigurationProperty(final String property) throws SiteConfigurationException {
+        final String value = getSiteConfigurationProperty(property);
+        return StringUtils.isNotBlank(value) ? Long.parseLong(value) : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Float getFloatSiteConfigurationProperty(final String property) throws SiteConfigurationException {
+        final String value = getSiteConfigurationProperty(property);
+        return StringUtils.isNotBlank(value) ? Float.parseFloat(value) : null;
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public Double getDoubleSiteConfigurationProperty(final String property) throws SiteConfigurationException {
+        final String value = getSiteConfigurationProperty(property);
+        return StringUtils.isNotBlank(value) ? Double.parseDouble(value) : null;
+    }
 
     @Override
     public void setServletContext(final ServletContext context) {
@@ -227,6 +267,48 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
         };
     }
 
+    public JdbcTemplate getJdbcTemplate() {
+        return _jdbcTemplate;
+    }
+
+    @Autowired(required = false)
+    public void setJdbcTemplate(final JdbcTemplate jdbcTemplate) {
+        _jdbcTemplate = jdbcTemplate;
+    }
+
+    /**
+     * Checks for existing rows in the configuration service tables labeled as 'siteConfiguration'. If found, the latest
+     * version is taken, converted into a properties file, and stored in the preferences-based site configuration. This
+     * is a legacy conversion operation and should be removed in later versions of this library.
+     */
+    protected Properties checkForConfigServiceSiteConfiguration() {
+        if (_jdbcTemplate != null) {
+            @SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
+            final List<String> contents = _jdbcTemplate.query("SELECT d.contents FROM xhbm_configuration c, xhbm_configuration_data d WHERE c.path = 'siteConfiguration' AND c.config_data = d.id ORDER BY c.version DESC LIMIT 1", new RowMapper<String>() {
+                public String mapRow(ResultSet rs, int rowNum) throws SQLException {
+                    return rs.getString(1);
+                }
+            });
+            // By the nature of the query above, the size should only ever be 0 or 1.
+            if (contents != null && contents.size() == 1) {
+                final Properties existing = new Properties();
+                try {
+                    existing.load(new StringReader(contents.get(0)));
+                    if (_log.isDebugEnabled()) {
+                        _log.debug("Found {} properties stored in the configuration service-based site configuration.", existing.stringPropertyNames().size());
+                        for (final String property : existing.stringPropertyNames()) {
+                            _log.debug(" * Setting the {} property to value: ", property, existing.getProperty(property));
+                        }
+                    }
+                    return existing;
+                } catch (IOException e) {
+                    _log.warn("Something went wrong trying to load properties from the existing configuration service-based site configuration.", e);
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * We won't know the servlet path until runtime, so this can't be done via Spring. Servlet will set the root and then we'll update the location list here.
      */
@@ -249,10 +331,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     }
 
     private boolean propertyIsDirty(String property, String value) {
-        return (
-                _siteConfiguration.getProperty(property) == null && value != null)
-                || (_siteConfiguration.getProperty(property) != null && !_siteConfiguration.getProperty(property).equals(value)
-        );
+        return (_siteConfiguration.getProperty(property) == null && value != null) || (_siteConfiguration.getProperty(property) != null && !_siteConfiguration.getProperty(property).equals(value));
     }
 
     private void notifyListeners(String property, String value) {
@@ -368,9 +447,7 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
             }
             if (persistentProperties.containsKey(polishedPropertyName) || transientProperties.containsKey(polishedPropertyName)) {
                 throw new DuplicateConfigurationDetectedException(polishedPropertyName);
-            } else if (polishedPropertyName.equals(CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME)
-                    || polishedPropertyName.equals(qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME))
-                    ) {
+            } else if (polishedPropertyName.equals(CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME) || polishedPropertyName.equals(qualifyPropertyName(namespace, CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME))) {
                 // this is a meta-property: ignore
                 if (_log.isDebugEnabled()) {
                     _log.debug("Found persistence setting, ignoring meta-property");
@@ -477,17 +554,19 @@ public abstract class PropertiesBasedSiteConfigurationService implements Initial
     private static final Logger _log = LoggerFactory.getLogger(PropertiesBasedSiteConfigurationService.class);
 
     private static final String CUSTOM_PROPERTIES_PERSISTENCE_SETTING_NAME = "persist";
-    private static final String SITE_CONFIGURATION_PROPERTIES_PACKAGE = "config.site";
-    private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME = "siteConfiguration.properties";
-    private static final String PROPERTY_CHANGED_LISTENER_PROPERTY = "property.changed.listener";
+    private static final String SITE_CONFIGURATION_PROPERTIES_PACKAGE      = "config.site";
+    private static final String SITE_CONFIGURATION_PROPERTIES_FILENAME     = "siteConfiguration.properties";
+    private static final String PROPERTY_CHANGED_LISTENER_PROPERTY         = "property.changed.listener";
 
     @Inject
     private Environment _environment;
 
-    private List<String> _configFilesLocations = new ArrayList<>();
+    private JdbcTemplate   _jdbcTemplate;
     private ServletContext _context;
-    private Properties _siteConfiguration = null;
-    private String _configFilesLocationsRoot;
-    private FileFilter _fileFilter = CUSTOM_PROPERTIES_FILTER;
-    private Pattern _customPropertiesName = CUSTOM_PROPERTIES_NAME;
+    private String         _configFilesLocationsRoot;
+
+    private Properties   _siteConfiguration    = null;
+    private List<String> _configFilesLocations = new ArrayList<>();
+    private FileFilter   _fileFilter           = CUSTOM_PROPERTIES_FILTER;
+    private Pattern      _customPropertiesName = CUSTOM_PROPERTIES_NAME;
 }

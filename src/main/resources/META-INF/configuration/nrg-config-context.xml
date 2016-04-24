@@ -20,6 +20,7 @@
 
     <context:component-scan base-package="org.nrg.config.daos" />
     <context:component-scan base-package="org.nrg.config.services.impl" />
+    <context:component-scan base-package="org.nrg.prefs.services.impl.hibernate" />
 
     <bean id="nrgConfigEntityPackages" class="org.nrg.framework.orm.hibernate.HibernateEntityPackageList">
         <property name="items">

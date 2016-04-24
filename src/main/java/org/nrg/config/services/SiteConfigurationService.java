@@ -29,7 +29,9 @@ public interface SiteConfigurationService extends NrgService {
      * Sets the {@link #getConfigFilesLocationsRoot() configuration file root} to the submitted location,  {@link
      * #resetSiteConfiguration() clears all cached properties}, and {@link #initSiteConfiguration() reloads properties
      * from any properties files} found in the submitted list.
-     * @param configFilesLocationsRoot    The root location to search for configuration files.
+     *
+     * @param configFilesLocationsRoot The root location to search for configuration files.
+     *
      * @return The resulting site configuration properties.
      */
     Properties updateSiteConfiguration(final String configFilesLocationsRoot) throws SiteConfigurationException;
@@ -38,7 +40,9 @@ public interface SiteConfigurationService extends NrgService {
      * Sets the {@link #getConfigFilesLocations() list of configuration file locations} to the submitted list, {@link
      * #resetSiteConfiguration() clears all cached properties}, and {@link #initSiteConfiguration() reloads properties
      * from any properties files} found in the submitted list.
-     * @param configFilesLocations    The list of locations where configuration files can be found.
+     *
+     * @param configFilesLocations The list of locations where configuration files can be found.
+     *
      * @return The resulting site configuration properties.
      */
     Properties updateSiteConfiguration(final List<String> configFilesLocations) throws SiteConfigurationException;
@@ -48,8 +52,10 @@ public interface SiteConfigurationService extends NrgService {
      * {@link #getConfigFilesLocations() list of configuration file locations} to the submitted list, {@link
      * #resetSiteConfiguration() clears all cached properties}, and {@link #initSiteConfiguration() reloads properties
      * from any properties files} found in the submitted list.
-     * @param configFilesLocationsRoot    The root location to search for configuration files.
-     * @param configFilesLocations        The list of locations where configuration files can be found.
+     *
+     * @param configFilesLocationsRoot The root location to search for configuration files.
+     * @param configFilesLocations     The list of locations where configuration files can be found.
+     *
      * @return The resulting site configuration properties.
      */
     Properties updateSiteConfiguration(final String configFilesLocationsRoot, final List<String> configFilesLocations) throws SiteConfigurationException;
@@ -62,23 +68,30 @@ public interface SiteConfigurationService extends NrgService {
 
     /**
      * Gets the site configuration as a Java {@link java.util.Properties} object.
+     *
      * @return The initialized Java {@link java.util.Properties} object.
+     *
      * @throws SiteConfigurationException Thrown when an error occurs resolving or accessing the configuration service.
      */
     Properties getSiteConfiguration() throws SiteConfigurationException;
 
     /**
      * Gets the value of the indicated property from the site configuration.
-     * @param property    The name of the property to be retrieved.
+     *
+     * @param property The name of the property to be retrieved.
+     *
      * @return The value of the property.
+     *
      * @throws SiteConfigurationException
      */
     String getSiteConfigurationProperty(String property) throws SiteConfigurationException;
 
     /**
      * Sets the value of the indicated property to the submitted value.
-     * @param property    The name of the property to be set.
-     * @param value       The value to set for the property.
+     *
+     * @param property The name of the property to be set.
+     * @param value    The value to set for the property.
+     *
      * @throws SiteConfigurationException
      */
     void setSiteConfigurationProperty(String username, String property, String value) throws SiteConfigurationException;
@@ -86,15 +99,54 @@ public interface SiteConfigurationService extends NrgService {
     /**
      * Gets the boolean value of the indicated property. If the property isn't found, the indicated default value is
      * returned instead.
-     * @param property    The name of the property to be set.
-     * @param _default    The default value to be returned if the property isn't found.
+     *
+     * @param property The name of the property to be retrieved.
+     * @param _default The default value to be returned if the property isn't found.
+     *
      * @return The boolean value requested.
      */
     boolean getBoolSiteConfigurationProperty(final String property, final boolean _default);
 
     /**
+     * Gets the integer value of the indicated property. If the property isn't found, null is returned instead.
+     *
+     * @param property The name of the property to be retrieved.
+     *
+     * @return The integer value requested.
+     */
+    Integer getIntegerSiteConfigurationProperty(final String property) throws SiteConfigurationException;
+
+    /**
+     * Gets the long value of the indicated property. If the property isn't found, null is returned instead.
+     *
+     * @param property The name of the property to be retrieved.
+     *
+     * @return The long value requested.
+     */
+    Long getLongSiteConfigurationProperty(final String property) throws SiteConfigurationException;
+
+    /**
+     * Gets the float value of the indicated property. If the property isn't found, null is returned instead.
+     *
+     * @param property The name of the property to be retrieved.
+     *
+     * @return The float value requested.
+     */
+    Float getFloatSiteConfigurationProperty(final String property) throws SiteConfigurationException;
+
+    /**
+     * Gets the double value of the indicated property. If the property isn't found, null is returned instead.
+     *
+     * @param property The name of the property to be retrieved.
+     *
+     * @return The double value requested.
+     */
+    Double getDoubleSiteConfigurationProperty(final String property) throws SiteConfigurationException;
+
+    /**
      * Gets the list of locations (relative to the {@link #getConfigFilesLocationsRoot() file location root} where
      * config files can be found.
+     *
      * @return The list of paths (as strings) to be searched for config files.
      */
     List<String> getConfigFilesLocations();
@@ -106,12 +158,14 @@ public interface SiteConfigurationService extends NrgService {
      * need to also call {@link #resetSiteConfiguration()} and {@link #initSiteConfiguration()}.  Alternatively, you can
      * call {@link #updateSiteConfiguration(List)} or {@link #updateSiteConfiguration(String, List)}, which both perform
      * all of the steps necessary to re-process the site configuration from as close to scratch as possible.
-     * @param configFilesLocations    The list of paths (as strings) to be searched for config files.
+     *
+     * @param configFilesLocations The list of paths (as strings) to be searched for config files.
      */
     void setConfigFilesLocations(final List<String> configFilesLocations);
 
     /**
      * The absolute path to prepend to any paths in the injected configFilesLocations that are relative.
+     *
      * @return The root location for configuration files.
      */
     String getConfigFilesLocationsRoot();
@@ -123,7 +177,8 @@ public interface SiteConfigurationService extends NrgService {
      * #resetSiteConfiguration()} and {@link #initSiteConfiguration()}.  Alternatively, you can call {@link
      * #updateSiteConfiguration(String, List)}, which performs all of the steps necessary to re-process the site
      * configuration from as close to scratch as possible.
-     * @param configFilesLocationRoot    The root location for configuration files.
+     *
+     * @param configFilesLocationRoot The root location for configuration files.
      */
     void setConfigFilesLocationsRoot(final String configFilesLocationRoot);
 
@@ -138,7 +193,7 @@ public interface SiteConfigurationService extends NrgService {
      */
     void setCustomPropertiesNamePattern(final String pattern);
 
-    Pattern CUSTOM_PROPERTIES_NAME = Pattern.compile("^.*-config\\.properties");
+    Pattern    CUSTOM_PROPERTIES_NAME   = Pattern.compile("^.*-config\\.properties");
     FileFilter CUSTOM_PROPERTIES_FILTER = new FileFilter() {
         public boolean accept(final File file) {
             return file.exists() && file.isFile() && CUSTOM_PROPERTIES_NAME.matcher(file.getName()).matches();

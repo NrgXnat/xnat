@@ -12,8 +12,8 @@ package org.nrg.xnat.event.listeners;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xnat.event.entities.WorkflowStatusEvent;
 
 /**
  * @author Tim Olsen <tim@deck5consulting.com>

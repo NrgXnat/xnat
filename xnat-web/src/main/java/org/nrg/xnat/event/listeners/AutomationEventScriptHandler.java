@@ -2,15 +2,10 @@ package org.nrg.xnat.event.listeners;
 
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
-import reactor.bus.Event;
-import reactor.bus.EventBus;
-import reactor.fn.Consumer;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.automation.entities.EventFilters;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptOutput.Status;
-import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptTriggerService;
 import org.nrg.automation.services.impl.hibernate.HibernateScriptTriggerService;
@@ -24,8 +19,6 @@ import org.nrg.xdat.services.impl.hibernate.HibernateAutomationEventIdsService;
 import org.nrg.xdat.services.impl.hibernate.HibernateAutomationFiltersService;
 import org.nrg.xdat.services.impl.hibernate.HibernatePersistentEventService;
 import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.core.RowMapper;
 import org.nrg.xft.event.AutomationEventImplementerI;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.event.Filterable;
@@ -38,12 +31,20 @@ import org.nrg.xft.event.persist.PersistentEventImplementerI;
 import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.security.UserI;
-import org.nrg.xnat.utils.WorkflowUtils;
 import org.nrg.xnat.services.messaging.automation.AutomatedScriptRequest;
+import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Service;
-import static reactor.bus.selector.Selectors.type;
+import reactor.bus.Event;
+import reactor.bus.EventBus;
+import reactor.fn.Consumer;
+
+import javax.annotation.PostConstruct;
+import javax.inject.Inject;
+import javax.sql.DataSource;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.sql.ResultSet;
@@ -51,11 +52,8 @@ import java.sql.SQLException;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
-import javax.annotation.PostConstruct;
-import javax.inject.Inject;
-import javax.sql.DataSource;
+
+import static reactor.bus.selector.Selectors.type;
 
 /**
  * The Class AutomatedScriptHandler.
@@ -403,7 +401,7 @@ public class AutomationEventScriptHandler implements Consumer<Event<AutomationEv
         } catch (NrgServiceException e) {
             final String message = String.format("Failed running the script %s by user %s for event %s on data type %s instance %s from project %s",
                     request.getScriptId(),
-                    request.getUser().getLogin(),
+					request.getUser().getLogin(),
                     request.getEvent(),
                     request.getDataType(),
                     request.getDataId(),

@@ -141,6 +141,7 @@ var XNAT = getObject(XNAT||{});
                 $dialog.find('.editor-content').attr('id');
 
             var data = {
+                scriptLabel: $dialog.find('.scriptLabel').val(),
                 content: ace.edit(editor_id).getSession().getValue(),
                 description: $dialog.find('.script-description').val(),
                 scriptVersion: $dialog.find('.script-version').val(),
@@ -228,6 +229,7 @@ var XNAT = getObject(XNAT||{});
 
             $dialog.find('.id').val(json.id || '');
             $dialog.find('.scriptId').val(scriptId);
+            $dialog.find('.scriptLabel').val(json.scriptLabel || '');
             $dialog.find('.language').val(lang);
             $dialog.find('.timestamp').val(time);
             $dialog.find('.script-description').val(json.description || '');
@@ -278,6 +280,7 @@ var XNAT = getObject(XNAT||{});
 
                     //$dialog.find('.id').val(json.id || '');
                     $dialog.find('.scriptId').val(scriptId || '');
+                    $dialog.find('.scriptLabel').val(json.scriptLabel || '');
                     $dialog.find('.language').val(json.language || '');
                     $dialog.find('.timestamp').val(json.timestamp || '');
                     $dialog.find('.script-description').val(json.description || '');
@@ -407,6 +410,7 @@ var XNAT = getObject(XNAT||{});
         xhr.getJSON(scriptURL(scriptId), function( json ){
             var data = {
                 //scriptId: json.scriptId + '_copy',
+                scriptLabel: json.scriptLabel,
                 description: json.description,
                 content: json.content,
                 language: json.language,

@@ -7,8 +7,8 @@ import reactor.bus.EventBus;
 import reactor.fn.Consumer;
 
 import org.nrg.xdat.om.WrkWorkflowdata;
+import org.nrg.xft.event.entities.WorkflowStatusEvent;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
-import org.nrg.xnat.event.entities.WorkflowStatusEvent;
 import org.springframework.stereotype.Service;
 
 import static reactor.bus.selector.Selectors.R;

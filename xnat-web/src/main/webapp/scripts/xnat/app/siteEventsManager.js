@@ -51,7 +51,7 @@ $(function(){
                     '<dl class="header">' + 
                          '<dl>' +
                               '<dd class="col1">Event</dd>' +
-                              '<dd class="col2">Script ID</dd>' +
+                              '<dd class="col2">Script</dd>' +
                               '<dd class="col3">Description</dd>' +
                             //((doEdit) ?
                               '<dd class="col4"></dd>' +
@@ -156,7 +156,7 @@ $(function(){
                     '<dl class="header">' + 
                          '<dl>' +
                               '<dd class="col1">Event</dd>' +
-                              '<dd class="col2">Script ID</dd>' +
+                              '<dd class="col2">Script</dd>' +
                               '<dd class="col3">Description</dd>' +
                               '<dd class="col4"></dd>' +
                               '<dd class="col5"></dd>' +
@@ -167,7 +167,7 @@ $(function(){
                 '<table id="events_manage_table" class="xnat-table" style="display:table;width:100%">' +
                     '<thead>' +
                     '<th>Event</th>' +
-                    '<th>Script ID</th>' +
+                    '<th>Script</th>' +
                     '<th>Description</th>' +
                     '<th></th>' +
                     '<th></th>' +
@@ -424,7 +424,7 @@ $(function(){
                 }
                 else {
                     forEach(scripts, function(script){
-                        options += '<option title="' + script['Description'] + '" value="' + script['Script ID'] + '">' + script['Script ID'] + '</option>';
+                        options += '<option title="' + script['Description'] + '" value="' + script['Script ID'] + '">' + script['Script ID'] + ':' + script['Script Label'] + '</option>';
                         siteEventsManager.scripts.push(script['Script ID']);
                     });
                     $scriptsMenu.html(options);
@@ -465,7 +465,7 @@ $(function(){
         //var url = serverRoot + "/data/projects/" + window.projectScope + "/automation/events?XNAT_CSRF=$!XNAT_CSRF";
 
         if (!data.event || data.event === '!' || !data.scriptId){
-            xmodal.message('Missing Information','Please select an <b>Event</b> <i>and</i> <b>Script ID</b> to create an <br>Event Handler.');
+            xmodal.message('Missing Information','Please select an <b>Event</b> <i>and</i> <b>Script</b> to create an <br>Event Handler.');
             return false;
         }
 	XNAT.app.siteEventsManager.eventHandlerData = data;

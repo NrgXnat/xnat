@@ -8,7 +8,8 @@ package org.nrg.xnat.restlet.actions;
  *
  * Released under the Simplified BSD.
  *
- * Last modified 7/10/13 9:04 PM
+ * Last modified 4/25/16 9:04 PM
+ * @author Mike Hodge <hodgem@mir.wustl.edu>
  */
 
 import java.io.File;
@@ -78,17 +79,13 @@ import org.nrg.xft.utils.zip.TarUtils;
 import org.nrg.xft.utils.zip.ZipI;
 import org.nrg.xft.utils.zip.ZipUtils;
 
-/**
- * The Class AutomationBasedImporter.
- *
- * @author Mike Hodge <hodgem@mir.wustl.edu>
- */
 @ImporterHandler(handler = "automation", allowCallsWithoutFiles = true, callPartialUriWrap = false)
 public class AutomationBasedImporter extends ImporterHandlerA implements Callable<List<String>> {
 
 	/** The Constant ZIP_EXT. */
 	static final String[] ZIP_EXT = { ".zip", ".jar", ".rar", ".ear", ".gar", ".xar" };
 	
+	/** The Constant STATUS_COMPLETE. */
 	private static final String STATUS_COMPLETE = "Complete";
 
 	/** The Constant CACHE_CONSTANT. */
@@ -125,7 +122,14 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	/** The configured resource. */
 	private String configuredResource;
 
-	/** The send admin email. */
+	/**
+	 *  The send admin email.
+	 *
+	 * @param listenerControl the listener control
+	 * @param u the u
+	 * @param fw the fw
+	 * @param params the params
+	 */
 	// Is this useful? Do we want it to be configurable?
 	// private boolean sendAdminEmail = false;
 
@@ -258,6 +262,7 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	/**
 	 * Return list to html string.
 	 *
+	 * @param string the string
 	 * @return the string
 	 */
 	/*
@@ -703,7 +708,17 @@ public class AutomationBasedImporter extends ImporterHandlerA implements Callabl
 	}
 	
 
- 	private PersistentWorkflowI buildWorkflow(XnatProjectdata proj,XnatSubjectdata subj,XnatExperimentdata exp, Map<String, Object> passMap,String eventText) {
+ 	/**
+	  * Builds the workflow.
+	  *
+	  * @param proj the proj
+	  * @param subj the subj
+	  * @param exp the exp
+	  * @param passMap the pass map
+	  * @param eventText the event text
+	  * @return the persistent workflow i
+	  */
+	 private PersistentWorkflowI buildWorkflow(XnatProjectdata proj,XnatSubjectdata subj,XnatExperimentdata exp, Map<String, Object> passMap,String eventText) {
 		final PersistentWorkflowI wrk;
 		try {
 			returnList.add("Building workflow entry for configured resource / event handler - " + eventText);

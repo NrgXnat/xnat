@@ -123,6 +123,14 @@ cargo {
     }
 }
 
+if (JavaVersion.current().isJava8Compatible()) {
+    allprojects {
+        tasks.withType(Javadoc) {
+            options.addStringOption('Xdoclint:none', '-quiet')
+        }
+    }
+}
+
 task sourceJar(type: Jar, dependsOn: classes) {
     from sourceSets.main.allSource
 }
@@ -170,7 +178,6 @@ publishing {
         }
     }
     repositories {
-        mavenLocal()
         maven {
             credentials {
                 // These properties must be set in the ~/.gradle/gradle.properties file or passed on the Gradle command

@@ -26,8 +26,19 @@ import com.google.gson.GsonBuilder;
 import java.io.IOException;
 import java.util.*;
 
+/**
+ * The Class ScriptTriggerResource.
+ */
 public class ScriptTriggerResource extends AutomationResource {
 
+    /**
+     * Instantiates a new script trigger resource.
+     *
+     * @param context the context
+     * @param request the request
+     * @param response the response
+     * @throws ResourceException the resource exception
+     */
     public ScriptTriggerResource(Context context, Request request, Response response) throws ResourceException {
         super(context, request, response);
 
@@ -103,26 +114,41 @@ public class ScriptTriggerResource extends AutomationResource {
         }
     }
 
+    /* (non-Javadoc)
+     * @see org.nrg.xnat.restlet.resources.AutomationResource#getResourceType()
+     */
     @Override
     protected String getResourceType() {
         return ScriptTrigger.class.getSimpleName();
     }
 
+    /* (non-Javadoc)
+     * @see org.nrg.xnat.restlet.resources.AutomationResource#getResourceId()
+     */
     @Override
     protected String getResourceId() {
         return _trigger == null ? null : _trigger.getEvent();
     }
 
+    /* (non-Javadoc)
+     * @see org.restlet.resource.Resource#allowPut()
+     */
     @Override
     public boolean allowPut() {
         return true;
     }
 
+    /* (non-Javadoc)
+     * @see org.restlet.resource.Resource#allowDelete()
+     */
     @Override
     public boolean allowDelete() {
         return true;
     }
 
+    /* (non-Javadoc)
+     * @see org.restlet.resource.Resource#represent(org.restlet.resource.Variant)
+     */
     @Override
     public Representation represent(Variant variant) throws ResourceException {
         final MediaType mediaType = overrideVariant(variant);
@@ -140,6 +166,9 @@ public class ScriptTriggerResource extends AutomationResource {
         }
     }
 
+    /* (non-Javadoc)
+     * @see org.restlet.resource.Resource#handlePut()
+     */
     @Override
     public void handlePut() {
         try {
@@ -152,6 +181,9 @@ public class ScriptTriggerResource extends AutomationResource {
         }
     }
 
+    /* (non-Javadoc)
+     * @see org.restlet.resource.Resource#handleDelete()
+     */
     @Override
     public void handleDelete() {
         if (_log.isDebugEnabled()) {
@@ -163,6 +195,12 @@ public class ScriptTriggerResource extends AutomationResource {
         recordAutomationEvent(triggerId, containerId, "Delete", ScriptTrigger.class);
     }
 
+    /**
+     * Map trigger.
+     *
+     * @param trigger the trigger
+     * @return the map
+     */
     private Map<String, String> mapTrigger(final ScriptTrigger trigger) {
         final Map<String, String> association = Scope.decode(trigger.getAssociation());
 
@@ -181,6 +219,7 @@ public class ScriptTriggerResource extends AutomationResource {
     /**
      * Lists the script triggers with the specified scope and entity ID and event.
      *
+     * @param mediaType the media type
      * @return A representation of the script triggers available for the specified scope, entity ID (if specified), and event.
      */
     private Representation listScriptTriggers(final MediaType mediaType) {
@@ -245,6 +284,12 @@ public class ScriptTriggerResource extends AutomationResource {
         return representTable(table, mediaType, params);
     }
 
+    /**
+     * Put script trigger.
+     *
+     * @throws ClientException the client exception
+     * @throws ServerException the server exception
+     */
     private void putScriptTrigger() throws ClientException, ServerException {
         // TODO: this needs to properly handle a PUT to an existing script as well as an existing but disabled script.
         final Representation entity = getRequest().getEntity();
@@ -357,6 +402,12 @@ public class ScriptTriggerResource extends AutomationResource {
         }
     }
 
+    /**
+     * Gets the event filters.
+     *
+     * @param filters the filters
+     * @return the event filters
+     */
     @SuppressWarnings("unused")
 	private Set<EventFilters> getEventFilters(Map<String, List<String>> filters) {
     	final Set<EventFilters> eventSet = Sets.newHashSet();
@@ -367,6 +418,11 @@ public class ScriptTriggerResource extends AutomationResource {
     	return eventSet;
 	}
 
+	/**
+	 * Format scope entity id and event.
+	 *
+	 * @return the string
+	 */
 	private String formatScopeEntityIdAndEvent() {
         final StringBuilder buffer = new StringBuilder();
         if (_trigger != null) {
@@ -396,64 +452,137 @@ public class ScriptTriggerResource extends AutomationResource {
         return buffer.toString();
     }
     
+	/**
+	 * The Class JsonResults.
+	 */
 	@SuppressWarnings("unused")
     private class JsonResults {
-    	private String event;
-		private String eventClass;
-		private String scriptId;
-		private String description;
-    	private Map<String,List<String>> filters;
     	
-    	public String getEvent() {
+	    /** The event. */
+	    private String event;
+		
+		/** The event class. */
+		private String eventClass;
+		
+		/** The script id. */
+		private String scriptId;
+		
+		/** The description. */
+		private String description;
+    	
+	    /** The filters. */
+	    private Map<String,List<String>> filters;
+    	
+    	/**
+	     * Gets the event.
+	     *
+	     * @return the event
+	     */
+	    public String getEvent() {
 			return event;
 		}
     	
+		/**
+		 * Sets the event.
+		 *
+		 * @param event the new event
+		 */
 		public void setEvent(String event) {
 			this.event = event;
 		}
 		
-    	public String getEventClass() {
+    	/**
+	     * Gets the event class.
+	     *
+	     * @return the event class
+	     */
+	    public String getEventClass() {
 			return eventClass;
 		}
     	
+		/**
+		 * Sets the event class.
+		 *
+		 * @param eventClass the new event class
+		 */
 		public void setEventClass(String eventClass) {
 			this.eventClass = eventClass;
 		}
 		
+		/**
+		 * Gets the script id.
+		 *
+		 * @return the script id
+		 */
 		public String getScriptId() {
 			return scriptId;
 		}
 		
+		/**
+		 * Sets the script id.
+		 *
+		 * @param scriptId the new script id
+		 */
 		public void setScriptId(String scriptId) {
 			this.scriptId = scriptId;
 		}
 		
-    	public String getDescription() {
+    	/**
+	     * Gets the description.
+	     *
+	     * @return the description
+	     */
+	    public String getDescription() {
 			return description;
 		}
     	
+		/**
+		 * Sets the description.
+		 *
+		 * @param description the new description
+		 */
 		public void setDescription(String description) {
 			this.description = description;
 		}
 		
+		/**
+		 * Gets the filters.
+		 *
+		 * @return the filters
+		 */
 		public Map<String, List<String>> getFilters() {
 			return filters;
 		}
 		
+		/**
+		 * Sets the filters.
+		 *
+		 * @param filters the filters
+		 */
 		public void setFilters(Map<String, List<String>> filters) {
 			this.filters = filters;
 		}
     	
     }
 
+    /** The Constant _log. */
     private static final Logger _log = LoggerFactory.getLogger(ScriptTriggerResource.class);
 
+    /** The Constant EVENT_ID. */
     private static final String EVENT_ID = "EVENT_ID";
+    
+    /** The Constant TRIGGER_ID. */
     private static final String TRIGGER_ID = "TRIGGER_ID";
+    
+    /** The Constant ID. */
     private static final String ID = "ID";
 
+    /** The _script trigger service. */
     private final ScriptTriggerService _scriptTriggerService;
 
+    /** The _event id. */
     private final String _eventId;
+    
+    /** The _trigger. */
     private final ScriptTrigger _trigger;
 }

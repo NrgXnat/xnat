@@ -40,7 +40,7 @@ You can build with a simple Gradle command:
 gradle clean war
 ```
 
-You may need to build the [XNAT Gradle plugin](https://bitbucket.org/xnatdev/gradle-xnat-plugin) first, although it should be available on the XNAT Maven repository.
+You may need to build the [XDAT Data Builder Gradle plugin](https://bitbucket.org/xnatdev/xdat-data-builder) and [XNAT Data Models library](https://bitbucket.org/xnatdev/xnat-data-models) first, although it should be available on the XNAT Maven repository.
 
 This will create your deployable web application in the location:
 
@@ -57,10 +57,10 @@ gradle clean jar publishToMavenLocal
 You can perform a build deploying to the XNAT Maven repository like this:
 
 ```bash
-gradle clean jar publishToMavenLocal publishMavenJavaPublicationToMavenRepository
+gradle clean jar publishToMavenLocal publish
 ```
 
-For this last one, the values set for **repoUsername** and **repoPassword** must be valid credentials for pushing artifacts to the Maven server.
+For this last one, the values set for **repoUsername** and **repoPassword** must be valid credentials for pushing artifacts to the Maven server. The *publish* task actually comprises a number of other tasks, which will publish all available artifacts to each repository defined in the *repositories* configuration in the *build.gradle* file. Practically speaking this means that *publish* is an alias for the *publishMavenJavaPublicationToMavenRepository* task.
 
 You can specify the name of the generated WAR file (and thus the application context of the application within the Tomcat server) from the command line or a properties file.
 
@@ -85,8 +85,7 @@ Note that **gradle.properties** is in this repository's **.gitignore** file, so 
 You must perform a couple of configuration steps in your run-time environment (e.g. your local development workstation, a Vagrant VM, etc.) in order for XNAT to run properly:
 
 * In your Tomcat start-up configuration, add **-Dxnat.home=<path>** where **<path>** is some writeable location. This is where XNAT will look for its configuration and logs folders, e.g. **${xnat.home}/config** and **${xnat.home}/logs**.
-* Copy **services.properties** into the **config** folder underneath the path you specified for **xnat.home**. For example, I set **xnat.home** to **~/xnat**. Under that I have the folder **config**, which contains **services.properties** (you don't have to create **logs**: log4j will create it if it doesn't exist).
-* Open **InstanceSettings.xml** and modify the settings in there to reflect your configuration. You must do this before the build. This is an annoying but temporary requirement.
+* Copy **xnat-conf.properties** into the **config** folder underneath the path you specified for **xnat.home**. For example, I set **xnat.home** to **~/xnat**. Under that I have the folder **config**, which contains **xnat-conf.properties** (you don't have to create **logs**: log4j will create it if it doesn't exist).
 
 # Running XNAT #
 

@@ -78,7 +78,6 @@ public class WorkflowStatusEvent extends StructuredEvent implements AutomationEv
 	 *
 	 * @return the workflow
 	 */
-	//@Transient
 	public PersistentWorkflowI getWorkflow() {
 		return workflow;
 	}
@@ -132,7 +131,6 @@ public class WorkflowStatusEvent extends StructuredEvent implements AutomationEv
 	 * @see org.nrg.xft.event.AutomationEventImplementerI#getAutomationCompletionEvent()
 	 */
 	@Override
-	//@Transient
 	public AutomationCompletionEvent getAutomationCompletionEvent() {
 		return automationCompletionEvent;
 	}

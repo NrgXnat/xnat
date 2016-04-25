@@ -23,10 +23,26 @@ public interface AutomationEventImplementerI extends StructuredEventI {
 	 */
 	void setAutomationCompletionEvent(AutomationCompletionEvent automationCompletionEvent); 
 	
+	/**
+	 * Gets the parameter map.
+	 *
+	 * @return the parameter map
+	 */
 	Map<String,Object> getParameterMap(); 
 	
+	/**
+	 * Sets the parameter map.
+	 *
+	 * @param passMap the pass map
+	 */
 	void setParameterMap(Map<String, Object> passMap); 
 	
+	/**
+	 * Adds the parameter to parameter map.
+	 *
+	 * @param parameter the parameter
+	 * @param value the value
+	 */
 	void addParameterToParameterMap(String parameter, Object value); 
 	
 }

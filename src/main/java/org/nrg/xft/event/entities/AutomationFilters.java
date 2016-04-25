@@ -38,7 +38,6 @@ public class AutomationFilters extends AbstractHibernateEntity implements Serial
 	
 	/** The values. */
 	private List<String> values;
-	//private Set<AutomationFiltersFields> automationFiltersFields = Sets.newHashSet();
 	
 	/**
 	 * Instantiates a new automation filters.

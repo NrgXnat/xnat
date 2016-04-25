@@ -20,7 +20,6 @@ import com.google.common.collect.Lists;
  */
 @Entity
 @SuppressWarnings("serial")
-//@Table(uniqueConstraints=@UniqueConstraint(columnNames = { "externalId", "srcEventClass","eventId"}))
 @Table(uniqueConstraints=@UniqueConstraint(columnNames = { "externalId", "srcEventClass" }))
 public class AutomationEventIds extends AbstractHibernateEntity implements Serializable {
 	
@@ -53,22 +52,12 @@ public class AutomationEventIds extends AbstractHibernateEntity implements Seria
 	
 	/** The event ids. */
 	private List<String> eventIds;
-	//private String eventId;
 	
 	/**
 	 * Sets the external id.
 	 *
 	 * @param externalId the new external id
 	 */
-	/*
-	public void setEventId(String eventId) {
-        this.eventId = eventId;
-    }
-
-	public String getEventId() {
-        return this.eventId;
-    }
-	*/
 	public void setExternalId(String externalId) {
 		this.externalId = externalId;
 	}

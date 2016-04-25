@@ -13,8 +13,25 @@ import javax.inject.Inject;
 import java.util.HashMap;
 import java.util.Map;
 
+/**
+ * The listener interface for receiving automatedScriptRequest events.
+ * The class that is interested in processing a automatedScriptRequest
+ * event implements this interface, and the object created
+ * with that class is registered with a component using the
+ * component's <code>addAutomatedScriptRequestListener<code> method. When
+ * the automatedScriptRequest event occurs, that object's appropriate
+ * method is invoked.
+ *
+ * @see AutomatedScriptRequestEvent
+ */
 public class AutomatedScriptRequestListener {
 
+    /**
+     * On request.
+     *
+     * @param request the request
+     * @throws Exception the exception
+     */
     public void onRequest(final AutomatedScriptRequest request) throws Exception {
         final PersistentWorkflowI workflow = WorkflowUtils.getUniqueWorkflow(request.getUser(), request.getScriptWorkflowId());
         workflow.setStatus(PersistentWorkflowUtils.IN_PROGRESS);
@@ -58,8 +75,10 @@ public class AutomatedScriptRequestListener {
         }
     }
 
+    /** The Constant logger. */
     private static final Logger logger = LoggerFactory.getLogger(AutomatedScriptRequestListener.class);
 
+    /** The _service. */
     @Inject
     private ScriptRunnerService _service;
 }

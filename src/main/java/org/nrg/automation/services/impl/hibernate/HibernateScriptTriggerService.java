@@ -36,6 +36,9 @@ import java.util.Map.Entry;
 @Service
 public class HibernateScriptTriggerService extends AbstractHibernateEntityService<ScriptTrigger, ScriptTriggerRepository> implements ScriptTriggerService {
 	
+    /**
+     * Update old style script triggers.
+     */
     @Transactional
     public void updateOldStyleScriptTriggers() {
     	getDao().updateOldStyleTriggers();
@@ -57,8 +60,7 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
     /**
      * Retrieves the {@link ScriptTrigger trigger} with the indicated trigger ID.
      *
-     * @param triggerId The {@link ScriptTrigger#getTriggerId()} trigger ID} of the trigger to retrieve.
-     *
+     * @param id the id
      * @return The trigger with the indicated ID, if it exists, <b>null</b> otherwise.
      */
     @Override
@@ -119,8 +121,8 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
      * wrapper around the full scope-entity-event get implemented in {@link #getByScopeEntityAndEvent(Scope, String,
      * String)}.
      *
+     * @param eventClass the event class
      * @param event The event associated with the trigger.
-     *
      * @return All triggers associated with the site scope and indicated event.
      * @see #getByScopeEntityAndEvent(Scope, String, String)
      */
@@ -151,6 +153,13 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return results;
     }
 
+    /**
+     * Gets the by event.
+     *
+     * @param eventClass the event class
+     * @param eventId the event id
+     * @return the by event
+     */
     @Override
     @Transactional
     public List<ScriptTrigger> getByEvent(final String eventClass, final String eventId) {
@@ -164,6 +173,14 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return results;
     }
 
+	/**
+	 * Gets the by event and filters.
+	 *
+	 * @param eventClass the event class
+	 * @param eventId the event id
+	 * @param filterMap the filter map
+	 * @return the by event and filters
+	 */
 	@Override
     @Transactional
 	public List<ScriptTrigger> getByEventAndFilters(String eventClass, String eventId, Map<String, String> filterMap) {
@@ -201,8 +218,8 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
      *
      * @param scope    The scope to search.
      * @param entityId The associated entity ID.
+     * @param eventClass the event class
      * @param event    The event associated with the trigger.
-     *
      * @return All triggers associated with the indicated scope and entity and event
      * @see #getSiteTriggers()
      */
@@ -212,6 +229,16 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return getByAssociationAndEvent(Scope.encode(scope, entityId), eventClass, event);
     }
 
+	/**
+	 * Gets the by scope entity and event and filters.
+	 *
+	 * @param scope the scope
+	 * @param entityId the entity id
+	 * @param eventClass the event class
+	 * @param event the event
+	 * @param filterMap the filter map
+	 * @return the by scope entity and event and filters
+	 */
 	@Override
     @Transactional
 	public ScriptTrigger getByScopeEntityAndEventAndFilters(Scope scope, String entityId, String eventClass, String event, Map<String, String> filterMap) {
@@ -236,11 +263,27 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return null;
 	}
 
+    /**
+     * Sets the default trigger id format.
+     *
+     * @param defaultTriggerIdFormat the new default trigger id format
+     */
     @Override
     public void setDefaultTriggerIdFormat(final String defaultTriggerIdFormat) {
         _defaultTriggerIdTemplate = defaultTriggerIdFormat;
     }
 
+    /**
+     * Gets the default trigger name.
+     *
+     * @param scriptId the script id
+     * @param scope the scope
+     * @param entityId the entity id
+     * @param eventClass the event class
+     * @param event the event
+     * @param eventFilters the event filters
+     * @return the default trigger name
+     */
     @Override
     public String getDefaultTriggerName(final String scriptId, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters) {
         final Map<String, String> values = new HashMap<>();
@@ -257,8 +300,8 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
      * is an encoded {@link Scope#code() scope code} and entity ID. This search performs no scope fail-over.
      *
      * @param association The association for the trigger. Association
+     * @param eventClass the event class
      * @param eventId       The event associated with the trigger.
-     *
      * @return The requested script trigger, if it exists.
      */
     @Override
@@ -278,6 +321,12 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return triggers;
     }
 
+    /**
+     * Are all params strings.
+     *
+     * @param parameters the parameters
+     * @return true, if successful
+     */
     @SuppressWarnings("unused")
 	private static boolean areAllParamsStrings(final Object[] parameters) {
         for (final Object parameter : parameters) {
@@ -288,10 +337,15 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
         return true;
     }
 
+    /** The Constant EXCLUDE_PROPS_SCOPE. */
     private static final String[] EXCLUDE_PROPS_SCOPE = AbstractHibernateEntity.getExcludedProperties("triggerId", "description", "scriptId", "event", "srcEventClass", "eventFilters");
+    
+    /** The Constant EXCLUDE_PROPS_SCRIPT_ID. */
     private static final String[] EXCLUDE_PROPS_SCRIPT_ID = AbstractHibernateEntity.getExcludedProperties("triggerId", "description", "association", "event", "srcEventClass", "eventFilters");
 
+    /** The Constant _log. */
     private static final Logger _log = LoggerFactory.getLogger(HibernateScriptTriggerService.class);
 
+    /** The _default trigger id template. */
     private String _defaultTriggerIdTemplate = "%(scriptId)-%(association)-%(event)-%(srcEventClass)-%(eventFilters)";
 }

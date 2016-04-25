@@ -31,6 +31,9 @@ import java.lang.reflect.InvocationTargetException;
 import java.util.*;
 import java.util.Map.Entry;
 
+/**
+ * The Class DefaultScriptRunnerService.
+ */
 @Service
 public class DefaultScriptRunnerService implements ScriptRunnerService, InitializingBean {
 
@@ -93,6 +96,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
 
     /**
      * This method should no longer be used now that we do not have the versions of scripts saved as separate scripts.
+     *
+     * @param scriptId the script id
+     * @return the scripts
      */
     @Override
     public List<Script> getScripts(final String scriptId) {
@@ -111,10 +117,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param scriptId     The ID of the script to locate.
      * @param scope        The scope for the script.
      * @param entityId     The associated entity for the script.
-     * @param entityClass  The eventClass for the event
+     * @param eventClass the event class
      * @param event        The event for the script.
-     * @param eventFilters the eventFilters for the ScriptTrigger
-     *
+     * @param filterMap the filter map
      * @return The {@link Script} object if a script with the indicated script ID and association is found, <b>null</b>
      * otherwise.
      */
@@ -200,8 +205,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      *
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
+     * @param eventClass the event class
      * @param event    The event for the script.
-     *
+     * @param filterMap the filter map
      * @return The associated {@link Script scripts} if any with the indicated associations is found, <b>null</b>
      * otherwise.
      */
@@ -306,7 +312,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param content  The content to set for the script.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
+     * @param eventClass the event class
      * @param event    The event for the script.
+     * @param eventFilters the event filters
      */
     @Override
     public void setScript(final String scriptId, final String scriptLabel, final String content, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters) {
@@ -322,7 +330,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param content  The content to set for the script.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
+     * @param eventClass the event class
      * @param event    The event for the script.
+     * @param eventFilters the event filters
      * @param language The script language for this script.
      */
     @Override
@@ -356,7 +366,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param description The description of the script.
      * @param scope       The scope for the script.
      * @param entityId    The associated entity for the script.
+     * @param eventClass the event class
      * @param event       The event for the script.
+     * @param eventFilters the event filters
      */
     @Override
     public void setScript(final String scriptId, final String scriptLabel, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters) {
@@ -373,7 +385,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param description The description of the script.
      * @param scope       The scope for the script.
      * @param entityId    The associated entity for the script.
+     * @param eventClass the event class
      * @param event       The event for the script.
+     * @param eventFilters the event filters
      * @param language    The script language for this script.
      */
     @Override
@@ -388,7 +402,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param script   The script object to set.
      * @param scope    The scope for the script.
      * @param entityId The associated entity for the script.
+     * @param eventClass the event class
      * @param event    The event for the script.
+     * @param eventFilters the event filters
      */
     @Override
     public void setScript(final Script script, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>>eventFilters) {
@@ -418,6 +434,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      *
      * @param scriptId   The ID of the script to set.
      * @param properties The properties to set on the script.
+     * @throws NrgServiceException the nrg service exception
      */
     @Override
     public void setScript(final String scriptId, final Properties properties) throws NrgServiceException {
@@ -444,8 +461,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * #getScript(Scope, String, String)} methods.
      *
      * @param script The script to run.
-     *
      * @return The results of the script execution.
+     * @throws NrgServiceException the nrg service exception
      */
     @Override
     public ScriptOutput runScript(final Script script) throws NrgServiceException {
@@ -460,8 +477,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      *
      * @param script     The script to run.
      * @param parameters The parameters to pass to the script.
-     *
      * @return The results of the script execution.
+     * @throws NrgServiceException the nrg service exception
      */
     @Override
     public ScriptOutput runScript(final Script script, final Map<String, Object> parameters) throws NrgServiceException {
@@ -476,8 +493,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      *
      * @param script  The script to run.
      * @param trigger The associated trigger for the script execution.
-     *
      * @return The results of the script execution.
+     * @throws NrgServiceException the nrg service exception
      */
     @Override
     public ScriptOutput runScript(final Script script, final ScriptTrigger trigger) throws NrgServiceException {
@@ -493,8 +510,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * @param script     The script to run.
      * @param trigger    The associated trigger for the script execution.
      * @param parameters The parameters to pass to the script.
-     *
      * @return The results of the script execution.
+     * @throws NrgServiceException the nrg service exception
      */
     @Override
     public ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters) throws NrgServiceException {
@@ -502,6 +519,16 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     	
     }
     
+    /**
+     * Run script.
+     *
+     * @param script the script
+     * @param trigger the trigger
+     * @param parameters the parameters
+     * @param exceptionOnError the exception on error
+     * @return the script output
+     * @throws NrgServiceException the nrg service exception
+     */
     @Override
     public ScriptOutput runScript(final Script script, final ScriptTrigger trigger, final Map<String, Object> parameters, boolean exceptionOnError) throws NrgServiceException {
         if (!hasRunner(script.getLanguage())) {
@@ -571,16 +598,33 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         }
     }
 
+    /**
+     * Checks for runner.
+     *
+     * @param language the language
+     * @return true, if successful
+     */
     @Override
     public boolean hasRunner(final String language) {
         return _runners.containsKey(language.toLowerCase());
     }
 
+    /**
+     * Gets the runners.
+     *
+     * @return the runners
+     */
     @Override
     public List<String> getRunners() {
         return new ArrayList<>(_runners.keySet());
     }
 
+    /**
+     * Gets the runner.
+     *
+     * @param language the language
+     * @return the runner
+     */
     @Override
     public ScriptRunner getRunner(final String language) {
         if (!_runners.containsKey(language.toLowerCase())) {
@@ -613,6 +657,12 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         }
     }
 
+    /**
+     * Creates the script runner instance.
+     *
+     * @param clazz the clazz
+     * @return the script runner
+     */
     @NotNull
     private ScriptRunner createScriptRunnerInstance(final Class<? extends ScriptRunner> clazz) {
         try {
@@ -625,10 +675,30 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         }
     }
 
+    /**
+     * Gets the language.
+     *
+     * @param runner the runner
+     * @return the language
+     */
     private String getLanguage(final Class<? extends ScriptRunner> runner) {
         return runner.getAnnotation(Supports.class).value();
     }
 
+    /**
+     * Sets the script impl.
+     *
+     * @param scriptId the script id
+     * @param scriptLabel the script label
+     * @param content the content
+     * @param description the description
+     * @param scope the scope
+     * @param entityId the entity id
+     * @param eventClass the event class
+     * @param event the event
+     * @param eventFilters the event filters
+     * @param language the language
+     */
     private void setScriptImpl(final String scriptId, final String scriptLabel, final String content, final String description, final Scope scope, final String entityId, final String eventClass, final String event, final Map<String,List<String>> eventFilters, final String language) {
         if (StringUtils.isBlank(scriptId)) {
             throw new NrgServiceRuntimeException(NrgServiceError.InvalidScript, "You can not save a script with an empty script ID!");
@@ -672,6 +742,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         }
     }
 
+    /**
+     * Save script.
+     *
+     * @param script the script
+     */
     private void saveScript(final Script script) {
         final Script existingScript = _scriptService.getByScriptId(script.getScriptId());
         if (existingScript == null) {
@@ -708,6 +783,11 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         }
     }
 
+    /**
+     * Save trigger.
+     *
+     * @param trigger the trigger
+     */
     private void saveTrigger(final ScriptTrigger trigger) {
         final ScriptTrigger existingTrigger = _triggerService.getByTriggerId(trigger.getTriggerId());
         if (existingTrigger == null) {
@@ -726,6 +806,13 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         }
     }
 
+    /**
+     * Format script and parameters.
+     *
+     * @param script the script
+     * @param parameters the parameters
+     * @return the string
+     */
     private String formatScriptAndParameters(final Script script, final Map<String, Object> parameters) {
         final StringBuilder buffer = new StringBuilder("Script ID: [").append(script.getScriptId()).append("]");
         if (parameters != null) {
@@ -737,22 +824,43 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
         return buffer.toString();
     }
 
+    /**
+     * Gets the default script description.
+     *
+     * @param script the script
+     * @return the default script description
+     */
     private String getDefaultScriptDescription(final Script script) {
         return "Default description: script ID " + script.getScriptId() + " configured to run with " + script.getLanguage();
     }
 
+    /**
+     * Gets the default trigger description.
+     *
+     * @param scriptId the script id
+     * @param scope the scope
+     * @param entityId the entity id
+     * @param event the event
+     * @return the default trigger description
+     */
     private String getDefaultTriggerDescription(final String scriptId, final Scope scope, final String entityId, final String event) {
         return "Script trigger for script " + scriptId + ", scope " + scope.code() + (entityId != null ? ", entity ID: " + entityId : "") + ", event: " + event;
     }
 
+    /** The Constant _log. */
     private static final Logger _log = LoggerFactory.getLogger(DefaultScriptRunnerService.class);
 
+    /** The _script service. */
     @Inject
     private ScriptService _scriptService;
 
+    /** The _trigger service. */
     @Inject
     private ScriptTriggerService _triggerService;
 
+    /** The _runners. */
     private final Map<String, Class<? extends ScriptRunner>> _runners = new HashMap<>();
+    
+    /** The _packages. */
     private List<String> _packages;
 }

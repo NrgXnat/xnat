@@ -28,8 +28,13 @@ import java.util.List;
  */
 @Repository
 public class ScriptTriggerRepository extends AbstractHibernateDAO<ScriptTrigger> {
+     
+     /** The Constant _log. */
      private static final Logger _log = LoggerFactory.getLogger(ScriptTriggerRepository.class);
 
+	/**
+	 * Update old style triggers.
+	 */
 	// This method will update any pre-1.7 ScriptTriggers, which were based on workflows
     public void updateOldStyleTriggers() {
         final Criteria criteria = getCriteriaForType();
@@ -43,6 +48,12 @@ public class ScriptTriggerRepository extends AbstractHibernateDAO<ScriptTrigger>
         }
     }
 
+    /**
+     * Gets the by id.
+     *
+     * @param id the id
+     * @return the by id
+     */
     public ScriptTrigger getById(final String id) {
         if (_log.isDebugEnabled()) {
             _log.debug("Attempting to find script trigger by ID: {}", id);
@@ -60,6 +71,12 @@ public class ScriptTriggerRepository extends AbstractHibernateDAO<ScriptTrigger>
         return (list == null || list.size() == 0) ? null : (ScriptTrigger) list.get(0);
     }
 
+    /**
+     * Gets the by trigger id.
+     *
+     * @param triggerId the trigger id
+     * @return the by trigger id
+     */
     public ScriptTrigger getByTriggerId(final String triggerId) {
         if (_log.isDebugEnabled()) {
             _log.debug("Attempting to find script trigger by trigger ID: {}", triggerId);

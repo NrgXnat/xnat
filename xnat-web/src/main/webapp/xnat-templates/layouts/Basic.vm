@@ -1,0 +1,9 @@
+<!DOCTYPE html>
+##Copyright 2005 Harvard University / Howard Hughes Medical Institute (HHMI) All Rights Reserved
+<!-- start xnat-templates/layouts/Basic.vm -->
+<!--[if lt IE 9]><html class="ie ie8 ltie9 ltie10"><![endif]-->
+<!--[if IE 9]><html class="ie ie9 ltie10"><![endif]-->
+<!--[if gt IE 9]><!--> <html> <!--<![endif]-->
+    $screen_placeholder
+<!-- end xnat-templates/layouts/Basic.vm -->
+</html>

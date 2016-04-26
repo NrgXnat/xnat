@@ -1,0 +1,26 @@
+## Main JavaScript and CSS files for XNAT
+
+## only load once
+#if (!$appJS)
+
+    <!-- app.css loaded last -->
+    <link rel="stylesheet" type="text/css" href="$content.getURI('style/app.css?v=1.7.0a1')">
+
+    <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/xmodal-v1/xmodal.css?v=1.7.0a1')">
+    <script src="$content.getURI('scripts/xmodal-v1/xmodal.js')"></script>
+    <script src="$content.getURI('scripts/xmodal-v1/xmodal-migrate.js')"></script>
+
+    <!-- XNAT JLAPI scripts -->
+    <script src="$content.getURI('scripts/xnat/url.js')"></script>
+    <script src="$content.getURI('scripts/xnat/xhr.js')"></script>
+    ##<script src="$content.getURI('scripts/xnat/widget.js')"></script>
+    <script src="$content.getURI('scripts/xnat/ui/popup.js')"></script>
+    <script src="$content.getURI('scripts/xnat/ui/dialog.js')"></script>
+
+    #set ($appJS = true)
+
+#else
+
+    <!-- AppJS is loaded -->
+
+#end

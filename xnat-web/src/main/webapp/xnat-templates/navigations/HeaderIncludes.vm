@@ -15,56 +15,12 @@
 <meta http-equiv="expires" content="-1">
 <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
 
-<!-- load polyfills before ANY other JavaScript -->
-<script type="text/javascript" src="$content.getURI('scripts/polyfills.js')"></script>
 
-<!-- set global vars that are used often -->
-<script type="text/javascript">
+## pull in the base JavaScript files
+$navigation.setTemplate("/BaseJS.vm")
 
-    var serverRoot = "$content.getURI('')";
-    var csrfToken = "$!data.getSession().getAttribute("XNAT_CSRF")";
-    var showReason = typeof $showReason != 'undefined' ? $showReason : null;
-    var requireReason = typeof $requireReason != 'undefined' ? $showReason : null;
 
-</script>
-## separate script tags so not everything breaks if showReason or requireReason blows up
-
-<!-- XNAT global functions (no dependencies) -->
-<script type="text/javascript" src="$content.getURI('scripts/globals.js')"></script>
-
-<!-- required libraries -->
 <script>
-    // loads minified versions by default
-    // add ?debug=true to the query string
-    // or #debug to the url hash to load
-    // the non-minified versions
-    writeScripts([
-        scriptUrl('lib/loadjs/loadjs'),
-        scriptUrl('lib/jquery/jquery|.min'),
-        scriptUrl('lib/jquery/jquery-migrate-1.2.1|.min'),
-    ]);
-</script>
-##<script type="text/javascript" src="$content.getURI('scripts/lib/loadjs/loadjs.js')"></script>
-##<script type="text/javascript" src="$content.getURI('scripts/lib/jquery/jquery.min.js')"></script>
-##<script type="text/javascript" src="$content.getURI('scripts/lib/jquery/jquery-migrate-1.2.1.min.js')"></script>
-<script type="text/javascript">
-    // use 'jq' to avoid _possible_ conflicts with Velocity
-    var jq = jQuery;
-</script>
-
-<!-- jQuery plugins -->
-<link rel="stylesheet" type="text/css" href="$content.getURI('scripts/lib/jquery-plugins/chosen/chosen.min.css?v=1.7.0a1')">
-<script type="text/javascript" src="$content.getURI('scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/lib/jquery-plugins/jquery.maskedinput.min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/lib/jquery-plugins/jquery.spawn.js')"></script>
-
-<!-- other libraries -->
-<script type="text/javascript" src="$content.getURI('scripts/lib/spawn/spawn.js')"></script>
-
-<!-- XNAT utility functions -->
-<script type="text/javascript" src="$content.getURI('scripts/utils.js')"></script>
-
-<script type="text/javascript">
 
     /*
      * XNAT global namespace object, which will not be overwriten if
@@ -206,7 +162,7 @@
     })(XNAT.data.todaysDate);
 
 </script>
-<script type="text/javascript">
+<script>
     // initialize "Chosen" menus on DOM load
     // all <select class="chosen-menu"> elements
     // will be converted
@@ -214,39 +170,43 @@
     // the jQuery DOM-ready queue
     jq(function(){chosenInit()});
 </script>
-<script type="text/javascript" src="$content.getURI('scripts/xdat.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/DynamicJSLoad.js')"></script>
+<script src="$content.getURI('scripts/xdat.js')"></script>
+<script src="$content.getURI('scripts/DynamicJSLoad.js')"></script>
 
 <!-- YAHOO USER INTERFACE files below here -->
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js')"></script>
-##<script type="text/javascript" src="$content.getURI('scripts/yui/build/event/event.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/event/event-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/container/container-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/menu/menu-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/element/element-beta-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/button/button-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/connection/connection-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/treeview/treeview-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/cookie/cookie-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/tabview/tabview-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/datasource/datasource-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/resize/resize-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/dragdrop/dragdrop-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/datatable/datatable-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/paginator/paginator-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/json/json-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/xnat_loader.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/LeftBarTreeView.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/justification/justification.js')"></script>
-<script type="text/javascript">
+<script src="$content.getURI('scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js')"></script>
+##<script src="$content.getURI('scripts/yui/build/event/event.js')"></script>
+<script src="$content.getURI('scripts/yui/build/event/event-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/container/container-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/menu/menu-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/element/element-beta-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/button/button-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/connection/connection-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/treeview/treeview-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/cookie/cookie-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/tabview/tabview-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/datasource/datasource-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/resize/resize-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/dragdrop/dragdrop-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/datatable/datatable-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/paginator/paginator-min.js')"></script>
+<script src="$content.getURI('scripts/yui/build/json/json-min.js')"></script>
+<script src="$content.getURI('scripts/yui/xnat_loader.js')"></script>
+<script src="$content.getURI('scripts/LeftBarTreeView.js')"></script>
+<script src="$content.getURI('scripts/justification/justification.js')"></script>
+<script>
 
     // The YUIDOM alias is used throughout XNAT
     var YUIDOM = YAHOO.util.Dom;
 
     XNAT.dom = getObject(XNAT.dom||{});
-    XNAT.dom.addFormCSRF = function(__form){
-        __form = isDefined(__form) ? $$(__form) : jq('form');
-        __form.append('<input type="hidden" name="XNAT_CSRF" value="' + csrfToken + '">')
+    XNAT.dom.addFormCSRF = function(form){
+        $$(form||'form').each(function(){
+            var form$ = $(this);
+            if (!form$.has('input[name="XNAT_CSRF"]').length){
+                form$.append('<input type="hidden" name="XNAT_CSRF" value="' + csrfToken + '">')
+            }
+        });
     };
 
     jq(function(){
@@ -260,29 +220,19 @@
 <!-- YUI css -->
 <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1')">
 
-<!-- xdat.css and xnat.css loaded last to override YUI styles -->
-<link rel="stylesheet" type="text/css" href="$content.getURI('style/app.css?v=1.7.0a1')">
-##<link rel="stylesheet" type="text/css" href="$content.getURI('style/xnat.css?v=1.7.0a1')">
-##<link rel="stylesheet" type="text/css" href="$content.getURI('style/icons.css?v=1.7.0a1')">
-
-<link rel="stylesheet" type="text/css" href="$content.getURI('scripts/xmodal-v1/xmodal.css?v=1.7.0a1')">
-<script type="text/javascript" src="$content.getURI('scripts/xmodal-v1/xmodal.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/xmodal-v1/xmodal-migrate.js')"></script>
-
-<link rel="stylesheet" type="text/css" href="$content.getURI('scripts/tabWrangler/tabWrangler.css?v=1.7.0a1')">
-<script type="text/javascript" src="$content.getURI('scripts/tabWrangler/tabWrangler.js')"></script>
-
 <!-- date input stuff -->
 <link type="text/css" rel="stylesheet" href="$content.getURI('scripts/yui/build/calendar/assets/skins/sam/calendar.css?v=1.7.0a1')">
-##<script type="text/javascript" src="$content.getURI('scripts/yui/build/calendar/calendar.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/yui/build/calendar/calendar-min.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/ezCalendar.js')"></script>
+##<script src="$content.getURI('scripts/yui/build/calendar/calendar.js')"></script>
+<script src="$content.getURI('scripts/yui/build/calendar/calendar-min.js')"></script>
+<script src="$content.getURI('scripts/ezCalendar.js')"></script>
 
-<!-- XNAT JLAPI scripts -->
-<script type="text/javascript" src="$content.getURI('scripts/xnat/url.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/xnat/xhr.js')"></script>
-##<script type="text/javascript" src="$content.getURI('scripts/xnat/widget.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/xnat/ui/popup.js')"></script>
-<script type="text/javascript" src="$content.getURI('scripts/xnat/ui/dialog.js')"></script>
+
+## pull in the XNAT app JavaScript files
+$navigation.setTemplate("/AppJS.vm")
+
+
+<link rel="stylesheet" type="text/css" href="$content.getURI('scripts/tabWrangler/tabWrangler.css?v=1.7.0a1')">
+<script src="$content.getURI('scripts/tabWrangler/tabWrangler.js')"></script>
+
 
 #addGlobalCustomScreens("header")

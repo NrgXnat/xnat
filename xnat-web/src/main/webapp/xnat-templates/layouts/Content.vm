@@ -1,0 +1,11 @@
+<!-- start xnat-templates/layouts/Content.vm -->
+
+## probably don't want to load these since
+## they may already be loaded elsewhere
+##
+## #parse("/navigations/BaseJS.vm")
+## #parse("/navigations/AppJS.vm")
+
+$screen_placeholder
+
+<!-- end xnat-templates/layouts/Content.vm -->

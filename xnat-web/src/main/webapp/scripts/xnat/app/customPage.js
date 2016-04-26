@@ -2,7 +2,11 @@
  * Retrieve custom pages via AJAX
  * Used in: /xnat-templates/screens/Page.vm
  */
-(function(NS, factory){
+
+var XNAT = getObject(XNAT);
+XNAT.app = getObject(XNAT.app||{});
+
+(function(factory){
     if (typeof define === 'function' && define.amd) {
         define(factory);
     }
@@ -10,14 +14,11 @@
         module.exports = factory();
     }
     else {
-        return factory(NS);
+        return factory();
     }
-}('app.customPage', function(NS, undefined){
+}(function(){
 
-    // setExtendedObject() hasn't been tested yet
-    // var customPage = setExtendedObject(XNAT, NS);
-
-    var customPage = getObject(eval('XNAT.'+NS)||{});
+    var customPage = getObject(XNAT.app.customPage||{});
 
     customPage.getName = function(){
         var name = getQueryStringValue('view');

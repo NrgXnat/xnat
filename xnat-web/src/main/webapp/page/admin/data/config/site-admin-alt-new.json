@@ -1,0 +1,66 @@
+{
+    "XNAT": {
+        "siteAdmin": {
+            "meta": {
+                "kind": "tabs",
+                "name": "siteAdmin",
+                "title": "XNAT Site Administration",
+                "groups": [
+                    { "name": "dashboard",            "label": "Dashboard" },
+                    { "name": "xnatSetup",            "label": "XNAT Setup" },
+                    { "name": "manageAccess",         "label": "Manage Access" },
+                    { "name": "manageData",           "label": "Manage Data" },
+                    { "name": "processing",           "label": "Processing" },
+                    { "name": "projectCustomization", "label": "Project Customization" },
+                    { "name": "advanced",             "label": "Advanced XNAT Settings" }
+                ]
+            },
+            "xnatSetup": {
+                "siteSetup": {
+                    "siteInfo": {
+                        "siteId": {},
+                        "siteURL": {},
+                        "siteDescription": {},
+                        "homePage": {},
+                        "landingPage": {}
+                    },
+                    "adminInfo": {
+                        "siteAdminEmail": {}
+                    }
+                },
+                "security": {
+                    "siteSecurity": {
+                        "securityChannel": {},
+                        "requireLogin": {}
+                    },
+                    "loginSessionControls": {
+                        "sessionTimeout": {},
+                        "sessionTimeoutMessage": {},
+                        "sessionAllowResume": {},
+                        "maxSessions": {},
+                        "loginFailureMessage": {}
+                    }
+                },
+                "dicomScpReceivers": {
+                    "receivers": {
+                        "receiverList": {}
+                    }
+                },
+                "emailServer": {
+                    "emailServerConfig": {
+                        "xdat.mail.server": {},
+                        "xdat.mail.port": {},
+                        "xdat.mail.username": {},
+                        "xdat.mail.password": {}
+                    }
+                },
+                "notifications": {},
+                "features": {},
+
+            },
+            "manageAccess": {
+                "authentication": {}
+            }
+        }
+    }
+}

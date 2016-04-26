@@ -1,0 +1,106 @@
+# Controls and panel defs for the DICOM Connections panel
+
+enableDicomReceiver:
+    label: Enable DICOM Receiver
+    id: enableDicomReceiver
+    name: enableDicomReceiver
+    type: select
+    options:
+        - { label: Yes, value: true }
+        - { label: No, value: false }
+    selected: true
+    description: Caution: Changes to this setting will take effect immediately. Before disabling the receiver, verify that there are no transmissions currently in progress.
+    tooltip: Should the DICOM receiver listen for connections?
+    url: /xapi/services/settings/enableDicomReceiver
+    validation:
+        required: true
+
+dicomHosts:
+    label: DICOM Hosts
+    id: dcmHost
+    name: dcmHost
+    type: hidden
+    url: /xapi/services/settings/dcmHost
+
+dicomAeTitles:
+    label: DICOM AE Titles
+    id: dcmAe
+    name: dcmAe
+    type: text
+    tooltip: These are the SCP Application Entity (AE) title(s).
+    url: /xapi/services/settings/dcmAe
+
+dicomPortNumber:
+    label: DICOM Port Number
+    id: dcmPort
+    name: dcmPort
+    type: text
+    tooltip: This is the port number to which C-STORE SCUs (scanners and other clients sending data) should connect.
+    url: /xapi/services/settings/dcmPort
+
+defaultDicomReceiver:
+    label: Default DICOM Receiver
+    id: servicesDicomScpAetitle
+    name: servicesDicomScpAetitle
+    type: hidden
+    url: /xapi/services/settings/servicesDicomScpAetitle
+    # grab setting for services.dicom.scp.aetitle from services.properties
+    # or, delete if this is obsolete
+
+defaultDicomReceiverUser:
+    label: Default DICOM Receiver User
+    id: servicesDicomScpReceivedfileuser
+    name: servicesDicomScpReceivedfileuser
+    type: hidden
+    url: /xapi/services/settings/servicesDicomScpReceivedfileuser
+    # grab setting for services.dicom.scp.receivedfileuser from services.properties
+    # or, delete if this is obsolete
+
+dicomPanel:
+    label: DICOM Receiver Settings
+    type: panel
+    controls:
+        ${enableDicomReceiver}
+        ${dicomHosts}
+        ${dicomAeTitles}
+        ${dicomPortNumber}
+        ${defaultDicomReceiver}
+        ${defaultDicomReceiverUser}
+
+# Tabs for the Manage Data Tab Group
+
+dicomConnections:
+    label: Manage DICOM Settings
+    type: tab
+    contents:
+        ${dicomPanel}
+        ${petMrPanel}
+
+sessionUploadSettings:
+    label: Session Upload, Import &amp; Anonymization
+    type: tab
+    contents:
+        ${anonScript}
+        ${seriesImportFilter}
+        ${sessionUploadMethod}
+
+dataTypes:
+    label: Manage Data Types
+    type: tab
+    contents:
+        ${dataTypeTable}
+
+manageData:
+    label: Manage Data
+    type: tabGroup
+    tabs:
+        ${dataTypes}
+        ${dicomConnections}
+        ${sessionUploadSettings}
+
+manageDataPage:
+    label: Manage Data
+    type: page
+    contains: tabs
+    contents:
+        ${manageData}

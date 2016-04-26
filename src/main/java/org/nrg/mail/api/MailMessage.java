@@ -61,7 +61,7 @@ public class MailMessage {
      * @param html           HTML body.
      * @param text           Text body.
      * @param attachments    Any attachments.
-     * @throws InvalidMailAttachmentException
+     * @throws InvalidMailAttachmentException If the attachment can't be located via file path, URI, or other standard means.
      */
     public MailMessage(String from, String onBehalfOf, List<String> tos, List<String> ccs, List<String> bccs, String subject, String html, String text, Map<String, Object> attachments) throws InvalidMailAttachmentException {
         _from = from;

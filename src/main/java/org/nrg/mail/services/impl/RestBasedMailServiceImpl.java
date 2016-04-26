@@ -57,6 +57,7 @@ public class RestBasedMailServiceImpl extends AbstractMailServiceImpl {
      * https://central.xnat.org/data/services/mail/send.
      * @param address The address of the REST mail service, including protocol, server address,
      *                and method path.
+     * @throws URISyntaxException When there's an error with the format or composition of the submitted URI.
      */
     public void setRestMailServiceEndpoint(String address) throws URISyntaxException {
         if (_log.isDebugEnabled()) {

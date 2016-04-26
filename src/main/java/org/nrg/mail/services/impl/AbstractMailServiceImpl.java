@@ -14,7 +14,6 @@ import org.nrg.mail.api.MailMessage;
 import org.nrg.mail.services.MailService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.util.Assert;
 
 import javax.mail.MessagingException;
@@ -24,8 +23,7 @@ import java.util.Map;
 abstract public class AbstractMailServiceImpl implements MailService {
 
     /**
-     * Gets the prefix to add to the subject of emails.
-     * @return The prefix to add to the subject of emails.
+     * {@inheritDoc}
      */
     @Override
     public String getSubjectPrefix() {
@@ -33,19 +31,16 @@ abstract public class AbstractMailServiceImpl implements MailService {
     }
 
     /**
-     * Sets the prefix to add to the subject of emails.
-     * @param subjectPrefix    The prefix to add to the subject of emails.
+     * {@inheritDoc}
      */
     @Override
-    @Value("${mailserver.prefix}")
     public void setSubjectPrefix(final String subjectPrefix) {
         _hasSubjectPrefix = StringUtils.isNotBlank(subjectPrefix);
         _subjectPrefix = subjectPrefix;
     }
 
     /**
-     * Indicates whether a {@link #getSubjectPrefix() subject prefix} has been set.
-     * @return <b>true</b> if a non-blank subject prefix has been set.
+     * {@inheritDoc}
      */
     @Override
     public boolean hasSubjectPrefix() {
@@ -53,24 +48,12 @@ abstract public class AbstractMailServiceImpl implements MailService {
     }
 
     /**
-     * Sends a {@link MailMessage}. The XDAT mail message class abstracts the plain-text, HTML,
-     * attachment, and other specialized logic away and leaves it to the implementation of this
-     * method to make the proper decisions about how the message should actually be dispatched.
-     * @param message The mail message object to send.
+     * {@inheritDoc}
      */
     public abstract void sendMessage(MailMessage message) throws MessagingException;
 
     /**
-     * Sends a {@link MailMessage}. The XDAT mail message class abstracts the plain-text, HTML,
-     * attachment, and other specialized logic away and leaves it to the implementation of this
-     * method to make the proper decisions about how the message should actually be dispatched.
-     * This includes a username and password to validate against the mail service being used.
-     * This method may be unimplemented in cases where the username and password aren't used
-     * or where the username and password are intended to be cached and used in a singleton.
-     *
-     * @param message     The mail message object to send.
-     * @param username    The username to use to validate against the mail service.
-     * @param password    The password to use to validate against the mail service.
+     * {@inheritDoc}
      */
     public abstract void sendMessage(MailMessage message, String username, String password) throws MessagingException;
 
@@ -81,24 +64,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
     }
 
     /**
-     * Send a simple mail message. This supports multiple addresses on the to,
-     * cc, and bcc lines.
-     * @param from
-     *            The address from which the email will be sent.
-     * @param to
-     *            A list of addresses to which to send the email.
-     * @param ccs
-     *            A list of addresses to which to copy the email.
-     * @param bccs
-     *            A list of addresses to which to blind-copy the email.
-     * @param subject
-     *            The subject of the email.
-     * @param body
-     *            The body of the email.
-     *
-     * @see #sendMessage(String, String[], String[], String, String)
-     * @see #sendMessage(String, String[], String, String)
-     * @see #sendMessage(String, String, String, String)
+     * {@inheritDoc}
      */
     @Override
     public void sendMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String body) throws MessagingException {
@@ -126,22 +92,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
     }
 
     /**
-     * Send a simple mail message. This supports multiple addresses on the to
-     * line.
-     * @param from
-     *            The address from which the email will be sent.
-     * @param to
-     *            A list of addresses to which to send the email.
-     * @param ccs
-     *            A list of addresses to which to cc the email.
-     * @param subject
-     *            The subject of the email.
-     * @param message
-     *            The body of the email.
-     *
-     * @see #sendMessage(String, String[], String[], String[], String, String)
-     * @see #sendMessage(String, String[], String, String)
-     * @see #sendMessage(String, String, String, String)
+     * {@inheritDoc}
      */
     @Override
     public void sendMessage(String from, String[] to, String[] ccs, String subject, String message) throws MessagingException {
@@ -149,20 +100,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
     }
 
     /**
-     * Send a simple mail message. This supports multiple addresses on the to
-     * line.
-     * @param from
-     *            The address from which the email will be sent.
-     * @param to
-     *            A list of addresses to which to send the email.
-     * @param subject
-     *            The subject of the email.
-     * @param message
-     *            The body of the email.
-     *
-     * @see #sendMessage(String, String[], String[], String[], String, String)
-     * @see #sendMessage(String, String[], String[], String, String)
-     * @see #sendMessage(String, String, String, String)
+     * {@inheritDoc}
      */
     @Override
     public void sendMessage(String from, String[] to, String subject, String message) throws MessagingException {
@@ -170,20 +108,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
     }
 
     /**
-     * Send a simple mail message. This supports a single address on the to
-     * line.
-     * @param from
-     *            The address from which the email will be sent.
-     * @param to
-     *            An address to which to send the email.
-     * @param subject
-     *            The subject of the email.
-     * @param message
-     *            The body of the email.
-     *
-     * @see #sendMessage(String, String[], String[], String[], String, String)
-     * @see #sendMessage(String, String[], String[], String, String)
-     * @see #sendMessage(String, String[], String, String)
+     * {@inheritDoc}
      */
     @Override
     public void sendMessage(String from, String to, String subject, String message) throws MessagingException {
@@ -191,46 +116,7 @@ abstract public class AbstractMailServiceImpl implements MailService {
     }
 
     /**
-     * Send an HTML-based mail message. This method takes both an HTML-formatted
-     * and plain-text message to support mail clients that don't support or
-     * accept HTML-formatted emails. This supports multiple addresses on the to,
-     * cc, and bcc lines.
-     *
-     * This method also accepts a list of attachments.
-     *
-     * @param from
-     *            The address from which the email will be sent.
-     * @param to
-     *            A list of addresses to which to send the email.
-     * @param ccs
-     *            A list of addresses to which to copy the email.
-     * @param bccs
-     *            A list of addresses to which to blind-copy the email.
-     * @param subject
-     *            The subject of the email.
-     * @param html
-     *            The body of the email in HTML format.
-     * @param text
-     *            The body of the email in plain-text format.
-     * @param attachments
-     *            A map of attachments, with the attachment name as a string and
-     *            the attachment body as a {@link File} object. Use the prefix
-     *            {@link MailService#PREFIX_INLINE_ATTACHMENT} to indicate inline
-     *            attachments.
-     *
-     * @param headers Additional headers to be added to the message.
-     * @throws MessagingException
-     *             Thrown when an error occurs during message composition or
-     *             transmission.
-     * @see #sendHtmlMessage(String, String[], String[], String[], String,
-     *      String, String)
-     * @see #sendHtmlMessage(String, String[], String[], String[], String,
-     *      String)
-     * @see #sendHtmlMessage(String, String[], String[], String, String)
-     * @see #sendHtmlMessage(String, String[], String, String)
-     * @see #sendHtmlMessage(String, String, String, String, String, String)
-     * @see #sendHtmlMessage(String, String, String, String, String, String)
-     * @see #sendHtmlMessage(String, String, String, String)
+     * {@inheritDoc}
      */
     @Override
     public void sendHtmlMessage(String from, String[] to, String[] ccs, String[] bccs, String subject, String html, String text, Map<String, File> attachments, Map<String, String> headers) throws MessagingException {

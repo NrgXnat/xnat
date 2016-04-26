@@ -62,6 +62,8 @@ public interface MailService extends NrgService {
      * @param message     The mail message object to send.
      * @param username    The username to use to validate against the mail service.
      * @param password    The password to use to validate against the mail service.
+	 *
+	 * @throws MessagingException When an error occurs attempting to send the message.
      */
 	void sendMessage(MailMessage message, String username, String password) throws MessagingException;
 

@@ -130,6 +130,9 @@
                     }
                 },
                 siteId: "XNAT"
+            },
+            data: {
+                context: {}
             }
         });
 
@@ -175,9 +178,9 @@
 
 
     <!-- legacy XNAT scripts -->
-    <link rel="stylesheet" type="text/css" href="${_siteRoot}/scripts/xmodal/xmodal.css?${versionString}">
-    <script src="${_siteRoot}/scripts/xmodal/xmodal.js"></script>
-    <script src="${_siteRoot}/scripts/xmodal/xmodal-migrate.js"></script>
+    <link rel="stylesheet" type="text/css" href="${_siteRoot}/scripts/xmodal-v1/xmodal.css?${versionString}">
+    <script src="${_siteRoot}/scripts/xmodal-v1/xmodal.js"></script>
+    <script src="${_siteRoot}/scripts/xmodal-v1/xmodal-migrate.js"></script>
 
     <%--<link rel="stylesheet" type="text/css" href="${_siteRoot}/scripts/tabWrangler/tabWrangler.css?${versionString}1">--%>
     <%--<script src="${_siteRoot}/scripts/tabWrangler/tabWrangler.js"></script>--%>
@@ -198,7 +201,7 @@
     <script src="${_siteRoot}/scripts/xnat/ui/popup.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/dialog.js"></script>
 
-    <script src="${_siteRoot}/scripts/timeLeft.js"></script>
+    <%--<script src="${_siteRoot}/scripts/timeLeft.js"></script>--%>
 
 ${headBottom}
 
@@ -225,10 +228,10 @@ ${bodyTop}
                 <b>|</b> 
                 <a id="logout_user" href="${_siteRoot}/app/action/LogoutUser">Logout</a>
             </span>
-            <script type="text/javascript">
-                $('#timeLeftRenew').click(XNAT.app.timeout.handleOk);
-                Cookies.set('guest', 'false', {path: '/'});
-            </script>
+            <%--<script type="text/javascript">--%>
+                <%--$('#timeLeftRenew').click(XNAT.app.timeout.handleOk);--%>
+                <%--Cookies.set('guest', 'false', {path: '/'});--%>
+            <%--</script>--%>
             <div class="clear"></div>
         </div>
     </div><!-- /user_bar -->
@@ -651,10 +654,10 @@ ${bodyTop}
     })
 
 </script>
-<script src="${_siteRoot}/scripts/footer.js"></script>
+<%--<script src="${_siteRoot}/scripts/footer.js"></script>--%>
 
 <div id="xmodal-loading" style="position:fixed;left:-9999px;top:-9999px;">
-    <img src="${_siteRoot}/scripts/xmodal/loading_bar.gif" alt="loading">
+    <img src="${_siteRoot}/scripts/xmodal-v1/loading_bar.gif" alt="loading">
 </div>
 
 ${bodyBottom}

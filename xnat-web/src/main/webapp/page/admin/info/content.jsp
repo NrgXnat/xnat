@@ -2,9 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<c:if test="${empty hasInit}">
-    <pg:init/>
-</c:if>
+<c:set var="pageName" value="info" scope="request"/>
 
 <c:choose>
     <c:when test="${isAdmin == true}">

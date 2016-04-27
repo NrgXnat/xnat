@@ -6,6 +6,14 @@
     <pg:init/>
 </c:if>
 
+<c:if test="${not empty hasInit}">
+    <!-- init done -->
+</c:if>
+
+<c:if test="${empty hasVars}">
+    <pg:jsvars/>
+</c:if>
+
 <div id="page-wrapper">
     <div class="pad">
         <div id="page-content">loading...</div>

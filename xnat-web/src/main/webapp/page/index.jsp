@@ -9,7 +9,12 @@
     <pg:head/>
 
     <pg:content id="${pageName}" className="xnat app ${pageName}">
-        <jsp:include page="content.jsp"/>
+        <div id="page-wrapper">
+            <div class="pad">
+                <jsp:include page="content.jsp"/>
+            </div>
+        </div>
+        <!-- /#page-wrapper -->
     </pg:content>
 
 </pg:wrapper>

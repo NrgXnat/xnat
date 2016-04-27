@@ -6,6 +6,10 @@
     <pg:init/>
 </c:if>
 
+<c:if test="${empty hasVars}">
+    <pg:jsvars/>
+</c:if>
+
 <script src="${themeRoot}/scripts/xnat/ui/table.js"></script>
 <script src="${themeRoot}/scripts/xnat/ui/panel.js"></script>
 <script src="${themeRoot}/scripts/xnat/ui/tabs.js"></script>

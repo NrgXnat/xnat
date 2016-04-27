@@ -157,16 +157,14 @@ var XNAT = getObject(XNAT||{});
 
 
         // create <ul> elements for tab groups
-        function setupGroups(list){
+        function setupGroups(groups){
 
             var flippers = __.tabs.flippers.container;
 
             __.tabs.groups = {};
 
-            list.forEach(function(item){
+            $.each(groups, function(name, label){
 
-                var name = item.name;
-                var label = item.label;
                 var id = toDashed(name) + '-tabs';
 
                 var container = spawn('ul.nav.tab-group', {
@@ -180,7 +178,8 @@ var XNAT = getObject(XNAT||{});
                     name: name,
                     label: label,
                     id: id,
-                    container: container
+                    container: container,
+                    children: []
                 };
 
             });

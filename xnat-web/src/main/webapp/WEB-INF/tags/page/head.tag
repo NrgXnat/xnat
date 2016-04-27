@@ -3,8 +3,8 @@
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
 <%@ attribute name="title" %>
-<%@ attribute name="headTop" %>
-<%@ attribute name="headBottom" %>
+<%@ attribute name="headTop" fragment="true" %>
+<%@ attribute name="headBottom" fragment="true" %>
 
 <head>
 
@@ -12,32 +12,13 @@
 
     <title>${title}</title>
 
-    <script>
-        var PAGE = {};
-        PAGE.siteRoot = '${sessionScope.siteRoot}';
-        PAGE.themeName = '${sessionScope.themeName}';
-        PAGE.themeRoot = '${sessionScope.themeRoot}';
-        PAGE.pageRoot = '${sessionScope.pageRoot}';
-        PAGE.username = '${sessionScope.username}';
-        PAGE.isDialog = '${sessionScope.isDialog}';
-        PAGE.isModal = '${sessionScope.isModal}';
-        PAGE.session = {
-            user: '${sessionScope.username}',
-            token: '${sessionScope.csrfToken}',
-            expiration: '${sessionScope.sessionExpiration}'
-        };
-        PAGE.session.startTime = ('${sessionScope.sessionExpiration}'.split(',')[0]) * 1;
-        PAGE.session.duration = ('${sessionScope.sessionExpiration}'.split(',')[1]) * 1;
-        PAGE.session.timeout = PAGE.session.startTime + PAGE.session.duration;
-
-        //    PAGE.session.timer = PAGE.session.timeout - 1000;
-        //    setInterval(function(){
-        //        PAGE.session.timer -= 1000;
-        //        console.log(parseInt(PAGE.session.timer/1000));
-        //    }, 1000);
-
-        console.log(PAGE);
-    </script>
+        <c:if test="${empty hasInit}">
+            <pg:init>
+                <c:if test="${empty hasVars}">
+                    <pg:jsvars/>
+                </c:if>
+            </pg:init>
+        </c:if>
 
     <c:set var="rootUrl" value="${sessionScope.themeRoot}"/>
 

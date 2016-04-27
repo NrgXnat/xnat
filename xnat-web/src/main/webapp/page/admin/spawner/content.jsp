@@ -25,11 +25,11 @@
                         maximize: true,
                         width: '90%',
                         height: '90%',
-                        content: spawn.element('pre.json', JSON.stringify(json, null, 2)).outerHTML
+                        content: spawn('pre.json', JSON.stringify(json, null, 2)).outerHTML
                     })
                 }
 
-                spawn.element('button|type=button', {
+                spawn('button|type=button', {
                     html: 'View JSON',
                     onclick: function(){
                         XNAT.xhr.get('/xapi/spawner/resolve/siteAdmin/siteAdmin', function(data){

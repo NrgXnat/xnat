@@ -5,16 +5,9 @@
 <c:set var="pageName" value="admin" scope="request"/>
 
 <pg:wrapper>
+    <pg:xnat>
 
-    <pg:head title="Site Admin"/>
+        <jsp:include page="content.jsp"/>
 
-    <pg:content id="${pageName}" className="xnat app ${pageName}">
-        <div id="page-wrapper">
-            <div class="pad">
-                <jsp:include page="content.jsp"/>
-            </div>
-        </div>
-        <!-- /#page-wrapper -->
-    </pg:content>
-
+    </pg:xnat>
 </pg:wrapper>

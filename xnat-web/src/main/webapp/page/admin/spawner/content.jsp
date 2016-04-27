@@ -3,53 +3,49 @@
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 <%--<%@ taglib prefix="sp" tagdir="/WEB-INF/tags/spawner" %>--%>
 
-<c:choose>
-    <c:when test="${isAdmin == true}">
+<c:set var="_msg">
+    No spawning allowed.
+</c:set>
 
-        <c:set var="_siteRoot" value="${sessionScope.siteRoot}"/>
+<pg:restricted msg="${_msg}">
 
-        <c:import url="${_siteRoot}/xapi/spawner/resolve/siteAdmin/siteAdmin" var="siteAdmin"/>
+    <c:set var="_siteRoot" value="${sessionScope.siteRoot}"/>
 
-        <%--<button type="button" id="view-json">View JSON</button>--%>
-        <div class="hidden">${siteAdmin}</div>
+    <c:import url="${_siteRoot}/xapi/spawner/resolve/siteAdmin/siteAdmin" var="siteAdmin"/>
 
-        <!-- button element will be rendered in this span -->
-        <span id="view-json"></span>
+    <%--<button type="button" id="view-json">View JSON</button>--%>
+    <div class="hidden">${siteAdmin}</div>
 
-        <script>
-            (function(){
+    <!-- button element will be rendered in this span -->
+    <span id="view-json"></span>
 
-                function showJSON(json){
-                    return xmodal.message({
-                        title: 'Site Admin JSON',
-                        maximize: true,
-                        width: '90%',
-                        height: '90%',
-                        content: spawn('pre.json', JSON.stringify(json, null, 2)).outerHTML
-                    })
+    <script>
+        (function(){
+
+            function showJSON(json){
+                return xmodal.message({
+                    title: 'Site Admin JSON',
+                    maximize: true,
+                    width: '90%',
+                    height: '90%',
+                    content: spawn('pre.json', JSON.stringify(json, null, 2)).outerHTML
+                })
+            }
+
+            spawn('button|type=button', {
+                html: 'View JSON',
+                onclick: function(){
+                    XNAT.xhr.get('/xapi/spawner/resolve/siteAdmin/siteAdmin', function(data){
+                        showJSON(data);
+                    });
+                },
+                $: {
+                    appendTo: '#view-json'
                 }
+            });
 
-                spawn('button|type=button', {
-                    html: 'View JSON',
-                    onclick: function(){
-                        XNAT.xhr.get('/xapi/spawner/resolve/siteAdmin/siteAdmin', function(data){
-                            showJSON(data);
-                        });
-                    },
-                    $: {
-                        appendTo: '#view-json'
-                    }
-                });
+            //$('#view-json').click(function(){});
 
-                //$('#view-json').click(function(){});
-
-            })();
-        </script>
-
-    </c:when>
-    <c:otherwise>
-
-        <p class="warning">Not authorized.</p>
-
-    </c:otherwise>
-</c:choose>
+        })();
+    </script>
+</pg:restricted>

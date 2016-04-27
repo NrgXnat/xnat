@@ -4,57 +4,58 @@
 
 <c:set var="pageName" value="info" scope="request"/>
 
-<c:choose>
-    <c:when test="${isAdmin == true}">
-        <h1>Some info</h1>
+<c:set var="_msg">
+    Nope.
+</c:set>
 
-        <c:import url="/xapi/users.json" var="userList"/>
+<pg:restricted msg="${_msg}">
 
-        <h2>Users</h2>
-        <p id="user-list-raw">
-                ${userList}
-        </p>
-        <p id="user-list"></p>
-        <script>
-            +function(){
-                var userList = JSON.parse('${userList}');
-                var ul = spawn.element('ul#users');
-                $.each(userList, function(i, name){
-                    ul.appendChild(spawn.element('li', name))
-                });
-                $('#user-list').append(ul);
-            }()
-        </script>
+    <h1>Some info</h1>
 
-        <br>
+    <c:import url="/xapi/users.json" var="userList"/>
 
-        <h2>Me</h2>
-        <ul>
-            <li><b>Logged in:</b> ${loggedIn} </li>
-            <li><b>Username:</b> ${username} </li>
-            <li><b>Is Admin?:</b> ${isAdmin} </li>
-            <li><b>CSRF token:</b> ${csrfToken} </li>
-            <li><b>Landing page:</b> ${landingPage} </li>
-        </ul>
+    <h2>Users</h2>
+    <p id="user-list-raw">
+            ${userList}
+    </p>
+    <p id="user-list"></p>
+    <script>
+        +function(){
+            var userList = JSON.parse('${userList}');
+            var ul = spawn.element('ul#users');
+            $.each(userList, function(i, name){
+                ul.appendChild(spawn.element('li', name))
+            });
+            $('#user-list').append(ul);
+        }()
+    </script>
 
-        <br>
+    <br>
 
-        <div id="page-info">
-            <p>request: ${requestScope.javamelody.request}</p>
-            <p>sessionScope: <br>${sessionScope}</p>
-            <p>applicationScope: <br> ${applicationScope}</p>
-            <p>requestScope: <br> ${requestScope}</p>
-            <p>pageScope: <br> ${pageScope}</p>
-            <p>pageContext: <br> ${pageContext}</p>
-            <p>param: <br> ${param}</p>
-            <p>paramValues: <br> ${paramValues}</p>
-            <p>header: <br> ${header}</p>
-            <p>headerValues: <br> ${headerValues}</p>
-            <p>cookie: <br> ${cookie}</p>
-            <p>SPRING_SECURITY_LAST_USERNAME: <br> ${SPRING_SECURITY_LAST_USERNAME}</p>
-        </div>
-    </c:when>
-    <c:otherwise>
-        <p>(not authorized)</p>
-    </c:otherwise>
-</c:choose>
+    <h2>Me</h2>
+    <ul>
+        <li><b>Logged in:</b> ${loggedIn} </li>
+        <li><b>Username:</b> ${username} </li>
+        <li><b>Is Admin?:</b> ${isAdmin} </li>
+        <li><b>CSRF token:</b> ${csrfToken} </li>
+        <li><b>Landing page:</b> ${landingPage} </li>
+    </ul>
+
+    <br>
+
+    <div id="page-info">
+        <p>request: ${requestScope.javamelody.request}</p>
+        <p>sessionScope: <br>${sessionScope}</p>
+        <p>applicationScope: <br> ${applicationScope}</p>
+        <p>requestScope: <br> ${requestScope}</p>
+        <p>pageScope: <br> ${pageScope}</p>
+        <p>pageContext: <br> ${pageContext}</p>
+        <p>param: <br> ${param}</p>
+        <p>paramValues: <br> ${paramValues}</p>
+        <p>header: <br> ${header}</p>
+        <p>headerValues: <br> ${headerValues}</p>
+        <p>cookie: <br> ${cookie}</p>
+        <p>SPRING_SECURITY_LAST_USERNAME: <br> ${SPRING_SECURITY_LAST_USERNAME}</p>
+    </div>
+
+</pg:restricted>

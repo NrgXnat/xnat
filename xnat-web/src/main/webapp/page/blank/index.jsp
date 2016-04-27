@@ -2,13 +2,12 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<div id="page-wrapper">
-    <div class="pad">
+<c:set var="pageName" value="blank" scope="request"/>
 
-        <h1>${pageName}</h1>
+<pg:wrapper>
+    <pg:xnat>
 
-        <h2>PUT YOUR STUFF HERE</h2>
+        <jsp:include page="content.jsp"/>
 
-    </div>
-</div>
-<!-- /#page-wrapper -->
+    </pg:xnat>
+</pg:wrapper>

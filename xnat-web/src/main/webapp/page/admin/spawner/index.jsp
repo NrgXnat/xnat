@@ -2,10 +2,10 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<c:set var="pageName" value="test" scope="request"/>
+<c:set var="pageName" value="spawner" scope="request"/>
 
 <pg:wrapper>
-    <pg:xnat>
+    <pg:xnat title="Manage Spawner">
 
         <jsp:include page="content.jsp"/>
 

@@ -220,7 +220,7 @@ ${bodyTop}
                     </span>
                 </span>
                 Auto-logout in: 
-                <b id="timeLeft">0:13:53</b> - 
+                <b id="timeLeft">-:--:--</b> -
                 <a id="timeLeftRenew" href="#!">renew</a>
                 <b>|</b> 
                 <a id="logout_user" href="${_siteRoot}/app/action/LogoutUser">Logout</a>

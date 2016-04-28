@@ -21,11 +21,30 @@
 
     <!-- playground for XNAT.spawner methods -->
 
+    <button id="show-spawn" type="button">Show some spawn() examples below:</button>
+
     <div id="spawn-container"></div>
 
+    <script src="${_siteRoot}/scripts/lib/spawn/spawn.examples.js"></script>
     <script src="${_siteRoot}/scripts/xnat/spawner.js"></script>
 
     <script>
+
+        (function(){
+
+            var $showSpawn = $('#show-spawn');
+            var $spawnContainer = $('#spawn-container');
+
+            $showSpawn.click(function(){
+                $spawnContainer.spawn('hr.clear', {
+                    style: 'margin: 30px 0'
+                }, '<br>');
+                $spawnContainer.append(spawn.examples.createSpawn());
+            });
+
+        })();
+
+
 
     </script>
 

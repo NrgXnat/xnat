@@ -123,6 +123,13 @@
                 'classes', 'attr', 'data', 'fn'],
             errors = []; // collect errors
 
+        // deal with passing an array as the only argument
+        if (Array.isArray(tag)){
+            children = tag[2];
+            opts = tag[1];
+            tag = tag[0];
+        }
+
         if (tag === '!'){
             el = doc.createDocumentFragment();
             appendChildren(el, opts, spawn);

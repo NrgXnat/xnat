@@ -58,7 +58,7 @@ public interface ScriptTriggerService extends BaseHibernateService<ScriptTrigger
     /**
      * Retrieves all triggers associated with the site scope and indicated event. This is basically a convenience
      * wrapper around the full scope-entity-event get implemented in {@link #getByScopeEntityAndEvent(Scope, String,
-     * String)}.
+     * String, String)}.
      *
      * @param eventClass the event class
      * @param event the event

@@ -13,12 +13,14 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.automation.configuration.AutomationTestsConfiguration;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.entities.ScriptTriggerTemplate;
 import org.nrg.framework.constants.Scope;
 import org.python.google.common.collect.Lists;
 import org.python.google.common.collect.Maps;
+import org.springframework.test.annotation.Rollback;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
 import org.springframework.test.context.transaction.TransactionConfiguration;
@@ -39,8 +41,8 @@ import static org.junit.Assert.*;
  */
 @SuppressWarnings("deprecation")
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
-@TransactionConfiguration(defaultRollback = true)
+@ContextConfiguration(classes = AutomationTestsConfiguration.class)
+@Rollback
 @Transactional
 public class TestScriptTriggerAndTemplateServices {
 

@@ -119,12 +119,12 @@ public class HibernateScriptTriggerService extends AbstractHibernateEntityServic
     /**
      * Retrieves all triggers associated with the site scope and indicated event. This is basically a convenience
      * wrapper around the full scope-entity-event get implemented in {@link #getByScopeEntityAndEvent(Scope, String,
-     * String)}.
+     * String, String)}.
      *
      * @param eventClass the event class
      * @param event The event associated with the trigger.
      * @return All triggers associated with the site scope and indicated event.
-     * @see #getByScopeEntityAndEvent(Scope, String, String)
+     * @see #getByScopeEntityAndEvent(Scope, String, String, String)
      */
     @Override
     @Transactional

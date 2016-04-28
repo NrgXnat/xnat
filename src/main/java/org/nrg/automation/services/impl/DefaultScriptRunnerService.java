@@ -3,12 +3,10 @@ package org.nrg.automation.services.impl;
 import org.apache.commons.lang3.StringUtils;
 import org.jetbrains.annotations.NotNull;
 import org.nrg.automation.annotations.Supports;
-import org.nrg.automation.entities.Event;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.entities.ScriptOutput;
 import org.nrg.automation.entities.ScriptTrigger;
 import org.nrg.automation.runners.ScriptRunner;
-import org.nrg.automation.services.EventService;
 import org.nrg.automation.services.ScriptRunnerService;
 import org.nrg.automation.services.ScriptService;
 import org.nrg.automation.services.ScriptTriggerService;
@@ -83,7 +81,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * Gets the script for the specified script ID. If a script doesn't exist with that script ID, this method returns
      * null. Note that this method does no checking of the scope, associated entity, or event, but just returns the
      * script. You can get @{link Script scripts} for particular scopes or events by calling {@link
-     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String)}.
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String,
+     * String, Map)}.
      *
      * @param scriptId The ID of the script to locate.
      *
@@ -102,7 +101,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      */
     @Override
     public List<Script> getScripts(final String scriptId) {
-        List<Script> scriptsList = new ArrayList<Script>();
+        List<Script> scriptsList = new ArrayList<>();
         scriptsList.add(_scriptService.getByScriptId(scriptId));
         return scriptsList;
     }
@@ -112,7 +111,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * indicated scope, entity ID, and event. If a script doesn't exist with that script ID and trigger association,
      * this method returns null. Note that this method does no checking of the scope, associated entity, or event, but
      * just returns the script. You can get @{link Script scripts} for particular scopes or events by calling {@link
-     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String)}.
+     * ScriptRunnerService#getScripts(Scope, String)} or {@link ScriptRunnerService#getScript(Scope, String, String,
+     * String, Map)}.
      *
      * @param scriptId     The ID of the script to locate.
      * @param scope        The scope for the script.
@@ -260,9 +260,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
-     * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
-     * site-wide script that can be run on demand.
+     * A pared down version of {@link #setScriptImpl(String, String, String, String, Scope, String, String, String, Map,
+     * String)} that sets the scope, event, language, and language version arguments to default values. This is useful
+     * for creating a site-wide script that can be run on demand.
      *
      * @param scriptId The ID of the script to set.
      * @param scriptLabel The Label of the script to set.
@@ -274,9 +274,9 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
-     * sets the scope, event, language, and language version arguments to default values. This is useful for creating a
-     * site-wide script that can be run on demand.
+     * A pared down version of {@link #setScriptImpl(String, String, String, String, Scope, String, String, String, Map,
+     * String)} that sets the scope, event, language, and language version arguments to default values. This is useful
+     * for creating a site-wide script that can be run on demand.
      *
      * @param scriptId    The ID of the script to set.
      * @param scriptLabel The Label of the script to set.
@@ -289,8 +289,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
-     * sets the event, language, and language version arguments to default values.
+     * A pared down version of {@link #setScriptImpl(String, String, String, String, Scope, String, String, String, Map,
+     * String)} that sets the event, language, and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
      * @param scriptLabel The Label of the script to set.
@@ -304,8 +304,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
-     * sets the language and language version arguments to default values.
+     * A pared down version of {@link #setScriptImpl(String, String, String, String, Scope, String, String, String, Map,
+     * String)} that sets the language and language version arguments to default values.
      *
      * @param scriptId The ID of the script to set.
      * @param scriptLabel The Label of the script to set.
@@ -322,8 +322,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
-     * sets the description to the default value.
+     * A pared down version of {@link #setScriptImpl(String, String, String, String, Scope, String, String, String, Map,
+     * String)} that sets the description to the default value.
      *
      * @param scriptId The ID of the script to set.
      * @param scriptLabel The Label of the script to set.
@@ -341,8 +341,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
-     * sets the event, language, and language version arguments to default values.
+     * A pared down version of {@link #setScriptImpl(String, String, String, String, Scope, String, String, String, Map,
+     * String)} that sets the event, language, and language version arguments to default values.
      *
      * @param scriptId    The ID of the script to set.
      * @param scriptLabel The Label of the script to set.
@@ -357,8 +357,8 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
     }
 
     /**
-     * A pared down version of {@link #setScript(String, String, String, Scope, String, String, String)} that
-     * sets the language and language version arguments to default values.
+     * A pared down version of {@link #setScriptImpl(String, String, String, String, Scope, String, String, String, Map,
+     * String)} that sets the language and language version arguments to default values.
      *
      * @param scriptId    The ID of the script to set.
      * @param scriptLabel The Label of the script to set.
@@ -458,7 +458,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * This attempts to run the submitted script. Note that this method does no checking of the scope, associated
      * entity, or event, but just executes the script. You can get @{link Script scripts} for particular scopes by
      * calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or {@link
-     * #getScript(Scope, String, String)} methods.
+     * #getScript(Scope, String, String, String, Map)} methods.
      *
      * @param script The script to run.
      * @return The results of the script execution.
@@ -473,7 +473,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * This attempts to run the submitted script, passing in the <b>parameters</b> map as parameters to the script. Note
      * that this method does no checking of the scope, associated entity, or event, but just executes the script. You
      * can get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
-     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String)} methods.
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String, String, Map)} methods.
      *
      * @param script     The script to run.
      * @param parameters The parameters to pass to the script.
@@ -489,7 +489,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
      * from the trigger parameter, into the script execution environment. You can get @{link Script scripts} for
      * particular scopes by calling the {@link #getScripts()}, {@link ScriptRunnerService#getScripts(Scope, String)}, or
-     * {@link #getScript(Scope, String, String)} methods.
+     * {@link #getScript(Scope, String, String, String, Map)} methods.
      *
      * @param script  The script to run.
      * @param trigger The associated trigger for the script execution.
@@ -505,7 +505,7 @@ public class DefaultScriptRunnerService implements ScriptRunnerService, Initiali
      * This attempts to run the submitted script. This passes the details about the associated scope and event, derived
      * from the trigger parameter, as well as the submitted parameters, into the script execution environment. You can
      * get @{link Script scripts} for particular scopes by calling the {@link #getScripts()}, {@link
-     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String)} methods.
+     * ScriptRunnerService#getScripts(Scope, String)}, or {@link #getScript(Scope, String, String, String, Map)} methods.
      *
      * @param script     The script to run.
      * @param trigger    The associated trigger for the script execution.

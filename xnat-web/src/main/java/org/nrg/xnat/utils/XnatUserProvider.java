@@ -10,13 +10,15 @@
  */
 package org.nrg.xnat.utils;
 
-import javax.inject.Provider;
-
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.stereotype.Component;
 
+import javax.inject.Provider;
+
+@Component
 public class XnatUserProvider implements Provider<UserI> {
     public XnatUserProvider(final String login) {
         _login = login;

@@ -12,7 +12,7 @@ package org.nrg.xnat.security;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nrg.config.services.SiteConfigurationService;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
@@ -22,7 +22,6 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.ldap.userdetails.LdapUserDetailsMapper;
 import org.springframework.util.Assert;
 
-import javax.inject.Inject;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
@@ -30,11 +29,11 @@ import java.util.Map;
 public class XnatLdapUserDetailsMapper extends LdapUserDetailsMapper {
 
     public static final String PROPERTY_PREFIX = "attributes.";
-    public static final String PROPERTY_EMAIL = PROPERTY_PREFIX + "email";
-    public static final String PROPERTY_FIRST = PROPERTY_PREFIX + "firstname";
-    public static final String PROPERTY_LAST = PROPERTY_PREFIX + "lastname";
+    public static final String PROPERTY_EMAIL  = PROPERTY_PREFIX + "email";
+    public static final String PROPERTY_FIRST  = PROPERTY_PREFIX + "firstname";
+    public static final String PROPERTY_LAST   = PROPERTY_PREFIX + "lastname";
 
-    public XnatLdapUserDetailsMapper(final String authMethodId, final Map<String, String> properties) {
+    public XnatLdapUserDetailsMapper(final String authMethodId, final Map<String, String> properties, final XdatUserAuthService userAuthService, final SiteConfigPreferences preferences) {
         super();
         Assert.hasText(authMethodId, "You must provide an authentication method ID.");
         Assert.notEmpty(properties, "You must provide the authentication provider properties.");
@@ -60,6 +59,8 @@ public class XnatLdapUserDetailsMapper extends LdapUserDetailsMapper {
             }
             _properties = properties;
         }
+        _userAuthService = userAuthService;
+        _preferences = preferences;
     }
 
     @Override
@@ -73,8 +74,8 @@ public class XnatLdapUserDetailsMapper extends LdapUserDetailsMapper {
         UserI userDetails = _userAuthService.getUserDetailsByNameAndAuth(user.getUsername(), XdatUserAuthService.LDAP, _authMethodId, email, lastname, firstname);
 
         try {
-            UserI xdatUser = Users.getUser(userDetails.getUsername());
-            if ((!_siteConfigurationService.getBoolSiteConfigurationProperty("emailVerification", false) || xdatUser.isVerified()) && userDetails.getAuthorization().isEnabled()) {
+            final UserI xdatUser = Users.getUser(userDetails.getUsername());
+            if ((!_preferences.getEmailVerification() || xdatUser.isVerified()) && userDetails.getAuthorization().isEnabled()) {
                 return userDetails;
             } else {
                 throw new NewLdapAccountNotAutoEnabledException(
@@ -92,12 +93,8 @@ public class XnatLdapUserDetailsMapper extends LdapUserDetailsMapper {
 
     private static final Log _log = LogFactory.getLog(XnatLdapUserDetailsMapper.class);
 
-    @Inject
-    private XdatUserAuthService _userAuthService;
-
-    @Inject
-    private SiteConfigurationService _siteConfigurationService;
-
-    private final String _authMethodId;
-    private final Map<String, String> _properties;
+    private final XdatUserAuthService   _userAuthService;
+    private final SiteConfigPreferences _preferences;
+    private final String                _authMethodId;
+    private final Map<String, String>   _properties;
 }

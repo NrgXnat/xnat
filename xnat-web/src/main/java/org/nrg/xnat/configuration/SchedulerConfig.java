@@ -2,52 +2,58 @@ package org.nrg.xnat.configuration;
 
 import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.mail.services.EmailRequestLogService;
-import org.nrg.schedule.TriggerTaskProxy;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xnat.helpers.prearchive.SessionXMLRebuilder;
-import org.nrg.xnat.initialization.InitializerSiteConfiguration;
 import org.nrg.xnat.security.DisableInactiveUsers;
 import org.nrg.xnat.security.ResetEmailRequests;
 import org.nrg.xnat.security.ResetFailedLogins;
 import org.nrg.xnat.security.alias.ClearExpiredAliasTokens;
 import org.nrg.xnat.utils.XnatUserProvider;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Lazy;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jms.core.JmsTemplate;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.SchedulingConfigurer;
 import org.springframework.scheduling.concurrent.ThreadPoolTaskScheduler;
 import org.springframework.scheduling.config.ScheduledTaskRegistrar;
+import org.springframework.scheduling.config.TriggerTask;
+import org.springframework.scheduling.support.CronTrigger;
+import org.springframework.scheduling.support.PeriodicTrigger;
 
 import javax.inject.Inject;
-import javax.sql.DataSource;
 import java.util.List;
 
 @Configuration
 @EnableScheduling
 public class SchedulerConfig implements SchedulingConfigurer {
     @Bean
-    public TriggerTaskProxy disableInactiveUsers() throws SiteConfigurationException {
-        return new TriggerTaskProxy(new DisableInactiveUsers(_preferences.getInactivityBeforeLockout()), _preferences.getInactivityBeforeLockoutSchedule());
+    public TriggerTask disableInactiveUsers() throws SiteConfigurationException {
+        return new TriggerTask(new DisableInactiveUsers(_preferences.getInactivityBeforeLockout()), new CronTrigger(_preferences.getInactivityBeforeLockoutSchedule()));
     }
 
     @Bean
-    public TriggerTaskProxy resetFailedLogins() throws SiteConfigurationException {
-        return new TriggerTaskProxy(new ResetFailedLogins(_dataSource), _preferences.getMaxFailedLoginsLockoutDuration());
+    public TriggerTask resetFailedLogins() throws SiteConfigurationException {
+        return new TriggerTask(new ResetFailedLogins(_template, _preferences.getMaxFailedLoginsLockoutDuration()), new PeriodicTrigger(900000));
     }
 
     @Bean
-    public TriggerTaskProxy resetEmailRequests() {
-        return new TriggerTaskProxy(new ResetEmailRequests(_emailRequestLogService), 900000);
+    public TriggerTask resetEmailRequests() {
+        return new TriggerTask(new ResetEmailRequests(_emailRequestLogService), new PeriodicTrigger(900000));
     }
 
     @Bean
-    public TriggerTaskProxy clearExpiredAliasTokens() throws SiteConfigurationException {
-        return new TriggerTaskProxy(new ClearExpiredAliasTokens(_dataSource, _preferences.getAliasTokenTimeout()), 3600000);
+    public TriggerTask clearExpiredAliasTokens() throws SiteConfigurationException {
+        return new TriggerTask(new ClearExpiredAliasTokens(_template, _preferences.getAliasTokenTimeout()), new PeriodicTrigger(3600000));
     }
 
     @Bean
-    public TriggerTaskProxy rebuildSessionéXmls() throws SiteConfigurationException {
-        return new TriggerTaskProxy(new SessionXMLRebuilder(_provider, _preferences.getSessionXmlRebuilderInterval(), _jmsTemplate), _preferences.getSessionXmlRebuilderRepeat(), 60000);
+    public TriggerTask rebuildSessionXmls() throws SiteConfigurationException {
+        final PeriodicTrigger trigger = new PeriodicTrigger(_preferences.getSessionXmlRebuilderRepeat());
+        trigger.setInitialDelay(60000);
+        return new TriggerTask(new SessionXMLRebuilder(_provider, _preferences.getSessionXmlRebuilderInterval(), _jmsTemplate), trigger);
     }
 
     @Bean(destroyMethod = "shutdown")
@@ -63,16 +69,17 @@ public class SchedulerConfig implements SchedulingConfigurer {
 //        taskRegistrar.addTriggerTask(resetEmailRequests());
 //        taskRegistrar.addTriggerTask(clearExpiredAliasTokens());
 //        taskRegistrar.addTriggerTask(rebuildSessionXmls());
-        for (final TriggerTaskProxy triggerTask : _triggerTasks) {
+        for (final TriggerTask triggerTask : _triggerTasks) {
             taskRegistrar.addTriggerTask(triggerTask);
         }
     }
 
     @Inject
-    private DataSource _dataSource;
-
-    @Inject
     private EmailRequestLogService _emailRequestLogService;
+
+    @Autowired
+    @Lazy
+    private JdbcTemplate _template;
 
     @Inject
     private XnatUserProvider _provider;
@@ -85,5 +92,5 @@ public class SchedulerConfig implements SchedulingConfigurer {
 
     @SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
     @Inject
-    private List<TriggerTaskProxy> _triggerTasks;
+    private List<TriggerTask> _triggerTasks;
 }

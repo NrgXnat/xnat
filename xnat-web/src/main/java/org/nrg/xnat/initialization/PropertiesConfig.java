@@ -1,4 +1,4 @@
-package org.nrg.xnat.configuration;
+package org.nrg.xnat.initialization;
 
 import org.apache.commons.configuration.ConfigurationException;
 import org.apache.commons.lang3.StringUtils;

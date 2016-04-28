@@ -14,17 +14,16 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.jdbc.core.JdbcTemplate;
 
-import javax.sql.DataSource;
 import java.util.Arrays;
 import java.util.List;
 
 public class ClearExpiredAliasTokens implements Runnable {
-    public ClearExpiredAliasTokens(final DataSource dataSource, final String timeout) {
+    public ClearExpiredAliasTokens(final JdbcTemplate template, final String timeout) {
         if (_log.isDebugEnabled()) {
             _log.debug("Initializing the alias token sweeper job with an interval of: " + timeout);
         }
 
-        _dataSource = dataSource;
+        _template = template;
         _timeout = timeout;
     }
 
@@ -35,13 +34,12 @@ public class ClearExpiredAliasTokens implements Runnable {
         if (_log.isDebugEnabled()) {
             _log.debug("Executing alias token sweep function");
         }
-        JdbcTemplate template = new JdbcTemplate(_dataSource);
         for (final String format : ALIAS_TOKEN_QUERIES) {
             final String query = String.format(format, _timeout);
             if (_log.isDebugEnabled()) {
                 _log.debug("Executing alias token sweep query: " + query);
             }
-            template.execute(query);
+            _template.execute(query);
         }
     }
 
@@ -50,6 +48,6 @@ public class ClearExpiredAliasTokens implements Runnable {
     private static final String       QUERY_DELETE_ALIAS_TOKENS       = "DELETE FROM xhbm_alias_token WHERE created < NOW() - INTERVAL '%s'";
     private static final List<String> ALIAS_TOKEN_QUERIES             = Arrays.asList(QUERY_DELETE_TOKEN_IP_ADDRESSES, QUERY_DELETE_ALIAS_TOKENS);
 
-    private final DataSource _dataSource;
-    private final String     _timeout;
+    private final JdbcTemplate _template;
+    private final String       _timeout;
 }

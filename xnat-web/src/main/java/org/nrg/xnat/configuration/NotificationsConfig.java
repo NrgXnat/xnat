@@ -6,7 +6,7 @@ import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.notify.entities.ChannelRendererProvider;
 import org.nrg.notify.renderers.ChannelRenderer;
 import org.nrg.notify.renderers.NrgMailChannelRenderer;
-import org.nrg.xnat.initialization.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;

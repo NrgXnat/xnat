@@ -20,6 +20,7 @@ import org.nrg.xft.security.UserI;
 import org.nrg.xnat.event.conf.EventPackages;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -49,13 +50,16 @@ public class EventHandlerApi {
     private static final Logger _log = LoggerFactory.getLogger(EventHandlerApi.class);
 	
 	/** The event ids service. */
+	@Autowired
 	private HibernateAutomationEventIdsService eventIdsService;
 	
 	/** The filters service. */
+	@Autowired
 	private HibernateAutomationFiltersService filtersService;
     
     /** The event packages. */
-    private static EventPackages eventPackages;
+	@Autowired
+    private EventPackages eventPackages;
     
     /**
      * Inits the this.
@@ -64,7 +68,6 @@ public class EventHandlerApi {
     private void initThis() {
     	getEventIdsService();
     	getFiltersService();
-    	getEventPackages();
     }
 	
     /**
@@ -82,7 +85,7 @@ public class EventHandlerApi {
     	if (status != null) {
     		return new ResponseEntity<>(status);
     	}
-        return new ResponseEntity<List<EventClassInfo>>(getEventInfoList(project_id), HttpStatus.OK);
+        return new ResponseEntity<>(getEventInfoList(project_id), HttpStatus.OK);
     }
 	
     /**
@@ -99,7 +102,7 @@ public class EventHandlerApi {
     	if (status != null) {
     		return new ResponseEntity<>(status);
     	}
-        return new ResponseEntity<List<EventClassInfo>>(getEventInfoList(null), HttpStatus.OK);
+        return new ResponseEntity<>(getEventInfoList(null), HttpStatus.OK);
     }
 
 	/**
@@ -190,7 +193,6 @@ public class EventHandlerApi {
 	private List<String> getEventClassList(List<AutomationEventIds> eventIdsList) {
 		final List<String> classList = Lists.newArrayList();
 		// ClassList should be pulled from available event classes rather than from events
-		final EventPackages eventPackages = getEventPackages();
 		if (eventPackages != null) {
 			for (final String pkg : eventPackages) {
 				try {
@@ -243,18 +245,6 @@ public class EventHandlerApi {
 		return filtersService;
 	}
     
-    /**
-     * Gets the event packages.
-     *
-     * @return the event packages
-     */
-    private static EventPackages getEventPackages() {
-		if (eventPackages == null) {
-			eventPackages = XDAT.getContextService().getBean("eventPackages",EventPackages.class);
-		}
-		return eventPackages;
-    }
-	
     /**
      * Gets the session user.
      *

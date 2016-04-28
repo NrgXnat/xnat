@@ -8,7 +8,7 @@ import org.nrg.config.services.impl.DefaultConfigService;
 import org.nrg.config.services.impl.DefaultUserConfigurationService;
 import org.nrg.prefs.configuration.NrgPrefsServiceConfiguration;
 import org.nrg.prefs.services.PreferenceService;
-import org.nrg.xnat.initialization.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xnat.resolvers.XnatPreferenceEntityResolver;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;

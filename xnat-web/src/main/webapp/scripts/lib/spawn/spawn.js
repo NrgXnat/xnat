@@ -118,7 +118,8 @@
     function spawn(tag, opts, children){
 
         var el, $el, parts, id, classes, tagParts, attrs, isVoid,
-            skip = ['innerHTML', 'html', 'append',  // properties to skip later
+            // property names to skip later
+            skip = ['innerHTML', 'html', 'append', 'appendTo',
                 'classes', 'attr', 'data', 'fn'],
             errors = []; // collect errors
 
@@ -277,6 +278,15 @@
                 }
             }
         }
+        
+        // shortcut for jQuery's .appendTo() method
+        // set the 'appendTo' property to a selector,
+        // element or jQuery object
+        if (opts.appendTo && window.jQuery){
+            // using brackets to clarify that we're
+            // using the .appendTo() jQuery method
+            jQuery(el)['appendTo'](opts.appendTo);
+        }
 
         // execute element methods last...
         // attach object or array of methods
@@ -292,16 +302,27 @@
         }
 
         // execute jQuery methods from the `$` property
-        if (opts.$ && window.$){
-            $el = $(el);
-            forOwn(opts.$, function(method, args){
-                $el[method].apply($el, [].concat(args));
-            });
+        if (opts.$ && window.jQuery){
+            $el = jQuery(el);
+            // use an array to call the same method more than once
+            if (Array.isArray(opts.$)){
+                forEach(opts.$, function(item){
+                    $el[item[0]].apply($el, [].concat(item[1]))   
+                });
+            }
+            else {
+                forOwn(opts.$, function(method, args){
+                    $el[method].apply($el, [].concat(args));
+                });
+            }
         }
 
         if (errors.length){
             if (hasConsole) console.log(errors);
         }
+        
+        // alias for convenience
+        el.html = el.outerHTML;
 
         return el;
 
@@ -818,6 +839,22 @@
 
     // export to the global window object
     window.spawn = spawn;
+    
+    // if jQuery is present, add it to the jQuery
+    // prototype for chaining and the jQuery object
+    // to get a jQuery-wrapped spawned element
+    if (window.jQuery){
+        
+        jQuery.fn.spawn = function(){
+            this.append(spawn.apply(this, arguments));
+            return this;
+        };
+        
+        jQuery.spawn = function(){
+            return jQuery(spawn.apply(null, arguments));
+        }
+        
+    }
 
     //
     // utility functions:

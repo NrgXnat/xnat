@@ -3,6 +3,7 @@ package org.nrg.dicomtools.filters;
 import org.apache.commons.lang3.StringUtils;
 import org.junit.Test;
 import org.junit.runner.RunWith;
+import org.nrg.dicomtools.configuration.SeriesImportFilterTestsConfiguration;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.test.context.ContextConfiguration;
 import org.springframework.test.context.junit4.SpringJUnit4ClassRunner;
@@ -15,7 +16,7 @@ import java.util.Map;
 import static org.junit.Assert.*;
 
 @RunWith(SpringJUnit4ClassRunner.class)
-@ContextConfiguration
+@ContextConfiguration(classes = SeriesImportFilterTestsConfiguration.class)
 public class SeriesImportFilterTests {
 
     @Test

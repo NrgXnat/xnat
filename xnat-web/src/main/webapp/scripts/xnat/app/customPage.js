@@ -20,9 +20,10 @@ XNAT.app = getObject(XNAT.app||{});
 
     var customPage = getObject(XNAT.app.customPage||{});
 
-    customPage.getName = function(){
+    customPage.getName = function(end){
         var name = getQueryStringValue('view');
-        name = name || getUrlHashValue('#view=');
+        name = name || getUrlHashValue('#view=', end);
+        name = name || getUrlHashValue('#/', end);
         name = name || getUrlHash();
         return customPage.name = name;
     };
@@ -32,9 +33,17 @@ XNAT.app = getObject(XNAT.app||{});
     customPage.getPage = function(name, container){
 
         var pagePaths = [],
-            themePaths = [];
+            themePaths = [],
+            end = ';';
 
-        name = name || customPage.getName();
+        // use an array for the name param
+        // to specify a start AND end for the page string
+        if (Array.isArray(name)){
+            end  = name[1] || end;
+            name = name[0] || '';
+        }
+        
+        name = name || customPage.getName(end);
 
         // don't even bother if there's no name
         if (!name) return;

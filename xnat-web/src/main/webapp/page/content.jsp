@@ -3,15 +3,11 @@
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
 <c:if test="${empty hasInit}">
-    <pg:init/>
-</c:if>
-
-<c:if test="${not empty hasInit}">
-    <!-- init done -->
-</c:if>
-
-<c:if test="${empty hasVars}">
-    <pg:jsvars/>
+    <pg:init>
+        <c:if test="${empty hasVars}">
+            <pg:jsvars/>
+        </c:if>
+    </pg:init>
 </c:if>
 
 <div id="page-wrapper">
@@ -20,33 +16,16 @@
     </div>
 </div>
 
-
 <script>
-    (function () {
+    (function(){
 
-        function getUrlHash(key) {
-            var hash = window.location.hash.split(key || '#')[1] || '';
-            return hash.split('/#')[0];
-        }
+        var customPage = XNAT.app.customPage;
+        var $pageContent = $('#page-content');
 
-        function getContent() {
-            var hash = getUrlHash('#/') || 'home';
-            XNAT.xhr.get({
-                dataType: 'html',
-                url: PAGE.pageRoot + '/' + (hash.replace(/\/+$/, '')) + '/content.jsp',
-                success: function (html) {
-                    $('#page-content').html(html);
-                },
-                failure: function () {
-                    $('#page-content').html('page not found');
-                }
-            })
-        }
+        customPage.getPage('', $pageContent);
 
-        getContent();
-
-        window.onhashchange = function () {
-            getContent();
+        window.onhashchange = function(){
+            customPage.getPage('', $pageContent);
         }
 
     })();

@@ -66,6 +66,7 @@
     <link rel="stylesheet" type="text/css" href="${_siteRoot}/scripts/lib/jquery-plugins/chosen/chosen.min.css?${versionString}">
     <script src="${_siteRoot}/scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js"></script>
     <script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.maskedinput.min.js"></script>
+    <script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
 
     <%-- probably not going to use the jquery spawner --%>
     <%--<script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.spawn.js"></script>--%>
@@ -247,7 +248,7 @@ ${bodyTop}
                 <script>
                     $('#nav-home').css({
                         width: '30px',
-                        backgroundImage: "url('/images/xnat-nav-logo-white-lg.png')",
+                        backgroundImage: "url('${_siteRoot}/images/xnat-nav-logo-white-lg.png')",
                         backgroundRepeat: 'no-repeat',
                         backgroundSize: '32px',
                         backgroundPosition: 'center'

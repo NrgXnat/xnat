@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.daos.AutomationEventIdsDAO;
+import org.nrg.xdat.services.AutomationEventIdsService;
 import org.nrg.xft.event.entities.AutomationEventIds;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -12,13 +13,14 @@ import org.springframework.transaction.annotation.Transactional;
  * The Class HibernateAutomationEventIdsService.
  */
 @Service
-public class HibernateAutomationEventIdsService extends AbstractHibernateEntityService<AutomationEventIds, AutomationEventIdsDAO> {
+public class HibernateAutomationEventIdsService extends AbstractHibernateEntityService<AutomationEventIds, AutomationEventIdsDAO> implements AutomationEventIdsService {
 	
 	/**
 	 * Save or update.
 	 *
 	 * @param e the e
 	 */
+	@Override
 	@Transactional
 	public void saveOrUpdate(AutomationEventIds e) {
 		getDao().saveOrUpdate(e);
@@ -32,6 +34,7 @@ public class HibernateAutomationEventIdsService extends AbstractHibernateEntityS
 	 * @param exactMatchExternalId the exact match external id
 	 * @return the event ids
 	 */
+	@Override
 	@Transactional
 	public List<AutomationEventIds> getEventIds(String projectId, String srcEventClass, boolean exactMatchExternalId) {
 		return getDao().getEventIds(projectId, srcEventClass, exactMatchExternalId);
@@ -44,9 +47,9 @@ public class HibernateAutomationEventIdsService extends AbstractHibernateEntityS
 	 * @param exactMatchExternalId the exact match external id
 	 * @return the event ids
 	 */
+	@Override
 	@Transactional
 	public List<AutomationEventIds> getEventIds(String projectId, boolean exactMatchExternalId) {
 		return getDao().getEventIds(projectId, exactMatchExternalId);
 	}
-	
 }

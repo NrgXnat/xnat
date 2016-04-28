@@ -7,7 +7,8 @@ import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xft.security.UserI;
 
 public interface FeatureServiceI {
-	
+	String DEFAULT_FEATURE_SERVICE = "org.nrg.xdat.security.services.impl.FeatureServiceImpl";
+
 	/**
 	 * Retrieve a list of features for this user by tag
 	 * @param user    The user to check.

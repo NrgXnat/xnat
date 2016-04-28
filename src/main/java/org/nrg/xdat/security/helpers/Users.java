@@ -7,7 +7,6 @@ import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.Authenticator.Credentials;
 import org.nrg.xdat.security.ElementSecurity;
-import org.nrg.xdat.security.UserGroupServiceI;
 import org.nrg.xdat.security.services.UserManagementServiceI;
 import org.nrg.xdat.security.user.exceptions.PasswordAuthenticationException;
 import org.nrg.xdat.security.user.exceptions.UserFieldMappingException;
@@ -79,7 +78,7 @@ public class Users {
             //default to XDATUser implementation (unless a different default is configured)
             if (singleton == null) {
                 try {
-                    String className = XDAT.safeSiteConfigProperty("security.userManagementService.default", DEFAULT_USER_SERVICE);
+                    final String className = XDAT.safeSiteConfigProperty("security.userManagementService.default", DEFAULT_USER_SERVICE);
                     singleton = (UserManagementServiceI) Class.forName(className).newInstance();
                 } catch (ClassNotFoundException | InstantiationException | IllegalAccessException e) {
                     logger.error("", e);

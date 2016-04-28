@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.daos.PersistentEventDAO;
+import org.nrg.xdat.services.PersistentEventService;
 import org.nrg.xft.event.AutomationEventImplementerI;
 import org.nrg.xft.event.entities.PersistentEvent;
 import org.springframework.stereotype.Service;
@@ -13,13 +14,14 @@ import org.springframework.transaction.annotation.Transactional;
  * The Class HibernatePersistentEventService.
  */
 @Service
-public class HibernatePersistentEventService extends AbstractHibernateEntityService<PersistentEvent, PersistentEventDAO> {
+public class HibernatePersistentEventService extends AbstractHibernateEntityService<PersistentEvent, PersistentEventDAO> implements PersistentEventService {
 	
 	/**
 	 * Save persistent event.
 	 *
 	 * @param e the e
 	 */
+	@Override
 	@Transactional
 	public void savePersistentEvent(PersistentEvent e) {
 		getDao().create(e);
@@ -33,6 +35,7 @@ public class HibernatePersistentEventService extends AbstractHibernateEntityServ
 	 * @param projectId the project id
 	 * @return the distinct values
 	 */
+	@Override
 	@Transactional
 	public List<Object[]> getDistinctValues(Class<AutomationEventImplementerI> clazz, String column, String projectId) {
 		return getDao().getDistinctValues(clazz,column,projectId);

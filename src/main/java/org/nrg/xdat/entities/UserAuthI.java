@@ -11,48 +11,52 @@ import org.springframework.security.core.GrantedAuthority;
 
 public interface UserAuthI {
 
-	public abstract String getXdatUsername();
+	String getXdatUsername();
 
-	public abstract void setXdatUsername(String xdatUsername);
+	void setXdatUsername(String xdatUsername);
 
-	public abstract String getAuthUser();
+	String getAuthUser();
 
-	public abstract void setAuthUser(String user);
+	void setAuthUser(String user);
 
-	public abstract String getAuthMethod();
+	String getAuthMethod();
 
-	public abstract void setAuthMethod(String means);
+	void setAuthMethod(String means);
 
-	public abstract String getAuthMethodId();
+	String getAuthMethodId();
 
-	public abstract void setAuthMethodId(String means);
+	void setAuthMethodId(String means);
 
-	public abstract Integer getFailedLoginAttempts();
+	Integer getFailedLoginAttempts();
 
-	public abstract void setFailedLoginAttempts(Integer count);
+	void setFailedLoginAttempts(Integer count);
 
-	public abstract Date getLastSuccessfulLogin();
+	Date getLastSuccessfulLogin();
 
-	public abstract void setLastSuccessfulLogin(Date lastSuccessfulLogin);
+	void setLastSuccessfulLogin(Date lastSuccessfulLogin);
+
+	Date getLastLoginAttempt();
+
+	void setLastLoginAttempt(Date lastLoginAttempt);
 
 	@Temporal(TemporalType.TIMESTAMP)
-	public abstract Date getPasswordUpdated();
+	Date getPasswordUpdated();
 
 	@Temporal(TemporalType.TIMESTAMP)
-	public abstract void setPasswordUpdated(Date timestamp);
+	void setPasswordUpdated(Date timestamp);
 
 	@Transient
-	public abstract Collection<GrantedAuthority> getAuthorities();
+	Collection<GrantedAuthority> getAuthorities();
 
 	@Transient
-	public abstract boolean isAccountNonExpired();
+	boolean isAccountNonExpired();
 
 	@Transient
-	public abstract boolean isAccountNonLocked();
+	boolean isAccountNonLocked();
 
 	@Transient
-	public abstract boolean isCredentialsNonExpired();
+	boolean isCredentialsNonExpired();
 
-	public abstract boolean isEnabled();
+	boolean isEnabled();
 
 }

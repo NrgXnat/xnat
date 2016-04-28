@@ -18,18 +18,18 @@ import org.nrg.xdat.entities.XdatUserAuth;
 import org.nrg.xft.security.UserI;
 
 public interface XdatUserAuthService extends BaseHibernateService<XdatUserAuth>{
+	String LOCALDB = "localdb";
+	String LDAP = "ldap";
+	String OPENID = "openid";
+	String TOKEN = "token";
 
-	public static final String LOCALDB = "localdb";
-	public static final String LDAP = "ldap";
-	public static final String OPENID = "openid";
-	public static final String TOKEN = "token";
-	public XdatUserAuth getUserByNameAndAuth(String user, String auth, String id);
-    public XdatUserAuth getUserByXdatUsernameAndAuth(String user, String auth, String id);
-    public UserI getUserDetailsByNameAndAuth(String user, String auth);
-	public UserI getUserDetailsByNameAndAuth(String user, String auth, String id);
-	public UserI getUserDetailsByNameAndAuth(String user, String auth, String id, String email);
-	public UserI getUserDetailsByNameAndAuth(String user, String auth, String id, String email, String lastname, String firstname);
-	public UserI getUserDetailsByUsernameAndMostRecentSuccessfulLogin(String username);
-	public List<XdatUserAuth> getUsersByName(String user);
-	public List<XdatUserAuth> getUsersByXdatUsername(String xdatUser);
+	XdatUserAuth getUserByNameAndAuth(String user, String auth, String id);
+	XdatUserAuth getUserByXdatUsernameAndAuth(String user, String auth, String id);
+    UserI getUserDetailsByNameAndAuth(String user, String auth);
+	UserI getUserDetailsByNameAndAuth(String user, String auth, String id);
+	UserI getUserDetailsByNameAndAuth(String user, String auth, String id, String email);
+	UserI getUserDetailsByNameAndAuth(String user, String auth, String id, String email, String lastname, String firstname);
+	UserI getUserDetailsByUsernameAndMostRecentSuccessfulLogin(String username);
+	List<XdatUserAuth> getUsersByName(String user);
+	List<XdatUserAuth> getUsersByXdatUsername(String xdatUser);
 }

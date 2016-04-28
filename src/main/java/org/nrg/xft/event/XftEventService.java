@@ -39,9 +39,6 @@ public class XftEventService {
 	    return _instance;
 	}
 	
-	/** The logger. */
-	static Logger logger = Logger.getLogger(XftEventService.class);
-	
 	/** The event bus. */
 	@Inject private EventBus eventBus;
 	

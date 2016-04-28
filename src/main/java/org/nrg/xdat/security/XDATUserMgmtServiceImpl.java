@@ -22,7 +22,6 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
-import org.nrg.xft.utils.XftStringUtils;
 import org.nrg.xft.utils.ValidationUtils.ValidationResultsI;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 
@@ -30,7 +29,7 @@ import java.util.List;
 import java.util.Map;
 
 public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
-    static Logger logger = Logger.getLogger(XDATUserMgmtServiceImpl.class);
+    private static final Logger logger = Logger.getLogger(XDATUserMgmtServiceImpl.class);
 
 	@Override
 	public UserI createUser() {
@@ -96,7 +95,7 @@ public class XDATUserMgmtServiceImpl  implements UserManagementServiceI{
 	}
 
 	@Override
-	public UserI createUser(Map<String, ? extends Object> params) throws UserFieldMappingException, UserInitException{
+	public UserI createUser(Map<String, ?> params) throws UserFieldMappingException, UserInitException{
         try {
 			PopulateItem populater = new PopulateItem(params,null,org.nrg.xft.XFT.PREFIX + ":user",true);
 			ItemI found = populater.getItem();

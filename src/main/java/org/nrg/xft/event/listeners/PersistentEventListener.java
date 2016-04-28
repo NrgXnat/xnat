@@ -1,19 +1,18 @@
 package org.nrg.xft.event.listeners;
 
-import static reactor.bus.selector.Selectors.type;
-
-import javax.inject.Inject;
-
-import org.nrg.xdat.XDAT;
-import org.nrg.xdat.services.impl.hibernate.HibernatePersistentEventService;
+import org.nrg.xdat.services.PersistentEventService;
 import org.nrg.xft.event.AutomationEventImplementerI;
 import org.nrg.xft.event.StructuredEventI;
 import org.nrg.xft.event.persist.PersistentEventImplementerI;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-
 import reactor.bus.Event;
 import reactor.bus.EventBus;
 import reactor.fn.Consumer;
+
+import javax.inject.Inject;
+
+import static reactor.bus.selector.Selectors.type;
 
 /**
  * The listener interface for receiving persistentEvent events.
@@ -23,8 +22,6 @@ import reactor.fn.Consumer;
  * component's <code>addPersistentEventListener<code> method. When
  * the persistentEvent event occurs, that object's appropriate
  * method is invoked.
- *
- * @see PersistentEventEvent
  */
 @Service
 public class PersistentEventListener implements Consumer<Event<PersistentEventImplementerI>> {
@@ -52,9 +49,10 @@ public class PersistentEventListener implements Consumer<Event<PersistentEventIm
 		}
 		StructuredEventI persistentEvent = event.getData();
 		if (persistentEvent != null) {
-			final HibernatePersistentEventService service = XDAT.getContextService().getBean(HibernatePersistentEventService.class);
-			service.create(event.getData());
+			_persistentEventService.create(event.getData());
 		}
 	}
 
+	@Autowired
+	private PersistentEventService _persistentEventService;
 }

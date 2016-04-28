@@ -15,7 +15,6 @@ package org.nrg.xdat.security;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.display.DisplayField;
 import org.nrg.xdat.display.ElementDisplay;
 import org.nrg.xdat.om.*;
@@ -24,8 +23,6 @@ import org.nrg.xdat.schema.SchemaField;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
-import org.nrg.xdat.security.services.impl.FeatureRepositoryServiceImpl;
 import org.nrg.xdat.velocity.loaders.CustomClasspathResourceLoader;
 import org.nrg.xft.*;
 import org.nrg.xft.cache.CacheManager;
@@ -72,17 +69,18 @@ public class ElementSecurity extends ItemWrapper {
     public static        Hashtable                          elementDistinctIds    = new Hashtable(); //Hashtable of Hashtables /level 1 key=elementName /level2 key=fieldName (or default if ref)/Level 3 key= pk value ,value=display name
 
     private String                                      elementName           = null;
-    private ArrayList<String>                           primarySecurityFields = new ArrayList<String>();
-    private ArrayList<ElementAction>                    elementActions        = new ArrayList<ElementAction>();
-    private ArrayList<XdatElementSecurityListingAction> listingActions        = new ArrayList<XdatElementSecurityListingAction>();
+    private ArrayList<String>                           primarySecurityFields = new ArrayList<>();
+    private ArrayList<ElementAction>                    elementActions        = new ArrayList<>();
+    private ArrayList<XdatElementSecurityListingAction> listingActions        = new ArrayList<>();
 
-    private static Object lock = new Object();
+    private static final Object lock = new Object();
 
     public ElementSecurity() {
     }
 
     /**
-     * @return
+     * Retrieves the system's element security objects.
+     * @return The map of element security objects.
      * @throws Exception When something goes wrong.
      */
     public static Hashtable<String, ElementSecurity> GetElementSecurities() throws Exception {
@@ -98,15 +96,6 @@ public class ElementSecurity extends ItemWrapper {
                         elements.put(es.getElementName(), es);
                     }
                 }
-                final ContextService service = ContextService.getInstance();
-                if (service.hasApplicationContext()) {
-                    final FeatureRepositoryServiceI featureRepoService = service.getBean(FeatureRepositoryServiceI.class);
-                    if (featureRepoService != null && featureRepoService instanceof FeatureRepositoryServiceImpl) {
-                        ((FeatureRepositoryServiceImpl) featureRepoService).updateNewSecureDefinitions();
-                    }
-                } else {
-                    logger.warn("The context service instance does not have an application context: I need to check for new feature definitions but can't.");
-                }
             }
         }
         return elements;
@@ -117,7 +106,7 @@ public class ElementSecurity extends ItemWrapper {
      * contain references to new data types (that haven't been registerd already), they
      * will be registered now.
      *
-     * @return
+     * @return Returns true if any new data model definitions were found.
      * @throws Exception When something goes wrong.
      */
     public static boolean registerNewTypes() throws Exception {
@@ -178,12 +167,12 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @param elementName
-     * @return
+     * @param elementName    The name of the element to retrieve.
+     * @return The requested element.
      * @throws Exception When something goes wrong. 
      */
     public static ElementSecurity GetElementSecurity(String elementName) throws Exception {
-        return (ElementSecurity) GetElementSecurities().get(elementName);
+        return GetElementSecurities().get(elementName);
     }
 
     public static ElementSecurity newElementSecurity(String elementName) throws Exception {
@@ -236,7 +225,8 @@ public class ElementSecurity extends ItemWrapper {
     }
 
     /**
-     * @return
+     * Gets a list of the insecure elements in the system.
+     * @return A list of insecure elements.
      * @throws Exception When something goes wrong. 
      */
     public static ArrayList<ElementSecurity> GetInSecureElements() throws Exception {

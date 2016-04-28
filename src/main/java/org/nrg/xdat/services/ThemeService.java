@@ -11,13 +11,11 @@
 package org.nrg.xdat.services;
 
 import org.nrg.xdat.entities.ThemeConfig;
-import org.springframework.stereotype.Service;
 
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
-@Service
 public interface ThemeService {
 
 //    abstract public void postServiceConstruction();

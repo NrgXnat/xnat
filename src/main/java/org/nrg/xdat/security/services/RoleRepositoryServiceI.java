@@ -3,14 +3,14 @@ package org.nrg.xdat.security.services;
 import java.util.Collection;
 
 public interface RoleRepositoryServiceI {
-	
-	public static interface RoleDefinitionI{
-		public String getKey();
-		public String getName();
-		public String getWarning();
-		public String getDescription();
+	String DEFAULT_ROLE_REPO_SERVICE = "org.nrg.xdat.security.services.impl.RoleRepositoryServiceImpl";
+
+	interface RoleDefinitionI{
+		String getKey();
+		String getName();
+		String getWarning();
+		String getDescription();
 	}
 	
-	public Collection<RoleDefinitionI> getRoles();
-	
+	Collection<RoleDefinitionI> getRoles();
 }

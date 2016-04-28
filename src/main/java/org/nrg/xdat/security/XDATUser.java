@@ -11,8 +11,10 @@
 package org.nrg.xdat.security;
 
 import com.google.common.base.Joiner;
+import com.google.common.collect.ImmutableList;
 import com.google.common.collect.Lists;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
 import org.apache.commons.lang3.builder.EqualsBuilder;
 import org.apache.commons.lang3.builder.HashCodeBuilder;
 import org.apache.commons.lang3.StringUtils;
@@ -44,6 +46,7 @@ import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xft.utils.XftStringUtils;
+import org.springframework.beans.factory.NoSuchBeanDefinitionException;
 import org.springframework.security.authentication.encoding.ShaPasswordEncoder;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
@@ -64,7 +67,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     private final Map<String, UserGroupI> groups = Maps.newHashMap();
     private final Map<String, String> groupsByTag = Maps.newHashMap();
     private boolean extended = false;
-    private List<String> roleNames = null;
+    private final Set<String> roleNames = new HashSet<>();
+    private boolean rolesNotUpdatedFromService = true;
     private ArrayList<XdatStoredSearch> stored_searches = null;
 
     private ArrayList<ElementDisplay> browseable = null;
@@ -451,8 +455,8 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
     	}
     }
 
-    private List<String> loadRoleNames() throws Exception {
-    	final List<String> r=Lists.newArrayList();
+    private Set<String> loadRoleNames() throws Exception {
+    	final Set<String> r= Sets.newHashSet();
 
     	//load from the old role store
         for (ItemI sub: (List<ItemI>)this.getChildItems(org.nrg.xft.XFT.PREFIX + ":user.assigned_roles.assigned_role")) {
@@ -462,18 +466,23 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
         try {
 			//load from the new role store
         	//TODO: Fix it so that this is required in tomcat mode, but optional in command line mode.
-			UserRoleService roleService=XDAT.getContextService().getBean(UserRoleService.class);
-			if(roleService!=null){
-			    List<UserRole> roles =roleService.findRolesForUser(this.getLogin());
-			    if(roles!=null){
-			    	for(final UserRole ur: roles){
-			    		r.add(ur.getRole());
-			    	}
-			    }
-			}else{
-				logger.error("skipping user role service review... service is null");
-			}
-		} catch (Throwable e) {
+                try {
+                    final UserRoleService roleService=XDAT.getContextService().getBean(UserRoleService.class);
+                    if(roleService!=null){
+                        List<UserRole> roles =roleService.findRolesForUser(this.getLogin());
+                        if(roles!=null){
+                            for(final UserRole ur: roles){
+                                r.add(ur.getRole());
+                            }
+                        }
+                        rolesNotUpdatedFromService = false;
+                    }else{
+                        logger.error("skipping user role service review... service is null");
+                    }
+                } catch (NoSuchBeanDefinitionException e) {
+                    logger.warn("Unable to update roles for user " + getUsername() + " due to not finding the user role service. Will mark as incomplete.");
+                }
+        } catch (Throwable e) {
 			logger.error("",e);
 		}
 
@@ -485,14 +494,14 @@ public class XDATUser extends XdatUser implements UserI, Serializable {
      * @return A list of the available system roles.
      */
     public List<String> getRoleNames() {
-        if (roleNames == null) {
+        if (roleNames.size() == 0 || rolesNotUpdatedFromService) {
             try {
-				roleNames = loadRoleNames();
+				roleNames.addAll(loadRoleNames());
 			} catch (Exception e) {
 				logger.error("",e);
 			}
         }
-        return roleNames;
+        return ImmutableList.copyOf(roleNames);
     }
 
     /**

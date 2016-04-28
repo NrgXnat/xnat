@@ -5,40 +5,48 @@ import java.util.Collection;
 import org.nrg.xdat.security.helpers.FeatureDefinitionI;
 
 public interface FeatureRepositoryServiceI {
+	String DEFAULT_FEATURE_REPO_SERVICE = "org.nrg.xdat.security.services.impl.FeatureRepositoryServiceImpl";
+
 	/**
 	 * Get all (including disabled)
-	 * @return
+	 * @return All features in the system.
 	 */
-	public Collection<? extends FeatureDefinitionI> getAllFeatures();
+	Collection<? extends FeatureDefinitionI> getAllFeatures();
 	
 	/**
 	 * Get by key
-	 * @param key
-	 * @return
+	 * @param key    The key of the feature to retrieve.
+	 * @return The requested feature.
 	 */
-	public FeatureDefinitionI getByKey(String key);
+    FeatureDefinitionI getByKey(String key);
 
 	/**
 	 * Prevent this feature from being used on this server
-	 * @param feature
+	 * @param feature    The key for the feature to be banned.
 	 */
-	public void banFeature(String feature);
+    void banFeature(String feature);
 
 	/**
 	 * Allow this feature to be used on this server
-	 * @param feature
+     * @param feature    The key for the feature to be unbanned.
 	 */
-	public void unBanFeature(String feature);
+    void unBanFeature(String feature);
 
 	/**
 	 * Turn on this feature by default for all user groups
-	 * @param feature
+     * @param feature    The key for the feature to be enabled by default.
 	 */
-	public void enableByDefault(String feature);
+    void enableByDefault(String feature);
 
 	/**
 	 * Turn off this feature by default for all user groups
-	 * @param feature
+     * @param feature    The key for the feature to be disabled.
 	 */
-	public void disableByDefault(String feature);
+    void disableByDefault(String feature);
+
+	/**
+	 * Updates secure definitions.
+	 */
+    void updateNewSecureDefinitions();
 }
+

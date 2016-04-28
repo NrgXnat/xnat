@@ -28,16 +28,17 @@ import java.util.*;
 public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 
     private static final long serialVersionUID = -1590002660142544162L;
-    private String xdatUsername;
-	private String authUser;
-	private String authMethod;
-	private String authMethodId;
-	private boolean accountNonExpired;
-	private boolean accountNonLocked;
-	private boolean credentialsNonExpired;
-	private Date passwordUpdated;
-	private Integer failedLoginAttempts;
-	private Date lastSuccessfulLogin;
+    private String  _xdatUsername;
+	private String  _authUser;
+	private String  _authMethod;
+	private String  _authMethodId;
+	private boolean _accountNonExpired;
+	private boolean _accountNonLocked;
+	private boolean _credentialsNonExpired;
+	private Date    _passwordUpdated;
+	private Integer _failedLoginAttempts;
+	private Date    _lastLoginAttempt;
+	private Date    _lastSuccessfulLogin;
 	
 	public XdatUserAuth() {
 	}
@@ -51,71 +52,71 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	}
 	
 	public XdatUserAuth(String user, String method, String xdat, boolean enabled,Integer failedLoginAttempts) {
-		this.authUser = user;
-		this.authMethod = method;
+		_authUser = user;
+		_authMethod = method;
 		setEnabled(enabled);
-		accountNonExpired=true;
-		accountNonLocked=true;
-		credentialsNonExpired=true;
-		this.xdatUsername = xdat;
-		passwordUpdated = new Date();
-		this.failedLoginAttempts=failedLoginAttempts;
+		_accountNonExpired =true;
+		_accountNonLocked =true;
+		_credentialsNonExpired =true;
+		_xdatUsername = xdat;
+		_passwordUpdated = new Date();
+		_failedLoginAttempts =failedLoginAttempts;
 	}
 
     @SuppressWarnings("unused")
 	public XdatUserAuth(String user, String method, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts) {
-		this.authUser = user;
-		this.authMethod = method;
+		_authUser = user;
+		_authMethod = method;
 		setEnabled(enabled);
-		accountNonExpired=true;
-		accountNonLocked=true;
-		credentialsNonExpired=true;
-		this.xdatUsername = xdatUsername;
-		passwordUpdated = new Date();
-		this.failedLoginAttempts=failedLoginAttempts;
+		_accountNonExpired =true;
+		_accountNonLocked =true;
+		_credentialsNonExpired =true;
+		_xdatUsername = xdatUsername;
+		_passwordUpdated = new Date();
+		_failedLoginAttempts =failedLoginAttempts;
 	}
 	
 	public XdatUserAuth(String user, String method, String methodId, String xdat, boolean enabled,Integer failedLoginAttempts) {
-		this.authUser = user;
-		this.authMethod = method;
-		this.authMethodId = methodId;
+		_authUser = user;
+		_authMethod = method;
+		_authMethodId = methodId;
 		setEnabled(enabled);
-		accountNonExpired=true;
-		accountNonLocked=true;
-		credentialsNonExpired=true;
-		this.xdatUsername = xdat;
-		passwordUpdated = new Date();
-		this.failedLoginAttempts=failedLoginAttempts;
+		_accountNonExpired =true;
+		_accountNonLocked =true;
+		_credentialsNonExpired =true;
+		_xdatUsername = xdat;
+		_passwordUpdated = new Date();
+		_failedLoginAttempts =failedLoginAttempts;
 	}
 
-    @SuppressWarnings("unused")
+	@SuppressWarnings("unused")
 	public XdatUserAuth(String user, String method, String methodId, boolean enabled, boolean aNonExpired, boolean nonLocked, boolean cNonExpired, List<GrantedAuthority> auth, String xdatUsername,Integer failedLoginAttempts, Date lastSuccessfulLogin) {
-		this.authUser = user;
-		this.authMethod = method;
-		this.authMethodId = methodId;
+		_authUser = user;
+		_authMethod = method;
+		_authMethodId = methodId;
 		setEnabled(enabled);
-		accountNonExpired=true;
-		accountNonLocked=true;
-		credentialsNonExpired=true;
-		this.xdatUsername = xdatUsername;
-		passwordUpdated = new Date();
-		this.failedLoginAttempts=failedLoginAttempts;
-		this.lastSuccessfulLogin = lastSuccessfulLogin;
+		_accountNonExpired=true;
+		_accountNonLocked=true;
+		_credentialsNonExpired=true;
+		_xdatUsername = xdatUsername;
+		_passwordUpdated = new Date();
+		_failedLoginAttempts=failedLoginAttempts;
+		_lastSuccessfulLogin = lastSuccessfulLogin;
 	}
-	
+
 	public XdatUserAuth(XdatUserAuth other)
 	{
-		this.authUser = other.authUser;
-		this.authMethod = other.authMethod;
-		this.authMethodId = other.authMethodId;
+		_authUser = other._authUser;
+		_authMethod = other._authMethod;
+		_authMethodId = other._authMethodId;
 		setEnabled(other.isEnabled());
-		accountNonExpired=other.accountNonExpired;
-		accountNonLocked=other.accountNonLocked;
-		credentialsNonExpired=other.credentialsNonExpired;
-		this.xdatUsername = other.xdatUsername;
-		passwordUpdated = other.passwordUpdated;
-		this.failedLoginAttempts = other.failedLoginAttempts;
-		this.lastSuccessfulLogin = other.lastSuccessfulLogin;
+		_accountNonExpired =other._accountNonExpired;
+		_accountNonLocked =other._accountNonLocked;
+		_credentialsNonExpired =other._credentialsNonExpired;
+		_xdatUsername = other._xdatUsername;
+		_passwordUpdated = other._passwordUpdated;
+		_failedLoginAttempts = other._failedLoginAttempts;
+		_lastSuccessfulLogin = other._lastSuccessfulLogin;
 	}
 
 	/* (non-Javadoc)
@@ -123,7 +124,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public String getXdatUsername() {
-		return xdatUsername;
+		return _xdatUsername;
 	}
 
 	/* (non-Javadoc)
@@ -131,7 +132,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public void setXdatUsername(String xdatUsername) {
-		this.xdatUsername = xdatUsername;
+		_xdatUsername = xdatUsername;
 	}
 
 	/* (non-Javadoc)
@@ -139,7 +140,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public String getAuthUser() {
-		return authUser;
+		return _authUser;
 	}
 
 	/* (non-Javadoc)
@@ -147,7 +148,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public void setAuthUser(String user) {
-		this.authUser = user;
+		_authUser = user;
 	}
 	
 	/* (non-Javadoc)
@@ -155,7 +156,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public String getAuthMethod() {
-		return authMethod;
+		return _authMethod;
 	}
 
 	/* (non-Javadoc)
@@ -163,7 +164,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public void setAuthMethod(String means) {
-		this.authMethod = means;
+		_authMethod = means;
 	}
 	
 	/* (non-Javadoc)
@@ -171,7 +172,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public String getAuthMethodId() {
-		return authMethodId;
+		return _authMethodId;
 	}
 
 	/* (non-Javadoc)
@@ -179,7 +180,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public void setAuthMethodId(String means) {
-		this.authMethodId = means;
+		_authMethodId = means;
 	}
 
 	/* (non-Javadoc)
@@ -187,10 +188,10 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public Integer getFailedLoginAttempts() {
-		if(failedLoginAttempts==null){
+		if(_failedLoginAttempts == null){
 			return 0;
 		}else{
-			return failedLoginAttempts;
+			return _failedLoginAttempts;
 		}
 	}
 
@@ -199,7 +200,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public void setFailedLoginAttempts(Integer count) {
-		this.failedLoginAttempts = count;
+		_failedLoginAttempts = count;
 	}
 
 	/* (non-Javadoc)
@@ -207,7 +208,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public Date getLastSuccessfulLogin() {
-		return lastSuccessfulLogin;
+		return _lastSuccessfulLogin;
 	}
 
 	/* (non-Javadoc)
@@ -215,7 +216,23 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	 */
 	@Override
 	public void setLastSuccessfulLogin(Date lastSuccessfulLogin) {
-		this.lastSuccessfulLogin = lastSuccessfulLogin;
+		_lastSuccessfulLogin = lastSuccessfulLogin;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#getLastLoginAttempt()
+	 */
+	@Override
+	public Date getLastLoginAttempt() {
+		return _lastLoginAttempt;
+	}
+
+	/* (non-Javadoc)
+	 * @see org.nrg.xdat.entities.UserAuthI#setLastLoginAttempt(java.util.Date)
+	 */
+	@Override
+	public void setLastLoginAttempt(Date lastLoginAttempt) {
+		_lastLoginAttempt = lastLoginAttempt;
 	}
 
     /* (non-Javadoc)
@@ -224,7 +241,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
     @Override
 	@Temporal(TemporalType.TIMESTAMP)
     public Date getPasswordUpdated() {
-        return passwordUpdated;
+        return _passwordUpdated;
     }
 
     /* (non-Javadoc)
@@ -233,7 +250,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
     @Override
 	@Temporal(TemporalType.TIMESTAMP)
     public void setPasswordUpdated(Date timestamp) {
-    	passwordUpdated = timestamp;
+		_passwordUpdated = timestamp;
     }
 	
     @Override
@@ -266,7 +283,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	@Override
 	@Transient
 	public boolean isAccountNonExpired() {
-		return accountNonExpired;
+		return _accountNonExpired;
 	}
 
 
@@ -276,7 +293,7 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	@Override
 	@Transient
 	public boolean isAccountNonLocked() {
-		return accountNonLocked;
+		return _accountNonLocked;
 	}
 
 
@@ -286,6 +303,6 @@ public class XdatUserAuth extends AbstractHibernateEntity implements UserAuthI{
 	@Override
 	@Transient
 	public boolean isCredentialsNonExpired() {
-		return credentialsNonExpired;
+		return _credentialsNonExpired;
 	}
 }

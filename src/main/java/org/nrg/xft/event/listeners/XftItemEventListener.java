@@ -47,7 +47,5 @@ public class XftItemEventListener implements Consumer<Event<XftItemEvent>> {
 		} catch (Exception e) {
 			logger.error("ERROR:  Could not update cache after event", e);
 		}
-		
 	}
-
 }

@@ -14,6 +14,8 @@ import org.nrg.xdat.services.GroupFeatureService;
 import org.nrg.xft.event.XftEventService;
 import org.nrg.xft.event.XftItemEvent;
 import org.nrg.xft.security.UserI;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
@@ -383,6 +385,7 @@ public class FeatureServiceImpl implements FeatureServiceI {
     private static final String STATUS_PREFIX = "__";
     private static final Logger logger = Logger.getLogger(FeatureServiceImpl.class);
 
-    @Inject
+    @Autowired
+    @Lazy
     private GroupFeatureService _service;
 }

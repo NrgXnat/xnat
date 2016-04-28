@@ -2,29 +2,26 @@ package org.nrg.xdat.security.services.impl;
 
 import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.framework.services.ContextService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.entities.FeatureDefinition;
 import org.nrg.xdat.security.ElementAction;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.FeatureDefinitionI;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.security.services.FeatureRepositoryServiceI;
 import org.nrg.xdat.services.FeatureDefinitionService;
 import org.nrg.xdat.turbine.utils.PropertiesHelper;
 import org.nrg.xft.event.EventUtils;
-import org.nrg.xft.exception.ElementNotFoundException;
+import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.InitializingBean;
-import org.springframework.scheduling.annotation.Async;
-import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 
 import javax.inject.Inject;
 import java.util.*;
-import java.util.concurrent.Future;
 import java.util.regex.Pattern;
 
 @Service
@@ -79,13 +76,6 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
                     }
                 }
             }
-        }
-        try {
-            if (ElementSecurity.GetElementSecurities() != null && _contextService.hasApplicationContext()) {
-                updateNewSecureDefinitions();
-            }
-        } catch (ElementNotFoundException ignore) {
-            // No worries...
         }
     }
 
@@ -155,6 +145,7 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
         }
     }
 
+    @Override
     public void updateNewSecureDefinitions() {
         try {
             logger.debug("Element security data found, processing new feature definitions.");
@@ -170,7 +161,7 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
                                 }
                                 //need to register this action
                                 elementAction.getItem().setProperty("secureFeature", definitionKey);
-                                SaveItemHelper.authorizedSave(elementAction.getItem(), Users.getUser("admin"), true, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Configure new feature."));
+                                SaveItemHelper.authorizedSave(elementAction.getItem(), getAdminUser(), true, false, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.WEB_SERVICE, "Configure new feature."));
                             }
                         }
                     }
@@ -181,6 +172,22 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
             //otherwise ignore failure
         }
         _newFeatures.clear();
+    }
+
+    /**
+     * Get the username of the site administrator. If there are multiple
+     * site admins, just get the first one. If none are found, return null.
+     *
+     * @return The name of the admin user.
+     */
+    private UserI getAdminUser() throws Exception {
+        for (String login : Users.getAllLogins()) {
+            final UserI user = Users.getUser(login);
+            if (Roles.isSiteAdmin(user)) {
+                return user;
+            }
+        }
+        return null;
     }
 
     private static final Logger   logger                        = LoggerFactory.getLogger(FeatureRepositoryServiceImpl.class);
@@ -196,9 +203,6 @@ public class FeatureRepositoryServiceImpl implements FeatureRepositoryServiceI, 
 
     @Inject
     private FeatureDefinitionService _service;
-
-    @Inject
-    private ContextService _contextService;
 
     private final Map<String, String> _newFeatures = new HashMap<>();
 }

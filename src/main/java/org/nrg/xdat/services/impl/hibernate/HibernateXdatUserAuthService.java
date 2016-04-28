@@ -27,6 +27,8 @@ import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils.EventRequirementAbsent;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.AuthUtils;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.core.GrantedAuthority;
@@ -38,7 +40,6 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
-import javax.sql.DataSource;
 import java.sql.ResultSet;
 import java.sql.SQLException;
 import java.util.*;
@@ -138,7 +139,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     }
 
     public List<GrantedAuthority> loadUserAuthorities(String username) {
-        return (new JdbcTemplate(_datasource)).query("SELECT login as username, 'ROLE_USER' as authority FROM xdat_user WHERE login = ?", new String[]{username}, new RowMapper<GrantedAuthority>() {
+        return (_jdbcTemplate).query("SELECT login as username, 'ROLE_USER' as authority FROM xdat_user WHERE login = ?", new String[]{username}, new RowMapper<GrantedAuthority>() {
             public GrantedAuthority mapRow(ResultSet rs, int rowNum) throws SQLException {
                 String roleName = rs.getString(2);
                 SimpleGrantedAuthority authority = new SimpleGrantedAuthority(roleName);
@@ -302,7 +303,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 
     private List<UserI> loadUsersByQuery(String query, String... params) {
         List<UserI> u =
-                (new JdbcTemplate(_datasource)).query(query, params, new RowMapper<UserI>() {
+                (_jdbcTemplate).query(query, params, new RowMapper<UserI>() {
                     public UserI mapRow(ResultSet rs, int rowNum) throws SQLException {
                         String username = rs.getString(1);
                         String method = rs.getString(2);
@@ -346,7 +347,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
                 throw new RuntimeException("Ran out of possible XNAT user ids to check (last one checked was " + usernameToTest + ")");
             }
 
-            existingLocalUsernames = (new JdbcTemplate(_datasource)).query("SELECT login FROM xdat_user WHERE login = ?", new String[]{usernameToTest}, new RowMapper<String>() {
+            existingLocalUsernames = (_jdbcTemplate).query("SELECT login FROM xdat_user WHERE login = ?", new String[]{usernameToTest}, new RowMapper<String>() {
                 public String mapRow(ResultSet rs, int rowNum) throws SQLException {
                     return rs.getString(1);
                 }
@@ -366,6 +367,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
     @Inject
     private XdatUserAuthDAO _dao;
 
-    @Inject
-    private DataSource _datasource;
+    @Autowired
+    @Lazy
+    private JdbcTemplate _jdbcTemplate;
 }

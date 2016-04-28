@@ -36,6 +36,8 @@ import org.nrg.notify.entities.*;
 import org.nrg.notify.exceptions.DuplicateSubscriberException;
 import org.nrg.notify.services.NotificationService;
 import org.nrg.xdat.display.DisplayManager;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.helpers.Roles;
@@ -47,7 +49,6 @@ import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.modules.actions.XDATLoginUser;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.PopulateItem;
-import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -95,9 +96,10 @@ public class XDAT implements Initializable,Configurable{
 	private static XdatUserAuthService _xdatUserAuthService;
     private static ConfigService _configurationService;
     private static SiteConfigurationService _siteConfigurationService;
-    public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
-    private static String _configFilesLocation = null;
-    private String instanceSettingsLocation = null;
+	private static SiteConfigPreferences _siteConfigPreferences;
+	public static final String ADMIN_USERNAME_FOR_SUBSCRIPTION = "ADMIN_USER";
+	private static String _configFilesLocation = null;
+	private String instanceSettingsLocation = null;
     private static File _screenTemplatesFolder;
     private static List<File> _screenTemplatesFolders= new ArrayList<>();
 
@@ -492,7 +494,7 @@ public class XDAT implements Initializable,Configurable{
 	 * @return An instance of the {@link SiteConfigurationService} service.
 	 */
 	private static SiteConfigurationService getSiteConfigurationService() {
-	    if (_siteConfigurationService == null) {
+	    if (_siteConfigurationService == null || _siteConfigurationService instanceof InitializerSiteConfiguration) {
 	    	_siteConfigurationService = getContextService().getBean(SiteConfigurationService.class);
 	    }
 	    return _siteConfigurationService;
@@ -514,7 +516,7 @@ public class XDAT implements Initializable,Configurable{
     }
 
     /**
-	 * Returns an instance of the currently supported data source.
+	 * Returns an instance of the site configuration preferences bean.
 	 * @return An instance of the {@link DataSource} bean.
 	 */
 	public static DataSource getDataSource() {
@@ -524,10 +526,20 @@ public class XDAT implements Initializable,Configurable{
 	    return _dataSource;
 	}
 
+    /**
+	 * Returns an instance of the site configuration preferences bean.
+	 * @return An instance of the {@link SiteConfigPreferences} bean.
+	 */
+	public static SiteConfigPreferences getSiteConfigPreferences() {
+	    if (_siteConfigPreferences == null) {
+	    	_siteConfigPreferences = getContextService().getBean(SiteConfigPreferences.class);
+	    }
+	    return _siteConfigPreferences;
+	}
+
 	public static XdatUserAuthService getXdatUserAuthService() {
 		if (_xdatUserAuthService == null) {
-			_xdatUserAuthService = getContextService().getBean(
-					XdatUserAuthService.class);
+			_xdatUserAuthService = getContextService().getBean(XdatUserAuthService.class);
 		}
 		return _xdatUserAuthService;
 	}

@@ -9,11 +9,9 @@ import org.springframework.transaction.annotation.Transactional;
 
 @Service
 public class HibernateFeatureDefinitionService extends AbstractHibernateEntityService<FeatureDefinition, FeatureDefinitionDAO> implements FeatureDefinitionService {
-
 	@Override
 	@Transactional
 	public FeatureDefinition findFeatureByKey(String key) {
 		return this.getDao().findByKey(key);
 	}
-
 }

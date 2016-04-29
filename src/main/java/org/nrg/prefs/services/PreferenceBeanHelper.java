@@ -147,6 +147,12 @@ public class PreferenceBeanHelper {
     }
 
     private static String propertize(final String name, final String type) {
-        return StringUtils.uncapitalize(name.replace(type, ""));
+        final String prefix;
+        if (type.equals("get")) {
+            prefix = name.startsWith("is") ? "is" : "get";
+        } else {
+            prefix = type;
+        }
+        return StringUtils.uncapitalize(name.replace(prefix, ""));
     }
 }

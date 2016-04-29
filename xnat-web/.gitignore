@@ -2,6 +2,7 @@
 .idea
 *.iml
 *.log
+*--xx*
 src/generated
 gradle.properties
 /out

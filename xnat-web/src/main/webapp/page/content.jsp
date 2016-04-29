@@ -24,9 +24,9 @@
 
         customPage.getPage('', $pageContent);
 
-        window.onhashchange = function(){
-            customPage.getPage('', $pageContent);
-        }
+//        window.onhashchange = function(){
+//            customPage.getPage('', $pageContent);
+//        }
 
     })();
 </script>

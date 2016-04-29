@@ -196,11 +196,13 @@
     <script src="${_siteRoot}/scripts/xnat/xhr.js"></script>
     <script src="${_siteRoot}/scripts/xnat/event.js"></script>
     <script src="${_siteRoot}/scripts/xnat/element.js"></script>
+    <script src="${_siteRoot}/scripts/xnat/ui/input.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/table.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/panel.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/tabs.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/popup.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/dialog.js"></script>
+    <script src="${_siteRoot}/scripts/xnat/spawner.js"></script>
 
     <%--<script src="${_siteRoot}/scripts/timeLeft.js"></script>--%>
 

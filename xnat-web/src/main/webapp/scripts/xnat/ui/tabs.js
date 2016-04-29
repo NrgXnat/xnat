@@ -6,23 +6,33 @@ var XNAT = getObject(XNAT||{});
 
 (function(XNAT, $, window, undefined){
 
-    var ui, tabs, page,
+    var ui, tab, tabs, page,
         element = XNAT.element;
 
     var $body = $(document.body);
 
-    XNAT.ui = ui = getObject(XNAT.ui || {});
-    XNAT.ui.tabs = XNAT.tabs = tabs = getObject(XNAT.ui.tabs || {});
-    XNAT.page = page = getObject(XNAT.page || {});
+    XNAT.ui = ui = 
+        getObject(XNAT.ui || {});
+    
+    // just one tab
+    XNAT.ui.tab = tab = 
+        getObject(XNAT.ui.tab || {});
+    
+    // a whole bunch of tabs
+    XNAT.ui.tabs = XNAT.tabs = tabs = 
+        getObject(XNAT.ui.tabs || {});
+    
+    XNAT.page = page = 
+        getObject(XNAT.page || {});
 
 
     /**
      * Initialize the tabs
-     * @param [tabsArray] {Array} array of tab config objects
+     * @param [tabItems] {Array} array of tab config objects
      * @param [container] {Element} parent element for tabs
      * @returns {{}}
      */
-    function init(tabsArray, container){
+    function init(tabItems, container){
 
         // a place to store things locally
         var __ = {};
@@ -244,7 +254,7 @@ var XNAT = getObject(XNAT||{});
                 __.tabs.$panes.addClass('side pull-'+other);
             }
 
-            [].concat(config).forEach(function(item){
+            $.each(config, function(name, item){
 
                 if (item.kind !== 'tab') {
                     if (item.kind === 'meta'){
@@ -296,9 +306,9 @@ var XNAT = getObject(XNAT||{});
         // expose globally
         __.setup = setupTabs;
 
-        // run setup on init() if 'tabsArray' is present
-        if (tabsArray && tabsArray.length){
-            setupTabs(tabsArray);
+        // run setup on init() if 'tabItems' is present
+        if (tabItems){
+            setupTabs(tabItems);
         }
 
         __.render = function(container){

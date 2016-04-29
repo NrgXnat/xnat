@@ -120,7 +120,7 @@
         var el, $el, parts, id, classes, tagParts, attrs, isVoid,
             // property names to skip later
             skip = ['innerHTML', 'html', 'append', 'appendTo',
-                'classes', 'attr', 'data', 'fn'],
+                'classes', 'className', 'attr', 'data', 'fn'],
             errors = []; // collect errors
 
         // deal with passing an array as the only argument
@@ -217,8 +217,8 @@
         }
 
         // allow use of 'classes' property for classNames
-        if (opts.className || opts.classes){
-            el.className = [].concat(opts.className||[], opts.classes||[]).join(' ').trim();
+        if (opts.className || opts.classes || opts.addClass){
+            el.className = [].concat(opts.className||[], opts.classes||[], opts.addClass||[]).join(' ').trim();
         }
 
         // add attributes and properties to element

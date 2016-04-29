@@ -19,10 +19,10 @@
 
     <c:set var="_siteRoot" value="${sessionScope.siteRoot}"/>
 
-    <c:import url="/xapi/spawner/resolve/siteAdmin/siteAdmin" var="siteAdmin"/>
+    <%--<c:import url="/xapi/spawner/resolve/siteAdmin/siteAdmin" var="siteAdmin"/>--%>
 
     <%--<button type="button" id="view-json">View JSON</button>--%>
-    <div class="hidden">${siteAdmin}</div>
+    <%--<div class="hidden">${siteAdmin}</div>--%>
 
     <!-- button element will be rendered in this span -->
     <span id="view-json"></span>

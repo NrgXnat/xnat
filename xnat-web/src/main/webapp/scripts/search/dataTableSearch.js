@@ -224,11 +224,11 @@ function DataTableSearch(_div_table_id,obj,_config,_options){
         }
       }
       if(this.config.rowsPerPage ==undefined){
-	this.config.rowsPerPage=20;
+	this.config.rowsPerPage=200;
       }
     }else{
       if(this.config.rowsPerPage ==undefined){
-	this.config.rowsPerPage=20;
+	this.config.rowsPerPage=200;
       }
       this.config.initialRequest="format=json&offset=0&limit="+this.config.rowsPerPage;
     }
@@ -256,7 +256,7 @@ function DataTableSearch(_div_table_id,obj,_config,_options){
 						  pageLinks          : 5,
 						  initialPage		   : (this.config.initialPage!=undefined)?this.config.initialPage:1,
 						  rowsPerPage        : this.config.rowsPerPage,
-						  rowsPerPageOptions : [10,20,40,100,500,5000],
+						  rowsPerPageOptions : [20,50,100,200,500,5000],
 	 						  template           : this.paginator_html,
  						  totalRecords       :  parseInt(this.initResults.ResultSet.totalRecords),
  						  pageReportTemplate : '{currentPage} of {totalPages} Pgs ({totalRecords} Rows)'

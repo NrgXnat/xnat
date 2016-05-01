@@ -25,6 +25,7 @@ import javax.inject.Inject;
 import java.io.IOException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.sql.Timestamp;
 import java.util.Date;
 import java.util.Map;
 import java.util.Properties;
@@ -140,8 +141,17 @@ public class InitializerSiteConfiguration extends PropertiesBasedSiteConfigurati
     }
 
     @Override
-    protected void setPreferenceValue(final String username, final String property, final String value) {
-        throw new NrgServiceRuntimeException(NrgServiceError.PermissionsViolation, "This site configuration service is for initialization and is read only.");
+    protected void setPreferenceValue(final String username, final String property, final String value) throws SiteConfigurationException {
+        final int toolId = getSiteConfigToolKey();
+        final String current = getSiteConfigurationProperty(property);
+        final boolean exists = !StringUtils.isBlank(current) || getJdbcTemplate().queryForObject("select count(*) as item_count from xhbm_preference where tool = ? and name = ?", Integer.class, toolId, property) != 0;
+        final Timestamp timestamp = new Timestamp(new Date().getTime());
+        if (exists && !StringUtils.equals(current, value)) {
+            getJdbcTemplate().update("update xhbm_preference set value = ?, set timestamp = ? where tool = ? and name = ?", value, timestamp, toolId, property);
+        } else if (!exists) {
+            getJdbcTemplate().update("insert into xhbm_preference (created, disabled, enabled, timestamp, entity_id, name, scope, value, tool) values (?, ?, true, ?, null, ?, 0, ?, ?)", timestamp, new Timestamp(0), timestamp, property, value, toolId);
+        }
+        setSiteConfigurationProperty(username, property, value);
     }
 
     @Override

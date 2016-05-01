@@ -58,7 +58,7 @@ public class EncryptXnatPasswords extends AbstractInitializingTask {
 
     private boolean tableExists(final String name) throws SQLException {
         try (final Connection connection = _template.getDataSource().getConnection();
-             final ResultSet results = connection.getMetaData().getTables("catalog", null, name, new String[]{"table"})) {
+             final ResultSet results = connection.getMetaData().getTables("catalog", null, name, new String[]{"TABLE"})) {
             if (results.next()) {
                 return true;
             }

@@ -18,6 +18,7 @@ import java.sql.SQLException;
 import java.sql.Types;
 import java.util.ArrayList;
 import java.util.Calendar;
+import java.util.Date;
 import java.util.List;
 
 public enum DatabaseSession {
@@ -656,6 +657,17 @@ public enum DatabaseSession {
 	 */
 	public static String findSessionSql (String session, String timestamp, String project) {
 		return "SELECT * FROM " + PrearcDatabase.tableWithSchema + " WHERE " + DatabaseSession.sessionSql(session,timestamp,project);
+	}
+
+	/**
+	 * Generate SQL to find a row where that matches the given session and project
+	 * @param patientName The patient name on which to search
+	 * @param patientID The patient ID on which to search
+	 * @param studyDate The timestamp on which to search
+	 * @return A complete SQL statement constructed from the submitted criteria.
+	 */
+	public static String findMyStudySql () {
+		return "SELECT * FROM " + PrearcDatabase.tableWithSchema + " WHERE project IS NULL AND (name = ? OR subject = ? OR scan_date = ?)";
 	}
 		
 	/**

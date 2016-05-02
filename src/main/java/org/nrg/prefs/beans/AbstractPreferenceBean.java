@@ -70,6 +70,16 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     }
 
     @Override
+    public Set<String> getPreferenceKeys() {
+        return _service.getToolPropertyNames(getToolId());
+    }
+
+    @Override
+    public Properties getPreferencesAsProperties() {
+        return _service.getToolProperties(getToolId());
+    }
+
+    @Override
     public final Class<? extends PreferenceEntityResolver> getResolver() {
         if (!_resolverInitialized) {
             if (getClass().isAnnotationPresent(NrgPreferenceBean.class)) {

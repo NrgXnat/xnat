@@ -6,16 +6,17 @@ import org.nrg.prefs.entities.PreferenceInfo;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 import org.nrg.prefs.resolvers.PreferenceEntityResolver;
-import org.nrg.prefs.services.NrgPreferenceService;
 
-import java.util.Date;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 
 public interface PreferenceBean {
     String NAMESPACE_DELIMITER = ":";
 
     String getToolId();
+
+    Set<String> getPreferenceKeys();
+
+    Properties getPreferencesAsProperties();
 
     Class<? extends PreferenceEntityResolver> getResolver();
 

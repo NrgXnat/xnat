@@ -140,7 +140,7 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
-    @NrgPreference(defaultValue = "{'host':'mail.server','port':'25'}")
+    @NrgPreference(defaultValue = "{'host':'localhost','port':'25'}")
     public Map<String, String> getSmtpServer() {
         return getMapValue("smtpServer");
     }
@@ -371,6 +371,19 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
             setBooleanValue(scanTypeMapping, "scanTypeMapping");
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'scanTypeMapping': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "true", property = "smtp.enabled")
+    public String getSmtpEnabled() {
+        return getValue("smtp.enabled");
+    }
+
+    public void setSmtpEnabled(final boolean smtpEnabled) {
+        try {
+            setBooleanValue(smtpEnabled, "smtp.enabled");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'smtp.enabled': something is very wrong here.", e);
         }
     }
 

@@ -10,7 +10,6 @@ import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
 import javax.inject.Inject;
@@ -25,7 +24,7 @@ import java.util.Properties;
 public class NotificationsConfig {
 
     @Bean
-    public JavaMailSender mailSender() throws IOException, SiteConfigurationException {
+    public JavaMailSenderImpl mailSender() throws IOException, SiteConfigurationException {
         final Map<String, String> smtp = _preferences.getSmtpServer();
         final JavaMailSenderImpl sender = new JavaMailSenderImpl();
         sender.setHost(StringUtils.defaultIfBlank(smtp.remove("host"), "localhost"));

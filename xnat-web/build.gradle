@@ -189,7 +189,6 @@ configurations {
     all*.exclude group: 'avalon-framework'
     all*.exclude group: 'avalon-logkit'
     all*.exclude group: 'com.metaparadigm'
-    all*.exclude group: 'com.sun.mail'
     all*.exclude group: 'commons-dbcp'
     all*.exclude group: 'commons-pool'
     all*.exclude group: 'excalibur-component'

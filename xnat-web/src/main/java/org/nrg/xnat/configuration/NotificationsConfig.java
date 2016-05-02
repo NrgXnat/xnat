@@ -18,6 +18,7 @@ import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 @Configuration
 @ComponentScan({"org.nrg.mail.services", "org.nrg.notify.services.impl", "org.nrg.notify.daos"})
@@ -27,10 +28,18 @@ public class NotificationsConfig {
     public JavaMailSender mailSender() throws IOException, SiteConfigurationException {
         final Map<String, String> smtp = _preferences.getSmtpServer();
         final JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setHost(StringUtils.defaultIfBlank(smtp.get("host"), "localhost"));
-        sender.setPort(Integer.parseInt(StringUtils.defaultIfBlank(smtp.get("port"), "25")));
-        sender.setUsername(StringUtils.defaultIfBlank(smtp.get("username"), ""));
-        sender.setPassword(StringUtils.defaultIfBlank(smtp.get("password"), ""));
+        sender.setHost(StringUtils.defaultIfBlank(smtp.remove("host"), "localhost"));
+        sender.setPort(Integer.parseInt(StringUtils.defaultIfBlank(smtp.remove("port"), "25")));
+        sender.setUsername(StringUtils.defaultIfBlank(smtp.remove("username"), ""));
+        sender.setPassword(StringUtils.defaultIfBlank(smtp.remove("password"), ""));
+        sender.setProtocol(StringUtils.defaultIfBlank(smtp.remove("protocol"), "smtp"));
+        if (smtp.size() > 0) {
+            final Properties properties = new Properties();
+            for (final String property : smtp.keySet()) {
+                properties.setProperty(property, smtp.get(property));
+            }
+            sender.setJavaMailProperties(properties);
+        }
         return sender;
     }
 

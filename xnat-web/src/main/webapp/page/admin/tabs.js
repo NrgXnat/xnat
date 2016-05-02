@@ -26,7 +26,8 @@
         success: function(data){
             var json = YAML.parse(data);
             var adminTabs = XNAT.spawner.spawn(json);
-            console.log(adminTabs);
+            adminTabs.render('#admin-config-tabs > .xnat-tab-content');
+            XNAT.app.adminTabs = adminTabs;
         }
     });
 

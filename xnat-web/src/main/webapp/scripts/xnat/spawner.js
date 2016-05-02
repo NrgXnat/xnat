@@ -101,7 +101,9 @@ var XNAT = getObject(XNAT);
                 // only spawn elements with defined methods
                 if (isFunction(method)) {
 
-                    // 'spawnedElement' item will be an HTML element
+                    // 'spawnedElement' item will be an
+                    // object with a .get() method that
+                    // will retrieve the spawned item
                     spawnedElement = method(prop);
 
                     // add spawnedElement to the master frag
@@ -121,6 +123,7 @@ var XNAT = getObject(XNAT);
             // a property matching the value of either 'contains' or 'kind'
             if (prop.contains || prop.contents || prop.content || prop.children || prop[prop.kind]) {
                 prop.contents = prop[prop.contains] || prop.contents || prop.content || prop.children || prop[prop.kind];
+                // if there's a 'target' property, put contents in there
                 if (spawnedElement.target) {
                     $spawnedElement = $(spawnedElement.target);
                 }
@@ -133,12 +136,17 @@ var XNAT = getObject(XNAT);
         });
 
         _spawn.spawned = frag;
+        
         _spawn.element = frag;
 
-        _spawn.children = $frag.contents();
+        _spawn.children = frag.children;
 
         _spawn.get = function(){
             return frag;
+        };
+        
+        _spawn.getContents = function(){
+            return $frag.contents();    
         };
 
         _spawn.render = function(element, empty){
@@ -152,13 +160,6 @@ var XNAT = getObject(XNAT);
         };
 
         _spawn.foo = '(spawn.foo)';
-
-        // console.log('spawned:')
-        // console.log(frag);
-        console.log('children:');
-        console.log(_spawn.children);
-        // console.log('get():')
-        // console.log(_spawn.get());
 
         return _spawn;
 

@@ -11,24 +11,19 @@ root:
         projectCustomization: Project Customization
         advanced: Advanced XNAT Settings
     contains: tabs
-
     tabs:  # this property name is the same as 'contains', so it will be treated like 'contents'
-
         siteSetup:
             kind: tab
             name: siteSetup
             label: Site Setup
             group: xnatSetup
             contains: panels # the value for 'contains' can be a custom name for 'contents'
-
             panels:
-
                 siteInfo:
                     kind: panel.form
                     name: siteInfo
                     label: Site Information
                     contents:
-
                         siteId:
                             kind: input.text
                             name: siteId
@@ -38,12 +33,10 @@ root:
                                 id: site-id
                                 style:
                                   display: block
-
                         adminEmail:
                             kind: input.email
                             name: adminEmail
                             label: Administrator Email Address
-
                         someInfo:
                             #kind: element
                             tag: div.message
@@ -52,3 +45,35 @@ root:
                                 style:
                                     padding: 20px
                                     color: red
+        security:
+            kind: tab
+            name: security
+            label: Security
+            contents:
+                generalSecuritySettings:
+                    kind: panel.form
+                    name: generalSecuritySettings
+                    label: General Site Security Settings
+                    contents:
+                        securityChannel:
+                            kind: element
+                            tag: select
+                            name: securityChannel
+                            label: Security Channel
+                            contains: options
+                            options:
+                                http:
+                                    tag: option
+                                    name: http
+                                    value: http
+                                https:
+                                    tag: option
+                                    name: https
+                                    value: https
+                            config:
+                                id: security-channel
+                                title: Security Channel
+
+
+
+

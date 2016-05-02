@@ -331,6 +331,10 @@
         // alias for convenience
         el.html = el.outerHTML;
 
+        el.get = function(){
+            return el;
+        };
+
         return el;
 
     }

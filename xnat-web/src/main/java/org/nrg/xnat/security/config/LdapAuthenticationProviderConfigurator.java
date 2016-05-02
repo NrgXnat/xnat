@@ -13,9 +13,13 @@ package org.nrg.xnat.security.config;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xnat.security.XnatLdapAuthoritiesPopulator;
 import org.nrg.xnat.security.XnatLdapUserDetailsMapper;
 import org.nrg.xnat.security.provider.XnatLdapAuthenticationProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationProvider;
 import org.springframework.security.ldap.DefaultSpringSecurityContextSource;
 import org.springframework.security.ldap.authentication.BindAuthenticator;
@@ -35,7 +39,7 @@ public class LdapAuthenticationProviderConfigurator extends AbstractAuthenticati
     public List<AuthenticationProvider> getAuthenticationProviders(String id, String name, Map<String, String> properties) {
         try {
             XnatLdapAuthenticationProvider ldapAuthProvider = new XnatLdapAuthenticationProvider(getBindAuthenticator(properties, getLdapContextSource(properties)), new XnatLdapAuthoritiesPopulator());
-            ldapAuthProvider.setUserDetailsContextMapper(new XnatLdapUserDetailsMapper(id, properties));
+            ldapAuthProvider.setUserDetailsContextMapper(new XnatLdapUserDetailsMapper(id, properties, _userAuthService, _preferences));
             ldapAuthProvider.setName(name);
             ldapAuthProvider.setProviderId(id);
             return Arrays.asList(new AuthenticationProvider[] { ldapAuthProvider });
@@ -60,4 +64,12 @@ public class LdapAuthenticationProviderConfigurator extends AbstractAuthenticati
     }
 
     private static final Log _log = LogFactory.getLog(LdapAuthenticationProviderConfigurator.class);
+
+    @Autowired
+    @Lazy
+    private XdatUserAuthService _userAuthService;
+
+    @Autowired
+    @Lazy
+    private SiteConfigPreferences _preferences;
 }

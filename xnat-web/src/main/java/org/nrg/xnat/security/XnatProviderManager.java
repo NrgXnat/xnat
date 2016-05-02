@@ -17,6 +17,7 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.apache.velocity.VelocityContext;
 import org.hibernate.exception.DataException;
+import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserAuthI;
@@ -35,6 +36,9 @@ import org.nrg.xnat.security.provider.XnatLdapAuthenticationProvider;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
 import org.nrg.xnat.security.tokens.XnatLdapUsernamePasswordAuthenticationToken;
 import org.nrg.xnat.security.userdetailsservices.XnatDatabaseUserDetailsService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.context.support.MessageSourceAccessor;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
@@ -81,9 +85,8 @@ public class XnatProviderManager extends ProviderManager {
 
         // HACK: This is a hack to work around open XNAT auth issue. If this is a bare un/pw auth token, use anon auth.
         if (authentication.getClass() == UsernamePasswordAuthenticationToken.class && authentication.getName().equalsIgnoreCase("guest")) {
-
-            providers.add(_anonymousAuthenticationProvider);
-            authentication = new AnonymousAuthenticationToken(_anonymousAuthenticationProvider.getKey(), authentication.getPrincipal(), Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
+            providers.add(getAnonymousAuthenticationProvider());
+            authentication = new AnonymousAuthenticationToken(getAnonymousAuthenticationProvider().getKey(), authentication.getPrincipal(), Collections.<GrantedAuthority>singletonList(new SimpleGrantedAuthority("ROLE_ANONYMOUS")));
         } else {
             for (AuthenticationProvider candidate : getProviders()) {
                 if (!candidate.supports(toTest)) {
@@ -169,6 +172,10 @@ public class XnatProviderManager extends ProviderManager {
         }
     }
 
+    private AnonymousAuthenticationProvider getAnonymousAuthenticationProvider() {
+        return _contextService.getBean(AnonymousAuthenticationProvider.class);
+    }
+
     public void setProperties(List<String> fileNames) {
         _properties = new Properties();
         for (String filename : fileNames) {
@@ -184,7 +191,7 @@ public class XnatProviderManager extends ProviderManager {
         }
     }
 
-    public static XdatUserAuth getUserByAuth(Authentication authentication) {
+    public XdatUserAuth getUserByAuth(Authentication authentication) {
         if(authentication==null){
             return null;
         }
@@ -206,7 +213,7 @@ public class XnatProviderManager extends ProviderManager {
         }
 
         try {
-            return XDAT.getXdatUserAuthService().getUserByNameAndAuth(u, method, provider);
+            return getUserAuthService().getUserByNameAndAuth(u, method, provider);
         } catch (DataException exception) {
             _log.error("An error occurred trying to retrieve the auth method", exception);
             throw new RuntimeException("An error occurred trying to validate the given information. Please check your username and password. If this problem persists, please contact your system administrator.");
@@ -227,7 +234,7 @@ public class XnatProviderManager extends ProviderManager {
         String auth = cached_methods.get(username);
         if (auth == null) {
             try {
-                List<XdatUserAuth> userAuths = _service.getUsersByName(username);
+                List<XdatUserAuth> userAuths = getUserAuthService().getUsersByName(username);
                 if (userAuths.size() == 1) {
                     auth = userAuths.get(0).getAuthMethod();
                     cached_methods.put(username.intern(), auth.intern());
@@ -250,6 +257,13 @@ public class XnatProviderManager extends ProviderManager {
             }
         }
         return auth;
+    }
+
+    private XdatUserAuthService getUserAuthService() {
+        if (_userAuthService == null) {
+            _userAuthService = _contextService.getBean(XdatUserAuthService.class);
+        }
+        return _userAuthService;
     }
 
     private static UsernamePasswordAuthenticationToken buildUPToken(XnatAuthenticationProvider provider, String username, String password){
@@ -301,8 +315,13 @@ public class XnatProviderManager extends ProviderManager {
 
     private static final class AuthenticationAttemptEventPublisher implements AuthenticationEventPublisher {
 
-        private final FailedAttemptsManager failedAttemptsManager = new FailedAttemptsManager();
-        private final LastSuccessfulLoginManager lastSuccessfulLoginManager = new LastSuccessfulLoginManager();
+        private final FailedAttemptsManager failedAttemptsManager;
+        private final LastSuccessfulLoginManager lastSuccessfulLoginManager;
+
+        private AuthenticationAttemptEventPublisher(final XnatProviderManager manager) {
+            failedAttemptsManager = new FailedAttemptsManager(manager);
+            lastSuccessfulLoginManager = new LastSuccessfulLoginManager(manager);
+        }
 
         public void publishAuthenticationFailure(AuthenticationException exception, Authentication authentication) {
             //increment failed login attempt
@@ -316,27 +335,41 @@ public class XnatProviderManager extends ProviderManager {
     }
 
     private static final class LastSuccessfulLoginManager {
+        private final XnatProviderManager _manager;
+
+        public LastSuccessfulLoginManager(final XnatProviderManager manager) {
+            _manager = manager;
+        }
+
         private void updateLastSuccessfulLogin(Authentication auth) {
-            XdatUserAuth ua = getUserByAuth(auth);
+            XdatUserAuth ua = _manager.getUserByAuth(auth);
             if (ua != null) {
                 Date now = java.util.Calendar.getInstance(TimeZone.getDefault()).getTime();
                 ua.setLastSuccessfulLogin(now);
+                ua.setLastLoginAttempt(now);
                 XDAT.getXdatUserAuthService().update(ua);
             }
         }
     }
 
     private static final class FailedAttemptsManager {
+        private final XnatProviderManager _manager;
+
+        public FailedAttemptsManager(final XnatProviderManager manager) {
+            _manager = manager;
+        }
+
         /**
          * Increments failed Login count
          *
          * @param auth The authentication that failed.
          */
         private synchronized void addFailedLoginAttempt(final Authentication auth) {
-            XdatUserAuth ua = getUserByAuth(auth);
+            XdatUserAuth ua = _manager.getUserByAuth(auth);
             if (ua != null) {
                 if (AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS > 0) {
                     ua.setFailedLoginAttempts(ua.getFailedLoginAttempts() + 1);
+                    ua.setLastLoginAttempt(new Date());
                     XDAT.getXdatUserAuthService().update(ua);
                 }
 
@@ -359,7 +392,7 @@ public class XnatProviderManager extends ProviderManager {
 
         public void clearCount(final Authentication auth) {
             if (AuthUtils.MAX_FAILED_LOGIN_ATTEMPTS > 0) {
-                XdatUserAuth ua = getUserByAuth(auth);
+                XdatUserAuth ua = _manager.getUserByAuth(auth);
                 if (ua != null) {
                     ua.setFailedLoginAttempts(0);
                     XDAT.getXdatUserAuthService().update(ua);
@@ -382,14 +415,15 @@ public class XnatProviderManager extends ProviderManager {
     protected MessageSourceAccessor messages = SpringSecurityMessageSource.getAccessor();
 
     @Inject
-    private XdatUserAuthService _service;
-
-    @Inject
-    private AnonymousAuthenticationProvider _anonymousAuthenticationProvider;
-
-    @Inject
     private DataSource _dataSource;
 
-    private final AuthenticationEventPublisher eventPublisher = new AuthenticationAttemptEventPublisher();
+    @Autowired
+    @Qualifier("rootContextService")
+    @Lazy
+    private ContextService _contextService;
+
+    private XdatUserAuthService _userAuthService;
+
+    private final AuthenticationEventPublisher eventPublisher = new AuthenticationAttemptEventPublisher(this);
     private Properties _properties;
 }

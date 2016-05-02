@@ -1,30 +1,19 @@
-package org.nrg.xnat.configuration;
+package org.nrg.xnat.initialization;
 
-import org.hibernate.cache.ehcache.SingletonEhCacheRegionFactory;
-import org.hibernate.cache.spi.RegionFactory;
-import org.hibernate.cfg.ImprovedNamingStrategy;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
-import org.nrg.framework.orm.hibernate.AggregatedAnnotationSessionFactoryBean;
-import org.nrg.framework.orm.hibernate.PrefixedTableNamingStrategy;
 import org.nrg.framework.utilities.Beans;
 import org.postgresql.Driver;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.config.PropertiesFactoryBean;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.datasource.SimpleDriverDataSource;
-import org.springframework.orm.hibernate4.HibernateTransactionManager;
-import org.springframework.orm.hibernate4.LocalSessionFactoryBean;
-import org.springframework.transaction.PlatformTransactionManager;
-import org.springframework.transaction.annotation.EnableTransactionManagement;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
-import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.util.Properties;
 
@@ -32,7 +21,6 @@ import java.util.Properties;
  * Sets up the database configuration for XNAT.
  */
 @Configuration
-@EnableTransactionManagement(proxyTargetClass = true)
 public class DatabaseConfig {
 
     public static final String DEFAULT_DATASOURCE_URL      = "jdbc:postgresql://localhost/xnat";
@@ -67,50 +55,6 @@ public class DatabaseConfig {
     @Bean
     public JdbcTemplate jdbcTemplate() throws NrgServiceException {
         return new JdbcTemplate(dataSource());
-    }
-
-    @Bean
-    public ImprovedNamingStrategy namingStrategy() {
-        return new PrefixedTableNamingStrategy("xhbm");
-    }
-
-    @Bean
-    public PropertiesFactoryBean hibernateProperties() {
-        final PropertiesFactoryBean bean = new PropertiesFactoryBean();
-        final Properties properties = Beans.getNamespacedProperties(_environment, "hibernate", false);
-        if (properties.size() == 0) {
-            properties.putAll(DEFAULT_HIBERNATE_PROPERTIES);
-        }
-        bean.setProperties(properties);
-        return bean;
-    }
-
-    @Bean
-    public RegionFactory regionFactory() throws NrgServiceException {
-        try {
-            return new SingletonEhCacheRegionFactory(hibernateProperties().getObject());
-        } catch (IOException e) {
-            throw new NrgServiceException(NrgServiceError.Unknown, "An error occurred trying to retrieve the Hibernate properties", e);
-        }
-    }
-
-    @Bean
-    public LocalSessionFactoryBean sessionFactory() throws NrgServiceException {
-        try {
-            final AggregatedAnnotationSessionFactoryBean bean = new AggregatedAnnotationSessionFactoryBean();
-            bean.setDataSource(dataSource());
-            bean.setCacheRegionFactory(regionFactory());
-            bean.setHibernateProperties(hibernateProperties().getObject());
-            bean.setNamingStrategy(namingStrategy());
-            return bean;
-        } catch (IOException e) {
-            throw new NrgServiceException(NrgServiceError.Unknown, "An error occurred trying to retrieve the Hibernate properties", e);
-        }
-    }
-
-    @Bean
-    public PlatformTransactionManager transactionManager() throws NrgServiceException {
-        return new HibernateTransactionManager(sessionFactory().getObject());
     }
 
     private static Properties setDefaultDatasourceProperties(final Properties properties) {
@@ -149,14 +93,6 @@ public class DatabaseConfig {
     }
 
     private static final Logger _log = LoggerFactory.getLogger(DatabaseConfig.class);
-
-    private static final Properties DEFAULT_HIBERNATE_PROPERTIES = new Properties() {{
-        setProperty("hibernate.dialect", "org.hibernate.dialect.PostgreSQL9Dialect");
-        setProperty("hibernate.hbm2ddl.auto", "update");
-        setProperty("hibernate.show_sql", "false");
-        setProperty("hibernate.cache.use_second_level_cache", "true");
-        setProperty("hibernate.cache.use_query_cache", "true");
-    }};
 
     @Inject
     private Environment _environment;

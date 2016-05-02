@@ -1,111 +1,83 @@
 package org.nrg.xnat.initialization;
 
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.core.PrettyPrinter;
+import com.fasterxml.jackson.core.util.DefaultIndenter;
+import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import org.nrg.framework.datacache.SerializerRegistry;
-import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
+import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.ContextService;
-import org.nrg.xdat.security.HistoricPasswordValidator;
-import org.nrg.xdat.security.PasswordValidatorChain;
-import org.nrg.xdat.security.RegExpValidator;
-import org.nrg.xnat.utils.XnatUserProvider;
-import org.nrg.xnat.event.conf.EventPackages;
-import org.nrg.xnat.restlet.XnatRestletExtensions;
-import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
-import org.springframework.beans.factory.annotation.Value;
+import org.nrg.framework.services.SerializerService;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xnat.helpers.prearchive.PrearcConfig;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
 import org.springframework.context.annotation.ImportResource;
 
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.HashSet;
-import java.util.List;
-
+/**
+ * Configuration for the XNAT root application context. This contains all of the basic infrastructure for initializing
+ * and bootstrapping the site, including data source configuration, transaction and session management, and site
+ * configuration preferences.
+ *
+ * <b>NOTE:</b> If you are adding code to this class, please be sure you know what you're doing! Most configuration code
+ * for standard XNAT components should be added in {@link org.nrg.xnat.configuration.ApplicationConfig}
+ */
 @Configuration
-@ComponentScan({"org.nrg.framework.datacache.impl.hibernate",
-                "org.nrg.framework.services.impl",
-                "org.nrg.xdat.daos",
-                "org.nrg.xnat.daos",
-                "org.nrg.xnat.services.impl.hibernate",
-                "org.nrg.xdat.services",
-                "org.nrg.xft.daos",
-                "org.nrg.xft.services",
-                "org.nrg.xapi.configuration",
-                "org.nrg.xnat.helpers.merge",
-                "org.nrg.xnat.configuration",
-                "org.nrg.xnat.services",
-                "org.nrg.prefs.repositories",
-                "org.nrg.prefs.services.impl.hibernate",
-                "org.nrg.dicomtools.filters"})
-@ImportResource({"WEB-INF/conf/xnat-security.xml", "WEB-INF/conf/mq-context.xml"})
+@Import({PropertiesConfig.class, DatabaseConfig.class})
+@ImportResource("WEB-INF/conf/xnat-security.xml")
 public class RootConfig {
-
-    public static final List<String> DEFAULT_ENTITY_PACKAGES = Arrays.asList("org.nrg.framework.datacache", "org.nrg.xft.entities", "org.nrg.xft.event.entities", "org.nrg.xdat.entities",
-                                                                              "org.nrg.xnat.entities", "org.nrg.xnat.event.entities", "org.nrg.prefs.entities", "org.nrg.config.entities");
-
     @Bean
-    public String siteId() {
-        return _siteId;
+    public InitializerSiteConfiguration initializerSiteConfiguration() {
+        return new InitializerSiteConfiguration();
     }
 
     @Bean
-    public RegExpValidator regexValidator(@Value("${security.password_complexity:^.*$}") final String complexityExpression,
-                                          @Value("${security.password_complexity_message:Password is not sufficiently complex.}") final String complexityMessage) {
-        return new RegExpValidator(complexityExpression, complexityMessage);
-    }
-
-    @Bean
-    public HistoricPasswordValidator historicPasswordValidator(@Value("${security.password_history:365}") final int durationInDays) {
-        return new HistoricPasswordValidator(durationInDays);
-    }
-
-    @Bean
-    public PasswordValidatorChain validator(final RegExpValidator regExpValidator, final HistoricPasswordValidator historicPasswordValidator) {
-        return new PasswordValidatorChain(Arrays.asList(regExpValidator, historicPasswordValidator));
-    }
-
-    // MIGRATION: I'm not even sure this is used, but we need to do away with it in favor of prefs.
-    @Bean
-    public List<String> propertiesRepositories() {
-        return Collections.singletonList("WEB-INF/conf/properties");
-    }
-
-    @Bean
-    public ContextService contextService() {
+    public ContextService rootContextService() throws NrgServiceException {
         return ContextService.getInstance();
     }
 
     @Bean
-    public HibernateEntityPackageList coreXnatEntityPackages() {
-        return new HibernateEntityPackageList(DEFAULT_ENTITY_PACKAGES);
+    public PrearcConfig prearcConfig() {
+        final PrearcConfig prearcConfig = new PrearcConfig();
+        prearcConfig.setReloadPrearcDatabaseOnApplicationStartup(false);
+        return prearcConfig;
     }
 
     @Bean
-    public XnatUserProvider receivedFileUserProvider(@Value("${services.dicom.scp.receivedfileuser:admin}") final String receivedFileUser) {
-        return new XnatUserProvider(receivedFileUser);
+    public PrettyPrinter prettyPrinter() {
+        final DefaultIndenter indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
+        return new DefaultPrettyPrinter() {{
+            indentObjectsWith(indenter);
+            indentArraysWith(indenter);
+        }};
     }
 
     @Bean
-    public XnatRestletExtensions xnatRestletExtensions() {
-		return new XnatRestletExtensions(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.extensions"})));
+    public ObjectMapper jsonObjectMapper() {
+        final PrettyPrinter printer = prettyPrinter();
+        final ObjectMapper  mapper  = new ObjectMapper().setDefaultPrettyPrinter(printer);
+        mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+        return mapper;
     }
 
     @Bean
-    public ImporterHandlerPackages importerHandlerPackages() {
-		return new ImporterHandlerPackages(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.restlet.actions","org.nrg.xnat.archive"})));
+    public ObjectMapper yamlObjectMapper() {
+        final PrettyPrinter printer = prettyPrinter();
+        final ObjectMapper  mapper  = new ObjectMapper(new YAMLFactory()).setDefaultPrettyPrinter(printer);
+        mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
+        return mapper;
     }
 
     @Bean
-    public EventPackages eventPackages() {
-    	// NOTE:  These should be treated as parent packages.  All sub-packages should be searched 
-		return new EventPackages(new HashSet<String>(Arrays.asList(new String[] {"org.nrg.xnat.event","org.nrg.xft.event","org.nrg.xdat.event"})));
+    public SerializerService serializerService() {
+        return new SerializerService();
     }
 
     @Bean
     public SerializerRegistry serializerRegistry() {
         return new SerializerRegistry();
     }
-
-    @Value("${site.title:XNAT}")
-    private String _siteId;
 }

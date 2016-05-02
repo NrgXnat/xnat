@@ -10,22 +10,21 @@
  */
 package org.nrg.xnat.security;
 
-import org.apache.commons.lang3.BooleanUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.config.exceptions.SiteConfigurationException;
-import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.entities.UserRole;
 import org.nrg.xdat.om.ArcArchivespecification;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.jdbc.core.RowMapper;
 import org.springframework.security.crypto.codec.Base64;
@@ -44,9 +43,11 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.sql.ResultSet;
 import java.sql.SQLException;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.List;
 
-
+@SuppressWarnings({"SqlDialectInspection", "SqlNoDataSourceInspection"})
 public class XnatExpiredPasswordFilter extends GenericFilterBean {
     private String changePasswordPath = "";
     private String changePasswordDestination = "";
@@ -132,7 +133,12 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                         logger.error(e);
                     }
 
-                    if (isPasswordExpirationDisabled()) {
+                    try {
+                        passwordExpirationDisabled = isPasswordExpirationDisabled();
+                    } catch (SiteConfigurationException e) {
+                        logger.error("An error occurred trying to check for expired passwords, continuing processing.", e);
+                    }
+                    if (passwordExpirationDisabled) {
                         chain.doFilter(request, response);
                     } else {
                         final boolean isExpired = checkForExpiredPassword(username);
@@ -177,7 +183,7 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                     } else if (user.isEnabled()) {
                         boolean isExpired = checkForExpiredPassword(user);
 
-                        if ((!isUserNonExpiring(user) && isExpired) || (getBoolSiteConfigurationProperty("requireSaltedPasswords", true) && user.getSalt() == null)) {
+                        if ((!isUserNonExpiring(user) && isExpired) || (_preferences.getRequireSaltedPasswords() && user.getSalt() == null)) {
                             request.getSession().setAttribute("expired", isExpired);
                             response.sendRedirect(TurbineUtils.GetFullServerPath() + changePasswordPath);
                         } else {
@@ -189,20 +195,6 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 }
             }
         }
-    }
-
-    private String getSiteConfigurationProperty(final String property) {
-        try {
-            return _siteConfigurationService.getSiteConfigurationProperty(property);
-        } catch (SiteConfigurationException e) {
-            _log.warn("An error occurred retrieving the site configuration property " + property, e);
-            return null;
-        }
-    }
-
-    private boolean getBoolSiteConfigurationProperty(final String property, final boolean _default) {
-        final String value = getSiteConfigurationProperty(property);
-        return StringUtils.isBlank(value) ? _default : BooleanUtils.toBoolean(value);
     }
 
     public void setChangePasswordPath(String path) {
@@ -271,14 +263,14 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
                 return false;
             }
             if (isPasswordExpirationInterval()) {
-                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT ((now()-password_updated)> (Interval '" + getPasswordExpirationSetting() + " days')) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[]{username}, new RowMapper<Boolean>() {
+                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT ((now()-password_updated)> (Interval '" + passwordExpirationSetting + " days')) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[]{username}, new RowMapper<Boolean>() {
                     public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
                         return rs.getBoolean(1);
                     }
                 });
                 return expired.get(0);
             } else {
-                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT (to_date('" + getPasswordExpirationSetting() + "', 'MM/DD/YYYY') BETWEEN password_updated AND now()) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[]{username}, new RowMapper<Boolean>() {
+                List<Boolean> expired = (new JdbcTemplate(_dataSource)).query("SELECT (to_date('" + new SimpleDateFormat("MM/dd/yyyy").format(new Date(Long.parseLong(passwordExpirationSetting))) + "', 'MM/DD/YYYY') BETWEEN password_updated AND now()) AS expired FROM xhbm_xdat_user_auth WHERE auth_user = ? AND auth_method = 'localdb'", new String[]{username}, new RowMapper<Boolean>() {
                     public Boolean mapRow(ResultSet rs, int rowNum) throws SQLException {
                         return rs.getBoolean(1);
                     }
@@ -291,20 +283,20 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
         return false;
     }
 
-    private boolean isPasswordExpirationDisabled() {
+    private boolean isPasswordExpirationDisabled() throws SiteConfigurationException {
         if (!passwordExpirationDirtied) {
             return passwordExpirationDisabled;
         }
-        final String type = getSiteConfigurationProperty("passwordExpirationType");
+        final String type = _preferences.getPasswordExpirationType();
         if (StringUtils.isBlank(type)) {
             passwordExpirationDisabled = true;
         } else if (type.equals("Interval")) {
             passwordExpirationInterval = true;
-            passwordExpirationSetting = validatePasswordExpirationInterval(getSiteConfigurationProperty("passwordExpirationInterval"));
+            passwordExpirationSetting = Integer.toString(_preferences.getPasswordExpirationInterval());
             passwordExpirationDisabled = passwordExpirationSetting.equals("0");
         } else if (type.equals("Date")) {
             passwordExpirationInterval = false;
-            passwordExpirationSetting = validatePasswordExpirationDate(getSiteConfigurationProperty("passwordExpirationDate"));
+            passwordExpirationSetting = Long.toString(_preferences.getPasswordExpirationDate().getTime());
             passwordExpirationDisabled = passwordExpirationSetting.equals("0");
         } else {
             passwordExpirationDisabled = true;
@@ -313,23 +305,8 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
         return passwordExpirationDisabled;
     }
 
-    private String validatePasswordExpirationInterval(final String passwordExpirationInterval) {
-        // overly long intervals break the query; this limit allows intervals up to approximately 2700 years, which should be sufficient for most purposes
-        return StringUtils.isNotBlank(passwordExpirationInterval) && !passwordExpirationInterval.equals("0") && passwordExpirationInterval.length() <= 6 && passwordExpirationInterval.matches("\\d+") ?
-                passwordExpirationInterval : "0";
-    }
-
-    private String validatePasswordExpirationDate(final String passwordExpirationDate) {
-        return StringUtils.isNotBlank(passwordExpirationDate) && passwordExpirationDate.matches("\\d\\d/\\d\\d/\\d\\d\\d\\d")
-                ? passwordExpirationDate : "0";
-    }
-
     private boolean isPasswordExpirationInterval() {
         return passwordExpirationInterval;
-    }
-
-    private String getPasswordExpirationSetting() {
-        return passwordExpirationSetting;
     }
 
     private boolean isUserNonExpiring(UserI user) {
@@ -350,12 +327,12 @@ public class XnatExpiredPasswordFilter extends GenericFilterBean {
         }
     }
 
-    private static final Logger _log = LoggerFactory.getLogger(XnatExpiredPasswordFilter.class);
+    @Autowired
+    @Lazy
+    private InitializerSiteConfiguration _preferences;
 
-    @Inject
-    private SiteConfigurationService _siteConfigurationService;
-
-    @Inject
+    @Autowired
+    @Lazy
     private AliasTokenService _aliasTokenService;
 
     @Inject

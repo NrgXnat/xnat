@@ -10,17 +10,11 @@
  */
 package org.nrg.xnat.security.provider;
 
-import org.nrg.config.services.SiteConfigurationService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.tokens.XnatDatabaseUsernamePasswordAuthenticationToken;
-import org.springframework.security.authentication.AccountExpiredException;
-import org.springframework.security.authentication.AuthenticationServiceException;
-import org.springframework.security.authentication.CredentialsExpiredException;
-import org.springframework.security.authentication.DisabledException;
-import org.springframework.security.authentication.LockedException;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.authentication.*;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
 import org.springframework.security.authentication.encoding.PlaintextPasswordEncoder;
 import org.springframework.security.core.AuthenticationException;
@@ -29,9 +23,9 @@ import org.springframework.security.core.userdetails.UserDetailsChecker;
 
 public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvider implements XnatAuthenticationProvider {
 
-    public XnatDatabaseAuthenticationProvider(final SiteConfigurationService siteConfigurationService) {
+    public XnatDatabaseAuthenticationProvider(final boolean requireEmailVerification) {
         super();
-        _siteConfigurationService = siteConfigurationService;
+        _requireEmailVerification = requireEmailVerification;
         this.setPreAuthenticationChecks(new PreAuthenticationChecks());
     }
 
@@ -85,7 +79,7 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
             throw new AuthenticationServiceException("User details class is not of a type I know how to handle: " + userDetails.getClass());
         }
         final UserI xdatUserDetails = (UserI) userDetails;
-        if ((_siteConfigurationService.getBoolSiteConfigurationProperty("emailVerification", false) && !xdatUserDetails.isVerified() && xdatUserDetails.isEnabled()) || !xdatUserDetails.isAccountNonLocked()) {
+        if ((_requireEmailVerification && !xdatUserDetails.isVerified() && xdatUserDetails.isEnabled()) || !xdatUserDetails.isAccountNonLocked()) {
             throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + xdatUserDetails.getUsername());
         }
         super.additionalAuthenticationChecks(userDetails, authentication);
@@ -94,8 +88,6 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
     public boolean isPlainText() {
         return (this.getPasswordEncoder().getClass() == plainText);
     }
-
-    private final SiteConfigurationService _siteConfigurationService;
 
     private String displayName = "";
     private String _providerId = "";
@@ -148,4 +140,6 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
             return false;
         }
     }
+
+    private final boolean _requireEmailVerification;
 }

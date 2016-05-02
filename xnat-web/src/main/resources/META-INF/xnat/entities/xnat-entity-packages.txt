@@ -1,0 +1,12 @@
+org.nrg.automation.entities
+org.nrg.config.entities
+org.nrg.dcm.xnat
+org.nrg.framework.datacache
+org.nrg.notify.entities
+org.nrg.prefs.entities
+org.nrg.xdat.entities
+org.nrg.xft.entities
+org.nrg.xft.event.entities
+org.nrg.xnat.entities
+org.nrg.xnat.event.entities
+org.nrg.xnat.spawner.entities

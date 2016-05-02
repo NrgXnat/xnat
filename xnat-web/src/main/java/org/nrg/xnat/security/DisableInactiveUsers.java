@@ -26,9 +26,8 @@ import java.sql.SQLException;
 import java.util.Calendar;
 import java.util.Date;
 import java.util.GregorianCalendar;
-import java.util.concurrent.Callable;
 
-public class DisableInactiveUsers implements Callable<Void> {
+public class DisableInactiveUsers implements Runnable {
 
     public DisableInactiveUsers(final int inactivityBeforeLockout) {
         _inactivityBeforeLockout = inactivityBeforeLockout;
@@ -39,7 +38,7 @@ public class DisableInactiveUsers implements Callable<Void> {
      * and disables them.
      */
     @Override
-    public Void call() {
+    public void run() {
         try {
             final XFTTable table = XFTTable.Execute("SELECT xdat_user.login FROM xdat_user INNER JOIN " +
                     "(" +
@@ -76,7 +75,6 @@ public class DisableInactiveUsers implements Callable<Void> {
         } catch (DBPoolException e) {
             logger.error("A database connection or pooling error occurred.", e);
         }
-        return null;
     }
 
     /**

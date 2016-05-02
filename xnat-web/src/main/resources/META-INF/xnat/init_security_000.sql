@@ -828,7 +828,7 @@ INSERT INTO xdat_field_mapping (comparison_type,xdat_field_mapping_set_xdat_fiel
 
 INSERT INTO xdat_user_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:55.466',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,1)
 
-INSERT INTO xdat_user (primary_password_encrypt,xdat_user_id,users_user_xdat_security_xdat_security_id,verified,firstname,lastname,enabled,email,login,user_info,primary_password) VALUES (1,1,1,1,'Admin','Admin',1,'administrator@xnat.org','admin',1,'cfokl')
+INSERT INTO xdat_user (primary_password_encrypt,xdat_user_id,users_user_xdat_security_xdat_security_id,verified,firstname,lastname,enabled,email,login,user_info,primary_password) VALUES (1,1,1,1,'Admin','Admin',1,'administrator@xnat.org','admin',1,'admin')
 
 INSERT INTO xdat_role_type_meta_data (status,activation_date,modified,row_last_modified,insert_date,xft_version,shareable,meta_data_id) VALUES ('active','2013-09-25 18:31:55.483',0,'2013-09-25 18:31:52.129','2013-09-25 18:31:52.129','1',1,1)
 

@@ -147,9 +147,9 @@ public class InitializerSiteConfiguration extends PropertiesBasedSiteConfigurati
         final boolean exists = !StringUtils.isBlank(current) || getJdbcTemplate().queryForObject("select count(*) as item_count from xhbm_preference where tool = ? and name = ?", Integer.class, toolId, property) != 0;
         final Timestamp timestamp = new Timestamp(new Date().getTime());
         if (exists && !StringUtils.equals(current, value)) {
-            getJdbcTemplate().update("update xhbm_preference set value = ?, set timestamp = ? where tool = ? and name = ?", value, timestamp, toolId, property);
+            getJdbcTemplate().update("update xhbm_preference set value = ?, set \"timestamp\" = ? where tool = ? and name = ?", value, timestamp, toolId, property);
         } else if (!exists) {
-            getJdbcTemplate().update("insert into xhbm_preference (created, disabled, enabled, timestamp, entity_id, name, scope, value, tool) values (?, ?, true, ?, null, ?, 0, ?, ?)", timestamp, new Timestamp(0), timestamp, property, value, toolId);
+            getJdbcTemplate().update("insert into xhbm_preference (created, disabled, enabled, \"timestamp\", entity_id, name, scope, value, tool) values (?, ?, true, ?, null, ?, 0, ?, ?)", timestamp, new Timestamp(0), timestamp, property, value, toolId);
         }
         setSiteConfigurationProperty(username, property, value);
     }

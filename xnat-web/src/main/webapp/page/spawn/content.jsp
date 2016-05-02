@@ -21,7 +21,7 @@
 
     <!-- playground for XNAT.spawner methods -->
 
-    <button id="show-spawn" type="button">Show some spawn() examples below:</button>
+    <a id="show-spawn" class="link" href="#!">Show some spawn() examples below &gt;&gt;</a>
 
     <div id="spawn-container"></div>
 
@@ -35,7 +35,8 @@
             var $showSpawn = $('#show-spawn');
             var $spawnContainer = $('#spawn-container');
 
-            $showSpawn.click(function(){
+            $showSpawn.click(function(e){
+                e.preventDefault();
                 $spawnContainer.spawn('hr.clear', {
                     style: 'margin: 30px 0'
                 }, '<br>');

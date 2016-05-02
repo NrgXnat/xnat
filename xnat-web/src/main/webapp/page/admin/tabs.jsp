@@ -32,37 +32,8 @@
             </div>
         </div>
 
-        <script>
-            (function(){
-
-                var $head = $('head');
-
-                // append the css to the head
-                $head.spawn('link', {
-                    rel: 'stylesheet',
-                    type: 'text/css',
-                    href: XNAT.url.rootUrl('/scripts/lib/bootstrap/themes/xnat/bootstrap-fixed.css')
-                });
-
-                // append the css to the head
-                $head.spawn('link', {
-                    rel: 'stylesheet',
-                    type: 'text/css',
-                    href: XNAT.url.rootUrl('/page/admin/style.css')
-                });
-
-                // get the JSON and do the setup
-                var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin.json');
-                $.getJSON(jsonUrl).done(function(data){
-                    var adminTabs =
-                                XNAT.ui.tabs
-                                    .init(data.Result)
-                                    .render('#admin-config-tabs');
-
-                    console.log(adminTabs);
-                });
-            })();
-        </script>
+        <%--<script src="${sessionScope.siteRoot}/scripts/xnat/ui/tabs.js"></script>--%>
+        <script src="${sessionScope.siteRoot}/page/admin/tabs.js"></script>
 
     </div>
 </pg:restricted>

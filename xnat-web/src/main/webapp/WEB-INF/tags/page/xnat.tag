@@ -74,7 +74,7 @@
     <!-- other libraries -->
     <script src="${_siteRoot}/scripts/lib/spawn/spawn.js"></script>
     <script src="${_siteRoot}/scripts/lib/js.cookie.js"></script>
-
+    <script src="${_siteRoot}/scripts/lib/yamljs/dist/yaml.js"></script>
 
 
 

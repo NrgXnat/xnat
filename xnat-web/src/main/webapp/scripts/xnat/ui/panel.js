@@ -2,12 +2,103 @@
  * Functions for creating XNAT tab UI elements
  */
 
-var XNAT = getObject(XNAT||{});
+var XNAT = getObject(XNAT || {});
 
 (function(XNAT, $, window, undefined){
 
-    var spawn = window.spawn,
+    var panel,
+        spawn   = window.spawn,
         element = XNAT.element;
+
+
+    XNAT.ui =
+        getObject(XNAT.ui || {});
+
+    XNAT.ui.panel = panel =
+        getObject(XNAT.ui.panel || {});
+
+    panel.init = function(config){
+        var _target = spawn('div.panel-body'),
+            _panel  = spawn('div.panel.panel-default', [
+                ['div.panel-heading', [
+                    ['h3.panel-title', config.title || config.label]
+                ]],
+                _target,
+                ['div.panel-footer', config.footer]
+            ]);
+        return {
+            target: _target,
+            element: _panel,
+            spawned: _panel,
+            get: function(){
+                return _panel;
+            }
+        }
+    };
+
+    panel.form = function(config){
+        var _target = spawn('div.panel-body', config.config),
+            _footer = [
+                ['button.btn.btn-sm.btn-primary.save.pull-right|type=submit', 'Submit'],
+                ['span.pull-right', '&nbsp;&nbsp;&nbsp;'],
+                ['button.btn.btn-sm.btn-default.revert.pull-right|type=button', 'Discard Changes'],
+                ['button.btn.btn-sm.btn-link.defaults.pull-left', 'Default Settings'],
+                ['div.clear']
+            ],
+            _panel  = spawn('form.xnat-form-panel.panel.panel-default', [
+                ['div.panel-heading', [
+                    ['h3.panel-title', config.title || config.label]
+                ]],
+                _target,
+                ['div.panel-footer', config.footer || _footer]
+            ]);
+        return {
+            target: _target,
+            element: _panel,
+            spawned: _panel,
+            get: function(){
+                return _panel;
+            }
+        }
+    };
+
+    function footerButton(text, type, disabled, classes){
+        var button = {
+            type: type || 'button',
+            html: text || 'Submit'
+        };
+        button.classes = [classes || '', 'btn btn-sm'];
+        if (type === 'link') {
+            button.classes.push('btn-link')
+        }
+        else if (/submit|primary/.test(type)) {
+            button.classes.push('btn-primary')
+        }
+        else {
+            button.classes.push('btn-default')
+        }
+        if (disabled) {
+            button.classes.push('disabled');
+            button.disabled = 'disabled'
+        }
+        return spawn('button', button);
+    }
+
+
+    return XNAT.ui.panel = panel;
+
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // STOP EVERYTHING!!!!!
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+    // EVERYTHING BELOW HERE IS EFFECTIVELY DISABLED
+    // WITH THE return STATEMENT ABOVE
+    //
+    // IT IS BEING KEPT AROUND TEMPORARILY FOR REFERENCE
+    // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 
     /**
@@ -22,7 +113,7 @@ var XNAT = getObject(XNAT||{});
     function panel(opts, container){
 
         // `this` object
-        var __ = {};
+        var _panel = {};
 
         /**
          * Standard panel widget
@@ -31,16 +122,16 @@ var XNAT = getObject(XNAT||{});
 
             var sections = [
                 ['div.panel-heading', [
-                    ['h3.panel-title', __.opts.title]
+                    ['h3.panel-title', _panel.opts.title]
                 ]],
-                ['div.panel-body', __.opts.body]
+                ['div.panel-body', _panel.opts.body]
             ];
 
-            if (__.opts.footer){
-                sections.push(['div.panel-footer', __.opts.footer])
+            if (_panel.opts.footer) {
+                sections.push(['div.panel-footer', _panel.opts.footer])
             }
 
-            return spawn((__.opts.tag) + '.panel.panel-default', __.opts.attr, sections);
+            return spawn((_panel.opts.tag) + '.panel.panel-default', _panel.opts.attr, sections);
             //return $(spawn('div.panel.panel-default')).append(content);
         }
 
@@ -49,55 +140,54 @@ var XNAT = getObject(XNAT||{});
          * @param _opts Config object
          * @returns {{}}
          */
-        __.setup = function(_opts){
+        _panel.setup = function _panelSetup(_opts){
 
-            __.opts = extend(true, {}, _opts);
+            _panel.opts = extend(true, {}, _opts);
 
-            __.opts.tag    = __.opts.tag    || 'div';
-            __.opts.title  = __.opts.title  || __.opts.header  || '';
-            __.opts.body   = __.opts.body   || __.opts.content || '';
-            __.opts.footer = __.opts.footer || '';
+            _panel.opts.tag = _panel.opts.tag || 'div';
+            _panel.opts.title = _panel.opts.title || _panel.opts.header || '';
+            _panel.opts.body = _panel.opts.body || _panel.opts.content || '';
+            _panel.opts.footer = _panel.opts.footer || '';
 
-            __.opts.attr = __.opts.attr || {};
+            _panel.opts.attr = _panel.opts.attr || {};
 
-            if (__.opts.id){
-                __.opts.attr.id = __.opts.id
+            if (_panel.opts.id) {
+                _panel.opts.attr.id = _panel.opts.id
             }
 
-            if (__.opts.name){
-                __.opts.attr.data = getObject(__.opts.attr.data);
-                __.opts.attr.data.name = __.opts.name;
+            if (_panel.opts.name) {
+                _panel.opts.attr.data = getObject(_panel.opts.attr.data);
+                _panel.opts.attr.data.name = _panel.opts.name;
             }
 
-            __.panel = __.element = newPanel();
+            _panel.panel = _panel.element = newPanel();
 
-            return __;
+            return _panel;
         };
 
         // if 'opts' arg is passed to .panel(), call .setup()
-        if (opts){
-            __.setup(opts);
+        if (opts) {
+            _panel.setup(opts);
         }
 
         // render the panel and append to 'container'
-        __.render = function(container){
-            $$(container).append(__.panel);
-            return __;
+        _panel.render = function _panelRender(container){
+            $$(container).append(_panel.panel);
+            return _panel;
         };
 
         // render immediately if 'container' is specified
-        if (container){
-            __.render(container);
+        if (container) {
+            _panel.render(container);
         }
 
-        __.get = function(){
-            return __.element;
+        _panel.get = function _panelGet(){
+            return _panel.element;
         };
 
-        return __;
+        return _panel;
 
     }
-
 
 
     /**
@@ -106,10 +196,9 @@ var XNAT = getObject(XNAT||{});
      * @param container
      * @returns {*}
      */
-    panel.form = function(opts, container){
+    panel.form = function panelForm(opts, container){
 
-        var __ = {},
-            _panel, $panel,
+        var _panel, $panel,
             saveBtn, revertBtn,
             $saveBtn, $revertBtn;
 
@@ -119,15 +208,15 @@ var XNAT = getObject(XNAT||{});
 
         opts.body = [];
 
-        if (opts.description){
-            opts.body.push(element.p(opts.description||''))
+        if (opts.description) {
+            opts.body.push(element.p(opts.description || ''))
         }
 
-        if (opts.elements){
+        if (opts.elements) {
             opts.body = opts.body.concat(setupElements(opts.elements))
         }
 
-        saveBtn   = footerButton('Save', 'submit', true, 'save pull-right');
+        saveBtn = footerButton('Save', 'submit', true, 'save pull-right');
         revertBtn = footerButton('Discard Changes', 'button', true, 'revert pull-right');
 
         opts.footer = [
@@ -152,7 +241,7 @@ var XNAT = getObject(XNAT||{});
 
         var url = '#';
 
-        if (method === 'GET'){
+        if (method === 'GET') {
             url = XNAT.url.restUrl(opts.url)
         }
         else if (/PUT|POST|DELETE/.test(method)) {
@@ -187,7 +276,7 @@ var XNAT = getObject(XNAT||{});
                         }
                     })
                 }
-                catch(e) {
+                catch (e) {
                     setDisabled([$saveBtn, $revertBtn], true);
                     console.log(e)
                 }
@@ -203,20 +292,26 @@ var XNAT = getObject(XNAT||{});
 
         _panel.panel = _panel.element;
 
-        return _panel
+        return {
+            element: _panel,
+            spawned: _panel,
+            get: function(){
+                return _panel;
+            }
+        }
 
     };
 
     function footerButton(text, type, disabled, classes){
         var button = {
-            type: type||'button',
-            html: text||'Submit'
+            type: type || 'button',
+            html: text || 'Submit'
         };
-        button.classes = [classes||'', 'btn btn-sm'];
-        if (type === 'link'){
+        button.classes = [classes || '', 'btn btn-sm'];
+        if (type === 'link') {
             button.classes.push('btn-link')
         }
-        else if (/submit|primary/.test(type)){
+        else if (/submit|primary/.test(type)) {
             button.classes.push('btn-primary')
         }
         else {
@@ -246,23 +341,23 @@ var XNAT = getObject(XNAT||{});
 
         radios = item.options.map(function(radio){
 
-            var label = {},
-                button = spawn('input', {
+            var label       = {},
+                button      = spawn('input', {
                     type: 'radio',
                     name: item.name,
                     value: radio.value
                 }),
                 description = spawn('div.description', {
-                    data: { 'for': item.value },
+                    data: {'for': item.value},
                     title: item.value,
                     html: radio.description
                 });
 
-            if (button.value === item.value){
+            if (button.value === item.value) {
                 button.checked = true;
             }
 
-            if (!button.checked){
+            if (!button.checked) {
                 $(description).addClass('hidden');
                 //button.disabled = true;
                 //label.classes = 'hidden';
@@ -277,7 +372,7 @@ var XNAT = getObject(XNAT||{});
 
             label.append = description;
 
-            return ['label.radio-item', label, [button, ' '+radio.label]];
+            return ['label.radio-item', label, [button, ' ' + radio.label]];
 
         });
 
@@ -291,91 +386,91 @@ var XNAT = getObject(XNAT||{});
         var elements = [],
             element, tag,
             children = '',
-            before = [],
-            after = [],
-            kind = item.kind || '',
-            obj = {};
+            before   = [],
+            after    = [],
+            kind     = item.kind || '',
+            obj      = {};
 
         // input (or other) element
-        tag = item.tag||item.kind||'div';
+        tag = item.tag || item.kind || 'div';
 
-        if (kind === 'element-group' && item.elements.length){
+        if (kind === 'element-group' && item.elements.length) {
             element = groupElements(item.elements);
             //element = spawn(tag, [radioToggle(item)]);
         }
         else {
-            if (item.name){
+            if (item.name) {
                 obj.name = item.name
             }
 
-            if (item.type){
+            if (item.type) {
                 obj.type = item.type;
             }
         }
 
-        if (item.id){
+        if (item.id) {
             obj.id = item.id;
         }
 
-        if (tag === 'input' && !item.type){
+        if (tag === 'input' && !item.type) {
             obj.type = 'text';
         }
 
         // 'checkbox' kind
-        if (kind === 'checkbox'){
+        if (kind === 'checkbox') {
             tag = 'input';
             obj.type = 'checkbox';
         }
 
         // set a default 'size' value for text inputs
-        if (tag === 'input' && /text|email|url/.test(item.type||obj.type||'')){
+        if (tag === 'input' && /text|email|url/.test(item.type || obj.type || '')) {
             obj.size = '25';
         }
 
-        if (item.label){
+        if (item.label) {
             obj.title = item.label;
         }
 
         obj.data = item.data ? extend(true, {}, item.data) : {};
 
-        if (item.value){
+        if (item.value) {
             obj.value = item.value;
             obj.data.value = item.value;
         }
 
-        if (item.checked){
+        if (item.checked) {
             obj.checked = true;
             obj.data.state = 'checked';
         }
 
-        if (item.info){
-            obj.data.info =  item.info;
+        if (item.info) {
+            obj.data.info = item.info;
         }
 
-        if (item.attr || item.attributes){
+        if (item.attr || item.attributes) {
             obj.attr = item.attr || item.attributes || {};
         }
 
-        if (/form-table|inputTable|input-table/i.test(kind)){
+        if (/form-table|inputTable|input-table/i.test(kind)) {
             element = XNAT.ui.inputTable(item.tableData).get();
         }
         else {
             obj.innerHTML = [].concat(item.innerHTML || item.html || []).join('\n');
         }
 
-        if (item.before){
+        if (item.before) {
             console.log('before');
             before = item.before;
             //elements.push(spawn('span.before', item.before))
         }
 
-        if (item.after){
+        if (item.after) {
             console.log('after');
             after = item.after;
             //elements.push(spawn('span.after', item.after))
         }
 
-        if (kind !== 'hidden'){
+        if (kind !== 'hidden') {
             // enable the 'Save' and 'Discard Changes' buttons on change
             obj.onchange = function(){
                 var $panel = $(this).closest('.panel');
@@ -383,13 +478,13 @@ var XNAT = getObject(XNAT||{});
             };
         }
 
-        if (kind === 'select' && item.options){
+        if (kind === 'select' && item.options) {
             children = item.options.map(function(option){
                 var obj = {};
                 obj.value = option.value;
                 obj.html = option.label;
-                if (isDefined(item.value)){
-                    if (item.value === obj.value){
+                if (isDefined(item.value)) {
+                    if (item.value === obj.value) {
                         obj.selected = true;
                     }
                 }
@@ -399,11 +494,11 @@ var XNAT = getObject(XNAT||{});
 
         element = element || spawn(tag, obj, children);
 
-        if (!elements.length){
+        if (!elements.length) {
             elements = [].concat(before, element, after);
         }
         // add a description if present
-        if (item.description){
+        if (item.description) {
             elements.push(spawn('div.description', item.description))
         }
 
@@ -414,9 +509,9 @@ var XNAT = getObject(XNAT||{});
 
     function elementLabel(label, id){
         var obj = {
-            innerHTML: label||''
+            innerHTML: label || ''
         };
-        if (id){
+        if (id) {
             obj.attr = {
                 'for': id
             }
@@ -430,7 +525,7 @@ var XNAT = getObject(XNAT||{});
         return items.map(function(item){
             var label = '';
             var tag = item.kind === 'hidden' ? 'div.hidden' : 'div.group-item';
-            if (item.label){
+            if (item.label) {
                 label = elementLabel(item.label, item.id)
             }
             tag += '|data-name=' + item.name;
@@ -452,7 +547,7 @@ var XNAT = getObject(XNAT||{});
                     tag += '.element-group';
                     break;
             }
-            if (item.label){
+            if (item.label) {
                 label = elementLabel(item.label, item.id)
             }
             tag += '|data-name=' + item.name;
@@ -467,9 +562,9 @@ var XNAT = getObject(XNAT||{});
         // reset all checkboxes and radio buttons
         $form.find(':checkbox, :radio').each(function(){
             var $this = $(this);
-            if ($this.hasClass('dirty')){
-                if ($this.data('state') !== 'checked'){
-                    if ($this.is(':checked')){
+            if ($this.hasClass('dirty')) {
+                if ($this.data('state') !== 'checked') {
+                    if ($this.is(':checked')) {
                         $this.trigger('click')
                     }
                     else {
@@ -501,12 +596,12 @@ var XNAT = getObject(XNAT||{});
 
         var sourceVal = $source.val();
         var targetVal = $target.val();
-        var dataVal   = $target.data('value');
+        var dataVal = $target.data('value');
 
         $target[0].value = (targetVal === sourceVal) ? dataVal : sourceVal;
 
         // avoid infinite loop of change triggers
-        if ($target[0] !== $$(modifier)[0]){
+        if ($target[0] !== $$(modifier)[0]) {
             $target.trigger('change.modify');
         }
 
@@ -525,7 +620,7 @@ var XNAT = getObject(XNAT||{});
     function setHidden(elements, hidden){
         [].concat(elements).forEach(function(element){
             var showOrHide, modifyClass;
-            if (!!hidden){
+            if (!!hidden) {
                 showOrHide = 'hide';
                 modifyClass = 'addClass';
             }
@@ -539,7 +634,7 @@ var XNAT = getObject(XNAT||{});
 
 
     XNAT.ui = getObject(XNAT.ui || {});
-    XNAT.ui.panel = panel.form; // temporarily use the 'form' panel kind
+    XNAT.ui.panel = panel; // temporarily use the 'form' panel kind
     XNAT.ui.panelForm = XNAT.ui.formPanel = panel.form;
 
 
@@ -566,9 +661,9 @@ var XNAT = getObject(XNAT||{});
                 var args = parts[1].split(',');
 
                 var _target = args[0].trim();
-                var _source = (args[1]||'').trim() || _target;
+                var _source = (args[1] || '').trim() || _target;
 
-                if (args[1]){
+                if (args[1]) {
                     _source = args[1].trim();
                 }
 
@@ -628,7 +723,6 @@ var XNAT = getObject(XNAT||{});
         //$('[data-modify]').trigger('change.modify');
 
     });
-
 
 
 })(XNAT, jQuery, window);

@@ -4,18 +4,6 @@
 
 <pg:restricted>
 
-    <div id="page-header">
-        <div class="pad">
-            <a href="${siteRoot}/"><img src="${siteRoot}/images/logo.png" style="vertical-align:baseline;"></a>
-                <span style="position:relative;bottom:4px;left:20px;">
-                    XNAT currently contains
-                    <a href="#">16 projects</a>,
-                    <a href="#">47 subjects</a>, and
-                    <a href="#">15 imaging sessions</a>.
-                </span>
-        </div>
-    </div>
-    <!-- /#page-header -->
     <div id="page-body">
         <div class="pad">
 
@@ -47,9 +35,9 @@
 
                         function fixSlashes(str){
 
-                            var HTTP = /^http:\/+/;
-                            var HTTPS = /^https:\/+/;
-                            var FTP = /^ftp:\/+/;
+                            var HTTP = /^http:\/+/i;
+                            var HTTPS = /^https:\/+/i;
+                            var FTP = /^ftp:\/+/i;
 
                             // initially remove multiple slashes
                             str = str.replace(/\/+/g, '/');
@@ -71,55 +59,23 @@
                         }
 
                         function setUrl(url){
-                            return fixSlashes(PAGE.siteRoot + url);
+                            return XNAT.url.rootUrl(url);
+                            //return fixSlashes(PAGE.siteRoot + url);
                         }
 
                         function dataUrl(url){
-                            return setUrl('/page/admin/data/' + url);
+                            return setUrl('/page/admin/data' + url);
                         }
 
-
-                        loadjs(setUrl('/scripts/lib/yamljs/dist/yaml.js'), function(){
-
-                            // get the JSON and do the setup
-                            $.getJSON(dataUrl('/config/siteAdmin.json')).done(function(data){
-
-                                var adminTabs =
-                                            XNAT.ui.tabs
-                                                .init(data.XNAT)
-                                                .render('#admin-config-tabs');
-
-                                console.log(adminTabs);
-                            });
-
-//                                    $.get({
-//                                        url: dataUrl('config/siteAdminAlt.yaml'),
-//                                        dataType: 'text',
-//                                        success: function (data) {
-//                                            var parsed = YAML.parse(data);
-//                                            console.log(parsed);
-//                                            extend(true, parsed.XNAT.siteAdmin.xnatSetup.siteSetup.siteInfo, {
-//                                                _self: {
-//                                                    foo: 'bar',
-//                                                    fn: function () {
-//                                                        alert('foo')
-//                                                    }
-//                                                },
-//                                                anotherElement: {
-//                                                    _self: {
-//                                                        type: 'thing',
-//                                                        bar: 'foo'
-//                                                    }
-//                                                }
-//                                            });
-//                                            console.log(parsed.XNAT.siteAdmin.xnatSetup.siteSetup.siteInfo._self);
-//
-//                                            parsed.XNAT.siteAdmin.xnatSetup.siteSetup.siteInfo._self.fn();
-//
-//                                        }
-//                                    });
-
+                        var getTabs = $.getJSON({
+                            url: dataUrl('/config/site-admin-sample-new.json'),
+                            success: function(obj){
+                                var adminTabs = XNAT.spawner.spawn(obj);
+                                adminTabs.render('#admin-config-tabs', true);
+                            }
                         });
+
+
 
                     })();
                 </script>

@@ -1,0 +1,54 @@
+root:
+    kind: tabs
+    name: siteAdmin
+    label: Administer XNAT
+    groups:
+        dashboard: Dashboard
+        xnatSetup: XNAT Setup
+        manageAccess: Manage Access
+        manageData: Manage Data
+        processing: Processing
+        projectCustomization: Project Customization
+        advanced: Advanced XNAT Settings
+    contains: tabs
+
+    tabs:  # this property name is the same as 'contains', so it will be treated like 'contents'
+
+        siteSetup:
+            kind: tab
+            name: siteSetup
+            label: Site Setup
+            group: xnatSetup
+            contains: panels # the value for 'contains' can be a custom name for 'contents'
+
+            panels:
+
+                siteInfo:
+                    kind: panel.form
+                    name: siteInfo
+                    label: Site Information
+                    contents:
+
+                        siteId:
+                            kind: input.text
+                            name: siteId
+                            label: Site ID
+                            validation: required id onblur
+                            element:  # the 'config' property is applied directly to the underlying spawn() function
+                                id: site-id
+                                style:
+                                  display: block
+
+                        adminEmail:
+                            kind: input.email
+                            name: adminEmail
+                            label: Administrator Email Address
+
+                        someInfo:
+                            #kind: element
+                            tag: div.message
+                            config:
+                                html: Hello people.
+                                style:
+                                    padding: 20px
+                                    color: red

@@ -2,29 +2,136 @@
  * Functions for creating XNAT tab UI elements
  */
 
-var XNAT = getObject(XNAT||{});
+var XNAT = getObject(XNAT || {});
+
+(function(factory){
+    if (typeof define === 'function' && define.amd) {
+        define(factory);
+    }
+    else if (typeof exports === 'object') {
+        module.exports = factory();
+    }
+    else {
+        return factory();
+    }
+}(function(){
+
+    var ui, tab, tabs, page,
+        tmp     = {},
+        element = XNAT.element;
+
+    XNAT.ui = ui =
+        getObject(XNAT.ui || {});
+
+    XNAT.ui.tab = XNAT.tab = tab =
+        getObject(XNAT.ui.tab || XNAT.tab || {});
+
+    XNAT.ui.tabs = XNAT.tabs = tabs =
+        getObject(XNAT.ui.tabs || XNAT.tabs || {});
+
+    XNAT.page = page =
+        getObject(XNAT.page || {});
+
+
+    // ==================================================
+    // MAIN FUNCTION
+    tabs.init = function _tabs(obj){
+
+        console.log('XNAT.ui.tabs.init()');
+        console.log(obj);
+
+        var spawned = spawn('div.tabs');
+
+        function render(element){
+            $$(element).append(spawned);
+            return spawned;
+        }
+
+        function get(){
+            console.log('XNAT.ui.tab.init().get()');
+            return spawned;
+        }
+
+        return {
+            // contents: obj.tabs||obj.contents||obj.content||'',
+            element: spawned,
+            spawned: spawned,
+            render: render,
+            get: get
+        };
+
+        // var frag = document.createDocumentFragment();
+        // var flippers, panes;
+        //
+        // // add content to pane
+        // function paneContents(contents){
+        //     var frag = document.createDocumentFragment();
+        //     $.each(contents, function(item, obj){
+        //         var widget = obj.kind||obj.type||'panel';
+        //         frag.appendChild(ui[widget](item).get());
+        //     });
+        //     return frag;
+        // }
+        //
+        // // setup the footer for the whole tab pane
+        // function paneFooter(){
+        //     var footer = spawn('footer.footer', [
+        //         ['button', {
+        //             type: 'button',
+        //             html: 'Save All',
+        //             classes: 'save-all btn btn-primary pull-right'
+        //         }]
+        //     ]);
+        //     return footer;
+        // }
+        //
+        // return frag;
+
+    };
+    // ==================================================
+
+
+    // ==================================================
+    // CREATE A SINGLE TAB
+    tab.init = function _tab(obj){
+
+        console.log('XNAT.ui.tab.init()');
+        console.log(obj);
+
+        var spawned = spawn('div.tab');
+
+        function render(element){
+            $$(element).append(spawned);
+            return spawned;
+        }
+
+        function get(){
+            console.log('XNAT.ui.tab.init().get()');
+            return spawned;
+        }
+
+        return {
+            // contents: obj.tabs||obj.contents||obj.content||'',
+            element: spawned,
+            spawned: spawned,
+            render: render,
+            get: get
+        }
+    };
+
+// ==================================================
+
+tabs.tab = tab;
+
+
+return tabs;
+
+}));
+
 
 (function(XNAT, $, window, undefined){
 
-    var ui, tab, tabs, page,
-        element = XNAT.element;
-
-    var $body = $(document.body);
-
-    XNAT.ui = ui = 
-        getObject(XNAT.ui || {});
-    
-    // just one tab
-    XNAT.ui.tab = tab = 
-        getObject(XNAT.ui.tab || {});
-    
-    // a whole bunch of tabs
-    XNAT.ui.tabs = XNAT.tabs = tabs = 
-        getObject(XNAT.ui.tabs || {});
-    
-    XNAT.page = page = 
-        getObject(XNAT.page || {});
-
+    return;
 
     /**
      * Initialize the tabs
@@ -82,7 +189,7 @@ var XNAT = getObject(XNAT||{});
 
 
         function refreshData(form, url){
-            
+
         }
 
 
@@ -113,7 +220,7 @@ var XNAT = getObject(XNAT||{});
                         name: item.name,
                         kind: item.kind
                     },
-                    append: element.p(item.description||'')
+                    append: element.p(item.description || '')
                 }))
             });
             pane.appendChild(spawn('ul', list));
@@ -126,7 +233,7 @@ var XNAT = getObject(XNAT||{});
                 // "kind" property defines which
                 // kind of UI widget to render
                 // default is "panel"
-                var widget = item.kind||'panel';
+                var widget = item.kind || 'panel';
                 return ui[widget](item).element;
             });
         }
@@ -148,7 +255,7 @@ var XNAT = getObject(XNAT||{});
             //tab.pane.content.appendChild(element.h3(tab.label));
 
             // add contents
-            if (tab.contents){
+            if (tab.contents) {
                 $(tab.pane.content).append(paneContents(tab.contents));
             }
 
@@ -210,8 +317,8 @@ var XNAT = getObject(XNAT||{});
                         onclick: function(){
                             activateTab(name);
                         }
-            });
-            if (tab.isDefault && !__.tabs.activeTab){
+                    });
+            if (tab.isDefault && !__.tabs.activeTab) {
                 activateTab(name);
             }
             tab.flipper.wrapper.appendChild(tab.flipper.label);
@@ -250,19 +357,19 @@ var XNAT = getObject(XNAT||{});
                 // only 'left' or 'right'
                 if (!/left|right/.test(side)) return;
                 var other = side === 'left' ? 'right' : 'left';
-                __.tabs.$flippers.addClass('side pull-'+side);
-                __.tabs.$panes.addClass('side pull-'+other);
+                __.tabs.$flippers.addClass('side pull-' + side);
+                __.tabs.$panes.addClass('side pull-' + other);
             }
 
             $.each(config, function(name, item){
 
                 if (item.kind !== 'tab') {
-                    if (item.kind === 'meta'){
-                        if (item.groups){
+                    if (item.kind === 'meta') {
+                        if (item.groups) {
                             // setup tab groups
                             setupGroups(item.groups);
                         }
-                        if (item.layout){
+                        if (item.layout) {
                             setLayout(item.layout);
                         }
                     }
@@ -277,7 +384,7 @@ var XNAT = getObject(XNAT||{});
                 _tab.id = item.id || toDashed(_name);
 
                 // save the first tab to activate it if there's no 'active' tab
-                if (!__.tabs.firstTab){
+                if (!__.tabs.firstTab) {
                     __.tabs.firstTab = _name;
                 }
 
@@ -293,7 +400,7 @@ var XNAT = getObject(XNAT||{});
             });
 
             // set the first tab to active if no 'default' tab is set
-            if (!__.tabs.activeTab){
+            if (!__.tabs.activeTab) {
                 activateTab(__.tabs.firstTab)
             }
 
@@ -303,11 +410,12 @@ var XNAT = getObject(XNAT||{});
             return __;
 
         }
+
         // expose globally
         __.setup = setupTabs;
 
         // run setup on init() if 'tabItems' is present
-        if (tabItems){
+        if (tabItems) {
             setupTabs(tabItems);
         }
 
@@ -324,7 +432,7 @@ var XNAT = getObject(XNAT||{});
         };
 
         // render immediately if 'container' is specified
-        if (container){
+        if (container) {
             __.render(container);
         }
 
@@ -338,5 +446,3 @@ var XNAT = getObject(XNAT||{});
     tabs.init = init;
 
 })(XNAT, jQuery, window);
-
-

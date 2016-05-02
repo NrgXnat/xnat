@@ -16,23 +16,19 @@ var XNAT = getObject(XNAT);
     }
 }(function(){
 
-    var undefined, uiInput, textTypes,
+    var undefined, textTypes,
         numberTypes, otherTypes,
         $ = jQuery || null, // check and localize
-        ui, input;
+        input_, input;
 
-    XNAT.ui = getObject(XNAT.ui||{});
-
-    XNAT.ui.input =
-        input = XNAT.ui.input || {};
-
+    XNAT.ui = getObject(XNAT.ui || {});
 
     // if XNAT.ui.input is already defined,
     // save it and its properties to add later
     // as methods and properties to the function
-    uiInput = input || null;
+    input_ = XNAT.ui.input || {};
 
-    
+
     // ========================================
     // MAIN FUNCTION
     input = function(type, config){
@@ -44,23 +40,31 @@ var XNAT = getObject(XNAT);
         }
         config = getObject(config);
         config.type = type || config.type || 'text';
-        return spawn('input', config)
+        var spawned = spawn('input', config);
+        return {
+            element: spawned,
+            spawned: spawned,
+            get: function(){
+                return spawned;
+            }
+        }
     };
     // ========================================
-    
-    
-    function setupType(type, className, config){
-        config = getObject(config);
+
+
+    function setupType(type, className, opts){
+        opts = getObject(opts);
+        config = getObject(opts.config || opts.element || {});
         config.addClass = className;
-        config.data = extend({ validate: type }, config.data);
+        config.data = extend({validate: className}, config.data);
         if (!config.data.validate) delete config.data.validate;
         return input(type, config);
     }
-    
+
     // methods for direct creation of specific input types
     // some are 'real' element types, others are XNAT-specific
     textTypes = [
-        'text', 'email', 'url', 'strict', 
+        'text', 'email', 'url', 'strict',
         'id', 'alpha', 'alphanum'
     ];
     textTypes.forEach(function(type){
@@ -68,16 +72,16 @@ var XNAT = getObject(XNAT);
             return setupType('text', type, config);
         }
     });
-    
+
     numberTypes = ['number', 'int', 'integer', 'float'];
     numberTypes.forEach(function(type){
         input[type] = function(config){
             return setupType('number', type, config);
         }
     });
-    
+
     otherTypes = [
-        'password', 'date', 'checkbox', 
+        'password', 'date', 'checkbox',
         'radio', 'button', 'hidden'
     ];
     otherTypes.forEach(function(type){
@@ -89,13 +93,9 @@ var XNAT = getObject(XNAT);
     // save a list of all available input types
     input.types = [].concat(textTypes, numberTypes, otherTypes);
 
-    // add back items that may have been on 
-    // a global XNAT.ui.input object
-    if (uiInput && isPlainObject(uiInput)) {
-        forOwn(uiInput, function(item, value){
-            input[item] = value;
-        })
-    }
+    // add back items that may have been on
+    // a global XNAT.ui.input object or function
+    extend(input, input_);
 
     // this script has loaded
     input.loaded = true;

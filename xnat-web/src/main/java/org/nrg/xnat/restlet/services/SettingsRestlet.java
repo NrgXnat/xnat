@@ -28,6 +28,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.ArcArchivespecificationNotificationTypeI;
 import org.nrg.xdat.om.ArcArchivespecification;
 import org.nrg.xdat.om.ArcArchivespecificationNotificationType;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.PopulateItem;
@@ -132,8 +133,10 @@ public class SettingsRestlet extends SecureResource {
     private Map<Object, Object> getArcSpecAsMap() throws IOException, ConfigServiceException {
         Map<Object, Object> settings = new HashMap<>();
 
+        final SiteConfigPreferences preferences = XDAT.getContextService().getBean(SiteConfigPreferences.class);
+
         settings.putAll(XDAT.getSiteConfiguration());
-        settings.put("siteId", getSiteId());
+        settings.put("siteId", preferences.getSiteTitle());
         final String siteUrl = StringUtils.isBlank(_arcSpec.getSiteUrl()) ? XnatHttpUtils.getServerRoot(getHttpServletRequest()) : _arcSpec.getSiteUrl();
         settings.put("siteUrl", siteUrl);
         settings.put("siteAdminEmail", _arcSpec.getSiteAdminEmail());
@@ -166,18 +169,6 @@ public class SettingsRestlet extends SecureResource {
         }
 
         return settings;
-    }
-
-    private String getSiteId() {
-        String siteId = XFT.GetSiteID();
-        if (StringUtils.isNotBlank(siteId)) {
-            return siteId;
-        }
-        siteId = _arcSpec.getSiteId();
-        if (StringUtils.isNotBlank(siteId)) {
-            return siteId;
-        }
-        return XDAT.getContextService().getBean("siteId", String.class);
     }
 
     private String emptyStringIfNull(final String configContents) {

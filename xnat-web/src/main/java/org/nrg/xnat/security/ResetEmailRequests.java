@@ -14,17 +14,16 @@ import org.nrg.mail.services.EmailRequestLogService;
 
 import java.util.concurrent.Callable;
 
-public class ResetEmailRequests implements Callable<Void> {
+public class ResetEmailRequests implements Runnable {
     public ResetEmailRequests(final EmailRequestLogService service) {
         _service = service;
     }
 
     @Override
-    public Void call() {
+    public void run() {
         if (_service != null) {
             _service.clearLogs();
         }
-        return null;
     }
 
     private final EmailRequestLogService _service;

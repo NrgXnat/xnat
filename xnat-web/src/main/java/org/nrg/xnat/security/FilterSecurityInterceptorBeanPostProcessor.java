@@ -10,12 +10,9 @@
  */
 package org.nrg.xnat.security;
 
-import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nrg.framework.constants.Scope;
-import org.nrg.prefs.entities.Preference;
-import org.nrg.prefs.services.PreferenceService;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.springframework.beans.BeansException;
 import org.springframework.beans.factory.config.BeanPostProcessor;
 import org.springframework.security.access.ConfigAttribute;
@@ -52,7 +49,7 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
 
         if (bean instanceof FilterSecurityInterceptor) {
             FilterSecurityInterceptor interceptor = (FilterSecurityInterceptor) bean;
-            final ExpressionBasedFilterInvocationSecurityMetadataSource metadataSource = getMetadataSource(isRequiredLogin());
+            final ExpressionBasedFilterInvocationSecurityMetadataSource metadataSource = getMetadataSource(_service.getRequireLogin());
             if (_log.isDebugEnabled()) {
                 _log.debug("Found a FilterSecurityInterceptor bean with the following metadata configuration:");
                 displayMetadataSource(interceptor.getSecurityMetadataSource());
@@ -106,20 +103,6 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
         }
     }
 
-    private boolean isRequiredLogin() {
-        final Preference preference = _service.getPreference("system", "require_login", Scope.Site, null);
-        if (preference == null) {
-            _log.warn("There is no preference set for the require_login setting.");
-            return true;
-        }
-        final String value = preference.getValue();
-        if (StringUtils.isBlank(value)) {
-            _log.warn("There is no preference value set for the require_login setting.");
-            return true;
-        }
-        return Boolean.parseBoolean(value);
-    }
-
     private static final Log _log = LogFactory.getLog(FilterSecurityInterceptorBeanPostProcessor.class);
     private static final String PERMIT_ALL = "permitAll";
     private static final String DEFAULT_PATTERN = "/**";
@@ -127,7 +110,7 @@ public class FilterSecurityInterceptorBeanPostProcessor implements BeanPostProce
     private static final String DEFAULT_EXPRESSION = "hasRole('ROLE_USER')";
 
     @Inject
-    private PreferenceService _service;
+    private InitializerSiteConfiguration _service;
 
     private final List<String> _openUrls = new ArrayList<>();
     private final List<String> _adminUrls = new ArrayList<>();

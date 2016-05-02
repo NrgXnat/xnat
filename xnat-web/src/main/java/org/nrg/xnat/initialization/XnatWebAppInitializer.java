@@ -10,6 +10,7 @@ import org.nrg.framework.processors.XnatPluginBean;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
 import org.nrg.xdat.servlet.XDATAjaxServlet;
 import org.nrg.xdat.servlet.XDATServlet;
+import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.restlet.servlet.XNATRestletServlet;
 import org.nrg.xnat.restlet.util.UpdateExpirationCookie;
 import org.nrg.xnat.security.XnatSessionEventPublisher;
@@ -17,6 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PropertiesLoaderUtils;
+import org.springframework.stereotype.Service;
 import org.springframework.web.filter.DelegatingFilterProxy;
 import org.springframework.web.servlet.support.AbstractAnnotationConfigDispatcherServletInitializer;
 
@@ -62,20 +64,20 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
 
     @Override
     protected String[] getServletMappings() {
-        return new String[] {"/admin/*", "/xapi/*"};
+        return new String[]{"/admin/*", "/xapi/*"};
     }
 
     @Override
     protected Class<?>[] getRootConfigClasses() {
-        final List<Class<?>> configClasses = new ArrayList<>();
-        configClasses.add(RootConfig.class);
-        configClasses.addAll(getPluginConfigs());
-        return configClasses.toArray(new Class[configClasses.size()]);
+        return new Class<?>[]{RootConfig.class};
     }
 
     @Override
     protected Class<?>[] getServletConfigClasses() {
-        return new Class<?>[0];
+        final List<Class<?>> configClasses = new ArrayList<>();
+        configClasses.add(ApplicationConfig.class);
+        configClasses.addAll(getPluginConfigs());
+        return configClasses.toArray(new Class[configClasses.size()]);
     }
 
     @Override
@@ -115,9 +117,9 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
         final List<Class<?>> configs = new ArrayList<>();
         try {
             for (final Resource resource : BasicXnatResourceLocator.getResources("classpath*:META-INF/xnat/**/*-plugin.properties")) {
-                final Properties     properties = PropertiesLoaderUtils.loadProperties(resource);
-                final XnatPluginBean plugin     = new XnatPluginBean(properties);
-                final Class<?>       config     = plugin.getConfigClass();
+                final Properties properties = PropertiesLoaderUtils.loadProperties(resource);
+                final XnatPluginBean plugin = new XnatPluginBean(properties);
+                final Class<?> config = plugin.getConfigClass();
                 configs.add(config);
             }
         } catch (IOException e) {
@@ -130,7 +132,7 @@ public class XnatWebAppInitializer extends AbstractAnnotationConfigDispatcherSer
     }
 
     private void addServlet(final Class<? extends Servlet> clazz, final int loadOnStartup, final String... mappings) {
-        final String                      name         = StringUtils.uncapitalize(clazz.getSimpleName());
+        final String name = StringUtils.uncapitalize(clazz.getSimpleName());
         final ServletRegistration.Dynamic registration = _context.addServlet(name, clazz);
         registration.setLoadOnStartup(loadOnStartup);
         registration.addMapping(mappings);

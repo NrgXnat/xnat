@@ -1,32 +1,45 @@
 package org.nrg.xnat.configuration;
 
+import org.apache.commons.lang3.StringUtils;
+import org.nrg.config.exceptions.SiteConfigurationException;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.notify.entities.ChannelRendererProvider;
 import org.nrg.notify.renderers.ChannelRenderer;
 import org.nrg.notify.renderers.NrgMailChannelRenderer;
-import org.springframework.beans.factory.annotation.Value;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.ComponentScan;
 import org.springframework.context.annotation.Configuration;
-import org.springframework.mail.MailSender;
 import org.springframework.mail.javamail.JavaMailSender;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 
+import javax.inject.Inject;
+import java.io.IOException;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.Properties;
 
 @Configuration
 @ComponentScan({"org.nrg.mail.services", "org.nrg.notify.services.impl", "org.nrg.notify.daos"})
 public class NotificationsConfig {
 
     @Bean
-    public JavaMailSender mailSender() {
+    public JavaMailSender mailSender() throws IOException, SiteConfigurationException {
+        final Map<String, String> smtp = _preferences.getSmtpServer();
         final JavaMailSenderImpl sender = new JavaMailSenderImpl();
-        sender.setHost(_host);
-        sender.setPort(_port);
-        sender.setUsername(_username);
-        sender.setPassword(_password);
+        sender.setHost(StringUtils.defaultIfBlank(smtp.remove("host"), "localhost"));
+        sender.setPort(Integer.parseInt(StringUtils.defaultIfBlank(smtp.remove("port"), "25")));
+        sender.setUsername(StringUtils.defaultIfBlank(smtp.remove("username"), ""));
+        sender.setPassword(StringUtils.defaultIfBlank(smtp.remove("password"), ""));
+        sender.setProtocol(StringUtils.defaultIfBlank(smtp.remove("protocol"), "smtp"));
+        if (smtp.size() > 0) {
+            final Properties properties = new Properties();
+            for (final String property : smtp.keySet()) {
+                properties.setProperty(property, smtp.get(property));
+            }
+            sender.setJavaMailProperties(properties);
+        }
         return sender;
     }
 
@@ -36,15 +49,15 @@ public class NotificationsConfig {
     }
 
     @Bean
-    public ChannelRenderer mailChannelRenderer() {
+    public ChannelRenderer mailChannelRenderer() throws SiteConfigurationException {
         final NrgMailChannelRenderer renderer = new NrgMailChannelRenderer();
-        renderer.setFromAddress(_fromAddress);
-        renderer.setSubjectPrefix(_subjectPrefix);
+        renderer.setFromAddress(_preferences.getAdminEmail());
+        renderer.setSubjectPrefix(_preferences.getEmailPrefix());
         return renderer;
     }
 
     @Bean
-    public Map<String, ChannelRenderer> renderers() {
+    public Map<String, ChannelRenderer> renderers() throws SiteConfigurationException {
         final Map<String, ChannelRenderer> renderers = new HashMap<>();
         renderers.put("htmlMail", mailChannelRenderer());
         renderers.put("textMail", mailChannelRenderer());
@@ -52,27 +65,12 @@ public class NotificationsConfig {
     }
 
     @Bean
-    public ChannelRendererProvider rendererProvider() {
+    public ChannelRendererProvider rendererProvider() throws SiteConfigurationException {
         final ChannelRendererProvider provider = new ChannelRendererProvider();
         provider.setRenderers(renderers());
         return provider;
     }
 
-    @Value("${mailserver.host}")
-    private String _host;
-    
-    @Value("${mailserver.port}")
-    private int _port;
-
-    @Value("${mailserver.username}")
-    private String _username;
-
-    @Value("${mailserver.password}")
-    private String _password;
-
-    @Value("${mailserver.admin}")
-    private String _fromAddress;
-
-    @Value("${mailserver.prefix}")
-    private String _subjectPrefix;
+    @Inject
+    private InitializerSiteConfiguration _preferences;
 }

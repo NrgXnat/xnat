@@ -17,6 +17,8 @@ import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -176,10 +178,12 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
         return _userAuthService.getUserDetailsByUsernameAndMostRecentSuccessfulLogin(token.getXdatUserId());
     }
 
-    @Inject
+    @Autowired
+    @Lazy
     private AliasTokenService _aliasTokenService;
 
-    @Inject
+    @Autowired
+    @Lazy
     private XdatUserAuthService _userAuthService;
 
     private String _name;

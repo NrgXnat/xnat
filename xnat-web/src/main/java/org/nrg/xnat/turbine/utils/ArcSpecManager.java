@@ -66,13 +66,13 @@ public class ArcSpecManager {
                 if (arcSpec.getSiteAdminEmail()!=null && !arcSpec.getSiteAdminEmail().equals("")){
                     XFT.SetAdminEmail(arcSpec.getSiteAdminEmail());
                 }else{
-                    arcSpec.setSiteAdminEmail(XFT.GetAdminEmail());
+                    arcSpec.setSiteAdminEmail(XDAT.getSiteConfigPreferences().getAdminEmail());
                 }
 
                 if (arcSpec.getSiteUrl()!=null && !arcSpec.getSiteUrl().equals("")){
                     XFT.SetSiteURL(arcSpec.getSiteUrl());
                 }else{
-                    arcSpec.setSiteUrl(XFT.GetSiteURL());
+                    arcSpec.setSiteUrl(XDAT.getSiteConfigPreferences().getSiteUrl());
                 }
 
                 if (arcSpec.getSiteId()!=null && !arcSpec.getSiteId().equals("")){
@@ -90,13 +90,13 @@ public class ArcSpecManager {
                 if (arcSpec.getEnableNewRegistrations()!=null){
                     XFT.SetUserRegistration(arcSpec.getEnableNewRegistrations().toString());
                 }else{
-                    arcSpec.setEnableNewRegistrations(XFT.GetUserRegistration());
+                    arcSpec.setEnableNewRegistrations(XDAT.getSiteConfigPreferences().getUserRegistration());
                 }
 
                 if (arcSpec.getRequireLogin()!=null){
                     XFT.SetRequireLogin(arcSpec.getRequireLogin().toString());
                 }else{
-                    arcSpec.setRequireLogin(XFT.GetRequireLogin());
+                    arcSpec.setRequireLogin(XDAT.getSiteConfigPreferences().getRequireLogin());
                 }
 
                 if (arcSpec.getGlobalpaths()!=null && arcSpec.getGlobalpaths().getPipelinepath()!=null){
@@ -118,8 +118,8 @@ public class ArcSpecManager {
                 if (arcSpec.getGlobalpaths()!=null && arcSpec.getGlobalpaths().getCachepath()!=null){
                     XFT.SetCachePath(arcSpec.getGlobalpaths().getCachepath());
                 }else{
-                    if (arcSpec.getGlobalpaths()!=null && XFT.GetCachePath()!=null){
-                        arcSpec.getGlobalpaths().setCachepath(XFT.GetCachePath());
+                    if (arcSpec.getGlobalpaths()!=null && XDAT.getSiteConfigPreferences().getCachePath()!=null){
+                        arcSpec.getGlobalpaths().setCachepath(XDAT.getSiteConfigPreferences().getCachePath());
                     }
                 }
 
@@ -181,7 +181,7 @@ public class ArcSpecManager {
                 if (arcSpec.getEnableCsrfToken()!=null){
                     XFT.SetEnableCsrfToken(arcSpec.getEnableCsrfToken().toString());
                 }else{
-                    arcSpec.setEnableCsrfToken(XFT.GetEnableCsrfToken());
+                    arcSpec.setEnableCsrfToken(XDAT.getSiteConfigPreferences().getEnableCsrfToken());
                 }
                 
                 
@@ -228,21 +228,21 @@ public class ArcSpecManager {
 
     public synchronized static ArcArchivespecification initialize(UserI user) throws XFTInitException, ElementNotFoundException, FieldNotFoundException, InvalidValueException {
         arcSpec = new ArcArchivespecification(user);
-        if (XFT.GetAdminEmail()!=null && !XFT.GetAdminEmail().equals("")) {
-            arcSpec.setSiteAdminEmail(XFT.GetAdminEmail());
+        if (XDAT.getSiteConfigPreferences().getAdminEmail()!=null && !XDAT.getSiteConfigPreferences().getAdminEmail().equals("")) {
+            arcSpec.setSiteAdminEmail(XDAT.getSiteConfigPreferences().getAdminEmail());
         }
 
-        if (XFT.GetSiteURL()!=null && !XFT.GetSiteURL().equals("")) {
-            arcSpec.setSiteUrl(XFT.GetSiteURL());
+        if (XDAT.getSiteConfigPreferences().getSiteUrl()!=null && !XDAT.getSiteConfigPreferences().getSiteUrl().equals("")) {
+            arcSpec.setSiteUrl(XDAT.getSiteConfigPreferences().getSiteUrl());
         }
 
         if (XFT.GetAdminEmailHost()!=null && !XFT.GetAdminEmailHost().equals("")) {
             arcSpec.setSmtpHost(XFT.GetAdminEmailHost());
         }
 
-        arcSpec.setEnableNewRegistrations(XFT.GetUserRegistration());
+        arcSpec.setEnableNewRegistrations(XDAT.getSiteConfigPreferences().getUserRegistration());
 
-        arcSpec.setRequireLogin(XFT.GetRequireLogin());
+        arcSpec.setRequireLogin(XDAT.getSiteConfigPreferences().getRequireLogin());
         if (XFT.GetPipelinePath()!=null && !XFT.GetPipelinePath().equals("")) {
             arcSpec.setProperty("globalPaths/pipelinePath", XFT.GetPipelinePath());
         }
@@ -255,8 +255,8 @@ public class ArcSpecManager {
             arcSpec.setProperty("globalPaths/prearchivePath", XFT.GetPrearchivePath());
         }
 
-        if (XFT.GetCachePath()!=null && !XFT.GetCachePath().equals("")) {
-            arcSpec.setProperty("globalPaths/cachePath", XFT.GetCachePath());
+        if (XDAT.getSiteConfigPreferences().getCachePath()!=null && !XDAT.getSiteConfigPreferences().getCachePath().equals("")) {
+            arcSpec.setProperty("globalPaths/cachePath", XDAT.getSiteConfigPreferences().getCachePath());
         }
 
         if (XFT.getFtpPath()!=null && !XFT.getFtpPath().equals("")) {

@@ -330,7 +330,7 @@ public class XnatPipelineLauncher {
      * @return The pipeline configuration arguments.
      */
     private List<String> getPipelineConfigurationArguments() {
-        List<String> arguments = new ArrayList<String>();
+        List<String> arguments = new ArrayList<>();
         try {
             String pipelinePath = new File(XFT.GetPipelinePath()).getCanonicalPath();
             boolean requiresQuotes = pipelinePath.contains(" ");

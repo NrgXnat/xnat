@@ -20,6 +20,7 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.nrg.pipeline.XnatPipelineLauncher;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
@@ -133,7 +134,7 @@ public class Transfer {
             xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
             xnatPipelineLauncher.setParameter("sessionType", mr.getXSIType());
             xnatPipelineLauncher.setParameter("xnat_project", mr.getProject());
-            xnatPipelineLauncher.setParameter("logDir", XFT.GetCachePath()+"logs" + "/" + "transfer" );
+            xnatPipelineLauncher.setParameter("logDir", XDAT.getSiteConfigPreferences().getCachePath() + "logs" + "/" + "transfer");
            // xnatPipelineLauncher.setParameter("notify","" +getNotifies());
  
             xnatPipelineLauncher.setWaitFor(waitForTransfer);            

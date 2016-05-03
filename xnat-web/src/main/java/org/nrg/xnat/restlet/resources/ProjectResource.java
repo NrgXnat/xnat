@@ -19,7 +19,6 @@ import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatProjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
-import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.event.EventMetaI;
@@ -179,10 +178,10 @@ public class ProjectResource extends ItemResource {
                                     } catch (NumberFormatException e) {
                                         switch (qc) {
                                             case "true":
-                                                ap.setQuarantineCode(new Integer(1));
+                                                ap.setQuarantineCode(1);
                                                 break;
                                             case "false":
-                                                ap.setQuarantineCode(new Integer(0));
+                                                ap.setQuarantineCode(0);
                                                 break;
                                             default:
                                                 getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Prearchive code must be an integer.");
@@ -204,10 +203,10 @@ public class ProjectResource extends ItemResource {
                                         } catch (NumberFormatException e) {
                                             switch (qc) {
                                                 case "true":
-                                                    ap.setPrearchiveCode(new Integer(1));
+                                                    ap.setPrearchiveCode(1);
                                                     break;
                                                 case "false":
-                                                    ap.setPrearchiveCode(new Integer(0));
+                                                    ap.setPrearchiveCode(0);
                                                     break;
                                                 default:
                                                     getResponse().setStatus(Status.CLIENT_ERROR_BAD_REQUEST, "Prearchive code must be an integer.");
@@ -267,7 +266,7 @@ public class ProjectResource extends ItemResource {
                                 }
                             }
 
-                            if (XFT.getBooleanProperty("UI.allow-non-admin-project-creation", true) || Roles.isSiteAdmin(user)) {
+                            if (XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation() || Roles.isSiteAdmin(user)) {
                                 project.preSave();
                                 BaseXnatProjectdata.createProject(project, user, allowDataDeletion, true, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN), getQueryVariable("accessibility"));
                             } else {

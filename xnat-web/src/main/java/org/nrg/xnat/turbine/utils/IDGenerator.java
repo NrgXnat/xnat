@@ -171,7 +171,7 @@ public class IDGenerator implements IDGeneratorI {
 	 * @return the site id
 	 */
 	private String getSiteID(){
-		String site_id = XFT.GetSiteID();
+		String site_id = XDAT.getSiteConfigPreferences().getSiteId();
 		site_id = StringUtils.replace(site_id, " ", "");
 		site_id = StringUtils.replace(site_id, "-", "_");
 		site_id = StringUtils.replace(site_id, "\"", "");

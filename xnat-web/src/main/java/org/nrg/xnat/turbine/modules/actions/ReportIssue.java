@@ -48,7 +48,7 @@ public class ReportIssue extends SecureAction {
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
 
-        final String adminEmail = XFT.GetAdminEmail();
+        final String adminEmail = XDAT.getSiteConfigPreferences().getAdminEmail();
 
         final UserI user = TurbineUtils.getUser(data);
         final ParameterParser parameters = data.getParameters();

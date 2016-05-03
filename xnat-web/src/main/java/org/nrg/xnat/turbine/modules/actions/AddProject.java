@@ -54,7 +54,7 @@ public class AddProject extends SecureAction {
             context.put("tag", TurbineUtils.GetPassedParameter("tag", data));
         }
 
-        if (!XFT.getBooleanProperty("UI.allow-non-admin-project-creation", true) && !Roles.isSiteAdmin(user)) {
+        if (!XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation() && !Roles.isSiteAdmin(user)) {
             displayProjectEditError("Invalid permissions for this operation", data, null);
             return;
         }

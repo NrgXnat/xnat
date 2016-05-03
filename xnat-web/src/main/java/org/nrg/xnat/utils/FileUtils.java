@@ -27,7 +27,7 @@ public class FileUtils {
     public static void moveToCache(final String project, final String subdir, final File src) throws IOException {
         // should include a timestamp in folder name
         if (src.exists()) {
-            final File cache = (StringUtils.isBlank(subdir)) ? new File(XFT.GetCachePath(), project) : new File(new File(XFT.GetCachePath(), project), subdir);
+            final File cache = (StringUtils.isBlank(subdir)) ? new File(XDAT.getSiteConfigPreferences().getCachePath(), project) : new File(new File(XDAT.getSiteConfigPreferences().getCachePath(), project), subdir);
 
             final File dest = new File(cache, org.nrg.xft.utils.FileUtils.renameWTimestamp(src.getName(), Calendar.getInstance().getTime()));
 
@@ -38,7 +38,7 @@ public class FileUtils {
     public static File buildCachepath(String project, final String subdir, final String destName) {
         if (project == null)
             project = "Unknown";
-        final File cache = (StringUtils.isEmpty(subdir)) ? new File(XFT.GetCachePath(), project) : new File(new File(XFT.GetCachePath(), project), subdir);
+        final File cache = (StringUtils.isEmpty(subdir)) ? new File(XDAT.getSiteConfigPreferences().getCachePath(), project) : new File(new File(XDAT.getSiteConfigPreferences().getCachePath(), project), subdir);
 
         return new File(cache, org.nrg.xft.utils.FileUtils.renameWTimestamp(destName, Calendar.getInstance().getTime()));
     }
@@ -144,7 +144,7 @@ public class FileUtils {
 
     @SafeVarargs
     public static <T extends String> File buildCacheSubDir(T... directories) {
-        File last = new File(XFT.GetCachePath());
+        File last = new File(XDAT.getSiteConfigPreferences().getCachePath());
 
         for (final String dir : directories) {
             if (!StringUtils.isEmpty(dir)) {

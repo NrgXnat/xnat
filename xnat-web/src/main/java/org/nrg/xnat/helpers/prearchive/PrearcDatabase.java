@@ -17,6 +17,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ClientException;
 import org.nrg.automation.entities.Script;
 import org.nrg.automation.services.ScriptService;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.dicomtools.filters.DicomFilterService;
 import org.nrg.dicomtools.filters.SeriesImportFilter;
 import org.nrg.framework.constants.PrearchiveCode;
@@ -29,8 +30,9 @@ import org.nrg.xdat.bean.XnatPetmrsessiondataBean;
 import org.nrg.xdat.bean.XnatPetsessiondataBean;
 import org.nrg.xdat.model.XnatImagescandataI;
 import org.nrg.xdat.model.XnatPetscandataI;
-import org.nrg.xdat.om.ArcArchivespecification;
 import org.nrg.xdat.om.XnatExperimentdata;
+import org.nrg.xdat.preferences.InitializerSiteConfiguration;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.security.UserI;
@@ -174,10 +176,14 @@ public final class PrearcDatabase {
      */
 
     protected static String getPrearcPath() {
-        ArcArchivespecification arcSpec = ArcSpecManager.GetInstance(false);
-        if (arcSpec != null) {
-            return arcSpec.getGlobalPrearchivePath();
-        } else {
+        final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
+        if (preferences != null) {
+            return preferences.getArchiveRootPath();
+        }
+        try {
+            final Properties properties = XDAT.getSiteConfiguration();
+            return properties.getProperty("archiveRootPath");
+        } catch (ConfigServiceException e) {
             return null;
         }
     }
@@ -443,7 +449,7 @@ public final class PrearcDatabase {
      * @return The path to the project.
      */
     static String projectPath(String project) {
-        return StringUtils.join(new String[]{PrearcDatabase.prearcPath, project});
+        return Paths.get(PrearcDatabase.prearcPath, project).toString();
     }
 
     /**

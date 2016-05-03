@@ -13,13 +13,13 @@ package org.nrg.xnat.turbine.modules.screens;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
-import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
@@ -27,12 +27,11 @@ import org.nrg.xft.security.UserI;
 
 import java.sql.SQLException;
 
-public class XDATScreen_UpdateUser extends SecureScreen {
+public class XDATScreen_UpdateUser extends VelocitySecureScreen {
 
     @Override
     protected void doBuildTemplate(RunData data) throws Exception {
         Context c = TurbineVelocity.getContext(data);
-        SecureScreen.loadAdditionalVariables(data, c);
         doBuildTemplate(data, c);
     }
 
@@ -112,11 +111,11 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                 }
 
                 context.put("topMessage", "Enter a new password.");
+
             }
         } catch (Exception e) {
             log.error(e);
         }
-
     }
 
     @Override

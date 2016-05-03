@@ -15,6 +15,7 @@ import org.nrg.xft.security.UserI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -29,7 +30,7 @@ public class UsersApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Get list of users.", notes = "The primary users function returns a list of all users of the XNAT system.", response = User.class, responseContainer = "List")
     @ApiResponses({@ApiResponse(code = 200, message = "An array of users"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(produces = {"application/json", "application/xml"}, method = RequestMethod.GET)
+    @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<String>> usersGet() {
         return new ResponseEntity<List<String>>(new ArrayList<>(Users.getAllLogins()), HttpStatus.OK);
@@ -37,7 +38,7 @@ public class UsersApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Gets the user with the specified user ID.", notes = "Returns the serialized user object with the specified user ID.", response = User.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to view this user."), @ApiResponse(code = 404, message = "User not found."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/{id}"}, produces = {"application/json", "application/xml", "text/html"}, method = {RequestMethod.GET})
+    @RequestMapping(value = {"/{id}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<User> usersIdGet(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("id") String id) {
         HttpStatus status = isPermitted(id);
         if (status != null) {
@@ -57,7 +58,7 @@ public class UsersApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Creates or updates the user object with the specified user ID.", notes = "Returns the updated serialized user object with the specified user ID.", response = User.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User successfully created or updated."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to create or update this user."), @ApiResponse(code = 404, message = "User not found."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/{id}"}, produces = {"application/json", "application/xml", "text/html"}, method = {RequestMethod.PUT})
+    @RequestMapping(value = {"/{id}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<User> usersIdPut(@ApiParam(value = "The ID of the user to create or update.", required = true) @PathVariable("id") String id, @RequestBody User model) throws NotFoundException {
         HttpStatus status = isPermitted(id);
         if (status != null) {
@@ -98,7 +99,7 @@ public class UsersApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Returns whether the user with the specified user ID is enabled.", notes = "Returns true or false based on whether the specified user is enabled or not.", response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User enabled status successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to view this user."), @ApiResponse(code = 404, message = "User not found."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/{id}/enabled"}, produces = {"application/json"}, method = {RequestMethod.GET})
+    @RequestMapping(value = {"/{id}/enabled"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Boolean> usersIdEnabledGet(@ApiParam(value = "The ID of the user to retrieve the enabled status for.", required = true) @PathVariable("id") String id) {
         HttpStatus status = isPermitted(id);
         if (status != null) {
@@ -120,7 +121,7 @@ public class UsersApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Sets the user's enabled state.", notes = "Sets the enabled state of the user with the specified user ID to the value of the flag parameter.", response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User enabled status successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to enable or disable this user."), @ApiResponse(code = 404, message = "User not found."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/{id}/enabled/{flag}"}, produces = {"application/json"}, method = {RequestMethod.PUT})
+    @RequestMapping(value = {"/{id}/enabled/{flag}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<Boolean> usersIdEnabledFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("id") String id, @ApiParam(value = "The value to set for the enabled status.", required = true) @PathVariable("flag") Boolean flag) {
         HttpStatus status = isPermitted(id);
         if (status != null) {
@@ -149,7 +150,7 @@ public class UsersApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Returns whether the user with the specified user ID is verified.", notes = "Returns true or false based on whether the specified user is verified or not.", response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User verified status successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to view this user."), @ApiResponse(code = 404, message = "User not found."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/{id}/verified"}, produces = {"application/json"}, method = {RequestMethod.GET})
+    @RequestMapping(value = {"/{id}/verified"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
     public ResponseEntity<Boolean> usersIdVerifiedGet(@ApiParam(value = "The ID of the user to retrieve the verified status for.", required = true) @PathVariable("id") String id) {
         HttpStatus status = isPermitted(id);
         if (status != null) {
@@ -171,7 +172,7 @@ public class UsersApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Sets the user's verified state.", notes = "Sets the verified state of the user with the specified user ID to the value of the flag parameter.", response = Boolean.class)
     @ApiResponses({@ApiResponse(code = 200, message = "User verified status successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to verify or un-verify this user."), @ApiResponse(code = 404, message = "User not found."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/{id}/verified/{flag}"}, produces = {"application/json"}, method = {RequestMethod.PUT})
+    @RequestMapping(value = {"/{id}/verified/{flag}"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
     public ResponseEntity<Boolean> usersIdVerifiedFlagPut(@ApiParam(value = "ID of the user to fetch", required = true) @PathVariable("id") String id, @ApiParam(value = "The value to set for the verified status.", required = true) @PathVariable("flag") Boolean flag) {
         HttpStatus status = isPermitted(id);
         if (status != null) {

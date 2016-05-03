@@ -54,7 +54,7 @@ var XNAT = getObject(XNAT);
 
     function setupType(type, className, opts){
         opts = getObject(opts);
-        config = getObject(opts.config || opts.element || {});
+        var config = getObject(opts.config || opts.element || {});
         config.addClass = className;
         config.data = extend({validate: className}, config.data);
         if (!config.data.validate) delete config.data.validate;

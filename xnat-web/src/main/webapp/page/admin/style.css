@@ -9,6 +9,7 @@
 }
 .xnat-nav-tabs li:hover { background: #f0f0f0; }
 .xnat-nav-tabs li > a {
+    display: block;
     padding: 8px 18px;
     font-size: 15px; color: #444;
     outline: none !important;
@@ -35,7 +36,7 @@
 .xnat-nav-tabs.side li { width: 100%; border-right: none; }
 .xnat-nav-tabs.side li > a { border-right: 1px solid #e0e0e0; }
 .xnat-nav-tabs.side li.active { /* border-bottom-color: #d0d0d0; */ }
-.xnat-nav-tabs.side li.active > a { left: 6px; padding-left: 12px; padding-right: 24px; border-right-color: #fff; }
+.xnat-nav-tabs.side li.active > a { padding-left: 12px; padding-right: 24px; border-left: 6px solid #2fa4e7; border-right-color: #fff; }
 /* (if we ever need right-side tabs, new style rules will be needed ) */
 
 /* TAB GROUPS */

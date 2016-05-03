@@ -136,7 +136,7 @@ var XNAT = getObject(XNAT || {});
         }
 
         // add all the flippers
-        $('#'+(toDashed(obj.group))+'.tab-group').append(_flipper);
+        $('#'+(toDashed(obj.group||'other'))+'.tab-group').append(_flipper);
 
         function render(element){
             $$(element).append(_pane);

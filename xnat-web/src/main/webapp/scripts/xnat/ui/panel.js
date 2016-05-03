@@ -16,6 +16,21 @@ var XNAT = getObject(XNAT || {});
 
     XNAT.ui.panel = panel =
         getObject(XNAT.ui.panel || {});
+    
+    // add new element class without destroying existing class
+    function addClassName(el, newClass){
+        el.className = [].concat(el.className||[], newClass).join(' ').trim();
+        return el.className;
+    }
+    
+    // add new data object item to be used for [data-] attribute(s)
+    function addDataObjects(obj, attrs){
+        obj.data = obj.data || {};
+        forOwn(attrs, function(name, prop){
+            obj.data[name] = prop;
+        });
+        return obj.data;
+    }
 
     panel.init = function(config){
         var _target = spawn('div.panel-body'),
@@ -63,17 +78,113 @@ var XNAT = getObject(XNAT || {});
             }
         }
     };
+    
+    // create a single generic panel element
+    panel.element = function(opts){
+        var _element, _inner = [], _target;
+        opts = getObject(opts);
+        opts.config = opts.config || opts.element || {};
+        addClassName(opts.config, 'panel-element');
+        addDataObjects(opts.config, { name: opts.name||'' });
+        opts.label = opts.label||opts.title||opts.name||'';
+
+        _inner.push(['label.element-label', opts.label]);
+        
+        // 'contents' will be inserted into the 'target' element
+        _target = spawn(['div.element-wrapper']);
+        
+        // add the target to the content array
+        _inner.push(_target);
+        
+        // add a description if there is one
+        if (opts.description){
+            _inner.push(['div.description', opts.description||opts.body||opts.html]);
+        }
+        
+        _element = spawn('div', opts.config, _inner);
+        
+        return {
+            target: _target,
+            element: _element,
+            spawned: _element,
+            get: function(){
+                return _element
+            }
+        }
+        
+    };
 
     panel.input = {};
 
     panel.input.text = function(opts){
-        return XNAT.ui.templates.panelInput(opts).spawned;
+        return XNAT.ui.template.panelInput(opts).spawned;
+    };
+    
+    panel.input.number = function(opts){
+        opts = getObject(opts);
+        opts.type = 'number';
+        return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.email = function(opts){
+        opts = getObject(opts);
         opts.type = 'text';
-        opts.className = [].concat(opts.className||[], 'email').join(' ').trim();
-        return XNAT.ui.templates.panelInput(opts).spawned;
+        //addClassName(opts, 'email');
+        return XNAT.ui.template.panelInput(opts).spawned;
+    };
+
+    panel.input.password = function(opts){
+        opts = getObject(opts);
+        opts.type = 'password';
+        //addClassName(opts, 'password ');
+        return XNAT.ui.template.panelInput(opts).spawned;
+    };
+
+    panel.input.checkbox = function(opts){
+        opts = getObject(opts);
+        opts.type = 'checkbox';
+        //addClassName(opts, 'checkbox');
+        return XNAT.ui.template.panelInput(opts).spawned;
+    };
+    
+    panel.input.group = function(obj){
+        var _inner = spawn('div.element-group');
+        var _outer = XNAT.ui.template.panelElementGroup(obj, _inner);
+        return {
+            target: _inner,
+            element: _outer,
+            spawned: _outer,
+            get: function(){
+                return _outer;
+            }
+        }
+    };
+
+    panel.select = {};
+
+    panel.select.menu = function(){
+
+    };
+
+    panel.select.single = function(opts){
+        var _menu;
+        opts = getObject(opts);
+        opts.config = opts.config || opts.element || {};
+        opts.config.name = opts.config.name || opts.name || '';
+        opts.config.id = opts.config.id || opts.id || toDashed(opts.config.name);
+
+        _menu = spawn('select', opts.config, [['option|value=!', 'Select']]);
+
+        if (opts.options){
+            forOwn(opts.options, function(name, prop){
+                _menu.appendChild(spawn('option', {
+                    value: prop.value,
+                    selected: (prop.value === opts.value)
+                }, prop.label));
+            });
+        }
+
+        return XNAT.ui.template.panelInput({ label: opts.label, name: opts.name }, _menu).spawned;
     };
 
     function footerButton(text, type, disabled, classes){

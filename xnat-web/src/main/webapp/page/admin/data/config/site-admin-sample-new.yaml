@@ -3,13 +3,14 @@ root:
     name: siteAdmin
     label: Administer XNAT
     groups:
-        dashboard: Dashboard
+#        dashboard: Dashboard
         xnatSetup: XNAT Setup
         manageAccess: Manage Access
         manageData: Manage Data
         processing: Processing
         projectCustomization: Project Customization
         advanced: Advanced XNAT Settings
+        other: Other
     contains: tabs
     tabs:  # this property name is the same as 'contains', so it will be treated like 'contents'
         siteSetup:
@@ -38,20 +39,22 @@ root:
                                 style:
                                   display: block
                         adminEmail:
-                            kind: input.email
+                            kind: panel.input.email
                             name: adminEmail
                             label: Administrator Email Address
                         someInfo:
                             #kind: element
                             tag: div.message
-                            config:
+                            element:
                                 html: Hello people.
                                 style:
                                     fontWeight: bold
+
         security:
             kind: tab
             name: security
             label: Security
+#            group: xnatSetup
             contents:
                 generalSecuritySettings:
                     kind: panel.form
@@ -59,7 +62,7 @@ root:
                     label: General Site Security Settings
                     contents:
                         securityChannel:
-                            kind: template.panelSelect
+                            kind: panel.select.single
                             name: securityChannel
                             label: Security Channel
                             value: https
@@ -74,3 +77,57 @@ root:
                             config:
                                 id: security-channel
                                 title: Security Channel
+
+
+        emailServer:
+            kind: tab
+            name: emailServer
+            label: Email Server
+            group: xnatSetup
+            contents:
+                emailServerSettings:
+                    kind: panel.form
+                    name: emailServerSettings
+                    label: Mail Server Settings
+                    contents:
+                        hostname:
+                            kind: panel.input.text
+                            name: hostname
+                            label: Host
+                            value: localhost
+                        port:
+                            kind: panel.input.number
+                            name: port
+                            label: Port
+                            value: 587
+                        username:
+                            kind: panel.input.text
+                            name: username
+                            label: Username
+                            value: ''
+                            element:
+                                placeholder: name@host.org
+#                        properties:
+#                            kind: panel.element
+#                            name: properties
+#                            label: Properties
+#                            contents:
+                        smtpAuth:
+                            kind: panel.input.checkbox
+                            name: mail.smtp.auth
+                            label: SMTP Auth?
+                            value: true
+                            element:
+                                checked: true
+                        smtpStartTls:
+                            kind: panel.input.checkbox
+                            name: mail.smtp.starttls.enable
+                            label: Smart TLS?
+                            value: true
+                            element:
+                                checked: true
+                        smtpSSLTrust:
+                            kind: panel.input.text
+                            name: mail.smtp.ssl.trust
+                            label: SSL Trust
+                            value: localhost

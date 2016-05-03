@@ -9,6 +9,7 @@ import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.auto.AutoXnatProjectdata;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.services.impl.hibernate.HibernateAutomationEventIdsService;
 import org.nrg.xdat.services.impl.hibernate.HibernateAutomationFiltersService;
@@ -270,7 +271,7 @@ public class EventHandlerApi {
         	if (project_id != null) {
         		final XnatProjectdata proj = AutoXnatProjectdata.getXnatProjectdatasById(project_id, sessionUser, false);
         		try {
-        			return (proj.canEdit(sessionUser)) ? null : HttpStatus.FORBIDDEN;
+        			return Permissions.canEdit(sessionUser, proj) ? null : HttpStatus.FORBIDDEN;
         		} catch (Exception e) {
         			_log.error("Error checking read status for project",e);
         			return HttpStatus.INTERNAL_SERVER_ERROR;

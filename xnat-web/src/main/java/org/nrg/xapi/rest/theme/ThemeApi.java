@@ -17,6 +17,7 @@ import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xapi.rest.NotFoundException;
 import org.nrg.xdat.entities.ThemeConfig;
 import org.nrg.xdat.security.XDATUser;
+import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xft.security.UserI;
 import org.nrg.xdat.services.ThemeService;
 import org.slf4j.Logger;
@@ -163,7 +164,7 @@ public class ThemeApi {
     private HttpStatus isPermitted() {
         UserI sessionUser = getSessionUser();
         if ((sessionUser instanceof XDATUser)) {
-            return ((XDATUser) sessionUser).isSiteAdmin() ? null : HttpStatus.FORBIDDEN;
+            return Roles.isSiteAdmin(sessionUser) ? null : HttpStatus.FORBIDDEN;
         }
         return null;
     }

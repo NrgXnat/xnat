@@ -641,7 +641,11 @@ public class XDAT implements Initializable,Configurable{
         if (Roles.isSiteAdmin(user)) {
             grantedAuthorities.add(new SimpleGrantedAuthority("ROLE_ADMIN"));
         }
-    	Authentication authentication = new UsernamePasswordAuthenticationToken(user.getLogin(), tempPass, grantedAuthorities);
+		Object username = found.getProperty("login");
+		if(username==null){
+			username = user.getLogin();
+		}
+    	Authentication authentication = new UsernamePasswordAuthenticationToken(username, tempPass, grantedAuthorities);
     	SecurityContext securityContext = SecurityContextHolder.getContext();
     	securityContext.setAuthentication(authentication);
         return true;

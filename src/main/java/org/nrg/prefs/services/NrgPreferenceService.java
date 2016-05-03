@@ -19,6 +19,7 @@ import org.nrg.prefs.entities.Tool;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.nrg.prefs.exceptions.UnknownToolId;
 
+import java.util.List;
 import java.util.Properties;
 import java.util.Set;
 
@@ -77,6 +78,7 @@ public interface NrgPreferenceService extends NrgService {
      *
      * @return Returns true if the preference exists for the tool, false otherwise.
      */
+    @SuppressWarnings("unused")
     boolean hasPreference(final String toolId, final String preference, final Scope scope, final String entityId);
 
     /**
@@ -209,7 +211,6 @@ public interface NrgPreferenceService extends NrgService {
      *
      * @return A list of all of the property names for the indicated tool.
      */
-    @SuppressWarnings("unused")
     Set<String> getToolPropertyNames(final String toolId);
 
     /**
@@ -221,4 +222,15 @@ public interface NrgPreferenceService extends NrgService {
      * @return All of the properties for the indicated tool.
      */
     Properties getToolProperties(final String toolId);
+
+    /**
+     * Gets the properties with the names specified in the <b>preferences</b> list and associated with the indicated
+     * {@link Tool tool} in the form of a standard Java properties object.
+     *
+     * @param toolId             The unique tool ID.
+     * @param preferenceNames    The names of the preferences to retrieve.
+     *
+     * @return All of the properties for the indicated tool.
+     */
+    Properties getToolProperties(final String toolId, final List<String> preferenceNames);
 }

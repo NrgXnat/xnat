@@ -1,5 +1,6 @@
 package org.nrg.prefs.beans;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonParseException;
 import com.fasterxml.jackson.core.JsonParser;
@@ -17,6 +18,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.entities.PreferenceInfo;
@@ -60,8 +62,9 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Override
     public final String getToolId() {
         if (StringUtils.isBlank(_toolId)) {
-            if (getClass().isAnnotationPresent(NrgPreferenceBean.class)) {
-                _toolId = getClass().getAnnotation(NrgPreferenceBean.class).toolId();
+            final NrgPreferenceBean annotation = Reflection.findAnnotationInClassHierarchy(getClass(), NrgPreferenceBean.class);
+            if (annotation != null) {
+                _toolId = annotation.toolId();
             } else {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The preferences bean class " + getClass().getName() + " must be annotated with the NrgPreferenceBean annotation.");
             }
@@ -69,21 +72,37 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return _toolId;
     }
 
+    @JsonIgnore
     @Override
     public Set<String> getPreferenceKeys() {
         return _service.getToolPropertyNames(getToolId());
     }
 
+    @JsonIgnore
     @Override
     public Properties getPreferencesAsProperties() {
         return _service.getToolProperties(getToolId());
     }
 
+    @JsonIgnore
+    @Override
+    public Properties getPreferencesAsProperties(final String... preferenceNames) {
+        return getPreferencesAsProperties(Arrays.asList(new String[preferenceNames.length]));
+    }
+
+    @JsonIgnore
+    @Override
+    public Properties getPreferencesAsProperties(final List<String> preferenceNames) {
+        return _service.getToolProperties(getToolId(), preferenceNames);
+    }
+
+    @JsonIgnore
     @Override
     public final Class<? extends PreferenceEntityResolver> getResolver() {
         if (!_resolverInitialized) {
-            if (getClass().isAnnotationPresent(NrgPreferenceBean.class)) {
-                final Class<? extends PreferenceEntityResolver>[] resolvers = getClass().getAnnotation(NrgPreferenceBean.class).resolver();
+            final NrgPreferenceBean annotation = Reflection.findAnnotationInClassHierarchy(getClass(), NrgPreferenceBean.class);
+            if (annotation != null) {
+                final Class<? extends PreferenceEntityResolver>[] resolvers = annotation.resolver();
                 if (resolvers.length == 0) {
                     _resolver = null;
                 } else {
@@ -97,31 +116,37 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return _resolver;
     }
 
+    @JsonIgnore
     @Override
     public Preference get(final String key, final String... subkeys) throws UnknownToolId {
         return _service.getPreference(getToolId(), getNamespacedPropertyId(key, subkeys));
     }
 
+    @JsonIgnore
     @Override
     public Preference get(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
         return _service.getPreference(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId);
     }
 
+    @JsonIgnore
     @Override
     public String getValue(final String key, final String... subkeys) throws UnknownToolId {
         return _service.getPreferenceValue(getToolId(), getNamespacedPropertyId(key, subkeys));
     }
 
+    @JsonIgnore
     @Override
     public String getValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
         return _service.getPreferenceValue(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId);
     }
 
+    @JsonIgnore
     @Override
     public Boolean getBooleanValue(final String key, final String... subkeys) throws UnknownToolId {
         return getBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public Boolean getBooleanValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
         final String value = getValue(scope, entityId, key, subkeys);
@@ -131,11 +156,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return Boolean.parseBoolean(value);
     }
 
+    @JsonIgnore
     @Override
     public Integer getIntegerValue(final String key, final String... subkeys) throws UnknownToolId {
         return getIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public Integer getIntegerValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
         final String value = getValue(scope, entityId, key, subkeys);
@@ -145,11 +172,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return Integer.parseInt(value);
     }
 
+    @JsonIgnore
     @Override
     public Long getLongValue(final String key, final String... subkeys) throws UnknownToolId {
         return getLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public Long getLongValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
         final String value = getValue(scope, entityId, key, subkeys);
@@ -159,11 +188,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return Long.parseLong(value);
     }
 
+    @JsonIgnore
     @Override
     public Float getFloatValue(final String key, final String... subkeys) throws UnknownToolId {
         return getFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public Float getFloatValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
         final String value = getValue(scope, entityId, key, subkeys);
@@ -173,11 +204,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return Float.parseFloat(value);
     }
 
+    @JsonIgnore
     @Override
     public Double getDoubleValue(final String key, final String... subkeys) throws UnknownToolId {
         return getDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public Double getDoubleValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
         final String value = getValue(scope, entityId, key, subkeys);
@@ -187,11 +220,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return Double.parseDouble(value);
     }
 
+    @JsonIgnore
     @Override
     public Date getDateValue(final String key, final String... subkeys) throws UnknownToolId {
         return getDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public Date getDateValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
         final String value = getValue(scope, entityId, key, subkeys);
@@ -206,11 +241,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         return new Date(date);
     }
 
+    @JsonIgnore
     @Override
     public <T> Map<String, T> getMapValue(final String preferenceName) throws UnknownToolId {
         return getMapValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName);
     }
 
+    @JsonIgnore
     @Override
     public <T> Map<String, T> getMapValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
         final PreferenceInfo info = _preferences.get(preferenceName);
@@ -230,11 +267,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
+    @JsonIgnore
     @Override
     public <T> List<T> getListValue(final String preferenceName) throws UnknownToolId {
         return getListValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName);
     }
 
+    @JsonIgnore
     @Override
     public <T> List<T> getListValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
         final PreferenceInfo info = _preferences.get(preferenceName);
@@ -258,103 +297,123 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
+    @JsonIgnore
     @Override
     public <T> T[] getArrayValue(final String preferenceName) throws UnknownToolId {
         return getArrayValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName);
     }
 
     @SuppressWarnings({"unchecked", "SuspiciousToArrayCall"})
+    @JsonIgnore
     @Override
     public <T> T[] getArrayValue(final Scope scope, final String entityId, final String preferenceName) throws UnknownToolId {
         final List<T> list = getListValue(scope, entityId, preferenceName);
         return (T[]) list.toArray(new Object[list.size()]);
     }
 
+    @JsonIgnore
     @Override
     public void create(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         _service.create(getToolId(), getNamespacedPropertyId(key, subkeys), value);
     }
 
+    @JsonIgnore
     @Override
     public void create(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         _service.create(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId, value);
     }
 
+    @JsonIgnore
     @Override
     public void set(final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(key, subkeys), value);
     }
 
+    @JsonIgnore
     @Override
     public void set(final Scope scope, final String entityId, final String value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         _service.setPreferenceValue(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId, value);
     }
 
+    @JsonIgnore
     @Override
     public void setBooleanValue(final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         setBooleanValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setBooleanValue(final Scope scope, final String entityId, final Boolean value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         set(scope, entityId, value.toString(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setIntegerValue(final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         setIntegerValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setIntegerValue(final Scope scope, final String entityId, final Integer value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         set(scope, entityId, value.toString(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setLongValue(final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         setLongValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setLongValue(final Scope scope, final String entityId, final Long value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         set(scope, entityId, value.toString(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setFloatValue(final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         setFloatValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setFloatValue(final Scope scope, final String entityId, final Float value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         set(scope, entityId, value.toString(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setDoubleValue(final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         setDoubleValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setDoubleValue(final Scope scope, final String entityId, final Double value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         set(scope, entityId, value.toString(), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setDateValue(final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         setDateValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), value, key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public void setDateValue(final Scope scope, final String entityId, final Date value, final String key, final String... subkeys) throws UnknownToolId, InvalidPreferenceName {
         set(scope, entityId, Long.toString(value.getTime()), key, subkeys);
     }
 
+    @JsonIgnore
     @Override
     public <T> void setMapValue(final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
         setMapValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, map);
     }
 
+    @JsonIgnore
     @Override
     public <T> void setMapValue(final Scope scope, final String entityId, final String preferenceName, Map<String, T> map) throws UnknownToolId, InvalidPreferenceName {
         for (final String key : map.keySet()) {
@@ -367,11 +426,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
+    @JsonIgnore
     @Override
     public <T> void setListValue(final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
         setListValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, list);
     }
 
+    @JsonIgnore
     @Override
     public <T> void setListValue(final Scope scope, final String entityId, final String preferenceName, List<T> list) throws UnknownToolId, InvalidPreferenceName {
         try {
@@ -381,11 +442,13 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
+    @JsonIgnore
     @Override
     public <T> void setArrayValue(final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
         setArrayValue(EntityId.Default.getScope(), EntityId.Default.getEntityId(), preferenceName, array);
     }
 
+    @JsonIgnore
     @Override
     public <T> void setArrayValue(final Scope scope, final String entityId, final String preferenceName, T[] array) throws UnknownToolId, InvalidPreferenceName {
         try {
@@ -395,16 +458,19 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
         }
     }
 
+    @JsonIgnore
     @Override
     public void delete(final String key, final String... subkeys) throws InvalidPreferenceName {
         _service.deletePreference(getToolId(), getNamespacedPropertyId(key, subkeys));
     }
 
+    @JsonIgnore
     @Override
     public void delete(final Scope scope, final String entityId, final String key, final String... subkeys) throws InvalidPreferenceName {
         _service.deletePreference(getToolId(), getNamespacedPropertyId(key, subkeys), scope, entityId);
     }
 
+    @JsonIgnore
     @Override
     public Map<String, PreferenceInfo> getDefaultPreferences() {
         return _preferences;

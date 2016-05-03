@@ -18,6 +18,10 @@ public interface PreferenceBean {
 
     Properties getPreferencesAsProperties();
 
+    Properties getPreferencesAsProperties(final String... preferenceNames);
+
+    Properties getPreferencesAsProperties(final List<String> preferenceNames);
+
     Class<? extends PreferenceEntityResolver> getResolver();
 
     Preference get(final String key, final String... subkeys) throws UnknownToolId;

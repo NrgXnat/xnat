@@ -5,6 +5,7 @@ import org.nrg.framework.orm.hibernate.BaseHibernateService;
 import org.nrg.prefs.entities.Preference;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
 
+import java.util.List;
 import java.util.Properties;
 
 // TODO: Remove the versions of calls that take the Tool object. It would be best to get these directly via the tool ID if possible.
@@ -115,4 +116,17 @@ public interface PreferenceService extends BaseHibernateService<Preference> {
      * @return All of the properties for the selected tool at the indicated scope, returned as a Java properties object.
      */
     Properties getToolProperties(final String toolId, final Scope scope, final String entityId);
+
+    /**
+     * Returns the properties with name specified in the <b>preferenceNames</b> list for the selected tool at the indicated
+     * scope.
+     *
+     * @param toolId             The ID of the tool.
+     * @param scope              The scope for which properties should be retrieved.
+     * @param entityId           The entity for which properties should be retrieved.
+     * @param preferenceNames    The names of the preferences to retrieve.
+     *
+     * @return All of the properties for the selected tool at the indicated scope, returned as a Java properties object.
+     */
+    Properties getToolProperties(final String toolId, final Scope scope, final String entityId, final List<String> preferenceNames);
 }

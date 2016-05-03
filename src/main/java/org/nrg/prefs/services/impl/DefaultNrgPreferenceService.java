@@ -6,6 +6,7 @@ import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.entities.Preference;
@@ -199,6 +200,19 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
     }
 
     /**
+     * Gets the properties with the names specified in the <b>preferences</b> list and associated with the indicated
+     * {@link Tool tool} in the form of a standard Java properties object.
+     *
+     * @param toolId          The unique tool ID.
+     * @param preferenceNames The names of the preferences to retrieve.
+     * @return All of the properties for the indicated tool.
+     */
+    @Override
+    public Properties getToolProperties(final String toolId, final List<String> preferenceNames) {
+        return _preferenceService.getToolProperties(toolId, DEFAULT_SCOPE, DEFAULT_ENTITY_ID, preferenceNames);
+    }
+
+    /**
      * {@inheritDoc}
      */
     @Override
@@ -230,7 +244,6 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
      * the current application context, this method returns null.
      *
      * @param toolId The tool ID for retrieving a registered entity resolver.
-     *
      * @return The entity resolver with the submitted ID if found, null otherwise.
      */
     private PreferenceEntityResolver getResolver(final String toolId) throws UnknownToolId {
@@ -242,10 +255,10 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
         // If it's not cached by tool ID, then let's get the tool and find the preferred resolver ID from that.
         // TODO: If the context ID could be set to the tool ID implicitly, we might be able to get all of this from the application context.
         final Class<? extends PreferenceEntityResolver> resolverClass;
-        final Tool tool = _toolService.getByToolId(toolId);
+        final Tool                                      tool = _toolService.getByToolId(toolId);
         if (tool != null) {
             // Get the resolver ID from the tool.
-             resolverClass = tool.getResolver();
+            resolverClass = tool.getResolver();
         } else if (getBeansByToolId().containsKey(toolId)) {
             resolverClass = getBeansByToolId().get(toolId).getResolver();
         } else {
@@ -279,31 +292,13 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
         return _resolversByToolId.get(toolId);
     }
 
-    /**
-     * Gets the {@link Tool tool instance} indicated by the submitted tool ID. Note that this method does not create the
-     * tool if it does not yet exist in the preferences service. Instead it throws an {@link UnknownToolId} exception.
-     *
-     * @param toolId The unique tool ID.
-     *
-     * @return The initialized tool for the indicated object.
-     */
-    private Tool getTool(final String toolId) throws UnknownToolId {
-        final Tool tool = _toolService.getByToolId(toolId);
-        if (tool == null) {
-            throw new UnknownToolId(toolId);
-        }
-        if (_log.isDebugEnabled()) {
-            _log.debug("Found the tool identified by tool ID: {}", toolId);
-        }
-        return tool;
-    }
-
     private Map<String, PreferenceBean> getBeansByToolId() {
         if (_beansByToolId.size() == 0) {
             final Map<String, PreferenceBean> beans = _context.getBeansOfType(PreferenceBean.class);
             for (final PreferenceBean bean : beans.values()) {
-                if (bean.getClass().isAnnotationPresent(NrgPreferenceBean.class)) {
-                    final String toolId = bean.getClass().getAnnotation(NrgPreferenceBean.class).toolId();
+                final NrgPreferenceBean annotation = Reflection.findAnnotationInClassHierarchy(bean.getClass(), NrgPreferenceBean.class);
+                if (annotation != null) {
+                    final String toolId = annotation.toolId();
                     _beansByToolId.put(toolId, bean);
                 }
             }
@@ -332,7 +327,7 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
     private final Map<Class<? extends PreferenceEntityResolver>, PreferenceEntityResolver> _resolversByClass  = new HashMap<>();
     private final Map<String, PreferenceBean>                                              _beansByToolId     = new HashMap<>();
 
-    private ApplicationContext       _context;
+    private ApplicationContext _context;
 
     private PreferenceEntityResolver _defaultResolver;
 }

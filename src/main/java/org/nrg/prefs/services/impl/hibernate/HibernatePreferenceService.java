@@ -4,6 +4,7 @@ import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.framework.scope.EntityId;
+import org.nrg.framework.utilities.Reflection;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.PreferenceBean;
 import org.nrg.prefs.entities.Preference;
@@ -14,12 +15,14 @@ import org.nrg.prefs.services.PreferenceService;
 import org.nrg.prefs.services.ToolService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import javax.inject.Inject;
-import java.util.*;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Properties;
 
 @Service
 public class HibernatePreferenceService extends AbstractHibernateEntityService<Preference, PreferenceRepository> implements PreferenceService {
@@ -77,7 +80,7 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
     @Override
     public void delete(final String toolId, final String preferenceName, final Scope scope, final String entityId) throws InvalidPreferenceName {
         final String     resolvedEntityId = resolveEntityId(entityId);
-        final Preference preference = getDao().findByToolIdNameAndEntity(toolId, preferenceName, scope, resolvedEntityId);
+        final Preference preference       = getDao().findByToolIdNameAndEntity(toolId, preferenceName, scope, resolvedEntityId);
         if (preference == null) {
             throw new InvalidPreferenceName("Couldn't find the preference " + preferenceName + " for the tool " + toolId + (StringUtils.isNotBlank(resolvedEntityId) ? " and entity " + scope + ":" + resolvedEntityId : ""));
         }
@@ -87,16 +90,24 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
     @Transactional
     @Override
     public Properties getToolProperties(final String toolId, final Scope scope, final String entityId) {
-        final String     resolvedEntityId = resolveEntityId(entityId);
-        final List<Preference> preferences = getDao().findByToolIdAndEntity(toolId, scope, resolvedEntityId);
-        final Properties       properties  = new Properties();
+        return getToolProperties(toolId, scope, entityId, null);
+    }
+
+    @Transactional
+    @Override
+    public Properties getToolProperties(final String toolId, final Scope scope, final String entityId, final List<String> preferenceNames) {
+        final boolean          unfiltered       = preferenceNames == null || preferenceNames.size() == 0;
+        final String           resolvedEntityId = resolveEntityId(entityId);
+        final List<Preference> preferences      = getDao().findByToolIdAndEntity(toolId, scope, resolvedEntityId);
+        final Properties       properties       = new Properties();
+
         for (final Preference preference : preferences) {
             /*
                 TODO: Something weird happens here: after deleting a preference, when you retrieve prefs by toolId, you
                 get a null entry in the list where the deleted pref used to be, so you have to check and skip it. Root
                 cause of this needs to be found, but this is a hacky workaround in the meantime.
             */
-            if (preference != null) {
+            if (preference != null && (unfiltered || preferenceNames.contains(preference.getName()))) {
                 properties.setProperty(preference.getName(), preference.getValue());
             }
         }
@@ -147,9 +158,10 @@ public class HibernatePreferenceService extends AbstractHibernateEntityService<P
         if (_beansById.size() == 0) {
             final Map<String, PreferenceBean> beans = getContext().getBeansOfType(PreferenceBean.class);
             for (final PreferenceBean bean : beans.values()) {
-                final Class<? extends PreferenceBean> clazz = bean.getClass();
-                if (clazz.isAnnotationPresent(NrgPreferenceBean.class)) {
-                    final String toolId = clazz.getAnnotation(NrgPreferenceBean.class).toolId();
+                final Class<? extends PreferenceBean> clazz      = bean.getClass();
+                final NrgPreferenceBean               annotation = Reflection.findAnnotationInClassHierarchy(clazz, NrgPreferenceBean.class);
+                if (annotation != null) {
+                    final String toolId = annotation.toolId();
                     _beansById.put(toolId, bean);
                 }
             }

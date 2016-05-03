@@ -24,15 +24,15 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
     public static final String SITE_CONFIG_TOOL_ID = "siteConfig";
 
     @NrgPreference(defaultValue = "XNAT")
-    public String getSiteTitle() {
-        return getValue("siteTitle");
+    public String getSiteId() {
+        return getValue("siteId");
     }
 
-    public void setSiteTitle(final String siteTitle) {
+    public void setSiteId(final String siteId) {
         try {
-            set(siteTitle, "siteTitle");
+            set(siteId, "siteId");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name siteTitle: something is very wrong here.", e);
+            _log.error("Invalid preference name siteId: something is very wrong here.", e);
         }
     }
 

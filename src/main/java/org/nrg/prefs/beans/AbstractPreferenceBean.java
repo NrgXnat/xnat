@@ -195,10 +195,15 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @Override
     public Date getDateValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId {
         final String value = getValue(scope, entityId, key, subkeys);
-        if (value == null) {
+        if (StringUtils.isBlank(value)) {
             return null;
         }
-        return new Date(Long.getLong(value));
+        final Long date = Long.getLong(value);
+        if (date == null) {
+            _log.error("The value for the date preference {} is a non-blank but invalid value: {}. It should be stored as a long that can be translated into a date object.", getNamespacedPropertyId(key, subkeys), value);
+            return null;
+        }
+        return new Date(date);
     }
 
     @Override

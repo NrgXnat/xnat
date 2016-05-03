@@ -17,6 +17,10 @@ root:
             name: siteSetup
             label: Site Setup
             group: xnatSetup
+            active: true
+            config:
+                data:
+                    foo: bar
             contains: panels # the value for 'contains' can be a custom name for 'contents'
             panels:
                 siteInfo:
@@ -25,7 +29,7 @@ root:
                     label: Site Information
                     contents:
                         siteId:
-                            kind: input.text
+                            kind: panel.input.text
                             name: siteId
                             label: Site ID
                             validation: required id onblur
@@ -43,8 +47,7 @@ root:
                             config:
                                 html: Hello people.
                                 style:
-                                    padding: 20px
-                                    color: red
+                                    fontWeight: bold
         security:
             kind: tab
             name: security
@@ -56,24 +59,18 @@ root:
                     label: General Site Security Settings
                     contents:
                         securityChannel:
-                            kind: element
-                            tag: select
+                            kind: template.panelSelect
                             name: securityChannel
                             label: Security Channel
-                            contains: options
+                            value: https
+#                            contains: options
                             options:
                                 http:
-                                    tag: option
-                                    name: http
+                                    label: http
                                     value: http
                                 https:
-                                    tag: option
-                                    name: https
+                                    label: https
                                     value: https
                             config:
                                 id: security-channel
                                 title: Security Channel
-
-
-
-

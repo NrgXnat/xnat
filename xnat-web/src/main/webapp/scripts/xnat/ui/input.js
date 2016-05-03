@@ -1,5 +1,5 @@
 /*!
- * Spawn UI elements using the Spawner service
+ * Spawn form input elements
  */
 
 var XNAT = getObject(XNAT);

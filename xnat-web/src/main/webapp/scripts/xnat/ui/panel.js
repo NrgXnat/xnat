@@ -45,11 +45,13 @@ var XNAT = getObject(XNAT || {});
                 ['button.btn.btn-sm.btn-link.defaults.pull-left', 'Default Settings'],
                 ['div.clear']
             ],
-            _panel  = spawn('form.xnat-form-panel.panel.panel-default', [
+            _panel = spawn('form.xnat-form-panel.panel.panel-default', [
                 ['div.panel-heading', [
                     ['h3.panel-title', config.title || config.label]
                 ]],
+                
                 _target,
+                
                 ['div.panel-footer', config.footer || _footer]
             ]);
         return {
@@ -60,6 +62,18 @@ var XNAT = getObject(XNAT || {});
                 return _panel;
             }
         }
+    };
+
+    panel.input = {};
+
+    panel.input.text = function(opts){
+        return XNAT.ui.templates.panelInput(opts).spawned;
+    };
+
+    panel.input.email = function(opts){
+        opts.type = 'text';
+        opts.className = [].concat(opts.className||[], 'email').join(' ').trim();
+        return XNAT.ui.templates.panelInput(opts).spawned;
     };
 
     function footerButton(text, type, disabled, classes){

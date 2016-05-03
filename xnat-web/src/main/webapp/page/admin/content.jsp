@@ -30,6 +30,7 @@
 
                 </div>
 
+                <script src="${sessionScope.siteRoot}/scripts/xnat/ui/templates.js"></script>
                 <script src="${sessionScope.siteRoot}/page/admin/tabs.js"></script>
 
             </div>

@@ -24,6 +24,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.annotation.AnnotationUtils;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
@@ -59,6 +60,7 @@ public class EventHandlerApi {
 	private HibernateAutomationFiltersService filtersService;
     
     /** The event packages. */
+	@SuppressWarnings("MismatchedQueryAndUpdateOfCollection")
 	@Autowired
     private EventPackages eventPackages;
     
@@ -79,7 +81,7 @@ public class EventHandlerApi {
      */
     @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = List.class)
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/projects/{project_id}/eventHandlers/automationEventClasses"}, produces = {"application/json"}, method = RequestMethod.GET)
+    @RequestMapping(value = {"/projects/{project_id}/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<EventClassInfo>> automationEventClassesGet(@PathVariable("project_id") String project_id) {
         final HttpStatus status = isPermitted(project_id);
@@ -96,7 +98,7 @@ public class EventHandlerApi {
      */
     @ApiOperation(value = "Get list of event classes.", notes = "Returns a list of classes implementing AutomationEventI.", response = List.class)
     @ApiResponses({@ApiResponse(code = 200, message = "An array of class names"), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/eventHandlers/automationEventClasses"}, produces = {"application/json"}, method = RequestMethod.GET)
+    @RequestMapping(value = {"/eventHandlers/automationEventClasses"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
     public ResponseEntity<List<EventClassInfo>> automationEventClassesGet() {
         final HttpStatus status = isPermitted(null);
@@ -144,8 +146,7 @@ public class EventHandlerApi {
 						final String[] annoInitialValues = (annoInitialValuesObj != null && annoInitialValuesObj instanceof String[]) ? (String[])annoInitialValuesObj : new String[] {};
 						
 						final Object annoIncludeValuesFromDatabase = AnnotationUtils.getValue(anno, "includeValuesFromDatabase");
-						boolean includeValuesFromDatabase = (annoIncludeValuesFromDatabase != null && annoIncludeValuesFromDatabase instanceof Boolean) ?
-							(boolean)annoIncludeValuesFromDatabase : true;
+						boolean includeValuesFromDatabase = !(annoIncludeValuesFromDatabase != null && annoIncludeValuesFromDatabase instanceof Boolean) || (boolean) annoIncludeValuesFromDatabase;
 						if (!filterableFields.containsKey(column)) {
 							final List<String> newValueList = Lists.newArrayList();
 							filterableFields.put(column,newValueList);
@@ -262,16 +263,16 @@ public class EventHandlerApi {
     /**
      * Checks if is permitted.
      *
-     * @param project_id the project_id
+     * @param projectId the project ID
      * @return the http status
      */
-    private HttpStatus isPermitted(String project_id) {
+    private HttpStatus isPermitted(String projectId) {
         final UserI sessionUser = getSessionUser();
         if ((sessionUser instanceof XDATUser)) {
-        	if (project_id != null) {
-        		final XnatProjectdata proj = AutoXnatProjectdata.getXnatProjectdatasById(project_id, sessionUser, false);
+        	if (projectId != null) {
+        		final XnatProjectdata project = AutoXnatProjectdata.getXnatProjectdatasById(projectId, sessionUser, false);
         		try {
-        			return Permissions.canEdit(sessionUser, proj) ? null : HttpStatus.FORBIDDEN;
+        			return Permissions.canEdit(sessionUser, project) ? null : HttpStatus.FORBIDDEN;
         		} catch (Exception e) {
         			_log.error("Error checking read status for project",e);
         			return HttpStatus.INTERNAL_SERVER_ERROR;

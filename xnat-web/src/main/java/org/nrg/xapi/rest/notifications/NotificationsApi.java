@@ -8,6 +8,7 @@ import org.nrg.xdat.rest.AbstractXnatRestApi;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
 import org.springframework.mail.javamail.JavaMailSenderImpl;
 import org.springframework.web.bind.annotation.RequestMapping;
@@ -27,7 +28,7 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Sets all the mail service properties.", notes = "Sets the mail service host, port, username, password, and protocol.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service properties successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the mail service properties."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/all"}, produces = {"application/json"}, method = {RequestMethod.POST})
+    @RequestMapping(value = {"/all"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setMailProperties(@ApiParam(value = "The value to set for the email host.") @RequestParam(value = "host", required = false) final String host,
                                                   @ApiParam(value = "The value to set for the email port.") @RequestParam(value = "port", required = false) final int port,
                                                   @ApiParam(value = "The value to set for the email username.") @RequestParam(value = "username", required = false) final String username,
@@ -80,7 +81,7 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Sets the mail service host.", notes = "Sets the mail service host.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service host successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the mail service host."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/host"}, produces = {"application/json"}, method = {RequestMethod.POST})
+    @RequestMapping(value = {"/host"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setHostProperty(@ApiParam(value = "The value to set for the email host.", required = true) @RequestParam("host") final String host) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -96,7 +97,7 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Sets the mail service port.", notes = "Sets the mail service port.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service port successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the mail service port."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/port"}, produces = {"application/json"}, method = {RequestMethod.POST})
+    @RequestMapping(value = {"/port"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setPortProperty(@ApiParam(value = "The value to set for the email port.", required = true) @RequestParam("port") final int port) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -112,7 +113,7 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Sets the mail service protocol.", notes = "Sets the mail service protocol.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service protocol successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the mail service protocol."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/protocol"}, produces = {"application/json"}, method = {RequestMethod.POST})
+    @RequestMapping(value = {"/protocol"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setProtocolProperty(@ApiParam(value = "The value to set for the email protocol.", required = true) @RequestParam("protocol") final String protocol) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -127,7 +128,7 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Sets the mail service username.", notes = "Sets the mail service username.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service username successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the mail service username."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/username"}, produces = {"application/json"}, method = {RequestMethod.POST})
+    @RequestMapping(value = {"/username"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setUsernameProperty(@ApiParam(value = "The value to set for the email username.", required = true) @RequestParam("username") final String username) {
         final HttpStatus status = isPermitted();
         if (status != null) {
@@ -142,7 +143,7 @@ public class NotificationsApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Sets the mail service password.", notes = "Sets the mail service password.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Mail service password successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set the mail service password."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/password"}, produces = {"application/json"}, method = {RequestMethod.POST})
+    @RequestMapping(value = {"/password"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setPasswordProperty(@ApiParam(value = "The value to set for the email password.", required = true) @RequestParam("password") final String password) {
         final HttpStatus status = isPermitted();
         if (status != null) {

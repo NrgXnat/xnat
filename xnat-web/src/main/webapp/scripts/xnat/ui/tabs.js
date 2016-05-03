@@ -167,7 +167,7 @@ var XNAT = getObject(XNAT || {});
         var spawned = spawn('div.tabs');
 
         // set up the group elements
-        tab.groups(obj.groups, '#admin-config-tabs > .xnat-nav-tabs');
+        tab.groups(obj.meta.tabGroups, '#admin-config-tabs > .xnat-nav-tabs');
 
         function render(element){
             $$(element).append(spawned);

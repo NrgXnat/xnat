@@ -1,117 +1,292 @@
-# Initial element declarations for the site admin user interface elements.
-siteId:
-    label: Site ID
-    type: text
-    id: site-id
-    description: Identifies your XNAT site.
-    placeholder: Enter your XNAT site ID...
-    url: /xapi/services/prefs/siteId/{siteId}
-    default: XNAT
-    validation:
-        required: true
-        type: xnat-id
-
-siteUrl:
-    label: Site Url
-    type: url
-    description: The root URL for the site. This is passed to external services.
-    placeholder: Enter the URL for your XNAT site...
-    value: https://cnda.wustl.edu
-    validation:
-        required: true
-
-siteDescriptionPage:
-    id: desc-page
-    label: Page
-    type: site.path
-    description: The page to display for the site description, e.g. /screens/site_description.vm.
-    value: /screens/site_description.vm
-    placeholder: Enter a page for your site description...
-    validation:
-        required: true
-
-siteDescriptionMarkdown:
-    id: desc-markdown
-    label: Text (Markdown)
-    type: markdown
-    tooltip: XNAT allows you to use GitHub-flavored Markdown to create and format your own site description. [&gt;&gt; View Tutorial](http://foobar)
-    description: Compose a site description without referencing a template or site page.
-    validation:
-        required: true
-
-siteDescription:
-    label: Site Description
-    type: composite
-    selection: radio
-    url: /data/services/prefs/{desc}
-    children:
-        ${siteDescriptionPage}
-        ${siteDescriptionMarkdown}
-
-landingPage:
-    label: Landing Page
-    type: site.path
-    description: The page to display when the user logs in.
-    value: /screens/QuickSearch.vm
-    placeholder: Enter the default landing page...
-    overrides:
-        target: homePage
-        type: checkbox
-        position: right
-        description: Use this as my home page.
-        hideTarget: false
-    validation:
-        required: true
-
-homePage:
-    label: Home Page
-    type: site.path
-    description: The page to display when the user clicks the home link.
-    value: /screens/AdminUsers.vm
-    placeholder: Enter the default home page...
-    validation:
-        required: true
+tabGroups:
+#    dashboard: Dashboard
+    xnatSetup: XNAT Setup
+    manageAccess: Manage Access
+    manageData: Manage Data
+    processing: Processing
+    projectCustomization: Project Customization
+    advanced: Advanced XNAT Settings
+    other: Other
 
 siteInfo:
+    kind: panel.form
+    name: siteInfo
     label: Site Information
-    type: panel
-    controls:
-       ${siteId}
-       ${siteUrl}
-       ${siteDescription}
-       ${landingPage}
-       ${homePage}
-
-siteAdminEmail:
-    label: Site Admin Email
-    type: email
-    placeholder: Administrator email address...
-    url: /xapi/services/prefs/siteAdminEmail/{siteAdminEmail}
-    validation:
-        required: true
-
-adminInfo:
-    label: Admin Information
-    type: panel
-    controls:
-        ${siteAdminEmail}
-
-siteSetup:
-    label: Site Setup
-    type: tab
     contents:
-        ${siteInfo}
-        ${adminInfo}
+        siteId:
+            kind: panel.input.text
+            name: siteId
+            label: Site ID
+            validation: required id onblur
+            element:  # the 'config' property is applied directly to the underlying spawn() function
+                id: site-id
+                style:
+                  display: block
+        adminEmail:
+            kind: panel.input.email
+            name: adminEmail
+            label: Administrator Email Address
+        someInfo:
+            #kind: element
+            tag: div.message
+            element:
+                html: Hello people.
+                style:
+                    fontWeight: bold
+                    
+generalSecuritySettings:
+    kind: panel.form
+    name: generalSecuritySettings
+    label: General Site Security Settings
+    contents:
+        securityChannel:
+            kind: panel.select.single
+            name: securityChannel
+            label: Security Channel
+            value: https
+#           contains: options
+            options:
+                http:
+                    label: http
+                    value: http
+                https:
+                    label: https
+                    value: https
+            config:
+                id: security-channel
+                title: Security Channel
 
-xnatSetup:
-    label: XNAT Setup
-    type: tabGroup
-    tabs:
-        ${siteSetup}
+emailServerSettings:
+    kind: panel.form
+    name: emailServerSettings
+    label: Mail Server Settings
+    contents:
+        hostname:
+            kind: panel.input.text
+            name: hostname
+            label: Host
+            value: localhost
+        port:
+            kind: panel.input.number
+            name: port
+            label: Port
+            value: 587
+        username:
+            kind: panel.input.text
+            name: username
+            label: Username
+            value: ''
+            element:
+                placeholder: name@host.org
+#               properties:
+#                 kind: panel.element
+#                 name: properties
+#                 label: Properties
+#                 contents:
+        smtpAuth:
+            kind: panel.input.checkbox
+            name: mail.smtp.auth
+            label: SMTP Auth?
+            value: true
+            element:
+                checked: true
+        smtpStartTls:
+            kind: panel.input.checkbox
+            name: mail.smtp.starttls.enable
+            label: Smart TLS?
+            value: true
+            element:
+                checked: true
+        smtpSSLTrust:
+            kind: panel.input.text
+            name: mail.smtp.ssl.trust
+            label: SSL Trust
+            value: localhost
 
+notifications:
+    kind: panel
+    name: notifications
+    label: Notifications
+#    contents:
+#      notificationScript
+
+themeManagement:
+    kind: panel
+    name: themeManagement
+    label: Theme Management
+    contents:
+      themeScript:
+          tag: script|type=text/javascript|src=../../scripts/themeManagement.js
+      currentTheme:
+          # kind: span  # this doesn't work
+          tag: span
+          label: Current Theme
+          description: The currently selected global theme.
+          html: None
+      existingTheme:
+          kind: panel.select.single
+          label: Select an existing theme
+          description: Selected a new global theme from those available on the system.
+          value: None
+          options:
+              default:
+                  label: None
+                  value: None
+      uploadTheme:
+          kind: panel.input.text  # file
+          name: xnat.theme.upload
+          label: Upload a theme package
+          description: Upload a zipped theme package for selection above.
+          after: "<form id=\"uploadThemeForm\" method=\"POST\" class=\"optOutOfXnatDefaultFormValidation\"><span class=\"label bold\">Upload a theme package: </span><input type=\"file\" id=\"themeFileUpload\" name=\"themeFileUpload\" multiple style=\"width: 270px; display: inline; float: left;\"/><button type=\"submit\" id=\"submitThemeUploadButton\" style=\"position: relative; top:-15px;\">Upload</button></form>"
+
+          
+authenticationMethods:
+    kind: panel
+    name: authenticationMethods
+    label: Authentication Methods
+#    contents:
+#      notificationScript
+            
+users:
+    kind: panel
+    name: users
+    label: Users
+#    contents:
+
+userRoles:
+    kind: panel
+    name: userRoles
+    label: User Roles
+#    contents:
+
+registrationOptions:
+    kind: panel
+    name: registrationOptions
+    label: Registration Options
+#    contents:
+          
+
+
+databaseSettings:
+    kind: panel
+    name: databaseSettings
+    label: Database Settings
+    group: manageData
+    contents:      
+          
+          
+dicomScpReceivers:
+    kind: panel
+    name: dicomScpReceivers
+    label: DICOM SCP Receivers
+#    contents:
+          
+          
 siteAdmin:
+    kind: tabs
+    name: siteAdmin
     label: Administer XNAT
-    type: page
+    meta:
+        ${tabGroups}
     contains: tabs
-    contents:
-        ${xnatSetup}
+    tabs:  # this property name is the same as 'contains', so it will be treated like 'contents'
+    
+        siteSetup:
+            kind: tab
+            name: siteSetup
+            label: Site Setup
+            group: xnatSetup
+            active: true
+            config:
+                data:
+                    foo: bar
+            contains: panels # the value for 'contains' can be a custom name for 'contents'
+            panels:
+                ${siteInfo}
+
+        security:
+            kind: tab
+            name: security
+            label: Security
+            group: xnatSetup
+            contents:
+                ${generalSecuritySettings}
+
+        emailServer:
+            kind: tab
+            name: emailServer
+            label: Email Server
+            group: xnatSetup
+            contents:
+                ${emailServerSettings}
+
+        notifications:
+            kind: tab
+            name: notifications
+            label: Notifications
+            group: xnatSetup
+            contents:
+                ${notifications}
+
+        themesAndFeatures:
+            kind: tab
+            name: themesAndFeatures
+            label: Themes & Features
+            group: xnatSetup
+            contents:
+                ${themeManagement}
+                
+        authenticationMethods:
+            kind: tab
+            name: authenticationMethods
+            label: Authentication Methods
+            group: manageAccess
+            contents:
+                ${authenticationMethods}
+
+        users:
+            kind: tab
+            name: users
+            label: Users
+            group: manageAccess
+            contents:
+                ${users}
+
+        userRoles:
+            kind: tab
+            name: userRoles
+            label: User Roles
+            group: manageAccess
+            contents:
+                ${userRoles}
+
+        registrationOptions:
+            kind: tab
+            name: registrationOptions
+            label: Registration Options
+            group: manageAccess
+            contents:
+                ${registrationOptions}
+
+        dicomScpReceivers:
+            kind: tab
+            name: dicomScpReceivers
+            label: DICOM SCP Receivers
+            group: advanced
+            contents:
+                ${dicomScpReceivers}
+                
+                
+        databaseSettings:
+            kind: tab
+            name: databaseSettings
+            label: Database Settings
+            group: manageData
+            contents:
+                ${databaseSettings}
+                
+                
+                
+                
+                
+                

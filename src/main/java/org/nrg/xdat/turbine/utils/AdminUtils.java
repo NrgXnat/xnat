@@ -27,7 +27,6 @@ import org.nrg.xdat.entities.UserRegistrationData;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.UserRegistrationDataService;
 import org.nrg.xft.ItemI;
-import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.AuthUtils;
 import org.slf4j.Logger;
@@ -101,7 +100,7 @@ public class AdminUtils {
 	 * @return The administrator's email address.
 	 */
 	public static String getAdminEmailId() {
-		return XFT.GetAdminEmail();
+		return XDAT.getSiteConfigPreferences().getAdminEmail();
 	}
 
 	/**
@@ -120,16 +119,6 @@ public class AdminUtils {
 
 		}
 		return authorizerEmailAddress;
-	}
-
-	/**
-	 * Gets the MailServer to be used
-	 *
-	 * @return MailServer
-	 */
-
-	public static String getMailServer() {
-		return XFT.GetAdminEmailHost();
 	}
 
 	/**
@@ -161,7 +150,7 @@ public class AdminUtils {
 
         AdminUtils.sendAdminEmail(subject, body);
 
-        Map<String, Object> properties = new HashMap<String, Object>();
+        Map<String, Object> properties = new HashMap<>();
         properties.put(MailMessage.PROP_FROM, getAdminEmailId());
         properties.put(MailMessage.PROP_SUBJECT, subject);
         properties.put(MailMessage.PROP_HTML, body);
@@ -246,7 +235,7 @@ public class AdminUtils {
         final String email = user.getEmail();
 
         //If auto approval is false, send a notification to the administrator for each user we just verified.
-        if(!XFT.GetUserRegistration()){
+        if(!XDAT.getSiteConfigPreferences().getUserRegistration()){
             // Send admin email
             AdminUtils.sendNewUserRequestNotification(username, firstName, lastName, email, comments, phone, organization, context);
         } else if((!XDAT.verificationOn()) || user.isVerified()) {
@@ -270,7 +259,7 @@ public class AdminUtils {
 
    public static void sendNewUserVerificationEmail(String email, String firstName, String lastName, String userName) throws Exception{
 
-		if(XFT.getBooleanProperty("smtp.enabled", true)){
+		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
        if((email == null || email.equals("")) || (firstName == null || firstName.equals("")) ||
           (lastName == null || lastName.equals("")) || (userName == null || userName.equals("")))
        {
@@ -296,7 +285,7 @@ public class AdminUtils {
 	 */
 
 	public static void sendNewUserEmailMessage(String username, String email, Context context) throws Exception {
-		if(XFT.getBooleanProperty("smtp.enabled", true)){
+		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
         context.put("username", username);
         context.put("server", TurbineUtils.GetFullServerPath());
         context.put("system", TurbineUtils.GetSystemName());
@@ -334,7 +323,7 @@ public class AdminUtils {
 	 */
 
 	public static void sendAuthorizationEmailMessage(UserI user) {
-		if(XFT.getBooleanProperty("smtp.enabled", true)){
+		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
 		String from = getAdminEmailId();
 		String[] tos = StringUtils.split(getAuthorizerEmailId(), ", ");
 		String[] ccs = AdminUtils.GetNewUserRegistrationsEmail() ? new String[] { from } : null;
@@ -349,27 +338,23 @@ public class AdminUtils {
 	}
 
     public static boolean sendUserHTMLEmail(String subject, String message, boolean ccAdmin, String[] email_addresses) {
-		boolean successful = false;
-
-		if(XFT.getBooleanProperty("smtp.enabled", true)){
-		if (email_addresses.length>0) {
-			String from = getAdminEmailId();
-			try {
-				XDAT.getMailService().sendHtmlMessage(from, email_addresses, ccAdmin ? new String[] { from } : null, null, subject, message);
-			} catch (MessagingException exception) {
-				logger.error("Unable to send mail", exception);
-				successful = false;
+		if (XDAT.getSiteConfigPreferences().getSmtpEnabled()) {
+			if (email_addresses.length > 0) {
+				final String from = getAdminEmailId();
+				try {
+					XDAT.getMailService().sendHtmlMessage(from, email_addresses, ccAdmin ? new String[]{from} : null, null, subject, message);
+					return true;
+				} catch (MessagingException exception) {
+					logger.error("Unable to send mail", exception);
+				}
 			}
-		} else {
-			successful = false;
 		}
-		}
-
-		return successful;
+		return false;
 	}
 
 	public static void sendErrorNotification(RunData data, String message, Context context) throws Exception {
-		UserI user = TurbineUtils.getUser(data);
+		UserI user = XDAT.getUserDetails();
+		assert user != null;
 		String email = user.getEmail();
 		if (!StringUtils.isBlank(email)) {
 		    context.put("time", Calendar.getInstance().getTime());
@@ -395,7 +380,7 @@ public class AdminUtils {
 	}
 
 	public static void sendAdminEmail(UserI user, String subject, String message) {
-		if(XFT.getBooleanProperty("smtp.enabled", true)){
+		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
 		String admin = getAdminEmailId();
 		String qualifiedSubject = TurbineUtils.GetSystemName() + ": " + subject;
 

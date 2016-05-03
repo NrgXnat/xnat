@@ -162,7 +162,7 @@ public abstract class SecureAction extends VelocitySecureAction
     	
     	boolean csrfEmailEnabled = XDAT.getBoolSiteConfigurationProperty("enableCsrfEmail", false);
     	
-    	if(!XFT.GetEnableCsrfToken()){
+    	if(!XDAT.getSiteConfigPreferences().getEnableCsrfToken()){
     		return true;
     	}
     	
@@ -210,7 +210,7 @@ public abstract class SecureAction extends VelocitySecureAction
     protected boolean isAuthorized( RunData data )  throws Exception
     {
 
-        if (XFT.GetRequireLogin() || TurbineUtils.HasPassedParameter("par", data))
+        if (XDAT.getSiteConfigPreferences().getRequireLogin() || TurbineUtils.HasPassedParameter("par", data))
         {
             TurbineVelocity.getContext(data).put("logout","true");
             data.getParameters().setString("logout","true");

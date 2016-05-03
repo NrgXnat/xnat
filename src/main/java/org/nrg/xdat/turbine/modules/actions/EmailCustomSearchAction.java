@@ -12,16 +12,16 @@
 
 package org.nrg.xdat.turbine.modules.actions;
 
-import java.net.URLEncoder;
-import java.util.Calendar;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
-import org.nrg.xft.utils.XftStringUtils;
+
+import java.net.URLEncoder;
+import java.util.Calendar;
 
 public class EmailCustomSearchAction extends SecureAction{
     public String getScreenTemplate(RunData data)
@@ -83,7 +83,7 @@ public class EmailCustomSearchAction extends SecureAction{
                 sb.append("Message from sender:\n");
                 sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
                 sb.append("\n\nThis email was sent by the <" +TurbineUtils.GetFullServerPath() + ">XNAT data management system on ").append(Calendar.getInstance().getTime()).append(".");
-                sb.append("  If you have questions or concerns, please contact the <" + org.nrg.xft.XFT.GetAdminEmail() + ">CNDA administrator.");
+                sb.append("  If you have questions or concerns, please contact the <" + XDAT.getSiteConfigPreferences().getAdminEmail() + ">CNDA administrator.");
                 return sb.toString();
             } catch (Exception e) {
                 logger.error("",e);
@@ -97,12 +97,12 @@ public class EmailCustomSearchAction extends SecureAction{
     
     public String getHtmlMessage(RunData data, Context context)
     {
-        if (((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("htmlmessage",data))==null)
+        if (TurbineUtils.GetPassedParameter("htmlmessage", data) == null)
         {
             try {
-                UserI user = TurbineUtils.getUser(data);
-
-                StringBuffer sb = new StringBuffer();
+                UserI user = XDAT.getUserDetails();
+                assert user != null;
+                StringBuilder sb = new StringBuilder();
                 sb.append("<html>");
                 sb.append("<body>");
                 sb.append(user.getFirstname()).append(" ").append(user.getLastname());
@@ -115,7 +115,7 @@ public class EmailCustomSearchAction extends SecureAction{
                 sb.append("Message from sender:<BR>");
                 sb.append(((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("message",data)));
                 sb.append("<BR><BR>This email was sent by the <A HREF=\"").append(TurbineUtils.GetFullServerPath()).append("\">").append(TurbineUtils.GetSystemName()).append("</A> data management system on ").append(Calendar.getInstance().getTime()).append(".");
-                sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:").append(XFT.GetAdminEmail()).append("\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
+                sb.append("  If you have questions or concerns, please contact the <A HREF=\"mailto:").append(XDAT.getSiteConfigPreferences().getAdminEmail()).append("\">").append(TurbineUtils.GetSystemName()).append(" administrator</A>.");
                 
                 sb.append("</body>");
                 sb.append("</html>");

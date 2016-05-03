@@ -10,20 +10,18 @@
  */
 package org.nrg.xdat.security;
 
-import java.util.Calendar;
-import java.util.Map.Entry;
-import java.util.UUID;
-import java.util.concurrent.ConcurrentHashMap;
-
-import javax.mail.MessagingException;
-
 import org.apache.log4j.Logger;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
+
+import javax.mail.MessagingException;
+import java.util.Calendar;
+import java.util.Map.Entry;
+import java.util.UUID;
+import java.util.concurrent.ConcurrentHashMap;
 
 public final class TemporaryTokenStore {
 	static Logger logger = Logger.getLogger(TemporaryTokenStore.class);
@@ -158,7 +156,7 @@ public final class TemporaryTokenStore {
 		final String body = "Dear " + u.getFirstname() + " " + u.getLastname() + ",\n" + emailBody(null);
 		CallableWith<Void,String> emailAction = new CallableWith<Void,String>() {
 			public Void call(String login) {
-				if(XFT.getBooleanProperty("smtp.enabled", true)){
+				if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
 					try {
 						XDAT.getMailService().sendHtmlMessage(from, tos, ccs, null, subj, body);
 					} catch (MessagingException exception) {

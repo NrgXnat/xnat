@@ -14,6 +14,7 @@ package org.nrg.xdat.turbine.modules.navigations;
 import org.apache.turbine.modules.navigations.VelocityNavigation;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFT;
 /**
  * @author Tim
@@ -22,7 +23,7 @@ import org.nrg.xft.XFT;
 public class DefaultTop extends VelocityNavigation {
 	protected void doBuildTemplate(RunData data,Context context)throws Exception
 	{
-		if (XFT.GetRequireLogin())
+		if (XDAT.getSiteConfigPreferences().getRequireLogin())
 		{
 			context.put("logout","true");
 		}

@@ -72,78 +72,78 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     }
     
     public static void loadAdditionalVariables(RunData data, Context c){
-                        if (TurbineUtils.GetPassedParameter("popup",data) !=null){
-                            if(((String)TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
-                                c.put("popup","true");
-                            }else{
-                                c.put("popup","false");
-                            }
-                        }else{
-                            c.put("popup","false");
-                        }
+    	if (TurbineUtils.GetPassedParameter("popup",data) !=null){
+            if(((String)TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
+                c.put("popup","true");
+            }else{
+                c.put("popup","false");
+            }
+        }else{
+            c.put("popup","false");
+        }
 
-                        c.put("user", XDAT.getUserDetails());
-                        c.put("turbineUtils",TurbineUtils.GetInstance());
-                        c.put("displayManager", DisplayManager.GetInstance());
-                        c.put("systemName",TurbineUtils.GetSystemName());
-                        c.put("esc", new EscapeTool());
+        c.put("user", XDAT.getUserDetails());
+        c.put("turbineUtils",TurbineUtils.GetInstance());
+    	c.put("displayManager", DisplayManager.GetInstance());
+        c.put("systemName",TurbineUtils.GetSystemName());
+        c.put("esc", new EscapeTool());
 
-                        c.put("showReason", XFT.getShowChangeJustification());
-                        c.put("requireReason", XFT.getRequireChangeJustification());
+        c.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
+        c.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
+        
+        try{
+        	c.put("siteConfig", XDAT.getSiteConfiguration());
+        }catch(ConfigServiceException ignored){
+        	
+        }
+    }
 
-                        try{
-                            c.put("siteConfig", XDAT.getSiteConfiguration());
-                        }catch(ConfigServiceException ignored){
-
-                        }
-                    }
-
-                    /**
-                     * This method overrides the method in {@link VelocitySecureScreen#doBuildTemplate(RunData)} to perform a security
-                     * check first and store the popup status in the context.
-                     *
-                     * @param data Turbine information.
-                     * @throws Exception When something goes wrong.
-                     */
-                protected void doBuildTemplate(RunData data) throws Exception {
-                    try {
-                        attemptToPreventBrowserCachingOfHTML(data.getResponse());
-                        Context c = TurbineVelocity.getContext(data);
-                        loadAdditionalVariables(data, c);
+	/**
+     * This method overrides the method in {@link VelocitySecureScreen#doBuildTemplate(RunData)} to perform a security
+     * check first and store the popup status in the context.
+     *
+     * @param data Turbine information.
+     * @throws Exception When something goes wrong.
+     */
+	protected void doBuildTemplate(RunData data) throws Exception {
+	    try {
+	    	attemptToPreventBrowserCachingOfHTML(data.getResponse());
+            Context c = TurbineVelocity.getContext(data);
+            loadAdditionalVariables(data, c);
                         if(data.getSession().getAttribute("userHelper")==null && !XFT.GetRequireLogin()) {
                             data.getSession().setAttribute("userHelper", UserHelper.getUserHelperService(Users.getGuest()));
                         }
 
-                        ThemeConfig themeConfig = themeService.getTheme();
-                        if(themeConfig != null) {
-                            c.put("theme", themeConfig.getName());
-                            String themedStyle = themeService.getThemePage("theme", "style");
-                            if (themedStyle != null) {
-                                c.put("themedStyle", themedStyle);
-                            }
-                            String themedScript = themeService.getThemePage("theme", "script");
-                            if (themedScript != null) {
-                                c.put("themedScript", themedScript);
-                            }
-                        }
+            ThemeConfig themeConfig = themeService.getTheme();
+            if(themeConfig != null) {
+                c.put("theme", themeConfig.getName());
+                String themedStyle = themeService.getThemePage("theme", "style");
+                if (themedStyle != null) {
+                    c.put("themedStyle", themedStyle);
+                }
+                String themedScript = themeService.getThemePage("theme", "script");
+                if (themedScript != null) {
+                    c.put("themedScript", themedScript);
+                }
+            }
 
-                        c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
-                        preserveVariables(data,c);
-
-                        if (isAuthorized(data)) {
-                            SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
-
-                            if(sessionRegistry != null){
-                                List<String> uniqueIPs = new ArrayList<>();
-                                List<String> sessionIds = new ArrayList<>();
-                    for (SessionInformation session : sessionRegistry.getAllSessions(TurbineUtils.getUser(data), false)) {
+            c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
+            preserveVariables(data,c);
+            
+            if (isAuthorized(data)) {
+                SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
+                
+                if(sessionRegistry != null){
+                    List<String> uniqueIPs = new ArrayList<>();
+                    List<String> sessionIds = new ArrayList<>();
+                    for (SessionInformation session : sessionRegistry.getAllSessions(XDAT.getUserDetails(), false)) {
                         sessionIds.add(session.getSessionId());
                     }
 
                     if (sessionIds.size() > 0) {
                         String query = "SELECT session_id, ip_address FROM xdat_user_login WHERE session_id in ('" + Joiner.on("','").join(sessionIds) + "')";
        
-                		UserI user = TurbineUtils.getUser(data);
+                		UserI user = XDAT.getUserDetails();
                         _whitelistedIPs = XDAT.getWhitelistedIPs(user);
 
                 		try {
@@ -171,8 +171,8 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 			logger.error("problem looking for concurrent session IP addresses.", e);
                 		}
                 	}
-                	//if(sessionCount > 100 || (sessionCount > 1 && ip.size() > 1 && ! TurbineUtils.getUser(data).getLogin().equals("guest"))){
-                	if(! TurbineUtils.getUser(data).getLogin().equals("guest")){
+                	//if(sessionCount > 100 || (sessionCount > 1 && ip.size() > 1 && ! XDAT.getUserDetails().getLogin().equals("guest"))){
+                	if(! XDAT.getUserDetails().getLogin().equals("guest")){
                         StringBuilder sessionWarning = new StringBuilder(); //"WARNING: Your account currently has ").append(sessionCount).append(" login sessions open from ").append(ip.size()).append(" distinct IP addresses. If you believe this is incorrect, please take corrective action. The IP addresses are:");
                         for (String i : uniqueIPs) {
                 			sessionWarning.append(i).append(", ");
@@ -188,7 +188,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 }
                 doBuildTemplate(data, c);
             }else{
-                if (!XFT.GetRequireLogin()) {
+                if (!XDAT.getSiteConfigPreferences().getRequireLogin()) {
                     data.setScreenTemplate("Login.vm");
                 }
             }
@@ -219,13 +219,13 @@ public abstract class SecureScreen extends VelocitySecureScreen {
      * @throws Exception When something goes wrong.
 	 */
     protected boolean isAuthorized(RunData data) throws Exception {
-        if (XFT.GetRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
+        if (XDAT.getSiteConfigPreferences().getRequireLogin() || TurbineUtils.HasPassedParameter("par", data)) {
 	        logger.debug("isAuthorized() Login Required:true");
             TurbineVelocity.getContext(data).put("logout","true");
 			data.getParameters().setString("logout","true");
 			boolean isAuthorized = false;
 
-			UserI user = TurbineUtils.getUser(data);
+			UserI user = XDAT.getUserDetails();
             if (user == null) {
 		        //logger.debug("isAuthorized() Login Required:true user:null");
 				String Destination = data.getTemplateInfo().getScreenTemplate();
@@ -256,7 +256,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
 		}else{
             boolean isAuthorized = true;
 	        logger.debug("isAuthorized() Login Required:false");
-			UserI user = TurbineUtils.getUser(data);
+			UserI user = XDAT.getUserDetails();
             if (user == null) {
                 if (!allowGuestAccess())isAuthorized=false;
 
@@ -264,7 +264,7 @@ public abstract class SecureScreen extends VelocitySecureScreen {
                 session.removeAttribute("loggedin");
                 UserI guest=Users.getGuest();
                 if (guest!=null) {
-					TurbineUtils.setUser(data,guest);
+					XDAT.setUserDetails(guest);
 					session.setAttribute("XNAT_CSRF", UUID.randomUUID().toString());
                     String Destination = data.getTemplateInfo().getScreenTemplate();
                     data.getParameters().add("nextPage", Destination);

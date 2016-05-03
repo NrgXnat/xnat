@@ -136,7 +136,7 @@ public class XDAT implements Initializable,Configurable{
 			return _default;
 		}
     }
-    
+
     public static String safeSiteConfigProperty(String property, String _default){
     	try{
 	    	Properties properties = getSiteConfiguration();
@@ -287,7 +287,7 @@ public class XDAT implements Initializable,Configurable{
 			// xdat_user table doesn't exist
 			user_count = null;
 		}
-		
+
 		if (allowDBAccess && user_count!=null)
 		{
 			try {
@@ -495,6 +495,10 @@ public class XDAT implements Initializable,Configurable{
 	}
 
     public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
+		final SiteConfigPreferences preferences = getSiteConfigPreferences();
+        if (preferences != null) {
+            return preferences.getPreferencesAsProperties().getProperty(property);
+        }
         return getSiteConfigurationService().getSiteConfigurationProperty(property);
     }
 
@@ -544,7 +548,7 @@ public class XDAT implements Initializable,Configurable{
      * @param event    The site-wide event to be verified.
      */
     public static void verifyNotificationType(NotificationType event) {
-        final String adminEmail = XFT.GetAdminEmail();
+        final String adminEmail = getSiteConfigPreferences().getAdminEmail();
         final Channel channel = getHtmlMailChannel();
         boolean created = false;
 
@@ -610,7 +614,7 @@ public class XDAT implements Initializable,Configurable{
         }
         return channel;
     }
-    
+
     public static boolean loginUser(RunData data, UserI user, boolean forcePasswordChange) throws Exception{
     	PopulateItem populator = PopulateItem.Populate(data,org.nrg.xft.XFT.PREFIX + ":user",true);
     	ItemI found = populator.getItem();

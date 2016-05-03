@@ -15,7 +15,6 @@ package org.nrg.xft.utils;
 
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
-import org.nrg.xft.XFT;
 import org.nrg.xft.XFTTool;
 import org.nrg.xft.exception.InvalidValueException;
 import org.nrg.xft.exception.XFTInitException;
@@ -46,14 +45,10 @@ public  class FileUtils
     }
 
     public static String ReadFromFile(File file) throws IOException {
-        FileInputStream stream = new FileInputStream(file);
-        try {
+        try (final FileInputStream stream = new FileInputStream(file)) {
             FileChannel channel = stream.getChannel();
             MappedByteBuffer buffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
             return Charset.defaultCharset().decode(buffer).toString();
-        }
-        finally {
-            stream.close();
         }
     }
 
@@ -127,7 +122,6 @@ public  class FileUtils
 		catch ( IOException except )
 		{
 			logger.error("FileUtils::OutputToFile",except);
-			return;
 		}
 	}
 
@@ -138,7 +132,7 @@ public  class FileUtils
         try {
             FileInputStream in = new FileInputStream(f);
             DataInputStream dis = new DataInputStream(in);
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             while (dis.available() !=0)
             {
                                     // Print file line to screen
@@ -168,24 +162,17 @@ public  class FileUtils
 
 	public static boolean SearchFolderForChild(File folder, String folderName)
 	{
-		boolean _return = false;
-
 		if (folder.exists())
 		{
 			String[] children = folder.list();
-			for (int i=0; i< children.length; i++)
-			{
-				if (children[i].indexOf(folderName) != -1)
-				{
+			for (final String aChildren : children) {
+				if (aChildren.contains(folderName)) {
 					return true;
 				}
 			}
-		}else
-		{
-			return false;
 		}
 
-		return _return;
+		return false;
 	}
 
 	public static Properties GetPropertiesFromFile(File file) throws IOException
@@ -238,7 +225,7 @@ public  class FileUtils
         try {
             FileInputStream in = new FileInputStream(f);
             DataInputStream dis = new DataInputStream(in);
-            List<Integer> sb = new ArrayList<Integer>();
+            List<Integer> sb = new ArrayList<>();
             while (dis.available() !=0)
             {
                                     // Print file line to screen
@@ -274,11 +261,6 @@ public  class FileUtils
 	        return path;
 	    }
 	}
-
-//	public static String AppendRootPath(String path)
-//	{
-//        return AppendRootPath(XFT.GetArchiveRootPath(),path);
-//	}
 
     public static String AppendRootPath(String root,String local)
     {
@@ -364,11 +346,11 @@ public  class FileUtils
 //
 //	public static String ArcFind(String sessionID) throws Exception
 //	{
-//	    if (XFT.GetArchiveRootPath().equals(""))
+//	    if (XFT.GetArchivePath().equals(""))
 //	    {
 //	        throw new Exception("Error: No root archive path found.");
 //	    }else{
-//	        File root = new File(XFT.GetArchiveRootPath());
+//	        File root = new File(XFT.GetArchivePath());
 //	        if (!root.exists())
 //	        {
 //		        throw new Exception("Error: Root archive directory not found.");
@@ -401,13 +383,13 @@ public  class FileUtils
 //	public static String ParseSessionIDFromPath(String archive_path) throws Exception
 //	{
 //	    String path = archive_path;
-//	    if (XFT.GetArchiveRootPath().equals(""))
+//	    if (XFT.GetArchivePath().equals(""))
 //	    {
 //	        throw new Exception("Error: No root archive path found.");
 //	    }else{
-//	        if (path.startsWith(XFT.GetArchiveRootPath()))
+//	        if (path.startsWith(XFT.GetArchivePath()))
 //	        {
-//	            path = path.substring(XFT.GetArchiveRootPath().length() + 1);
+//	            path = path.substring(XFT.GetArchivePath().length() + 1);
 //	        }
 //
 //	        if (path.startsWith(File.separator))
@@ -968,7 +950,7 @@ public  class FileUtils
 	}
 
 	public static String BuildRootHistoryPath(){
-		String cache = XFT.GetArchiveRootPath();
+		String cache = XDAT.getSiteConfigPreferences().getCachePath();
 		
 		if(StringUtils.isBlank(cache))
 		{
@@ -1010,7 +992,7 @@ public  class FileUtils
     
     public static void MoveToCache(File f) throws FileNotFoundException, IOException{
     	if(XDAT.getBoolSiteConfigurationProperty("files.allow_move_to_cache", true)){
-			String cache = XFT.GetCachePath();
+			String cache = XDAT.getSiteConfigPreferences().getCachePath();
 			if(cache.equals(""))
 			{
 			    cache="/cache/";

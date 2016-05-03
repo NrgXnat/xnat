@@ -6,6 +6,7 @@ import java.util.Collection;
 import java.util.List;
 
 import org.apache.axis.utils.StringUtils;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.ItemI;
 import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
@@ -127,13 +128,13 @@ public class PersistentWorkflowUtils {
 			workflow.setType(event.getType());
 			workflow.setComments(event.getComment());
 			workflow.setCategory(event.getCategory());
-			
-			if( (XFT.getRequireChangeJustification() && XFT.getShowChangeJustification()) && StringUtils.isEmpty(event.getReason()) && requiresReason(xsiType, project_id)){
+
+			if( (XDAT.getSiteConfigPreferences().getRequireChangeJustification() && XDAT.getSiteConfigPreferences().getShowChangeJustification()) && StringUtils.isEmpty(event.getReason()) && requiresReason(xsiType, project_id)){
 				throw new JustificationAbsent();
 			}
 			workflow.setJustification(event.getReason());
 			if(StringUtils.isEmpty(event.getAction())){
-				if(XFT.getRequireEventName()){
+				if(XDAT.getSiteConfigPreferences().getRequireEventName()){
 					throw new ActionNameAbsent();
 				}else{
 					workflow.setPipelineName(EventUtils.UNKNOWN);

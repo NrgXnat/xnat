@@ -24,6 +24,7 @@ import org.apache.commons.fileupload.FileItem;
 import org.apache.turbine.util.RunData;
 import org.apache.turbine.util.parser.ParameterParser;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.schema.SchemaElement;
 import org.nrg.xdat.security.helpers.Users;
@@ -261,7 +262,7 @@ public class CSVUpload2 extends SecureAction {
                                     if(newID!=null){
                                     	item.setProperty("ID", newID);
                                     }else{
-                                    	item.setProperty("ID",XFT.CreateIDFromBase(XFT.GetSiteID(),5, "ID", se.getSQLName(), null,null));
+                                    	item.setProperty("ID",XFT.CreateIDFromBase(XDAT.getSiteConfigPreferences().getSiteId(), 5, "ID", se.getSQLName(), null, null));
                                     }
                             	}
                             }
@@ -275,7 +276,7 @@ public class CSVUpload2 extends SecureAction {
                     }
                 }
 
-                PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, item, this.newEventInstance(data, EventUtils.CATEGORY.DATA, "Upload Spreadsheet"));
+                PersistentWorkflowI wrk=PersistentWorkflowUtils.buildOpenWorkflow(user, item, CSVUpload2.newEventInstance(data, EventUtils.CATEGORY.DATA, "Upload Spreadsheet"));
                 
                 try {
                 	SaveItemHelper.unauthorizedSave(item,user, false, false,wrk.buildEvent());

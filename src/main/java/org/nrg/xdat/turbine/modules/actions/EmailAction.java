@@ -51,7 +51,7 @@ public class EmailAction extends SecureAction {
 
 	public void sendMessage(RunData data, Context context) {
 
-		if(XFT.getBooleanProperty("smtp.enabled", true)){
+		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
 			if (!StringUtils.isBlank(toAddress) || !StringUtils.isBlank(ccAddress) || !StringUtils.isBlank(bccAddress)) {
 				if (AdminUtils.GetPageEmail()) {
 					if (StringUtils.isBlank(bccAddress)) {

@@ -129,7 +129,7 @@ public class TurbineUtils {
     }
 
     public static String GetSystemName() {
-        final String site_id = XFT.GetSiteID();
+        final String site_id = XDAT.getSiteConfigPreferences().getSiteId();
         if (site_id == null || StringUtils.isEmpty(site_id)) {
             return "XNAT";
         } else {
@@ -139,12 +139,12 @@ public class TurbineUtils {
 
     @SuppressWarnings("unused")
     public boolean loginRequired() {
-        return XFT.GetRequireLogin();
+        return XDAT.getSiteConfigPreferences().getRequireLogin();
     }
 
     @SuppressWarnings("unused")
     public static boolean LoginRequired() {
-        return XFT.GetRequireLogin();
+        return XDAT.getSiteConfigPreferences().getRequireLogin();
     }
 
     public static ItemI GetItemBySearch(RunData data, boolean preLoad) throws Exception {
@@ -353,14 +353,14 @@ public class TurbineUtils {
      * @return The full server path.
      */
     public static String GetFullServerPath() {
-        if (XFT.GetSiteURL() == null || XFT.GetSiteURL().equals("")) {
+        if (XDAT.getSiteConfigPreferences().getSiteUrl() == null || XDAT.getSiteConfigPreferences().getSiteUrl().equals("")) {
             String s = Turbine.getServerScheme() + "://" + Turbine.getServerName();
             if (!Turbine.getServerPort().equals("80"))
                 s += ":" + Turbine.getServerPort();
             s += Turbine.getContextPath();
             return s;
         } else {
-            return XFT.GetSiteURL();
+            return XDAT.getSiteConfigPreferences().getSiteUrl();
         }
     }
 
@@ -393,7 +393,7 @@ public class TurbineUtils {
      * @return The full server path.
      */
     public static String GetFullServerPath(HttpServletRequest req) {
-        if (XFT.GetSiteURL() == null || XFT.GetSiteURL().equals("")) {
+        if (XDAT.getSiteConfigPreferences().getSiteUrl() == null || XDAT.getSiteConfigPreferences().getSiteUrl().equals("")) {
             String s = req.getRequestURL().toString();
             String server = null;
 
@@ -419,7 +419,7 @@ public class TurbineUtils {
 
             return server;
         } else {
-            return XFT.GetSiteURL();
+            return XDAT.getSiteConfigPreferences().getSiteUrl();
         }
     }
 

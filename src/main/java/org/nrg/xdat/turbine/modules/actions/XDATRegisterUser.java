@@ -273,7 +273,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
     }
     
     public boolean autoApproval(RunData data, Context context)throws Exception{
-    	return XFT.GetUserRegistration();
+    	return XDAT.getSiteConfigPreferences().getUserRegistration();
     }
     
     public void directRequest(RunData data,Context context,UserI user) throws Exception{
@@ -282,7 +282,7 @@ public class XDATRegisterUser extends VelocitySecureAction {
 
         data.setScreenTemplate("Index.vm");
         
-        if (XFT.GetUserRegistration() && !XDAT.verificationOn()){
+        if (XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.verificationOn()){
          if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
 			data.setAction(nextAction);
             VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);

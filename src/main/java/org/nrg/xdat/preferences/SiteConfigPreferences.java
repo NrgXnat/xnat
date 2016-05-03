@@ -1,5 +1,6 @@
 package org.nrg.xdat.preferences;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
@@ -11,10 +12,12 @@ import org.nrg.xdat.security.services.RoleServiceI;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.xml.bind.annotation.XmlRootElement;
 import java.util.Date;
 import java.util.List;
 import java.util.Map;
 
+@XmlRootElement
 @NrgPreferenceBean(toolId = SiteConfigPreferences.SITE_CONFIG_TOOL_ID,
                    toolName = "XNAT Site Preferences",
                    description = "Manages site configurations and settings for the XNAT system.",
@@ -63,15 +66,15 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "/data/xnat/archive")
-    public String getArchiveRootPath() {
-        return getValue("archiveRootPath");
+    public String getArchivePath() {
+        return getValue("archivePath");
     }
 
-    public void setArchiveRootPath(final String archiveRootPath) {
+    public void setArchivePath(final String archivePath) {
         try {
-            set(archiveRootPath, "archiveRootPath");
+            set(archivePath, "archivePath");
         } catch (InvalidPreferenceName e) {
-            _log.error("Invalid preference name 'archiveRootPath': something is very wrong here.", e);
+            _log.error("Invalid preference name 'archivePath': something is very wrong here.", e);
         }
     }
 
@@ -375,8 +378,8 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
     }
 
     @NrgPreference(defaultValue = "true", property = "smtp.enabled")
-    public String getSmtpEnabled() {
-        return getValue("smtp.enabled");
+    public boolean getSmtpEnabled() {
+        return getBooleanValue("smtp.enabled");
     }
 
     public void setSmtpEnabled(final boolean smtpEnabled) {
@@ -894,5 +897,57 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         } catch (InvalidPreferenceName e) {
             _log.error("Invalid preference name 'aliasTokenTimeout': something is very wrong here.", e);
         }
+    }
+    private static final String STR_REQUIRE_EVENT_NAME = "audit.require_event_name";
+    private static final String REQUIRE_CHANGE_JUSTIFICATION = "audit.require_change_justification";
+    private static final String SHOW_CHANGE_JUSTIFICATION = "audit.show_change_justification";
+
+    @NrgPreference(defaultValue = "false", property = "audit.show_change_justification")
+    public boolean getShowChangeJustification(){
+        return getBooleanValue("audit.show_change_justification");
+    }
+
+    public void setShowChangeJustification(final boolean showChangeJustification) {
+        try {
+            setBooleanValue(showChangeJustification, "audit.show_change_justification");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'audit.show_change_justification': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false", property = "audit.require_change_justification")
+    public boolean getRequireChangeJustification(){
+        return getBooleanValue("audit.require_change_justification");
+    }
+
+    public void setRequireChangeJustification(final boolean requireChangeJustification) {
+        try {
+            setBooleanValue(requireChangeJustification, "audit.require_change_justification");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'audit.require_change_justification': something is very wrong here.", e);
+        }
+    }
+
+    @NrgPreference(defaultValue = "false", property = "audit.require_event_name")
+    public boolean getRequireEventName(){
+        return getBooleanValue("audit.require_event_name");
+    }
+
+    public void setRequireEventName(final boolean requireEventName) {
+        try {
+            setBooleanValue(requireEventName, "audit.require_event_name");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'audit.require_event_name': something is very wrong here.", e);
+        }
+    }
+
+    public boolean isComplete() {
+        return !StringUtils.isBlank(getSiteId()) &&
+               !StringUtils.isBlank(getAdminEmail()) &&
+               !StringUtils.isBlank(getArchivePath()) &&
+               !StringUtils.isBlank(getPrearchivePath()) &&
+               !StringUtils.isBlank(getCachePath()) &&
+               !StringUtils.isBlank(getBuildPath()) &&
+               !StringUtils.isBlank(getFtpPath());
     }
 }

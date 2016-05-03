@@ -25,6 +25,7 @@ import java.util.List;
 
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xft.ItemI;
@@ -2217,7 +2218,7 @@ public class DBAction {
                 if (FileUtils.IsAbsolutePath(uri)) {
                     //must be within a specified directory, to prevent directory traversal to secured files.
                     if (!allowInvalidValues)
-                        FileUtils.ValidateUriAgainstRoot(uri, XFT.GetArchiveRootPath(), "URI references data outside of the archive:" + uri);
+                        FileUtils.ValidateUriAgainstRoot(uri, XDAT.getSiteConfigPreferences().getArchivePath(), "URI references data outside of the archive:" + uri);
 
                 }
                 return "'" + XftStringUtils.CleanForSQLValue(uri) + "'";

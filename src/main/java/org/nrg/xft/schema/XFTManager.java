@@ -10,27 +10,11 @@
  */
 package org.nrg.xft.schema;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.IOException;
-import java.io.InputStream;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Map;
-
-import javax.xml.parsers.ParserConfigurationException;
-import javax.xml.parsers.SAXParser;
-import javax.xml.parsers.SAXParserFactory;
-
+import com.google.common.collect.Lists;
 import org.apache.commons.io.FilenameUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.utilities.Reflection;
-import org.nrg.xdat.XDAT;
-import org.nrg.xft.XFT;
 import org.nrg.xft.collections.XFTElementSorter;
-import org.nrg.xft.db.ViewManager;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.references.XFTReferenceI;
@@ -52,7 +36,14 @@ import org.w3c.dom.Node;
 import org.xml.sax.Attributes;
 import org.xml.sax.SAXException;
 
-import com.google.common.collect.Lists;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.parsers.SAXParser;
+import javax.xml.parsers.SAXParserFactory;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.IOException;
+import java.io.InputStream;
+import java.util.*;
 
 public class XFTManager {
     private static final Logger     logger  = LoggerFactory.getLogger(XFTManager.class);
@@ -61,7 +52,7 @@ public class XFTManager {
     private static XFTElement                      ELEMENT_TABLE = null;
     private static final Map<String, XFTDataModel> DATA_MODELS   = new Hashtable<>();
 
-    private static Map<String,String> ROOT_LEVEL_ELEMENTS = new Hashtable<String,String>();
+    private static Map<String,String> ROOT_LEVEL_ELEMENTS = new Hashtable<>();
 
     private String sourceDir = "";
 
@@ -218,42 +209,6 @@ public class XFTManager {
         } else {
             sourceDir = source;
         }    	
-
-		if (StringUtils.isEmpty(XFT.GetAdminEmail())) {
-            XFT.SetAdminEmail("admin@yourXnat.org");
-        }
-    	
-    	if (StringUtils.isEmpty(XFT.GetSiteURL())) {
-            XFT.SetSiteURL("");
-        }
-
-        if (StringUtils.isEmpty(XFT.GetArchiveRootPath()) || XFT.GetArchiveRootPath().equals(File.separator)) {
-            XFT.SetArchiveRootPath("/data/xnat/archive");
-        }
-
-        if (StringUtils.isEmpty(XFT.GetPrearchivePath()) || XFT.GetPrearchivePath().equals(File.separator)) {
-            XFT.SetPrearchivePath("/data/xnat/prearchive");
-        }
-
-        if (StringUtils.isEmpty(XFT.GetCachePath()) || XFT.GetCachePath().equals(File.separator)) {
-            XFT.SetCachePath("/data/xnat/cache");
-        }
-
-        if (StringUtils.isEmpty(XFT.GetAdminEmailHost())) {
-            XFT.SetAdminEmailHost("localhost");
-        }
-
-        if (StringUtils.isEmpty(XFT.GetPipelinePath()) || XFT.GetPipelinePath().equals(File.separator)) {
-            XFT.SetPipelinePath("/data/xnat/pipeline");
-        }
-
-        if (StringUtils.isEmpty(XFT.getFtpPath()) || XFT.getFtpPath().equals(File.separator)) {
-            XFT.setFtpPath("/data/xnat/ftp");
-        }
-
-        if (StringUtils.isEmpty(XFT.getBuildPath()) || XFT.getBuildPath().equals(File.separator)) {
-            XFT.setBuildPath("/data/xnat/build");
-        }
 
         try {
             List<String> schemaParsed = Lists.newArrayList(DATA_MODELS.keySet());

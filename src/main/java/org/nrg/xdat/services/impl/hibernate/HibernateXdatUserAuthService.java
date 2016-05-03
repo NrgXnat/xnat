@@ -18,6 +18,7 @@ import org.nrg.framework.orm.hibernate.AbstractHibernateEntityService;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.daos.XdatUserAuthDAO;
 import org.nrg.xdat.entities.XdatUserAuth;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.XFT;
@@ -151,10 +152,6 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         });
     }
 
-    public Boolean newUserAccountsAreAutoEnabled() {
-        return XFT.GetUserRegistration();
-    }
-
     protected UserI getUserDetails(String username, String auth, String id) {
         UserI userDetails = null;
         try {
@@ -237,7 +234,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
                 * Must clone a new object to return, rather than modifying the existing, so that Hibernate still saves the desired values to the DB.
                 */
                 newUserAuth = new XdatUserAuth(newUserAuth);
-                newUserAuth.setEnabled(newUserAccountsAreAutoEnabled());
+                newUserAuth.setEnabled(_preferences.getUserRegistration());
                 // </HACK_ALERT>
 
                 newUser.setAuthorization(newUserAuth);
@@ -271,7 +268,7 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
         newUserProperties.put(XFT.PREFIX + ":user.primary_password.encrypt", "true");
         // TODO: Need to add ability to verify email address in cases where we may not completely trust LDAP repo.
         newUserProperties.put(XFT.PREFIX + ":user.verified", "true");
-        newUserProperties.put(XFT.PREFIX + ":user.enabled", newUserAccountsAreAutoEnabled().toString());
+        newUserProperties.put(XFT.PREFIX + ":user.enabled", Boolean.toString(_preferences.getUserRegistration()));
 
         return Users.createUser(newUserProperties);
     }
@@ -366,6 +363,9 @@ public class HibernateXdatUserAuthService extends AbstractHibernateEntityService
 
     @Inject
     private XdatUserAuthDAO _dao;
+
+    @Inject
+    private SiteConfigPreferences _preferences;
 
     @Autowired
     @Lazy

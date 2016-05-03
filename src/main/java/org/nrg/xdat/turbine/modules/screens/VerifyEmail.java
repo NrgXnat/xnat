@@ -38,7 +38,7 @@ public class VerifyEmail extends VelocitySecureScreen {
     	String alias = "";
 
         try {
-            if (XFT.GetUserRegistration()) {
+            if (XDAT.getSiteConfigPreferences().getUserRegistration()) {
                 context.put("autoApproval", "true");
             } else {
                 context.put("autoApproval", "false");
@@ -57,7 +57,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 	    				curUser.setVerified(Boolean.TRUE);
 	    			
 	    				// If auto-approval is true, the user is enabled
-	    				if(XFT.GetUserRegistration()){
+	    				if(XDAT.getSiteConfigPreferences().getUserRegistration()){
 	    					curUser.setEnabled(true);
 	    				}
 	    				
@@ -104,7 +104,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 				catch (Exception exception) {
 					logger.error("Error occurred sending admin email to enable newly verified accounts", exception);
 				}
-                if(!XFT.GetUserRegistration()){
+                if(!XDAT.getSiteConfigPreferences().getUserRegistration()){
                     //data.setRedirectURI(null);
                     data.setMessage("Thank you for your interest in our site. Your user account will be reviewed and enabled by the site administrator. When this is complete, you will receive an email inviting you to login to the site.");
                     redirectToLogin(data);

@@ -13,8 +13,6 @@
 package org.nrg.xft;
 
 import org.apache.commons.lang3.StringUtils;
-import org.apache.log4j.Logger;
-import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
 import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
@@ -25,6 +23,8 @@ import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperElement;
 import org.nrg.xft.schema.Wrappers.GenericWrapper.GenericWrapperFactory;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.schema.XFTSchema;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -34,39 +34,37 @@ import java.util.Iterator;
 import java.util.Random;
 
 public class XFT {
-    private static String ADMIN_EMAIL = "nrgtech@nrg.wustl.edu";
+    private static String ADMIN_EMAIL      = "nrgtech@nrg.wustl.edu";
     private static String ADMIN_EMAIL_HOST = "";
 
-    private static String CONF_DIR=null;
+    private static String CONF_DIR = null;
 
-    private static String SITE_URL = "";
-    private static String ARCHIVE_ROOT_PATH = "";
-    private static String PREARCHIVE_PATH = "";
-    private static String CACHE_PATH = "";
-    private static final Logger logger = Logger.getLogger(XFT.class);
-    public static final String PREFIX = "xdat";
-    public static final char PATH_SEPERATOR = '/';
+    private static       String SITE_URL          = "";
+    private static       String ARCHIVE_ROOT_PATH = "";
+    private static       String PREARCHIVE_PATH   = "";
+    private static       String CACHE_PATH        = "";
+    private static final Logger logger            = LoggerFactory.getLogger(XFT.class);
+    public static final  String PREFIX            = "xdat";
+    public static final  char   PATH_SEPERATOR    = '/';
+    private static       String WEBAPP_NAME       = null;
 
-    public static boolean VERBOSE = false;
+    public static  boolean VERBOSE        = false;
     private static Boolean REQUIRE_REASON = null;
-    private static Boolean SHOW_REASON = null;
-    
+    private static Boolean SHOW_REASON    = null;
+
 
     private static Boolean REQUIRE_EVENT_NAME = false;//used to configure whether event names are required on modifications
-//	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
-//	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 
     /**
      * This method must be run before any XFT task is performed.
      * Using the InstanceSettings.xml document, it initializes the
      * XFT's settings and loads the schema.
+     *
      * @param location (Directory which includes the InstanceSettings.xml document)
      */
-    public static void init(String location) throws ElementNotFoundException
-    {
+    public static void init(String location) throws ElementNotFoundException {
 
-        if (! location.endsWith(File.separator))
-        {
+        if (!location.endsWith(File.separator)) {
             location = location + File.separator;
         }
 
@@ -74,7 +72,7 @@ public class XFT {
             System.out.println("SETTINGS LOCATION: " + location);
         }
 
-        CONF_DIR=location;
+        CONF_DIR = location;
 
         XFTManager.clean();
         XFTMetaManager.clean();
@@ -87,15 +85,12 @@ public class XFT {
             XFTMetaManager.init();
 
             Iterator schemas = XFTManager.GetSchemas().iterator();
-            while (schemas.hasNext())
-            {
-                XFTSchema s = (XFTSchema)schemas.next();
-                Iterator elements = s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance()).iterator();
-                while (elements.hasNext())
-                {
-                    GenericWrapperElement input = (GenericWrapperElement)elements.next();
-                    if (input.isExtension())
-                    {
+            while (schemas.hasNext()) {
+                XFTSchema s        = (XFTSchema) schemas.next();
+                Iterator  elements = s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance()).iterator();
+                while (elements.hasNext()) {
+                    GenericWrapperElement input = (GenericWrapperElement) elements.next();
+                    if (input.isExtension()) {
                         GenericWrapperElement e = GenericWrapperElement.GetElement(input.getExtensionType());
                         e.initializeExtendedField();
                     }
@@ -105,31 +100,26 @@ public class XFT {
             XFTReferenceManager.init();
 
             schemas = XFTManager.GetSchemas().iterator();
-            while (schemas.hasNext())
-            {
-                XFTSchema s = (XFTSchema)schemas.next();
-                Iterator elements = s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance()).iterator();
-                while (elements.hasNext())
-                {
-                    GenericWrapperElement input = (GenericWrapperElement)elements.next();
-                    if (!input.hasUniqueIdentifiers() && !input.ignoreWarnings())
-                    {
+            while (schemas.hasNext()) {
+                XFTSchema s        = (XFTSchema) schemas.next();
+                Iterator  elements = s.getWrappedElementsSorted(GenericWrapperFactory.GetInstance()).iterator();
+                while (elements.hasNext()) {
+                    GenericWrapperElement input = (GenericWrapperElement) elements.next();
+                    if (!input.hasUniqueIdentifiers() && !input.ignoreWarnings()) {
                         if (XFT.VERBOSE) {
                             System.out.println("WARNING: Data Type:" + input.getFullXMLName() + " has no columns which uniquely identify it.");
                         }
                         logger.info("WARNING: Data Type:" + input.getFullXMLName() + " has no columns which uniquely identify it.");
                     }
 
-                    ArrayList sqlColumnNames= new ArrayList();
-                    Iterator iter = input.getAllFieldNames().iterator();
-                    while (iter.hasNext())
-                    {
-                        Object[] field = (Object[])iter.next();
-                        String sqlName = (String)field[0];
-                        if (!sqlColumnNames.contains(sqlName.toLowerCase()))
-                        {
+                    ArrayList sqlColumnNames = new ArrayList();
+                    Iterator  iter           = input.getAllFieldNames().iterator();
+                    while (iter.hasNext()) {
+                        Object[] field   = (Object[]) iter.next();
+                        String   sqlName = (String) field[0];
+                        if (!sqlColumnNames.contains(sqlName.toLowerCase())) {
                             sqlColumnNames.add(sqlName.toLowerCase());
-                        }else{
+                        } else {
                             System.out.println("ERROR: Duplicate SQL column names in data type:" + input.getFullXMLName() + " column:" + sqlName);
                             logger.info("ERROR: Duplicate SQL column names in data type:" + input.getFullXMLName() + " column:" + sqlName);
                         }
@@ -138,16 +128,14 @@ public class XFT {
                 }
             }
         } catch (XFTInitException e) {
-            logger.error("",e);
+            logger.error("", e);
         }
-        if (XFT.VERBOSE)
-         {
+        if (XFT.VERBOSE) {
             System.out.print("");
         }
     }
 
-    public static boolean IsInitialized()
-    {
+    public static boolean IsInitialized() {
         try {
             XFTManager.GetInstance();
             return true;
@@ -156,381 +144,121 @@ public class XFT {
         }
     }
 
-    public static Character CreateRandomCharacter(Random randGen){
+    public static Character CreateRandomCharacter(Random randGen) {
         int i = 111;
-        while (i==111)
-        {
-            i= randGen.nextInt(25) + 97;
+        while (i == 111) {
+            i = randGen.nextInt(25) + 97;
         }
-        return new Character((char)i);
+        return (char) i;
     }
 
-    public static Integer CreateRandomNumber(Random randGen){
-        return randGen.nextInt(8)+1;
+    public static Integer CreateRandomNumber(Random randGen) {
+        return randGen.nextInt(8) + 1;
     }
 
-    public static String CreateRandomAlphaNumeric(int length){
-        Random randGen= new Random();
-        String temp ="";
-        boolean b=true;
-        for(int i=0;i<length;i++){
-            if(b){
-                b=false;
-                temp +=CreateRandomCharacter(randGen);
-            }else{
-                b=true;
-                temp +=CreateRandomNumber(randGen);
+    public static String CreateRandomAlphaNumeric(int length) {
+        Random  randGen = new Random();
+        String  temp    = "";
+        boolean b       = true;
+        for (int i = 0; i < length; i++) {
+            if (b) {
+                b = false;
+                temp += CreateRandomCharacter(randGen);
+            } else {
+                b = true;
+                temp += CreateRandomNumber(randGen);
             }
         }
         return temp;
     }
 
-    private static String SITE_ID ="";
+    private static String SITE_ID = "";
 
-    public static String GetSiteID(){
+    public static String GetSiteID() {
         return SITE_ID;
     }
 
-    public static void SetSiteID(String s){
-        SITE_ID=s;
+    public static void SetSiteID(String s) {
+        SITE_ID = s;
     }
 
     /**
      * Returns ID as SITE ID + incremented number.
-     * @return
-     * @throws Exception
+     *
+     * @return The generated ID.
+     * @throws Exception When something goes wrong.
      */
-    public static String CreateId(int digits, String column, String tableName, String dbname, String login) throws Exception{
-        return CreateIDFromBase(GetSiteID(), digits, column, tableName,dbname,login);
+    public static String CreateId(int digits, String column, String tableName, String dbname, String login) throws Exception {
+        return CreateIDFromBase(GetSiteID(), digits, column, tableName, dbname, login);
     }
 
-    public static String CreateIDFromBase(String base, int digits, String column, String tableName, String dbname, String login) throws Exception{
-        String identifier = "";
+    public static String CreateIDFromBase(String base, int digits, String column, String tableName, String dbname, String login) throws Exception {
+        if (base == null) {
+            throw new NullPointerException();
+        }
+        final String identifier = StringUtils.replace(StringUtils.replace(StringUtils.replace(StringUtils.replace(base, " ", ""), "-", "_"), "\"", ""), "'", "");
+        return IncrementID(identifier, digits, column, tableName, dbname, login);
+    }
 
-        if (base!=null)
-        {
-            identifier = base;
-            identifier = StringUtils.replace(identifier, " ", "");
-            identifier = StringUtils.replace(identifier, "-", "_");
-            identifier = StringUtils.replace(identifier, "\"", "");
-            identifier = StringUtils.replace(identifier, "'", "");
+    private static String IncrementID(String s, int digits, String column, String tableName, String dbname, String login) throws Exception {
+        String tempId;
 
-            identifier= IncrementID(identifier,digits,column,tableName,dbname,login);
-        }else{
+        if (s == null) {
             throw new NullPointerException();
         }
 
-        return identifier;
-    }
-
-    private static String IncrementID(String s,int digits, String column, String tableName, String dbname, String login) throws Exception{
-        String temp_id = null;
-
-        if(s == null)
-        {
-            throw new NullPointerException();
-        }
-
-        XFTTable table = org.nrg.xft.search.TableSearch.Execute("SELECT " + column + " FROM " + tableName + " WHERE " + column + " LIKE '" + s + "%';", dbname, login);
-        ArrayList al =table.convertColumnToArrayList("id");
+        XFTTable  table = org.nrg.xft.search.TableSearch.Execute("SELECT " + column + " FROM " + tableName + " WHERE " + column + " LIKE '" + s + "%';", dbname, login);
+        ArrayList al    = table.convertColumnToArrayList("id");
 
         NumberFormat nf = NumberFormat.getIntegerInstance();
         nf.setMinimumIntegerDigits(digits);
-        if (al.size()>0){
-            int count =al.size()+1;
-            String full = StringUtils.replace(nf.format(count), ",", "");
-            temp_id = s+ full;
+        if (al.size() > 0) {
+            int    count = al.size() + 1;
+            String full  = StringUtils.replace(nf.format(count), ",", "");
+            tempId = s + full;
 
-            while (al.contains(temp_id)){
+            while (al.contains(tempId)) {
                 count++;
                 full = StringUtils.replace(nf.format(count), ",", "");
-                temp_id = s+ full;
+                tempId = s + full;
             }
 
-            return temp_id;
-        }else{
-            int count =1;
-            String full = StringUtils.replace(nf.format(count), ",", "");
-            temp_id = s+ full;
-            return temp_id;
+            return tempId;
+        } else {
+            int    count = 1;
+            String full  = StringUtils.replace(nf.format(count), ",", "");
+            tempId = s + full;
+            return tempId;
         }
     }
 
 
-    public static String GetAllSchemaLocations(String location)
-    {
-        StringBuffer sb = new StringBuffer();
-        Iterator schemas = XFTManager.GetSchemas().iterator();
-        int counter = 0;
-        while (schemas.hasNext())
-        {
+    public static String GetAllSchemaLocations(String location) {
+        StringBuffer sb      = new StringBuffer();
+        Iterator     schemas = XFTManager.GetSchemas().iterator();
+        int          counter = 0;
+        while (schemas.hasNext()) {
             try {
-            XFTSchema s = (XFTSchema)schemas.next();
-				if (counter++>0)
-                {
-					sb.append(" ");
+                XFTSchema s = (XFTSchema) schemas.next();
+                if (counter++ > 0) {
+                    sb.append(" ");
                 }
 
-                if (location==null)
-                {
-				    sb.append(s.getTargetNamespaceURI()).append(" ").append(s.getDataModel().getResource().getFile().getPath());
-                }else{
-				    sb.append(s.getTargetNamespaceURI()).append(" ").append(XFT.GetSiteURL()).append("/schemas/").append(s.getDataModel().getFileName());
+                if (location == null) {
+                    sb.append(s.getTargetNamespaceURI()).append(" ").append(s.getDataModel().getResource().getFile().getPath());
+                } else {
+                    sb.append(s.getTargetNamespaceURI()).append(" ").append(XDAT.getSiteConfigPreferences().getSiteUrl()).append("/schemas/").append(s.getDataModel().getFileName());
                 }
-			} catch (IOException e) {
-				logger.error("",e);
+            } catch (IOException e) {
+                logger.error("", e);
             }
         }
 
         return sb.toString();
     }
-    public static String GetSiteURL()
-    {
-        return XFT.SITE_URL;
-    }
 
-    public static void SetSiteURL(String s)
-    {
-        XFT.SITE_URL=s;
-    }
-    public static String GetAdminEmail()
-    {
-        return XFT.ADMIN_EMAIL;
-    }
-
-    public static void SetAdminEmail(String s)
-    {
-        XFT.ADMIN_EMAIL=s;
-    }
-
-    public static String GetAdminEmailHost()
-    {
-        return XFT.ADMIN_EMAIL_HOST;
-    }
-
-    public static void SetAdminEmailHost(String s)
-    {
-        if (!s.equals("%SMTP_SERVER%")) {
-            XFT.ADMIN_EMAIL_HOST=s;
-        }
-    }
-
-    public static String GetArchiveRootPath()
-    {
-        if (!XFT.ARCHIVE_ROOT_PATH.endsWith(File.separator) && !XFT.ARCHIVE_ROOT_PATH.endsWith("/"))
-        {
-            XFT.ARCHIVE_ROOT_PATH = XFT.ARCHIVE_ROOT_PATH + File.separator;
-        }
-        return XFT.ARCHIVE_ROOT_PATH;
-    }
-
-    public static void SetArchiveRootPath(String s)
-    {
-        XFT.ARCHIVE_ROOT_PATH=s.replace('\\', '/');
-    }
-
-    public static String GetPrearchivePath()
-    {
-        if (!XFT.PREARCHIVE_PATH.endsWith(File.separator) && !XFT.PREARCHIVE_PATH.endsWith("/"))
-        {
-            XFT.PREARCHIVE_PATH = XFT.PREARCHIVE_PATH + File.separator;
-        }
-        return XFT.PREARCHIVE_PATH;
-    }
-
-    public static void SetPrearchivePath(String s)
-    {
-        XFT.PREARCHIVE_PATH=s.replace('\\', '/');
-    }
-
-    public static String GetCachePath()
-    {
-        if (!XFT.CACHE_PATH.endsWith(File.separator) && !XFT.CACHE_PATH.endsWith("/"))
-        {
-            XFT.CACHE_PATH = XFT.CACHE_PATH + File.separator;
-        }
-        return XFT.CACHE_PATH;
-    }
-
-    public static File GetCacheDir()
-    {
-        return new File(GetCachePath());
-    }
-
-    public static void SetCachePath(String s)
-    {
-        XFT.CACHE_PATH=s.replace('\\', '/');;
-    }
-
-    private static String PIPELINE_LOCATION = "";
-    public static String GetPipelinePath()
-    {
-        if (!XFT.PIPELINE_LOCATION.endsWith(File.separator) && !XFT.PIPELINE_LOCATION.endsWith("/"))
-        {
-            XFT.PIPELINE_LOCATION = XFT.PIPELINE_LOCATION + File.separator;
-        }
-        return XFT.PIPELINE_LOCATION;
-    }
-
-    public static void SetPipelinePath(String s)
-    {
-        XFT.PIPELINE_LOCATION=s;
-    }
-
-    /**
-     * FTP Location
-     */
-    private static String FTP_LOCATION = "";
-    public static String getFtpPath()
-    {
-        if (!XFT.FTP_LOCATION.endsWith(File.separator) && !XFT.FTP_LOCATION.endsWith("/"))
-        {
-            XFT.FTP_LOCATION = XFT.FTP_LOCATION + File.separator;
-        }
-        return XFT.FTP_LOCATION;
-    }
-
-    public static void setFtpPath(String s)
-    {
-        XFT.FTP_LOCATION=s;
-    }
-
-    /**
-     * FTP Location
-     */
-    private static String BUILD_LOCATION = "";
-    public static String getBuildPath()
-    {
-        if (!XFT.BUILD_LOCATION.endsWith(File.separator) && !XFT.BUILD_LOCATION.endsWith("/"))
-        {
-            XFT.BUILD_LOCATION = XFT.BUILD_LOCATION + File.separator;
-        }
-        return XFT.BUILD_LOCATION;
-    }
-
-    public static void setBuildPath(String s)
-    {
-        XFT.BUILD_LOCATION=s;
-    }
-
-    private static String RequireLogin = "";
-    public static boolean GetRequireLogin()
-    {
-        if(XFT.RequireLogin==null){
-            return true;
-        }else if(XFT.RequireLogin.equalsIgnoreCase("false") || XFT.RequireLogin.equalsIgnoreCase("1"))
-        {
-            return false;
-        }else{
-            return true;
-        }
-    }
-
-    public static void SetRequireLogin(String s)
-    {
-        XFT.RequireLogin=s;
-    }
-
-    private static String EmailVerification = "";
-    public static boolean GetEmailVerification()
-    {
-        if(XFT.EmailVerification==null){
-            return false;
-        }else if(XFT.EmailVerification.equalsIgnoreCase("false") || XFT.EmailVerification.equalsIgnoreCase("1"))
-        {
-            return false;
-        }else{
-            return true;
-        }
-    }
-
-    public static void SetEmailVerification(String s)
-    {
-        XFT.EmailVerification=s;
-    }    
-
-    private static String UserRegistration = "";
-    public static boolean GetUserRegistration()
-    {
-        if(XFT.UserRegistration != null && (XFT.UserRegistration.equalsIgnoreCase("false") || XFT.UserRegistration.equalsIgnoreCase("1")))
-        {
-            return false;
-        }else{
-            return true;
-        }
-    }
-
-    public static void SetUserRegistration(String s)
-    {
-        XFT.UserRegistration=s;
-    }
-
-    public static String GetSettingsDirectory() throws XFTInitException
-    {
-        return XFTManager.GetInstance().getSourceDir();
-    }
-
-    public static String GetConfDir(){
+    public static String GetConfDir() {
         return CONF_DIR;
     }
-    
-    private static String EnableCsrfToken = "";
-    public static boolean GetEnableCsrfToken()
-    {
-        if(XFT.EnableCsrfToken==null){
-            return true;
-        }else if(XFT.EnableCsrfToken.equalsIgnoreCase("false") || XFT.EnableCsrfToken.equalsIgnoreCase("1"))
-        {
-            return false;
-        }else{
-            return true;
-        }
-    }
-
-    public static void SetEnableCsrfToken(String s)
-    {
-        XFT.EnableCsrfToken=s;
-    }
-    
-    public static boolean getBooleanProperty(String key, String _default){
-        try {
-            Object item = XDAT.getSiteConfigurationProperty(key);
-            if (item == null) {
-                return Boolean.valueOf(_default);
-            } else {
-                return Boolean.valueOf(item.toString());
-            }
-        } catch (ConfigServiceException e) {
-            throw new RuntimeException("Error accessing site configuration", e);
-        }
-    }
-    
-    public static boolean getBooleanProperty(String key, boolean _default){
-    	return getBooleanProperty(key, Boolean.toString(_default));
-    }
-
-    private static final String STR_REQUIRE_EVENT_NAME = "audit.require_event_name";
-    private static final String REQUIRE_CHANGE_JUSTIFICATION = "audit.require_change_justification";
-    private static final String SHOW_CHANGE_JUSTIFICATION = "audit.show_change_justification";
-    
-    public static boolean getShowChangeJustification(){
-    	if(SHOW_REASON==null){
-    		SHOW_REASON=getBooleanProperty(SHOW_CHANGE_JUSTIFICATION,false);
-    	}
-    	return SHOW_REASON;
-    }
-    public static boolean getRequireChangeJustification(){
-    	if(REQUIRE_REASON==null){
-    		REQUIRE_REASON=getBooleanProperty(REQUIRE_CHANGE_JUSTIFICATION,false);
-    	}
-    	return REQUIRE_REASON;
-    }
-    public static boolean getRequireEventName(){
-    	if(REQUIRE_EVENT_NAME==null){
-    		REQUIRE_EVENT_NAME=getBooleanProperty(STR_REQUIRE_EVENT_NAME,false);
-    	}
-    	return REQUIRE_EVENT_NAME;
-    }
-    
 }
 

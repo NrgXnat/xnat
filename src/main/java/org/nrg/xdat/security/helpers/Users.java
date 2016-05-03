@@ -143,7 +143,7 @@ public class Users {
      * @return
      */
     public static String getUserCacheUploadsPath(final UserI user) {
-        return XFT.GetCachePath() + "USERS" + File.separator + user.getID();
+        return XDAT.getSiteConfigPreferences().getCachePath() + "USERS" + File.separator + user.getID();
     }
 
     /**

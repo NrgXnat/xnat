@@ -136,7 +136,7 @@ public class SettingsRestlet extends SecureResource {
         final SiteConfigPreferences preferences = XDAT.getContextService().getBean(SiteConfigPreferences.class);
 
         settings.putAll(XDAT.getSiteConfiguration());
-        settings.put("siteId", preferences.getSiteTitle());
+        settings.put("siteId", preferences.getSiteId());
         final String siteUrl = StringUtils.isBlank(_arcSpec.getSiteUrl()) ? XnatHttpUtils.getServerRoot(getHttpServletRequest()) : _arcSpec.getSiteUrl();
         settings.put("siteUrl", siteUrl);
         settings.put("siteAdminEmail", _arcSpec.getSiteAdminEmail());

@@ -13,11 +13,14 @@ import org.springframework.context.annotation.Lazy;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.*;
+import org.springframework.web.bind.annotation.PathVariable;
+import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestMethod;
 
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 @Api(description = "XNAT Site Configuration Management API")
 @XapiRestController
@@ -37,30 +40,33 @@ public class SiteConfigApi extends AbstractXnatRestApi {
         return new ResponseEntity<>(_preferences, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Returns a map of the selected site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
+    @ApiOperation(value = "Returns a map of the selected site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = Properties.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.PUT})
-    public ResponseEntity<Map<String, String>> getSpecifiedSiteConfigProperties(@RequestBody final List<String> preferences) {
+    @RequestMapping(value = "values/{preferences}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Properties> getSpecifiedSiteConfigProperties(@PathVariable final List<String> preferences) {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
         }
 
         if (_log.isDebugEnabled()) {
-            _log.debug("User " + getSessionUser().getUsername() + " requested the site configuration properties " + Joiner.on(", ").join(preferences));
+            _log.debug("User " + getSessionUser().getUsername() + " requested the site configuration preferences " + Joiner.on(", ").join(preferences));
         }
 
-        final Map<String, String> properties = new HashMap<>();
+        final Properties values = new Properties();
         for (final String preference : preferences) {
-            properties.put(preference, _preferences.getValue(preference));
+            final String value = _preferences.getValue(preference);
+            if (value != null) {
+                values.put(preference, value);
+            }
         }
-        return new ResponseEntity<>(properties, HttpStatus.OK);
+        return new ResponseEntity<>(values, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Returns a map of the selected site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
-    @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @ApiOperation(value = "Returns the value of the selected site configuration property.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Site configuration property successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "{property}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<String> getSpecifiedSiteConfigProperties(@ApiParam(value = "The site configuration property to retrieve.", required = true) @PathVariable final String property) {
+    public ResponseEntity<String> getSpecifiedSiteConfigProperty(@ApiParam(value = "The site configuration property to retrieve.", required = true) @PathVariable final String property) {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -74,7 +80,7 @@ public class SiteConfigApi extends AbstractXnatRestApi {
 
     @ApiOperation(value = "Sets a map of site configuration properties.", notes = "Sets the site configuration properties specified in the map.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
-    @RequestMapping(value = {"/batch"}, consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
+    @RequestMapping(value = "batch", consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
     public ResponseEntity<Void> setBatchSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, String> properties) {
         HttpStatus status = isPermitted();
         if (status != null) {
@@ -91,7 +97,7 @@ public class SiteConfigApi extends AbstractXnatRestApi {
 
         for (final String name : properties.keySet()) {
             try {
-                _preferences.set(name, properties.get(name));
+                _preferences.set(properties.get(name), name);
             } catch (InvalidPreferenceName invalidPreferenceName) {
                 _log.error("Got an invalid preference name error for the preference: " + name + ", which is weird because the site configuration is not strict");
             }
@@ -114,7 +120,7 @@ public class SiteConfigApi extends AbstractXnatRestApi {
         }
 
         try {
-            _preferences.set(property, value);
+            _preferences.set(value, property);
         } catch (InvalidPreferenceName invalidPreferenceName) {
             _log.error("Got an invalid preference name error for the preference: " + property + ", which is weird because the site configuration is not strict");
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);

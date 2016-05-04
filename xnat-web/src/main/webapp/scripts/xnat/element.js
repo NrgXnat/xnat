@@ -148,7 +148,7 @@ var XNAT = getObject(XNAT||{});
     // chainable spawner
     // XNAT.element('div').p()._b('Bold text. ')._i('Italic text.');
     // -> <div><p><b>Bold text. </b><i>Italic text.</i></p></div>
-    XNAT.element = XNAT.el = element = function(tag, opts, content){
+    element = function(tag, opts, content){
         return new Element(tag, opts, content);
     };
     //////////////////////////////////////////////////////////////////////
@@ -261,5 +261,17 @@ var XNAT = getObject(XNAT||{});
         }
 
     });
+
+
+    //////////////////////////////////////////////////////////////////////
+    // chainable spawner
+    // XNAT.element('div').p()._b('Bold text. ')._i('Italic text.');
+    // -> <div><p><b>Bold text. </b><i>Italic text.</i></p></div>
+    XNAT.element = XNAT.el = element;
+    // also add to XNAT.ui namespace
+    XNAT.ui = getObject(XNAT.ui||{});
+    XNAT.ui.element = XNAT.element;
+    //////////////////////////////////////////////////////////////////////
+
 
 })(XNAT);

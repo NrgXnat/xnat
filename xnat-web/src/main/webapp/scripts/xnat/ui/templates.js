@@ -24,12 +24,17 @@ var XNAT = getObject(XNAT);
     XNAT.ui.template = template = 
         XNAT.ui.template || {};
 
+    // add new element class without destroying existing class
+    function addClassName(el, newClass){
+        el.className = [].concat(el.className||[], newClass).join(' ').trim();
+        return el.className;
+    }
 
     // ========================================
     // generic panel element
     template.panelElement = function(opts, content){
         var _templ, _spawn, _html;
-        opts.className = [].concat(opts.className||[], 'panel-element').join(' ').trim();
+        addClassName(opts, 'panel-element');
         _templ = [
             'div|data-name='+(opts.name||''),
             { className: opts.className },
@@ -57,20 +62,22 @@ var XNAT = getObject(XNAT);
     // input element for form panels
     template.panelInput = function(opts, element){
         opts = getObject(opts);
-        opts.id = opts.id||toDashed(opts.name);
+        opts.name = opts.name || opts.id || randomID('input-', false);
+        opts.id = opts.id||toDashed(opts.name||'');
         opts.label = opts.label||opts.title||opts.name||'';
+        element = element || spawn('input', {
+                type: opts.type||'text',
+                id: opts.id,
+                name: opts.name,
+                className: opts.className||'',
+                size: 25,
+                title: opts.title||opts.name||opts.id,
+                value: opts.value||''
+            });
         return template.panelElement(opts, [
-            ['label.element-label|for='+opts.id, opts.label],
+            ['label.element-label|for='+element.id||opts.id, opts.label],
             ['div.element-wrapper', [
-                element || ['input', {
-                    type: opts.type||'text',
-                    id: opts.id,
-                    name: opts.name,
-                    className: opts.className||'',
-                    size: 25,
-                    title: opts.title||opts.name||opts.id,
-                    value: opts.value||''
-                }],
+                element,
                 ['div.description', opts.description||opts.body||opts.html]
             ]]
         ]);
@@ -82,8 +89,8 @@ var XNAT = getObject(XNAT);
     // select element for form panels
     template.panelSelect = function(opts){
         opts = getObject(opts);
-        opts.name = opts.name || opts.id;
-        opts.id = opts.id || toDashed(opts.name);
+        opts.name = opts.name || opts.id || randomID('select-', false);
+        opts.id = opts.id || toDashed(opts.name||'');
         
         var _select = spawn('select', {
             id: opts.id,
@@ -92,11 +99,12 @@ var XNAT = getObject(XNAT);
             //size: 25,
             title: opts.title||opts.name||opts.id||'',
             value: opts.value||''
-        });
+        }, [['option|value=!', 'Select']]);
+        
         // add the options
         $.each(opts.options||{}, function(name, prop){
             var _option = spawn('option', {
-                html: prop.label || prop.text,
+                html: prop.html || prop.label || prop.text || prop.value,
                 value: prop.value
             });
             // select the option if it's the select element's value
@@ -105,13 +113,14 @@ var XNAT = getObject(XNAT);
             }
             _select.appendChild(_option)    
         });
-        return template.panelElement(opts, [
-            ['label.element-label|for='+opts.id, opts.label||opts.title||opts.name],
-            ['div.element-wrapper', [
-                _select,
-                ['div.description', opts.description||opts.body||opts.html]
-            ]]
-        ]);
+        return template.panelInput(opts, _select);
+        // return template.panelElement(opts, [
+        //     ['label.element-label|for='+opts.id, opts.label||opts.title||opts.name],
+        //     ['div.element-wrapper', [
+        //         _select,
+        //         ['div.description', opts.description||opts.body||opts.html]
+        //     ]]
+        // ]);
     };
     // ========================================
 
@@ -120,11 +129,7 @@ var XNAT = getObject(XNAT);
         opts = getObject(opts);
         return template.panelElement(opts, [
             ['label.element-label|for='+opts.id, opts.label||opts.title||opts.name],
-            ['div.element-wrapper', [
-
-                elements
-
-            ]]
+            ['div.element-wrapper', elements]
         ]);
     };
 

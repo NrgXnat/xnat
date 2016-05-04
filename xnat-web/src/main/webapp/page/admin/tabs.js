@@ -2,12 +2,12 @@
 
     var $head = $('head');
 
-    // append the css to the head
-    $head.spawn('link', {
-        rel: 'stylesheet',
-        type: 'text/css',
-        href: XNAT.url.rootUrl('/scripts/lib/bootstrap/themes/xnat/bootstrap-fixed.css')
-    });
+    // // append the css to the head
+    // $head.spawn('link', {
+    //     rel: 'stylesheet',
+    //     type: 'text/css',
+    //     href: XNAT.url.rootUrl('/scripts/lib/bootstrap/themes/xnat/bootstrap-fixed.css')
+    // });
 
     // append the css to the head
     $head.spawn('link', {

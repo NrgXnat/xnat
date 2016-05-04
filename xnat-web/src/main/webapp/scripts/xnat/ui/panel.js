@@ -16,7 +16,7 @@ var XNAT = getObject(XNAT || {});
 
     XNAT.ui.panel = panel =
         getObject(XNAT.ui.panel || {});
-
+    
     // add new element class without destroying existing class
     function addClassName(el, newClass){
         el.className = [].concat(el.className||[], newClass).join(' ').trim();
@@ -32,7 +32,7 @@ var XNAT = getObject(XNAT || {});
         return obj.data;
     }
 
-    panel.init = function(opts){
+    panel.init = function panelInit(opts){
         
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
@@ -69,7 +69,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     // creates a panel that's a form that can be submitted
-    panel.form = function(opts){
+    panel.form = function panelForm(opts){
 
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
@@ -86,7 +86,7 @@ var XNAT = getObject(XNAT || {});
                 ['div.clear']
             ],
 
-            _panel = spawn('form.xnat-form-panel.panel.panel-default', {
+            _formPanel = spawn('form.xnat-form-panel.panel.panel-default', {
                 method: opts.method || 'POST',
                 action: opts.action || '#'
             }, [
@@ -103,21 +103,24 @@ var XNAT = getObject(XNAT || {});
 
         // add an id to the outer panel element if present
         if (opts.id || opts.element.id) {
-            _panel.id = (opts.id || opts.element.id) + '-panel';
+            _formPanel.id = (opts.id || opts.element.id) + '-panel';
         }
+        
+        // intercept the form submit to do it via REST instead
+        
 
         return {
             target: _target,
-            element: _panel,
-            spawned: _panel,
+            element: _formPanel,
+            spawned: _formPanel,
             get: function(){
-                return _panel;
+                return _formPanel;
             }
         }
     };
 
     // create a single generic panel element
-    panel.element = function(opts){
+    panel.element = function panelElement(opts){
         var _element, _inner = [], _target;
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
@@ -156,38 +159,38 @@ var XNAT = getObject(XNAT || {});
 
     panel.input = {};
 
-    panel.input.text = function(opts){
+    panel.input.text = function panelInputText(opts){
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.number = function(opts){
+    panel.input.number = function panelInputNumber(opts){
         opts = getObject(opts);
         opts.type = 'number';
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.email = function(opts){
+    panel.input.email = function panelInputEmail(opts){
         opts = getObject(opts);
         opts.type = 'text';
         //addClassName(opts, 'email');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.password = function(opts){
+    panel.input.password = function panelInputPassword(opts){
         opts = getObject(opts);
         opts.type = 'password';
         //addClassName(opts, 'password ');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.checkbox = function(opts){
+    panel.input.checkbox = function panelInputCheckbox(opts){
         opts = getObject(opts);
         opts.type = 'checkbox';
         //addClassName(opts, 'checkbox');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.upload = function(opts){
+    panel.input.upload = function panelInputUpload(opts){
         opts = getObject(opts);
         opts.id = (opts.id||randomID('upload-', false));
         opts.element = opts.element || opts.config || {};
@@ -201,10 +204,7 @@ var XNAT = getObject(XNAT || {});
             ['input', {
                 type: 'file',
                 id: opts.id + '-input',
-                multiple: true,
-                style: {
-                    width: '270px'
-                }
+                multiple: true
             }],
             ['button', {
                 type: 'button',
@@ -215,9 +215,9 @@ var XNAT = getObject(XNAT || {});
         return XNAT.ui.template.panelInput(opts, form).spawned;
     };
 
-    panel.input.group = function(obj){
-        var _inner = ['div.element-group'];
-        var _outer = XNAT.ui.template.panelElementGroup(obj, _inner);
+    panel.input.group = function panelInputGroup(obj){
+        var _inner = spawn('div.element-group');
+        var _outer = XNAT.ui.template.panelElementGroup(obj, [_inner]).spawned;
         return {
             target: _inner,
             element: _outer,
@@ -230,30 +230,44 @@ var XNAT = getObject(XNAT || {});
 
     panel.select = {};
 
-    panel.select.menu = function(){
-
-    };
-
-    panel.select.single = function(opts){
+    panel.select.menu = function panelSelectSingle(opts, multi){
+        
         var _menu;
+        
         opts = getObject(opts);
-        opts.config = opts.config || opts.element || {};
-        opts.config.name = opts.config.name || opts.name || '';
-        opts.config.id = opts.config.id || opts.id || toDashed(opts.config.name);
-
-        _menu = spawn('select', opts.config, [['option|value=!', 'Select']]);
+        opts.element = opts.element || opts.config || {};
+        opts.element.name = opts.element.name || opts.name || '';
+        opts.element.id = opts.element.id || opts.id || toDashed(opts.element.name);
+        if (multi) {
+            opts.element.multiple = true;
+        }
+        _menu = spawn('select', opts.element, [['option|value=!', 'Select']]);
 
         if (opts.options){
             forOwn(opts.options, function(name, prop){
                 _menu.appendChild(spawn('option', {
                     value: prop.value,
-                    selected: (prop.value === opts.value)
+                    selected: prop.selected || (prop.value === opts.value)
                 }, prop.label));
             });
         }
-
-        return XNAT.ui.template.panelInput({ label: opts.label, name: opts.name }, _menu).spawned;
+        return XNAT.ui.template.panelInput({
+            label: opts.label,
+            name: opts.name
+        }, _menu).spawned;
     };
+    panel.select.init = panel.select.menu;
+    panel.select.single = panel.select.menu;
+
+    panel.select.multi = function panelSelectMulti(opts){
+        return panel.select.menu(opts, true)
+    };
+    
+    panel.selectMenu = function panelSelectMenu(opts){
+        opts = getObject(opts);
+        return XNAT.ui.template.panelSelect(opts).spawned;
+    };
+    
 
     function footerButton(text, type, disabled, classes){
         var button = {

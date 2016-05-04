@@ -53,7 +53,8 @@
         'url',
         'checkbox',
         'radio',
-        'hidden'
+        'hidden',
+        'file'
     ];
 
     // use these as a shortcut to create <input> elements:
@@ -132,7 +133,7 @@
 
         if (tag === '!'){
             el = doc.createDocumentFragment();
-            appendChildren(el, opts, spawn);
+            appendChildren(el, opts||'', spawn);
             return el;
         }
 

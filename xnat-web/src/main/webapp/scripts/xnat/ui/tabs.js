@@ -122,11 +122,23 @@ var XNAT = getObject(XNAT || {});
         }, [
             ['a', {
                 title: obj.label,
-                //href: '#'+obj.config.id,
+                // href: '#'+obj.config.id,
                 href: '#!',
                 html: obj.label
             }]
         ]);
+
+        // setup the footer for the whole tab pane
+        function paneFooter(){
+            return spawn('footer.footer', [
+                ['button', {
+                    type: 'button',
+                    html: 'Save All',
+                    classes: 'save-all btn btn-primary pull-right'
+                }]
+            ]);
+        }
+
         _pane = spawn('div.tab-pane', obj.config);
 
         if (obj.active) {
@@ -140,6 +152,7 @@ var XNAT = getObject(XNAT || {});
 
         function render(element){
             $$(element).append(_pane);
+            $$(element).append(paneFooter());
             return _pane;
         }
 
@@ -167,7 +180,7 @@ var XNAT = getObject(XNAT || {});
         var spawned = spawn('div.tabs');
 
         // set up the group elements
-        tab.groups(obj.groups, '#admin-config-tabs > .xnat-nav-tabs');
+        tab.groups(obj.meta.tabGroups, '#admin-config-tabs > .xnat-nav-tabs');
 
         function render(element){
             $$(element).append(spawned);
@@ -199,17 +212,6 @@ var XNAT = getObject(XNAT || {});
         //     return frag;
         // }
         //
-        // // setup the footer for the whole tab pane
-        // function paneFooter(){
-        //     var footer = spawn('footer.footer', [
-        //         ['button', {
-        //             type: 'button',
-        //             html: 'Save All',
-        //             classes: 'save-all btn btn-primary pull-right'
-        //         }]
-        //     ]);
-        //     return footer;
-        // }
         //
         // return frag;
 

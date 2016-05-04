@@ -2227,13 +2227,6 @@ public final class PrearcDatabase {
                 return convertRStoList(rs);
             }
         }.run();
-
-//        return new SessionOp<ArrayList<ArrayList<Object>>>() {
-//            public ArrayList<ArrayList<Object>> op() throws SQLException, SessionException, Exception {
-//                ResultSet rs = this.pdb.executeQuery(null, DatabaseSession.findStudySql(patientName, patientID, studyDate), null);
-//                return convertRStoList(rs);
-//            }
-//        }.run();
     }
 
     private static ArrayList<ArrayList<Object>> convertRStoList(ResultSet rs) throws SQLException {

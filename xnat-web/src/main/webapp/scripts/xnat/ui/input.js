@@ -82,7 +82,7 @@ var XNAT = getObject(XNAT);
 
     otherTypes = [
         'password', 'date', 'checkbox',
-        'radio', 'button', 'hidden'
+        'radio', 'button', 'hidden', 'file'
     ];
     otherTypes.forEach(function(type){
         input[type] = function(config){

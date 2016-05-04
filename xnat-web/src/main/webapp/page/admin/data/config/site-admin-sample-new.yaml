@@ -2,15 +2,16 @@ root:
     kind: tabs
     name: siteAdmin
     label: Administer XNAT
-    groups:
-#        dashboard: Dashboard
-        xnatSetup: XNAT Setup
-        manageAccess: Manage Access
-        manageData: Manage Data
-        processing: Processing
-        projectCustomization: Project Customization
-        advanced: Advanced XNAT Settings
-        other: Other
+    meta:
+        tabGroups:
+            dashboard: Dashboard
+            xnatSetup: XNAT Setup
+            manageAccess: Manage Access
+            manageData: Manage Data
+            processing: Processing
+            projectCustomization: Project Customization
+            advanced: Advanced XNAT Settings
+            other: Other
     contains: tabs
     tabs:  # this property name is the same as 'contains', so it will be treated like 'contents'
         siteSetup:
@@ -49,12 +50,27 @@ root:
                                 html: Hello people.
                                 style:
                                     fontWeight: bold
+                manageThemes:
+                    kind: panel
+                    name: manageThemes
+                    label: Manage Themes
+                    footer: false
+                    contents:
+                        themeUpload:
+                            kind: panel.input.upload
+                            name: themeUpload
+                            # id: uplode-here
+                            method: PUT
+                            action: '/put/the/thing/in/the/stuff'
+                            label: Upload Theme File
+
+
 
         security:
             kind: tab
             name: security
             label: Security
-#            group: xnatSetup
+            group: xnatSetup
             contents:
                 generalSecuritySettings:
                     kind: panel.form
@@ -66,10 +82,9 @@ root:
                             name: securityChannel
                             label: Security Channel
                             value: https
-#                            contains: options
                             options:
                                 http:
-                                    label: http
+                                    # if there's no 'label' property, the value will be used for the label
                                     value: http
                                 https:
                                     label: https

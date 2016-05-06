@@ -27,6 +27,6 @@ public class XDATForgotLogin extends org.nrg.xdat.turbine.modules.actions.XDATFo
          	context.put("user", user);
          	action.doPerform(data, context);
         }
-	    
+
     }
 }

@@ -2211,6 +2211,24 @@ public final class PrearcDatabase {
         return PrearcDatabase.buildRows(projects.toArray(_proj));
     }
 
+    public static ArrayList<ArrayList<Object>> findMyStudy(final String patientName, final String patientID, final Date studyDate) throws Exception, SQLException, SessionException {
+        return new SessionOp<ArrayList<ArrayList<Object>>>() {
+            public ArrayList<ArrayList<Object>> op() throws Exception {
+                PreparedStatement statement = this.pdb.getPreparedStatement(null, DatabaseSession.findMyStudySql());//patientID, patientName, studyDate
+                statement.setString(1,patientID);
+                statement.setString(2,patientName);
+                if(studyDate!=null) {
+                    statement.setDate(3, new java.sql.Date(studyDate.getTime()));
+                }
+                else{
+                    statement.setDate(3, new java.sql.Date(0L));
+                }
+                ResultSet rs = statement.executeQuery();
+                return convertRStoList(rs);
+            }
+        }.run();
+    }
+
     private static ArrayList<ArrayList<Object>> convertRStoList(ResultSet rs) throws SQLException {
         ArrayList<ArrayList<Object>> ao = new ArrayList<ArrayList<Object>>();
         while (rs.next()) {

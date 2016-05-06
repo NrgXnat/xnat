@@ -29,10 +29,11 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.InvalidPermissionException;
 import org.nrg.xft.security.UserI;
-
+import org.nrg.xdat.entities.XdatUserAuth;
+import org.nrg.xdat.services.XdatUserAuthService;
 import java.util.List;
 import java.util.Map;
-
+import org.apache.commons.lang.StringUtils;
 @SuppressWarnings("unused")
 public class ModifyUserGroups extends SecureAction {
 
@@ -54,6 +55,18 @@ public class ModifyUserGroups extends SecureAction {
                 for (UserGroupI uGroup : oldGroups.values()) {
                     if (!Groups.isMember(newUser, uGroup.getId())) {
                         Groups.removeUserFromGroup(oldUser, uGroup.getId(), ci);
+                    }
+                }
+
+                if (newUser.isEnabled() && !oldUser.isEnabled()) {
+                    //Enable the UserAuth as well
+                    List<XdatUserAuth> auths = XDAT.getXdatUserAuthService().getAllWithDisabled();
+                    for(XdatUserAuth auth : auths){
+                        if(StringUtils.equals(newUser.getUsername(),auth.getXdatUsername()) && StringUtils.equals(auth.getAuthMethod(),XdatUserAuthService.LOCALDB)){
+                            auth.setEnabled(true);
+                            auth.setPasswordUpdated(new java.util.Date());
+                            XDAT.getXdatUserAuthService().update(auth);
+                        }
                     }
                 }
 

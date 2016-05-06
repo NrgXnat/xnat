@@ -59,4 +59,6 @@ public interface UserAuthI {
 
 	boolean isEnabled();
 
+	void setEnabled(boolean enabled);
+
 }

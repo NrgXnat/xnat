@@ -103,7 +103,7 @@ var XNAT = getObject(XNAT || {});
     // CREATE A SINGLE TAB
     tab.init = function _tab(obj){
 
-        var _flipper, _pane;
+        var $group, _flipper, _pane;
 
         obj = getObject(obj);
         obj.config = getObject(obj.config);
@@ -145,8 +145,14 @@ var XNAT = getObject(XNAT || {});
             tab.active = _pane.id;
         }
 
+        // un-hide the group that this tab is in
+        // (groups are hidden until there is a tab for them)
+        $group = $('#' + (toDashed(obj.group || 'other')) + '.tab-group');
+        
+        $group.show();
+        
         // add all the flippers
-        $('#' + (toDashed(obj.group || 'other')) + '.tab-group').append(_flipper);
+        $group.append(_flipper);
 
         function render(element){
             $$(element).append(_pane);

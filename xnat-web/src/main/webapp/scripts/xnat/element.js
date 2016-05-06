@@ -152,7 +152,7 @@ var XNAT = getObject(XNAT||{});
         return new Element(tag, opts, content);
     };
     //////////////////////////////////////////////////////////////////////
-
+    
     // copy value from 'target' to 'source'
     element.copyValue = function(target, source){
         var sourceValue = $$(source).val();

@@ -45,7 +45,7 @@
 /* (if we ever need right-side tabs, new style rules will be needed ) */
 
 /* TAB GROUPS */
-.xnat-nav-tabs.side .tab-group { margin-top: 20px; padding: 0; list-style-type: none; }
+.xnat-nav-tabs.side .tab-group { display: none; margin-top: 20px; padding: 0; list-style-type: none; }
 .xnat-nav-tabs.side .tab-group li.label {
     padding: 10px 2px; border: none;  text-align: left;
     font-size: 13px; font-weight: bold; color: #000; }

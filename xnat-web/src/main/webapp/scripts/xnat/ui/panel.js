@@ -120,7 +120,8 @@ var XNAT = getObject(XNAT || {});
     };
 
     // create a single generic panel element
-    panel.element = function panelElement(opts){
+    panel.element = function(opts){
+
         var _element, _inner = [], _target;
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
@@ -131,7 +132,7 @@ var XNAT = getObject(XNAT || {});
         addDataObjects(opts.element, { name: opts.name||'' });
         opts.label = opts.label||opts.title||opts.name||'';
 
-        _inner.push(['label.element-label', opts.label]);
+        _inner.push(['div.element-label', opts.label]);
 
         // 'contents' will be inserted into the 'target' element
         _target = spawn('div.element-wrapper');
@@ -161,6 +162,42 @@ var XNAT = getObject(XNAT || {});
         opts = getObject(opts);
         opts.html = opts.html || opts.text || opts.label;
         return XNAT.ui.template.panelSubhead(opts).spawned;    
+    };
+    
+    // return a generic panel 'section'
+    panel.section = function(opts){
+
+        var _section, _inner = [], _body;
+
+        opts = getObject(opts);
+        opts.element = opts.element || opts.config || {};
+        opts.header = opts.header || opts.label || opts.title || '';
+        
+        if (opts.header) {
+            _inner.push(['header.section-header', opts.header]);
+        }
+        
+        // this needs to be spawned here to act as
+        // the target for this elements 'contents'
+        _body = spawn('div.section-body');
+        
+        _inner.push(_body);
+        
+        if (opts.footer) {
+            _inner.push(['footer.section-footer'], opts.footer);    
+        }
+        
+        _section = spawn('div.panel-section', opts.element, _inner);
+        
+        return {
+            target: _body,
+            element: _section,
+            spawned: _section,
+            get: function(){
+                return _section;
+            }
+        }
+
     };
 
     panel.input = {};

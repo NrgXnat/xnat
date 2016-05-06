@@ -201,6 +201,7 @@
     <script src="${_siteRoot}/scripts/xnat/event.js"></script>
     <script src="${_siteRoot}/scripts/xnat/element.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/input.js"></script>
+    <script src="${_siteRoot}/scripts/xnat/ui/select.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/table.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/panel.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/tabs.js"></script>

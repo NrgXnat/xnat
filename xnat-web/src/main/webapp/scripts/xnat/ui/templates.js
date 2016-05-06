@@ -30,7 +30,16 @@ var XNAT = getObject(XNAT);
         return el.className;
     }
 
-    
+    // add new data object item to be used for [data-] attribute(s)
+    function addDataObjects(obj, attrs){
+        obj.data = obj.data || {};
+        forOwn(attrs, function(name, prop){
+            obj.data[name] = prop;
+        });
+        return obj.data;
+    }
+
+
     // ========================================
     // subhead element to segment panels
     template.panelSubhead = function(opts){
@@ -97,7 +106,16 @@ var XNAT = getObject(XNAT);
             title: opts.title||opts.name||opts.id,
             value: opts.value||''
         }, opts.element);
+
+        opts.data = opts.data || {};
+        opts.data.value = opts.data.value || opts.value;
+
+        addDataObjects(opts.element, opts.data||{});
+
+        // use an existing element (passed as the second argument)
+        // or spawn a new one
         element = element || spawn('input', opts.element);
+
         if (/checkbox|radio/i.test(opts.type||'') && opts.checked) {
             element.checked = true;
         }

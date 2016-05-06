@@ -348,12 +348,28 @@
             }
         }
 
+        var frag = document.createDocumentFragment();
+
+        if (opts.after){
+            frag.appendChild(el);
+            appendChildren(frag, opts.after, spawn);
+            el = frag;
+        }
+        
+        if (opts.before){
+            appendChildren(frag, opts.before, spawn);
+            frag.appendChild(el);
+            el = frag;
+        }
+
         if (errors.length){
             if (hasConsole) console.log(errors);
         }
 
         // alias for convenience
         el.html = el.outerHTML;
+
+        el.element = el;
 
         el.get = function(){
             return el;

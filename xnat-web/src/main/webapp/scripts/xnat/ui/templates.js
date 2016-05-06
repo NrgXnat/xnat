@@ -30,10 +30,33 @@ var XNAT = getObject(XNAT);
         return el.className;
     }
 
+    
+    // ========================================
+    // subhead element to segment panels
+    template.panelSubhead = function(opts){
+        var _templ, _spawn, _html;
+        opts = getObject(opts);
+        _templ = ['h4.panel-subhead', opts];
+        _spawn = function(){
+            return spawn.apply(null, _templ);
+        };
+        _html = _spawn().outerHTML;
+        return {
+            template: _templ,
+            spawned: _spawn(),
+            spawn: _spawn,
+            html: _html,
+            get: _spawn
+        }
+    };
+    // ========================================
+
+    
     // ========================================
     // generic panel element
     template.panelElement = function(opts, content){
         var _templ, _spawn, _html;
+        opts = getObject(opts);
         addClassName(opts, 'panel-element');
         _templ = [
             'div|data-name='+(opts.name||''),
@@ -51,7 +74,7 @@ var XNAT = getObject(XNAT);
             html: _html, // pre-spawned HTML
             get: _spawn,
             getHTML: function(){ // call to get fresh HTML
-                return spawn(_templ).outerHTML;
+                return _spawn().outerHTML;
             }
         }
     };
@@ -65,15 +88,19 @@ var XNAT = getObject(XNAT);
         opts.name = opts.name || opts.id || randomID('input-', false);
         opts.id = opts.id||toDashed(opts.name||'');
         opts.label = opts.label||opts.title||opts.name||'';
-        element = element || spawn('input', {
-                type: opts.type||'text',
-                id: opts.id,
-                name: opts.name,
-                className: opts.className||'',
-                size: 25,
-                title: opts.title||opts.name||opts.id,
-                value: opts.value||''
-            });
+        opts.element = extend({
+            type: opts.type||'text',
+            id: opts.id,
+            name: opts.name,
+            className: opts.className||'',
+            size: 25,
+            title: opts.title||opts.name||opts.id,
+            value: opts.value||''
+        }, opts.element);
+        element = element || spawn('input', opts.element);
+        if (/checkbox|radio/i.test(opts.type||'') && opts.checked) {
+            element.checked = true;
+        }
         return template.panelElement(opts, [
             ['label.element-label|for='+element.id||opts.id, opts.label],
             ['div.element-wrapper', [
@@ -91,22 +118,23 @@ var XNAT = getObject(XNAT);
         opts = getObject(opts);
         opts.name = opts.name || opts.id || randomID('select-', false);
         opts.id = opts.id || toDashed(opts.name||'');
-        
-        var _select = spawn('select', {
+        opts.element = extend({
             id: opts.id,
             name: opts.name,
             className: opts.className||'',
             //size: 25,
             title: opts.title||opts.name||opts.id||'',
             value: opts.value||''
-        }, [['option|value=!', 'Select']]);
+        }, opts.element);
+
+        var _select = spawn('select', opts.element, [['option|value=!', 'Select']]);
         
         // add the options
         $.each(opts.options||{}, function(name, prop){
-            var _option = spawn('option', {
-                html: prop.html || prop.label || prop.text || prop.value,
-                value: prop.value
-            });
+            var _option = spawn('option', extend(true, {
+                html: prop.label || prop.value || name,
+                value: prop.value || name
+            }, prop.element));
             // select the option if it's the select element's value
             if (prop.value === opts.value){
                 _option.selected = true;
@@ -114,13 +142,6 @@ var XNAT = getObject(XNAT);
             _select.appendChild(_option)    
         });
         return template.panelInput(opts, _select);
-        // return template.panelElement(opts, [
-        //     ['label.element-label|for='+opts.id, opts.label||opts.title||opts.name],
-        //     ['div.element-wrapper', [
-        //         _select,
-        //         ['div.description', opts.description||opts.body||opts.html]
-        //     ]]
-        // ]);
     };
     // ========================================
 

@@ -7,13 +7,7 @@
 <pg:wrapper>
     <pg:xnat>
 
-        <c:set var="view" value="${param.view}"/>
-
-        <c:if test="${empty view}">
-            <c:set var="view" value="content"/>
-        </c:if>
-
-        <jsp:include page="${view}.jsp"/>
+        <jsp:include page="${not empty param.view ? param.view : 'content'}.jsp"/>
 
     </pg:xnat>
 </pg:wrapper>

@@ -100,17 +100,21 @@ var XNAT = getObject(XNAT);
     });
 
     // create a single <td> element
-    Table.p.td = function(opts, content){
-        var td = element('td', opts || {}, content);
+    // just using a single argument
+    // if you want to modify the <td>
+    // you'll need to pass a config
+    // object to set the properties
+    // and use append or innerHTML
+    // to add the cell content
+    Table.p.td = function(content){
+        var td = element('td', content);
         this.last.tr.appendChild(td);
-        //this.setLast(td);
         return this;
     };
 
-    Table.p.th = function(opts, content){
-        var th = element('th', opts || {}, content);
+    Table.p.th = function(content){
+        var th = element('th', content);
         this.last.tr.appendChild(th);
-        //this.setLast(th);
         return this;
     };
 

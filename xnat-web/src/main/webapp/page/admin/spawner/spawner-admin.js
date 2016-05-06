@@ -91,19 +91,28 @@ XNAT.xhr.getJSON({
                         }
                         var elementUrl = XNAT.url.rootUrl('/xapi/spawner/element/' + NS + '/' + getId);
                         $.get(elementUrl, function(data){
-                            var $textarea = $.spawn('textarea.mono|name='+getId);
-                            $textarea.text(data.yaml);
-                            var _table = XNAT.table().init([
-                                ['Namespace: ', data.namespace],
-                                ['Element ID: ', data.elementId],
-                                ['Label: ', data.label],
-                                ['Created: ', new Date(data.created).toString()],
-                                ['Modified: ', new Date(data.timestamp).toString()]
+                            var _textarea = spawn('textarea.mono', {
+                                name: getId,
+                                html: data.yaml,
+                                style: { width: '500px', height: '250px' }
+                            });
+                            _textarea.innerHTML = (data.yaml);
+                            var _table = XNAT.table({className: 'xnat-table borderless'}).init([
+                                ['<b class="label">Namespace:</b> ', data.namespace],
+                                ['<b class="label">Element ID:</b> ', data.elementId],
+                                [ [['b.label', 'Label: ']], data.label ],
+                                //['<b class="label">Label:</b> ', data.label],
+                                [ [['b.label', 'Created: ']], new Date(data.created).toString() ],
+                                // ['<b class="label">Created:</b> ', new Date(data.created).toString()],
+                                ['<b class="label">Modified:</b> ', new Date(data.timestamp).toString()]
                             ]);
                             // anothe way to add a row of data
-                            _table.tr().td('YAML: ').td($textarea[0]);
+                            _table.tr().td([['b.label', 'YAML: ']]).td([_textarea]);
+                            //_table.tr().td('<b>YAML:</b> ').td([_textarea]);
                             xmodal.open({
-                                size: 'med',
+                                //size: 'med',
+                                width: 700,
+                                height: 550,
                                 maximize: true,
                                 title: 'Element ID: ' + getId,
                                 content: _table.get().outerHTML,
@@ -113,14 +122,17 @@ XNAT.xhr.getJSON({
                                 okLabel: 'Save Changes',
                                 okAction: function(){
                                     XNAT.xhr.put({
-                                        url: XNAT.url.csrfUrl(elementUrl),
+                                        // url: XNAT.url.csrfUrl(elementUrl),
+                                        url: (elementUrl),
                                         data: {
-                                            namespace: data.namespace,
-                                            elementId: data.elementId,
-                                            yaml: $textarea.val()
+                                            // namespace: data.namespace,
+                                            // elementId: data.elementId,
+                                            yaml: _textarea.value
                                         },
-                                        dataType: 'json',
-                                        //processData: false,
+                                        //dataType: 'text/x-yaml',
+                                        //contentType: 'application/json',
+                                        contentType: 'text/x-yaml',
+                                        processData:  false,
                                         success: function(){
                                             xmodal.message('Data saved.')
                                         },

@@ -156,6 +156,12 @@ var XNAT = getObject(XNAT || {});
         }
 
     };
+    
+    panel.subhead = function(opts){
+        opts = getObject(opts);
+        opts.html = opts.html || opts.text || opts.label;
+        return XNAT.ui.template.panelSubhead(opts).spawned;    
+    };
 
     panel.input = {};
 

@@ -441,7 +441,7 @@
 
         // add attributes and properties to element
         forOwn(opts, function(prop, val){
-            if (/^(tag|html|classes|addClass|append|appendChild|attr|data|fn|$)$/.test(prop)) return;
+            if (/^(tag|html|classes|addClass|attr|append|appendChild|data|fn|$)$/.test(prop)) return;
             el[prop] = val;
         });
 
@@ -466,10 +466,10 @@
 
         // special handling of 'append' and 'appendChild'
         if (opts.appendChild){
-            el.appendChild(opts.appendChild)
+            appendChildren(el, opts.appendChild, spawnElement);
         }
         if (opts.append){
-            el.appendChild(opts.append)
+            appendChildren(el, opts.append, spawnElement);
         }
 
         // call any element methods

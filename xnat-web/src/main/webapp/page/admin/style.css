@@ -4,9 +4,6 @@
 
 #page_wrapper { overflow: auto; }
 
-.pull-right { float: right; box-sizing: border-box; }
-.pull-left  { float: left;  box-sizing: border-box; }
-
 .xnat-nav-tabs { position: relative; z-index: 1; }
 .xnat-nav-tabs li {
     float: left; margin-right: -1px; margin-bottom: -1px;
@@ -90,6 +87,12 @@ body.xnat .panel-title { font-weight: normal; }
 .panel .panel-element span.before { right: 10px; }
 .panel .panel-element span.after { margin-left: 10px; }
 .panel .panel-element label.small { font-weight: normal; }
+
+.panel .panel-subhead {
+    padding: 2px; margin: 10px;
+    font-size: 13px;
+    border-bottom: 1px solid #e0e0e0;
+}
 
 /* ELEMENT GROUP ITEMS */
 .panel .panel-element-group .group-item .element-label { width: auto; }

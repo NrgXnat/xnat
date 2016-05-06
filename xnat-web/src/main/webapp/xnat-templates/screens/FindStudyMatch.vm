@@ -1,0 +1,39 @@
+$page.setTitle("Find Study")
+$page.setLinkColor($ui.alink)
+$page.setVlinkColor($ui.vlink)
+## used to create Change Project modal dialog
+<div id='move_project_dialog' style='visibility:hidden'>
+    <div class='hd'>Change project</div>
+    <div class='bd' style=''>
+        <div id='move_projec_desc'>Select the project to move this session to.</div>
+        <div id='move_projec_div'>
+            <select id="proj_move_select"></select>
+        </div>
+    </div>
+    <input type="hidden" name="oldProjString" id="oldProjString" value=""/>
+    <input type="hidden" name="timestampString" id="timestampString" value=""/>
+    <input type="hidden" name="folderString" id="folderString" value=""/>
+</div>
+
+<script type="text/javascript" src="$content.getURI("scripts/prearchive/PrearchiveFound_actions.js")"></script>
+
+<h2>Matching Unassigned Studies</h2>
+$resultsSize matching studies were found:
+<br><br>
+#foreach( $result in $results )
+    <h3>Study $velocityCount</h3>
+    <table clsss="">
+            <tr><th align="left">$displayManager.getSingularDisplayNameForProject():</th><td>$!result[0]</td></tr>
+            <tr><th align="left">Session:</th><td>$!result[7]</td></tr>
+            <tr><th align="left">$displayManager.getSingularDisplayNameForSubject():</th><td>$!result[6]</td></tr>
+            <tr><th align="left">Patient ID:</th><td>$!result[8]</td></tr>
+            <tr><th align="left">Study Date:</th><td>$!result[4]</td></tr>
+            <tr><th align="left">Upload Date:</th><td>$!result[3]</td></tr>
+            <tr><th align="left"></th><td><button onclick='XNAT.app.prearchiveActions.requestMoveDialog("$result[0]", "$result[3]", "$result[7]")'>Change Project</button></td></tr>
+    </table>
+<br>
+#end
+<form action="$link.setPage("XDATScreen_prearchives.vm")">
+    <input type="submit" value="Return to Prearchive">
+</form>
+

@@ -21,12 +21,27 @@ var XNAT = getObject(XNAT);
     else {
         return factory(XNAT, jQuery);
     }
-    
+
 }(function(XNAT, $){
 
     var table,
         element = spawn.element,
         undefined;
+
+    // add new element class without destroying existing class
+    function addClassName(el, newClass){
+        el.className = [].concat(el.className||[], newClass).join(' ').trim();
+        return el.className;
+    }
+
+    // add new data object item to be used for [data-] attribute(s)
+    function addDataObjects(obj, attrs){
+        obj.data = obj.data || {};
+        forOwn(attrs, function(name, prop){
+            obj.data[name] = prop;
+        });
+        return obj.data;
+    }
 
     /**
      * Constructor function for XNAT.table()
@@ -61,10 +76,6 @@ var XNAT = getObject(XNAT);
         this._rows = [];
         this.cols = this.columns = [];
 
-        // try to init?
-        if (config && config.data) {
-            this.init(config.data);
-        }
     }
 
 
@@ -89,21 +100,21 @@ var XNAT = getObject(XNAT);
     });
 
     // create a single <td> element
-    Table.p.td = function(content, opts){
-        var td = element('td', opts || content, content);
+    Table.p.td = function(opts, content){
+        var td = element('td', opts || {}, content);
         this.last.tr.appendChild(td);
         //this.setLast(td);
         return this;
     };
 
-    Table.p.th = function(content, opts){
-        var th = element('th', opts || content, content);
+    Table.p.th = function(opts, content){
+        var th = element('th', opts || {}, content);
         this.last.tr.appendChild(th);
         //this.setLast(th);
         return this;
     };
 
-    Table.p.tr = function(data, opts){
+    Table.p.tr = function(opts, data){
         var tr = element('tr', opts);
         //data = data || this.data || null;
         if (data) {
@@ -223,6 +234,10 @@ var XNAT = getObject(XNAT);
         return $(this.table);
     };
 
+    Table.p.getHTML = function(){
+        return this.table.outerHTML;
+    };
+
     /**
      * Populate table with data
      * @param data {Array} array of row arrays
@@ -295,9 +310,14 @@ var XNAT = getObject(XNAT);
 
     };
 
-    Table.p.render = function(element){
+    Table.p.render = function(element, empty){
+        var $element;
         if (element) {
-            $$(element).empty().append(this.table);
+            $element = $$(element);
+            if (empty){
+                $element.empty();
+            }
+            $element.append(this.table);
         }
         return this.table;
     };
@@ -306,22 +326,34 @@ var XNAT = getObject(XNAT);
         return this.table.outerHTML;
     };
 
-    table = function(data, opts){
-        if (!opts) {
-            opts = data;
-            data = [];
-        }
-        return new Table(data, opts);
+    // 'opts' are options for the <table> element
+    // 'config' is for other configurable stuff
+    table = function(opts, config){
+        return new Table(opts, config);
     };
 
     // helper for future XNAT DataTable widget
     table.dataTable = function(data, opts){
-
+        var tableData = data;
+        // tolerate reversed arguments
+        if (Array.isArray(opts)){
+            tableData = opts;
+            opts = data;
+        }
+        addClassName(opts, 'data-table');
+        var newTable = new Table(opts);
+        return newTable.init(tableData);
     };
 
     // table with <input> elements in the cells
     table.inputTable = function(data, opts){
-        data = data.map(function(row){
+        var tableData = data;
+        // tolerate reversed arguments
+        if (Array.isArray(opts)){
+            tableData = opts;
+            opts = data;
+        }
+        tableData = tableData.map(function(row){
             return row.map(function(cell){
                 if (/string|number/.test(typeof cell)) {
                     return cell + ''
@@ -340,9 +372,9 @@ var XNAT = getObject(XNAT);
             });
         });
         opts = getObject(opts);
-        opts.className = 'input-table';
-        var table = new Table(opts);
-        return table.init(data);
+        addClassName(opts, 'input-table');
+        var newTable = new Table(opts);
+        return newTable.init(tableData);
     };
 
     XNAT.ui = getObject(XNAT.ui||{});

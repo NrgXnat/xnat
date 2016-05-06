@@ -1,59 +1,55 @@
-<%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
-<%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
-<%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
-<%--<%@ taglib prefix="sp" tagdir="/WEB-INF/tags/spawner" %>--%>
+    <%@ page session="true" contentType="text/html" pageEncoding="UTF-8" language="java" %>
+        <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
+        <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
+        <%--<%@ taglib prefix="sp" tagdir="/WEB-INF/tags/spawner" %>--%>
 
-<c:if test="${empty hasInit}">
-    <pg:init>
-        <c:if test="${empty hasVars}">
-            <pg:jsvars/>
+        <c:if test="${empty hasInit}">
+            <pg:init>
+                <c:if test="${empty hasVars}">
+                    <pg:jsvars/>
+                </c:if>
+            </pg:init>
         </c:if>
-    </pg:init>
-</c:if>
 
-<c:set var="_msg">
-    No spawning allowed.
-</c:set>
+        <c:set var="MSG">
+            No spawning allowed.
+        </c:set>
 
-<pg:restricted msg="${_msg}">
+        <pg:restricted msg="${MSG}">
 
-    <c:set var="_siteRoot" value="${sessionScope.siteRoot}"/>
+            <c:set var="_siteRoot" value="${sessionScope.siteRoot}"/>
 
-    <%--<c:import url="/xapi/spawner/resolve/siteAdmin/siteAdmin" var="siteAdmin"/>--%>
+            <div class="panel panel-default">
 
-    <%--<button type="button" id="view-json">View JSON</button>--%>
-    <%--<div class="hidden">${siteAdmin}</div>--%>
+            <div class="panel-heading">
+            <h3 class="panel-title">XNAT Spawner Elements</h3>
+            </div>
 
-    <!-- button element will be rendered in this span -->
-    <span id="view-json"></span>
+            <div class="panel-body">
 
-    <script>
-        (function(){
+            <div data-name="spawnerElements" class="panel-element">
 
-            function showJSON(json){
-                return xmodal.message({
-                    title: 'Site Admin JSON',
-                    maximize: true,
-                    width: '90%',
-                    height: '90%',
-                    content: spawn('pre.json', JSON.stringify(json, null, 2)).outerHTML
-                })
-            }
+            <%--<label class="element-label" for="!?"></label>--%>
+            <%--<div class="element-wrapper">--%>
 
-            spawn('button|type=button', {
-                html: 'View JSON',
-                onclick: function(){
-                    XNAT.xhr.get('${siteRoot}/xapi/spawner/resolve/siteAdmin/siteAdmin', function(data){
-                        showJSON(data);
-                    });
-                },
-                $: {
-                    appendTo: '#view-json'
-                }
-            });
+            <table id="spawner-element-list" class="xnat-table alt1 clean" style="width:100%">
+            <!-- list of available namespaces will show here -->
+            </table>
 
-            //$('#view-json').click(function(){});
+            <div class="description" style="margin:20px 5px 0">View and manage XNAT Spawner elements.</div>
 
-        })();
-    </script>
-</pg:restricted>
+            <%--</div>--%>
+
+            </div>
+            </div>
+
+            <div class="hidden"></div>
+
+            </div>
+
+            <!-- button element will be rendered in this span -->
+            <span id="view-json"></span>
+
+            <script src="${_siteRoot}/page/admin/spawner/spawner-admin.js"></script>
+
+        </pg:restricted>

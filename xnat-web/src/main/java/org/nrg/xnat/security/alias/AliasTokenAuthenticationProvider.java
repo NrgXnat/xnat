@@ -11,13 +11,16 @@
 package org.nrg.xnat.security.alias;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.services.ContextService;
 import org.nrg.xdat.entities.AliasToken;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.services.XdatUserAuthService;
+import org.nrg.xdat.services.impl.hibernate.HibernateAliasTokenService;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.security.provider.XnatAuthenticationProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.beans.factory.annotation.Qualifier;
 import org.springframework.context.annotation.Lazy;
 import org.springframework.security.authentication.AuthenticationServiceException;
 import org.springframework.security.authentication.BadCredentialsException;
@@ -27,8 +30,6 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
-
-import javax.inject.Inject;
 
 public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthenticationProvider implements XnatAuthenticationProvider {
 
@@ -47,7 +48,7 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
     @Override
     public Authentication authenticate(final Authentication authentication) throws AuthenticationException {
         final String alias = (String) authentication.getPrincipal();
-        final AliasToken token = _aliasTokenService.locateToken(alias);
+        final AliasToken token = getAliasTokenService().locateToken(alias);
         if (token == null) {
             throw new BadCredentialsException("No valid alias token found for alias: " + alias);
         }
@@ -131,7 +132,7 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
 
         String alias = ((AliasTokenAuthenticationToken) authentication).getAlias();
         long secret = ((AliasTokenAuthenticationToken) authentication).getSecret();
-        String userId = _aliasTokenService.validateToken(alias, secret);
+        String userId = getAliasTokenService().validateToken(alias, secret);
         if (StringUtils.isBlank(userId) || !userId.equals(userDetails.getUsername())) {
             throw new BadCredentialsException("The submitted alias token was invalid: " + alias);
         }
@@ -166,7 +167,7 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
      */
     @Override
     protected UserDetails retrieveUser(final String username, final UsernamePasswordAuthenticationToken authentication) throws AuthenticationException {
-        AliasToken token = _aliasTokenService.locateToken(username);
+        AliasToken token = getAliasTokenService().locateToken(username);
         if (token == null) {
             throw new UsernameNotFoundException("Unable to locate token with alias: " + username);
         }
@@ -175,15 +176,30 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
          * The hack is to return the user details for the most recent successful login of the user, as that is likely the provider that was used.
          * Not perfect, but better than just hard-coding to localdb provider (cause then it won't work for a token created by an LDAP-authenticated user).
          */
-        return _userAuthService.getUserDetailsByUsernameAndMostRecentSuccessfulLogin(token.getXdatUserId());
+        return getUserAuthService().getUserDetailsByUsernameAndMostRecentSuccessfulLogin(token.getXdatUserId());
+    }
+
+    private XdatUserAuthService getUserAuthService() {
+        if (_userAuthService == null) {
+            _userAuthService = _contextService.getBean(XdatUserAuthService.class);
+        }
+        return _userAuthService;
+    }
+
+    private AliasTokenService getAliasTokenService() {
+        if (_aliasTokenService == null) {
+            _aliasTokenService = _contextService.getBean(HibernateAliasTokenService.class);
+        }
+        return _aliasTokenService;
     }
 
     @Autowired
+    @Qualifier("rootContextService")
     @Lazy
+    private ContextService _contextService;
+
     private AliasTokenService _aliasTokenService;
 
-    @Autowired
-    @Lazy
     private XdatUserAuthService _userAuthService;
 
     private String _name;

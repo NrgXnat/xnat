@@ -36,7 +36,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.security.core.session.SessionInformation;
 import org.springframework.security.core.session.SessionRegistry;
 import org.springframework.security.core.session.SessionRegistryImpl;
-
+import org.nrg.xdat.security.helpers.UserHelper;
 import javax.servlet.ServletResponse;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
@@ -72,67 +72,70 @@ public abstract class SecureScreen extends VelocitySecureScreen {
     }
     
     public static void loadAdditionalVariables(RunData data, Context c){
-    	if (TurbineUtils.GetPassedParameter("popup",data) !=null){
-            if(((String)TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
-                c.put("popup","true");
-            }else{
-                c.put("popup","false");
-            }
-        }else{
-            c.put("popup","false");
-        }
+                        if (TurbineUtils.GetPassedParameter("popup",data) !=null){
+                            if(((String)TurbineUtils.GetPassedParameter("popup",data)).equalsIgnoreCase("true")){
+                                c.put("popup","true");
+                            }else{
+                                c.put("popup","false");
+                            }
+                        }else{
+                            c.put("popup","false");
+                        }
 
-        c.put("user", XDAT.getUserDetails());
-        c.put("turbineUtils",TurbineUtils.GetInstance());
-    	c.put("displayManager", DisplayManager.GetInstance());
-        c.put("systemName",TurbineUtils.GetSystemName());
-        c.put("esc", new EscapeTool());
+                        c.put("user", XDAT.getUserDetails());
+                        c.put("turbineUtils",TurbineUtils.GetInstance());
+                        c.put("displayManager", DisplayManager.GetInstance());
+                        c.put("systemName",TurbineUtils.GetSystemName());
+                        c.put("esc", new EscapeTool());
 
-        c.put("showReason", XFT.getShowChangeJustification());
-        c.put("requireReason", XFT.getRequireChangeJustification());
-        
-        try{
-        	c.put("siteConfig", XDAT.getSiteConfiguration());
-        }catch(ConfigServiceException ignored){
-        	
-        }
-    }
+                        c.put("showReason", XFT.getShowChangeJustification());
+                        c.put("requireReason", XFT.getRequireChangeJustification());
 
-	/**
-     * This method overrides the method in {@link VelocitySecureScreen#doBuildTemplate(RunData)} to perform a security
-     * check first and store the popup status in the context.
-     *
-     * @param data Turbine information.
-     * @throws Exception When something goes wrong.
-     */
-	protected void doBuildTemplate(RunData data) throws Exception {
-	    try {
-	    	attemptToPreventBrowserCachingOfHTML(data.getResponse());
-            Context c = TurbineVelocity.getContext(data);
-            loadAdditionalVariables(data, c);
+                        try{
+                            c.put("siteConfig", XDAT.getSiteConfiguration());
+                        }catch(ConfigServiceException ignored){
 
-            ThemeConfig themeConfig = themeService.getTheme();
-            if(themeConfig != null) {
-                c.put("theme", themeConfig.getName());
-                String themedStyle = themeService.getThemePage("theme", "style");
-                if (themedStyle != null) {
-                    c.put("themedStyle", themedStyle);
-                }
-                String themedScript = themeService.getThemePage("theme", "script");
-                if (themedScript != null) {
-                    c.put("themedScript", themedScript);
-                }
-            }
+                        }
+                    }
 
-            c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
-            preserveVariables(data,c);
-            
-            if (isAuthorized(data)) {
-                SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
-                
-                if(sessionRegistry != null){
-                    List<String> uniqueIPs = new ArrayList<>();
-                    List<String> sessionIds = new ArrayList<>();
+                    /**
+                     * This method overrides the method in {@link VelocitySecureScreen#doBuildTemplate(RunData)} to perform a security
+                     * check first and store the popup status in the context.
+                     *
+                     * @param data Turbine information.
+                     * @throws Exception When something goes wrong.
+                     */
+                protected void doBuildTemplate(RunData data) throws Exception {
+                    try {
+                        attemptToPreventBrowserCachingOfHTML(data.getResponse());
+                        Context c = TurbineVelocity.getContext(data);
+                        loadAdditionalVariables(data, c);
+                        if(data.getSession().getAttribute("userHelper")==null && !XFT.GetRequireLogin()) {
+                            data.getSession().setAttribute("userHelper", UserHelper.getUserHelperService(Users.getGuest()));
+                        }
+
+                        ThemeConfig themeConfig = themeService.getTheme();
+                        if(themeConfig != null) {
+                            c.put("theme", themeConfig.getName());
+                            String themedStyle = themeService.getThemePage("theme", "style");
+                            if (themedStyle != null) {
+                                c.put("themedStyle", themedStyle);
+                            }
+                            String themedScript = themeService.getThemePage("theme", "script");
+                            if (themedScript != null) {
+                                c.put("themedScript", themedScript);
+                            }
+                        }
+
+                        c.put("XNAT_CSRF", data.getSession().getAttribute("XNAT_CSRF"));
+                        preserveVariables(data,c);
+
+                        if (isAuthorized(data)) {
+                            SessionRegistry sessionRegistry = XDAT.getContextService().getBean("sessionRegistry", SessionRegistryImpl.class);
+
+                            if(sessionRegistry != null){
+                                List<String> uniqueIPs = new ArrayList<>();
+                                List<String> sessionIds = new ArrayList<>();
                     for (SessionInformation session : sessionRegistry.getAllSessions(TurbineUtils.getUser(data), false)) {
                         sessionIds.add(session.getSessionId());
                     }

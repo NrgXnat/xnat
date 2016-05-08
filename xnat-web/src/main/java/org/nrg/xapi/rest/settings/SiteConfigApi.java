@@ -18,9 +18,9 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Properties;
 
 @Api(description = "XNAT Site Configuration Management API")
 @XapiRestController
@@ -40,10 +40,10 @@ public class SiteConfigApi extends AbstractXnatRestApi {
         return new ResponseEntity<>(_preferences, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Returns a map of the selected site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = Properties.class)
+    @ApiOperation(value = "Returns a map of the selected site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "values/{preferences}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<Properties> getSpecifiedSiteConfigProperties(@PathVariable final List<String> preferences) {
+    public ResponseEntity<Map<String, Object>> getSpecifiedSiteConfigProperties(@PathVariable final List<String> preferences) {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
@@ -53,9 +53,9 @@ public class SiteConfigApi extends AbstractXnatRestApi {
             _log.debug("User " + getSessionUser().getUsername() + " requested the site configuration preferences " + Joiner.on(", ").join(preferences));
         }
 
-        final Properties values = new Properties();
+        final Map<String, Object> values = new HashMap<>();
         for (final String preference : preferences) {
-            final String value = _preferences.getValue(preference);
+            final Object value = _preferences.getValueByReference(preference);
             if (value != null) {
                 values.put(preference, value);
             }
@@ -63,15 +63,15 @@ public class SiteConfigApi extends AbstractXnatRestApi {
         return new ResponseEntity<>(values, HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Returns the value of the selected site configuration property.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class)
+    @ApiOperation(value = "Returns the value of the selected site configuration property.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = Object.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration property successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to access site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "{property}", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<String> getSpecifiedSiteConfigProperty(@ApiParam(value = "The site configuration property to retrieve.", required = true) @PathVariable final String property) {
+    public ResponseEntity<Object> getSpecifiedSiteConfigProperty(@ApiParam(value = "The site configuration property to retrieve.", required = true) @PathVariable final String property) {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
         }
-        final String value = _preferences.getValue(property);
+        final Object value = _preferences.getValueByReference(property);
         if (_log.isDebugEnabled()) {
             _log.debug("User " + getSessionUser().getUsername() + " requested the value for the site configuration property " + property + ", got value: " + value);
         }

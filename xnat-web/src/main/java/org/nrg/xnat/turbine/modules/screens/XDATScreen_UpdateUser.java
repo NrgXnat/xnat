@@ -13,25 +13,60 @@ package org.nrg.xnat.turbine.modules.screens;
 import org.apache.commons.lang3.StringEscapeUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.turbine.modules.screens.VelocitySecureScreen;
 import org.apache.turbine.services.velocity.TurbineVelocity;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.apache.velocity.tools.generic.EscapeTool;
+import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.xdat.XDAT;
+import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
+import org.nrg.xdat.turbine.modules.screens.SecureScreen;
 import org.nrg.xdat.turbine.utils.AccessLogger;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
+import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
 
 import java.sql.SQLException;
 
-public class XDATScreen_UpdateUser extends VelocitySecureScreen {
+public class XDATScreen_UpdateUser extends SecureScreen {
 
     @Override
     protected void doBuildTemplate(RunData data) throws Exception {
         Context c = TurbineVelocity.getContext(data);
+
+        //SecureScreen.loadAdditionalVariables(data, c);
+        //When a user has forgotten their password and comes to this page in a half logged in state, setting
+        // turbineUtils will cause problems. The below code is a copy of loadAdditionalVariables, but without setting
+        // turbineUtils in cases where the user forgot their password.
+        if(TurbineUtils.GetPassedParameter("a", data)==null || TurbineUtils.GetPassedParameter("s", data)==null) {
+            c.put("turbineUtils", TurbineUtils.GetInstance());
+        }
+
+        c.put("user", XDAT.getUserDetails());
+        if (TurbineUtils.GetPassedParameter("popup", data) != null) {
+            if (((String) TurbineUtils.GetPassedParameter("popup", data)).equalsIgnoreCase("true")) {
+                c.put("popup", "true");
+            } else {
+                c.put("popup", "false");
+            }
+        } else {
+            c.put("popup", "false");
+        }
+
+        c.put("displayManager", DisplayManager.GetInstance());
+        c.put("systemName", TurbineUtils.GetSystemName());
+        c.put("esc", new EscapeTool());
+
+        c.put("showReason", XFT.getShowChangeJustification());
+        c.put("requireReason", XFT.getRequireChangeJustification());
+        try{
+            c.put("siteConfig", XDAT.getSiteConfiguration());
+        }catch(ConfigServiceException ignored){
+        }
+
         doBuildTemplate(data, c);
     }
 

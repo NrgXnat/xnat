@@ -32,6 +32,10 @@ public interface PreferenceBean {
 
     String getValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;
 
+    Object getValueByReference(final String preference) throws UnknownToolId;
+
+    Object getValueByReference(final Scope scope, final String entityId, final String preference) throws UnknownToolId;
+
     Boolean getBooleanValue(final String key, final String... subkeys) throws UnknownToolId;
 
     Boolean getBooleanValue(final Scope scope, final String entityId, final String key, final String... subkeys) throws UnknownToolId;

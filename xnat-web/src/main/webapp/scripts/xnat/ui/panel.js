@@ -33,7 +33,7 @@ var XNAT = getObject(XNAT || {});
     }
 
     panel.init = function(opts){
-        
+
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
 
@@ -52,7 +52,7 @@ var XNAT = getObject(XNAT || {});
                 (hideFooter ? ['div.hidden'] : ['div.panel-footer', opts.footer])
 
             ]);
-        
+
         // add an id to the outer panel element if present
         if (opts.id || opts.element.id) {
             _panel.id = (opts.id || opts.element.id) + '-panel';
@@ -156,6 +156,10 @@ var XNAT = getObject(XNAT || {});
 
     panel.input = {};
 
+    panel.display = function(opts){
+        return XNAT.ui.template.panelDisplay(opts).spawned;
+    };
+    
     panel.input.text = function(opts){
         return XNAT.ui.template.panelInput(opts).spawned;
     };
@@ -202,12 +206,10 @@ var XNAT = getObject(XNAT || {});
                 type: 'file',
                 id: opts.id + '-input',
                 multiple: true,
-                style: {
-                    width: '270px'
-                }
+                className: addClassName(opts, 'file-upload-input')
             }],
             ['button', {
-                type: 'button',
+                type: 'submit',
                 id: opts.id +'-button',
                 html: 'Upload'
             }]

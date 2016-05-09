@@ -21,7 +21,7 @@ var XNAT = getObject(XNAT);
 
     XNAT.ui = getObject(XNAT.ui || {});
 
-    XNAT.ui.template = template = 
+    XNAT.ui.template = template =
         XNAT.ui.template || {};
 
 
@@ -52,6 +52,28 @@ var XNAT = getObject(XNAT);
     };
     // ========================================
 
+    // ========================================
+    // display only element for form panels
+    template.panelDisplay = function(opts, element){
+        opts = getObject(opts);
+        opts.id = opts.id||toDashed(opts.name);
+        opts.label = opts.label||opts.title||opts.name||'';
+        return template.panelElement(opts, [
+            ['label.element-label|for='+opts.id, opts.label],
+            ['div.element-wrapper', [
+                element || ['div', {
+                    id: opts.id,
+                    name: opts.name,
+                    className: opts.className||'',
+                    size: 25,
+                    title: opts.title||opts.name||opts.id,
+                    html: opts.value||''
+                }],
+                ['div.description', opts.description||opts.body||opts.html]
+            ]]
+        ]);
+    };
+    // ========================================
 
     // ========================================
     // input element for form panels
@@ -84,7 +106,7 @@ var XNAT = getObject(XNAT);
         opts = getObject(opts);
         opts.name = opts.name || opts.id;
         opts.id = opts.id || toDashed(opts.name);
-        
+
         var _select = spawn('select', {
             id: opts.id,
             name: opts.name,
@@ -103,7 +125,7 @@ var XNAT = getObject(XNAT);
             if (prop.value === opts.value){
                 _option.selected = true;
             }
-            _select.appendChild(_option)    
+            _select.appendChild(_option)
         });
         return template.panelElement(opts, [
             ['label.element-label|for='+opts.id, opts.label||opts.title||opts.name],

@@ -15,24 +15,61 @@ siteInfo:
     contents:
         siteId:
             kind: panel.input.text
+            id: siteId
             name: siteId
             label: Site ID
             validation: required id onblur
-            element:  # the 'config' property is applied directly to the underlying spawn() function
-                id: site-id
-                style:
-                  display: block
+            description: "The id used to refer to this site (also used to generate database ids). No spaces or non-alphanumeric characters. It should be a short, one-word name or acronym which describes your site."
+        siteUrl:
+            kind: panel.input.text
+            id: siteUrl
+            name: siteUrl
+            label: Site Url
+            validation: required id onblur
+            description: ""
+        siteDescriptionOption:
+            kind: panel.display  # make this a radio button group
+            id: siteDescriptionOption
+            name: siteDescriptionOption
+            label: Site Description
+            value: Select a site description option below
+            # onchange: # some javascript that toggles display of the elements below appropriately
+        siteDescriptionOptionText:
+            kind: panel.input.checkbox  # make this a radio button group
+            id: siteDescriptionOptionText
+            label: "Text (Markdown)"
+        siteDescriptionOptionPage:
+            kind: panel.input.checkbox  # make this a radio button group
+            id: siteDescriptionOptionPage
+            label: "Page"
+        siteDescriptionFile:
+            kind: panel.input.text
+            id: siteDescriptionFile
+            name: siteDescriptionFile
+            label: ""
+            description: "Specify a velocity template file to display on the login page"
+        siteDescriptionText:
+            kind: panel.input.text
+            id: siteDescriptionText
+            name: siteDescriptionText
+            label: ""
+            description: "Specify a simple text description of this site"
+
+adminInfo:
+    kind: panel.form
+    name: adminInfo
+    label: Admin Information
+    contents:
         adminEmail:
             kind: panel.input.email
             name: adminEmail
-            label: Administrator Email Address
-        someInfo:
-            #kind: element
-            tag: div.message
-            element:
-                html: Hello people.
-                style:
-                    fontWeight: bold
+            label: Site Admin Email Address
+#        someInfo:
+#            tag: div.message
+#            element:
+#                html: Hello people.
+#                style:
+#                    fontWeight: bold
                     
 generalSecuritySettings:
     kind: panel.form
@@ -41,10 +78,10 @@ generalSecuritySettings:
     contents:
         securityChannel:
             kind: panel.select.single
-            name: securityChannel
+            id: securityChannel
+            name: security.channel
             label: Security Channel
             value: https
-#           contains: options
             options:
                 http:
                     label: http
@@ -55,7 +92,164 @@ generalSecuritySettings:
             config:
                 id: security-channel
                 title: Security Channel
+        requireUserLogin:
+            kind: panel.input.checkbox
+            id: requireUserLogin
+            name: require_login
+            label: Require User Login
+            description: If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data.
 
+userLoginsSessionControls:
+    kind: panel.form
+    name: userLoginsSessionControls
+    label: User Logins / Session Controls
+    contents:
+        sessionTimeout:
+            kind: panel.input.number
+            id: sessionTimeout
+            name: security.token_timeout
+            label: Session Timeout
+            value: 15
+            description: "Interval for timing out alias tokens. Uses PostgreSQL interval notation: http://www.postgresql.org/docs/9.0/static/functions-datetime.html"
+        sessionTimeoutMessage:
+            kind: panel.input.text
+            id: sessionTimeoutMessage
+            name: sessionTimeoutMessage
+            label: Session Timeout Message
+            value: "Your session has timed out."
+            description: Alert message provided to users after a session timeout and logout.
+        allowResumeOnNextLogin:
+            kind: panel.input.checkbox
+            id: allowResumeOnNextLogin
+            name: allowResumeOnNextLogin
+            label: Allow Resume On Next Login?
+            value: true
+            description: Allow user to resume where they left off, if logging back in after a session timeout?
+        maximumConcurrentSessions:
+            kind: panel.input.number
+            id: maximumConcurrentSessions
+            name: security.sessions.concurrent_max
+            label: Maximum Concurrent Sessions
+            value: 5
+            description: The maximum number of permitted sessions a user can have open simultaneously
+        loginFailureMessage:
+            kind: panel.input.text
+            id: loginFailureMessage
+            name: UI.login_failure_message
+            label: Login Failure Message
+            value: Login failed
+            description: Text to show when a user fails to login
+        maximumFailedLogins:
+            kind: panel.input.number
+            id: maximumFailedLogins
+            name: security.max_failed_logins
+            label: Maximum Failed Logins
+            value: -1
+            description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
+        failedLoginLockoutDuration:
+            kind: panel.input.number
+            id: failedLoginLockoutDuration
+            name: security.max_failed_logins_lockout_duration
+            label: Failed Login Lockout Duration
+            value: 0
+            description: Number of milliseconds to lock user accounts that have exceeded the max_failed_logins count. Select (3600000 for 1 hour, 86400000 for 24 hours)
+        userInactivityLockout:
+            kind: panel.input.number
+            id: userInactivityLockout
+            name: security.inactivity_before_lockout
+            label: User Inactivity Lockout
+            value: 31556926
+            description: Number of seconds of inactivity before an account is disabled (31556926 for 1 year)
+
+passwords:
+    kind: panel.form
+    name: passwords
+    label: Passwords
+    contents:
+        passwordComplexity:
+            kind: panel.input.text
+            id: passwordComplexity
+            name: security.password_complexity
+            label: Password Complexity
+            value: "^.*$"
+            description: Must be a valid regular expression.
+        passwordComplexityMessage:
+            kind: panel.input.text
+            id: passwordComplexityMessage
+            name: security.password_complexity_message
+            label: Password Complexity Message
+            value: "Your password must contain..."
+        passwordExpirationInterval:
+            kind: panel.input.number
+            id: passwordExpirationInterval
+            name: security.password_expiration_interval
+            label: Password Expiration (Interval)
+            value: -1
+            description: "-1 to disable"
+        passwordExpirationDate:
+            kind: panel.input.text
+            id: passwordExpirationDate
+            name: security.password_expiration_date
+            label: Password Expiration (Date)
+            description: Dates must be formatted MM/DD/YYYY
+        passwordReuseRestriction:
+            kind: panel.select.single
+            id: passwordReuseRestriction
+            name: security.password_history
+            label: Password Reuse Restriction
+        requirePasswordsToBeSalted:
+            kind: panel.input.checkbox
+            id: requirePasswordsToBeSalted
+            name: security.salted_passwords
+            label: Require Passwords To Be Salted
+            value: false
+
+csrf:
+    kind: panel.form
+    name: csrf
+    label: CSRF
+    contents:
+        requireCsrfToken:
+            kind: panel.input.checkbox
+            id: requireCsrfToken
+            name: enable_csrf_token
+            label: Require CSRF Token?
+            value: true
+            description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
+        csrfEmailAlert:
+            kind: panel.input.checkbox
+            id: csrfEmailAlert
+            name: enable_csrf_email_alert
+            label: CSRF Email Alert
+            value: "Should this site send an email to the site admin whenever a CSRF attack is attempted?"
+
+auditTrail:
+    kind: panel.form
+    name: auditTrail
+    label: Audit Trail Configuration
+    contents:
+        enableAuditTrail:
+            kind: panel.input.checkbox
+            id: enableAuditTrail
+            name: audit.enable
+            label: Enable Audit Trail?
+            value: true
+        allowUserJustificationForChanges:
+            kind: panel.input.checkbox
+            id: allowUserJustificationForChanges
+            name: audit.show_change_justification
+            label: Allow User Justification For Changes
+            value: true
+            description: "Allow users to enter change justifications when modifying data"
+        requireUserJustificationForChanges:
+            kind: panel.input.checkbox
+            id: requireUserJustificationForChanges
+            name: audit.require_change_justification
+            label: Require User Justification For Changes
+            value: false
+            description: "Force users to enter change justifications when modifying data"
+
+            
 emailServerSettings:
     kind: panel.form
     name: emailServerSettings
@@ -115,29 +309,41 @@ themeManagement:
     name: themeManagement
     label: Theme Management
     contents:
-      themeScript:
-          tag: script|type=text/javascript|src=../../scripts/themeManagement.js
-      currentTheme:
-          # kind: span  # this doesn't work
-          tag: span
-          label: Current Theme
-          description: The currently selected global theme.
-          html: None
-      existingTheme:
-          kind: panel.select.single
-          label: Select an existing theme
-          description: Selected a new global theme from those available on the system.
-          value: None
-          options:
-              default:
-                  label: None
-                  value: None
-      uploadTheme:
-          kind: panel.input.text  # file
-          name: xnat.theme.upload
-          label: Upload a theme package
-          description: Upload a zipped theme package for selection above.
-          after: "<form id=\"uploadThemeForm\" method=\"POST\" class=\"optOutOfXnatDefaultFormValidation\"><span class=\"label bold\">Upload a theme package: </span><input type=\"file\" id=\"themeFileUpload\" name=\"themeFileUpload\" multiple style=\"width: 270px; display: inline; float: left;\"/><button type=\"submit\" id=\"submitThemeUploadButton\" style=\"position: relative; top:-15px;\">Upload</button></form>"
+        themeScript:
+            tag: script|type=text/javascript;src=../../scripts/themeManagement.js
+        themeStyle:
+            tag: style
+            element:
+                html: ".themeUploader{width:270px;display:inline !important;}"
+        currentTheme:
+            kind: panel.display
+            id: currentTheme
+            label: Current Theme
+            description: The currently selected global theme.
+            value: None
+            element:
+                style:
+                    color: 'red'
+        existingTheme:
+            kind: panel.select.single
+            id: themeSelection
+            label: Select an existing theme
+            description: Selected a new global theme from those available on the system.
+            value: None
+            options:
+                default:
+                    label: None
+                    value: None
+            after:
+                - "&nbsp;<!--button id=\"submitThemeButton\" onclick=\"setTheme();\">Set Theme</button-->&nbsp;&nbsp;<button id=\"removeThemeButton\" onclick=\"removeTheme();\">Remove Theme</button>"
+        uploadTheme:
+            kind: panel.input.upload
+            id: themeFileUpload
+            name: xnat.theme.upload
+            label: Upload a theme package
+            description: Upload a zipped theme package for selection above.
+            className: themeUploader
+          
 
           
 authenticationMethods:
@@ -179,7 +385,54 @@ dicomScpReceivers:
     kind: panel
     name: dicomScpReceivers
     label: DICOM SCP Receivers
-#    contents:
+    contents:
+        enableDicomReceiver:
+            kind: panel.input.checkbox
+            id: enableDicomReceiver
+            name: enableDicomReceiver
+            label: DICOM Receiver Enabled?
+            value: true
+            description: "Should the DICOM receiver listen for connections?"
+        someInfo:
+            tag: div.message
+            element:
+                html: "Caution: Changes to this setting will take effect immediately. Before disabling the receiver, verify that there are no transmissions currently in progress."
+                style:
+                    fontWeight: bold
+        # hidden form element...
+        # enableDicomReceiver.property.changed.listener
+        # org.nrg.dcm.DicomSCPSiteConfigurationListener
+        dicomHost:
+            kind: panel.input.text
+            id: dicomHost
+            name: dicomHost
+            label: DICOM Host
+            description: "Hostname(s) for DICOM Receiver(s)"
+        dicomAeTitle:
+            kind: panel.input.text
+            id: dicomAeTitle
+            name: dicomAeTitle
+            label: DICOM AE Title
+            description: "AE Title(s) for DICOM Receiver(s)"
+        dicomPortNumber:
+            kind: panel.input.number
+            id: dicomPortNumber
+            name: dicomPortNumber
+            label: DICOM Host
+            description: "Port for DICOM Receiver(s)"
+        defaultDicomReceiver:
+            kind: panel.select.single
+            id: defaultDicomReceiver
+            name: services.dicom.scp.aetitle
+            label: Default DICOM Receiver
+            description: "AE Title for default DICOM receiver"
+        defaultDicomReceiverUser:
+            kind: panel.input.text
+            id: defaultDicomReceiverUser
+            name: services.dicom.scp.receivedfileuser
+            label: Default DICOM Receiver: User
+            value: Login failed
+            description: User account for default DICOM receiver
           
           
 siteAdmin:
@@ -190,20 +443,19 @@ siteAdmin:
         ${tabGroups}
     contains: tabs
     tabs:  # this property name is the same as 'contains', so it will be treated like 'contents'
-    
         siteSetup:
             kind: tab
             name: siteSetup
             label: Site Setup
             group: xnatSetup
             active: true
-            config:
-                data:
-                    foo: bar
+#            config:
+#                data:
+#                    foo: bar
             contains: panels # the value for 'contains' can be a custom name for 'contents'
             panels:
                 ${siteInfo}
-
+                ${adminInfo}
         security:
             kind: tab
             name: security
@@ -211,7 +463,10 @@ siteAdmin:
             group: xnatSetup
             contents:
                 ${generalSecuritySettings}
-
+                ${userLoginsSessionControls}
+                ${passwords}
+                ${csrf}
+                ${auditTrail}
         emailServer:
             kind: tab
             name: emailServer
@@ -219,7 +474,6 @@ siteAdmin:
             group: xnatSetup
             contents:
                 ${emailServerSettings}
-
         notifications:
             kind: tab
             name: notifications
@@ -227,7 +481,6 @@ siteAdmin:
             group: xnatSetup
             contents:
                 ${notifications}
-
         themesAndFeatures:
             kind: tab
             name: themesAndFeatures
@@ -235,7 +488,6 @@ siteAdmin:
             group: xnatSetup
             contents:
                 ${themeManagement}
-                
         authenticationMethods:
             kind: tab
             name: authenticationMethods
@@ -243,7 +495,6 @@ siteAdmin:
             group: manageAccess
             contents:
                 ${authenticationMethods}
-
         users:
             kind: tab
             name: users
@@ -251,7 +502,6 @@ siteAdmin:
             group: manageAccess
             contents:
                 ${users}
-
         userRoles:
             kind: tab
             name: userRoles
@@ -259,7 +509,6 @@ siteAdmin:
             group: manageAccess
             contents:
                 ${userRoles}
-
         registrationOptions:
             kind: tab
             name: registrationOptions
@@ -267,7 +516,6 @@ siteAdmin:
             group: manageAccess
             contents:
                 ${registrationOptions}
-
         dicomScpReceivers:
             kind: tab
             name: dicomScpReceivers
@@ -275,8 +523,6 @@ siteAdmin:
             group: advanced
             contents:
                 ${dicomScpReceivers}
-                
-                
         databaseSettings:
             kind: tab
             name: databaseSettings

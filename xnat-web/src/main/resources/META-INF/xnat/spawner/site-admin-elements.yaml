@@ -433,8 +433,11 @@ dicomScpReceivers:
             label: "Default DICOM Receiver: User"
             value: Login failed
             description: User account for default DICOM receiver
-          
-          
+
+
+#################################################
+####  Root Site Admin Spawner Config Object  ####
+#################################################
 siteAdmin:
     kind: tabs
     name: siteAdmin
@@ -449,9 +452,6 @@ siteAdmin:
             label: Site Setup
             group: xnatSetup
             active: true
-#            config:
-#                data:
-#                    foo: bar
             contains: panels # the value for 'contains' can be a custom name for 'contents'
             panels:
                 ${siteInfo}
@@ -530,9 +530,3 @@ siteAdmin:
             group: manageData
             contents:
                 ${databaseSettings}
-                
-                
-                
-                
-                
-                

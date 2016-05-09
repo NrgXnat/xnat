@@ -371,7 +371,7 @@ public class XnatPipelineLauncher {
         arguments.add("-u");
         arguments.add(token.getAlias());
         arguments.add("-pwd");
-        arguments.add(Long.toString(token.getSecret()));
+        arguments.add(token.getSecret());
         arguments.add("-dataType");
         arguments.add(dataType);
 

@@ -18,7 +18,7 @@ public class AliasTokenAuthenticationToken extends UsernamePasswordAuthenticatio
         _principal = principal;
         _credentials = credentials;
         _alias = (String) principal;
-        _secret = (Long) credentials;
+        _secret = (String) credentials;
 	}
 
     @Override
@@ -43,7 +43,7 @@ public class AliasTokenAuthenticationToken extends UsernamePasswordAuthenticatio
         return _alias;
     }
 
-    public long getSecret() {
+    public String getSecret() {
         return _secret;
     }
 
@@ -55,5 +55,5 @@ public class AliasTokenAuthenticationToken extends UsernamePasswordAuthenticatio
     private Object _principal;
     private Object _credentials;
     private String _alias;
-    private long _secret;
+    private String _secret;
 }

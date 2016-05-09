@@ -23,7 +23,7 @@ import org.nrg.xft.security.UserI;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
-
+import org.apache.commons.lang.StringUtils;
 @Service
 public class HibernateAliasTokenService extends AbstractHibernateEntityService<AliasToken, AliasTokenDAO> implements AliasTokenService {
 
@@ -120,13 +120,13 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
 
     @Override
     @Transactional
-    public String validateToken(final String alias, final long secret) {
+    public String validateToken(final String alias, final String secret) {
         return validateToken(alias, secret, null);
     }
 
     @Override
     @Transactional
-    public String validateToken(final String alias, final long secret, final String address) {
+    public String validateToken(final String alias, final String secret, final String address) {
         AliasToken token = getDao().findByAlias(alias);
         if (token == null) {
             if (_log.isInfoEnabled()) {
@@ -135,7 +135,7 @@ public class HibernateAliasTokenService extends AbstractHibernateEntityService<A
             return null;
         }
         try {
-            return secret == token.getSecret() && token.isValidIPAddress(address) ? token.getXdatUserId() : null;
+            return StringUtils.equals(secret, token.getSecret()) && token.isValidIPAddress(address) ? token.getXdatUserId() : null;
         } finally {
             if (token.isSingleUse()) {
                 getDao().delete(token);

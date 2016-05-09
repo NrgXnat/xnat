@@ -16,7 +16,8 @@ import org.hibernate.annotations.Cache;
 import org.hibernate.annotations.CacheConcurrencyStrategy;
 import org.nrg.framework.orm.hibernate.AbstractHibernateEntity;
 import org.nrg.framework.utilities.Patterns;
-
+import org.apache.commons.lang3.RandomStringUtils;
+import java.security.SecureRandom;
 import javax.persistence.*;
 import java.util.Date;
 import java.util.List;
@@ -30,7 +31,7 @@ public class AliasToken extends AbstractHibernateEntity {
 
     public AliasToken() {
         _alias = UUID.randomUUID().toString();
-        _secret = new Date().getTime();
+        _secret = RandomStringUtils.random(64, 0, 0, true, true, null, new SecureRandom());
     }
 
     /**
@@ -57,7 +58,7 @@ public class AliasToken extends AbstractHibernateEntity {
      *
      * @return A value representing the token secret.
      */
-    public long getSecret() {
+    public String getSecret() {
         return _secret;
     }
 
@@ -66,7 +67,7 @@ public class AliasToken extends AbstractHibernateEntity {
      *
      * @param secret A value representing the token secret.
      */
-    public void setSecret(final long secret) {
+    public void setSecret(final String secret) {
         _secret = secret;
     }
 
@@ -212,7 +213,7 @@ public class AliasToken extends AbstractHibernateEntity {
 
     private static final Log _log = LogFactory.getLog(AliasToken.class);
     private String                       _alias;
-    private long                         _secret;
+    private String                         _secret;
     private boolean                      _isSingleUse;
     private String                       _xdatUserId;
     private Set<String>                  _validIPAddresses;

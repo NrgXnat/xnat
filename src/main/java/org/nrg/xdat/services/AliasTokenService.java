@@ -95,7 +95,7 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param secret    The secret to validate the indicated alias.
      * @return The {@link UserI#getLogin() XDAT user login ID} of the matching token exists, or <b>null</b> if not.
      */
-    abstract public String validateToken(String alias, long secret);
+    abstract public String validateToken(String alias, String secret);
 
     /**
      * Checks whether a token exists with the indicated alias and secret and an IP address matching one of the defined
@@ -108,7 +108,7 @@ public interface AliasTokenService extends BaseHibernateService<AliasToken> {
      * @param address   The IP address to validate.
      * @return The {@link UserI#getLogin() XDAT user login ID} of the matching token exists, or <b>null</b> if not.
      */
-    abstract public String validateToken(String alias, long secret, String address);
+    abstract public String validateToken(String alias, String secret, String address);
 
     /**
      * Invalidates the token with the given alias. No supporting validation is required for this operation.

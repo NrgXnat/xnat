@@ -46,7 +46,7 @@ public class VerifyEmail extends VelocitySecureScreen {
 
             alias = (String) TurbineUtils.GetPassedParameter("a", data);
             String secret = (String) TurbineUtils.GetPassedParameter("s", data);
-			String userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias, Long.parseLong(secret));
+			String userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias, secret);
 	    	if (userID!=null) {
 	    		UserI u = Users.getUser(userID);
 	    		List<UserI> users = getAllUsersWithEmail(u.getEmail());

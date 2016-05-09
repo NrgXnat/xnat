@@ -89,6 +89,28 @@ var XNAT = getObject(XNAT);
     };
     // ========================================
 
+    // ========================================
+    // display only element for form panels
+    template.panelDisplay = function(opts, element){
+        opts = getObject(opts);
+        opts.id = opts.id||toDashed(opts.name);
+        opts.label = opts.label||opts.title||opts.name||'';
+        return template.panelElement(opts, [
+            ['label.element-label|for='+opts.id, opts.label],
+            ['div.element-wrapper', [
+                element || ['div', {
+                    id: opts.id,
+                    name: opts.name,
+                    className: opts.className||'',
+                    size: 25,
+                    title: opts.title||opts.name||opts.id,
+                    html: opts.value||''
+                }],
+                ['div.description', opts.description||opts.body||opts.html]
+            ]]
+        ]);
+    };
+    // ========================================    
 
     // ========================================
     // input element for form panels

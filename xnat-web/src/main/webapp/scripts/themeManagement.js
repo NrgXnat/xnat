@@ -15,9 +15,9 @@ var csrf = 'XNAT_CSRF='+window.csrfToken;
 $('#titleAppName').text(XNAT.app.siteId);
 var currentTheme = $('#currentTheme');
 var themeSelector = $('#themeSelection');
-var uploadForm = document.getElementById('uploadThemeForm');
-var themeUploader = document.getElementById('themeFileUpload');
-var themeUploadSubmit = document.getElementById('submitThemeUploadButton');
+var uploadForm = document.getElementById('themeFileUpload-form');
+var themeUploader = document.getElementById('themeFileUpload-input');
+var themeUploadSubmit = document.getElementById('themeFileUpload-button');
 var selectedTheme = null;
 function populateThemes(){
     getCurrentTheme(getAvailableThemes);

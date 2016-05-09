@@ -67,7 +67,7 @@ public class InactiveAccount extends VelocitySecureScreen {
                         String userID="";
                         try
                         {
-                            userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,Long.parseLong(secret));
+                            userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,secret);
                             if(userID!=null){
                                 user = Users.getUser(userID);
                                 boolean forcePasswordChange = true;

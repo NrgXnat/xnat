@@ -394,7 +394,11 @@ var XNAT = getObject(XNAT || {});
 
     panel.input = {};
 
-    panel.input.text = function panelInputText(opts){
+    panel.display = function(opts){
+        return XNAT.ui.template.panelDisplay(opts).spawned;
+    };
+    
+    panel.input.text = function(opts){
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
@@ -439,10 +443,11 @@ var XNAT = getObject(XNAT || {});
             ['input', {
                 type: 'file',
                 id: opts.id + '-input',
-                multiple: true
+                multiple: true,
+                className: addClassName(opts, 'file-upload-input')
             }],
             ['button', {
-                type: 'button',
+                type: 'submit',
                 id: opts.id +'-button',
                 html: 'Upload'
             }]

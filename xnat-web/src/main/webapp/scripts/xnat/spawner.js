@@ -141,6 +141,11 @@ var XNAT = getObject(XNAT);
             if (prop.before) {
                 $frag.prepend(prop.before)
             }
+            
+            // if there's a .load() method, fire that
+            if (isFunction(spawnedElement.load)) {
+                spawnedElement.load();
+            }
 
         });
 

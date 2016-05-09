@@ -1,4 +1,4 @@
-root:
+siteAdmin:
     kind: tabs
     name: siteAdmin
     label: Administer XNAT
@@ -31,6 +31,11 @@ root:
                     kind: panel.form
                     name: siteInfo
                     label: Site Information
+                    method: POST
+                    action: /xapi/siteConfig/batch
+                    load:
+                        data: XNAT.data.siteConfig
+
                     contents:
 
                         # panel input
@@ -118,7 +123,12 @@ root:
                     kind: panel.form
                     method: POST
                     action: /xapi/notifications/all
-                    name: emailServerSettings
+                    load: # load data
+                        url: /xapi/siteConfig
+#                        method: GET      # defaults to GET if not set
+                        prop: smtpServer # which root property? gets the root object if not set
+#                        data: XNAT.data.siteConfig.smtpServer
+                    name:  emailServerSettings
                     label: Mail Server Settings
                     contents:
                         hostname:
@@ -128,18 +138,15 @@ root:
                             value: ''
                             element:
                                 placeholder: localhost
-                            data:
+                            #data:
                                 # METHOD:/url/for/data:object.path
-                                get: GET|/xapi/siteConfig|smtpServer.host
-                                set: POST|/xapi/notifications/host
+                                #get: GET|/xapi/siteConfig|smtpServer.host
+                                #set: POST|/xapi/notifications/host
                         port:
                             kind: panel.input.number
                             name: port
                             label: Port
                             value: ''
-                            data:
-                                get: GET|/xapi/siteConfig|smtpServer.port
-                                set: POST|/xapi/notifications/port
                             element:
                                 placeholder: 587
                         username:
@@ -148,9 +155,6 @@ root:
                             label: Username
                             url: /xapi/notifications/username
                             value: ''
-                            data:
-                                get: GET|/xapi/siteConfig|smtpServer.username
-                                set: POST|/xapi/notifications/username
                             element:
                                 placeholder: admin@localhost
                         password:
@@ -158,17 +162,14 @@ root:
                             name: password
                             label: Password
                             value: ''
-                            data:
-                                get: GET|/xapi/siteConfig|smtpServer.username
-                                set: POST|/xapi/notifications/password
                         protocol:
                             kind: panel.input.text
                             name: protocol
                             label: Protocol
                             value: ''
-                            data:
-                                get: GET|/xapi/siteConfig|smtpServer.protocol
-                                set: POST|/xapi/notifications/protocol
+                            #data:
+                                #get: GET|/xapi/siteConfig|smtpServer.protocol
+                                #set: POST|/xapi/notifications/protocol
                         # subhead breaks up panel items
                         mailServerProperties:
                             kind: panel.subhead

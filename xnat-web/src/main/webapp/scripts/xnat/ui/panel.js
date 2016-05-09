@@ -68,6 +68,7 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
+
     // creates a panel that's a form that can be submitted
     panel.form = function panelForm(opts){
 
@@ -78,10 +79,12 @@ var XNAT = getObject(XNAT || {});
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
 
+            _resetBtn = spawn('button.btn.btn-sm.btn-default.revert.pull-right|type=button', 'Discard Changes'),
+
             _footer = [
                 ['button.btn.btn-sm.btn-primary.save.pull-right|type=submit', 'Submit'],
                 ['span.pull-right', '&nbsp;&nbsp;&nbsp;'],
-                ['button.btn.btn-sm.btn-default.revert.pull-right|type=button', 'Discard Changes'],
+                _resetBtn,
                 ['button.btn.btn-sm.btn-link.defaults.pull-left', 'Default Settings'],
                 ['div.clear']
             ],
@@ -105,11 +108,133 @@ var XNAT = getObject(XNAT || {});
         if (opts.id || opts.element.id) {
             _formPanel.id = (opts.id || opts.element.id) + '-panel';
         }
+
+        // set form element values from an object map
+        function setValues(form, dataObj){
+            // pass a single argument to work with this form
+            if (!dataObj) {
+                dataObj = form;
+                form = _formPanel;
+            }
+            // find all form inputs with a name attribute
+            $$(form).find(':input[name]').each(function(){
+                $(this).changeVal(dataObj[this.name]||'');
+            });
+            if (xmodal && xmodal.loading && xmodal.loading.close){
+                xmodal.loading.close();
+            }
+        }
+
+        // populate the data fields if this panel is in the 'active' tab
+        // (only getting values for the active tab should cut down on requests)
+        function loadData(obj){
+
+            if (!obj) {
+                obj = opts.load || {};
+            }
+
+            obj = extend(true, {}, obj);
+
+            obj.form = obj.form || obj.target || obj.element || _formPanel;
+
+            // need a form to put the data into
+            if (!obj.form) return;
+
+            // if we pass data in a 'data' property, just use that
+            // to avoid doing a server request
+
+            if (obj.data) {
+                setValues(obj.form, eval(obj.data));
+                return obj.form;
+            }
+
+            // otherwise try to get the data values via ajax
+
+            // need a url to get the data
+            if (!obj.url) return obj.form;
+
+            obj.method = obj.method || 'GET';
+
+            // setup the ajax request
+            // override values with an
+            // 'ajax' or 'xhr' property
+            obj.ajax = extend(true, {
+                method: obj.method,
+                url: XNAT.url.restUrl(obj.url)
+            }, obj.ajax || obj.xhr);
+
+            // allow use of 'prop' or 'root' for the root property name
+            obj.prop = obj.prop || obj.root;
+
+            obj.ajax.success = function(data){
+                var prop = data;
+                // if there's a property to target,
+                // specify the 'prop' property
+                if (obj.prop){
+                    obj.prop.split('.').forEach(function(part){
+                        prop = prop[part];
+                    });
+                }
+                setValues(prop);
+            };
+
+            // return the ajax thing for method chaining
+            return XNAT.xhr.request(obj.ajax);
+
+        }
+
+        //if (opts.load){
+        //    loadData(opts.load);
+        //}
+
+        // click 'Discard Changes' butotn to reload data
+        _resetBtn.onclick = function(){
+            xmodal.loading.open();
+            loadData(opts.load);
+        };
         
         // intercept the form submit to do it via REST instead
-        
+        $(_formPanel).on('submit', function(e){
 
+            e.preventDefault();
+
+            xmodal.loading.open();
+
+            var ajaxSubmitOpts = {
+
+                target:        '#server-response',  // target element(s) to be updated with server response
+                beforeSubmit:  function(){},  // pre-submit callback
+                success:       function(){},  // post-submit callback
+
+                // other available options:
+                url:       '/url/for/submit', // override for form's 'action' attribute
+                type:      'get or post (or put?)', // 'get' or 'post', override for form's 'method' attribute
+                dataType:  null,        // 'xml', 'script', or 'json' (expected server response type)
+                clearForm: true,        // clear all form fields after successful submit
+                resetForm: true,        // reset the form after successful submit
+
+                // $.ajax options can be used here too, for example:
+                timeout:   3000
+
+            };
+
+            $(this).ajaxSubmit({
+                success: function(){
+                    xmodal.loading.close();
+                    xmodal.message('Data saved successfully.', {
+                        action: loadData()
+                    });
+                }
+            });
+
+            return false;
+
+        });
+        
+        // this object is returned to the XNAT.spawner() method
         return {
+            load: loadData,
+            setValues: setValues,
             target: _target,
             element: _formPanel,
             spawned: _formPanel,

@@ -30,6 +30,16 @@
 
                 </div>
 
+                <script src="${sessionScope.siteRoot}/scripts/lib/jquery-plugins/jquery.form.js"></script>
+
+                <c:import url="/xapi/siteConfig" var="siteConfig"/>
+
+                <script>
+                    XNAT.data = extend({}, XNAT.data, {
+                        siteConfig: ${siteConfig}
+                    });
+                </script>
+
                 <script src="${sessionScope.siteRoot}/scripts/xnat/ui/templates.js"></script>
                 <script src="${sessionScope.siteRoot}/page/admin/tabs.js"></script>
 

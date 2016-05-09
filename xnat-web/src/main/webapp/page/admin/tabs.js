@@ -1,5 +1,5 @@
 (function(){
-
+    
     var $head = $('head');
 
     // // append the css to the head
@@ -20,15 +20,30 @@
     var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.yaml');
     //var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.json');
     //var jsonUrl = XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteAdmin');
-    $.get({
-        url: jsonUrl,
-        // dataType: 'text',
-        success: function(data){
-            var json = YAML.parse(data);
-            var adminTabs = XNAT.spawner.spawn(json);
-            adminTabs.render('#admin-config-tabs > .xnat-tab-content');
-            XNAT.app.adminTabs = adminTabs;
-        }
-    });
+    
+    // get the siteConfig object first
+    // doing this in JSP for better(?) performance
+    //XNAT.xhr.get(XNAT.url.restUrl('/xapi/siteConfig'), function(siteConfig){
+
+        // put those values in an object named XNAT.data.siteConfig
+      //  XNAT.data = extend({}, XNAT.data, {
+        //    siteConfig: siteConfig
+        //});
+
+        // THEN render the tabs...
+        $.get({
+            url: jsonUrl,
+            // dataType: 'text',
+            success: function(data){
+                var json = YAML.parse(data);
+                var adminTabs = XNAT.spawner.spawn(json);
+                adminTabs.render('#admin-config-tabs > .xnat-tab-content');
+                XNAT.app.adminTabs = adminTabs;
+                // xmodal.loading.closeAll();
+            }
+
+        });
+
+    //});
 
 })();

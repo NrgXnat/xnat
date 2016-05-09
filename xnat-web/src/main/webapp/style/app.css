@@ -3449,11 +3449,17 @@ div.submit div.actions {
 }
 
 hr {
+    display: block;
     margin: 20px 0;
 }
 
 hr.h20 {
     margin: 10px 0;
+}
+
+hr.light {
+    color: #f0f0f0;
+    border-color: #f0f0f0;
 }
 
 
@@ -3502,3 +3508,13 @@ hr.h20 {
 
 }
 
+pre.json { outline: 1px solid #f0f0f0; padding: 20px; }
+pre.json .string { color: green; }
+pre.json .number { color: darkorange; }
+pre.json .boolean { color: blue; }
+pre.json .null { color: magenta; }
+pre.json .key { color: red; }
+textarea.xml-formatted {
+    display: block; padding: 10px; margin: 10px; width: 95%; height: 95%;
+    overflow-x: scroll; overflow-y: scroll; border: 1px solid #ccc;
+}

@@ -81,7 +81,11 @@ body.xnat .panel-title { font-weight: normal; }
 /* PANEL ELEMENTS */
 .panel .panel-element { margin: 15px 0; clear: both; overflow: auto; }
 .panel .panel-element > * { box-sizing: border-box; }
-.panel .panel-element .element-label { width: 35%; padding-right: 10px; float: left; color: #222; text-align: right; }
+.panel .panel-element .element-label {
+    width: 35%; padding-right: 10px; float: left;
+    color: #222; font-weight: bold; text-align: right;
+    line-height: 24px; vertical-align: middle;
+}
 .panel .panel-element .element-wrapper { display: inline-block; width: 65%; float: right; }
 .panel .panel-element .element-wrapper .description { margin: 10px 0; }
 .panel .panel-element span.before { right: 10px; }

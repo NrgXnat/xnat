@@ -365,7 +365,7 @@ var XNAT = getObject(XNAT||{});
         // XNAT.xhr.cache === false (the default)
         if (xhr && !xhr.cache) {
             if (isUndefined(cacheParam) || isTrue(cacheParam)){
-                params.XNAT_XHR = randomID(Date.now(), false);
+                params.XNAT_XHR = randomID('x', false) + '-' + Date.now();
             }
         }
 

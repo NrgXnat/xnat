@@ -74,10 +74,27 @@ repositories {
 sourceCompatibility = 1.7
 targetCompatibility = 1.7
 
+if (hasProperty("rt.17.jar")) {
+    // Solution for bootstrap classpath warning and possible issues with compatibility with 1.7 libraries
+    // was taken from this post on discuss.gradle.org: http://bit.ly/24xD9j0
+    def rt17jar = getProperty("rt.17.jar")
+    logger.info "Using ${rt17jar} as the bootstrap class path jar."
+    gradle.projectsEvaluated {
+        tasks.withType(JavaCompile) {
+            options.fork = true
+            options.compilerArgs << "-XDignore.symbol.file"
+            options.bootClasspath = rt17jar
+        }
+    }
+} else {
+    logger.warn "No value was set for the rt.17.jar build property, using the default bootstrap class path. You should consider setting rt.17.jar to indicate a jar file containing the Java 1.7 run-time library:\n"
+    logger.warn "  ./gradlew -Prt.17.jar=rt-1.7.0_45.jar war\n"
+}
+
 if (hasProperty("archiveName")) {
     war.archiveName = archiveName.endsWith(".war") ? archiveName : "${archiveName}.war"
 } else {
-war.baseName = "xnat-web"
+    war.baseName = "xnat-web"
 }
 
 tomcatRun.contextPath = '/'

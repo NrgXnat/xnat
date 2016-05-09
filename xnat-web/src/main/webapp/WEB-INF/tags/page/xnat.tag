@@ -177,6 +177,10 @@
     <!-- xdat.css and xnat.css loaded last to override YUI styles -->
     <link rel="stylesheet" type="text/css" href="${_siteRoot}/style/app.css?${versionString}">
 
+    <%-- styles for tabbed interface --%>
+    <%-- TODO: rename and move file or integrate it into app.css --%>
+    <link rel="stylesheet" type="text/css" href="${_siteRoot}/page/admin/style.css?${versionString}">
+
 
     <!-- legacy XNAT scripts -->
     <link rel="stylesheet" type="text/css" href="${_siteRoot}/scripts/xmodal-v1/xmodal.css?${versionString}">
@@ -197,6 +201,7 @@
     <script src="${_siteRoot}/scripts/xnat/event.js"></script>
     <script src="${_siteRoot}/scripts/xnat/element.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/input.js"></script>
+    <script src="${_siteRoot}/scripts/xnat/ui/select.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/table.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/panel.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/tabs.js"></script>

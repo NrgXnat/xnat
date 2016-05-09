@@ -332,7 +332,9 @@ var XNAT = getObject(XNAT||{}),
         'getJSON' : { method: 'GET', dataType: 'json', format: 'json' },
         'getHTML' : { method: 'GET', dataType: 'html', format: 'html' },
         'getXML' : { method: 'GET', dataType: 'xml', format: 'xml' },
-        'getText' : { method: 'GET', dataType: 'text', format: 'text' }
+        'getText' : { method: 'GET', dataType: 'text', format: 'text' },
+        'putJSON' : { method: 'PUT', contentType: 'application/json', processData: false },
+        'postJSON' : { method: 'PUT', contentType: 'application/json', processData: false }
     };
 
     xhr.shorthands._delete = xhr.shorthands.delete_ = xhr.shorthands['delete'];
@@ -369,26 +371,26 @@ var XNAT = getObject(XNAT||{}),
                 dataType: 'html'
             },
             success = null;
-        
+
         // need $container and url arguments at the very least
         if (arguments.length < 2){
             return new Error('XNAT.xhr.loadHTML() requires the $container and url arguments.');
         }
-        
+
         if (isPlainObject(url)){
-            obj = extend(true, {}, url, obj);    
+            obj = extend(true, {}, url, obj);
         }
         else {
             obj.url = url;
             obj.data = data;
         }
-        
+
         // if there's a 'success' property, call it
         // after appending the HTML
         if (isFunction(obj.success)){
-            success = obj.success;        
+            success = obj.success;
         }
-        
+
         obj.success = function(html){
             $$($container).empty().append(html);
             if (success){
@@ -398,7 +400,7 @@ var XNAT = getObject(XNAT||{}),
                 callback.apply(this, arguments);
             }
         };
-        
+
         return xhr.request(obj);
 
         // make sure we've got a jQuery object and pass to jQuery's .load() method

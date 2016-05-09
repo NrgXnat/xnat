@@ -149,10 +149,16 @@ public class PrearcUtils {
             if (requestedProject.contains(",")) {
                 String[] projectIds = StringUtils.split(requestedProject, ',');
                 for (final String projectId : projectIds) {
-                    projects.add(cleanProject(projectId));
+                    String cleanProject = cleanProject(projectId);
+                    if(cleanProject!=null || Roles.isSiteAdmin(user)) {
+                        projects.add(cleanProject);
+                    }
                 }
             } else {
-                projects.add(cleanProject(requestedProject));
+                String cleanProject = cleanProject(requestedProject);
+                if(cleanProject!=null || Roles.isSiteAdmin(user)) {
+                    projects.add(cleanProject);
+                }
             }
         } else {
             final UserHelperServiceI userHelperService = UserHelper.getUserHelperService(user);

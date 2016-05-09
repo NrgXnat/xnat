@@ -43,7 +43,8 @@ var XNAT = getObject(XNAT);
 
         forOwn(obj, function(item, prop){
 
-            var kind, method, spawnedElement, $spawnedElement
+            var kind, method, spawnedElement, $spawnedElement;
+            
             // save the config properties in a new object
             prop = getObject(prop);
 
@@ -107,10 +108,10 @@ var XNAT = getObject(XNAT);
                     spawnedElement = method(prop);
 
                     // add spawnedElement to the master frag
-                    $frag.append(spawnedElement.get());
+                    $frag.append(spawnedElement.element);
 
                     // save a reference to spawnedElement
-                    spawner.spawnedElements.push(spawnedElement.get());
+                    spawner.spawnedElements.push(spawnedElement.element);
 
                 }
                 else {
@@ -128,9 +129,22 @@ var XNAT = getObject(XNAT);
                     $spawnedElement = $(spawnedElement.target);
                 }
                 else {
-                    $spawnedElement = $(spawnedElement.get());
+                    $spawnedElement = $(spawnedElement.element);
                 }
                 $spawnedElement.append(_spawn(prop.contents).get());
+            }
+            
+            if (prop.after) {
+                $frag.append(prop.after)
+            }
+            
+            if (prop.before) {
+                $frag.prepend(prop.before)
+            }
+            
+            // if there's a .load() method, fire that
+            if (isFunction(spawnedElement.load)) {
+                spawnedElement.load();
             }
 
         });

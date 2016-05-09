@@ -430,7 +430,7 @@ dicomScpReceivers:
             kind: panel.input.text
             id: defaultDicomReceiverUser
             name: services.dicom.scp.receivedfileuser
-            label: Default DICOM Receiver: User
+            label: "Default DICOM Receiver: User"
             value: Login failed
             description: User account for default DICOM receiver
           

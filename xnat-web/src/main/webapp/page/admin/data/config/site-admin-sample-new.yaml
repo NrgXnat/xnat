@@ -1,4 +1,4 @@
-root:
+siteAdmin:
     kind: tabs
     name: siteAdmin
     label: Administer XNAT
@@ -25,24 +25,41 @@ root:
                     foo: bar
             contains: panels # the value for 'contains' can be a custom name for 'contents'
             panels:
+
+                #panel
                 siteInfo:
                     kind: panel.form
                     name: siteInfo
                     label: Site Information
+                    method: POST
+                    action: /xapi/siteConfig/batch
+                    load:
+                        data: XNAT.data.siteConfig
+
                     contents:
+
+                        # panel input
                         siteId:
                             kind: panel.input.text
                             name: siteId
+                            id: side-id
                             label: Site ID
+                            value: XNAT
+                            description: >
+                                The id used to refer to this site (also used to generate ids). The Site ID must start
+                                with a letter and contain only letters, numbers and underscores. It should be a short,
+                                one-word name or acronym which describes your site.
                             validation: required id onblur
-                            element:  # the 'config' property is applied directly to the underlying spawn() function
-                                id: site-id
-                                style:
-                                  display: block
+
+                        # panel input
                         adminEmail:
                             kind: panel.input.email
                             name: adminEmail
                             label: Administrator Email Address
+                            url: /xapi/siteConfig/adminEmail
+                            value: ''
+
+                        # panel div
                         someInfo:
                             #kind: element
                             tag: div.message
@@ -50,6 +67,7 @@ root:
                                 html: Hello people.
                                 style:
                                     fontWeight: bold
+                # panel
                 manageThemes:
                     kind: panel
                     name: manageThemes
@@ -85,6 +103,7 @@ root:
                             options:
                                 http:
                                     # if there's no 'label' property, the value will be used for the label
+                                    label: http
                                     value: http
                                 https:
                                     label: https
@@ -102,47 +121,133 @@ root:
             contents:
                 emailServerSettings:
                     kind: panel.form
-                    name: emailServerSettings
+                    method: POST
+                    action: /xapi/notifications/all
+                    load: # load data
+                        url: /xapi/siteConfig
+#                        method: GET      # defaults to GET if not set
+                        prop: smtpServer # which root property? gets the root object if not set
+#                        data: XNAT.data.siteConfig.smtpServer
+                    name:  emailServerSettings
                     label: Mail Server Settings
                     contents:
                         hostname:
                             kind: panel.input.text
-                            name: hostname
+                            name: host
                             label: Host
-                            value: localhost
+                            value: ''
+                            element:
+                                placeholder: localhost
+                            #data:
+                                # METHOD:/url/for/data:object.path
+                                #get: GET|/xapi/siteConfig|smtpServer.host
+                                #set: POST|/xapi/notifications/host
                         port:
                             kind: panel.input.number
                             name: port
                             label: Port
-                            value: 587
+                            value: ''
+                            element:
+                                placeholder: 587
                         username:
                             kind: panel.input.text
                             name: username
                             label: Username
+                            url: /xapi/notifications/username
                             value: ''
                             element:
-                                placeholder: name@host.org
-#                        properties:
-#                            kind: panel.element
-#                            name: properties
-#                            label: Properties
-#                            contents:
+                                placeholder: admin@localhost
+                        password:
+                            kind: panel.input.password
+                            name: password
+                            label: Password
+                            value: ''
+                        protocol:
+                            kind: panel.input.text
+                            name: protocol
+                            label: Protocol
+                            value: ''
+                            #data:
+                                #get: GET|/xapi/siteConfig|smtpServer.protocol
+                                #set: POST|/xapi/notifications/protocol
+                        # subhead breaks up panel items
+                        mailServerProperties:
+                            kind: panel.subhead
+                            name: mailServerProperties
+                            label: Properties
                         smtpAuth:
                             kind: panel.input.checkbox
                             name: mail.smtp.auth
                             label: SMTP Auth?
-                            value: true
-                            element:
-                                checked: true
+                            #value: true
+                            checked: true
                         smtpStartTls:
                             kind: panel.input.checkbox
                             name: mail.smtp.starttls.enable
                             label: Smart TLS?
-                            value: true
-                            element:
-                                checked: true
+                            #value: true
+                            checked: true
                         smtpSSLTrust:
                             kind: panel.input.text
                             name: mail.smtp.ssl.trust
                             label: SSL Trust
-                            value: localhost
+                            value: ''
+                            element:
+                                placeholder: localhost
+
+        misc:
+            kind: tab
+            name: misc
+            label: Misc.
+            contents:
+                random:
+                    kind: panel
+                    name: random
+                    id: random-things
+                    label: Random Things
+                    contains: things
+                    things:
+                        panel1:
+                            kind: panel.element
+                            label: A Multi-Select Menu
+                            contents:
+                                select1:
+                                    kind: select.multiple
+                                    label: Select Some:
+                                    options:
+                                        a:
+                                            html: A
+                                            selected: true
+                                        b:
+                                            html: B
+                                            selected: true
+                        sectionA:
+                            kind: panel.section
+                            element:
+                                style:
+                                    borderTop: "1px solid #e0e0e0"
+                                    padding: 0 20px
+                                    marginTop: 20px
+                            header: >
+                                <h4>The Button Section</h4>
+                            contains: stuff
+                            stuff:
+                                p1:
+                                    tag: p
+                                    element:
+                                        html: >
+                                            This is a 'panel.section' element. It takes up the entire width
+                                            of the panel and does not have layout structure for a label
+                                            on the left-hand side. There is a 'panel-header' item at the
+                                            top though, which can be set with the 'header' or 'label' property.
+                                            <br><br>
+                                btn1:
+                                    tag: button
+                                    element:
+                                        html: Hello.
+                                    after: <br><br>
+                                btn2:
+                                    tag: button.goodbye
+                                    element:
+                                        html: Goodbye.
+                                    after: <b class="w10">&nbsp;</b><small>Bye-bye.</small>

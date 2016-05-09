@@ -16,7 +16,7 @@ var XNAT = getObject(XNAT || {});
 
     XNAT.ui.panel = panel =
         getObject(XNAT.ui.panel || {});
-
+    
     // add new element class without destroying existing class
     function addClassName(el, newClass){
         el.className = [].concat(el.className||[], newClass).join(' ').trim();
@@ -32,8 +32,8 @@ var XNAT = getObject(XNAT || {});
         return obj.data;
     }
 
-    panel.init = function(opts){
-
+    panel.init = function panelInit(opts){
+        
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
 
@@ -52,7 +52,7 @@ var XNAT = getObject(XNAT || {});
                 (hideFooter ? ['div.hidden'] : ['div.panel-footer', opts.footer])
 
             ]);
-
+        
         // add an id to the outer panel element if present
         if (opts.id || opts.element.id) {
             _panel.id = (opts.id || opts.element.id) + '-panel';
@@ -68,8 +68,9 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
+
     // creates a panel that's a form that can be submitted
-    panel.form = function(opts){
+    panel.form = function panelForm(opts){
 
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
@@ -78,15 +79,17 @@ var XNAT = getObject(XNAT || {});
 
             hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
 
+            _resetBtn = spawn('button.btn.btn-sm.btn-default.revert.pull-right|type=button', 'Discard Changes'),
+
             _footer = [
                 ['button.btn.btn-sm.btn-primary.save.pull-right|type=submit', 'Submit'],
                 ['span.pull-right', '&nbsp;&nbsp;&nbsp;'],
-                ['button.btn.btn-sm.btn-default.revert.pull-right|type=button', 'Discard Changes'],
+                _resetBtn,
                 ['button.btn.btn-sm.btn-link.defaults.pull-left', 'Default Settings'],
                 ['div.clear']
             ],
 
-            _panel = spawn('form.xnat-form-panel.panel.panel-default', {
+            _formPanel = spawn('form.xnat-form-panel.panel.panel-default', {
                 method: opts.method || 'POST',
                 action: opts.action || '#'
             }, [
@@ -103,21 +106,147 @@ var XNAT = getObject(XNAT || {});
 
         // add an id to the outer panel element if present
         if (opts.id || opts.element.id) {
-            _panel.id = (opts.id || opts.element.id) + '-panel';
+            _formPanel.id = (opts.id || opts.element.id) + '-panel';
         }
 
+        // set form element values from an object map
+        function setValues(form, dataObj){
+            // pass a single argument to work with this form
+            if (!dataObj) {
+                dataObj = form;
+                form = _formPanel;
+            }
+            // find all form inputs with a name attribute
+            $$(form).find(':input[name]').each(function(){
+                $(this).changeVal(dataObj[this.name]||'');
+            });
+            if (xmodal && xmodal.loading && xmodal.loading.close){
+                xmodal.loading.close();
+            }
+        }
+
+        // populate the data fields if this panel is in the 'active' tab
+        // (only getting values for the active tab should cut down on requests)
+        function loadData(obj){
+
+            if (!obj) {
+                obj = opts.load || {};
+            }
+
+            obj = extend(true, {}, obj);
+
+            obj.form = obj.form || obj.target || obj.element || _formPanel;
+
+            // need a form to put the data into
+            if (!obj.form) return;
+
+            // if we pass data in a 'data' property, just use that
+            // to avoid doing a server request
+
+            if (obj.data) {
+                setValues(obj.form, eval(obj.data));
+                return obj.form;
+            }
+
+            // otherwise try to get the data values via ajax
+
+            // need a url to get the data
+            if (!obj.url) return obj.form;
+
+            obj.method = obj.method || 'GET';
+
+            // setup the ajax request
+            // override values with an
+            // 'ajax' or 'xhr' property
+            obj.ajax = extend(true, {
+                method: obj.method,
+                url: XNAT.url.restUrl(obj.url)
+            }, obj.ajax || obj.xhr);
+
+            // allow use of 'prop' or 'root' for the root property name
+            obj.prop = obj.prop || obj.root;
+
+            obj.ajax.success = function(data){
+                var prop = data;
+                // if there's a property to target,
+                // specify the 'prop' property
+                if (obj.prop){
+                    obj.prop.split('.').forEach(function(part){
+                        prop = prop[part];
+                    });
+                }
+                setValues(prop);
+            };
+
+            // return the ajax thing for method chaining
+            return XNAT.xhr.request(obj.ajax);
+
+        }
+
+        //if (opts.load){
+        //    loadData(opts.load);
+        //}
+
+        // click 'Discard Changes' butotn to reload data
+        _resetBtn.onclick = function(){
+            xmodal.loading.open();
+            loadData(opts.load);
+        };
+        
+        // intercept the form submit to do it via REST instead
+        $(_formPanel).on('submit', function(e){
+
+            e.preventDefault();
+
+            xmodal.loading.open();
+
+            var ajaxSubmitOpts = {
+
+                target:        '#server-response',  // target element(s) to be updated with server response
+                beforeSubmit:  function(){},  // pre-submit callback
+                success:       function(){},  // post-submit callback
+
+                // other available options:
+                url:       '/url/for/submit', // override for form's 'action' attribute
+                type:      'get or post (or put?)', // 'get' or 'post', override for form's 'method' attribute
+                dataType:  null,        // 'xml', 'script', or 'json' (expected server response type)
+                clearForm: true,        // clear all form fields after successful submit
+                resetForm: true,        // reset the form after successful submit
+
+                // $.ajax options can be used here too, for example:
+                timeout:   3000
+
+            };
+
+            $(this).ajaxSubmit({
+                success: function(){
+                    xmodal.loading.close();
+                    xmodal.message('Data saved successfully.', {
+                        action: loadData()
+                    });
+                }
+            });
+
+            return false;
+
+        });
+        
+        // this object is returned to the XNAT.spawner() method
         return {
+            load: loadData,
+            setValues: setValues,
             target: _target,
-            element: _panel,
-            spawned: _panel,
+            element: _formPanel,
+            spawned: _formPanel,
             get: function(){
-                return _panel;
+                return _formPanel;
             }
         }
     };
 
     // create a single generic panel element
     panel.element = function(opts){
+
         var _element, _inner = [], _target;
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
@@ -128,7 +257,7 @@ var XNAT = getObject(XNAT || {});
         addDataObjects(opts.element, { name: opts.name||'' });
         opts.label = opts.label||opts.title||opts.name||'';
 
-        _inner.push(['label.element-label', opts.label]);
+        _inner.push(['div.element-label', opts.label]);
 
         // 'contents' will be inserted into the 'target' element
         _target = spawn('div.element-wrapper');
@@ -153,6 +282,48 @@ var XNAT = getObject(XNAT || {});
         }
 
     };
+    
+    panel.subhead = function(opts){
+        opts = getObject(opts);
+        opts.html = opts.html || opts.text || opts.label;
+        return XNAT.ui.template.panelSubhead(opts).spawned;    
+    };
+    
+    // return a generic panel 'section'
+    panel.section = function(opts){
+
+        var _section, _inner = [], _body;
+
+        opts = getObject(opts);
+        opts.element = opts.element || opts.config || {};
+        opts.header = opts.header || opts.label || opts.title || '';
+        
+        if (opts.header) {
+            _inner.push(['header.section-header', opts.header]);
+        }
+        
+        // this needs to be spawned here to act as
+        // the target for this elements 'contents'
+        _body = spawn('div.section-body');
+        
+        _inner.push(_body);
+        
+        if (opts.footer) {
+            _inner.push(['footer.section-footer'], opts.footer);    
+        }
+        
+        _section = spawn('div.panel-section', opts.element, _inner);
+        
+        return {
+            target: _body,
+            element: _section,
+            spawned: _section,
+            get: function(){
+                return _section;
+            }
+        }
+
+    };
 
     panel.input = {};
 
@@ -164,34 +335,34 @@ var XNAT = getObject(XNAT || {});
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.number = function(opts){
+    panel.input.number = function panelInputNumber(opts){
         opts = getObject(opts);
         opts.type = 'number';
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.email = function(opts){
+    panel.input.email = function panelInputEmail(opts){
         opts = getObject(opts);
         opts.type = 'text';
         //addClassName(opts, 'email');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.password = function(opts){
+    panel.input.password = function panelInputPassword(opts){
         opts = getObject(opts);
         opts.type = 'password';
         //addClassName(opts, 'password ');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.checkbox = function(opts){
+    panel.input.checkbox = function panelInputCheckbox(opts){
         opts = getObject(opts);
         opts.type = 'checkbox';
         //addClassName(opts, 'checkbox');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
-    panel.input.upload = function(opts){
+    panel.input.upload = function panelInputUpload(opts){
         opts = getObject(opts);
         opts.id = (opts.id||randomID('upload-', false));
         opts.element = opts.element || opts.config || {};
@@ -217,9 +388,9 @@ var XNAT = getObject(XNAT || {});
         return XNAT.ui.template.panelInput(opts, form).spawned;
     };
 
-    panel.input.group = function(obj){
-        var _inner = ['div.element-group'];
-        var _outer = XNAT.ui.template.panelElementGroup(obj, _inner);
+    panel.input.group = function panelInputGroup(obj){
+        var _inner = spawn('div.element-group');
+        var _outer = XNAT.ui.template.panelElementGroup(obj, [_inner]).spawned;
         return {
             target: _inner,
             element: _outer,
@@ -232,30 +403,44 @@ var XNAT = getObject(XNAT || {});
 
     panel.select = {};
 
-    panel.select.menu = function(){
-
-    };
-
-    panel.select.single = function(opts){
+    panel.select.menu = function panelSelectSingle(opts, multi){
+        
         var _menu;
+        
         opts = getObject(opts);
-        opts.config = opts.config || opts.element || {};
-        opts.config.name = opts.config.name || opts.name || '';
-        opts.config.id = opts.config.id || opts.id || toDashed(opts.config.name);
-
-        _menu = spawn('select', opts.config, [['option|value=!', 'Select']]);
+        opts.element = opts.element || opts.config || {};
+        opts.element.name = opts.element.name || opts.name || '';
+        opts.element.id = opts.element.id || opts.id || toDashed(opts.element.name);
+        if (multi) {
+            opts.element.multiple = true;
+        }
+        _menu = spawn('select', opts.element, [['option|value=!', 'Select']]);
 
         if (opts.options){
             forOwn(opts.options, function(name, prop){
                 _menu.appendChild(spawn('option', {
                     value: prop.value,
-                    selected: (prop.value === opts.value)
+                    selected: prop.selected || (prop.value === opts.value)
                 }, prop.label));
             });
         }
-
-        return XNAT.ui.template.panelInput({ label: opts.label, name: opts.name }, _menu).spawned;
+        return XNAT.ui.template.panelInput({
+            label: opts.label,
+            name: opts.name
+        }, _menu).spawned;
     };
+    panel.select.init = panel.select.menu;
+    panel.select.single = panel.select.menu;
+
+    panel.select.multi = function panelSelectMulti(opts){
+        return panel.select.menu(opts, true)
+    };
+    
+    panel.selectMenu = function panelSelectMenu(opts){
+        opts = getObject(opts);
+        return XNAT.ui.template.panelSelect(opts).spawned;
+    };
+    
 
     function footerButton(text, type, disabled, classes){
         var button = {

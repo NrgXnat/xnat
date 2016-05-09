@@ -33,6 +33,8 @@ public class User {
         _salt = "";
         _lastModified = null;
         _authorization = null;
+        _isEnabled = user.isEnabled();
+        _isVerified = user.isVerified();
     }
 
     public User(final XdatUser user) {
@@ -117,6 +119,32 @@ public class User {
 
     public void setAdmin(final boolean isAdmin) {
         _isAdmin = isAdmin;
+    }
+
+    /**
+     * Whether the user is enabled.
+     **/
+    @ApiModelProperty(value = "Whether the user is enabled.")
+    @JsonProperty("enabled")
+    public boolean isEnabled() {
+        return _isEnabled;
+    }
+
+    public void setEnabled(final boolean isEnabled) {
+        _isEnabled = isEnabled;
+    }
+
+    /**
+     * Whether the user is verified.
+     **/
+    @ApiModelProperty(value = "Whether the user is verified.")
+    @JsonProperty("verified")
+    public boolean isVerified() {
+        return _isVerified;
+    }
+
+    public void setVerified(final boolean isVerified) {
+        _isVerified = isVerified;
     }
 
     /**
@@ -243,4 +271,6 @@ public class User {
     private String _salt = null;
     private Date _lastModified = null;
     private UserAuth _authorization = null;
+    private boolean _isEnabled;
+    private boolean _isVerified;
 }

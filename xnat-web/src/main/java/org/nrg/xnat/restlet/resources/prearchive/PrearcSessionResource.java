@@ -12,7 +12,6 @@ package org.nrg.xnat.restlet.resources.prearchive;
 
 import com.google.common.base.Strings;
 import com.google.common.collect.Maps;
-
 import org.apache.commons.io.FileUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.TurbineException;
@@ -22,7 +21,6 @@ import org.nrg.framework.constants.PrearchiveCode;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.exception.InvalidPermissionException;
-import org.nrg.xft.utils.DateUtils;
 import org.nrg.xnat.archive.FinishImageUpload;
 import org.nrg.xnat.helpers.prearchive.*;
 import org.nrg.xnat.helpers.prearchive.PrearcDatabase.SyncFailedException;
@@ -130,7 +128,7 @@ public final class PrearcSessionResource extends SecureResource {
 
         final File sessionDir;
         try {
-            sessionDir = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session,false);
+            sessionDir = PrearcUtils.getPrearcSessionDir(user, project, timestamp, session,true);
         } catch (InvalidPermissionException e) {
             logger.error("",e);
             this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, e.getMessage());

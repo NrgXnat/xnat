@@ -28,6 +28,7 @@ import org.nrg.action.ServerException;
 import org.nrg.config.services.ConfigService;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
+import org.nrg.framework.services.SerializerService;
 import org.nrg.framework.utilities.Reflection;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
@@ -66,7 +67,6 @@ import org.nrg.xnat.restlet.representations.*;
 import org.nrg.xnat.restlet.util.FileWriterWrapperI;
 import org.nrg.xnat.restlet.util.RequestUtil;
 import org.nrg.xnat.turbine.utils.ArchivableItem;
-import org.nrg.framework.services.SerializerService;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.restlet.Context;
 import org.restlet.data.*;
@@ -151,7 +151,14 @@ public abstract class SecureResource extends Resource {
         // expects that the user exists in the session (either via traditional
         // session or set via the XnatSecureGuard
         user = XDAT.getUserDetails();
-
+        if(user==null && !XFT.GetRequireLogin()){
+            try {
+                user = Users.getGuest();
+                XDAT.setUserDetails(user);
+            } catch (Exception e) {
+                logger.error("",e);
+            }
+        }
         filepath = getRequest().getResourceRef().getRemainingPart();
         if (filepath != null) {
             if (filepath.contains("?")) {

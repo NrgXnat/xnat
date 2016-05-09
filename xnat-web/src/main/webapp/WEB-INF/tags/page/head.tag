@@ -22,7 +22,7 @@
 
     <c:set var="rootUrl" value="${sessionScope.themeRoot}"/>
 
-    <link type="text/css" rel="stylesheet" href="${rootUrl}/scripts/lib/bootstrap/themes/xnat/bootstrap.css">
+    <%--<link type="text/css" rel="stylesheet" href="${rootUrl}/scripts/lib/bootstrap/themes/xnat/bootstrap.css">--%>
     <link type="text/css" rel="stylesheet" href="${rootUrl}/style/app.css">
 
     <%--<script src="<c:url value="/scripts/polyfills.js"/>"></script>--%>

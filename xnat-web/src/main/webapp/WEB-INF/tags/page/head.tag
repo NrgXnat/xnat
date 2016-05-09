@@ -3,8 +3,8 @@
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
 <%@ attribute name="title" %>
-<%@ attribute name="headTop" fragment="true" %>
-<%@ attribute name="headBottom" fragment="true" %>
+<%@ attribute name="headTop" %>
+<%@ attribute name="headBottom" %>
 
 <head>
 

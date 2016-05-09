@@ -6,6 +6,14 @@
 
 <%-- restricts access to only admin users --%>
 
+<c:if test="${empty hasInit}">
+    <pg:init>
+        <c:if test="${empty hasVars}">
+            <pg:jsvars/>
+        </c:if>
+    </pg:init>
+</c:if>
+
 <c:choose>
     <c:when test="${isAdmin == true}">
 

@@ -31,6 +31,7 @@
                 </div>
 
                 <script src="${sessionScope.siteRoot}/scripts/lib/jquery-plugins/jquery.form.js"></script>
+                <script src="${sessionScope.siteRoot}/scripts/lib/yamljs/dist/yaml.js"></script>
 
                 <c:import url="/xapi/siteConfig" var="siteConfig"/>
 
@@ -38,9 +39,12 @@
                     XNAT.data = extend({}, XNAT.data, {
                         siteConfig: ${siteConfig}
                     });
+                    // get rid of the 'targetSource' property
+                    delete XNAT.data.siteConfig.targetSource;
                 </script>
 
                 <script src="${sessionScope.siteRoot}/scripts/xnat/ui/templates.js"></script>
+                <script src="${sessionScope.siteRoot}/scripts/xnat/spawner.js"></script>
                 <script src="${sessionScope.siteRoot}/page/admin/tabs.js"></script>
 
             </div>

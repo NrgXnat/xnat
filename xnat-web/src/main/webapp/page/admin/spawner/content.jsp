@@ -3,14 +3,6 @@
         <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
         <%--<%@ taglib prefix="sp" tagdir="/WEB-INF/tags/spawner" %>--%>
 
-        <c:if test="${empty hasInit}">
-            <pg:init>
-                <c:if test="${empty hasVars}">
-                    <pg:jsvars/>
-                </c:if>
-            </pg:init>
-        </c:if>
-
         <c:set var="MSG">
             No spawning allowed.
         </c:set>

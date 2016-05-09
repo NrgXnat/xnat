@@ -119,6 +119,32 @@ var XNAT = getObject(XNAT);
         if (/checkbox|radio/i.test(opts.type||'') && opts.checked) {
             element.checked = true;
         }
+
+        var dataGetParts;
+
+        // set the values of form elements
+        if (opts.data) {
+            if (opts.data.get){
+                dataGetParts = opts.data.get.split('|');
+                $.ajax({
+                    method: dataGetParts[0] || 'GET',
+                    url: XNAT.url.restUrl(dataGetParts[1] || ''),
+                    success: function(data){
+                        // split object path
+                        if (dataGetParts[2]) {
+                            dataGetParts[2].split('.').forEach(function(part){
+                                data = data[part]
+                            });
+                        }
+                        // element.value = data;
+                        // changeVal() changes the value and triggers
+                        // the 'onchange' event
+                        $(element).changeVal(data).dataAttr('value', data);
+                    }
+                })
+            }
+        }
+
         return template.panelElement(opts, [
             ['label.element-label|for='+element.id||opts.id, opts.label],
             ['div.element-wrapper', [
@@ -171,7 +197,54 @@ var XNAT = getObject(XNAT);
             ['div.element-wrapper', elements]
         ]);
     };
-
+    
+    
+    template.codeEditor = function(opts, contents){
+        // options for the 'div.editor-content' element
+        opts = extend(true, opts, {
+            style: {
+                width: '100%', height: '100%',
+                position: 'absolute',
+                top: 0, right: 0,
+                bottom: 0, left: 0,
+                border: '1px solid #ccc'
+            }
+        });
+        // don't pass 'before' and 'after' into the editor
+        var before = opts.before || '';
+        var after = opts.after || '';
+        delete opts.before;
+        delete opts.after;
+        var content = spawn('div.editor-content', opts, contents||'');
+        var _tmpl = ['form.code-editor', [
+            before,
+            ['div.editor-wrapper', {
+                style: {
+                    width:  opts.width  || '840px',
+                    height: opts.height || '482px',
+                    position: 'relative'
+                }
+            }, [content]],
+            after
+        ]];
+        var _spawned = spawn.apply(null, _tmpl);
+        var _html = _spawned.outerHTML;
+        return {
+            template: _tmpl, // the raw template (Spawn array)
+            spawned: _spawned, // pre-spawned
+            editor: content, // easy-to-remember name for the editor div
+            target: content, // for inserting content dynamically
+            inner: content,
+            html: _html, // pre-spawned HTML
+            outerHTML: _html,
+            get: function(){
+                return _spawned;
+            },
+            getHTML: function(){ // call to get the HTML
+                return _html;
+            }
+        }
+    };
 
     return XNAT.ui.templates = XNAT.ui.template = template;
 

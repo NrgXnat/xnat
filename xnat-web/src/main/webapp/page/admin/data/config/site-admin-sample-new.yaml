@@ -20,7 +20,7 @@ siteAdmin:
             label: Site Setup
             group: xnatSetup
             active: true
-            config:
+            element:
                 data:
                     foo: bar
             contains: panels # the value for 'contains' can be a custom name for 'contents'
@@ -33,9 +33,10 @@ siteAdmin:
                     label: Site Information
                     method: POST
                     action: /xapi/siteConfig/batch
+                    contentType: application/json
                     load:
                         data: XNAT.data.siteConfig
-
+                        refresh: /xapi/siteConfig # url to use to get fresh data (uses GET)
                     contents:
 
                         # panel input
@@ -45,6 +46,8 @@ siteAdmin:
                             id: side-id
                             label: Site ID
                             value: XNAT
+                            load:
+                                url: /xapi/siteConfig/siteId
                             description: >
                                 The id used to refer to this site (also used to generate ids). The Site ID must start
                                 with a letter and contain only letters, numbers and underscores. It should be a short,
@@ -122,11 +125,15 @@ siteAdmin:
                 emailServerSettings:
                     kind: panel.form
                     method: POST
-                    action: /xapi/notifications/all
+#                    action: /xapi/notifications/smtp
+                    action: /xapi/siteConfig/smtpServer
+#                    action: '#@' # this character combo means submit each item individually
+                    contentType: json
                     load: # load data
-                        url: /xapi/siteConfig
-#                        method: GET      # defaults to GET if not set
-                        prop: smtpServer # which root property? gets the root object if not set
+#                        refresh: /xapi/siteConfig/smtpServer
+                        url: /xapi/siteConfig/smtpServer
+                        method: GET      # defaults to GET if not set
+#                        prop: smtpServer # which root property? gets the root object if not set
 #                        data: XNAT.data.siteConfig.smtpServer
                     name:  emailServerSettings
                     label: Mail Server Settings
@@ -153,7 +160,6 @@ siteAdmin:
                             kind: panel.input.text
                             name: username
                             label: Username
-                            url: /xapi/notifications/username
                             value: ''
                             element:
                                 placeholder: admin@localhost
@@ -167,10 +173,12 @@ siteAdmin:
                             name: protocol
                             label: Protocol
                             value: ''
-                            #data:
-                                #get: GET|/xapi/siteConfig|smtpServer.protocol
-                                #set: POST|/xapi/notifications/protocol
-                        # subhead breaks up panel items
+#                            data:
+#                                get: GET|/xapi/siteConfig|smtpServer.protocol
+#                                set: POST|/xapi/notifications/protocol
+
+#                        subhead breaks up panel items
+
                         mailServerProperties:
                             kind: panel.subhead
                             name: mailServerProperties
@@ -179,13 +187,13 @@ siteAdmin:
                             kind: panel.input.checkbox
                             name: mail.smtp.auth
                             label: SMTP Auth?
-                            #value: true
+                            value: true
                             checked: true
                         smtpStartTls:
                             kind: panel.input.checkbox
                             name: mail.smtp.starttls.enable
                             label: Smart TLS?
-                            #value: true
+                            value: true
                             checked: true
                         smtpSSLTrust:
                             kind: panel.input.text
@@ -221,6 +229,7 @@ siteAdmin:
                                         b:
                                             html: B
                                             selected: true
+
                         sectionA:
                             kind: panel.section
                             element:

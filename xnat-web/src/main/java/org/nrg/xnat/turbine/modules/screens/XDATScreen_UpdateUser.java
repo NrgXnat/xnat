@@ -99,7 +99,7 @@ public class XDATScreen_UpdateUser extends SecureScreen {
                         {
                             context.put("forgot", true);
                             data.getSession().setAttribute("forgot", true);
-                            userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,Long.parseLong(secret));
+                            userID = XDAT.getContextService().getBean(AliasTokenService.class).validateToken(alias,secret);
                             if(userID!=null){
                                 user = Users.getUser(userID);
                                 XDAT.loginUser(data, user, true);

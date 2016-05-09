@@ -47,8 +47,7 @@ public class AliasTokenRestlet extends SecureResource {
         _operation = (String) getRequest().getAttributes().get(PARAM_OPERATION);
         _username = (String) getRequest().getAttributes().get(PARAM_USERNAME);
         _token = (String) getRequest().getAttributes().get(PARAM_TOKEN);
-        final String secret = (String) getRequest().getAttributes().get(PARAM_SECRET);
-        _secret = StringUtils.isBlank(secret) ? INVALID : Long.parseLong(secret);
+        _secret = (String) getRequest().getAttributes().get(PARAM_SECRET);
 
         _serializer = XDAT.getContextService().getBean(SerializerService.class);
         if (null == _serializer) {
@@ -70,7 +69,7 @@ public class AliasTokenRestlet extends SecureResource {
                 throw new ResourceException(Status.CLIENT_ERROR_BAD_REQUEST, "An error occurred retrieving the user: " + _username, exception);
             }
         } else if (OP_VALIDATE.equals(_operation)) {
-            if (StringUtils.isBlank(_token) || _secret == INVALID) {
+            if (StringUtils.isBlank(_token) || StringUtils.isBlank(_secret)) {
                 throw new ResourceException(Status.CLIENT_ERROR_UNAUTHORIZED, "You must specify both token and secret to validate a token.");
             }
             try {
@@ -91,7 +90,7 @@ public class AliasTokenRestlet extends SecureResource {
     private String mapToken(final AliasToken token) {
         Map<String, String> map = Maps.newHashMap();
         map.put("alias", token.getAlias());
-        map.put("secret", Long.toString(token.getSecret()));
+        map.put("secret", token.getSecret());
         String value = "";
         try {
             value = _serializer.toJson(map);
@@ -119,5 +118,5 @@ public class AliasTokenRestlet extends SecureResource {
     private       String            _operation;
     private final String            _username;
     private final String            _token;
-    private final long              _secret;
+    private final String              _secret;
 }

@@ -131,7 +131,7 @@ public class AliasTokenAuthenticationProvider extends AbstractUserDetailsAuthent
         Users.validateUserLogin(xdatUserDetails);
 
         String alias = ((AliasTokenAuthenticationToken) authentication).getAlias();
-        long secret = ((AliasTokenAuthenticationToken) authentication).getSecret();
+        String secret = ((AliasTokenAuthenticationToken) authentication).getSecret();
         String userId = getAliasTokenService().validateToken(alias, secret);
         if (StringUtils.isBlank(userId) || !userId.equals(userDetails.getUsername())) {
             throw new BadCredentialsException("The submitted alias token was invalid: " + alias);

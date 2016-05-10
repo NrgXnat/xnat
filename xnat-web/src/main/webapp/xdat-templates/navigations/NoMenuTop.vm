@@ -23,6 +23,7 @@ $page.setBgColor($ui.bgcolor)
     <div class="clear"></div>
 </div><!-- /user_bar -->
 
+<div id="page_wrapper">
 
 <div id="header" class="main_header"><div class="pad">
     <a id="header_logo" href="$link.setPage("Index.vm")#if($data.getParameters().getString('par'))/par/$data.getParameters().getString('par')#end">

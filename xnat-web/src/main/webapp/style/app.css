@@ -909,7 +909,7 @@ body,
 html body,
 * body {
     margin: 0;
-    background: #f0f0f0;
+    background: #fff;
     font-family: Arial, Helvetica, sans-serif !important;
     font-size: 12px;
     line-height: 15px;
@@ -1264,6 +1264,11 @@ span.sep {
     vertical-align: middle;
     color: #fff;
     background: #033769;
+}
+
+#user_bar > .inner {
+    width: 1160px;
+    margin: 0 auto;
 }
 
 #user_bar.no_menu {
@@ -1683,44 +1688,54 @@ div.containerTitle.withColor {
     border-bottom: 1px solid #033769;
 }
 
+#main_nav > .inner {
+    width: 1160px;
+    margin: 0 auto;
+    position: relative;
+}
+
 #main_nav.hidden {
     overflow: hidden;
 }
 
-#main_nav > ul li {
+#main_nav ul.nav li {
     float: left;
     display: block;
     position: relative;
 }
 
-#main_nav > ul,
-#main_nav > ul ul {
+#main_nav ul.nav,
+#main_nav ul.nav ul {
     margin: 0;
     padding: 0;
     list-style: none;
     /*background: #fff;*/
 }
 
-#main_nav > ul a {
+#main_nav ul.nav a {
     display: block;
     text-decoration: none;
     vertical-align: middle;
     white-space: nowrap;
 }
 
-#main_nav > ul a:hover {
+#main_nav ul.nav a:hover {
     cursor: pointer !important;
 }
 
-#main_nav > ul > li {
+#main_nav ul.nav > li {
     border-right: 1px solid #033769;
+}
+
+#main_nav ul.nav > li:first-of-type {
+    border-left: 1px solid #033769;
 }
 
 /*#main_nav li:hover {*/
 /*!*background: url('../images/nav_bkgd_hover.png') center center repeat-x;*!*/
 /*}*/
 
-#main_nav > ul > li > a {
+#main_nav ul.nav > li > a {
     padding: 0 15px;
     line-height: 40px;
     background-position: right center;
@@ -1728,23 +1743,23 @@ div.containerTitle.withColor {
     color: #fff;
 }
 
-#main_nav > ul > li > a:hover {
+#main_nav ul.nav > li > a:hover {
     /*color: #000;*/
     background-color: #044687;
 }
 
-#main_nav > ul > li.more > a {
+#main_nav ul.nav > li.more > a {
     padding-right: 30px;
     background-image: url('../images/nav_more_light.png');
 }
 
 /* second-level menus */
-#main_nav > ul > li.more > ul {
+#main_nav ul.nav > li.more > ul {
     top: 40px;
 }
 
 /* all subnav */
-#main_nav > ul ul {
+#main_nav ul.nav ul {
     display: none;
     position: absolute;
     left: 0;
@@ -1755,7 +1770,7 @@ div.containerTitle.withColor {
 }
 
 /* make sure all sub-nav menus are wide enough */
-#main_nav > ul li li {
+#main_nav ul.nav li li {
     width: 100%;
 }
 
@@ -1763,7 +1778,7 @@ div.containerTitle.withColor {
 /*background: !* #D8ECFF *! !* #EDF5FF *! #e5f2ff right center no-repeat;*/
 /*}*/
 
-#main_nav > ul li li a {
+#main_nav ul.nav li li a {
     padding: 0 30px 0 15px;
     line-height: 25px;
     font-size: 13px;
@@ -1774,23 +1789,23 @@ div.containerTitle.withColor {
     color: #222;
 }
 
-#main_nav > ul li li a:hover {
+#main_nav ul.nav li li a:hover {
     background-color: #e5f2ff;
 }
 
-#main_nav li li.more > a {
+#main_nav ul.nav li li.more > a {
     background-image: url('../images/subnav_more_light.png');
 }
 
 /* third-level menus */
-#main_nav > ul li li ul {
+#main_nav ul.nav li li ul {
     display: none;
     top: 0;
     margin-left: -2px;
     border: 1px solid #c0c0c0;
 }
 
-#main_nav > ul ul,
+#main_nav ul.nav ul,
 .shadowed {
     -moz-box-shadow: 0 2px 12px rgba(96, 96, 96, 0.8);
     -webkit-box-shadow: 0 2px 12px rgba(96, 96, 96, 0.8);
@@ -3468,7 +3483,9 @@ hr.light {
 @media screen and (max-width: 1200px) {
 
     #page_wrapper,
-    #xnat_power {
+    #xnat_power,
+    #main_nav > .inner,
+    #user_bar > .inner {
         width: 960px;
     }
 

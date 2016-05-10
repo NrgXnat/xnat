@@ -76,8 +76,6 @@
     <script src="${_siteRoot}/scripts/lib/js.cookie.js"></script>
     <script src="${_siteRoot}/scripts/lib/yamljs/dist/yaml.js"></script>
 
-
-
     <%--<script src="${_siteRoot}/scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>--%>
     <%--<script src="${_siteRoot}/scripts/yui/build/event/event-min.js"></script>--%>
     <%--<script src="${_siteRoot}/scripts/yui/build/container/container-min.js"></script>--%>
@@ -97,9 +95,6 @@
     <%--<script src="${_siteRoot}/scripts/yui/xnat_loader.js"></script>--%>
     <%--<script src="${_siteRoot}/scripts/LeftBarTreeView.js"></script>--%>
     <%--<script src="${_siteRoot}/scripts/justification/justification.js"></script>--%>
-
-
-
 
     <!-- XNAT utility functions -->
     <script src="${_siteRoot}/scripts/utils.js"></script>
@@ -218,72 +213,71 @@ ${headBottom}
 
 ${bodyTop}
 
-<div id="page_wrapper">
-
-    <div id="user_bar">
-        <div class="inner">
-            <img id="attention_icon" src="${_siteRoot}/images/attention.png" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
+<div id="user_bar">
+    <div class="inner">
+        <img id="attention_icon" src="${_siteRoot}/images/attention.png" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
             <span id="user_info">Logged in as: &nbsp;<a href="${_siteRoot}/app/template/XDATScreen_UpdateUser.vm">${_user}</a> <b>|</b>
                 <span class="tip_icon" style="margin-right:3px;left:2px;top:3px;">
                     <span class="tip shadowed" style="top:20px;z-index:10000;white-space:normal;left:-150px;width:300px;background-color:#ffc;">
-                        Your XNAT session will auto-logout after a certain period of inactivity. 
+                        Your XNAT session will auto-logout after a certain period of inactivity.
                         You can reset the timer without reloading thepage by clicking "renew."
                     </span>
                 </span>
-                Auto-logout in: 
+                Auto-logout in:
                 <b id="timeLeft">-:--:--</b> -
                 <a id="timeLeftRenew" href="#!">renew</a>
-                <b>|</b> 
+                <b>|</b>
                 <a id="logout_user" href="${_siteRoot}/app/action/LogoutUser">Logout</a>
             </span>
-            <%--<script type="text/javascript">--%>
-                <%--$('#timeLeftRenew').click(XNAT.app.timeout.handleOk);--%>
-                <%--Cookies.set('guest', 'false', {path: '/'});--%>
-            <%--</script>--%>
-            <div class="clear"></div>
-        </div>
-    </div><!-- /user_bar -->
+        <%--<script type="text/javascript">--%>
+        <%--$('#timeLeftRenew').click(XNAT.app.timeout.handleOk);--%>
+        <%--Cookies.set('guest', 'false', {path: '/'});--%>
+        <%--</script>--%>
+        <div class="clear"></div>
+    </div>
+</div><!-- /user_bar -->
+
+<div id="main_nav">
+    <div class="inner">
+
+    <ul class="nav">
+        <!-- Sequence: 10 -->
+        <!-- allowGuest: true -->
+        <li>
+            <a id="nav-home" title="Home" href="${_siteRoot}/">&nbsp;</a>
+            <script>
+                $('#nav-home').css({
+                    width: '30px',
+                    backgroundImage: "url('${_siteRoot}/images/xnat-nav-logo-white-lg.png')",
+                    backgroundRepeat: 'no-repeat',
+                    backgroundSize: '32px',
+                    backgroundPosition: 'center'
+                });
+            </script>
+        </li>
+        <!-- Sequence: 20 -->
+        <li class="more"><a href="#new">New</a>
+            <ul class="" style="display: none;">
+                <!-- Sequence: 10 -->
+                <li><a href="${_siteRoot}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
+                <li><a href="${_siteRoot}/app/action/XDATActionRouter/xdataction/edit/search_element/xnat:subjectData">Subject</a></li>
+                <li><a href="${_siteRoot}/app/template/XDATScreen_add_experiment.vm">Experiment</a></li>
+            </ul>
+        </li>
+        <!-- Sequence: 30 -->
+        <li class="more"><a href="#upload">Upload</a>
+            <ul>
+                <!-- Sequence: 10 -->
+                <!-- Upload/Default -->
+                <li><a href="${_siteRoot}/app/template/LaunchUploadApplet.vm">Images</a></li>
+                <li><a href="${_siteRoot}/app/template/XMLUpload.vm">XML</a></li>
+                <li><a href="${_siteRoot}/app/template/XDATScreen_uploadCSV.vm">Spreadsheet</a></li>
+                <li><a href="${_siteRoot}/app/template/XDATScreen_prearchives.vm">Go to prearchive</a></li>
+            </ul>
+        </li>
 
 
-    <div id="main_nav">
-
-        <ul class="nav">
-            <!-- Sequence: 10 -->
-            <!-- allowGuest: true -->
-            <li>
-                <a id="nav-home" title="Home" href="${_siteRoot}/">&nbsp;</a>
-                <script>
-                    $('#nav-home').css({
-                        width: '30px',
-                        backgroundImage: "url('${_siteRoot}/images/xnat-nav-logo-white-lg.png')",
-                        backgroundRepeat: 'no-repeat',
-                        backgroundSize: '32px',
-                        backgroundPosition: 'center'
-                    });
-                </script>
-            </li>
-            <!-- Sequence: 20 -->
-            <li class="more"><a href="#new">New</a>
-                <ul class="" style="display: none;">
-                    <!-- Sequence: 10 -->
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
-                    <li><a href="${_siteRoot}/app/action/XDATActionRouter/xdataction/edit/search_element/xnat%3AsubjectData">Subject</a></li>
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_add_experiment.vm">Experiment</a></li>
-                </ul>
-            </li>
-            <!-- Sequence: 30 -->
-            <li class="more"><a href="#upload">Upload</a>
-                <ul>
-                    <!-- Sequence: 10 -->
-                    <!-- Upload/Default -->
-                    <li><a href="${_siteRoot}/app/template/LaunchUploadApplet.vm">Images</a></li>
-                    <li><a href="${_siteRoot}/app/template/XMLUpload.vm">XML</a></li>
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_uploadCSV.vm">Spreadsheet</a></li>
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_prearchives.vm">Go to prearchive</a></li>
-                </ul>
-            </li>
-
-            <c:if test="${isAdmin == true}">
+        <c:if test="${isAdmin == true}">
             <!-- Sequence: 40 -->
             <li class="more"><a href="#adminbox">Administer</a>
                 <ul>
@@ -298,222 +292,229 @@ ${bodyTop}
                     <li><a href="${_siteRoot}/app/template/XDATScreen_admin_options.vm">More...</a></li>
                 </ul>
             </li>
-            </c:if>
+        </c:if>
 
 
-            <!-- Title: Tools -->
-            <!-- Sequence: 50 -->
-            <!-- allowGuest: true -->
+        <!-- Title: Tools -->
+        <!-- Sequence: 50 -->
+        <!-- allowGuest: true -->
 
-            <li class="more"><a href="#tools">Tools</a>
-                <ul>
-                    <!-- Sequence: 10 -->
-                    <!-- allowGuest: true -->
-                    <li><a href="https://wiki.xnat.org/display/XNAT16/XNAT+Desktop" target="_blank">XNAT Desktop (XND)</a></li>
-                    <li><a href="http://nrg.wustl.edu/projects/DICOM/DicomBrowser.jsp" target="_blank">DICOM Browser</a></li>
-                    <li><a href="https://wiki.xnat.org/display/XNAT16/XNAT+Client+Tools" target="_blank">Command Prompt Tools</a></li>
-                </ul>
-            </li>
-            <!-- Sequence: 60 -->
-            <li class="more"><a href="#help">Help</a>
-                <ul class="" style="display: none;">
-                    <!-- Sequence: 10 -->
-                    <!-- Home/Default -->
-                    <li><a href="${_siteRoot}/app/template/ReportIssue.vm">Report a Problem</a></li>
-                    <li><a href="http://wiki.xnat.org/display/XNAT16/Home" target="_blank">Documentation</a></li>
-                </ul>
-            </li>
-        </ul>
-        
-        <!-- search script -->
-        <script type="text/javascript">
-            <!--
-            function DefaultEnterKey(e, button){
-                var keynum, keychar, numcheck;
+        <li class="more"><a href="#tools">Tools</a>
+            <ul>
+                <!-- Sequence: 10 -->
+                <!-- allowGuest: true -->
+                <li><a href="https://wiki.xnat.org/display/XNAT16/XNAT+Desktop" target="_blank">XNAT Desktop (XND)</a></li>
+                <li><a href="http://nrg.wustl.edu/projects/DICOM/DicomBrowser.jsp" target="_blank">DICOM Browser</a></li>
+                <li><a href="https://wiki.xnat.org/display/XNAT16/XNAT+Client+Tools" target="_blank">Command Prompt Tools</a></li>
+            </ul>
+        </li>
+        <!-- Sequence: 60 -->
+        <li class="more"><a href="#help">Help</a>
+            <ul class="" style="display: none;">
+                <!-- Sequence: 10 -->
+                <!-- Home/Default -->
+                <li><a href="${_siteRoot}/app/template/ReportIssue.vm">Report a Problem</a></li>
+                <li><a href="http://wiki.xnat.org/display/XNAT16/Home" target="_blank">Documentation</a></li>
+            </ul>
+        </li>
+    </ul>
 
-                if (window.event) // IE
-                {
-                    keynum = e.keyCode;
-                    if (keynum == 13) {
-                        submitQuickSearch();
-                        return true;
-                    }
+    <!-- search script -->
+    <script type="text/javascript">
+        <!--
+        function DefaultEnterKey(e, button){
+            var keynum, keychar, numcheck;
+
+            if (window.event) // IE
+            {
+                keynum = e.keyCode;
+                if (keynum == 13) {
+                    submitQuickSearch();
+                    return true;
                 }
-                else if (e) // Netscape/Firefox/Opera
-                {
-                    keynum = e.which;
-                    if (keynum == 13) {
-                        submitQuickSearch();
-                        return false;
-                    }
+            }
+            else if (e) // Netscape/Firefox/Opera
+            {
+                keynum = e.which;
+                if (keynum == 13) {
+                    submitQuickSearch();
+                    return false;
                 }
-                return true;
             }
+            return true;
+        }
 
-            function submitQuickSearch(){
-                concealContent();
-                if (document.getElementById('quickSearchForm').value != "")
-                    document.getElementById('quickSearchForm').submit();
-            }
+        function submitQuickSearch(){
+            concealContent();
+            if (document.getElementById('quickSearchForm').value != "")
+                document.getElementById('quickSearchForm').submit();
+        }
 
-            //-->
+        //-->
+    </script>
+    <!-- end search script -->
+
+    <style type="text/css">
+        #quickSearchForm .chosen-results {
+            max-height: 500px;
+        }
+
+        #quickSearchForm .chosen-results li {
+            padding-right: 20px;
+            white-space: nowrap;
+        }
+
+        #quickSearchForm .chosen-container .chosen-drop {
+            width: auto;
+            min-width: 180px;
+            max-width: 360px;
+        }
+
+        #quickSearchForm .chosen-container .chosen-drop .divider {
+            padding: 0;
+            overflow: hidden;
+        }
+    </style>
+
+    <form id="quickSearchForm" method="post" action="${_siteRoot}/app/action/QuickSearchAction">
+        <select id="stored-searches" data-placeholder="Stored Searches" style="display: none;">
+            <option></option>
+            <optgroup>
+                <option value="${_siteRoot}/app/template/XDATScreen_search_wizard1.vm">Advanced Search…</option>
+            </optgroup>
+            <optgroup class="stored-search-list">
+                <option disabled="">(no stored searches)</option>
+                <!-- stored searches will show up here -->
+            </optgroup>
+        </select>
+        <input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="">
+        <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Go</button>
+
+        <script>
+
+            $('#searchValue').each(function(){
+                var _this = this;
+                _this.value = _this.value || 'search';
+                $(_this).focus(function(){
+                    $(_this).removeClass('clean');
+                    if (!_this.value || _this.value === 'search') {
+                        _this.value = '';
+                    }
+                })
+            });
+
+            $('#stored-searches').on('change', function(){
+                if (this.value) {
+                    window.location.href = this.value;
+                }
+            }).chosen({
+                width: '150px',
+                disable_search_threshold: 9,
+                inherit_select_classes: true,
+                placeholder_text_single: 'Stored Searches',
+                search_contains: true
+            });
+
         </script>
-        <!-- end search script -->
-
-        <style type="text/css">
-            #quickSearchForm .chosen-results {
-                max-height: 500px;
-            }
-
-            #quickSearchForm .chosen-results li {
-                padding-right: 20px;
-                white-space: nowrap;
-            }
-
-            #quickSearchForm .chosen-container .chosen-drop {
-                width: auto;
-                min-width: 180px;
-                max-width: 360px;
-            }
-
-            #quickSearchForm .chosen-container .chosen-drop .divider {
-                padding: 0;
-                overflow: hidden;
-            }
-        </style>
-
-        <form id="quickSearchForm" method="post" action="${_siteRoot}/app/action/QuickSearchAction">
-            <select id="stored-searches" data-placeholder="Stored Searches" style="display: none;">
-                <option></option>
-                <optgroup>
-                    <option value="${_siteRoot}/app/template/XDATScreen_search_wizard1.vm">Advanced Search…</option>
-                </optgroup>
-                <optgroup class="stored-search-list">
-                    <option disabled="">(no stored searches)</option>
-                    <!-- stored searches will show up here -->
-                </optgroup>
-            </select>
-            <input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="">
-            <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Go</button>
-
-            <script>
-                $('#searchValue').each(function(){
-                    var _this = this;
-                    _this.value = _this.value || 'search';
-                    $(_this).focus(function(){
-                        $(_this).removeClass('clean');
-                        if (!_this.value || _this.value === 'search') {
-                            _this.value = '';
-                        }
-                    })
-                });
-                
-                $('#stored-searches').on('change', function(){
-                    if (this.value) {
-                        window.location.href = this.value;
-                    }
-                }).chosen({
-                    width: '150px',
-                    disable_search_threshold: 9,
-                    inherit_select_classes: true,
-                    placeholder_text_single: 'Stored Searches',
-                    search_contains: true
-                });
-            </script>
-        </form>
+    </form>
 
     </div>
-    <!-- /main_nav -->
+    <!-- /.inner -->
 
-    <!-- main_nav interactions -->
-    <script type="text/javascript">
+</div>
+<!-- /#main_nav -->
 
-        (function(){
+<!-- main_nav interactions -->
+<script type="text/javascript">
 
-            // cache it
-            var main_nav$ = jq('#main_nav > ul');
-            
-            var body$ = jq('body');
+    (function(){
 
-            var cover_up_count = 1;
+        // cache it
+        var main_nav$ = jq('#main_nav ul.nav');
 
-            function coverApplet(el$){
-                var cover_up_id = 'cover_up' + cover_up_count++;
-                var jqObjPos = el$.offset(),
+        var body$ = jq('body');
+
+        var cover_up_count = 1;
+
+        function coverApplet(el$){
+            var cover_up_id = 'cover_up' + cover_up_count++;
+            var jqObjPos = el$.offset(),
                     jqObjLeft = jqObjPos.left,
                     jqObjTop = jqObjPos.top,
                     jqObjMarginTop = el$.css('margin-top'),
                     jqObjWidth = el$.outerWidth() + 4,
                     jqObjHeight = el$.outerHeight() + 2;
 
-                el$.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
+            el$.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
 
-                jq('#' + cover_up_id).css({
-                    display: 'block',
-                    position: 'fixed',
-                    width: jqObjWidth,
-                    height: jqObjHeight,
-                    marginTop: jqObjMarginTop,
-                    left: jqObjLeft,
-                    top: jqObjTop,
-                    background: 'transparent',
-                    border: 'none',
-                    outline: 'none'
-                });
-            }
-
-            function unCoverApplets(el$){
-                el$.prev('iframe.applet_cover_up').detach();
-            }
-
-            function fadeInNav(el$){
-//            el$.stop('clearQueue','gotoEnd');
-                el$.find('> ul').show().addClass('open');
-            }
-
-            function fadeOutNav(el$){
-//            el$.stop('clearQueue','gotoEnd');
-                el$.find('> ul').hide().removeClass('open');
-            }
-
-            // give menus with submenus a class of 'more'
-            main_nav$.find('li ul, li li ul').closest('li').addClass('more');
-            main_nav$.find('li li ul').addClass('subnav');
-
-            // no fancy fades on hover
-            main_nav$.find('li.more').on('mouseover',
-                    function(){
-                        var li$ = $(this);
-                        fadeInNav(li$);
-                        //jq('#main_nav li').removeClass('open');
-                        li$.find('ul.subnav').each(function(){
-                            var sub$ = $(this);
-                            var offsetL = sub$.closest('ul').outerWidth();
-                            sub$.css({'left': offsetL + -25})
-                        });
-                        if (body$.hasClass('applet')) {
-                            coverApplet(li$.find('> ul'));
-                        }
-                    }
-            ).on('mouseout',
-                    function(){
-                        var li$ = $(this);
-                        fadeOutNav(li$);
-                        if (body$.hasClass('applet')) {
-                            unCoverApplets(li$.find('> ul'));
-                        }
-                    }
-            );
-
-            // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
-            jq('#logout_user').click(function(){
-                Cookies.set('WARNING_BAR', 'OPEN', {path: '/'});
-                Cookies.set('NOTIFICATION_MESSAGE', 'OPEN', {path: '/'});
+            jq('#' + cover_up_id).css({
+                display: 'block',
+                position: 'fixed',
+                width: jqObjWidth,
+                height: jqObjHeight,
+                marginTop: jqObjMarginTop,
+                left: jqObjLeft,
+                top: jqObjTop,
+                background: 'transparent',
+                border: 'none',
+                outline: 'none'
             });
+        }
 
-        })();
-    </script>
-    <!-- end main_nav interactions -->
+        function unCoverApplets(el$){
+            el$.prev('iframe.applet_cover_up').detach();
+        }
+
+        function fadeInNav(el$){
+//            el$.stop('clearQueue','gotoEnd');
+            el$.find('> ul').show().addClass('open');
+        }
+
+        function fadeOutNav(el$){
+//            el$.stop('clearQueue','gotoEnd');
+            el$.find('> ul').hide().removeClass('open');
+        }
+
+        // give menus with submenus a class of 'more'
+        main_nav$.find('li ul, li li ul').closest('li').addClass('more');
+        main_nav$.find('li li ul').addClass('subnav');
+
+        // no fancy fades on hover
+        main_nav$.find('li.more').on('mouseover',
+                function(){
+                    var li$ = $(this);
+                    fadeInNav(li$);
+                    //jq('#main_nav li').removeClass('open');
+                    li$.find('ul.subnav').each(function(){
+                        var sub$ = $(this);
+                        var offsetL = sub$.closest('ul').outerWidth();
+                        sub$.css({'left': offsetL + -25})
+                    });
+                    if (body$.hasClass('applet')) {
+                        coverApplet(li$.find('> ul'));
+                    }
+                }
+        ).on('mouseout',
+                function(){
+                    var li$ = $(this);
+                    fadeOutNav(li$);
+                    if (body$.hasClass('applet')) {
+                        unCoverApplets(li$.find('> ul'));
+                    }
+                }
+        );
+
+        // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
+        jq('#logout_user').click(function(){
+            Cookies.set('WARNING_BAR', 'OPEN', {path: '/'});
+            Cookies.set('NOTIFICATION_MESSAGE', 'OPEN', {path: '/'});
+        });
+
+    })();
+</script>
+<!-- end main_nav interactions -->
+
+<div id="page_wrapper">
 
     <div id="header" class="main_header">
         <div class="pad">

@@ -16,7 +16,7 @@ var XNAT = getObject(XNAT || {});
 
     XNAT.ui.panel = panel =
         getObject(XNAT.ui.panel || {});
-    
+
     // add new element class without destroying existing class
     function addClassName(el, newClass){
         el.className = [].concat(el.className||[], newClass).join(' ').trim();
@@ -33,7 +33,7 @@ var XNAT = getObject(XNAT || {});
     }
 
     panel.init = function panelInit(opts){
-        
+
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
 
@@ -52,7 +52,7 @@ var XNAT = getObject(XNAT || {});
                 (hideFooter ? ['div.hidden'] : ['div.panel-footer', opts.footer])
 
             ]);
-        
+
         // add an id to the outer panel element if present
         if (opts.id || opts.element.id) {
             _panel.id = (opts.id || opts.element.id) + '-panel';
@@ -118,7 +118,14 @@ var XNAT = getObject(XNAT || {});
             }
             // find all form inputs with a name attribute
             $$(form).find(':input[name]').each(function(){
-                $(this).changeVal(dataObj[this.name]||'');
+                var val = '';
+                if (Array.isArray(dataObj)) {
+                    val = dataObj.join(', ');
+                }
+                else {
+                    val = /string|number/i.test(typeof dataObj) ? dataObj : dataObj[this.name] || '';
+                }
+                $(this).changeVal(val);
             });
             if (xmodal && xmodal.loading && xmodal.loading.close){
                 xmodal.loading.close();
@@ -140,11 +147,26 @@ var XNAT = getObject(XNAT || {});
             // need a form to put the data into
             if (!obj.form) return;
 
+            // // if there's a 'refresh' url, make that obj.url
+            // if (obj.refresh) obj.url = obj.refresh;
+
             // if we pass data in a 'data' property, just use that
             // to avoid doing a server request
 
-            if (obj.data) {
-                setValues(obj.form, eval(obj.data));
+            if (obj.data && !obj.url) {
+                if (Array.isArray(obj.data)) {
+                    obj.data = obj.data[0];
+                }
+                else {
+                    try {
+                        obj.data = eval(obj.data);
+                    }
+                    catch (e) {
+                        if (console && console.log) console.log(e);
+                        obj.data = ''
+                    }
+                }
+                setValues(obj.form, obj.data);
                 return obj.form;
             }
 
@@ -187,12 +209,13 @@ var XNAT = getObject(XNAT || {});
         //    loadData(opts.load);
         //}
 
-        // click 'Discard Changes' butotn to reload data
+        // click 'Discard Changes' button to reload data
         _resetBtn.onclick = function(){
             xmodal.loading.open();
+            opts.load.url = opts.load.refresh;
             loadData(opts.load);
         };
-        
+
         // intercept the form submit to do it via REST instead
         $(_formPanel).on('submit', function(e){
 
@@ -218,19 +241,63 @@ var XNAT = getObject(XNAT || {});
 
             };
 
-            $(this).ajaxSubmit({
-                success: function(){
+            function formToJSON(form){
+                var json = {};
+                $$(form).serializeArray().forEach(function(item) {
+                    if (typeof json[item.name] == 'undefined') {
+                        json[item.name] = item.value || '';
+                    }
+                    else {
+                        json[item.name] = [].concat(json[item.name], item.value||[]) ;
+                    }
+                });
+                return json;
+            }
+
+            var ajaxConfig = {
+                method: opts.method,
+                url: this.action,
+                success: function(data){
+                    var obj = {};
+                    // if a data object is returned,
+                    // just use that
+                    if (data) {
+                        // wrap the returned data in an array so the
+                        // loadData() function handles it properly
+                        obj.data = [data];
+                    }
+                    else {
+                        obj.url = opts.refresh;
+                    }
                     xmodal.loading.close();
                     xmodal.message('Data saved successfully.', {
-                        action: loadData()
+                        action: loadData(obj)
                     });
                 }
-            });
+            };
+
+            // if (!/form/i.test(opts.contentType||'')) {
+            //     ajaxConfig.contentType = opts.contentType;
+            // }
+
+            if (/json/i.test(opts.contentType||'')){
+                ajaxConfig.data = JSON.stringify(formToJSON(this));
+                ajaxConfig.processData = false;
+                ajaxConfig.contentType = 'application/json';
+                $.ajax(ajaxConfig);
+            }
+            else {
+                // ajaxConfig.data =  $(this).serialize();
+                // $.ajax(ajaxConfig);
+                $(this).ajaxSubmit(ajaxConfig);
+            }
+
+            // $.ajax(ajaxConfig);
 
             return false;
 
         });
-        
+
         // this object is returned to the XNAT.spawner() method
         return {
             load: loadData,
@@ -282,13 +349,13 @@ var XNAT = getObject(XNAT || {});
         }
 
     };
-    
+
     panel.subhead = function(opts){
         opts = getObject(opts);
         opts.html = opts.html || opts.text || opts.label;
-        return XNAT.ui.template.panelSubhead(opts).spawned;    
+        return XNAT.ui.template.panelSubhead(opts).spawned;
     };
-    
+
     // return a generic panel 'section'
     panel.section = function(opts){
 
@@ -297,23 +364,23 @@ var XNAT = getObject(XNAT || {});
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
         opts.header = opts.header || opts.label || opts.title || '';
-        
+
         if (opts.header) {
             _inner.push(['header.section-header', opts.header]);
         }
-        
+
         // this needs to be spawned here to act as
         // the target for this elements 'contents'
         _body = spawn('div.section-body');
-        
+
         _inner.push(_body);
-        
+
         if (opts.footer) {
-            _inner.push(['footer.section-footer'], opts.footer);    
+            _inner.push(['footer.section-footer'], opts.footer);
         }
-        
+
         _section = spawn('div.panel-section', opts.element, _inner);
-        
+
         return {
             target: _body,
             element: _section,
@@ -404,9 +471,9 @@ var XNAT = getObject(XNAT || {});
     panel.select = {};
 
     panel.select.menu = function panelSelectSingle(opts, multi){
-        
+
         var _menu;
-        
+
         opts = getObject(opts);
         opts.element = opts.element || opts.config || {};
         opts.element.name = opts.element.name || opts.name || '';
@@ -435,12 +502,12 @@ var XNAT = getObject(XNAT || {});
     panel.select.multi = function panelSelectMulti(opts){
         return panel.select.menu(opts, true)
     };
-    
+
     panel.selectMenu = function panelSelectMenu(opts){
         opts = getObject(opts);
         return XNAT.ui.template.panelSelect(opts).spawned;
     };
-    
+
 
     function footerButton(text, type, disabled, classes){
         var button = {

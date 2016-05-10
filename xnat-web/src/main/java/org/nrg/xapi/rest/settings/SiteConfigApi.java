@@ -22,7 +22,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
-@Api(description = "XNAT Site Configuration Management API")
+@Api(description = "Site Configuration Management API")
 @XapiRestController
 @RequestMapping(value = "/siteConfig")
 public class SiteConfigApi extends AbstractXnatRestApi {

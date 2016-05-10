@@ -12,6 +12,8 @@ package org.nrg.xnat.security;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.nrg.framework.services.ContextService;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.XdatUserAuthService;
@@ -71,11 +73,11 @@ public class XnatLdapUserDetailsMapper extends LdapUserDetailsMapper {
         String firstname = (String) ctx.getObjectAttribute(_properties.get(PROPERTY_FIRST));
         String lastname = (String) ctx.getObjectAttribute(_properties.get(PROPERTY_LAST));
 
-        UserI userDetails = _userAuthService.getUserDetailsByNameAndAuth(user.getUsername(), XdatUserAuthService.LDAP, _authMethodId, email, lastname, firstname);
+        UserI userDetails = ContextService.getInstance().getBean(XdatUserAuthService.class).getUserDetailsByNameAndAuth(user.getUsername(), XdatUserAuthService.LDAP, _authMethodId, email, lastname, firstname);
 
         try {
             final UserI xdatUser = Users.getUser(userDetails.getUsername());
-            if ((!_preferences.getEmailVerification() || xdatUser.isVerified()) && userDetails.getAuthorization().isEnabled()) {
+            if ((!XDAT.verificationOn() || xdatUser.isVerified()) && userDetails.getAuthorization().isEnabled()) {
                 return userDetails;
             } else {
                 throw new NewLdapAccountNotAutoEnabledException(

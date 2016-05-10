@@ -2,7 +2,6 @@
 .idea
 *.iml
 *.log
-*--xx*
 src/generated
 gradle.properties
 /out
@@ -12,4 +11,4 @@ gradle.properties
 .project
 .settings/
 InstanceSettings.xml
-xnat-conf.properties
+src/main/resources/META-INF/xnat/auth

@@ -334,7 +334,7 @@ var XNAT = getObject(XNAT||{}),
         'getXML' : { method: 'GET', dataType: 'xml', format: 'xml' },
         'getText' : { method: 'GET', dataType: 'text', format: 'text' },
         'putJSON' : { method: 'PUT', contentType: 'application/json', processData: false },
-        'postJSON' : { method: 'PUT', contentType: 'application/json', processData: false }
+        'postJSON' : { method: 'POST', contentType: 'application/json', processData: false }
     };
 
     xhr.shorthands._delete = xhr.shorthands.delete_ = xhr.shorthands['delete'];

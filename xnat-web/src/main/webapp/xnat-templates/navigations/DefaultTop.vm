@@ -47,6 +47,8 @@
     </div>
 </div><!-- /user_bar -->
 
+<script src="$content.getURI("scripts/timeLeft.js")"></script>
+
 #if ($sessionCount > 1 || $sessionIpCount > 1 )
 ##If you want fewer warnings, you can eliminate $sessionCount > 1 so it will not display a warning for multiple sessions on the same IP, or increase it to $sessionCount > X where X is the maximum number of sessions you can have on the same IP before you get a warning.
 <script type="text/javascript">
@@ -95,13 +97,15 @@
 #end
 
 <div id="main_nav">
+    <div class="inner">
 
-    <ul class="nav">
+    <ul class="nav" style="border-left: 1px solid #033769;">
         #addGlobalCustomScreens("topBar")
     </ul>
 
     $navigation.setTemplate("XNATQuickSearch.vm")
 
+    </div>
 </div>
 <!-- /main_nav -->
 
@@ -111,7 +115,7 @@
     (function() {
 
         // cache it
-        var main_nav$ = jq('#main_nav > ul');
+        var main_nav$ = jq('#main_nav ul.nav');
 
 //        function subnav(items){
 //            var lis = [];
@@ -223,6 +227,8 @@
 </script>
 <!-- end main_nav interactions -->
 
+<div id="page_wrapper">
+
 <div id="header" class="main_header"><div class="pad">
 
     #if($siteConfig.getProperty("siteWideAlertStatus","")=="2")
@@ -321,8 +327,6 @@
     };
 
 </script>
-
-<script src="$content.getURI("scripts/timeLeft.js")"></script>
 
 <div id="tp_fm"></div>
 

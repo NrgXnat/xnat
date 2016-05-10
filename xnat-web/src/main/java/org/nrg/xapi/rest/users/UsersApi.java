@@ -26,7 +26,7 @@ import org.springframework.web.bind.annotation.*;
 
 import java.util.*;
 
-@Api(description = "The XNAT POC User Management API")
+@Api(description = "User Management API")
 @XapiRestController
 @RequestMapping(value = "/users")
 public class UsersApi extends AbstractXnatRestApi {
@@ -44,26 +44,25 @@ public class UsersApi extends AbstractXnatRestApi {
     @ApiResponses({@ApiResponse(code = 200, message = "An array of user profiles"), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/profiles"}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = RequestMethod.GET)
     @ResponseBody
-    public ResponseEntity<List<Map<String,String>>> usersProfilesGet() {
-        List<UserI> users = Users.getUsers();
-        List<Map<String,String>> userMaps = new ArrayList<Map<String,String>>();
-        for(UserI user : users){
-            try{
-                Map<String,String> userMap = new HashMap<String,String>();
-                userMap.put("firstname",user.getFirstname());
-                userMap.put("lastname",user.getLastname());
-                userMap.put("username",user.getUsername());
-                userMap.put("email",user.getEmail());
-                userMap.put("id",String.valueOf(user.getID()));
-                userMap.put("enabled",String.valueOf(user.isEnabled()));
-                userMap.put("verified",String.valueOf(user.isVerified()));
+    public ResponseEntity<List<Map<String, String>>> usersProfilesGet() {
+        List<UserI>               users    = Users.getUsers();
+        List<Map<String, String>> userMaps = new ArrayList<>();
+        for (UserI user : users) {
+            try {
+                Map<String, String> userMap = new HashMap<>();
+                userMap.put("firstname", user.getFirstname());
+                userMap.put("lastname", user.getLastname());
+                userMap.put("username", user.getUsername());
+                userMap.put("email", user.getEmail());
+                userMap.put("id", String.valueOf(user.getID()));
+                userMap.put("enabled", String.valueOf(user.isEnabled()));
+                userMap.put("verified", String.valueOf(user.isVerified()));
                 userMaps.add(userMap);
-            }
-            catch(Exception e){
+            } catch (Exception e) {
                 _log.error("", e);
             }
         }
-        return new ResponseEntity<List<Map<String,String>>>(userMaps, HttpStatus.OK);
+        return new ResponseEntity<>(userMaps, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Gets the user with the specified user ID.", notes = "Returns the serialized user object with the specified user ID.", response = User.class)
@@ -94,13 +93,10 @@ public class UsersApi extends AbstractXnatRestApi {
         if (status != null) {
             return new ResponseEntity<>(status);
         }
-        UserI user = null;
+        UserI user;
         try {
             user = Users.getUser(username);
         } catch (Exception e) {
-            user = null;
-        }
-        if (user == null) {
             //Create new User
             user = Users.createUser();
             user.setLogin(username);
@@ -114,9 +110,9 @@ public class UsersApi extends AbstractXnatRestApi {
         if ((StringUtils.isNotBlank(model.getEmail())) && (!StringUtils.equals(model.getEmail(), user.getEmail()))) {
             user.setEmail(model.getEmail());
         }
-        if (model.isEnabled()!=user.isEnabled()) {
+        if (model.isEnabled() != user.isEnabled()) {
             user.setEnabled(model.isEnabled());
-            if(!model.isEnabled()){
+            if (!model.isEnabled()) {
                 //When a user is disabled, deactivate all their AliasTokens
                 try {
                     XDAT.getContextService().getBean(AliasTokenService.class).deactivateAllTokensForUser(user.getLogin());
@@ -125,7 +121,7 @@ public class UsersApi extends AbstractXnatRestApi {
                 }
             }
         }
-        if (model.isVerified()!=user.isVerified()) {
+        if (model.isVerified() != user.isVerified()) {
             user.setVerified(model.isVerified());
         }
 
@@ -253,7 +249,7 @@ public class UsersApi extends AbstractXnatRestApi {
             if (user == null) {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
-            Collection<String> roles =  Roles.getRoles(user);
+            Collection<String> roles = Roles.getRoles(user);
             return new ResponseEntity<>(roles, HttpStatus.OK);
         } catch (UserInitException e) {
             _log.error("An error occurred initializing the user " + id, e);
@@ -277,10 +273,10 @@ public class UsersApi extends AbstractXnatRestApi {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
             try {
-                Roles.addRole(getSessionUser(),user,role);
+                Roles.addRole(getSessionUser(), user, role);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred adding role "+role+" to user " + user.getLogin()+".");
+                _log.error("Error occurred adding role " + role + " to user " + user.getLogin() + ".");
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {
@@ -306,10 +302,10 @@ public class UsersApi extends AbstractXnatRestApi {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
             try {
-                Roles.deleteRole(getSessionUser(),user,role);
+                Roles.deleteRole(getSessionUser(), user, role);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred removing role "+role+" from user " + user.getLogin()+".");
+                _log.error("Error occurred removing role " + role + " from user " + user.getLogin() + ".");
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {
@@ -357,10 +353,10 @@ public class UsersApi extends AbstractXnatRestApi {
                 return new ResponseEntity<>(HttpStatus.NOT_FOUND);
             }
             try {
-                Groups.addUserToGroup(group, user, getSessionUser(),null);
+                Groups.addUserToGroup(group, user, getSessionUser(), null);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred adding user " + user.getLogin()+ " to group "+group+".");
+                _log.error("Error occurred adding user " + user.getLogin() + " to group " + group + ".");
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {
@@ -389,7 +385,7 @@ public class UsersApi extends AbstractXnatRestApi {
                 Groups.removeUserFromGroup(user, group, null);
                 return new ResponseEntity<>(HttpStatus.OK);
             } catch (Exception e) {
-                _log.error("Error occurred removing user "+user.getLogin()+" from group " + group+".");
+                _log.error("Error occurred removing user " + user.getLogin() + " from group " + group + ".");
             }
             return new ResponseEntity<>(false, HttpStatus.INTERNAL_SERVER_ERROR);
         } catch (UserInitException e) {

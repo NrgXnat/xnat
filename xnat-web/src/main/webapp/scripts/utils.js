@@ -622,3 +622,33 @@ function compareByText( obj1, obj2 ){
     return convertToText(obj1) === convertToText(obj2);
 }
 
+// simplest accordion of all
+$.fn.superSimpleAccordion = function(){
+    
+    var container = $(this).show();
+    var h3s = container.find('h3');
+    var divs = h3s.next('div');
+
+    divs.addClass('content').hide();
+    container.find('.active').show();
+    h3s.on('click', function(){
+        var content = $(this).next('div');
+        if (content.is(':hidden')) {
+            h3s.removeClass('active');
+            $(this).addClass('active');
+            divs.removeClass('active').slideUp();
+            content.addClass('active').slideDown();
+        }
+    });
+
+    // add styling to <head> element
+    $('head').append('<style type="text/css" id="accordion-styles">' +
+        '#accordion { font-family: Arial, Helvetica, sans-serif; font-size: 13px; line-height: 17px; }' +
+        '#accordion .active { display: block; }' +
+        '#accordion h3 { font-size: 13px; font-weight: bold; color: #222; padding: 5px 10px; border: 1px solid #d0d0d0; }' +
+        '#accordion h3:hover { cursor: pointer; }' +
+        '#accordion h3.active { background: #04519b; color: #fff; } ' +
+        '#accordion .content { padding: 1em; border: 1px solid #d0d0d0; }' +
+        '</style>');
+    
+};

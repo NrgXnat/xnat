@@ -53,7 +53,8 @@
         'url',
         'checkbox',
         'radio',
-        'hidden'
+        'hidden',
+        'file'
     ];
 
     // use these as a shortcut to create <input> elements:
@@ -97,7 +98,16 @@
             }
             // ...or 'appendable' nodes
             else {
-                el.appendChild(child);
+                try {
+                    el.appendChild(child);
+                }
+                catch (e) {
+                    // try appending with jQuery
+                    // if native .appendChild() fails
+                    if (window.jQuery) {
+                        jQuery(el).append(child);
+                    }
+                }
             }
         });
     }
@@ -118,13 +128,21 @@
     function spawn(tag, opts, children){
 
         var el, $el, parts, id, classes, tagParts, attrs, isVoid,
-            skip = ['innerHTML', 'html', 'append',  // properties to skip later
-                'classes', 'attr', 'data', 'fn'],
+        // property names to skip later
+            skip = ['innerHTML', 'html', 'append', 'appendTo',
+                'classes', 'className', 'attr', 'style', 'data', 'fn'],
             errors = []; // collect errors
+
+        // deal with passing an array as the only argument
+        if (Array.isArray(tag)){
+            children = tag[2];
+            opts = tag[1];
+            tag = tag[0];
+        }
 
         if (tag === '!'){
             el = doc.createDocumentFragment();
-            appendChildren(el, opts, spawn);
+            appendChildren(el, opts||'', spawn);
             return el;
         }
 
@@ -209,8 +227,8 @@
         }
 
         // allow use of 'classes' property for classNames
-        if (opts.className || opts.classes){
-            el.className = [].concat(opts.className||[], opts.classes||[]).join(' ').trim();
+        if (opts.className || opts.classes || opts.addClass){
+            el.className = [].concat(opts.className||[], opts.classes||[], opts.addClass||[]).join(' ').trim();
         }
 
         // add attributes and properties to element
@@ -233,6 +251,20 @@
             forOwn(opts.data, function(name, val){
                 setElementData(el, name, [].concat(val).join(''));
             });
+        }
+
+        // handle style object
+        if (opts.style){
+            // it's either a string
+            if (typeof opts.style == 'string') {
+                el.style = opts.style;
+            }
+            // or an object
+            else {
+                forOwn(opts.style, function(prop, val){
+                    el.style[prop] = val;
+                });
+            }
         }
 
         // only add innerHTML and children for non-void elements
@@ -278,6 +310,15 @@
             }
         }
 
+        // shortcut for jQuery's .appendTo() method
+        // set the 'appendTo' property to a selector,
+        // element or jQuery object
+        if (opts.appendTo && window.jQuery){
+            // using brackets to clarify that we're
+            // using the .appendTo() jQuery method
+            jQuery(el)['appendTo'](opts.appendTo);
+        }
+
         // execute element methods last...
         // attach object or array of methods
         // to 'fn' property - this can be an
@@ -292,16 +333,47 @@
         }
 
         // execute jQuery methods from the `$` property
-        if (opts.$ && window.$){
-            $el = $(el);
-            forOwn(opts.$, function(method, args){
-                $el[method].apply($el, [].concat(args));
-            });
+        if (opts.$ && window.jQuery){
+            $el = jQuery(el);
+            // use an array to call the same method more than once
+            if (Array.isArray(opts.$)){
+                forEach(opts.$, function(item){
+                    $el[item[0]].apply($el, [].concat(item[1]))
+                });
+            }
+            else {
+                forOwn(opts.$, function(method, args){
+                    $el[method].apply($el, [].concat(args));
+                });
+            }
+        }
+
+        var frag = document.createDocumentFragment();
+
+        if (opts.after){
+            frag.appendChild(el);
+            appendChildren(frag, opts.after, spawn);
+            el = frag;
+        }
+        
+        if (opts.before){
+            appendChildren(frag, opts.before, spawn);
+            frag.appendChild(el);
+            el = frag;
         }
 
         if (errors.length){
             if (hasConsole) console.log(errors);
         }
+
+        // alias for convenience
+        el.html = el.outerHTML;
+
+        el.element = el;
+
+        el.get = function(){
+            return el;
+        };
 
         return el;
 
@@ -375,8 +447,8 @@
             opts = {};
         }
 
-        if (opts.classes || opts.className){
-            el.className = [].concat(el.className||[], opts.classes||[], opts.className||[]).join(' ');
+        if (opts.classes || opts.className || opts.addClass){
+            el.className = [].concat(el.className||[], opts.classes||[], opts.className||[], opts.addClass||[]).join(' ');
         }
 
         if (opts.html){
@@ -385,7 +457,7 @@
 
         // add attributes and properties to element
         forOwn(opts, function(prop, val){
-            if (/^(tag|html|classes|attr|data|$)$/.test(prop)) return;
+            if (/^(tag|html|classes|addClass|attr|append|appendChild|data|fn|$)$/.test(prop)) return;
             el[prop] = val;
         });
 
@@ -408,12 +480,37 @@
             appendChildren(el, content, spawnElement);
         }
 
-        if (opts.$){
-            $el = $(el);
-            forOwn(opts.$, function(method, args){
-                $el[method].apply($el, [].concat(args));
+        // special handling of 'append' and 'appendChild'
+        if (opts.appendChild){
+            appendChildren(el, opts.appendChild, spawnElement);
+        }
+        if (opts.append){
+            appendChildren(el, opts.append, spawnElement);
+        }
+
+        // call any element methods
+        if (opts.fn){
+            [].concat(opts.fn).forEach(function(fn){
+                forOwn(fn, function(f, args){
+                    el[f].apply(el, [].concat(args));
+                });
             });
-            //delete opts.$;
+        }
+
+        // execute jQuery methods from the `$` property
+        if (opts.$ && window.jQuery){
+            $el = jQuery(el);
+            // use an array to call the same method more than once
+            if (Array.isArray(opts.$)){
+                forEach(opts.$, function(item){
+                    $el[item[0]].apply($el, [].concat(item[1]))
+                });
+            }
+            else {
+                forOwn(opts.$, function(method, args){
+                    $el[method].apply($el, [].concat(args));
+                });
+            }
         }
 
         return el;
@@ -818,6 +915,22 @@
 
     // export to the global window object
     window.spawn = spawn;
+
+    // if jQuery is present, add it to the jQuery
+    // prototype for chaining and the jQuery object
+    // to get a jQuery-wrapped spawned element
+    if (window.jQuery){
+
+        jQuery.fn.spawn = function(){
+            this.append(spawn.apply(this, arguments));
+            return this;
+        };
+
+        jQuery.spawn = function(){
+            return jQuery(spawn.apply(null, arguments));
+        }
+
+    }
 
     //
     // utility functions:

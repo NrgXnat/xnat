@@ -13,13 +13,13 @@ import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
+import org.nrg.framework.services.YamlObjectMapper;
+import org.nrg.prefs.beans.PreferenceBeanMixIn;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.helpers.prearchive.PrearcConfig;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.context.annotation.Import;
-import org.springframework.context.annotation.ImportResource;
+import org.springframework.context.annotation.*;
+import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
@@ -58,35 +58,34 @@ public class RootConfig {
 
     @Bean
     public PrettyPrinter prettyPrinter() {
-        final DefaultIndenter indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
         return new DefaultPrettyPrinter() {{
+            final DefaultIndenter indenter = new DefaultIndenter("    ", DefaultIndenter.SYS_LF);
             indentObjectsWith(indenter);
             indentArraysWith(indenter);
         }};
     }
 
     @Bean
-    public ObjectMapper jsonObjectMapper() {
-        final PrettyPrinter printer = prettyPrinter();
-        final ObjectMapper mapper = new ObjectMapper().setDefaultPrettyPrinter(printer);
-        mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
-        mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
-        mapper.registerModule(new Hibernate4Module());
-        return mapper;
+    public Jackson2ObjectMapperBuilder objectMapperBuilder() {
+        return new Jackson2ObjectMapperBuilder()
+                .serializationInclusion(JsonInclude.Include.NON_NULL)
+                .failOnEmptyBeans(false)
+                .mixIns(mixIns())
+                .featuresToEnable(JsonParser.Feature.ALLOW_SINGLE_QUOTES, JsonParser.Feature.ALLOW_YAML_COMMENTS)
+                .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS, SerializationFeature.WRITE_NULL_MAP_VALUES)
+                .modulesToInstall(new Hibernate4Module());
     }
 
     @Bean
-    public ObjectMapper yamlObjectMapper() {
-        final PrettyPrinter printer = prettyPrinter();
-        final ObjectMapper mapper = new ObjectMapper(new YAMLFactory()).setDefaultPrettyPrinter(printer);
-        mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-        mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
-        mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
-        mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
-        mapper.registerModule(new Hibernate4Module());
-        return mapper;
+    public Map<Class<?>, Class<?>> mixIns() {
+        final Map<Class<?>, Class<?>> mixIns = new HashMap<>();
+        mixIns.put(SiteConfigPreferences.class, PreferenceBeanMixIn.class);
+        return mixIns;
+    }
+
+    @Bean
+    public YamlObjectMapper yamlObjectMapper() {
+        return new YamlObjectMapper();
     }
 
     @Bean

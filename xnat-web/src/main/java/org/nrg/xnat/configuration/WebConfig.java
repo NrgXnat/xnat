@@ -1,6 +1,9 @@
 package org.nrg.xnat.configuration;
 
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonParser;
+import com.fasterxml.jackson.databind.SerializationFeature;
+import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.xnat.spawner.configuration.SpawnerConfig;
 import org.slf4j.Logger;
@@ -35,9 +38,12 @@ import springfox.documentation.swagger2.annotations.EnableSwagger2;
 public class WebConfig extends WebMvcConfigurerAdapter {
     @Bean
     public Jackson2ObjectMapperBuilder objectMapperBuilder() {
-        Jackson2ObjectMapperBuilder builder = new Jackson2ObjectMapperBuilder();
-        builder.serializationInclusion(JsonInclude.Include.NON_NULL);
-        return builder;
+        return new Jackson2ObjectMapperBuilder()
+                .serializationInclusion(JsonInclude.Include.NON_NULL)
+                .failOnEmptyBeans(false)
+                .featuresToEnable(JsonParser.Feature.ALLOW_SINGLE_QUOTES, JsonParser.Feature.ALLOW_YAML_COMMENTS)
+                .featuresToDisable(SerializationFeature.FAIL_ON_EMPTY_BEANS, SerializationFeature.WRITE_NULL_MAP_VALUES)
+                .modules(new Hibernate4Module());
     }
 
     @Override

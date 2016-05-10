@@ -8,6 +8,7 @@ import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
+import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.ContextService;
@@ -72,6 +73,7 @@ public class RootConfig {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
         mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
+        mapper.registerModule(new Hibernate4Module());
         return mapper;
     }
 
@@ -83,6 +85,7 @@ public class RootConfig {
         mapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         mapper.configure(SerializationFeature.WRITE_NULL_MAP_VALUES, false);
         mapper.configure(JsonParser.Feature.ALLOW_YAML_COMMENTS, true);
+        mapper.registerModule(new Hibernate4Module());
         return mapper;
     }
 

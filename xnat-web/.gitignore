@@ -11,3 +11,4 @@ gradle.properties
 .project
 .settings/
 InstanceSettings.xml
+src/main/resources/META-INF/xnat/auth

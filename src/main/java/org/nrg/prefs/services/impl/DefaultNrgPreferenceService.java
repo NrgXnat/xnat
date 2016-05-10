@@ -1,7 +1,5 @@
 package org.nrg.prefs.services.impl;
 
-import com.fasterxml.jackson.core.JsonParser;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import org.nrg.framework.constants.Scope;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
@@ -309,12 +307,7 @@ public class DefaultNrgPreferenceService implements NrgPreferenceService, Applic
     private static final Scope  DEFAULT_SCOPE     = EntityId.Default.getScope();
     private static final String DEFAULT_ENTITY_ID = EntityId.Default.getEntityId();
 
-    private static final Logger       _log    = LoggerFactory.getLogger(DefaultNrgPreferenceService.class);
-    private static final ObjectMapper _mapper = new ObjectMapper();
-
-    static {
-        _mapper.configure(JsonParser.Feature.ALLOW_SINGLE_QUOTES, true);
-    }
+    private static final Logger _log = LoggerFactory.getLogger(DefaultNrgPreferenceService.class);
 
     @Autowired
     @Lazy

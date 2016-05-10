@@ -1692,6 +1692,7 @@ div.containerTitle.withColor {
     width: 1160px;
     margin: 0 auto;
     position: relative;
+    overflow: visible;
 }
 
 #main_nav.hidden {

@@ -103,8 +103,11 @@
             // show the whole siteConfig object in an xmodal dialog
             $('#show-site-config-json').click(function(){
                 xmodal.open({
-                    width: 600,
-                    height: 500,
+                    size: 'large',
+                    minWidth: 800,
+                    minHeight: '90%',
+                    //width: 600,
+                    //height: 500,
                     maximize: true,
                     title: 'Site Config JSON',
                     content: prettifyJSON(siteConfigObj)

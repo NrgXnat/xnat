@@ -430,7 +430,7 @@ ${bodyTop}
     (function(){
 
         // cache it
-        var main_nav$ = jq('#main_nav > ul');
+        var main_nav$ = jq('#main_nav ul.nav');
 
         var body$ = jq('body');
 

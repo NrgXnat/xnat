@@ -115,7 +115,7 @@
     (function() {
 
         // cache it
-        var main_nav$ = jq('#main_nav > ul');
+        var main_nav$ = jq('#main_nav ul.nav');
 
 //        function subnav(items){
 //            var lis = [];

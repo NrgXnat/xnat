@@ -11,9 +11,6 @@
 package org.nrg.xft.utils.DBTools;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.xft.XFT;
-import org.nrg.xft.db.DBAction;
-import org.nrg.xft.exception.ElementNotFoundException;
 import org.nrg.xft.exception.XFTInitException;
 import org.nrg.xft.schema.XFTManager;
 import org.nrg.xft.utils.FileUtils;
@@ -322,26 +319,6 @@ public class DBCopy {
             }
         }
         return true;
-    }
-
-
-    public static void main(String args[]) {
-        if (args.length != 1) {
-            System.out.println("Arguments: <Properties File location>");
-            return;
-        }
-        try {
-            XFT.init("C:\\xdat\\projects\\cnda", false);
-        } catch (ElementNotFoundException e) {
-            e.printStackTrace();
-        }
-        DBCopy db = new DBCopy(args[0]);
-        db.cleanDestinationDB();
-        db.copyDB();
-        db.validateCopy();
-        DBAction.AdjustSequences();
-        DBAction.InsertMetaDatas();
-
     }
 
     /**

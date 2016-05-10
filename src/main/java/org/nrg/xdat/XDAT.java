@@ -278,13 +278,7 @@ public class XDAT implements Initializable,Configurable{
             _configFilesLocation = FileUtils.AppendSlash(location);
         }
 
-		if (initLog4j)
-		{
-			PropertyConfigurator.configure(_configFilesLocation + "log4j.properties");
-		}
-
-		// This used to use initLog4j, but initLog4j was always set to false, so...
-		XFT.init(_configFilesLocation, false);
+		XFT.init(_configFilesLocation);
 
 		Long user_count;
 		try {

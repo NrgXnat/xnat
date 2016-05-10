@@ -185,7 +185,6 @@ public abstract class CommandPromptTool {
     
     public void _service() throws DBPoolException,SQLException,FailedLoginException,Exception
     {
-        XFT.initLog4j(getDirectory());
         service();
     }
     

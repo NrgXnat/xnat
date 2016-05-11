@@ -91,7 +91,7 @@ var XNAT = getObject(XNAT || {});
 
             _formPanel = spawn('form.xnat-form-panel.panel.panel-default', {
                 method: opts.method || 'POST',
-                action: opts.action || '#'
+                action: XNAT.url.rootUrl(opts.action || '') || '#'
             }, [
                 ['div.panel-heading', [
                     ['h3.panel-title', opts.title || opts.label]

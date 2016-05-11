@@ -52,6 +52,7 @@ siteUrl:
     description: ""
 adminEmail:
     kind: panel.input.email
+    id: adminEmail
     name: adminEmail
     label: Site Administrator Email Address
     url: /xapi/siteConfig/adminEmail
@@ -121,7 +122,8 @@ siteInfo:
     method: POST
     action: /xapi/siteConfig/batch
     load:
-        data: XNAT.data.siteConfig
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         ${siteId}
         ${siteUrl}
@@ -232,37 +234,49 @@ passwords:
     kind: panel.form
     name: passwords
     label: Passwords
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         passwordComplexity:
             kind: panel.input.text
             id: passwordComplexity
-            name: security.password_complexity
+            name: passwordComplexity
             label: Password Complexity
             value: "^.*$"
             description: Must be a valid regular expression.
         passwordComplexityMessage:
             kind: panel.input.text
             id: passwordComplexityMessage
-            name: security.password_complexity_message
+            name: passwordComplexityMessage
             label: Password Complexity Message
             value: "Your password must contain..."
+        passwordHistoryDuration:
+            kind: panel.input.number
+            id: passwordHistoryDuration
+            name: passwordHistoryDuration
+            label: Password History (Duration)
+            value: -1
+            description: "-1 to disable"
         passwordExpirationInterval:
             kind: panel.input.number
             id: passwordExpirationInterval
-            name: security.password_expiration_interval
+            name: passwordExpirationInterval
             label: Password Expiration (Interval)
             value: -1
             description: "-1 to disable"
         passwordExpirationDate:
             kind: panel.input.text
             id: passwordExpirationDate
-            name: security.password_expiration_date
+            name: passwordExpirationDate
             label: Password Expiration (Date)
             description: Dates must be formatted MM/DD/YYYY
         passwordReuseRestriction:
             kind: panel.select.single
             id: passwordReuseRestriction
-            name: security.password_history
+            name: passwordReuseRestriction
             label: Password Reuse Restriction
         requireSaltedPasswords:
             kind: panel.input.checkbox
@@ -325,7 +339,8 @@ emailServerSettings:
         url: /xapi/siteConfig
 #        method: GET      # defaults to GET if not set
         prop: smtpServer # which root property? gets the root object if not set
-#        data: XNAT.data.siteConfig.smtpServer
+#        lookup: XNAT.data.siteConfig.smtpServer
+    contentType: json
     name: emailServerSettings
     label: Mail Server Settings
     contents:
@@ -465,7 +480,7 @@ notifications:
             kind: panel.input.email
             id: emailRecipientUpdate
             name: "Notifications:Update"
-            label: "Email Recipient: Update"
+            label: "Email Recipient: Updates"
             description: "What email address should receive update emails"
         notifyAdminSessionTransfer:
             kind: panel.input.checkbox
@@ -730,6 +745,11 @@ fileSystem:
     kind: panel.form
     name: fileSystem
     label: File System
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
     contents:
         ${archiveRootPath}
         ${cachePath}
@@ -844,21 +864,22 @@ siteAdmin:
             group: advanced
             contents:
                 ${fileSystem}
+                ${siteIdMain}
 
 
 ###########################################
 ####  Initial Site Setup Admin Panels  ####
 ###########################################
 siteIdMain:
-    kind: panel
+    kind: panel.form
     name: siteIdMain
     label: Site Identification
     contents:
-#        ${siteId}
-#        ${siteUrl}
+        ${siteId}
+        ${siteUrl}
         ${adminEmail}
 sitePaths:
-    kind: panel
+    kind: panel.form
     name: sitePaths
     label: Site Paths
     contents:

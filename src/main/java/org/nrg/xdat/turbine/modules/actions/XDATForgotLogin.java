@@ -148,5 +148,5 @@ public class XDATForgotLogin extends VelocitySecureAction {
     }
 
 	// TODO: This should be converted to use a Velocity template or property in a resource bundle.
-	private static final String USERNAME_REQUEST = "<html><body>\nYou requested your username, which is: %s\n<br><br><br>Please login to the site for additional user information <a href=\"%s\">%s</a>.\n</body></html>";
+	private static final String USERNAME_REQUEST = "\nYou requested your username, which is: %s\n<br><br><br>Please login to the site for additional user information <a href=\"%s\">%s</a>.\n";
 }

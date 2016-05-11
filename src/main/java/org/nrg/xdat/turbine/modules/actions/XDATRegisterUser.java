@@ -45,7 +45,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 
 import javax.servlet.http.HttpSession;
 import java.util.*;
-
+import org.nrg.xdat.security.helpers.UserHelper;
 
 public class XDATRegisterUser extends VelocitySecureAction {
     static Logger logger = Logger.getLogger(XDATRegisterUser.class);
@@ -137,7 +137,8 @@ public class XDATRegisterUser extends VelocitySecureAction {
                                 }
                             } else {
 	                            XDAT.setUserDetails(found);
-	
+                                UserHelper.setUserHelper(data.getRequest(),found);
+
 	                            HttpSession session = data.getSession();
 			                    session.setAttribute("loggedin",true);
 			                    data.setMessage("User registration complete.");

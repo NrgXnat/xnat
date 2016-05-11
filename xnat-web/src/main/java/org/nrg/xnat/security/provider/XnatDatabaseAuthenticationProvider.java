@@ -10,6 +10,7 @@
  */
 package org.nrg.xnat.security.provider;
 
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.services.XdatUserAuthService;
 import org.nrg.xft.db.PoolDBUtils;
 import org.nrg.xft.security.UserI;
@@ -79,7 +80,7 @@ public class XnatDatabaseAuthenticationProvider extends DaoAuthenticationProvide
             throw new AuthenticationServiceException("User details class is not of a type I know how to handle: " + userDetails.getClass());
         }
         final UserI xdatUserDetails = (UserI) userDetails;
-        if ((_requireEmailVerification && !xdatUserDetails.isVerified() && xdatUserDetails.isEnabled()) || !xdatUserDetails.isAccountNonLocked()) {
+        if ((XDAT.verificationOn() && !xdatUserDetails.isVerified() && xdatUserDetails.isEnabled()) || !xdatUserDetails.isAccountNonLocked()) {
             throw new CredentialsExpiredException("Attempted login to unverified or locked account: " + xdatUserDetails.getUsername());
         }
         super.additionalAuthenticationChecks(userDetails, authentication);

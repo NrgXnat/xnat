@@ -35,7 +35,7 @@ siteAdmin:
                     action: /xapi/siteConfig/batch
                     contentType: application/json
                     load:
-                        data: XNAT.data.siteConfig
+                        lookup: XNAT.data.siteConfig
                         refresh: /xapi/siteConfig # url to use to get fresh data (uses GET)
                     contents:
 

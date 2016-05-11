@@ -93,7 +93,7 @@ var XNAT = getObject(XNAT);
     // display only element for form panels
     template.panelDisplay = function(opts, element){
         opts = getObject(opts);
-        opts.id = opts.id||toDashed(opts.name);
+        opts.id = opts.id||toDashed(opts.name||'');
         opts.label = opts.label||opts.title||opts.name||'';
         return template.panelElement(opts, [
             ['label.element-label|for='+opts.id, opts.label],
@@ -124,15 +124,22 @@ var XNAT = getObject(XNAT);
             id: opts.id,
             name: opts.name,
             className: opts.className||'',
-            size: 25,
+            size: opts.size || 25,
             title: opts.title||opts.name||opts.id,
             value: opts.value||''
         }, opts.element);
 
         opts.data = opts.data || {};
-        opts.data.value = opts.data.value || opts.value;
+        
+        if (opts.element.type !== 'password'){
+            opts.data.value = opts.data.value || opts.value;
+        }
 
         addDataObjects(opts.element, opts.data||{});
+        
+        if (opts.placeholder) {
+            opts.element.placeholder = opts.placeholder;
+        }
 
         // use an existing element (passed as the second argument)
         // or spawn a new one
@@ -142,23 +149,43 @@ var XNAT = getObject(XNAT);
             element.checked = true;
         }
 
-        var dataGetParts;
+        var val = '';
 
-        // set the values of form elements
-        if (opts.data) {
-            if (opts.data.get){
-                dataGetParts = opts.data.get.split('|');
+        // set the value of individual form elements
+        
+        // look up a namespaced object value if the value starts with ?|
+        var doLookup = '?|';
+        if (opts.value && opts.value.toString().indexOf(doLookup) === 0) {
+            try {
+                val = eval(opts.value.split(doLookup)[1]);
+            }
+            catch (e) {
+                val = ''
+            }
+            $(element).changeVal(val).dataAttr('value', val);
+        }
+        
+        if (opts.load) {
+            if (opts.load.lookup) {
+                try {
+                    val = eval(opts.load.lookup);
+                }
+                catch (e) {
+                    val = ''
+                }
+                $(element).changeVal(val).dataAttr('value', val);
+            }
+            else if (opts.load.url){
                 $.ajax({
-                    method: dataGetParts[0] || 'GET',
-                    url: XNAT.url.restUrl(dataGetParts[1] || ''),
+                    method: opts.load.method || 'GET',
+                    url: XNAT.url.restUrl(opts.load.url),
                     success: function(data){
                         // split object path
-                        if (dataGetParts[2]) {
-                            dataGetParts[2].split('.').forEach(function(part){
+                        if (opts.load.prop) {
+                            opts.load.prop.split('.').forEach(function(part){
                                 data = data[part]
                             });
                         }
-                        // element.value = data;
                         // changeVal() changes the value and triggers
                         // the 'onchange' event
                         $(element).changeVal(data).dataAttr('value', data);
@@ -170,7 +197,9 @@ var XNAT = getObject(XNAT);
         return template.panelElement(opts, [
             ['label.element-label|for='+element.id||opts.id, opts.label],
             ['div.element-wrapper', [
+
                 element,
+
                 ['div.description', opts.description||opts.body||opts.html]
             ]]
         ]);
@@ -198,7 +227,7 @@ var XNAT = getObject(XNAT);
         // add the options
         $.each(opts.options||{}, function(name, prop){
             var _option = spawn('option', extend(true, {
-                html: prop.label || prop.value || name,
+                html: prop.label || prop.value || prop,
                 value: prop.value || name
             }, prop.element));
             // select the option if it's the select element's value

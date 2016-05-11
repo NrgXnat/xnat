@@ -6,6 +6,8 @@
     <!-- app.css loaded last -->
     <link rel="stylesheet" type="text/css" href="$content.getURI('style/app.css?v=1.7.0a1')">
 
+    <link rel="stylesheet" type="text/css" href="$content.getURI('page/admin/style.css?v=1.7.0a1')">
+
     <link rel="stylesheet" type="text/css" href="$content.getURI('scripts/xmodal-v1/xmodal.css?v=1.7.0a1')">
     <script src="$content.getURI('scripts/xmodal-v1/xmodal.js')"></script>
     <script src="$content.getURI('scripts/xmodal-v1/xmodal-migrate.js')"></script>

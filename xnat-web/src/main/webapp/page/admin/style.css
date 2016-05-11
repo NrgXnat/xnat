@@ -70,13 +70,13 @@
 /* PANELS */
 body.xnat .panel { margin-bottom: 20px; background: #f8f8f8; border-radius: 0; }
 body.xnat .panel-default { border: 1px solid #e0e0e0; }
-body.xnat .panel-default .panel-heading {
+.panel-default .panel-heading {
     padding: 12px 16px; font-size: 15px;
     color: #222; background: #e9e9e9; border-color: #d0d0d0 ;
 }
-body.xnat .panel-default .panel-body { padding: 12px; }
-body.xnat .panel-default .panel-footer  { padding: 12px; background: #f0f0f0; }
-body.xnat .panel-title { font-weight: normal; }
+.panel-default .panel-body { padding: 12px; }
+.panel-default .panel-footer  { padding: 12px; background: #f0f0f0; }
+.panel-title { font-weight: bold; font-size: 15px; line-height: inherit; }
 
 /* PANEL ELEMENTS */
 .panel .panel-element { margin: 15px 0; clear: both; overflow: auto; }
@@ -100,6 +100,15 @@ body.xnat .panel-title { font-weight: normal; }
 
 /* ELEMENT GROUP ITEMS */
 .panel .panel-element-group .group-item .element-label { width: auto; }
+
+/* MULTI-FORM PANEL ELEMENTS */
+.multi-form.panel {}
+.multi-form.panel > .panel-heading {  }
+.multi-form.panel > .panel-heading .panel-title { font-weight: normal; font-size: 18px; }
+.multi-form.panel > .panel-body { padding: 24px 24px 0; background: #fff; }
+.multi-form.panel > .panel-footer {  }
+/* MULTI-FORM PANEL CHILD PANELS */
+.multi-form.panel > .panel-body > .panel .panel-title {  }
 
 /* FORM CONTROLS */
 body.xnat textarea.form-control { font-family: Courier, monospace; font-weight: normal; }

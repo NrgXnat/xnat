@@ -5,7 +5,7 @@
 
 <%-- set empty user info --%>
 <c:set var="loggedIn" value="false" scope="session"/>
-<c:set var="username" value="0" scope="session"/>
+<c:set var="username" value="-" scope="session"/>
 <c:set var="isAdmin" value="false" scope="session"/>
 
 <%-- set vars for user --%>

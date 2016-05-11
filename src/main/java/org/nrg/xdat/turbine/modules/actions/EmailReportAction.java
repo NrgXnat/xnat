@@ -37,9 +37,9 @@ public class EmailReportAction extends EmailAction {
         if (!StringUtils.isBlank(toAddress) | !StringUtils.isBlank(ccAddress) || !StringUtils.isBlank(bccAddress)) {	
 			if (AdminUtils.GetPageEmail()) {
 				if (StringUtils.isBlank(bccAddress)) {
-					bccAddress = AdminUtils.getAdminEmailId();
+					bccAddress = XDAT.getSiteConfigPreferences().getAdminEmail();
 				} else {
-					bccAddress += ", " + AdminUtils.getAdminEmailId();
+					bccAddress += ", " + XDAT.getSiteConfigPreferences().getAdminEmail();
 				}
 			}
 
@@ -53,7 +53,7 @@ public class EmailReportAction extends EmailAction {
 			String text = getTxtMessage(data,context).replace("&apos;", "'");
 
 			try {
-				XDAT.getMailService().sendHtmlMessage(AdminUtils.getAdminEmailId(), tos, ccs, bccs, subject, message, text);
+				XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), tos, ccs, bccs, subject, message, text);
 			    data.setMessage("Message sent.");
 			} catch (Exception e) {
 			    logger.error("Unable to send mail");

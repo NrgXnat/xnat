@@ -149,7 +149,7 @@ public final class TemporaryTokenStore {
 	
  	public static void addTokenAndEmail(final String login, final String subject) throws Exception {
 		final UserI u = Users.getUser(login);
-		final String from = AdminUtils.getAdminEmailId();
+		final String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 		final String[] tos = {u.getEmail()};
 		final String[] ccs = {};
 		final String subj = TurbineUtils.GetSystemName() + ": " + subject;

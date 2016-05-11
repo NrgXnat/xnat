@@ -95,15 +95,6 @@ public class AdminUtils {
 	}
 
 	/**
-	 * Gets the administrator's email address.
-	 *
-	 * @return The administrator's email address.
-	 */
-	public static String getAdminEmailId() {
-		return XDAT.getSiteConfigPreferences().getAdminEmail();
-	}
-
-	/**
 	 * Gets the Authorizer Email Id
 	 *
 		* @return Email id
@@ -111,10 +102,10 @@ public class AdminUtils {
 	public static String getAuthorizerEmailId() {
 		if (authorizerEmailAddress == null) {
 			try {
-				authorizerEmailAddress = getAdminEmailId();
+				authorizerEmailAddress = XDAT.getSiteConfigPreferences().getAdminEmail();
 			} catch (Exception e) {
 				logger.error("", e);
-				authorizerEmailAddress = getAdminEmailId();
+				authorizerEmailAddress = XDAT.getSiteConfigPreferences().getAdminEmail();
 			}
 
 		}
@@ -151,7 +142,7 @@ public class AdminUtils {
         AdminUtils.sendAdminEmail(subject, body);
 
         Map<String, Object> properties = new HashMap<>();
-        properties.put(MailMessage.PROP_FROM, getAdminEmailId());
+        properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
         properties.put(MailMessage.PROP_SUBJECT, subject);
         properties.put(MailMessage.PROP_HTML, body);
         XDAT.verifyNotificationType(NotificationType.NewUser);
@@ -187,7 +178,7 @@ public class AdminUtils {
         AdminUtils.sendAdminEmail(subject, body);
 
         Map<String, Object> properties = new HashMap<>();
-        properties.put(MailMessage.PROP_FROM, getAdminEmailId());
+        properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
         properties.put(MailMessage.PROP_SUBJECT, subject);
         properties.put(MailMessage.PROP_HTML, body);
         XDAT.verifyNotificationType(NotificationType.NewUser);
@@ -206,7 +197,7 @@ public class AdminUtils {
         AdminUtils.sendAdminEmail(subject, body);
 
         Map<String, Object> properties = new HashMap<>();
-        properties.put(MailMessage.PROP_FROM, getAdminEmailId());
+        properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
         properties.put(MailMessage.PROP_SUBJECT, subject);
         properties.put(MailMessage.PROP_HTML, body);
         XDAT.verifyNotificationType(NotificationType.Issue);
@@ -273,7 +264,7 @@ public class AdminUtils {
 
        String subject = TurbineUtils.GetSystemName() + " Email Verification";
        String text = populateVmTemplate(context, "/screens/email/NewUserVerification.vm");
-       XDAT.getMailService().sendHtmlMessage(AdminUtils.getAdminEmailId(), email, subject, text);
+       XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), email, subject, text);
    }
    }
 
@@ -289,15 +280,15 @@ public class AdminUtils {
         context.put("username", username);
         context.put("server", TurbineUtils.GetFullServerPath());
         context.put("system", TurbineUtils.GetSystemName());
-        context.put("admin_email", AdminUtils.getAdminEmailId());
+        context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
 
         String body = populateVmTemplate(context, "/screens/email/WelcomeNewUser.vm");
         String subject = "Welcome to " + TurbineUtils.GetSystemName();
 
         if (AdminUtils.GetNewUserRegistrationsEmail()) {
-			XDAT.getMailService().sendHtmlMessage(getAdminEmailId(), new String[] { email }, new String[] { getAdminEmailId() }, null, subject, body);
+			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), new String[] { email }, new String[] { XDAT.getSiteConfigPreferences().getAdminEmail() }, null, subject, body);
 		} else {
-			XDAT.getMailService().sendHtmlMessage(getAdminEmailId(), email, subject, body);
+			XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), email, subject, body);
 		}
 	}
 	}
@@ -312,7 +303,7 @@ public class AdminUtils {
 		String msg = "Authorization for new or updated access privilege has been requested for <b>" + UserName_AwaitingAuthorization + "</b>";
 		msg += "<br><br> This user will not be able to access the requested resources until you have completed authorization. Please review the privileges <a href=\"" + TurbineUtils.GetFullServerPath()
 				+ "/app/action/DisplayItemAction/search_element/xdat:user/search_field/xdat:user.login/search_value/" + login + "/\">here</a>.";
-		msg += "<br><br> For help, contact  <a href=\"mailto:" + getAdminEmailId() + "?subject=" + TurbineUtils.GetSystemName() + " Assistance\">" + TurbineUtils.GetSystemName() + " Management </A>";
+		msg += "<br><br> For help, contact  <a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=" + TurbineUtils.GetSystemName() + " Assistance\">" + TurbineUtils.GetSystemName() + " Management </A>";
 		return msg;
 	}
 
@@ -324,7 +315,7 @@ public class AdminUtils {
 
 	public static void sendAuthorizationEmailMessage(UserI user) {
 		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
-		String from = getAdminEmailId();
+		String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 		String[] tos = StringUtils.split(getAuthorizerEmailId(), ", ");
 		String[] ccs = AdminUtils.GetNewUserRegistrationsEmail() ? new String[] { from } : null;
 		String subject = TurbineUtils.GetSystemName() + ": Authorization Request";
@@ -340,7 +331,7 @@ public class AdminUtils {
     public static boolean sendUserHTMLEmail(String subject, String message, boolean ccAdmin, String[] email_addresses) {
 		if (XDAT.getSiteConfigPreferences().getSmtpEnabled()) {
 			if (email_addresses.length > 0) {
-				final String from = getAdminEmailId();
+				final String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 				try {
 					XDAT.getMailService().sendHtmlMessage(from, email_addresses, ccAdmin ? new String[]{from} : null, null, subject, message);
 					return true;
@@ -366,9 +357,9 @@ public class AdminUtils {
 			String body = populateVmTemplate(context, "/screens/email/ErrorReport.vm");
 
 			try {
-				// XDAT.getMailService().sendHtmlMessage(getAdminEmailId(), getErrorEmailIds(), TurbineUtils.GetSystemName() + ": Error Thrown", body);
+				// XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), getErrorEmailIds(), TurbineUtils.GetSystemName() + ": Error Thrown", body);
                 Map<String, Object> properties = new HashMap<>();
-                properties.put(MailMessage.PROP_FROM, getAdminEmailId());
+                properties.put(MailMessage.PROP_FROM, XDAT.getSiteConfigPreferences().getAdminEmail());
                 properties.put(MailMessage.PROP_SUBJECT, TurbineUtils.GetSystemName() + ": Error Thrown");
                 properties.put(MailMessage.PROP_HTML, body);
                 XDAT.verifyNotificationType(NotificationType.Error);
@@ -381,7 +372,7 @@ public class AdminUtils {
 
 	public static void sendAdminEmail(UserI user, String subject, String message) {
 		if(XDAT.getSiteConfigPreferences().getSmtpEnabled()){
-		String admin = getAdminEmailId();
+		String admin = XDAT.getSiteConfigPreferences().getAdminEmail();
 		String qualifiedSubject = TurbineUtils.GetSystemName() + ": " + subject;
 
 		StringBuilder formattedMessage = new StringBuilder();

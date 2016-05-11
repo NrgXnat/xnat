@@ -1,5 +1,6 @@
 package org.nrg.xdat.configuration;
 
+import org.nrg.framework.configuration.FrameworkConfig;
 import org.nrg.framework.orm.hibernate.HibernateEntityPackageList;
 import org.nrg.framework.test.OrmTestConfiguration;
 import org.nrg.prefs.configuration.NrgPrefsServiceConfiguration;
@@ -16,7 +17,7 @@ import org.springframework.context.annotation.Import;
 import java.io.IOException;
 
 @Configuration
-@Import({OrmTestConfiguration.class, XdatTestConfig.class, NrgPrefsServiceConfiguration.class})
+@Import({OrmTestConfiguration.class, XdatTestConfig.class, NrgPrefsServiceConfiguration.class, FrameworkConfig.class})
 public class TestXdatUserAuthServiceConfig {
     @Bean
     public XdatUserAuthService xdatUserAuthService() {

@@ -55,9 +55,9 @@ public class EmailAction extends SecureAction {
 			if (!StringUtils.isBlank(toAddress) || !StringUtils.isBlank(ccAddress) || !StringUtils.isBlank(bccAddress)) {
 				if (AdminUtils.GetPageEmail()) {
 					if (StringUtils.isBlank(bccAddress)) {
-						bccAddress = AdminUtils.getAdminEmailId();
+						bccAddress = XDAT.getSiteConfigPreferences().getAdminEmail();
 					} else {
-						bccAddress += ", " + AdminUtils.getAdminEmailId();
+						bccAddress += ", " + XDAT.getSiteConfigPreferences().getAdminEmail();
 					}
 				}
 				// Split each string on commas and whitespace.

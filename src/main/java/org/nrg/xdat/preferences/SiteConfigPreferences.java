@@ -793,6 +793,19 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @NrgPreference(defaultValue = "true", property = "security.allow-HTML-resource-rendering")
+    public boolean getAllowHtmlResourceRendering() {
+        return getBooleanValue("security.allow-HTML-resource-rendering");
+    }
+
+    public void setAllowHtmlResourceRendering(final String allowHtmlResourceRendering) {
+        try {
+            set(allowHtmlResourceRendering, "security.allow-HTML-resource-rendering");
+        } catch (InvalidPreferenceName e) {
+            _log.error("Invalid preference name 'security.allow-HTML-resource-rendering': something is very wrong here.", e);
+        }
+    }
+
     @NrgPreference(defaultValue = "XNAT")
     public String getEmailPrefix() {
         return getValue("emailPrefix");

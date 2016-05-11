@@ -52,7 +52,7 @@ public class XDATForgotLogin extends VelocitySecureAction {
         String email = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("email",data));
         String username = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("username",data));
 		String subject = TurbineUtils.GetSystemName() + " Login Request";
-		String admin = AdminUtils.getAdminEmailId();
+		String admin = XDAT.getSiteConfigPreferences().getAdminEmail();
 		if (!StringUtils.isBlank(email)) {
             //check email
 			

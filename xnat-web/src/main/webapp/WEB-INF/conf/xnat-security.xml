@@ -148,6 +148,7 @@
                 <value>/app/template/XDATScreen_manage_pipeline.vm*</value>
                 <value>/app/template/XDATScreen_roles.vm*</value>
                 <value>/monitoring*</value>
+                <value>/setup/**</value>
             </list>
         </property>
     </bean>
@@ -223,7 +224,8 @@
 	
 	<bean id="xnatInitCheckFilter" class="org.nrg.xnat.security.XnatInitCheckFilter">
         <property name="initializationPath" value="/services/settings/initialize"/>
-        <property name="configurationPath" value="/app/template/Configuration.vm"/>
+        <!--<property name="configurationPath" value="/app/template/Configuration.vm"/>-->
+        <property name="configurationPath" value="/setup"/>
         <property name="nonAdminErrorPath" value="/app/template/Unconfigured.vm"/>
         <property name="exemptedPaths">
             <list value-type="java.lang.String">

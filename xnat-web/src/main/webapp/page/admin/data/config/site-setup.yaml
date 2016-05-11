@@ -1,0 +1,197 @@
+initialSetup:
+    kind: panel.multiForm
+    name: initialSetup
+    label: XNAT Initial Setup
+    #method: POST
+    action: '#!'
+    contents:
+
+        setupMessage:
+            tag: div.message
+            element:
+                style:
+                    marginBottom: 24px
+                html: >
+                    The settings below need to be configured before this XNAT system
+                    can be used. Please set the properties below and submit the form continue.
+
+        # ====================
+        # PANEL
+        siteInfo:
+            kind: panel.form
+            name: siteInfo
+            label: Site Information
+            footer: false
+            method: POST
+            action: /xapi/siteConfig/batch
+            contentType: json
+            load:
+                lookup: XNAT.data.siteConfig
+                refresh: /xapi/siteConfig
+            contents:
+
+                siteId:
+                    kind: panel.input.text
+                    name: siteId
+                    label: Site ID
+                    value: ''
+                    placeholder: XNAT
+                    description: >
+                        The id used to refer to this site (also used to generate ids). The Site ID must start
+                        with a letter and contain only letters, numbers and underscores. It should be a short,
+                        one-word name or acronym which describes your site.
+                    validation: required id
+
+                siteUrl:
+                    kind: panel.input.text
+                    name: siteUrl
+                    label: Site URL
+                    value: ''
+                    placeholder: localhost
+                    description: ''
+                    validation: required url
+
+                adminEmail:
+                    kind: panel.input.email
+                    name: adminEmail
+                    label: Administrator Email Address
+                    value: ''
+                    placeholder: admin@localhost
+                    description: Email address for site administrator.
+                    validation: required email
+
+        # ====================
+        # PANEL
+        dataStorage:
+            kind: panel.form
+            name: dataStorage
+            label: Data Storage
+            footer: false
+            method: POST
+            action: /xapi/siteConfig/batch
+            contentType: json
+            load:
+                lookup: XNAT.data.siteConfig
+                refresh: /xapi/siteConfig
+            contents:
+
+                archiveRootPath:
+                    kind: panel.input.text
+                    name: archiveRootPath
+                    label: Archive Location
+                    size: 50
+                    value: ''
+                    validation: required path
+
+                prearchivePath:
+                    kind: panel.input.text
+                    name: prearchivePath
+                    label: Pre-archive Location
+                    size: 50
+                    value: ''
+                    validation: required path
+
+                cachePath:
+                    kind: panel.input.text
+                    name: cachePath
+                    label: Cache Location
+                    size: 50
+                    value: ''
+                    validation: required path
+
+                buildPath:
+                    kind: panel.input.text
+                    name: buildPath
+                    label: Build Location
+                    size: 50
+                    value: ''
+                    validation: required path
+
+                ftpPath:
+                    kind: panel.input.text
+                    name: ftpPath
+                    label: FTP Location
+                    size: 50
+                    value: ''
+                    validation: required path
+
+                pipelinePath:
+                    kind: panel.input.text
+                    name: pipelinePath
+                    label: Pipeline Installation Location
+                    size: 50
+                    value: ''
+                    validation: required path
+
+        # ====================
+        # PANEL
+        smtpServer:
+            kind: panel.form
+            name: smtpServer
+            label: SMTP Server Settings
+            footer: false
+            method: POST
+            action: /xapi/siteConfig/smtpServer
+            contentType: json
+            load:
+                #lookup: XNAT.data.siteConfig.smtpServer
+                refresh: /xapi/siteConfig/smtpServer
+            contents:
+
+                host:
+                    kind: panel.input.text
+                    name: host
+                    label: Host
+                    value: ?|XNAT.data.siteConfig.smtpServer.host
+                    placeholder: localhost
+
+                port:
+                    kind: panel.input.number
+                    name: port
+                    label: Port
+                    value: ?|XNAT.data.siteConfig.smtpServer.port
+                    placeholder: 25
+
+                username:
+                    kind: panel.input.text
+                    name: username
+                    label: Username
+                    value: ?|XNAT.data.siteConfig.smtpServer.username
+
+                password:
+                    kind: panel.input.password
+                    name: password
+                    label: Password
+                    value: ?|XNAT.data.siteConfig.smtpServer.password
+
+                protocol:
+                    kind: panel.input.text
+                    name: protocol
+                    label: Protocol
+                    value: ?|XNAT.data.siteConfig.smtpServer.protocol
+
+                mailServerProperties:
+                    kind: panel.input.group
+                    name: mailServerProperties
+                    label: Mail Server Settings
+                    contents:
+
+                        smtpAuth:
+                            kind: panel.input.checkbox
+                            name: mail.smtp.auth
+                            label: SMTP Auth?
+                            value: true
+#                            checked: true
+
+                        smtpStartTls:
+                            kind: panel.input.checkbox
+                            name: mail.smtp.starttls.enable
+                            label: Smart TLS?
+                            value: true
+#                            checked: true
+
+                        smtpSSLTrust:
+                            kind: panel.input.text
+                            name: mail.smtp.ssl.trust
+                            label: SSL Trust
+                            value: ?|XNAT.data.siteConfig.smtpServer['mail.smtp.ssl.trust']

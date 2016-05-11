@@ -2,6 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
+<%@ attribute name="page" %>
 <%@ attribute name="title" %>
 <%@ attribute name="headTop" %>
 <%@ attribute name="headBottom" %>
@@ -67,6 +68,7 @@
     <script src="${_siteRoot}/scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js"></script>
     <script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.maskedinput.min.js"></script>
     <script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
+    <script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.form.js"></script>
 
     <%-- probably not going to use the jquery spawner --%>
     <%--<script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.spawn.js"></script>--%>
@@ -75,6 +77,7 @@
     <script src="${_siteRoot}/scripts/lib/spawn/spawn.js"></script>
     <script src="${_siteRoot}/scripts/lib/js.cookie.js"></script>
     <script src="${_siteRoot}/scripts/lib/yamljs/dist/yaml.js"></script>
+
 
     <%--<script src="${_siteRoot}/scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>--%>
     <%--<script src="${_siteRoot}/scripts/yui/build/event/event-min.js"></script>--%>
@@ -195,6 +198,7 @@
     <script src="${_siteRoot}/scripts/xnat/xhr.js"></script>
     <script src="${_siteRoot}/scripts/xnat/event.js"></script>
     <script src="${_siteRoot}/scripts/xnat/element.js"></script>
+    <script src="${_siteRoot}/scripts/xnat/ui/templates.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/input.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/select.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/table.js"></script>
@@ -202,11 +206,12 @@
     <script src="${_siteRoot}/scripts/xnat/ui/tabs.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/popup.js"></script>
     <script src="${_siteRoot}/scripts/xnat/ui/dialog.js"></script>
+
     <script src="${_siteRoot}/scripts/xnat/spawner.js"></script>
 
     <%--<script src="${_siteRoot}/scripts/timeLeft.js"></script>--%>
 
-${headBottom}
+    ${headBottom}
 
 </head>
 <body id="xnat-app" class="xnat app">
@@ -215,7 +220,10 @@ ${bodyTop}
 
 <div id="user_bar">
     <div class="inner">
-        <img id="attention_icon" src="${_siteRoot}/images/attention.png" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
+
+        <c:if test="${_user != '-'}">
+
+            <img id="attention_icon" src="${_siteRoot}/images/attention.png" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
             <span id="user_info">Logged in as: &nbsp;<a href="${_siteRoot}/app/template/XDATScreen_UpdateUser.vm">${_user}</a> <b>|</b>
                 <span class="tip_icon" style="margin-right:3px;left:2px;top:3px;">
                     <span class="tip shadowed" style="top:20px;z-index:10000;white-space:normal;left:-150px;width:300px;background-color:#ffc;">
@@ -229,290 +237,308 @@ ${bodyTop}
                 <b>|</b>
                 <a id="logout_user" href="${_siteRoot}/app/action/LogoutUser">Logout</a>
             </span>
-        <%--<script type="text/javascript">--%>
-        <%--$('#timeLeftRenew').click(XNAT.app.timeout.handleOk);--%>
-        <%--Cookies.set('guest', 'false', {path: '/'});--%>
-        <%--</script>--%>
+            <%--<script type="text/javascript">--%>
+            <%--$('#timeLeftRenew').click(XNAT.app.timeout.handleOk);--%>
+            <%--Cookies.set('guest', 'false', {path: '/'});--%>
+            <%--</script>--%>
+
+        </c:if>
+
         <div class="clear"></div>
     </div>
 </div><!-- /user_bar -->
 
-<div id="main_nav">
-    <div class="inner">
+<c:if test="${_user != '-' && page != 'setup'}">
 
-    <ul class="nav">
-        <!-- Sequence: 10 -->
-        <!-- allowGuest: true -->
-        <li>
-            <a id="nav-home" title="Home" href="${_siteRoot}/">&nbsp;</a>
-            <script>
-                $('#nav-home').css({
-                    width: '30px',
-                    backgroundImage: "url('${_siteRoot}/images/xnat-nav-logo-white-lg.png')",
-                    backgroundRepeat: 'no-repeat',
-                    backgroundSize: '32px',
-                    backgroundPosition: 'center'
-                });
-            </script>
-        </li>
-        <!-- Sequence: 20 -->
-        <li class="more"><a href="#new">New</a>
-            <ul class="" style="display: none;">
-                <!-- Sequence: 10 -->
-                <li><a href="${_siteRoot}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
-                <li><a href="${_siteRoot}/app/action/XDATActionRouter/xdataction/edit/search_element/xnat:subjectData">Subject</a></li>
-                <li><a href="${_siteRoot}/app/template/XDATScreen_add_experiment.vm">Experiment</a></li>
-            </ul>
-        </li>
-        <!-- Sequence: 30 -->
-        <li class="more"><a href="#upload">Upload</a>
-            <ul>
-                <!-- Sequence: 10 -->
-                <!-- Upload/Default -->
-                <li><a href="${_siteRoot}/app/template/LaunchUploadApplet.vm">Images</a></li>
-                <li><a href="${_siteRoot}/app/template/XMLUpload.vm">XML</a></li>
-                <li><a href="${_siteRoot}/app/template/XDATScreen_uploadCSV.vm">Spreadsheet</a></li>
-                <li><a href="${_siteRoot}/app/template/XDATScreen_prearchives.vm">Go to prearchive</a></li>
-            </ul>
-        </li>
+    <div id="main_nav">
+        <div class="inner">
 
-
-        <c:if test="${isAdmin == true}">
-            <!-- Sequence: 40 -->
-            <li class="more"><a href="#adminbox">Administer</a>
-                <ul>
-                    <!-- Sequence: 10 -->
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_admin.vm">Users</a></li>
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_groups.vm">Groups</a></li>
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_dataTypes.vm">Data Types</a></li>
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_email.vm">Email</a></li>
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_manage_pipeline.vm">Pipelines</a></li>
-                    <li><a href="${_siteRoot}/app/template/Configuration.vm">Configuration</a></li>
-                    <li><a href="${_siteRoot}/app/template/Scripts.vm">Automation</a></li>
-                    <li><a href="${_siteRoot}/app/template/XDATScreen_admin_options.vm">More...</a></li>
-                </ul>
-            </li>
-        </c:if>
-
-
-        <!-- Title: Tools -->
-        <!-- Sequence: 50 -->
-        <!-- allowGuest: true -->
-
-        <li class="more"><a href="#tools">Tools</a>
-            <ul>
+            <ul class="nav">
                 <!-- Sequence: 10 -->
                 <!-- allowGuest: true -->
-                <li><a href="https://wiki.xnat.org/display/XNAT16/XNAT+Desktop" target="_blank">XNAT Desktop (XND)</a></li>
-                <li><a href="http://nrg.wustl.edu/projects/DICOM/DicomBrowser.jsp" target="_blank">DICOM Browser</a></li>
-                <li><a href="https://wiki.xnat.org/display/XNAT16/XNAT+Client+Tools" target="_blank">Command Prompt Tools</a></li>
-            </ul>
-        </li>
-        <!-- Sequence: 60 -->
-        <li class="more"><a href="#help">Help</a>
-            <ul class="" style="display: none;">
-                <!-- Sequence: 10 -->
-                <!-- Home/Default -->
-                <li><a href="${_siteRoot}/app/template/ReportIssue.vm">Report a Problem</a></li>
-                <li><a href="http://wiki.xnat.org/display/XNAT16/Home" target="_blank">Documentation</a></li>
-            </ul>
-        </li>
-    </ul>
+                <li>
+                    <a id="nav-home" title="Home" href="${_siteRoot}/">&nbsp;</a>
+                    <script>
+                        $('#nav-home').css({
+                            width: '30px',
+                            backgroundImage: "url('${_siteRoot}/images/xnat-nav-logo-white-lg.png')",
+                            backgroundRepeat: 'no-repeat',
+                            backgroundSize: '32px',
+                            backgroundPosition: 'center'
+                        });
+                    </script>
+                </li>
+                <!-- Sequence: 20 -->
+                <li class="more"><a href="#new">New</a>
+                    <ul class="" style="display: none;">
+                        <!-- Sequence: 10 -->
+                        <li><a href="${_siteRoot}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
+                        <li>
+                            <a href="${_siteRoot}/app/action/XDATActionRouter/xdataction/edit/search_element/xnat:subjectData">Subject</a>
+                        </li>
+                        <li><a href="${_siteRoot}/app/template/XDATScreen_add_experiment.vm">Experiment</a></li>
+                    </ul>
+                </li>
+                <!-- Sequence: 30 -->
+                <li class="more"><a href="#upload">Upload</a>
+                    <ul>
+                        <!-- Sequence: 10 -->
+                        <!-- Upload/Default -->
+                        <li><a href="${_siteRoot}/app/template/LaunchUploadApplet.vm">Images</a></li>
+                        <li><a href="${_siteRoot}/app/template/XMLUpload.vm">XML</a></li>
+                        <li><a href="${_siteRoot}/app/template/XDATScreen_uploadCSV.vm">Spreadsheet</a></li>
+                        <li><a href="${_siteRoot}/app/template/XDATScreen_prearchives.vm">Go to prearchive</a></li>
+                    </ul>
+                </li>
 
-    <!-- search script -->
-    <script type="text/javascript">
-        <!--
-        function DefaultEnterKey(e, button){
-            var keynum, keychar, numcheck;
 
-            if (window.event) // IE
-            {
-                keynum = e.keyCode;
-                if (keynum == 13) {
-                    submitQuickSearch();
+                <c:if test="${isAdmin == true}">
+                    <!-- Sequence: 40 -->
+                    <li class="more"><a href="#adminbox">Administer</a>
+                        <ul>
+                            <!-- Sequence: 10 -->
+                            <li><a href="${_siteRoot}/app/template/XDATScreen_admin.vm">Users</a></li>
+                            <li><a href="${_siteRoot}/app/template/XDATScreen_groups.vm">Groups</a></li>
+                            <li><a href="${_siteRoot}/app/template/XDATScreen_dataTypes.vm">Data Types</a></li>
+                            <li><a href="${_siteRoot}/app/template/XDATScreen_email.vm">Email</a></li>
+                            <li><a href="${_siteRoot}/app/template/XDATScreen_manage_pipeline.vm">Pipelines</a></li>
+                            <li><a href="${_siteRoot}/app/template/Configuration.vm">Configuration</a></li>
+                            <li><a href="${_siteRoot}/app/template/Scripts.vm">Automation</a></li>
+                            <li><a href="${_siteRoot}/app/template/XDATScreen_admin_options.vm">More...</a></li>
+                        </ul>
+                    </li>
+                </c:if>
+
+
+                <!-- Title: Tools -->
+                <!-- Sequence: 50 -->
+                <!-- allowGuest: true -->
+
+                <li class="more"><a href="#tools">Tools</a>
+                    <ul>
+                        <!-- Sequence: 10 -->
+                        <!-- allowGuest: true -->
+                        <li>
+                            <a href="https://wiki.xnat.org/display/XNAT16/XNAT+Desktop" target="_blank">XNAT Desktop (XND)</a>
+                        </li>
+                        <li>
+                            <a href="http://nrg.wustl.edu/projects/DICOM/DicomBrowser.jsp" target="_blank">DICOM Browser</a>
+                        </li>
+                        <li>
+                            <a href="https://wiki.xnat.org/display/XNAT16/XNAT+Client+Tools" target="_blank">Command Prompt Tools</a>
+                        </li>
+                    </ul>
+                </li>
+                <!-- Sequence: 60 -->
+                <li class="more"><a href="#help">Help</a>
+                    <ul class="" style="display: none;">
+                        <!-- Sequence: 10 -->
+                        <!-- Home/Default -->
+                        <li><a href="${_siteRoot}/app/template/ReportIssue.vm">Report a Problem</a></li>
+                        <li><a href="http://wiki.xnat.org/display/XNAT16/Home" target="_blank">Documentation</a></li>
+                    </ul>
+                </li>
+            </ul>
+
+            <!-- search script -->
+            <script type="text/javascript">
+                <!--
+                function DefaultEnterKey(e, button){
+                    var keynum, keychar, numcheck;
+
+                    if (window.event) // IE
+                    {
+                        keynum = e.keyCode;
+                        if (keynum == 13) {
+                            submitQuickSearch();
+                            return true;
+                        }
+                    }
+                    else if (e) // Netscape/Firefox/Opera
+                    {
+                        keynum = e.which;
+                        if (keynum == 13) {
+                            submitQuickSearch();
+                            return false;
+                        }
+                    }
                     return true;
                 }
-            }
-            else if (e) // Netscape/Firefox/Opera
-            {
-                keynum = e.which;
-                if (keynum == 13) {
-                    submitQuickSearch();
-                    return false;
+
+                function submitQuickSearch(){
+                    concealContent();
+                    if (document.getElementById('quickSearchForm').value != "")
+                        document.getElementById('quickSearchForm').submit();
                 }
-            }
-            return true;
-        }
 
-        function submitQuickSearch(){
-            concealContent();
-            if (document.getElementById('quickSearchForm').value != "")
-                document.getElementById('quickSearchForm').submit();
-        }
+                //-->
+            </script>
+            <!-- end search script -->
 
-        //-->
-    </script>
-    <!-- end search script -->
+            <style type="text/css">
+                #quickSearchForm .chosen-results {
+                    max-height: 500px;
+                }
 
-    <style type="text/css">
-        #quickSearchForm .chosen-results {
-            max-height: 500px;
-        }
+                #quickSearchForm .chosen-results li {
+                    padding-right: 20px;
+                    white-space: nowrap;
+                }
 
-        #quickSearchForm .chosen-results li {
-            padding-right: 20px;
-            white-space: nowrap;
-        }
+                #quickSearchForm .chosen-container .chosen-drop {
+                    width: auto;
+                    min-width: 180px;
+                    max-width: 360px;
+                }
 
-        #quickSearchForm .chosen-container .chosen-drop {
-            width: auto;
-            min-width: 180px;
-            max-width: 360px;
-        }
+                #quickSearchForm .chosen-container .chosen-drop .divider {
+                    padding: 0;
+                    overflow: hidden;
+                }
+            </style>
 
-        #quickSearchForm .chosen-container .chosen-drop .divider {
-            padding: 0;
-            overflow: hidden;
-        }
-    </style>
+            <form id="quickSearchForm" method="post" action="${_siteRoot}/app/action/QuickSearchAction">
+                <select id="stored-searches" data-placeholder="Stored Searches" style="display: none;">
+                    <option></option>
+                    <optgroup>
+                        <option value="${_siteRoot}/app/template/XDATScreen_search_wizard1.vm">Advanced Search…</option>
+                    </optgroup>
+                    <optgroup class="stored-search-list">
+                        <option disabled="">(no stored searches)</option>
+                        <!-- stored searches will show up here -->
+                    </optgroup>
+                </select>
+                <input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="">
+                <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Go</button>
 
-    <form id="quickSearchForm" method="post" action="${_siteRoot}/app/action/QuickSearchAction">
-        <select id="stored-searches" data-placeholder="Stored Searches" style="display: none;">
-            <option></option>
-            <optgroup>
-                <option value="${_siteRoot}/app/template/XDATScreen_search_wizard1.vm">Advanced Search…</option>
-            </optgroup>
-            <optgroup class="stored-search-list">
-                <option disabled="">(no stored searches)</option>
-                <!-- stored searches will show up here -->
-            </optgroup>
-        </select>
-        <input id="searchValue" class="clean" name="searchValue" type="text" maxlength="40" size="20" value="">
-        <button type="button" id="search_btn" class="btn2" onclick="submitQuickSearch();">Go</button>
+                <script>
 
-        <script>
+                    $('#searchValue').each(function(){
+                        var _this = this;
+                        _this.value = _this.value || 'search';
+                        $(_this).focus(function(){
+                            $(_this).removeClass('clean');
+                            if (!_this.value || _this.value === 'search') {
+                                _this.value = '';
+                            }
+                        })
+                    });
 
-            $('#searchValue').each(function(){
-                var _this = this;
-                _this.value = _this.value || 'search';
-                $(_this).focus(function(){
-                    $(_this).removeClass('clean');
-                    if (!_this.value || _this.value === 'search') {
-                        _this.value = '';
+                    $('#stored-searches').on('change', function(){
+                        if (this.value) {
+                            window.location.href = this.value;
+                        }
+                    }).chosen({
+                        width: '150px',
+                        disable_search_threshold: 9,
+                        inherit_select_classes: true,
+                        placeholder_text_single: 'Stored Searches',
+                        search_contains: true
+                    });
+
+
+                    window.logged_in = true;
+
+                </script>
+            </form>
+
+            <!-- main_nav interactions -->
+            <script type="text/javascript">
+
+                (function(){
+
+                    // cache it
+                    var main_nav$ = jq('#main_nav ul.nav');
+
+                    var body$ = jq('body');
+
+                    var cover_up_count = 1;
+
+                    function coverApplet(el$){
+                        var cover_up_id = 'cover_up' + cover_up_count++;
+                        var jqObjPos = el$.offset(),
+                                jqObjLeft = jqObjPos.left,
+                                jqObjTop = jqObjPos.top,
+                                jqObjMarginTop = el$.css('margin-top'),
+                                jqObjWidth = el$.outerWidth() + 4,
+                                jqObjHeight = el$.outerHeight() + 2;
+
+                        el$.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
+
+                        jq('#' + cover_up_id).css({
+                            display: 'block',
+                            position: 'fixed',
+                            width: jqObjWidth,
+                            height: jqObjHeight,
+                            marginTop: jqObjMarginTop,
+                            left: jqObjLeft,
+                            top: jqObjTop,
+                            background: 'transparent',
+                            border: 'none',
+                            outline: 'none'
+                        });
                     }
-                })
-            });
 
-            $('#stored-searches').on('change', function(){
-                if (this.value) {
-                    window.location.href = this.value;
-                }
-            }).chosen({
-                width: '150px',
-                disable_search_threshold: 9,
-                inherit_select_classes: true,
-                placeholder_text_single: 'Stored Searches',
-                search_contains: true
-            });
+                    function unCoverApplets(el$){
+                        el$.prev('iframe.applet_cover_up').detach();
+                    }
 
-        </script>
-    </form>
+                    function fadeInNav(el$){
+//            el$.stop('clearQueue','gotoEnd');
+                        el$.find('> ul').show().addClass('open');
+                    }
+
+                    function fadeOutNav(el$){
+//            el$.stop('clearQueue','gotoEnd');
+                        el$.find('> ul').hide().removeClass('open');
+                    }
+
+                    // give menus with submenus a class of 'more'
+                    main_nav$.find('li ul, li li ul').closest('li').addClass('more');
+                    main_nav$.find('li li ul').addClass('subnav');
+
+                    // no fancy fades on hover
+                    main_nav$.find('li.more').on('mouseover',
+                            function(){
+                                var li$ = $(this);
+                                fadeInNav(li$);
+                                //jq('#main_nav li').removeClass('open');
+                                li$.find('ul.subnav').each(function(){
+                                    var sub$ = $(this);
+                                    var offsetL = sub$.closest('ul').outerWidth();
+                                    sub$.css({ 'left': offsetL + -25 })
+                                });
+                                if (body$.hasClass('applet')) {
+                                    coverApplet(li$.find('> ul'));
+                                }
+                            }
+                    ).on('mouseout',
+                            function(){
+                                var li$ = $(this);
+                                fadeOutNav(li$);
+                                if (body$.hasClass('applet')) {
+                                    unCoverApplets(li$.find('> ul'));
+                                }
+                            }
+                    );
+
+                    // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
+                    jq('#logout_user').click(function(){
+                        Cookies.set('WARNING_BAR', 'OPEN', { path: '/' });
+                        Cookies.set('NOTIFICATION_MESSAGE', 'OPEN', { path: '/' });
+                    });
+
+                })();
+            </script>
+            <!-- end main_nav interactions -->
+
+        </div>
+        <!-- /.inner -->
 
     </div>
-    <!-- /.inner -->
+    <!-- /#main_nav -->
 
-</div>
-<!-- /#main_nav -->
-
-<!-- main_nav interactions -->
-<script type="text/javascript">
-
-    (function(){
-
-        // cache it
-        var main_nav$ = jq('#main_nav ul.nav');
-
-        var body$ = jq('body');
-
-        var cover_up_count = 1;
-
-        function coverApplet(el$){
-            var cover_up_id = 'cover_up' + cover_up_count++;
-            var jqObjPos = el$.offset(),
-                    jqObjLeft = jqObjPos.left,
-                    jqObjTop = jqObjPos.top,
-                    jqObjMarginTop = el$.css('margin-top'),
-                    jqObjWidth = el$.outerWidth() + 4,
-                    jqObjHeight = el$.outerHeight() + 2;
-
-            el$.before('<iframe id="' + cover_up_id + '" class="applet_cover_up" src="about:blank" width="' + jqObjWidth + '" height="' + jqObjHeight + '"></iframe>');
-
-            jq('#' + cover_up_id).css({
-                display: 'block',
-                position: 'fixed',
-                width: jqObjWidth,
-                height: jqObjHeight,
-                marginTop: jqObjMarginTop,
-                left: jqObjLeft,
-                top: jqObjTop,
-                background: 'transparent',
-                border: 'none',
-                outline: 'none'
-            });
-        }
-
-        function unCoverApplets(el$){
-            el$.prev('iframe.applet_cover_up').detach();
-        }
-
-        function fadeInNav(el$){
-//            el$.stop('clearQueue','gotoEnd');
-            el$.find('> ul').show().addClass('open');
-        }
-
-        function fadeOutNav(el$){
-//            el$.stop('clearQueue','gotoEnd');
-            el$.find('> ul').hide().removeClass('open');
-        }
-
-        // give menus with submenus a class of 'more'
-        main_nav$.find('li ul, li li ul').closest('li').addClass('more');
-        main_nav$.find('li li ul').addClass('subnav');
-
-        // no fancy fades on hover
-        main_nav$.find('li.more').on('mouseover',
-                function(){
-                    var li$ = $(this);
-                    fadeInNav(li$);
-                    //jq('#main_nav li').removeClass('open');
-                    li$.find('ul.subnav').each(function(){
-                        var sub$ = $(this);
-                        var offsetL = sub$.closest('ul').outerWidth();
-                        sub$.css({'left': offsetL + -25})
-                    });
-                    if (body$.hasClass('applet')) {
-                        coverApplet(li$.find('> ul'));
-                    }
-                }
-        ).on('mouseout',
-                function(){
-                    var li$ = $(this);
-                    fadeOutNav(li$);
-                    if (body$.hasClass('applet')) {
-                        unCoverApplets(li$.find('> ul'));
-                    }
-                }
-        );
-
-        // clicking the "Logout" link sets the warning bar cookie to 'OPEN' so it's available if needed on next login
-        jq('#logout_user').click(function(){
-            Cookies.set('WARNING_BAR', 'OPEN', {path: '/'});
-            Cookies.set('NOTIFICATION_MESSAGE', 'OPEN', {path: '/'});
-        });
-
-    })();
-</script>
-<!-- end main_nav interactions -->
+</c:if>
 
 <div id="page_wrapper">
 
@@ -550,8 +576,6 @@ ${bodyTop}
 
         })();
 
-        logged_in = true;
-
         // initialize the advanced search method toggler
         XNAT.app.searchMethodToggler = function(parent$){
 
@@ -563,10 +587,12 @@ ${bodyTop}
                     searchMethodInputs$ = parent$.find(SEARCH_METHOD_CKBOXES);
 
             // disable 'by-id' search groups by default
-            searchGroups$.filter('.by-id').addClass('disabled').find(INPUTS).not(SEARCH_METHOD_CKBOXES).changeVal('').prop('disabled', true).addClass('disabled');
+            searchGroups$.filter('.by-id').addClass('disabled').find(INPUTS).not(SEARCH_METHOD_CKBOXES).changeVal('')
+                         .prop('disabled', true).addClass('disabled');
 
             // enable 'by-criteria' search groups by default
-            searchGroups$.filter('.by-criteria').removeClass('disabled').find(INPUTS).prop('disabled', false).removeClass('disabled');
+            searchGroups$.filter('.by-criteria').removeClass('disabled').find(INPUTS).prop('disabled', false)
+                         .removeClass('disabled');
 
             // check 'by-criteria' checkboxes
             searchMethodInputs$.filter('.by-criteria').prop('checked', true);
@@ -578,11 +604,13 @@ ${bodyTop}
             searchMethodInputs$.on('click', function(){
 
                 var method = this.value,
-                    isChecked = this.checked;
+                        isChecked = this.checked;
 
-                searchGroups$.addClass('disabled').find(INPUTS).not(SEARCH_METHOD_CKBOXES).changeVal('').prop('disabled', true).addClass('disabled');
+                searchGroups$.addClass('disabled').find(INPUTS).not(SEARCH_METHOD_CKBOXES).changeVal('')
+                             .prop('disabled', true).addClass('disabled');
 
-                searchGroups$.filter('.' + method).removeClass('disabled').find(INPUTS).prop('disabled', false).removeClass('disabled');
+                searchGroups$.filter('.' + method).removeClass('disabled').find(INPUTS).prop('disabled', false)
+                             .removeClass('disabled');
 
                 // update the radio buttons/checkboxes
                 searchMethodInputs$.prop('checked', false);
@@ -632,9 +660,9 @@ ${bodyTop}
 <!-- /page_wrapper -->
 
 <div id="xnat_power">
-    <a target="_blank" href="http://www.xnat.org/" style="" title="XNAT version Unknown"><img
+    <a target="_blank" href="http://www.xnat.org/" style="" title="XNAT Version 1.7"><img
             src="${_siteRoot}/images/xnat_power_small.png"></a>
-    <small>version Unknown</small>
+    <small>version 1.7</small>
 </div>
 
 <script type="text/javascript">

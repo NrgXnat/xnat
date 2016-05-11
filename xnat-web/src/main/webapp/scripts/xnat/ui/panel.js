@@ -150,23 +150,23 @@ var XNAT = getObject(XNAT || {});
             // // if there's a 'refresh' url, make that obj.url
             // if (obj.refresh) obj.url = obj.refresh;
 
-            // if we pass data in a 'data' property, just use that
+            // if we pass data in a 'lookup' property, just use that
             // to avoid doing a server request
 
-            if (obj.data && !obj.url) {
-                if (Array.isArray(obj.data)) {
-                    obj.data = obj.data[0];
+            if (obj.lookup && !obj.url) {
+                if (Array.isArray(obj.lookup)) {
+                    obj.lookup = obj.lookup[0];
                 }
                 else {
                     try {
-                        obj.data = eval(obj.data);
+                        obj.lookup = eval(obj.lookup);
                     }
                     catch (e) {
                         if (console && console.log) console.log(e);
-                        obj.data = ''
+                        obj.lookup = ''
                     }
                 }
-                setValues(obj.form, obj.data);
+                setValues(obj.form, obj.lookup);
                 return obj.form;
             }
 
@@ -209,11 +209,15 @@ var XNAT = getObject(XNAT || {});
         //    loadData(opts.load);
         //}
 
+        $(_formPanel).on('reload-data', function(){
+            xmodal.loading.open();
+            opts.load.url = opts.load.url || opts.load.refresh;
+            loadData(opts.load);
+        });
+
         // click 'Discard Changes' button to reload data
         _resetBtn.onclick = function(){
-            xmodal.loading.open();
-            opts.load.url = opts.load.refresh;
-            loadData(opts.load);
+            $(_formPanel).triggerHandler('reload-data');
         };
 
         // intercept the form submit to do it via REST instead
@@ -264,14 +268,17 @@ var XNAT = getObject(XNAT || {});
                     if (data) {
                         // wrap the returned data in an array so the
                         // loadData() function handles it properly
-                        obj.data = [data];
+                        obj.lookup = [data];
                     }
                     else {
                         obj.url = opts.refresh;
                     }
                     xmodal.loading.close();
                     xmodal.message('Data saved successfully.', {
-                        action: loadData(obj)
+                        action: function(){
+                            xmodal.closeAll();
+                            loadData(obj);
+                        }
                     });
                 }
             };
@@ -307,6 +314,91 @@ var XNAT = getObject(XNAT || {});
             spawned: _formPanel,
             get: function(){
                 return _formPanel;
+            }
+        }
+    };
+    
+    // creates a panel that submits all forms contained within
+    panel.multiForm = function(opts){
+
+        opts = getObject(opts);
+        opts.element = opts.element || opts.config || {};
+
+        var inner = spawn('div.panel-body', opts.element),
+
+            hideFooter = (isDefined(opts.footer) && (opts.footer === false || /^-/.test(opts.footer))),
+
+            submitBtn = spawn('button', {
+                type: 'submit',
+                classes: 'btn btn-sm btn-primary save pull-right',
+                html: 'Save All'
+            }),
+            
+            resetBtn  = spawn('button', {
+                type: 'button',
+                classes: 'btn btn-sm btn-default revert pull-right',
+                html: 'Discard Changes',
+                onclick: function(e){
+                    e.preventDefault();
+                    $(this).closest('form.multi-form').find('form').each(function(){
+                        $(this).triggerHandler('reload-data');
+                    });
+                    return false;
+                }
+            }),
+            
+            defaults = spawn('button', {
+                type: 'button',
+                classes: 'btn btn-sm btn-link defaults pull-left',
+                html: 'Default Settings'
+            }),
+
+            footer = [
+                submitBtn,
+                ['span.pull-right', '&nbsp;&nbsp;&nbsp;'],
+                resetBtn,
+                // defaults,
+                ['div.clear']
+            ],
+
+            multiForm = spawn('form', {
+                classes: 'xnat-form-panel multi-form panel panel-default', 
+                method: opts.method || 'POST',
+                action: opts.action || '#',
+                onsubmit: function(e){
+                    e.preventDefault();
+                    // submit all enclosed forms
+                    $(this).find('form').each(function(){
+                        xmodal.closeAll();
+                        $(this).trigger('submit');
+                    });
+                    return false;
+                }
+            }, [
+                ['div.panel-heading', [
+                    ['h3.panel-title', opts.title || opts.label]
+                ]],
+
+                
+                // 'inner' is where the next spawned item will render
+                inner,
+
+                
+                (hideFooter ? ['div.hidden'] : ['div.panel-footer', opts.footer || footer])
+
+            ]);
+
+        // add an id to the outer panel element if present
+        if (opts.id || opts.element.id) {
+            multiForm.id = opts.id || (opts.element.id + '-panel');
+        }
+        
+        return {
+            target: inner,
+            element: multiForm,
+            spawned: multiForm,
+            get: function(){
+                return multiForm
             }
         }
     };
@@ -411,14 +503,14 @@ var XNAT = getObject(XNAT || {});
     panel.input.email = function panelInputEmail(opts){
         opts = getObject(opts);
         opts.type = 'text';
-        //addClassName(opts, 'email');
+        addClassName(opts, 'email');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.password = function panelInputPassword(opts){
         opts = getObject(opts);
         opts.type = 'password';
-        //addClassName(opts, 'password ');
+        addClassName(opts, 'password');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 

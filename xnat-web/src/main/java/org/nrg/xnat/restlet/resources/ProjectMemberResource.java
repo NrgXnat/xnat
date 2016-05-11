@@ -10,27 +10,18 @@
  */
 package org.nrg.xnat.restlet.resources;
 
-import java.sql.SQLException;
-import java.util.ArrayList;
-import java.util.Hashtable;
-import java.util.List;
-
-import javax.servlet.http.HttpServletRequest;
-
+import com.noelios.restlet.ext.servlet.ServletCall;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.nrg.action.ActionException;
 import org.nrg.xdat.display.DisplayManager;
-import org.nrg.xdat.om.XdatUsergroup;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.ItemI;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
 import org.nrg.xft.event.EventUtils;
@@ -38,8 +29,6 @@ import org.nrg.xft.event.persist.PersistentWorkflowI;
 import org.nrg.xft.event.persist.PersistentWorkflowUtils;
 import org.nrg.xft.exception.DBPoolException;
 import org.nrg.xft.exception.InvalidItemException;
-import org.nrg.xft.search.CriteriaCollection;
-import org.nrg.xft.search.ItemSearch;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ProjectAccessRequest;
 import org.nrg.xnat.utils.WorkflowUtils;
@@ -51,7 +40,11 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 
-import com.noelios.restlet.ext.servlet.ServletCall;
+import javax.servlet.http.HttpServletRequest;
+import java.sql.SQLException;
+import java.util.ArrayList;
+import java.util.Hashtable;
+import java.util.List;
 
 public class ProjectMemberResource extends SecureResource {
 	XnatProjectdata proj=null;
@@ -119,7 +112,7 @@ public class ProjectMemberResource extends SecureResource {
 						UserI newUser=null;
 						try {
 							newUser = Users.getUser(uID);
-						} catch (UserNotFoundException e) {
+						} catch (Exception e) {
 						}
 						if (newUser==null){
 							//by email

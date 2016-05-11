@@ -49,7 +49,7 @@ public class RequestAccess extends SecureAction {
         context.put("server",TurbineUtils.GetFullServerPath());
         context.put("process","Transfer to the archive.");
         context.put("system",TurbineUtils.GetSystemName());
-        context.put("admin_email",AdminUtils.getAdminEmailId());
+        context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());
         context.put("projectOM",project);
         context.put("access_level",access_level);
         context.put("comments",comments);
@@ -81,10 +81,10 @@ public class RequestAccess extends SecureAction {
 
         String[] bcc = null;
         if(ArcSpecManager.GetInstance().getEmailspecifications_projectAccess()){
-        	bcc = new String[] { AdminUtils.getAdminEmailId() };
+        	bcc = new String[] { XDAT.getSiteConfigPreferences().getAdminEmail() };
         }
         
-        String from = AdminUtils.getAdminEmailId();
+        String from = XDAT.getSiteConfigPreferences().getAdminEmail();
         String subject = TurbineUtils.GetSystemName() + " Access Request for " + project.getName();
 
         try {

@@ -151,7 +151,7 @@ public abstract class SecureResource extends Resource {
         // expects that the user exists in the session (either via traditional
         // session or set via the XnatSecureGuard
         user = XDAT.getUserDetails();
-        if(user==null && !XFT.GetRequireLogin()){
+        if(user==null && !XDAT.getSiteConfigPreferences().getRequireLogin()){
             try {
                 user = Users.getGuest();
                 XDAT.setUserDetails(user);
@@ -639,7 +639,7 @@ public abstract class SecureResource extends Resource {
     public FileRepresentation representFile(File f, MediaType mt) {
         mt = buildMediaType(mt, f.getName());
 
-        if (mt.getName().startsWith("APPLICATION") || !XFT.getBooleanProperty("security.allow-HTML-resource-rendering", true)) {
+        if (mt.getName().startsWith("APPLICATION") || !XDAT.getSiteConfigPreferences().getAllowHtmlResourceRendering()) {
             setContentDisposition(f.getName());
         }
 

@@ -10,17 +10,17 @@
  */
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.util.List;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.modules.screens.SecureScreen;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
+
+import java.util.List;
 
 public class ConfirmRegister extends SecureAction {
 
@@ -38,7 +38,7 @@ public class ConfirmRegister extends SecureAction {
             if(!StringUtils.isEmpty(par)){
             	context.put("par", par);
             }
-		    if (!StringUtils.isEmpty(nextAction) && nextAction.indexOf("XDATLoginUser")==-1 && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
+		    if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(org.apache.turbine.Turbine.getConfiguration().getString("action.login"))){
             	context.put("nextAction", nextAction);
 		    }else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(org.apache.turbine.Turbine.getConfiguration().getString("template.home")) ) {
             	context.put("nextPage", nextPage);
@@ -50,7 +50,7 @@ public class ConfirmRegister extends SecureAction {
             if (current==null)
             {
             	//allowed to have multiple accounts with the admin email address
-            	if(!StringUtils.equals(newUser.getEmail(),AdminUtils.getAdminEmailId()))
+            	if(!StringUtils.equals(newUser.getEmail(), XDAT.getSiteConfigPreferences().getAdminEmail()))
             	{
             		List<UserI> match=Users.getUsersByEmail(newUser.getEmail());
             		if(match.size()>0){
@@ -72,7 +72,7 @@ public class ConfirmRegister extends SecureAction {
                 data.setMessage("Username (" + newUser.getEmail() + ") already exists.");
                 data.setScreenTemplate("ForgotLogin.vm");
             }
-        } catch (Exception e) {
+        } catch (Exception ignored) {
         }
     }
 

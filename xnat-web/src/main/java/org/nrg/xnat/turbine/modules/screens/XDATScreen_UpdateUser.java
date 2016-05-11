@@ -46,22 +46,14 @@ public class XDATScreen_UpdateUser extends SecureScreen {
         }
 
         c.put("user", XDAT.getUserDetails());
-        if (TurbineUtils.GetPassedParameter("popup", data) != null) {
-            if (((String) TurbineUtils.GetPassedParameter("popup", data)).equalsIgnoreCase("true")) {
-                c.put("popup", "true");
-            } else {
-                c.put("popup", "false");
-            }
-        } else {
-            c.put("popup", "false");
-        }
+        checkForPopup(data, c);
 
         c.put("displayManager", DisplayManager.GetInstance());
         c.put("systemName", TurbineUtils.GetSystemName());
         c.put("esc", new EscapeTool());
 
-        c.put("showReason", XFT.getShowChangeJustification());
-        c.put("requireReason", XFT.getRequireChangeJustification());
+        c.put("showReason", XDAT.getSiteConfigPreferences().getShowChangeJustification());
+        c.put("requireReason", XDAT.getSiteConfigPreferences().getRequireChangeJustification());
         try{
             c.put("siteConfig", XDAT.getSiteConfiguration());
         }catch(ConfigServiceException ignored){

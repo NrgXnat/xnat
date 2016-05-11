@@ -10,21 +10,21 @@
  */
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.io.File;
-
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.om.XnatImagescandata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.schema.Wrappers.XMLWrapper.SAXReader;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.archive.BatchTransfer;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+
+import java.io.File;
 
 public class MatchPrearchiveSessions extends SecureAction {
 
@@ -33,14 +33,14 @@ public class MatchPrearchiveSessions extends SecureAction {
      */
     @Override
     public void doPerform(RunData data, Context context) throws Exception {
-        Integer num= ((Integer)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedInteger("num_sessions",data));
-        BatchTransfer bt = new BatchTransfer(TurbineUtils.GetFullServerPath(),TurbineUtils.GetSystemName(),AdminUtils.getAdminEmailId());
+        Integer num= TurbineUtils.GetPassedInteger("num_sessions", data);
+        BatchTransfer bt = new BatchTransfer(TurbineUtils.GetFullServerPath(), TurbineUtils.GetSystemName(), XDAT.getSiteConfigPreferences().getAdminEmail());
         UserI user =TurbineUtils.getUser(data);
-        bt.setUser((UserI)user);
+        bt.setUser(user);
         String project = (String)TurbineUtils.GetPassedParameter("project", data);
         if (num !=null)
         {
-            for (int h=0;h<=num.intValue();h++)
+            for (int h = 0; h <= num; h++)
             {
                 String sessionFolder = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("session" + h,data));
                 String match = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("match" + h,data));
@@ -82,7 +82,7 @@ public class MatchPrearchiveSessions extends SecureAction {
                                                 SAXReader reader = new SAXReader(TurbineUtils.getUser(data));
                                                 XFTItem item = reader.parse(xml.getAbsolutePath());
 
-                                                XnatImagesessiondata mr = (XnatImagesessiondata)XnatImagesessiondata.getXnatImagesessiondatasById(match, user, false);
+                                                XnatImagesessiondata mr = XnatImagesessiondata.getXnatImagesessiondatasById(match, user, false);
                                                 
                                                 int k = 0;
                                                 while(TurbineUtils.HasPassedParameter("match" + h + ".scan" + k + "_id", data)){
@@ -90,10 +90,10 @@ public class MatchPrearchiveSessions extends SecureAction {
                                                     String use = (String)TurbineUtils.GetPassedParameter("match" + h + ".scan" + k + "_use", data);
                                                     String t = (String)TurbineUtils.GetPassedParameter("match" + h + ".scan" + k + "_type", data);
                                                     
-                                                    XnatImagescandata scan = (XnatImagescandata) mr.getScanById(id);
+                                                    XnatImagescandata scan = mr.getScanById(id);
                                                     if (scan==null){
                                                         XnatImagesessiondata tempMR= (XnatImagesessiondata)BaseElement.GetGeneratedItem(item);
-                                                        scan =(XnatImagescandata)tempMR.getScanById(id);
+                                                        scan = tempMR.getScanById(id);
                                                         if (scan!=null){
                                                             mr.setScans_scan(scan);
                                                         }

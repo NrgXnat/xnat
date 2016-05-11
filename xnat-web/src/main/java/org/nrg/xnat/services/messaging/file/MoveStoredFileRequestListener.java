@@ -77,7 +77,7 @@ public class MoveStoredFileRequestListener {
             }
 
             try {
-                XDAT.getMailService().sendHtmlMessage(AdminUtils.getAdminEmailId(), request.getNotifyList(), subject, message);
+                XDAT.getMailService().sendHtmlMessage(XDAT.getSiteConfigPreferences().getAdminEmail(), request.getNotifyList(), subject, message);
             } catch (MessagingException e) {
                 log.error("Failed to send email.", e);
             }

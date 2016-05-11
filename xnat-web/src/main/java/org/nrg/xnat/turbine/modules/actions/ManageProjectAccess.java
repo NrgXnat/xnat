@@ -92,7 +92,7 @@ public class ManageProjectAccess extends SecureAction {
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());
                         context.put("access_level", "owner");
-                        context.put("admin_email", AdminUtils.getAdminEmailId());
+                        context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
                         context.put("projectOM", project);
                         org.nrg.xnat.turbine.modules.actions.ProcessAccessRequest.SendAccessApprovalEmail(context, newOwner, TurbineUtils.getUser(data), TurbineUtils.GetSystemName() + " Access Granted for " + project.getName());
                     }
@@ -126,7 +126,7 @@ public class ManageProjectAccess extends SecureAction {
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());
                         context.put("access_level", "member");
-                        context.put("admin_email", AdminUtils.getAdminEmailId());
+                        context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
                         context.put("projectOM", project);
                         org.nrg.xnat.turbine.modules.actions.ProcessAccessRequest.SendAccessApprovalEmail(context, newMember, TurbineUtils.getUser(data), TurbineUtils.GetSystemName() + " Access Granted for " + project.getName());
                     }
@@ -160,7 +160,7 @@ public class ManageProjectAccess extends SecureAction {
                         context.put("process", "Transfer to the archive.");
                         context.put("system", TurbineUtils.GetSystemName());
                         context.put("access_level", "collaborator");
-                        context.put("admin_email", AdminUtils.getAdminEmailId());
+                        context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
                         context.put("projectOM", project);
                         org.nrg.xnat.turbine.modules.actions.ProcessAccessRequest.SendAccessApprovalEmail(context, newMember, TurbineUtils.getUser(data), TurbineUtils.GetSystemName() + " Access Granted for " + project.getName());
                     }

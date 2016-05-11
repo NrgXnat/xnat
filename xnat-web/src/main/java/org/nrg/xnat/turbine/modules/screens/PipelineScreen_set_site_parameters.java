@@ -19,12 +19,12 @@ import org.nrg.pipeline.xmlbeans.PipelineData.Documentation.InputParameters;
 import org.nrg.pipeline.xmlbeans.PipelineData.Documentation.InputParameters.Parameter;
 import org.nrg.pipeline.xmlbeans.PipelineData.Documentation.InputParameters.Parameter.Values;
 import org.nrg.pipeline.xmlbeans.PipelineDocument;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.PipePipelinedetails;
 import org.nrg.xdat.om.PipePipelinedetailsParameter;
 import org.nrg.xdat.om.PipePipelinerepository;
 import org.nrg.xdat.turbine.modules.screens.AdminEditScreenA;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
@@ -88,7 +88,7 @@ public class PipelineScreen_set_site_parameters extends AdminEditScreenA{
 		}catch(Exception e) {
 			logger.error(e);
 			e.printStackTrace();
-			data.setMessage("The pipeline could not be added to the repository. Please contact " + XDAT.getSiteConfigPreferences().getAdminEmail() );
+			data.setMessage("The pipeline could not be added to the repository. Please contact " + XDAT.getSiteConfigPreferences().getAdminEmail());
 			data.setScreenTemplate("Error.vm");
 		}
 	}

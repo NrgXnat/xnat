@@ -22,9 +22,7 @@ import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.om.XnatExperimentdata;
 import org.nrg.xdat.om.XnatImagesessiondata;
 import org.nrg.xdat.services.AliasTokenService;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
-import org.nrg.xft.XFT;
 import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
@@ -54,8 +52,8 @@ public class XnatPipelineLauncher {
     private UserI user;
     private String dataType;
     private String host;
-    private Set<String> notificationEmailIds = new HashSet<String>();
-    private Map<String, List<String>> parameters = new Hashtable<String, List<String>>();
+    private Set<String> notificationEmailIds = new HashSet<>();
+    private Map<String, List<String>> parameters = new Hashtable<>();
     private String startAt;
     private boolean waitFor;
     private boolean needsBuildDir;
@@ -136,7 +134,7 @@ public class XnatPipelineLauncher {
         }
 
         if (needsBuildDir) {
-            parameters.put("builddir", Arrays.asList(path));
+            parameters.put("builddir", Collections.singletonList(path));
         }
 
         setNeedsBuildDir(false);
@@ -159,7 +157,7 @@ public class XnatPipelineLauncher {
     }
 
     public XnatPipelineLauncher(RunData data, Context context) {
-        user = TurbineUtils.getUser(data);
+        user = XDAT.getUserDetails();
         host = TurbineUtils.GetFullServerPath();
         startAt = null;
         supressNotification = false;
@@ -182,7 +180,7 @@ public class XnatPipelineLauncher {
 
     private void addUserEmailForNotification() {
         notify(user.getEmail());
-        notify(AdminUtils.getAdminEmailId());
+        notify(XDAT.getSiteConfigPreferences().getAdminEmail());
     }
 
     /*
@@ -192,7 +190,7 @@ public class XnatPipelineLauncher {
      */
 
     public boolean launch() {
-        return launch(XFT.GetPipelinePath() + "bin" + File.separator + SCHEDULE);
+        return launch(XDAT.getSiteConfigPreferences().getPipelinePath() + "bin" + File.separator + SCHEDULE);
     }
 
     /*
@@ -305,7 +303,7 @@ public class XnatPipelineLauncher {
             command = "";
         }
 
-        command += XFT.GetPipelinePath() + "bin" + File.separator + "XnatPipelineLauncher";
+        command += XDAT.getSiteConfigPreferences().getAdminEmail() + "bin" + File.separator + "XnatPipelineLauncher";
 
         if (System.getProperty("os.name").toUpperCase().startsWith("WINDOWS")) {
             command += ".bat";
@@ -332,7 +330,7 @@ public class XnatPipelineLauncher {
     private List<String> getPipelineConfigurationArguments() {
         List<String> arguments = new ArrayList<>();
         try {
-            String pipelinePath = new File(XFT.GetPipelinePath()).getCanonicalPath();
+            String pipelinePath = new File(XDAT.getSiteConfigPreferences().getAdminEmail()).getCanonicalPath();
             boolean requiresQuotes = pipelinePath.contains(" ");
             arguments.add("-config");
             String configPath = pipelinePath + File.separator + "pipeline.config";
@@ -361,7 +359,7 @@ public class XnatPipelineLauncher {
     private List<String> getCommandLineArguments() {
         AliasToken token = XDAT.getContextService().getBean(AliasTokenService.class).issueTokenForUser(user);
 
-        List<String> arguments = new ArrayList<String>();
+        List<String> arguments = new ArrayList<>();
         arguments.add("-pipeline");
         arguments.add(pipelineName);
         arguments.add("-id");
@@ -437,7 +435,7 @@ public class XnatPipelineLauncher {
     }
 
     private Integer initiateWorkflowEntry() throws Exception {
-        WrkWorkflowdata wrk = new WrkWorkflowdata((UserI)user);
+        WrkWorkflowdata wrk = new WrkWorkflowdata(user);
         wrk.setDataType(this.getDataType());
         wrk.setId(this.getId());
         wrk.setExternalid(this.getExternalId());
@@ -516,7 +514,7 @@ public class XnatPipelineLauncher {
         if (parameters.containsKey(name)) {
             parameters.get(name).add(value);
         } else {
-            parameters.put(name, Arrays.asList(value));
+            parameters.put(name, Collections.singletonList(value));
         }
 
     }
@@ -528,7 +526,7 @@ public class XnatPipelineLauncher {
             buildPath = buildPath.substring(0, buildPath.length() - 1);
         }
         if (needsBuildDir) {
-            parameters.put("builddir", Arrays.asList(buildPath + File.separator + "Pipeline"));
+            parameters.put("builddir", Collections.singletonList(buildPath + File.separator + "Pipeline"));
         }
     }
 
@@ -622,11 +620,11 @@ public class XnatPipelineLauncher {
     public static XnatPipelineLauncher GetLauncherForExperiment(RunData data, Context context, XnatExperimentdata imageSession) throws Exception {
         XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(data, context);
         xnatPipelineLauncher.setSupressNotification(true);
-        UserI user = TurbineUtils.getUser(data);
+        UserI user = XDAT.getUserDetails();
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());
         xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
-        xnatPipelineLauncher.setParameter("adminemail", AdminUtils.getAdminEmailId());
-        xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
+        xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
 
         xnatPipelineLauncher.setId(imageSession.getId());
@@ -637,8 +635,8 @@ public class XnatPipelineLauncher {
         xnatPipelineLauncher.setParameter("project", imageSession.getProject());
         xnatPipelineLauncher.setParameter("cachepath", QCImageCreator.getQCCachePathForSession(imageSession.getProject()));
 
-        List<String> emails = new ArrayList<String>();
-        emails.add(TurbineUtils.getUser(data).getEmail());
+        List<String> emails = new ArrayList<>();
+        emails.add(XDAT.getUserDetails().getEmail());
 
         String extraEmails = (String) TurbineUtils.GetPassedParameter("emailField", data);
         if (!StringUtils.isBlank(extraEmails)) {
@@ -659,11 +657,11 @@ public class XnatPipelineLauncher {
     public static XnatPipelineLauncher GetBareLauncherForExperiment(RunData data, Context context, XnatExperimentdata imageSession) throws Exception {
         XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(data, context);
         xnatPipelineLauncher.setSupressNotification(true);
-        UserI user = TurbineUtils.getUser(data);
+        UserI user = XDAT.getUserDetails();
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());
         xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
-        xnatPipelineLauncher.setParameter("adminemail", AdminUtils.getAdminEmailId());
-        xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
+        xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
 
         xnatPipelineLauncher.setId(imageSession.getId());

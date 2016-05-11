@@ -15,13 +15,14 @@ import org.apache.xmlbeans.XmlException;
 import org.apache.xmlbeans.XmlObject;
 import org.apache.xmlbeans.XmlOptions;
 import org.nrg.pipeline.xmlbeans.PipelineDocument;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcProject;
-import org.nrg.xft.XFT;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Calendar;
 
 public class PipelineFileUtils {
@@ -35,7 +36,7 @@ public class PipelineFileUtils {
         xopt.setErrorListener(errors);
          XmlObject xo = XmlObject.Factory.parse(xmlFile, xopt);
          if (errors.size() != 0) {
-             throw new XmlException(errors.toArray().toString());
+             throw new XmlException(Arrays.toString(errors.toArray()));
          }
          //String err = XMLBeansUtils.validateAndGetErrors(xo);
          //if (err != null) {
@@ -54,7 +55,7 @@ public class PipelineFileUtils {
 
 
     public static  String getMaxMatching(String file1, String file2, String scanId1, String scanId2) {
-        String rtn = null;
+        String rtn;
         if (file1 == null || file2 == null || scanId1 == null || scanId2 == null) return null;
         int index = 0;
         while (true) {
@@ -91,7 +92,7 @@ public class PipelineFileUtils {
 
 	public static String getBuildDir(String project,  boolean postfixTimestamp) {
 		ArcProject arcProject = ArcSpecManager.GetFreshInstance().getProjectArc(project);
-		String buildPath = XFT.GetPipelinePath()  ;
+		String buildPath = XDAT.getSiteConfigPreferences().getAdminEmail()  ;
 		if (arcProject != null) {
 			buildPath = arcProject.getPaths().getBuildpath();
 		}

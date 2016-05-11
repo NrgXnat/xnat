@@ -14,13 +14,14 @@ import com.noelios.restlet.ext.servlet.ServletCall;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.velocity.VelocityContext;
 import org.nrg.action.ActionException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.display.DisplayManager;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.UserGroupI;
 import org.nrg.xdat.security.helpers.Groups;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Users;
-import org.nrg.xdat.turbine.utils.AdminUtils;
+import org.nrg.xdat.security.user.exceptions.UserNotFoundException;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.event.EventMetaI;
@@ -49,8 +50,8 @@ import java.util.List;
 public class ProjectMemberResource extends SecureResource {
 	XnatProjectdata proj=null;
 	UserGroupI group=null;
-	ArrayList<UserI> newUsers= new ArrayList<UserI>();
-	ArrayList<String> unknown= new ArrayList<String>();
+	ArrayList<UserI> newUsers= new ArrayList<>();
+	ArrayList<String> unknown= new ArrayList<>();
 	String gID=null;
     boolean displayHiddenUsers = false;
 	
@@ -61,12 +62,12 @@ public class ProjectMemberResource extends SecureResource {
 			this.getVariants().add(new Variant(MediaType.TEXT_HTML));
 			this.getVariants().add(new Variant(MediaType.TEXT_XML));
 			
-			String pID= (String)getUrlEncodedParameter(request,"PROJECT_ID");
+			String pID= getUrlEncodedParameter(request, "PROJECT_ID");
 			if(pID!=null){
 				proj = XnatProjectdata.getProjectByIDorAlias(pID, user, false);
 			}
 			
-			gID =(String)getUrlEncodedParameter(request,"GROUP_ID");
+			gID = getUrlEncodedParameter(request, "GROUP_ID");
 			
 			group=Groups.getGroup(gID);
 			
@@ -90,44 +91,44 @@ public class ProjectMemberResource extends SecureResource {
 
 			String tempValue =(String)getParameter(request,"USER_ID");
 			try {
-				String[] ids=null;
-				if(tempValue.indexOf(",")>-1){
+				String[] ids;
+				if(tempValue.contains(",")){
 					ids=tempValue.split(",");
 				}else{
 					ids=new String[]{tempValue};
 				}
-				
-				for(int i=0;i<ids.length;i++){
-					String uID=ids[i].trim();
-					Integer xdat_user_id= null;
+
+				for (final String id : ids) {
+					String  uID          = id.trim();
+					Integer xdat_user_id = null;
 					try {
-						xdat_user_id=Integer.parseInt(uID);
-					} catch (NumberFormatException e) {
-						
+						xdat_user_id = Integer.parseInt(uID);
+					} catch (NumberFormatException ignored) {
+
 					}
-					
-					
-					if (xdat_user_id==null){
+
+
+					if (xdat_user_id == null) {
 						//login or email
-						UserI newUser=null;
+						UserI newUser = null;
 						try {
 							newUser = Users.getUser(uID);
-						} catch (Exception e) {
+						} catch (UserNotFoundException ignored) {
 						}
-						if (newUser==null){
+						if (newUser == null) {
 							//by email
-							List<UserI> items =Users.getUsersByEmail(uID);
-							if(items.size()>0){
+							List<UserI> items = Users.getUsersByEmail(uID);
+							if (items.size() > 0) {
 								newUsers.addAll(items);
-							}else{
+							} else {
 								unknown.add(uID);
 							}
-						}else{
+						} else {
 							newUsers.add(newUser);
 						}
-					}else{
+					} else {
 						UserI tempUser = Users.getUser(xdat_user_id);
-						if (tempUser!=null){
+						if (tempUser != null) {
 							newUsers.add(tempUser);
 						}
 					}
@@ -167,9 +168,6 @@ public class ProjectMemberResource extends SecureResource {
 				}else{
 					getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
 				}
-			} catch (InvalidItemException e) {
-				logger.error("",e);
-				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 			} catch (Exception e) {
 				logger.error("",e);
 				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
@@ -196,7 +194,7 @@ public class ProjectMemberResource extends SecureResource {
 							    context.put("process","Transfer to the archive.");
 							    context.put("system",TurbineUtils.GetSystemName());
 							    context.put("access_level",gID);
-							    context.put("admin_email",AdminUtils.getAdminEmailId());
+							    context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());
 							    context.put("projectOM",proj);
 							    //SEND email to user
 							    final PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, XnatProjectdata.SCHEMA_ELEMENT_NAME, proj.getId(), proj.getId(), newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.INVITE_USER_TO_PROJECT + " (" + uID + ")"));
@@ -224,31 +222,27 @@ public class ProjectMemberResource extends SecureResource {
 						for(UserI newUser: newUsers){
 							final PersistentWorkflowI wrk=PersistentWorkflowUtils.getOrCreateWorkflowData(null, user, Users.getUserDataType(),newUser.getID().toString(),proj.getId(),newEventInstance(EventUtils.CATEGORY.PROJECT_ACCESS, EventUtils.ADD_USER_TO_PROJECT));
 					    	EventMetaI c=wrk.buildEvent();
-							
-								try {
-									proj.addGroupMember(group.getId(), newUser, user,WorkflowUtils.setStep(wrk, "Add " + newUser.getLogin()));
-									WorkflowUtils.complete(wrk, c);
-									
-									if (sendmail){
-										try {
-											VelocityContext context = new VelocityContext();
-											
-											context.put("user",user);
-											context.put("server",TurbineUtils.GetFullServerPath(request));
-											context.put("process","Transfer to the archive.");
-											context.put("system",TurbineUtils.GetSystemName());
-											context.put("access_level","member");
-											context.put("admin_email",AdminUtils.getAdminEmailId());
-											context.put("projectOM",proj);
-											org.nrg.xnat.turbine.modules.actions.ProcessAccessRequest.SendAccessApprovalEmail(context, newUser.getEmail(), user, TurbineUtils.GetSystemName() + " Access Granted for " + proj.getName());
-										} catch (Throwable e) {
-											logger.error("",e);
-										}
-									}
-								} catch (Exception e) {
-									throw e;
-								}
-							}
+
+							proj.addGroupMember(group.getId(), newUser, user,WorkflowUtils.setStep(wrk, "Add " + newUser.getLogin()));
+							WorkflowUtils.complete(wrk, c);
+
+							if (sendmail){
+                                try {
+                                    VelocityContext context = new VelocityContext();
+
+                                    context.put("user",user);
+                                    context.put("server",TurbineUtils.GetFullServerPath(request));
+                                    context.put("process","Transfer to the archive.");
+                                    context.put("system",TurbineUtils.GetSystemName());
+                                    context.put("access_level","member");
+                                    context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
+                                    context.put("projectOM",proj);
+                                    org.nrg.xnat.turbine.modules.actions.ProcessAccessRequest.SendAccessApprovalEmail(context, newUser.getEmail(), user, TurbineUtils.GetSystemName() + " Access Granted for " + proj.getName());
+                                } catch (Throwable e) {
+                                    logger.error("",e);
+                                }
+                            }
+						}
 					}
 				}else{
 					getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
@@ -268,26 +262,23 @@ public class ProjectMemberResource extends SecureResource {
 	}
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		XFTTable table=null;
 		if(proj!=null){
 			try {
-                StringBuffer query = new StringBuffer("SELECT g.id AS \"GROUP_ID\", displayname,login,firstname,lastname,email FROM xdat_userGroup g RIGHT JOIN xdat_user_Groupid map ON g.id=map.groupid RIGHT JOIN xdat_user u ON map.groups_groupid_xdat_user_xdat_user_id=u.xdat_user_id WHERE tag='").append(proj.getId()).append("' ");
+                StringBuilder query = new StringBuilder("SELECT g.id AS \"GROUP_ID\", displayname,login,firstname,lastname,email FROM xdat_userGroup g RIGHT JOIN xdat_user_Groupid map ON g.id=map.groupid RIGHT JOIN xdat_user u ON map.groups_groupid_xdat_user_xdat_user_id=u.xdat_user_id WHERE tag='").append(proj.getId()).append("' ");
                 if(!displayHiddenUsers){
                     query.append(" and enabled = 1 ");
                 }
                 query.append(" ORDER BY g.id DESC;");
                 table = XFTTable.Execute(query.toString(), user.getDBName(), user.getLogin());
-			} catch (SQLException e) {
-				logger.error("",e);
-				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
-			} catch (DBPoolException e) {
+			} catch (SQLException | DBPoolException e) {
 				logger.error("",e);
 				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 			}
 		}
 		
-		Hashtable<String,Object> params=new Hashtable<String,Object>();
+		Hashtable<String,Object> params=new Hashtable<>();
 		params.put("title", "Projects");
 
 		MediaType mt = overrideVariant(variant);

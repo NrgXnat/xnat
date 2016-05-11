@@ -11,7 +11,7 @@
 package org.nrg.xnat.turbine.utils;
 
 import org.apache.commons.lang3.StringUtils;
-import org.nrg.xft.XFT;
+import org.nrg.xdat.XDAT;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.identifier.IDGeneratorI;
 import org.nrg.xnat.services.impl.hibernate.HibernateHostInfoService;
@@ -53,7 +53,7 @@ public class IDGenerator implements IDGeneratorI {
 	}
 	
 	/** The claimed i ds. */
-	private static List<String> claimedIDs=new ArrayList<String>();
+	private static List<String> claimedIDs= new ArrayList<>();
 	
 	/** The Constant lock. */
 	private static final Object lock=new Object();
@@ -80,7 +80,7 @@ public class IDGenerator implements IDGeneratorI {
 				site +="_V";
 			}
 			
-			String temp_id=null;
+			String temp_id;
 			
 			XFTTable table = org.nrg.xft.search.TableSearch.Execute("SELECT DISTINCT " + column + " FROM (SELECT " + column + " FROM " + tableName + " WHERE " + column + " LIKE '" + site + "%' UNION SELECT DISTINCT " + column + " FROM " + tableName + "_history WHERE " + column + " LIKE '" + site + "%') SRCH;", null, null);
 	        ArrayList al =table.convertColumnToArrayList(column.toLowerCase());

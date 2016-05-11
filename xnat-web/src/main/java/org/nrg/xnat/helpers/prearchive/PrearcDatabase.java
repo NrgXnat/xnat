@@ -178,11 +178,11 @@ public final class PrearcDatabase {
     protected static String getPrearcPath() {
         final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
         if (preferences != null) {
-            return preferences.getArchiveRootPath();
+            return preferences.getPrearchivePath();
         }
         try {
             final Properties properties = XDAT.getSiteConfiguration();
-            return properties.getProperty("archiveRootPath");
+            return properties.getProperty("prearchivePath");
         } catch (ConfigServiceException e) {
             return null;
         }

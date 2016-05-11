@@ -11,12 +11,6 @@
 
 package org.nrg.xnat.turbine.modules.actions;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.Hashtable;
-
 import org.apache.turbine.modules.ScreenLoader;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
@@ -30,17 +24,11 @@ import org.nrg.pipeline.xmlbeans.ParameterData;
 import org.nrg.pipeline.xmlbeans.ParameterData.Values;
 import org.nrg.pipeline.xmlbeans.ParametersDocument;
 import org.nrg.pipeline.xmlbeans.ParametersDocument.Parameters;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.ArcPipelinedataI;
-import org.nrg.xdat.om.ArcProject;
-import org.nrg.xdat.om.ArcProjectDescendant;
-import org.nrg.xdat.om.ArcProjectDescendantPipeline;
-import org.nrg.xdat.om.ArcProjectPipeline;
-import org.nrg.xdat.om.PipePipelinedetails;
-import org.nrg.xdat.om.PipePipelinerepository;
-import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
 import org.nrg.xdat.turbine.modules.screens.EditScreenA;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.PopulateItem;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
@@ -60,6 +48,12 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
 import org.nrg.xnat.utils.WorkflowUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.ArrayList;
+import java.util.Date;
+import java.util.Hashtable;
 
 
 public class ManagePipeline extends SecureAction {
@@ -386,8 +380,8 @@ public class ManagePipeline extends SecureAction {
             xnatPipelineLauncher.setSupressNotification(true);
             xnatPipelineLauncher.setParameter("useremail", user.getEmail());
             xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
-            xnatPipelineLauncher.setParameter("adminemail", AdminUtils.getAdminEmailId());
-            xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
+            xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
+            xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
             xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
             xnatPipelineLauncher.setPipelineName(pipeline_path);
             String exptLabel = item.getStringProperty("label");
@@ -433,7 +427,7 @@ public class ManagePipeline extends SecureAction {
         for (int i = 0; i < totalParams; i++) {
 			String name = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("param[" + i + "].name",data));
 			int rowcount = TurbineUtils.GetPassedInteger("param[" + i + "].name.rowcount", data);
-            ArrayList<String> formvalues = new ArrayList<String>();
+            ArrayList<String> formvalues = new ArrayList<>();
             for (int j = 0; j < rowcount; j++) {
                 String formfieldname = "param[" + i + "][" + j + "].value";
                 if (TurbineUtils.HasPassedParameter(formfieldname, data)) //formvalues.add(data.getParameters().get(formfieldname));

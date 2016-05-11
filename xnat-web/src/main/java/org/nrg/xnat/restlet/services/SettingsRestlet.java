@@ -12,6 +12,7 @@ package org.nrg.xnat.restlet.services;
 
 import org.apache.commons.lang3.StringUtils;
 import org.hibernate.PropertyNotFoundException;
+import org.json.JSONObject;
 import org.nrg.config.entities.Configuration;
 import org.nrg.config.exceptions.ConfigServiceException;
 import org.nrg.dicomtools.filters.*;
@@ -108,7 +109,7 @@ public class SettingsRestlet extends SecureResource {
             if (StringUtils.isBlank(_property)) {
                 return mediaType == MediaType.TEXT_XML ?
                         new ItemXMLRepresentation(_arcSpec.getItem(), mediaType) :
-                        new StringRepresentation("{\"ResultSet\":{\"Result\":" + toJson(getArcSpecAsMap()) + ", \"title\": \"Settings\"}}");
+                        new StringRepresentation("{\"ResultSet\":{\"Result\":" + new JSONObject(getArcSpecAsMap()) + ", \"title\": \"Settings\"}}");
             } else {
                 if (!getArcSpecAsMap().containsKey(_property)) {
                     throw new PropertyNotFoundException(String.format("Setting '%s' was not found in the system.", _property));

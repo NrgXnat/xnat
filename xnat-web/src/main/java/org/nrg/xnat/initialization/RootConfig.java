@@ -5,21 +5,22 @@ import com.fasterxml.jackson.core.JsonParser;
 import com.fasterxml.jackson.core.PrettyPrinter;
 import com.fasterxml.jackson.core.util.DefaultIndenter;
 import com.fasterxml.jackson.core.util.DefaultPrettyPrinter;
-import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
-import com.fasterxml.jackson.dataformat.yaml.YAMLFactory;
 import com.fasterxml.jackson.datatype.hibernate4.Hibernate4Module;
 import org.nrg.framework.datacache.SerializerRegistry;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.services.ContextService;
 import org.nrg.framework.services.SerializerService;
-import org.nrg.framework.services.YamlObjectMapper;
 import org.nrg.prefs.beans.PreferenceBeanMixIn;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xnat.helpers.prearchive.PrearcConfig;
-import org.springframework.context.annotation.*;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Import;
+import org.springframework.context.annotation.ImportResource;
 import org.springframework.http.converter.json.Jackson2ObjectMapperBuilder;
+import org.springframework.http.converter.json.MappingJackson2HttpMessageConverter;
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
@@ -66,6 +67,11 @@ public class RootConfig {
     }
 
     @Bean
+    public MappingJackson2HttpMessageConverter mappingJackson2HttpMessageConverter(final Jackson2ObjectMapperBuilder builder) {
+        return new MappingJackson2HttpMessageConverter(builder.build());
+    }
+
+    @Bean
     public Jackson2ObjectMapperBuilder objectMapperBuilder() {
         return new Jackson2ObjectMapperBuilder()
                 .serializationInclusion(JsonInclude.Include.NON_NULL)
@@ -81,11 +87,6 @@ public class RootConfig {
         final Map<Class<?>, Class<?>> mixIns = new HashMap<>();
         mixIns.put(SiteConfigPreferences.class, PreferenceBeanMixIn.class);
         return mixIns;
-    }
-
-    @Bean
-    public YamlObjectMapper yamlObjectMapper() {
-        return new YamlObjectMapper();
     }
 
     @Bean

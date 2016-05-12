@@ -16,10 +16,10 @@ siteId:
     label: Site ID
     validation: required id onblur
     description: "The id used to refer to this site (also used to generate database ids). The Site ID must start with a letter and contain only letters, numbers and underscores. It should be a short, one-word name or acronym which describes your site. No spaces or non-alphanumeric characters."
-siteDescriptionOption:
+siteDescriptionType:
     kind: panel.display  # make this a radio button group
-    id: siteDescriptionOption
-    name: siteDescriptionOption
+    id: siteDescriptionType
+    name: siteDescriptionType
     label: Site Description
     value: Select a site description option below
     # onchange: # some javascript that toggles display of the elements below appropriately
@@ -31,10 +31,10 @@ siteDescriptionOptionPage:
     kind: panel.input.checkbox  # make this a radio button group
     id: siteDescriptionOptionPage
     label: "Page"
-siteDescriptionFile:
+siteDescriptionPage:
     kind: panel.input.text
-    id: siteDescriptionFile
-    name: siteDescriptionFile
+    id: siteDescriptionPage
+    name: siteDescriptionPage
     label: " "
     description: "Specify a velocity template file to display on the login page"
 siteDescriptionText:
@@ -43,6 +43,26 @@ siteDescriptionText:
     name: siteDescriptionText
     label: " "
     description: "Specify a simple text description of this site"
+siteLoginLanding:
+    kind: panel.input.text
+    id: siteLoginLanding
+    name: siteLoginLanding
+    label: Site Login Landing
+siteLandingLayout:
+    kind: panel.input.text
+    id: siteLandingLayout
+    name: siteLandingLayout
+    label: Site Landing Layout
+siteHome:
+    kind: panel.input.text
+    id: siteHome
+    name: siteHome
+    label: Site Home
+siteHomeLayout:
+    kind: panel.input.text
+    id: siteHomeLayout
+    name: siteHomeLayout
+    label: Site Home Layout
 siteUrl:
     kind: panel.input.text
     id: siteUrl
@@ -114,6 +134,11 @@ dataFolders:
     label: Data Folders
     validation: required id onblur
     description: ""
+zipExtensions:
+    kind: panel.input.text
+    id: zipExtensions
+    name: zipExtensions
+    label: Zip Extensions
     
 siteInfo:
     kind: panel.form
@@ -127,11 +152,15 @@ siteInfo:
     contents:
         ${siteId}
         ${siteUrl}
-        ${siteDescriptionOption}
+        ${siteDescriptionType}
         ${siteDescriptionOptionText}
         ${siteDescriptionOptionPage}
-        ${siteDescriptionFile}
+        ${siteDescriptionPage}
         ${siteDescriptionText}
+        ${siteLoginLanding}
+        ${siteLandingLayout}
+        ${siteHome}
+        ${siteHomeLayout}
 
 adminInfo:
     kind: panel.form
@@ -148,7 +177,7 @@ generalSecuritySettings:
         securityChannel:
             kind: panel.select.single
             id: securityChannel
-            name: security.channel
+            name: securityChannel
             label: Security Channel
             value: https
             options:
@@ -164,7 +193,7 @@ generalSecuritySettings:
         requireUserLogin:
             kind: panel.input.checkbox
             id: requireUserLogin
-            name: require_login
+            name: requireLogin
             label: Require User Login
             description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
 
@@ -176,7 +205,7 @@ userLoginsSessionControls:
         sessionTimeout:
             kind: panel.input.number
             id: sessionTimeout
-            name: security.token_timeout
+            name: aliasTokenTimeout
             label: Session Timeout
             value: 15
             description: "Interval for timing out alias tokens. Uses PostgreSQL interval notation: http://www.postgresql.org/docs/9.0/static/functions-datetime.html"
@@ -218,17 +247,22 @@ userLoginsSessionControls:
         failedLoginLockoutDuration:
             kind: panel.input.number
             id: failedLoginLockoutDuration
-            name: security.max_failed_logins_lockout_duration
+            name: maxFailedLoginsLockoutDuration
             label: Failed Login Lockout Duration
             value: 0
             description: Number of milliseconds to lock user accounts that have exceeded the max_failed_logins count. Select (3600000 for 1 hour, 86400000 for 24 hours)
         userInactivityLockout:
             kind: panel.input.number
             id: userInactivityLockout
-            name: security.inactivity_before_lockout
+            name: inactivityBeforeLockout
             label: User Inactivity Lockout
             value: 31556926
             description: Number of seconds of inactivity before an account is disabled (31556926 for 1 year)
+        inactivityBeforeLockoutSchedule:
+            kind: panel.input.text
+            id: inactivityBeforeLockoutSchedule
+            name: inactivityBeforeLockoutSchedule
+            label: "User Inactivity Before Lockout Schedule"
 
 passwords:
     kind: panel.form
@@ -260,6 +294,19 @@ passwords:
             label: Password History (Duration)
             value: -1
             description: "-1 to disable"
+        passwordExpirationType:
+            kind: panel.select.single
+            id: passwordExpirationType
+            name: passwordExpirationType
+            label: passwordExpirationType
+            value: Interval
+            options:
+                Interval:
+                    label: Interval
+                    value: Interval
+                Date:
+                    label: Date
+                    value: Date
         passwordExpirationInterval:
             kind: panel.input.number
             id: passwordExpirationInterval
@@ -312,24 +359,49 @@ auditTrail:
         enableAuditTrail:
             kind: panel.input.checkbox
             id: enableAuditTrail
-            name: audit.enable
+            name: enableAuditTrail
             label: Enable Audit Trail?
             value: true
         allowUserJustificationForChanges:
             kind: panel.input.checkbox
             id: allowUserJustificationForChanges
-            name: audit.show_change_justification
+            name: allowUserJustificationForChanges
             label: Allow User Justification For Changes
             value: true
             description: "Allow users to enter change justifications when modifying data"
         requireUserJustificationForChanges:
             kind: panel.input.checkbox
             id: requireUserJustificationForChanges
-            name: audit.require_change_justification
+            name: requireUserJustificationForChanges
             label: Require User Justification For Changes
             value: false
             description: "Force users to enter change justifications when modifying data"
 
+securityServices:
+    kind: panel.form
+    name: securityServices
+    label: Security Services
+    contents:
+        securityServicesFeatureDefault:
+            kind: panel.input.text
+            id: securityServicesFeatureDefault
+            name: security.services.feature.default
+            label: Feature Default
+        securityServicesFeatureRepoDefault:
+            kind: panel.input.text
+            id: securityServicesFeatureRepoDefault
+            name: security.services.featureRepository.default
+            label: Feature Repository Default
+        securityServicesRoleDefault:
+            kind: panel.input.text
+            id: securityServicesRoleDefault
+            name: security.services.role.default
+            label: Role Default
+        securityServicesRoleRepositoryDefault:
+            kind: panel.input.text
+            id: securityServicesRoleRepositoryDefault
+            name: security.services.roleRepository.default
+            label: Role Repository Default
             
 emailServerSettings:
     kind: panel.form
@@ -344,6 +416,13 @@ emailServerSettings:
     name: emailServerSettings
     label: Mail Server Settings
     contents:
+        smtpEnabled:
+            kind: panel.input.checkbox
+            id: smtpEnabled
+            name: smtp.enabled
+            label: "Enable SMTP?"
+            #value: true
+            checked: true
         hostname:
             kind: panel.input.text
             name: host
@@ -401,6 +480,12 @@ emailServerSettings:
             value: ''
             element:
                 placeholder: localhost
+        emailPrefix:
+            kind: panel.input.text
+            name: emailPrefix
+            label: Email Prefix
+            element:
+                placeholder: XNAT
 
 notifications:
     kind: panel.form
@@ -433,62 +518,61 @@ notifications:
         notifyAdminUserRegistration:
             kind: panel.input.checkbox
             id: notifyAdminUserRegistration
-            name: "email:new_user_registration"
+            name: notifyAdminUserRegistration
             label: "Notify Admin on User Registration"
             value: true
             description: "Whether to cc admin user on new user emails. Requires valid admin email address."
         notifyAdminPipelineEmails:
             kind: panel.input.checkbox
             id: notifyAdminPipelineEmails
-            name: "email:pipeline"
+            name: notifyAdminPipelineEmails
             label: "Notify Admin on Pipeline Emails"
             value: false
             description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
         notifyAdminProjectAccessRequest:
             kind: panel.input.checkbox
             id: notifyAdminProjectAccessRequest
-            name: "email:project_access"
+            name: notifyAdminProjectAccessRequest
             label: "Notify Admin on Project Access Request"
             value: false
             description: "Whether to cc admin user on user project access request. Requires valid admin email address."
         notifyAdminSessionTransfer:
             kind: panel.input.checkbox
             id: notifyAdminSessionTransfer
-            name: "email:transfer"
+            name: notifyAdminSessionTransfer
             label: "Notify Admin on Session Transfer"
             value: false
             description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
         emailRecipientErrorMessages:
             kind: panel.input.email
             id: emailRecipientErrorMessages
-            name: "Notifications:Error"
+            name: emailRecipientErrorMessages
             label: "Email Recipient: Error Messages"
             description: "What email address should receive error emails"
         emailRecipientIssueReports:
             kind: panel.input.email
             id: emailRecipientIssueReports
-            name: "Notifications:Issues"
+            name: emailRecipientIssueReports
             label: "Email Recipient: Issue Reports"
             description: "What email address should receive issue reports"
         emailRecipientNewUserAlert:
             kind: panel.input.email
             id: emailRecipientNewUserAlert
-            name: "Notifications:NewUser"
+            name: emailRecipientNewUserAlert
             label: "Email Recipient: New User Alert"
             description: "What email address should receive New User Registration emails"
         emailRecipientUpdate:
             kind: panel.input.email
             id: emailRecipientUpdate
-            name: "Notifications:Update"
+            name: emailRecipientUpdate
             label: "Email Recipient: Updates"
             description: "What email address should receive update emails"
-        notifyAdminSessionTransfer:
+        emailAllowNonuserSubscribers:
             kind: panel.input.checkbox
-            id: notifyAdminSessionTransfer
-            name: "email:transfer"
-            label: "Notify Admin on Session Transfer"
-            value: false
-            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
+            id: emailAllowNonuserSubscribers
+            name: emailAllowNonuserSubscribers
+            label: "Allow Nonuser Subscribers"
+            value: true
 
 themeManagement:
     kind: panel
@@ -529,9 +613,7 @@ themeManagement:
             label: Upload a theme package
             description: Upload a zipped theme package for selection above.
             className: themeUploader
-          
 
-          
 authenticationMethods:
     kind: panel.form
     name: authenticationMethods
@@ -633,11 +715,19 @@ userRoles:
     label: User Roles
 #    contents:
 
+
 registrationOptions:
     kind: panel.form
     name: registrationOptions
     label: Registration Options
     contents:
+        requireLogin:
+            kind: panel.input.checkbox
+            id: requireLogin
+            name: requireLogin
+            label: "Require User?"
+            value: true
+            disabled: true
         requireEmailVerificationToRegister:
             kind: panel.input.checkbox
             id: requireEmailVerificationToRegister
@@ -659,7 +749,7 @@ registrationOptions:
         autoEnableUserRegistration:
             kind: panel.input.checkbox
             id: autoEnableUserRegistration
-            name: autoEnableUserRegistration
+            name: userRegistration
             label: "Auto-enable User Registration?"
             value: false
         allowUserCommentsOnRegistration:
@@ -668,18 +758,17 @@ registrationOptions:
             name: allowUserCommentsOnRegistration
             label: "Allow User Comments on Registration?"
             value: true
-        restrictAccessToUserList:
+        restrictUserListAccessToAdmins:
             kind: panel.input.checkbox
-            id: restrictAccessToUserList
-            name: restrictAccessToUserList
-            label: "Restrict Access to User List?"
+            id: restrictUserListAccessToAdmins
+            name: restrictUserListAccessToAdmins
+            label: "Restrict User List Access To Admins?"
             value: true
 
 dataReporting:
     kind: panel.form
     name: dataReporting
     label: Data Reporting
-    group: manageData
     contents:
         enableAdvancedSearch:
             kind: panel.input.checkbox
@@ -688,10 +777,128 @@ dataReporting:
             label: "Enable Advanced Search"
             value: true
 
+manageDataTypes:
+    kind: panel.form
+    name: manageDataTypes
+    label: Manage Data Types
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
+    contents:
+        displayNameForGenericImageSessionSingular:
+            kind: panel.input.text
+            id: displayNameForGenericImageSessionSingular
+            name: displayNameForGenericImageSession.singular
+            label: "Singular Display Name For Generic Image Session Singular"
+            value: "Session"
+        displayNameForGenericImageSessionPlural:
+            kind: panel.input.text
+            id: displayNameForGenericImageSessionPlural
+            name: displayNameForGenericImageSession.plural
+            label: "Plural Display Name For Generic Image Session Singular"
+            value: "Sessions"
+
+anonymization:
+    kind: panel.form
+    name: Anonymization
+    label: "Anonymization Script (Site Wide)"
+    contents:
+        enableSitewideAnonymizationScript:
+            kind: panel.input.checkbox
+            id: enableSitewideAnonymizationScript
+            name: enableSitewideAnonymizationScript
+            label: "Enable Site-wide Anonymization Script"
+            value: true
+        editAnonymzationScript:
+            kind: panel.input.text                #textarea
+            id: editAnonymzationScript
+            name: editAnonymzationScript
+            label: "Edit Anonymzation Script"
+            value: true
+
+seriesImportFilter:
+    kind: panel.form
+    name: seriesImportFilter
+    label: "Series Import Filter"
+    contents:
+        enableSitewideSeriesImportFilter:
+            kind: panel.input.checkbox
+            id: enableSitewideSeriesImportFilter
+            name: enableSitewideSeriesImportFilter
+            label: "Enable Site-wide Series Import Filter"
+            value: false
+        filterMode:
+            kind: panel.input.checkbox
+            id: filterMode
+            name: filterMode
+            label: Filter Mode
+            value: false
+        seriesImportFilter:
+            kind: panel.input.text                #textarea
+            id: seriesImportFilter
+            name: seriesImportFilter
+            label: "Edit Series Import Filter"
+
+sessionUploadMethod:
+    kind: panel.form
+    name: sessionUploadMethod
+    label: "Session Upload Method"
+    contents:
+        selectUploadMethod:
+            kind: panel.select.single
+            id: selectUploadMethod
+            name: selectUploadMethod
+            label: "Session Upload Method"
+#            options:                             # don't know where to populate this from
+#                http:
+#                    label: http
+#                    value: http
+#                https:
+#                    label: https
+#                    value: https
+        showApplet:
+            kind: panel.input.checkbox
+            id: showApplet
+            name: showApplet
+            label: Show Applet
+            value: false
+        enableProjectAppletScript:
+            kind: panel.input.checkbox
+            id: enableProjectAppletScript
+            name: enableProjectAppletScript
+            label: Enable Project Applet Script
+            value: false
+        appletScript:
+            kind: panel.input.text                #textarea
+            id: appletScript
+            name: appletScript
+            label: "Applet Script"
+        sessionXmlRebuilderRepeat:
+            kind: panel.input.number
+            id: sessionXmlRebuilderRepeat
+            name: sessionXmlRebuilderRepeat
+            label: Session Xml Rebuilder Repeat
+            value: 60000
+        sessionXmlRebuilderInterval:
+            kind: panel.input.number
+            id: sessionXmlRebuilderInterval
+            name: sessionXmlRebuilderInterval
+            label: Session Xml Rebuilder Interval
+            value: 5
+
+
 dicomScpReceivers:
     kind: panel.form
     name: dicomScpReceivers
     label: DICOM SCP Receivers
+    method: POST
+    action: /xapi/dicomscp
+    load:
+        url: /xapi/dicomscp
+#        prop: # Not set, so should get the root object
+    contentType: json
     contents:
         enableDicomReceiver:
             kind: panel.input.checkbox
@@ -706,9 +913,12 @@ dicomScpReceivers:
                 html: "Caution: Changes to this setting will take effect immediately. Before disabling the receiver, verify that there are no transmissions currently in progress."
                 style:
                     fontWeight: bold
-        # hidden form element...
-        # enableDicomReceiver.property.changed.listener
-        # org.nrg.dcm.DicomSCPSiteConfigurationListener
+        enableDicomReceiverPropertyChangedListener:   # Should this be a hidden form element??
+            kind: panel.input.text
+            id: enableDicomReceiverPropertyChangedListener
+            name: enableDicomReceiverPropertyChangedListener      #  Should this be "enableDicomReceiver.property.changed.listener"
+            label: "Enable Dicom Receiver Property Changed Listener"
+            value: "org.nrg.dcm.DicomSCPSiteConfigurationListener"
         dicomHost:
             kind: panel.input.text
             id: dicomHost
@@ -733,12 +943,12 @@ dicomScpReceivers:
             name: services.dicom.scp.aetitle
             label: Default DICOM Receiver
             description: "AE Title for default DICOM receiver"
-        defaultDicomReceiverUser:
+        receivedFileUser:
             kind: panel.input.text
-            id: defaultDicomReceiverUser
-            name: services.dicom.scp.receivedfileuser
+            id: receivedFileUser
+            name: receivedFileUser
             label: "Default DICOM Receiver: User"
-            value: Login failed
+            value: admin
             description: "User account for default DICOM receiver"
             
 fileSystem:
@@ -758,7 +968,37 @@ fileSystem:
         ${buildPath}
         ${pipelinePath}
         ${dataFolders}
+        ${zipExtensions}
 
+misc:
+    kind: panel.form
+    name: misc
+    label: Miscellaneous
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
+    contents:
+        checksums:
+            kind: panel.input.checkbox
+            id: checksums
+            name: checksums
+            label: Checksums?
+            value: true
+        checksumsPropertyChangedListener:
+            kind: panel.input.text
+            id: checksumsPropertyChangedListener
+            name: checksums.property.changed.listener
+            label: Checksums Property Changed Listener?
+            value: org.nrg.xnat.utils.ChecksumsSiteConfigurationListener
+        scanTypeMapping:
+            kind: panel.input.checkbox
+            id: scanTypeMapping
+            name: scanTypeMapping
+            label: Scan Type Mapping?
+            value: true
+            
 
 #################################################
 ####  Root Site Admin Spawner Config Object  ####
@@ -792,6 +1032,7 @@ siteAdmin:
                 ${passwords}
                 ${csrf}
                 ${auditTrail}
+                ${securityServices}
         emailServer:
             kind: tab
             name: emailServer
@@ -822,20 +1063,20 @@ siteAdmin:
                 ${authenticationMethods}
                 ${genericAuthenticationProvider}
                 ${ldapAuthentication}
-        users:
-            kind: tab
-            name: users
-            label: Users
-            group: manageAccess
-            contents:
-                ${users}
-        userRoles:
-            kind: tab
-            name: userRoles
-            label: User Roles
-            group: manageAccess
-            contents:
-                ${userRoles}
+#        users:            # enable when users table can be re-implmented in spawner, until then use old users config?
+#            kind: tab
+#            name: users
+#            label: Users
+#            group: manageAccess
+#            contents:
+#                ${users}
+#        userRoles:        # enable when user roles table can be re-implmented in spawner, until then use old user roles config?
+#            kind: tab
+#            name: userRoles
+#            label: User Roles
+#            group: manageAccess
+#            contents:
+#                ${userRoles}
         registrationOptions:
             kind: tab
             name: registrationOptions
@@ -850,6 +1091,22 @@ siteAdmin:
             group: manageData
             contents:
                 ${dataReporting}
+        manageDataTypes:
+            kind: tab
+            name: manageDataTypes
+            label: Manage Data Types
+            group: manageData
+            contents:
+                ${manageDataTypes}
+        sessionUploadImportAnonymization:
+            kind: tab
+            name: sessionUploadImportAnonymization
+            label: "Session Upload, Import & Anonymization"
+            group: manageData
+            contents:
+                ${anonymization}
+                ${seriesImportFilter}
+                ${sessionUploadMethod}
         dicomScpReceivers:
             kind: tab
             name: dicomScpReceivers
@@ -865,6 +1122,13 @@ siteAdmin:
             contents:
                 ${fileSystem}
                 ${siteIdMain}
+        misc:
+            kind: tab
+            name: misc
+            label: Miscellaneous
+#            group: misc           # should show up under Other
+            contents:
+                ${misc}
 
 
 ###########################################

@@ -510,8 +510,8 @@ public abstract class SecureResource extends Resource {
         return getRequest().getResourceRef().getPath();
     }
 
-    public void returnDefaultRepresentation() {
-        getResponse().setEntity(getRepresentation(getVariants().get(0)));
+    public void returnRepresentation(Representation representation) {
+        getResponse().setEntity(representation);
         Representation selectedRepresentation = getResponse().getEntity();
         if (getRequest().getConditions().hasSome()) {
             final Status status = getRequest().getConditions().getStatus(getRequest().getMethod(), selectedRepresentation);
@@ -521,6 +521,10 @@ public abstract class SecureResource extends Resource {
                 getResponse().setEntity(null);
             }
         }
+    }
+
+    public void returnDefaultRepresentation() {
+        returnRepresentation(getRepresentation(getVariants().get(0)));
     }
 
     public Representation representItem(XFTItem item, MediaType mt, Hashtable<String, Object> metaFields, boolean allowDBAccess, boolean allowSchemaLocation) {
@@ -901,16 +905,7 @@ public abstract class SecureResource extends Resource {
             targetRef = targetRef.substring(0, targetRef.indexOf("?"));
         }
 
-        getResponse().setEntity(new StringRepresentation(targetRef));
-        Representation selectedRepresentation = getResponse().getEntity();
-        if (getRequest().getConditions().hasSome()) {
-            final Status status = getRequest().getConditions().getStatus(getRequest().getMethod(), selectedRepresentation);
-
-            if (status != null) {
-                getResponse().setStatus(status);
-                getResponse().setEntity(null);
-            }
-        }
+        returnRepresentation(new StringRepresentation(targetRef));
     }
 
     public void returnString(String message, Status status) {
@@ -927,16 +922,7 @@ public abstract class SecureResource extends Resource {
     }
 
     public void returnXML(XFTItem item) {
-        getResponse().setEntity(representItem(item, MediaType.TEXT_XML));
-        Representation selectedRepresentation = getResponse().getEntity();
-        if (getRequest().getConditions().hasSome()) {
-            final Status status = getRequest().getConditions().getStatus(getRequest().getMethod(), selectedRepresentation);
-
-            if (status != null) {
-                getResponse().setStatus(status);
-                getResponse().setEntity(null);
-            }
-        }
+        returnRepresentation(representItem(item, MediaType.TEXT_XML));
     }
 
     protected void setResponseHeader(String key, String value) {

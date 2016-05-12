@@ -74,19 +74,7 @@ public class ProjectAccessibilityResource extends SecureResource {
                     	WorkflowUtils.complete(wrk, c);
                     }
 				}
-				
-				getResponse().setEntity(getRepresentation(getVariants().get(0)));
-                Representation selectedRepresentation = getResponse().getEntity();
-                if (getRequest().getConditions().hasSome()) {
-                    final Status status = getRequest().getConditions()
-                            .getStatus(getRequest().getMethod(),
-                                    selectedRepresentation);
-
-                    if (status != null) {
-                        getResponse().setStatus(status);
-                        getResponse().setEntity(null);
-                    }
-                }
+				returnDefaultRepresentation();
 			} catch (Exception e) {
 				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 			}

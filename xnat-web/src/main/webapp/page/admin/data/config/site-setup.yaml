@@ -142,36 +142,36 @@ initialSetup:
                     kind: panel.input.text
                     name: host
                     label: Host
-                    value: ?|XNAT.data.siteConfig.smtpServer.host
+                    value: ?? XNAT.data.siteConfig.smtpServer.host
                     placeholder: localhost
 
                 port:
                     kind: panel.input.number
                     name: port
                     label: Port
-                    value: ?|XNAT.data.siteConfig.smtpServer.port
+                    value: ?? XNAT.data.siteConfig.smtpServer.port
                     placeholder: 25
 
                 username:
                     kind: panel.input.text
                     name: username
                     label: Username
-                    value: ?|XNAT.data.siteConfig.smtpServer.username
+                    value: ?? XNAT.data.siteConfig.smtpServer.username
 
                 password:
                     kind: panel.input.password
                     name: password
                     label: Password
-                    value: ?|XNAT.data.siteConfig.smtpServer.password
+                    value: ?? XNAT.data.siteConfig.smtpServer.password
 
                 protocol:
                     kind: panel.input.text
                     name: protocol
                     label: Protocol
-                    value: ?|XNAT.data.siteConfig.smtpServer.protocol
+                    value: ?? XNAT.data.siteConfig.smtpServer.protocol
 
                 mailServerProperties:
-                    kind: panel.input.group
+                    kind: panel.section
                     name: mailServerProperties
                     label: Mail Server Settings
                     contents:
@@ -194,4 +194,4 @@ initialSetup:
                             kind: panel.input.text
                             name: mail.smtp.ssl.trust
                             label: SSL Trust
-                            value: ?|XNAT.data.siteConfig.smtpServer['mail.smtp.ssl.trust']
+                            value: ?? XNAT.data.siteConfig.smtpServer['mail.smtp.ssl.trust']

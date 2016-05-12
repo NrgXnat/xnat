@@ -38,7 +38,7 @@ siteDescriptionPage:
     label: " "
     description: "Specify a velocity template file to display on the login page"
 siteDescriptionText:
-    kind: panel.input.text
+    kind: panel.textarea
     id: siteDescriptionText
     name: siteDescriptionText
     label: " "
@@ -68,7 +68,7 @@ siteUrl:
     id: siteUrl
     name: siteUrl
     label: Site Url
-    validation: required id onblur
+    validation: required id
     description: ""
 adminEmail:
     kind: panel.input.email
@@ -90,29 +90,33 @@ archiveRootPath:
     id: archiveRootPath
     name: archiveRootPath
     label: Archive Root Path
-    validation: required id onblur
+    validation: required path
     description: ""
+    value: ??XNAT.data.siteConfig.archiveRootPath
 cachePath:
     kind: panel.input.text
     id: cachePath
     name: cachePath
     label: Cache Path
-    validation: required id onblur
+    validation: required path
     description: ""
+    value: ??XNAT.data.siteConfig.cachePath
 prearchivePath:
     kind: panel.input.text
     id: prearchivePath
     name: prearchivePath
     label: Prearchive Path
-    validation: required id onblur
+    validation: required path
     description: ""
+    value: ??XNAT.data.siteConfig.prearchivePath
 ftpPath:
     kind: panel.input.text
     id: ftpPath
     name: ftpPath
     label: FTP Path
-    validation: required id onblur
+    validation: required path
     description: ""
+    value: ??XNAT.data.siteConfig.cachePath
 buildPath:
     kind: panel.input.text
     id: buildPath
@@ -120,6 +124,7 @@ buildPath:
     label: Build Path
     validation: required id onblur
     description: ""
+    value: ??XNAT.data.siteConfig.cachePath
 pipelinePath:
     kind: panel.input.text
     id: pipelinePath
@@ -127,6 +132,7 @@ pipelinePath:
     label: Pipeline Path
     validation: required id onblur
     description: ""
+    value: ??XNAT.data.siteConfig.cachePath
 dataFolders:
     kind: panel.input.text
     id: dataFolders
@@ -181,13 +187,10 @@ generalSecuritySettings:
             label: Security Channel
             value: https
             options:
-                http:
-                    label: http
-                    value: http
-                https:
-                    label: https
-                    value: https
-            config:
+                # value: label # <- simplest setup
+                http: http
+                https: https
+            element:
                 id: security-channel
                 title: Security Channel
         requireUserLogin:
@@ -201,6 +204,11 @@ userLoginsSessionControls:
     kind: panel.form
     name: userLoginsSessionControls
     label: User Logins / Session Controls
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+        refresh: /xapi/siteConfig
     contents:
         sessionTimeout:
             kind: panel.input.number

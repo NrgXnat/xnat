@@ -32,9 +32,48 @@ var XNAT = getObject(XNAT || {});
         return obj.data;
     }
 
+    // another way to do this without using eval()
+    // is to loop over object string using dot notation:
+    // var myVal = lookupObjectValue(XNAT, 'data.siteConfig.siteId');
+    // --> myVal == 'myXnatSiteId'
+    function lookupObjectValue(root, objStr){
+        var val = '';
+        if (!objStr) {
+            objStr = root;
+            root = window;
+        }
+        root = root || window;
+        objStr.toString().trim().split('.').forEach(function(part, i){
+            // start at the root object
+            if (i === 0) {
+                val = root[part] || {};
+            }
+            else {
+                val = val[part];
+            }
+        });
+        return val;
+    }
+
+    // string that indicates to look for a namespaced object value
+    var doLookupString = '??';
+
+    function doLookup(input){
+        if (!input) return '';
+        if (input.toString().trim().indexOf(doLookupString) === 0){
+            return lookupObjectValue(window, input.split(doLookupString)[1]);
+        }
+        return input;
+    }
+
+    /**
+     * Initialize panel.
+     * @param [opts] {Object} Config object
+     * @returns {{}}
+     */
     panel.init = function panelInit(opts){
 
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
 
         var _target = spawn('div.panel-body', opts.element),
@@ -68,11 +107,10 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
-
     // creates a panel that's a form that can be submitted
     panel.form = function panelForm(opts){
 
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
 
         var _target = spawn('div.panel-body', opts.element),
@@ -140,7 +178,7 @@ var XNAT = getObject(XNAT || {});
                 obj = opts.load || {};
             }
 
-            obj = extend(true, {}, obj);
+            obj = cloneObject(obj);
 
             obj.form = obj.form || obj.target || obj.element || _formPanel;
 
@@ -321,7 +359,7 @@ var XNAT = getObject(XNAT || {});
     // creates a panel that submits all forms contained within
     panel.multiForm = function(opts){
 
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
 
         var inner = spawn('div.panel-body', opts.element),
@@ -407,7 +445,7 @@ var XNAT = getObject(XNAT || {});
     panel.element = function(opts){
 
         var _element, _inner = [], _target;
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
         if (opts.id || opts.element.id) {
             opts.element.id = (opts.id || opts.element.id) + '-element';
@@ -443,7 +481,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     panel.subhead = function(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.html = opts.html || opts.text || opts.label;
         return XNAT.ui.template.panelSubhead(opts).spawned;
     };
@@ -453,7 +491,7 @@ var XNAT = getObject(XNAT || {});
 
         var _section, _inner = [], _body;
 
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
         opts.header = opts.header || opts.label || opts.title || '';
 
@@ -495,34 +533,34 @@ var XNAT = getObject(XNAT || {});
     };
 
     panel.input.number = function panelInputNumber(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.type = 'number';
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.email = function panelInputEmail(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.type = 'text';
         addClassName(opts, 'email');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.password = function panelInputPassword(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.type = 'password';
         addClassName(opts, 'password');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.checkbox = function panelInputCheckbox(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.type = 'checkbox';
         //addClassName(opts, 'checkbox');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 
     panel.input.upload = function panelInputUpload(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.id = (opts.id||randomID('upload-', false));
         opts.element = opts.element || opts.config || {};
         opts.element.id = opts.id;
@@ -560,13 +598,31 @@ var XNAT = getObject(XNAT || {});
         }
     };
 
+    panel.textarea = function(opts){
+        opts = cloneObject(opts);
+        opts.element = opts.element || opts.config || {};
+        if (opts.id) opts.element.id = opts.id;
+        if (opts.name) opts.element.name = opts.name;
+        opts.element.html =
+            opts.element.html ||
+            opts.element.value ||
+            opts.value ||
+            opts.text ||
+            opts.html || '';
+
+        opts.element.html = doLookup(opts.element.html);
+
+        var textarea = spawn('textarea', opts.element);
+        return XNAT.ui.template.panelDisplay(opts, textarea).spawned;
+    };
+
     panel.select = {};
 
     panel.select.menu = function panelSelectSingle(opts, multi){
 
         var _menu;
 
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.element = opts.element || opts.config || {};
         opts.element.name = opts.element.name || opts.name || '';
         opts.element.id = opts.element.id || opts.id || toDashed(opts.element.name);
@@ -596,7 +652,7 @@ var XNAT = getObject(XNAT || {});
     };
 
     panel.selectMenu = function panelSelectMenu(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         return XNAT.ui.template.panelSelect(opts).spawned;
     };
 
@@ -639,94 +695,6 @@ var XNAT = getObject(XNAT || {});
     // IT IS BEING KEPT AROUND TEMPORARILY FOR REFERENCE
     // !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-
-    /**
-     * Initialize panel and optionally render it.
-     * If 'opts' argument is passed, 'setup' method will run.
-     * If 'container' argument is passed, the 'render' method will run.
-     * So if both args are passed, 'setup' and 'render' do NOT need to be called.
-     * @param [opts] {Object} Config object
-     * @param [container] {Element} Container for panel
-     * @returns {{}}
-     */
-    function panel(opts, container){
-
-        // `this` object
-        var _panel = {};
-
-        /**
-         * Standard panel widget
-         */
-        function newPanel(){
-
-            var sections = [
-                ['div.panel-heading', [
-                    ['h3.panel-title', _panel.opts.title]
-                ]],
-                ['div.panel-body', _panel.opts.body]
-            ];
-
-            if (_panel.opts.footer) {
-                sections.push(['div.panel-footer', _panel.opts.footer])
-            }
-
-            return spawn((_panel.opts.tag) + '.panel.panel-default', _panel.opts.attr, sections);
-            //return $(spawn('div.panel.panel-default')).append(content);
-        }
-
-        /**
-         * Sets up elements before rendering to the page
-         * @param _opts Config object
-         * @returns {{}}
-         */
-        _panel.setup = function _panelSetup(_opts){
-
-            _panel.opts = extend(true, {}, _opts);
-
-            _panel.opts.tag = _panel.opts.tag || 'div';
-            _panel.opts.title = _panel.opts.title || _panel.opts.header || '';
-            _panel.opts.body = _panel.opts.body || _panel.opts.content || '';
-            _panel.opts.footer = _panel.opts.footer || '';
-
-            _panel.opts.attr = _panel.opts.attr || {};
-
-            if (_panel.opts.id) {
-                _panel.opts.attr.id = _panel.opts.id
-            }
-
-            if (_panel.opts.name) {
-                _panel.opts.attr.data = getObject(_panel.opts.attr.data);
-                _panel.opts.attr.data.name = _panel.opts.name;
-            }
-
-            _panel.panel = _panel.element = newPanel();
-
-            return _panel;
-        };
-
-        // if 'opts' arg is passed to .panel(), call .setup()
-        if (opts) {
-            _panel.setup(opts);
-        }
-
-        // render the panel and append to 'container'
-        _panel.render = function _panelRender(container){
-            $$(container).append(_panel.panel);
-            return _panel;
-        };
-
-        // render immediately if 'container' is specified
-        if (container) {
-            _panel.render(container);
-        }
-
-        _panel.get = function _panelGet(){
-            return _panel.element;
-        };
-
-        return _panel;
-
-    }
 
 
     /**

@@ -28,6 +28,39 @@ var XNAT = getObject(XNAT);
     // as methods and properties to the function
     input_ = XNAT.ui.input || {};
 
+    function lookupValue(el, lookup){
+        var val = '';
+        try {
+            val = eval(lookup.trim())
+        }
+        catch (e) {
+            val = '';
+            console.log(e);
+        }
+        el.value = val;
+        return val;
+    }
+
+    function lookupObjectValue(root, objStr){
+        var val = '';
+        if (!objStr) {
+            objStr = root;
+            root = window;
+        }
+        root = root || window;
+        objStr.toString().trim().split('.').forEach(function(part, i){
+            part = part.trim();
+            // start at the root object
+            if (i === 0) {
+                val = root[part] || {};
+            }
+            else {
+                val = val[part];
+            }
+        });
+        return val;
+    }
+
 
     // ========================================
     // MAIN FUNCTION
@@ -40,6 +73,16 @@ var XNAT = getObject(XNAT);
         }
         config = getObject(config);
         config.type = type || config.type || 'text';
+        // lookup a value if it starts with '??'
+        var doLookup = '??';
+        if (config.value && config.value.toString().indexOf(doLookup) === 0) {
+            config.value = lookupObjectValue(config.value.split(doLookup)[1])
+        }
+        // lookup a value from a namespaced object
+        // if no value is given
+        if (!config.value && config.data && config.data.lookup) {
+            config.value = lookupObjectValue(config.data.lookup)
+        }
         var spawned = spawn('input', config);
         return {
             element: spawned,
@@ -92,6 +135,16 @@ var XNAT = getObject(XNAT);
 
     // save a list of all available input types
     input.types = [].concat(textTypes, numberTypes, otherTypes);
+
+    // after the page is finished loading, set empty
+    // input values from [data-lookup] attribute
+    $(window).load(function(){
+        $(':input[data-lookup]').each(function(){
+            var $input = $(this);
+            var val = lookupObjectValue($input.dataAttr('lookup'));
+            $input.changeVal(val);
+        });
+    });
 
     // add back items that may have been on
     // a global XNAT.ui.input object or function

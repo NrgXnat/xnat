@@ -16,7 +16,7 @@
  * jQuery().data().name values override
  * element.dataset.name properties.
  * @param {string} name - Name of [data-] attribute
- * @param {string|array|object|function} value - The value to assign to name
+ * @param {string|array|object|function} [value] - The value to assign to name
  * @return {object}
  * Returns object map of data attributes and values
  * OR the jQuery object .dataAttr() was called on

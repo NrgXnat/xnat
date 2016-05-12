@@ -39,6 +39,44 @@ var XNAT = getObject(XNAT);
         return obj.data;
     }
 
+    function lookupValue(el, lookup){
+        var val = '';
+        try {
+            val = eval(lookup);
+        }
+        catch (e) {
+            val = '';
+            console.log(e);
+        }
+        // changeVal() changes the value and triggers
+        // the 'onchange' event
+        $(el).changeVal(val).dataAttr('value', val);
+        return val;
+    }
+
+    // another way to do this without using eval()
+    // is to loop over object string using dot notation:
+    // var myVal = lookupObjectValue(XNAT, 'data.siteConfig.siteId');
+    // --> myVal == 'myXnatSiteId'
+    function lookupObjectValue(root, objStr){
+        var val = '';
+        if (!objStr) {
+            objStr = root;
+            root = window;
+        }
+        root = root || window;
+        objStr.toString().split('.').forEach(function(part, i){
+            // start at the root object
+            if (i === 0) {
+                val = root[part];
+            }
+            else {
+                val = val[part];
+            }
+        });
+        return val;
+    }
+
 
     // ========================================
     // subhead element to segment panels
@@ -89,6 +127,7 @@ var XNAT = getObject(XNAT);
     };
     // ========================================
 
+
     // ========================================
     // display only element for form panels
     template.panelDisplay = function(opts, element){
@@ -100,17 +139,16 @@ var XNAT = getObject(XNAT);
             ['div.element-wrapper', [
                 element || ['div', {
                     id: opts.id,
-                    name: opts.name,
                     className: opts.className||'',
-                    size: 25,
                     title: opts.title||opts.name||opts.id,
-                    html: opts.value||''
+                    html: opts.value||opts.html||opts.text||opts.body||''
                 }],
-                ['div.description', opts.description||opts.body||opts.html]
+                ['div.description', opts.description]
             ]]
         ]);
     };
     // ========================================    
+
 
     // ========================================
     // input element for form panels
@@ -149,45 +187,30 @@ var XNAT = getObject(XNAT);
             element.checked = true;
         }
 
-        var val = '';
-
         // set the value of individual form elements
         
-        // look up a namespaced object value if the value starts with ?|
-        var doLookup = '?|';
+        // look up a namespaced object value if the value starts with '??'
+        var doLookup = '??';
         if (opts.value && opts.value.toString().indexOf(doLookup) === 0) {
-            try {
-                val = eval(opts.value.split(doLookup)[1]);
-            }
-            catch (e) {
-                val = ''
-            }
-            $(element).changeVal(val).dataAttr('value', val);
+            lookupValue(element, opts.value.split(doLookup)[1]);
         }
         
         if (opts.load) {
             if (opts.load.lookup) {
-                try {
-                    val = eval(opts.load.lookup);
-                }
-                catch (e) {
-                    val = ''
-                }
-                $(element).changeVal(val).dataAttr('value', val);
+                lookupValue(element, opts.load.lookup);
             }
             else if (opts.load.url){
                 $.ajax({
                     method: opts.load.method || 'GET',
                     url: XNAT.url.restUrl(opts.load.url),
                     success: function(data){
-                        // split object path
+                        // get value from specific object path
                         if (opts.load.prop) {
                             opts.load.prop.split('.').forEach(function(part){
-                                data = data[part]
+                                data = data[part] || {};
                             });
+                            // data = lookupObjectValue(opts.load.prop);
                         }
-                        // changeVal() changes the value and triggers
-                        // the 'onchange' event
                         $(element).changeVal(data).dataAttr('value', data);
                     }
                 })

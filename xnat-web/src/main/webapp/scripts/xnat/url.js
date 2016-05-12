@@ -46,7 +46,7 @@ var XNAT = getObject(XNAT||{});
     // make sure the serverRoot string (and only ONE serverRoot string)
     // is at the beginning of a url
     function rootUrl(url){
-        return fixRoot((window.serverRoot || XNAT.serverRoot || ''), url)
+        return fixRoot((window.serverRoot || XNAT.serverRoot || ''), url || '');
     }
     url.rootUrl = rootUrl;
 

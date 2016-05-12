@@ -28,6 +28,16 @@ var XNAT = getObject(XNAT);
     // as methods and properties to the function
     input_ = XNAT.ui.input || {};
 
+    function lookupValue(el, lookup){
+        try {
+            el.value = eval(lookup)
+        }
+        catch (e) {
+            el.value = '';
+            console.log(e);
+        }
+        return el.value;
+    }
 
     // ========================================
     // MAIN FUNCTION
@@ -40,6 +50,16 @@ var XNAT = getObject(XNAT);
         }
         config = getObject(config);
         config.type = type || config.type || 'text';
+        // lookup a value if it starts with '??'
+        var doLookup = '??';
+        if (config.value && config.value.toString().indexOf(doLookup) === 0) {
+            lookupValue(config, config.value.split(doLookup)[1])
+        }
+        // lookup a value from a namespaced object
+        // if no value is given
+        if (!config.value && config.data && config.data.lookup) {
+            lookupValue(config, config.data.lookup)
+        }
         var spawned = spawn('input', config);
         return {
             element: spawned,
@@ -92,6 +112,16 @@ var XNAT = getObject(XNAT);
 
     // save a list of all available input types
     input.types = [].concat(textTypes, numberTypes, otherTypes);
+
+    // after the page is finished loading, set empty
+    // input values from [data-lookup] attribute
+    $(window).load(function(){
+        $(':input[data-lookup]').each(function(){
+            var $input = $(this);
+            var val = lookupValue(this, $input.dataAttr('lookup'));
+            $input.changeVal(val);
+        });
+    });
 
     // add back items that may have been on
     // a global XNAT.ui.input object or function

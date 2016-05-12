@@ -491,7 +491,8 @@ public class XDAT implements Initializable,Configurable{
     public static String getSiteConfigurationProperty(String property) throws ConfigServiceException {
 		final SiteConfigPreferences preferences = getSiteConfigPreferences();
         if (preferences != null) {
-            return preferences.getPreferencesAsProperties().getProperty(property);
+			final Object preference = preferences.getPreferenceMap().get(property);
+			return preference != null ? preference.toString() : null;
         }
         return getSiteConfigurationService().getSiteConfigurationProperty(property);
     }

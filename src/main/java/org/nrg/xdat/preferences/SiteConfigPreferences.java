@@ -468,6 +468,15 @@ public class SiteConfigPreferences extends AbstractPreferenceBean {
         }
     }
 
+    @NrgPreference(defaultValue = "false", property = "security.require_image_assessor_labels")
+    public boolean getRequireImageAssessorLabels() {
+        return getBooleanValue("security.require_image_assessor_labels");
+    }
+
+    public void setRequireImageAssessorLabels(final boolean requireImageAssessorLabels) throws InvalidPreferenceName {
+        setBooleanValue(requireImageAssessorLabels, "security.require_image_assessor_labels");
+    }
+
     @NrgPreference(defaultValue = "['zip','jar','rar','ear','gar','mrb']")
     public List<String> getZipExtensions() {
         return getListValue("zipExtensions");

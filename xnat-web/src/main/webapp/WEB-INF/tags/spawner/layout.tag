@@ -292,7 +292,7 @@
                 <script>
                     $('#nav-home').css({
                         width: '30px',
-                        backgroundImage: "url('/images/xnat-nav-logo-white-lg.png')",
+                        backgroundImage: "url('${siteRoot}/images/xnat-nav-logo-white-lg.png')",
                         backgroundRepeat: 'no-repeat',
                         backgroundSize: '32px',
                         backgroundPosition: 'center'

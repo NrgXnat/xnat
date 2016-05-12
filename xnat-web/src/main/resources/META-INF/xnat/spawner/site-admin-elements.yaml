@@ -1,117 +1,908 @@
-# Initial element declarations for the site admin user interface elements.
+tabGroups:
+#    dashboard: Dashboard
+    xnatSetup: XNAT Setup
+    manageAccess: Manage Access
+    manageData: Manage Data
+    processing: Processing
+    projectCustomization: Project Customization
+    advanced: Advanced XNAT Settings
+    other: Other
+
+
 siteId:
+    kind: panel.input.text
+    id: siteId
+    name: siteId
     label: Site ID
-    type: text
-    id: site-id
-    description: Identifies your XNAT site.
-    placeholder: Enter your XNAT site ID...
-    url: /xapi/services/prefs/siteId/{siteId}
-    default: XNAT
-    validation:
-        required: true
-        type: xnat-id
-
-siteUrl:
-    label: Site Url
-    type: url
-    description: The root URL for the site. This is passed to external services.
-    placeholder: Enter the URL for your XNAT site...
-    value: https://cnda.wustl.edu
-    validation:
-        required: true
-
-siteDescriptionPage:
-    id: desc-page
-    label: Page
-    type: site.path
-    description: The page to display for the site description, e.g. /screens/site_description.vm.
-    value: /screens/site_description.vm
-    placeholder: Enter a page for your site description...
-    validation:
-        required: true
-
-siteDescriptionMarkdown:
-    id: desc-markdown
-    label: Text (Markdown)
-    type: markdown
-    tooltip: XNAT allows you to use GitHub-flavored Markdown to create and format your own site description. [&gt;&gt; View Tutorial](http://foobar)
-    description: Compose a site description without referencing a template or site page.
-    validation:
-        required: true
-
-siteDescription:
+    validation: required id onblur
+    description: "The id used to refer to this site (also used to generate database ids). The Site ID must start with a letter and contain only letters, numbers and underscores. It should be a short, one-word name or acronym which describes your site. No spaces or non-alphanumeric characters."
+siteDescriptionOption:
+    kind: panel.display  # make this a radio button group
+    id: siteDescriptionOption
+    name: siteDescriptionOption
     label: Site Description
-    type: composite
-    selection: radio
-    url: /data/services/prefs/{desc}
-    children:
-        ${siteDescriptionPage}
-        ${siteDescriptionMarkdown}
+    value: Select a site description option below
+    # onchange: # some javascript that toggles display of the elements below appropriately
+siteDescriptionOptionText:
+    kind: panel.input.checkbox  # make this a radio button group
+    id: siteDescriptionOptionText
+    label: "Text (Markdown)"
+siteDescriptionOptionPage:
+    kind: panel.input.checkbox  # make this a radio button group
+    id: siteDescriptionOptionPage
+    label: "Page"
+siteDescriptionFile:
+    kind: panel.input.text
+    id: siteDescriptionFile
+    name: siteDescriptionFile
+    label: " "
+    description: "Specify a velocity template file to display on the login page"
+siteDescriptionText:
+    kind: panel.textarea
+    id: siteDescriptionText
+    name: siteDescriptionText
+    label: " "
+    description: "Specify a simple text description of this site"
+siteUrl:
+    kind: panel.input.text
+    id: siteUrl
+    name: siteUrl
+    label: Site Url
+    validation: required id
+    description: ""
+adminEmail:
+    kind: panel.input.email
+    id: adminEmail
+    name: adminEmail
+    label: Site Administrator Email Address
+    url: /xapi/siteConfig/adminEmail
+    value: ''
 
-landingPage:
-    label: Landing Page
-    type: site.path
-    description: The page to display when the user logs in.
-    value: /screens/QuickSearch.vm
-    placeholder: Enter the default landing page...
-    overrides:
-        target: homePage
-        type: checkbox
-        position: right
-        description: Use this as my home page.
-        hideTarget: false
-    validation:
-        required: true
-
-homePage:
-    label: Home Page
-    type: site.path
-    description: The page to display when the user clicks the home link.
-    value: /screens/AdminUsers.vm
-    placeholder: Enter the default home page...
-    validation:
-        required: true
-
+fileSystemSettingsWarning:
+    someInfo:
+        tag: div.message
+        element:
+            html: "These settings must be defined during initial application configuration, and are seldom - if ever - changed."
+            style:
+                fontWeight: bold
+archiveRootPath:
+    kind: panel.input.text
+    id: archiveRootPath
+    name: archiveRootPath
+    label: Archive Root Path
+    validation: required path
+    description: ""
+    value: ??XNAT.data.siteConfig.archiveRootPath
+cachePath:
+    kind: panel.input.text
+    id: cachePath
+    name: cachePath
+    label: Cache Path
+    validation: required path
+    description: ""
+    value: ??XNAT.data.siteConfig.cachePath
+prearchivePath:
+    kind: panel.input.text
+    id: prearchivePath
+    name: prearchivePath
+    label: Prearchive Path
+    validation: required path
+    description: ""
+    value: ??XNAT.data.siteConfig.prearchivePath
+ftpPath:
+    kind: panel.input.text
+    id: ftpPath
+    name: ftpPath
+    label: FTP Path
+    validation: required path
+    description: ""
+    value: ??XNAT.data.siteConfig.cachePath
+buildPath:
+    kind: panel.input.text
+    id: buildPath
+    name: buildPath
+    label: Build Path
+    validation: required id onblur
+    description: ""
+    value: ??XNAT.data.siteConfig.cachePath
+pipelinePath:
+    kind: panel.input.text
+    id: pipelinePath
+    name: pipelinePath
+    label: Pipeline Path
+    validation: required id onblur
+    description: ""
+    value: ??XNAT.data.siteConfig.cachePath
+dataFolders:
+    kind: panel.input.text
+    id: dataFolders
+    name: dataFolders
+    label: Data Folders
+    validation: required id onblur
+    description: ""
+    
 siteInfo:
+    kind: panel.form
+    name: siteInfo
     label: Site Information
-    type: panel
-    controls:
-       ${siteId}
-       ${siteUrl}
-       ${siteDescription}
-       ${landingPage}
-       ${homePage}
-
-siteAdminEmail:
-    label: Site Admin Email
-    type: email
-    placeholder: Administrator email address...
-    url: /xapi/services/prefs/siteAdminEmail/{siteAdminEmail}
-    validation:
-        required: true
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
+    contents:
+        ${siteId}
+        ${siteUrl}
+        ${siteDescriptionOption}
+        ${siteDescriptionOptionText}
+        ${siteDescriptionOptionPage}
+        ${siteDescriptionFile}
+        ${siteDescriptionText}
 
 adminInfo:
+    kind: panel.form
+    name: adminInfo
     label: Admin Information
-    type: panel
-    controls:
-        ${siteAdminEmail}
-
-siteSetup:
-    label: Site Setup
-    type: tab
     contents:
-        ${siteInfo}
-        ${adminInfo}
+        ${adminEmail}
 
-xnatSetup:
-    label: XNAT Setup
-    type: tabGroup
-    tabs:
-        ${siteSetup}
+generalSecuritySettings:
+    kind: panel.form
+    name: generalSecuritySettings
+    label: General Site Security Settings
+    contents:
+        securityChannel:
+            kind: panel.select.single
+            id: securityChannel
+            name: security.channel
+            label: Security Channel
+            value: https
+            options:
+                # value: label # <- simplest setup
+                http: http
+                https: https
+            element:
+                id: security-channel
+                title: Security Channel
+        requireUserLogin:
+            kind: panel.input.checkbox
+            id: requireUserLogin
+            name: require_login
+            label: Require User Login
+            description: "If checked, then only registered users will be able to access your site. If false, anyone visiting your site will automatically be logged in as 'guest' with access to public data."
 
+userLoginsSessionControls:
+    kind: panel.form
+    name: userLoginsSessionControls
+    label: User Logins / Session Controls
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+        refresh: /xapi/siteConfig
+    contents:
+        sessionTimeout:
+            kind: panel.input.number
+            id: sessionTimeout
+            name: security.token_timeout
+            label: Session Timeout
+            value: 15
+            description: "Interval for timing out alias tokens. Uses PostgreSQL interval notation: http://www.postgresql.org/docs/9.0/static/functions-datetime.html"
+        sessionTimeoutMessage:
+            kind: panel.input.text
+            id: sessionTimeoutMessage
+            name: sessionTimeoutMessage
+            label: Session Timeout Message
+            value: "Your session has timed out."
+            description: Alert message provided to users after a session timeout and logout.
+        allowResumeOnNextLogin:
+            kind: panel.input.checkbox
+            id: allowResumeOnNextLogin
+            name: allowResumeOnNextLogin
+            label: Allow Resume On Next Login?
+            value: true
+            description: Allow user to resume where they left off, if logging back in after a session timeout?
+        maximumConcurrentSessions:
+            kind: panel.input.number
+            id: maximumConcurrentSessions
+            name: security.sessions.concurrent_max
+            label: Maximum Concurrent Sessions
+            value: 5
+            description: The maximum number of permitted sessions a user can have open simultaneously
+        loginFailureMessage:
+            kind: panel.input.text
+            id: loginFailureMessage
+            name: UI.login_failure_message
+            label: Login Failure Message
+            value: Login failed
+            description: Text to show when a user fails to login
+        maximumFailedLogins:
+            kind: panel.input.number
+            id: maximumFailedLogins
+            name: security.max_failed_logins
+            label: Maximum Failed Logins
+            value: -1
+            description: Number of failed login attempts before accounts are temporarily locked. (-1 disables feature)
+        failedLoginLockoutDuration:
+            kind: panel.input.number
+            id: failedLoginLockoutDuration
+            name: security.max_failed_logins_lockout_duration
+            label: Failed Login Lockout Duration
+            value: 0
+            description: Number of milliseconds to lock user accounts that have exceeded the max_failed_logins count. Select (3600000 for 1 hour, 86400000 for 24 hours)
+        userInactivityLockout:
+            kind: panel.input.number
+            id: userInactivityLockout
+            name: security.inactivity_before_lockout
+            label: User Inactivity Lockout
+            value: 31556926
+            description: Number of seconds of inactivity before an account is disabled (31556926 for 1 year)
+
+passwords:
+    kind: panel.form
+    name: passwords
+    label: Passwords
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
+    contents:
+        passwordComplexity:
+            kind: panel.input.text
+            id: passwordComplexity
+            name: passwordComplexity
+            label: Password Complexity
+            value: "^.*$"
+            description: Must be a valid regular expression.
+        passwordComplexityMessage:
+            kind: panel.input.text
+            id: passwordComplexityMessage
+            name: passwordComplexityMessage
+            label: Password Complexity Message
+            value: "Your password must contain..."
+        passwordHistoryDuration:
+            kind: panel.input.number
+            id: passwordHistoryDuration
+            name: passwordHistoryDuration
+            label: Password History (Duration)
+            value: -1
+            description: "-1 to disable"
+        passwordExpirationInterval:
+            kind: panel.input.number
+            id: passwordExpirationInterval
+            name: passwordExpirationInterval
+            label: Password Expiration (Interval)
+            value: -1
+            description: "-1 to disable"
+        passwordExpirationDate:
+            kind: panel.input.text
+            id: passwordExpirationDate
+            name: passwordExpirationDate
+            label: Password Expiration (Date)
+            description: Dates must be formatted MM/DD/YYYY
+        passwordReuseRestriction:
+            kind: panel.select.single
+            id: passwordReuseRestriction
+            name: passwordReuseRestriction
+            label: Password Reuse Restriction
+        requireSaltedPasswords:
+            kind: panel.input.checkbox
+            id: requireSaltedPasswords
+            name: requireSaltedPasswords
+            label: Require Passwords To Be Salted
+            value: false
+
+csrf:
+    kind: panel.form
+    name: csrf
+    label: CSRF
+    contents:
+        enableCsrfToken:
+            kind: panel.input.checkbox
+            id: enableCsrfToken
+            name: enableCsrfToken
+            label: Require CSRF Token?
+            value: true
+            description: Should this site require the use of a token to prevent CSRF attacks on POST, PUT, and DELETEs?
+        csrfEmailAlert:
+            kind: panel.input.checkbox
+            id: csrfEmailAlert
+            name: enable_csrf_email_alert
+            label: CSRF Email Alert
+            value: "Should this site send an email to the site admin whenever a CSRF attack is attempted?"
+
+auditTrail:
+    kind: panel.form
+    name: auditTrail
+    label: Audit Trail Configuration
+    contents:
+        enableAuditTrail:
+            kind: panel.input.checkbox
+            id: enableAuditTrail
+            name: audit.enable
+            label: Enable Audit Trail?
+            value: true
+        allowUserJustificationForChanges:
+            kind: panel.input.checkbox
+            id: allowUserJustificationForChanges
+            name: audit.show_change_justification
+            label: Allow User Justification For Changes
+            value: true
+            description: "Allow users to enter change justifications when modifying data"
+        requireUserJustificationForChanges:
+            kind: panel.input.checkbox
+            id: requireUserJustificationForChanges
+            name: audit.require_change_justification
+            label: Require User Justification For Changes
+            value: false
+            description: "Force users to enter change justifications when modifying data"
+
+            
+emailServerSettings:
+    kind: panel.form
+    method: POST
+    action: /xapi/notifications/all
+    load: # load data
+        url: /xapi/siteConfig
+#        method: GET      # defaults to GET if not set
+        prop: smtpServer # which root property? gets the root object if not set
+#        lookup: XNAT.data.siteConfig.smtpServer
+    contentType: json
+    name: emailServerSettings
+    label: Mail Server Settings
+    contents:
+        hostname:
+            kind: panel.input.text
+            name: host
+            label: Host
+            value: localhost
+        port:
+            kind: panel.input.number
+            name: port
+            label: Port
+            value: ""
+            element:
+                placeholder: 587
+        username:
+            kind: panel.input.text
+            name: username
+            label: Username
+            url: /xapi/notifications/username
+            value: ''
+            element:
+                placeholder: name@host.org
+        password:
+            kind: panel.input.password
+            name: password
+            label: Password
+            value: ''
+        protocol:
+            kind: panel.input.text
+            name: protocol
+            label: Protocol
+            value: ''
+            #data:
+                #get: GET|/xapi/siteConfig|smtpServer.protocol
+                #set: POST|/xapi/notifications/protocol
+        # subhead breaks up panel items
+        mailServerProperties:
+            kind: panel.subhead
+            name: mailServerProperties
+            label: Properties
+        smtpAuth:
+            kind: panel.input.checkbox
+            name: mail.smtp.auth
+            label: SMTP Auth?
+            #value: true
+            checked: true
+        smtpStartTls:
+            kind: panel.input.checkbox
+            name: mail.smtp.starttls.enable
+            label: Smart TLS?
+            #value: true
+            checked: true
+        smtpSSLTrust:
+            kind: panel.input.text
+            name: mail.smtp.ssl.trust
+            label: SSL Trust
+            value: ''
+            element:
+                placeholder: localhost
+
+notifications:
+    kind: panel.form
+    name: notifications
+    label: Notifications
+    contents:
+        helpContactInfo:
+            kind: panel.input.email
+            id: helpContactInfo
+            name: helpContactInfo
+            label: "Help Contact Info"
+        emailMessageUserRegistration:
+            kind: panel.input.text                     # textarea
+            id: emailMessageUserRegistration
+            name: emailMessageUserRegistration
+            label: "Email Message: User Registration"
+            description: "Text of message emailed to users upon registration. Link for email validation is auto-populated."
+        emailMessageForgotUsernameRequest:
+            kind: panel.input.text                     # textarea
+            id: emailMessageForgotUsernameRequest
+            name: emailMessageForgotUsernameRequest
+            label: "Email Message: Forgot Username Request"
+            description: "Text of message emailed to users upon lost username request."
+        emailMessageForgotPasswordReset:
+            kind: panel.input.text                     # textarea
+            id: emailMessageForgotPasswordReset
+            name: emailMessageForgotPasswordReset
+            label: "Email Message: Password Reset"
+            description: "Text of message emailed to users upon lost password reset. Link for password reset is auto-populated"
+        notifyAdminUserRegistration:
+            kind: panel.input.checkbox
+            id: notifyAdminUserRegistration
+            name: "email:new_user_registration"
+            label: "Notify Admin on User Registration"
+            value: true
+            description: "Whether to cc admin user on new user emails. Requires valid admin email address."
+        notifyAdminPipelineEmails:
+            kind: panel.input.checkbox
+            id: notifyAdminPipelineEmails
+            name: "email:pipeline"
+            label: "Notify Admin on Pipeline Emails"
+            value: false
+            description: "Whether to cc admin user on pipeline processing submit. Requires valid admin email address."
+        notifyAdminProjectAccessRequest:
+            kind: panel.input.checkbox
+            id: notifyAdminProjectAccessRequest
+            name: "email:project_access"
+            label: "Notify Admin on Project Access Request"
+            value: false
+            description: "Whether to cc admin user on user project access request. Requires valid admin email address."
+        notifyAdminSessionTransfer:
+            kind: panel.input.checkbox
+            id: notifyAdminSessionTransfer
+            name: "email:transfer"
+            label: "Notify Admin on Session Transfer"
+            value: false
+            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
+        emailRecipientErrorMessages:
+            kind: panel.input.email
+            id: emailRecipientErrorMessages
+            name: "Notifications:Error"
+            label: "Email Recipient: Error Messages"
+            description: "What email address should receive error emails"
+        emailRecipientIssueReports:
+            kind: panel.input.email
+            id: emailRecipientIssueReports
+            name: "Notifications:Issues"
+            label: "Email Recipient: Issue Reports"
+            description: "What email address should receive issue reports"
+        emailRecipientNewUserAlert:
+            kind: panel.input.email
+            id: emailRecipientNewUserAlert
+            name: "Notifications:NewUser"
+            label: "Email Recipient: New User Alert"
+            description: "What email address should receive New User Registration emails"
+        emailRecipientUpdate:
+            kind: panel.input.email
+            id: emailRecipientUpdate
+            name: "Notifications:Update"
+            label: "Email Recipient: Updates"
+            description: "What email address should receive update emails"
+        notifyAdminSessionTransfer:
+            kind: panel.input.checkbox
+            id: notifyAdminSessionTransfer
+            name: "email:transfer"
+            label: "Notify Admin on Session Transfer"
+            value: false
+            description: "Whether to cc admin user on session transfer by user. Requires valid admin email address."
+
+themeManagement:
+    kind: panel
+    name: themeManagement
+    label: Theme Management
+    contents:
+        themeScript:
+            tag: script|type=text/javascript;src=../../scripts/themeManagement.js
+        themeStyle:
+            tag: style
+            element:
+                html: ".themeUploader{width:270px;display:inline !important;}"
+        currentTheme:
+            kind: panel.display
+            id: currentTheme
+            label: Current Theme
+            description: The currently selected global theme.
+            value: None
+            element:
+                style:
+                    color: 'red'
+        existingTheme:
+            kind: panel.select.single
+            id: themeSelection
+            label: Select an existing theme
+            description: Selected a new global theme from those available on the system.
+            value: None
+            options:
+                default:
+                    label: None
+                    value: None
+            after:
+                - "<span style=\"position: relative; top: -49px;left: 270px;\">&nbsp;<button id=\"submitThemeButton\" onclick=\"setTheme();\">Set Theme</button>&nbsp;&nbsp;<button id=\"removeThemeButton\" onclick=\"removeTheme();\">Remove Theme</button></span>"
+        uploadTheme:
+            kind: panel.input.upload
+            id: themeFileUpload
+            name: xnat.theme.upload
+            label: Upload a theme package
+            description: Upload a zipped theme package for selection above.
+            className: themeUploader
+          
+
+          
+authenticationMethods:
+    kind: panel.form
+    name: authenticationMethods
+    label: User Authentication Methods
+    contents:
+        xnatInternal:
+            kind: panel.input.checkbox
+            id: xnatInternal
+            name: provider.providers.xnatInternal
+            label: XNAT (Internal)
+            value: true
+        ldapProvider:
+            kind: panel.input.checkbox
+            id: ldapProvider
+            name: provider.providers.ldap
+            label: LDAP
+            value: false
+        oauthProvider:
+            kind: panel.input.checkbox
+            id: oauthProvider
+            name: provider.providers.oauth
+            label: OAuth
+            value: false
+genericAuthenticationProvider:
+    kind: panel.form
+    name: genericAuthenticationProvider
+    label: Generic Authentication Provider
+    contents:
+        providerDbName:
+            kind: panel.input.text
+            id: providerDbName
+            name: providerDbName
+            label: "Provider DB Name"
+        providerDbId:
+            kind: panel.input.text
+            id: providerDbId
+            name: providerDbId
+            label: "Provider DB ID"
+        providerDbType:
+            kind: panel.input.text
+            id: providerDbType
+            name: providerDbType
+            label: "Provider DB Type"
+ldapAuthentication:
+    kind: panel.form
+    name: ldapAuthenticationProvider
+    label: LDAP Authentication Provider
+    contents:
+        ldapName:
+            kind: panel.input.text
+            id: ldapName
+            name: ldapName
+            label: "LDAP Name"
+        ldapId:
+            kind: panel.input.text
+            id: ldapId
+            name: ldapId
+            label: "LDAP ID"
+        ldapType:
+            kind: panel.input.text
+            id: ldapType
+            name: ldapType
+            label: "LDAP Type"
+        ldapAddress:
+            kind: panel.input.text
+            id: ldapAddress
+            name: ldapAddress
+            label: "LDAP Address"
+        ldapUserDomain:
+            kind: panel.input.text
+            id: ldapUserDomain
+            name: ldapUserDomain
+            label: "LDAP User Domain"
+        ldapPassword:
+            kind: panel.input.text
+            id: ldapPassword
+            name: ldapPassword
+            label: "LDAP Password"
+        ldapSearchBase:
+            kind: panel.input.text
+            id: ldapSearchBase
+            name: ldapSearchBase
+            label: "LDAP Search Base"
+        ldapSearchFilter:
+            kind: panel.input.text
+            id: ldapSearchFilter
+            name: ldapSearchFilter
+            label: "LDAP Search Filter"
+
+users:
+    kind: panel
+    name: users
+    label: Users
+#    contents:
+
+userRoles:
+    kind: panel
+    name: userRoles
+    label: User Roles
+#    contents:
+
+registrationOptions:
+    kind: panel.form
+    name: registrationOptions
+    label: Registration Options
+    contents:
+        requireEmailVerificationToRegister:
+            kind: panel.input.checkbox
+            id: requireEmailVerificationToRegister
+            name: emailVerification
+            label: "Require Email Verification To Register?"
+            value: true
+        emailVerificationMessage:
+            kind: panel.input.text                        #textarea
+            id: emailVerificationMessage
+            name: emailVerificationMessage
+            label: "Email Verification Message"
+            value: ""
+        emailVerificationExpiration:
+            kind: panel.input.number
+            id: emailVerificationExpiration
+            name: emailVerificationExpiration
+            label: "Email Verification Expiration"
+            value: 60000
+        autoEnableUserRegistration:
+            kind: panel.input.checkbox
+            id: autoEnableUserRegistration
+            name: autoEnableUserRegistration
+            label: "Auto-enable User Registration?"
+            value: false
+        allowUserCommentsOnRegistration:
+            kind: panel.input.checkbox
+            id: allowUserCommentsOnRegistration
+            name: allowUserCommentsOnRegistration
+            label: "Allow User Comments on Registration?"
+            value: true
+        restrictAccessToUserList:
+            kind: panel.input.checkbox
+            id: restrictAccessToUserList
+            name: restrictAccessToUserList
+            label: "Restrict Access to User List?"
+            value: true
+
+dataReporting:
+    kind: panel.form
+    name: dataReporting
+    label: Data Reporting
+    group: manageData
+    contents:
+        enableAdvancedSearch:
+            kind: panel.input.checkbox
+            id: enableAdvancedSearch
+            name: enableAdvancedSearch
+            label: "Enable Advanced Search"
+            value: true
+
+dicomScpReceivers:
+    kind: panel.form
+    name: dicomScpReceivers
+    label: DICOM SCP Receivers
+    contents:
+        enableDicomReceiver:
+            kind: panel.input.checkbox
+            id: enableDicomReceiver
+            name: enableDicomReceiver
+            label: DICOM Receiver Enabled?
+            value: true
+            description: "Should the DICOM receiver listen for connections?"
+        someInfo:
+            tag: div.message
+            element:
+                html: "Caution: Changes to this setting will take effect immediately. Before disabling the receiver, verify that there are no transmissions currently in progress."
+                style:
+                    fontWeight: bold
+        # hidden form element...
+        # enableDicomReceiver.property.changed.listener
+        # org.nrg.dcm.DicomSCPSiteConfigurationListener
+        dicomHost:
+            kind: panel.input.text
+            id: dicomHost
+            name: dicomHost
+            label: DICOM Host
+            description: "Hostname(s) for DICOM Receiver(s)"
+        dicomAeTitle:
+            kind: panel.input.text
+            id: dicomAeTitle
+            name: dicomAeTitle
+            label: DICOM AE Title
+            description: "AE Title(s) for DICOM Receiver(s)"
+        dicomPortNumber:
+            kind: panel.input.number
+            id: dicomPortNumber
+            name: dicomPortNumber
+            label: DICOM Host
+            description: "Port for DICOM Receiver(s)"
+        defaultDicomReceiver:
+            kind: panel.select.single
+            id: defaultDicomReceiver
+            name: services.dicom.scp.aetitle
+            label: Default DICOM Receiver
+            description: "AE Title for default DICOM receiver"
+        defaultDicomReceiverUser:
+            kind: panel.input.text
+            id: defaultDicomReceiverUser
+            name: services.dicom.scp.receivedfileuser
+            label: "Default DICOM Receiver: User"
+            value: Login failed
+            description: "User account for default DICOM receiver"
+            
+fileSystem:
+    kind: panel.form
+    name: fileSystem
+    label: File System
+    method: POST
+    action: /xapi/siteConfig/batch
+    load:
+        lookup: XNAT.data.siteConfig
+    contentType: json
+    contents:
+        ${archiveRootPath}
+        ${cachePath}
+        ${prearchivePath}
+        ${ftpPath}
+        ${buildPath}
+        ${pipelinePath}
+        ${dataFolders}
+
+
+#################################################
+####  Root Site Admin Spawner Config Object  ####
+#################################################
 siteAdmin:
+    kind: tabs
+    name: siteAdmin
     label: Administer XNAT
-    type: page
+    meta:
+        ${tabGroups}
     contains: tabs
+    tabs:  # this property name is the same as 'contains', so it will be treated like 'contents'
+        siteSetup:
+            kind: tab
+            name: siteSetup
+            label: Site Setup
+            group: xnatSetup
+            active: true
+            contains: panels # the value for 'contains' can be a custom name for 'contents'
+            panels:
+                ${siteInfo}
+                ${adminInfo}
+        security:
+            kind: tab
+            name: security
+            label: Security
+            group: xnatSetup
+            contents:
+                ${generalSecuritySettings}
+                ${userLoginsSessionControls}
+                ${passwords}
+                ${csrf}
+                ${auditTrail}
+        emailServer:
+            kind: tab
+            name: emailServer
+            label: Email Server
+            group: xnatSetup
+            contents:
+                ${emailServerSettings}
+        notifications:
+            kind: tab
+            name: notifications
+            label: Notifications
+            group: xnatSetup
+            contents:
+                ${notifications}
+        themesAndFeatures:
+            kind: tab
+            name: themesAndFeatures
+            label: Themes & Features
+            group: xnatSetup
+            contents:
+                ${themeManagement}
+        authenticationMethods:
+            kind: tab
+            name: authenticationMethods
+            label: Authentication Methods
+            group: manageAccess
+            contents:
+                ${authenticationMethods}
+                ${genericAuthenticationProvider}
+                ${ldapAuthentication}
+        users:
+            kind: tab
+            name: users
+            label: Users
+            group: manageAccess
+            contents:
+                ${users}
+        userRoles:
+            kind: tab
+            name: userRoles
+            label: User Roles
+            group: manageAccess
+            contents:
+                ${userRoles}
+        registrationOptions:
+            kind: tab
+            name: registrationOptions
+            label: Registration Options
+            group: manageAccess
+            contents:
+                ${registrationOptions}
+        dataReporting:
+            kind: tab
+            name: dataReporting
+            label: Data Reporting
+            group: manageData
+            contents:
+                ${dataReporting}
+        dicomScpReceivers:
+            kind: tab
+            name: dicomScpReceivers
+            label: DICOM SCP Receivers
+            group: advanced
+            contents:
+                ${dicomScpReceivers}
+        fileSystem:
+            kind: tab
+            name: fileSystem
+            label: File System
+            group: advanced
+            contents:
+                ${fileSystem}
+                ${siteIdMain}
+
+
+###########################################
+####  Initial Site Setup Admin Panels  ####
+###########################################
+siteIdMain:
+    kind: panel.form
+    name: siteIdMain
+    label: Site Identification
     contents:
-        ${xnatSetup}
+        ${siteId}
+        ${siteUrl}
+        ${adminEmail}
+sitePaths:
+    kind: panel.form
+    name: sitePaths
+    label: Site Paths
+    contents:
+#        ${archiveRootPath}
+#        ${cachePath}
+#        ${prearchivePath}
+#        ${ftpPath}
+#        ${buildPath}
+#        ${pipelinePath}
+        ${dataFolders}
+initialSetup:
+    kind: panel
+    name: initialSetup
+    label: Initial XNAT Setup
+    contents:
+#        ${siteIdMain}
+#        ${smtpServer}
+        ${sitePaths}

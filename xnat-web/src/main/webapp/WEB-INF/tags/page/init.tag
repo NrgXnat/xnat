@@ -5,7 +5,7 @@
 
 <%-- set empty user info --%>
 <c:set var="loggedIn" value="false" scope="session"/>
-<c:set var="username" value="0" scope="session"/>
+<c:set var="username" value="-" scope="session"/>
 <c:set var="isAdmin" value="false" scope="session"/>
 
 <%-- set vars for user --%>
@@ -21,11 +21,11 @@
 <c:set var="themeName" value="${cookie.THEME_NAME.value}" scope="session"/>
 
 <%-- if there's a theme specified in the request, use that --%>
-<c:if test="${not empty param.theme}">
+<c:if test="${empty themeName && not empty param.theme}">
     <c:set var="themeName" value="${param.theme}" scope="session"/>
 </c:if>
 
-<%-- change 'siteRoot' to the root of your web app --%>
+<%-- set 'siteRoot' to the root of your web app --%>
 <c:set var="siteRoot" value="${pageContext.request.contextPath}" scope="session"/>
 
 <%-- add a leading slash if siteRoot is not empty and doesn't already start with a slash --%>
@@ -58,3 +58,6 @@
 <c:set var="isDialog" value="${not empty param.dialog && param.dialog == 'true'}"/>
 
 <c:set var="hasInit" value="true" scope="request"/>
+
+<%-- inject content on init--%>
+<jsp:doBody/>

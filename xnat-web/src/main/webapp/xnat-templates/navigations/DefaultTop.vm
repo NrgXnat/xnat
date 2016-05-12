@@ -99,7 +99,7 @@
 <div id="main_nav">
     <div class="inner">
 
-    <ul class="nav" style="border-left: 1px solid #033769;">
+    <ul class="nav">
         #addGlobalCustomScreens("topBar")
     </ul>
 

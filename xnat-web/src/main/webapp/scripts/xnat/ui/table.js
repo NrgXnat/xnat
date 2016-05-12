@@ -2,13 +2,46 @@
  * Methods for creating XNAT-specific <table> elements
  */
 
-var XNAT = getObject(XNAT||{});
+var XNAT = getObject(XNAT);
 
-(function(XNAT, $){
+(function(factory){
+
+    // add dependencies to 'imports' array
+    var imports = [
+        'xnat/init',
+        'lib/jquery/jquery'
+    ];
+
+    if (typeof define === 'function' && define.amd) {
+        define(imports, factory);
+    }
+    else if (typeof exports === 'object') {
+        module.exports = factory(XNAT, jQuery);
+    }
+    else {
+        return factory(XNAT, jQuery);
+    }
+
+}(function(XNAT, $){
 
     var table,
         element = spawn.element,
         undefined;
+
+    // add new element class without destroying existing class
+    function addClassName(el, newClass){
+        el.className = [].concat(el.className||[], newClass).join(' ').trim();
+        return el.className;
+    }
+
+    // add new data object item to be used for [data-] attribute(s)
+    function addDataObjects(obj, attrs){
+        obj.data = obj.data || {};
+        forOwn(attrs, function(name, prop){
+            obj.data[name] = prop;
+        });
+        return obj.data;
+    }
 
     /**
      * Constructor function for XNAT.table()
@@ -18,8 +51,8 @@ var XNAT = getObject(XNAT||{});
      */
     function Table(opts, config){
 
-        this.opts = opts||{};
-        this.config = config||null;
+        this.opts = opts || {};
+        this.config = config || null;
 
         this.table = element('table', this.opts);
         this.table$ = $(this.table);
@@ -31,7 +64,7 @@ var XNAT = getObject(XNAT||{});
 
         // get 'last' item wrapped in jQuery
         this.last$ = function(el){
-            return $(this.last[el||'parent']);
+            return $(this.last[el || 'parent']);
         };
 
         this.setLast = function(el){
@@ -43,10 +76,6 @@ var XNAT = getObject(XNAT||{});
         this._rows = [];
         this.cols = this.columns = [];
 
-        // try to init?
-        if (config && config.data){
-            this.init(config.data);
-        }
     }
 
 
@@ -71,30 +100,34 @@ var XNAT = getObject(XNAT||{});
     });
 
     // create a single <td> element
-    Table.p.td = function(content, opts){
-        var td = element('td', opts||content, content);
+    // just using a single argument
+    // if you want to modify the <td>
+    // you'll need to pass a config
+    // object to set the properties
+    // and use append or innerHTML
+    // to add the cell content
+    Table.p.td = function(content){
+        var td = element('td', content);
         this.last.tr.appendChild(td);
-        //this.setLast(td);
         return this;
     };
 
-    Table.p.th = function(content, opts){
-        var th = element('th', opts||content, content);
+    Table.p.th = function(content){
+        var th = element('th', content);
         this.last.tr.appendChild(th);
-        //this.setLast(th);
         return this;
     };
 
-    Table.p.tr = function(data, opts){
+    Table.p.tr = function(opts, data){
         var tr = element('tr', opts);
         //data = data || this.data || null;
-        if (data){
+        if (data) {
             [].concat(data).forEach(function(item){
                 tr.appendChild(element('td', item))
             });
         }
         // only add <tr> elements to <table>, <thead>, <tbody>, and <tfoot>
-        if (/(table|thead|tbody|tfoot)/.test(this.last.parent.tagName.toLowerCase())){
+        if (/(table|thead|tbody|tfoot)/.test(this.last.parent.tagName.toLowerCase())) {
             this.last.parent.appendChild(tr);
         }
         this.last.tr = tr;
@@ -110,7 +143,7 @@ var XNAT = getObject(XNAT||{});
         [].concat(data).forEach(function(item){
             tr.appendChild(element('td', item));
         });
-        (this.last.tbody||this.table).appendChild(tr);
+        (this.last.tbody || this.table).appendChild(tr);
         return this;
     };
 
@@ -119,7 +152,7 @@ var XNAT = getObject(XNAT||{});
         var last_tr = this.last.tr;
         [].concat(items).forEach(function(item){
             var td;
-            if (isPlainObject(item)){
+            if (isPlainObject(item)) {
                 td = element('td', '', extend(true, item, opts));
             }
             else {
@@ -134,8 +167,8 @@ var XNAT = getObject(XNAT||{});
 
     Table.p.rows = function(data, opts){
         var _this = this,
-            rows = [];
-        data = data||[];
+            rows  = [];
+        data = data || [];
         data.forEach(function(row){
             rows.push(_this.tr(opts, row))
         });
@@ -160,13 +193,13 @@ var XNAT = getObject(XNAT||{});
 
     // reset last.parent to <tbody>
     Table.p.toBody = Table.p.closestBody = function(){
-        this.setLast(this.last.tbody||this.table);
+        this.setLast(this.last.tbody || this.table);
         return this;
     };
 
     // reset last.parent to <thead>
     Table.p.toHead = Table.p.closestBody = function(){
-        this.setLast(this.last.thead||this.table);
+        this.setLast(this.last.thead || this.table);
         return this;
     };
 
@@ -205,6 +238,10 @@ var XNAT = getObject(XNAT||{});
         return $(this.table);
     };
 
+    Table.p.getHTML = function(){
+        return this.table.outerHTML;
+    };
+
     /**
      * Populate table with data
      * @param data {Array} array of row arrays
@@ -213,26 +250,28 @@ var XNAT = getObject(XNAT||{});
     Table.p.init = function(data){
 
         var _this = this,
-            obj = {},
+            obj   = {},
             header,
-            cols = 0;
+            cols  = 0;
 
         // don't init twice
-        if (this.inited) { return this }
+        if (this.inited) {
+            return this
+        }
 
         data = data || [];
 
-        if (Array.isArray(data)){
+        if (Array.isArray(data)) {
             obj.data = data;
         }
         else {
-            obj = data||{};
+            obj = data || {};
         }
-        if (obj.header){
+        if (obj.header) {
             // if there's a 'header' property
             // set to true, pick the header from
             // the first row of data
-            if (obj.header === true){
+            if (obj.header === true) {
                 header = obj.data.shift();
             }
             // otherwise it's set explicitly
@@ -245,10 +284,10 @@ var XNAT = getObject(XNAT||{});
 
         // set the number of columns based on
         // the header or first row of data
-        cols = (header) ? header.length : (obj.data[0]||[]).length;
+        cols = (header) ? header.length : (obj.data[0] || []).length;
 
         // add the header
-        if (header){
+        if (header) {
             this.thead();
             this.tr();
             [].concat(header).forEach(function(item){
@@ -259,12 +298,12 @@ var XNAT = getObject(XNAT||{});
         // always add <tbody> element on .init()
         this.tbody();
 
-        [].concat(obj.data||[]).forEach(function(col){
+        [].concat(obj.data || []).forEach(function(col){
             var i = -1;
             // make a row!
             _this.tr();
             // don't exceed column width of header or first column
-            while (++i < cols){
+            while (++i < cols) {
                 _this.td(col[i]);
             }
         });
@@ -274,10 +313,15 @@ var XNAT = getObject(XNAT||{});
         return this;
 
     };
-    
-    Table.p.render = function(element){
-        if (element){
-            $$(element).empty().append(this.table);
+
+    Table.p.render = function(element, empty){
+        var $element;
+        if (element) {
+            $element = $$(element);
+            if (empty){
+                $element.empty();
+            }
+            $element.append(this.table);
         }
         return this.table;
     };
@@ -286,47 +330,60 @@ var XNAT = getObject(XNAT||{});
         return this.table.outerHTML;
     };
 
-    table = function(data, opts){
-        if (!opts){
-            opts = data;
-            data = [];
-        }
-        return new Table(data, opts);
+    // 'opts' are options for the <table> element
+    // 'config' is for other configurable stuff
+    table = function(opts, config){
+        return new Table(opts, config);
     };
-    
+
     // helper for future XNAT DataTable widget
     table.dataTable = function(data, opts){
-            
+        var tableData = data;
+        // tolerate reversed arguments
+        if (Array.isArray(opts)){
+            tableData = opts;
+            opts = data;
+        }
+        addClassName(opts, 'data-table');
+        var newTable = new Table(opts);
+        return newTable.init(tableData);
     };
 
     // table with <input> elements in the cells
     table.inputTable = function(data, opts){
-        data = data.map(function(row){
+        var tableData = data;
+        // tolerate reversed arguments
+        if (Array.isArray(opts)){
+            tableData = opts;
+            opts = data;
+        }
+        tableData = tableData.map(function(row){
             return row.map(function(cell){
-                if (/string|number/.test(typeof cell)){
-                    return cell+''
+                if (/string|number/.test(typeof cell)) {
+                    return cell + ''
                 }
-                if (Array.isArray(cell)){
+                if (Array.isArray(cell)) {
                     return element('input', extend(true, {}, cell[2], {
-                        name: cell[0],
+                        name:  cell[0],
                         value: cell[1],
-                        data: { value: cell[1] }
+                        data:  { value: cell[1] }
                     }));
                 }
                 cell = extend(true, cell, {
-                    data: { value: cell.value }
+                    data: {value: cell.value}
                 });
                 return element('input', cell);
             });
         });
         opts = getObject(opts);
-        opts.className = 'input-table';
-        var table = new Table(opts);
-        return table.init(data);
+        addClassName(opts, 'input-table');
+        var newTable = new Table(opts);
+        return newTable.init(tableData);
     };
 
-    XNAT.ui = getObject(XNAT.ui);
+    XNAT.ui = getObject(XNAT.ui||{});
     XNAT.ui.table = XNAT.table = table;
     XNAT.ui.inputTable = XNAT.inputTable = table.inputTable;
 
-})(XNAT, jQuery);
+}));
+

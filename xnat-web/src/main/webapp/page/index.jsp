@@ -2,14 +2,16 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<c:set var="pageName" value="view-page" scope="request"/>
-
 <pg:wrapper>
+    <pg:xnat>
 
-    <pg:head/>
+        <c:set var="view" value="${param.view}"/>
 
-    <pg:content id="${pageName}" className="xnat app ${pageName}">
-        <jsp:include page="content.jsp"/>
-    </pg:content>
+        <c:if test="${empty view}">
+            <c:set var="view" value="content"/>
+        </c:if>
 
+        <jsp:include page="${view}.jsp"/>
+
+    </pg:xnat>
 </pg:wrapper>

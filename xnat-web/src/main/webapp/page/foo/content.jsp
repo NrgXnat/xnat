@@ -3,7 +3,11 @@
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
 <c:if test="${empty hasInit}">
-    <pg:init/>
+    <pg:init>
+        <c:if test="${empty hasVars}">
+            <pg:jsvars/>
+        </c:if>
+    </pg:init>
 </c:if>
 
 <h1>FOO</h1>

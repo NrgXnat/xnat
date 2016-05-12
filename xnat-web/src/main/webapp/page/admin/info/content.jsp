@@ -3,60 +3,67 @@
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
 <c:if test="${empty hasInit}">
-    <pg:init/>
+    <pg:init>
+        <c:if test="${empty hasVars}">
+            <pg:jsvars/>
+        </c:if>
+    </pg:init>
 </c:if>
 
-<c:choose>
-    <c:when test="${isAdmin == true}">
-        <h1>Some info</h1>
+<c:set var="pageName" value="info" scope="request"/>
 
-        <c:import url="/xapi/users.json" var="userList"/>
+<c:set var="_msg">
+    Nope.
+</c:set>
 
-        <h2>Users</h2>
-        <p id="user-list-raw">
-                ${userList}
-        </p>
-        <p id="user-list"></p>
-        <script>
-            +function(){
-                var userList = JSON.parse('${userList}');
-                var ul = spawn.element('ul#users');
-                $.each(userList, function(i, name){
-                    ul.appendChild(spawn.element('li', name))
-                });
-                $('#user-list').append(ul);
-            }()
-        </script>
+<pg:restricted msg="${_msg}">
 
-        <br>
+    <h1>Some info</h1>
 
-        <h2>Me</h2>
-        <ul>
-            <li><b>Logged in:</b> ${loggedIn} </li>
-            <li><b>Username:</b> ${username} </li>
-            <li><b>Is Admin?:</b> ${isAdmin} </li>
-            <li><b>CSRF token:</b> ${csrfToken} </li>
-            <li><b>Landing page:</b> ${landingPage} </li>
-        </ul>
+    <c:import url="/xapi/users.json" var="userList"/>
 
-        <br>
+    <h2>Users</h2>
+    <p id="user-list-raw">
+            ${userList}
+    </p>
+    <p id="user-list"></p>
+    <script>
+        +function(){
+            var userList = JSON.parse('${userList}');
+            var ul = spawn.element('ul#users');
+            $.each(userList, function(i, name){
+                ul.appendChild(spawn.element('li', name))
+            });
+            $('#user-list').append(ul);
+        }()
+    </script>
 
-        <div id="page-info">
-            <p>request: ${requestScope.javamelody.request}</p>
-            <p>sessionScope: <br>${sessionScope}</p>
-            <p>applicationScope: <br> ${applicationScope}</p>
-            <p>requestScope: <br> ${requestScope}</p>
-            <p>pageScope: <br> ${pageScope}</p>
-            <p>pageContext: <br> ${pageContext}</p>
-            <p>param: <br> ${param}</p>
-            <p>paramValues: <br> ${paramValues}</p>
-            <p>header: <br> ${header}</p>
-            <p>headerValues: <br> ${headerValues}</p>
-            <p>cookie: <br> ${cookie}</p>
-            <p>SPRING_SECURITY_LAST_USERNAME: <br> ${SPRING_SECURITY_LAST_USERNAME}</p>
-        </div>
-    </c:when>
-    <c:otherwise>
-        <p>(not authorized)</p>
-    </c:otherwise>
-</c:choose>
+    <br>
+
+    <h2>Me</h2>
+    <ul>
+        <li><b>Logged in:</b> ${loggedIn} </li>
+        <li><b>Username:</b> ${username} </li>
+        <li><b>Is Admin?:</b> ${isAdmin} </li>
+        <li><b>CSRF token:</b> ${csrfToken} </li>
+        <li><b>Landing page:</b> ${landingPage} </li>
+    </ul>
+
+    <br>
+
+    <div id="page-info">
+        <p>request: ${requestScope.javamelody.request}</p>
+        <p>sessionScope: <br>${sessionScope}</p>
+        <p>applicationScope: <br> ${applicationScope}</p>
+        <p>requestScope: <br> ${requestScope}</p>
+        <p>pageScope: <br> ${pageScope}</p>
+        <p>pageContext: <br> ${pageContext}</p>
+        <p>param: <br> ${param}</p>
+        <p>paramValues: <br> ${paramValues}</p>
+        <p>header: <br> ${header}</p>
+        <p>headerValues: <br> ${headerValues}</p>
+        <p>cookie: <br> ${cookie}</p>
+        <p>SPRING_SECURITY_LAST_USERNAME: <br> ${SPRING_SECURITY_LAST_USERNAME}</p>
+    </div>
+
+</pg:restricted>

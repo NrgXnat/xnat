@@ -641,7 +641,7 @@ $(function(){
         var $input = $(input);
         var format = XNAT.app.utils.getValueByClass($input,['iso','us','eu','euro']);
         var val = $input.val();
-        if (val === ('__/__/____' || '____-__-__' || '')){
+        if (val === '__/__/____' || val === '____-__-__' || val === ''){
             $input.val('');
             return false;
         }

@@ -61,19 +61,13 @@ public class XFT {
 //	private static Category STANDARD_LOG = Category.getInstance("org.nrg.xft");
 //	private static Category SQL_LOG = Category.getInstance("org.nrg.xft.db");
 
-    public static void init(String location) throws ElementNotFoundException
-    {
-        init(location);
-    }
     /**
      * This method must be run before any XFT task is performed.
      * Using the InstanceSettings.xml document, it initializes the
      * XFT's settings and loads the schema.
      * @param location (Directory which includes the InstanceSettings.xml document)
      */
-    public static void init(String location, boolean initLog4j) throws ElementNotFoundException
-    {
-
+    public static void init(String location) throws ElementNotFoundException {
         if (! location.endsWith(File.separator))
         {
             location = location + File.separator;
@@ -84,12 +78,6 @@ public class XFT {
         }
 
         CONF_DIR=location;
-
-        if (initLog4j)
-        {
-            initLog4j(location);
-        }
-
 
         XFTManager.clean();
         XFTMetaManager.clean();
@@ -158,59 +146,6 @@ public class XFT {
         if (XFT.VERBOSE)
          {
             System.out.print("");
-        }
-    }
-
-    public static void initLog4j(String location)
-    {
-        if (! location.endsWith(File.separator))
-        {
-            location = location + File.separator;
-        }
-
-        PropertyConfigurator.configure(location + "log4j.properties");
-
-        logger.info("");
-        Logger.getLogger("org.nrg.xft.db.PoolDBUtils").error("");
-
-
-        LoggerRepository lr = logger.getLoggerRepository();
-        Enumeration enum1 = lr.getCurrentLoggers();
-        while (enum1.hasMoreElements())
-        {
-            Logger l = (Logger)enum1.nextElement();
-            Enumeration e2 = l.getAllAppenders();
-            while (e2.hasMoreElements())
-            {
-                Appender a = (Appender)e2.nextElement();
-                if (a instanceof FileAppender)
-                {
-                    FileAppender fa = (FileAppender)a;
-                    String s = fa.getFile();
-                    if (s != null)
-                    {
-                        File f = new File(s);
-                        if (f.exists())
-                        {
-                            try {
-                                Runtime.getRuntime().exec("ls -l " + s + " > " + s + ".info1");
-                                Runtime.getRuntime().exec("chmod 777 " + s);
-                                Runtime.getRuntime().exec("ls -l " + s + " > " + s + ".info2");
-                            } catch (Exception e1) {
-                            }
-                        }else{
-                            try {
-                               // FileUtils.OutputToFile("",s);
-                                Runtime.getRuntime().exec("touch " + s);
-                                Runtime.getRuntime().exec("ls -l " + s + " > " + s + ".info1");
-                                Runtime.getRuntime().exec("chmod 777 " + s);
-                                Runtime.getRuntime().exec("ls -l " + s + " > " + s + ".info2");
-                            } catch (Exception e1) {
-                            }
-                        }
-                    }
-                }
-            }
         }
     }
 

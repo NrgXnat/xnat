@@ -16,7 +16,6 @@ import com.google.common.collect.Lists;
 import org.apache.commons.configuration.Configuration;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
-import org.apache.log4j.PropertyConfigurator;
 import org.apache.stratum.lifecycle.Configurable;
 import org.apache.stratum.lifecycle.Initializable;
 import org.apache.turbine.util.RunData;
@@ -257,7 +256,7 @@ public class XDAT implements Initializable,Configurable{
 
 	public static void init(String location) throws Exception
 	{
-		XDAT.init(location, true, true);
+		XDAT.init(location, true);
 	}
 
 	public static void RefreshDisplay()
@@ -267,11 +266,6 @@ public class XDAT implements Initializable,Configurable{
 	}
 
 	public static void init(String location,boolean allowDBAccess) throws Exception
-	{
-		init(location, allowDBAccess, true);
-	}
-
-	public static void init(String location,boolean allowDBAccess, boolean initLog4j) throws Exception
 	{
 		DisplayManager.clean();
         if (StringUtils.isBlank(_configFilesLocation)) {

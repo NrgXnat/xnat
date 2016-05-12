@@ -64,7 +64,7 @@ public class XDATServlet extends HttpServlet {
             XDATServlet.WEBAPP_ROOT = getWebAppPath();
 
             // Migration: Fix this to use NIO Paths.
-            XDAT.init(getWebAppPath("WEB-INF", "conf"), true, false);
+            XDAT.init(getWebAppPath("WEB-INF", "conf"), true);
 
             //store some  more convenience paths
             XDAT.setScreenTemplatesFolder(getWebAppPath("templates", "screens"));

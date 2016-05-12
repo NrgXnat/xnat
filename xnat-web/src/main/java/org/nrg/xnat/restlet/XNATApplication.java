@@ -350,9 +350,6 @@ public class XNATApplication extends Application {
                 "/automation/templates/{TEMPLATE_ID}",
                 "/projects/{PROJECT_ID}/automation/templates",
                 "/projects/{PROJECT_ID}/automation/templates/{TEMPLATE_ID}");
-        attachURI(router, "/services/settings", SettingsRestlet.class);
-        attachURI(router, "/services/settings/{PROPERTY}", SettingsRestlet.class);
-        attachURI(router, "/services/settings/{PROPERTY}/{VALUE}", SettingsRestlet.class);
 
         attachURI(router, "/status/{TRANSACTION_ID}", SQListenerRepresentation.class);
 
@@ -401,7 +398,7 @@ public class XNATApplication extends Application {
             if (clazz.isAnnotationPresent(XnatRestlet.class)) {
                 XnatRestlet annotation = clazz.getAnnotation(XnatRestlet.class);
                 final String[] urls = annotation.value();
-                if (urls == null || urls.length == 0) {
+                if (urls.length == 0) {
                     throw new RuntimeException("The restlet extension class " + clazz.getName() + " has no URLs configured.");
                 }
                 if (annotation.secure()) {
@@ -418,7 +415,7 @@ public class XNATApplication extends Application {
             }else if (clazz.isAnnotationPresent(XnatRestlet2.class)) {
                 XnatRestlet2 annotation = clazz.getAnnotation(XnatRestlet2.class);
                 final XnatRestletURI[] urls = annotation.value();
-                if (urls == null || urls.length == 0) {
+                if (urls.length == 0) {
                     throw new RuntimeException("The restlet extension class " + clazz.getName() + " has no URLs configured.");
                 }
                 if (annotation.secure()) {
@@ -445,7 +442,7 @@ public class XNATApplication extends Application {
     private void attachPath(Router router, Class<? extends Resource> clazz, XnatRestlet annotation) {
         String[] paths = annotation.value();
         boolean required = annotation.required();
-        if (paths == null || paths.length == 0) {
+        if (paths.length == 0) {
             String message = "You must specify a value for the XnatRestlet annotation to indicate the hosting path for the restlet extension in class: " + clazz.getName();
             if (required) {
                 throw new NrgServiceRuntimeException(message);
@@ -462,7 +459,7 @@ public class XNATApplication extends Application {
     private void attachPath(Router router, Class<? extends Resource> clazz, XnatRestlet2 annotation) {
         XnatRestletURI[] paths = annotation.value();
         boolean required = annotation.required();
-        if (paths == null || paths.length == 0) {
+        if (paths.length == 0) {
             String message = "You must specify a value for the XnatRestlet annotation to indicate the hosting path for the restlet extension in class: " + clazz.getName();
             if (required) {
                 throw new NrgServiceRuntimeException(message);
@@ -477,8 +474,6 @@ public class XNATApplication extends Application {
     }
 
     private void addPublicRoutes(final Router router, List<Class<? extends Resource>> publicRoutes) {
-        attachURI(router, "/version", VersionRepresentation.class);
-
         if (publicRoutes == null) {
             return;
         }

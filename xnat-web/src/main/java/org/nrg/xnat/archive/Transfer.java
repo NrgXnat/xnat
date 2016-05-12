@@ -20,6 +20,7 @@ import org.apache.velocity.Template;
 import org.apache.velocity.VelocityContext;
 import org.apache.velocity.app.Velocity;
 import org.nrg.pipeline.XnatPipelineLauncher;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFT;
@@ -101,7 +102,7 @@ public class Transfer {
 
             XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher((UserI)user);
            // Modified by MR - 2010/03/11 AdminEmail is set in pipeline setup setup
-            // xnatPipelineLauncher.setAdmin_email(AdminUtils.getAdminEmailId());
+            // xnatPipelineLauncher.setAdmin_email(XDAT.getSiteConfigPreferences().getAdminEmail());
            //Modified bt MR - 2010/03/11 There is a setting for Site Admin to set email notification for Transfer pipeline
            // xnatPipelineLauncher.setAlwaysEmailAdmin(ArcSpecManager.GetInstance().getEmailspecifications_pipeline());
             String pipelineName = "xnat_tools/Transfer.xml";
@@ -130,10 +131,10 @@ public class Transfer {
             xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
             xnatPipelineLauncher.setParameter("adminemail", admin_email);
             xnatPipelineLauncher.setParameter("xnatserver", system);
-            xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
+            xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
             xnatPipelineLauncher.setParameter("sessionType", mr.getXSIType());
             xnatPipelineLauncher.setParameter("xnat_project", mr.getProject());
-            xnatPipelineLauncher.setParameter("logDir", XFT.GetCachePath()+"logs" + "/" + "transfer" );
+            xnatPipelineLauncher.setParameter("logDir", XDAT.getSiteConfigPreferences().getCachePath() + "logs" + "/" + "transfer");
            // xnatPipelineLauncher.setParameter("notify","" +getNotifies());
  
             xnatPipelineLauncher.setWaitFor(waitForTransfer);            

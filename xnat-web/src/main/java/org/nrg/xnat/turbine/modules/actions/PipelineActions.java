@@ -25,6 +25,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.pipeline.PipelineManager;
 import org.nrg.pipeline.XnatPipelineLauncher;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.ArcPipelineparameterdataI;
 import org.nrg.xdat.om.WrkWorkflowdata;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
@@ -108,7 +109,7 @@ public class PipelineActions extends SecureAction{
     
     private XnatPipelineLauncher getGenericCommonParameters(RunData data, Context context, String projectId,  String step, ItemI item) throws Exception {
         XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(data,context);
-        xnatPipelineLauncher.setAdmin_email(AdminUtils.getAdminEmailId());
+        xnatPipelineLauncher.setAdmin_email(XDAT.getSiteConfigPreferences().getAdminEmail());
         xnatPipelineLauncher.setAlwaysEmailAdmin(ArcSpecManager.GetInstance().getEmailspecifications_pipeline());
         UserI user = TurbineUtils.getUser(data);
         xnatPipelineLauncher.setNeedsBuildDir(true);
@@ -185,7 +186,7 @@ public class PipelineActions extends SecureAction{
             }
         } catch (Exception e){
         	logger.error("",e);
-            data.setMessage("<p><img src=\"/fcon/images/error.gif\">The build process failed to launch. Please contact the <a href=\"mailto:" + AdminUtils.getAdminEmailId() + "?subject=Failed to launch build \">NRG techdesk</a>");
+            data.setMessage("<p><img src=\"/fcon/images/error.gif\">The build process failed to launch. Please contact the <a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=Failed to launch build \">NRG techdesk</a>");
             data.setScreenTemplate("Error.vm");
         }
     }
@@ -193,7 +194,7 @@ public class PipelineActions extends SecureAction{
     
     private XnatPipelineLauncher getCommonParameters(RunData data, Context context, String projectId, String pipelineName, String step) throws Exception {
         XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(data,context);
-        xnatPipelineLauncher.setAdmin_email(AdminUtils.getAdminEmailId());
+        xnatPipelineLauncher.setAdmin_email(XDAT.getSiteConfigPreferences().getAdminEmail());
         xnatPipelineLauncher.setAlwaysEmailAdmin(ArcSpecManager.GetInstance().getEmailspecifications_pipeline());
         xnatPipelineLauncher.setPipelineName(pipelineName);
         UserI user = TurbineUtils.getUser(data);
@@ -203,9 +204,9 @@ public class PipelineActions extends SecureAction{
         xnatPipelineLauncher.setDataType("xnat:mrSessionData");
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());
         xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
-        xnatPipelineLauncher.setParameter("adminemail", AdminUtils.getAdminEmailId());
+        xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
-        xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
 
         String emailsStr =  ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("emailField",data));
         if (emailsStr != null) {

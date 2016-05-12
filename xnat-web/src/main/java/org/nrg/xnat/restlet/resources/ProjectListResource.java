@@ -14,6 +14,7 @@ import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
 import org.apache.commons.lang3.StringUtils;
 import org.nrg.action.ActionException;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XdatStoredSearch;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.om.base.BaseXnatProjectdata;
@@ -25,7 +26,6 @@ import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xdat.security.helpers.Roles;
 import org.nrg.xdat.security.helpers.UserHelper;
 import org.nrg.xdat.security.services.UserHelperServiceI;
-import org.nrg.xft.XFT;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.XFTTable;
 import org.nrg.xft.db.ViewManager;
@@ -56,7 +56,6 @@ public class ProjectListResource extends QueryOrganizerResource {
     private static final String DATA_READABLE = "readable";
     private static final String DATA_WRITABLE = "writable";
     private static final List<String> PERMISSIONS = Arrays.asList(SecurityManager.ACTIVATE, SecurityManager.CREATE, SecurityManager.DELETE, SecurityManager.EDIT, SecurityManager.READ);
-    private XFTTable table = null;
 
     public ProjectListResource(Context context, Request request, Response response) {
         super(context, request, response);
@@ -111,7 +110,7 @@ public class ProjectListResource extends QueryOrganizerResource {
                 }
 
                 if (item.getCurrentDBVersion() == null) {
-                    if (XFT.getBooleanProperty("UI.allow-non-admin-project-creation", true) || Roles.isSiteAdmin(user)) {
+                    if (XDAT.getSiteConfigPreferences().getUiAllowNonAdminProjectCreation() || Roles.isSiteAdmin(user)) {
                         this.returnSuccessfulCreateFromList(BaseXnatProjectdata.createProject(project, user, allowDataDeletion, false, newEventInstance(EventUtils.CATEGORY.PROJECT_ADMIN), getQueryVariable("accessibility")));
                     } else {
                         this.getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User account doesn't have permission to edit this project.");

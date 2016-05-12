@@ -13,6 +13,7 @@ package org.nrg.xnat.restlet.resources;
 
 import org.nrg.pipeline.PipelineRepositoryManager;
 import org.nrg.xdat.om.ArcProject;
+import org.nrg.xdat.om.PipePipelinerepository;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.helpers.Permissions;
 import org.nrg.xft.XFTTable;
@@ -58,111 +59,87 @@ public class ProjectPipelineListResource extends SecureResource  {
 		if (proj != null) {
 			String pathToPipeline = null;
 			String datatype = null;
-				pathToPipeline = this.getQueryVariable("path");
-				datatype = this.getQueryVariable("datatype");
-				if (pathToPipeline != null && datatype != null) {
-					pathToPipeline = pathToPipeline.trim();
-					datatype=datatype.trim();
-					boolean isUserAuthorized = isUserAuthorized();
-					if (isUserAuthorized) {
-						try {
+			pathToPipeline = this.getQueryVariable("path");
+			datatype = this.getQueryVariable("datatype");
+			if (pathToPipeline != null && datatype != null) {
+				pathToPipeline = pathToPipeline.trim();
+				datatype = datatype.trim();
+
+				boolean isUserAuthorized = false;
+				try {
+					isUserAuthorized = Permissions.canDelete(user, proj);
+				} catch (Exception e) {
+					e.printStackTrace();
+					getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Encountered exception " + e.getMessage());
+					return;
+				}
+
+				if (isUserAuthorized) {
+					try {
 						ArcProject arcProject = ArcSpecManager.GetFreshInstance().getProjectArc(proj.getId());
 						boolean success = PipelineRepositoryManager.GetInstance().delete(arcProject, pathToPipeline, datatype, user);
 						if (!success) {
 							getLogger().log(getLogger().getLevel(), "Couldnt delete the pipeline " + pathToPipeline + " for the project " + proj.getId());
-							getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, " Couldnt succesfully save Project Specification" );
+							getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, " Couldn't successfully save Project Specification");
 							return;
-						}else {
+						} else {
 							ArcSpecManager.Reset();
-							getResponse().setEntity(getRepresentation(getVariants().get(0)));
-					        Representation selectedRepresentation = getResponse().getEntity();
-					        if (getRequest().getConditions().hasSome()) {
-					            final Status status = getRequest().getConditions()
-					                    .getStatus(getRequest().getMethod(),
-					                            selectedRepresentation);
-
-					            if (status != null) {
-					                getResponse().setStatus(status);
-					                getResponse().setEntity(null);
-					            }
-					        }
+							returnDefaultRepresentation();
 							//Send a 200 OK message back
 							//getResponse().setStatus(Status.SUCCESS_OK,"Pipeline has been removed from project " + _project.getId());
 						}
-						}catch(Exception e) {
-							e.printStackTrace();
-							getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Encountered exception " + e.getMessage());
-						}
-					}else {
-						getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User unauthroized to remove pipeline from project");
+					} catch (Exception e) {
+						e.printStackTrace();
+						getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Encountered exception " + e.getMessage());
 					}
+				} else {
+					getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN, "User unauthorized to remove pipeline from project");
 				}
-			}else {
+			} else {
 				getResponse().setStatus(Status.CLIENT_ERROR_EXPECTATION_FAILED, "Expecting path and datatype as query parameters");
 			}
-	}
-
-	
-	
-
-	private boolean isUserAuthorized() {
-		boolean isUserAuthorized = false;
-		try {
-			isUserAuthorized = Permissions.canDelete(user,proj);
-		}catch(Exception e) {
-			e.printStackTrace();
-			getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
 		}
-		return isUserAuthorized;
 	}
 	
 	@Override
 	public Representation getRepresentation(Variant variant) {
-		//Document xmldoc = null;
-		boolean isUserAuthorized = isUserAuthorized();
-		ArcProject arcProject = ArcSpecManager.GetFreshInstance().getProjectArc(proj.getId());
-		String comment = "existing";
+		boolean isUserAuthorized;
+		try {
+			isUserAuthorized = Permissions.canRead(user, proj);
+		} catch (Exception e) {
+			e.printStackTrace();
+			getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "Encountered exception " + e.getMessage());
+			return null;
+		}
 		if (isUserAuthorized) {
-			boolean additional=this.isQueryVariableTrue("additional");
-			
-				//Check to see if the Project already has an entry in the ArcSpec.
-				//If yes, then return that entry. If not then construct a new ArcProject element and insert an attribute to say that it's an already existing
-				//entry or not
-				try {
-					if (arcProject == null) { // No Project pipelines set in the archive specification
-						   if (additional) {
-							arcProject = PipelineRepositoryManager.GetInstance().createNewArcProject(proj);
-							comment = "new";
-						   }else {
-							   getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "No archive spec entry for project " + proj.getId());
-						   }
-						}else {
-							if (additional) { //Return all the pipelines that are applicable to the project but not selected
-								arcProject = PipelineRepositoryManager.GetInstance().getAdditionalPipelines(proj);
-								comment = "additional";
-							}else {
-								//XFTItem hack = arcProject.getCurrentDBVersion(true);
-								//arcProject.setItem(hack);
-							}
-						}
-						//xmldoc = arcProject.toXML();
-						//Comment commentNode = xmldoc.createComment(comment);
-						//xmldoc.appendChild(commentNode);
-					}catch(Exception e) {
-						e.printStackTrace();
-						getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
+			ArcProject arcProject = ArcSpecManager.GetFreshInstance().getProjectArc(proj.getId());
+			boolean additional = this.isQueryVariableTrue("additional");
+
+			//Check to see if the Project already has an entry in the ArcSpec.
+			//If yes, then return that entry. If not then construct a new ArcProject element and insert an attribute to say that it's an already existing
+			//entry or not
+			try {
+				if (additional) {
+					PipePipelinerepository repository = PipelineRepositoryManager.GetInstance();
+					arcProject = arcProject == null ? repository.createNewArcProject(proj) : repository.getAdditionalPipelines(proj);
+				} else {
+					getResponse().setStatus(Status.SERVER_ERROR_INTERNAL, "No archive spec entry for project " + proj.getId());
 				}
-				MediaType mt = overrideVariant(variant);
-				if (mt.equals(MediaType.TEXT_XML)) {
-					return representItem(arcProject.getItem(), mt, null,false, true);
-				}else if (mt.equals(MediaType.APPLICATION_JSON)) {
-					XFTTable table = PipelineRepositoryManager.GetInstance().toTable(arcProject);
-					
-					return representTable(table, mt,null);
-				}else {
-					return null;
-				}
-		}else {
+			} catch(Exception e) {
+				e.printStackTrace();
+				getResponse().setStatus(Status.SERVER_ERROR_INTERNAL);
+			}
+			MediaType mt = overrideVariant(variant);
+			if (mt.equals(MediaType.TEXT_XML)) {
+				return representItem(arcProject.getItem(), mt, null, false, true);
+			} else if (mt.equals(MediaType.APPLICATION_JSON)) {
+				XFTTable table = PipelineRepositoryManager.GetInstance().toTable(arcProject);
+
+				return representTable(table, mt,null);
+			} else {
+				return null;
+			}
+		} else {
 			getResponse().setStatus(Status.CLIENT_ERROR_FORBIDDEN);
 		}
 		return null;

@@ -94,13 +94,13 @@ public class XDATRegisterUser extends org.nrg.xdat.turbine.modules.actions.XDATR
             context.put("user", user);
             action.doPerform(data, context);
         } else if (!StringUtils.isEmpty(nextAction) && !nextAction.contains("XDATLoginUser") && !nextAction.equals(Turbine.getConfiguration().getString("action.login"))) {
-            if (XFT.GetUserRegistration() & !XDAT.verificationOn()) {
+            if (XDAT.getSiteConfigPreferences().getUserRegistration() & !XDAT.verificationOn()) {
                 data.setAction(nextAction);
                 VelocityAction action = (VelocityAction) ActionLoader.getInstance().getInstance(nextAction);
                 action.doPerform(data, context);
             }
         } else if (!StringUtils.isEmpty(nextPage) && !nextPage.equals(Turbine.getConfiguration().getString("template.home"))) {
-            if (XFT.GetUserRegistration() && !XDAT.verificationOn()) {
+            if (XDAT.getSiteConfigPreferences().getUserRegistration() && !XDAT.verificationOn()) {
                 data.setScreenTemplate(nextPage);
             }
         }

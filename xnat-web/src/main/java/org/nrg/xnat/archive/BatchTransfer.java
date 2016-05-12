@@ -409,8 +409,8 @@ public class BatchTransfer extends Thread{
             }
         }
         
-		String[] to = new String[] { AdminUtils.getAdminEmailId(), user.getEmail() };
-            String from = AdminUtils.getAdminEmailId();
+		String[] to = new String[] { XDAT.getSiteConfigPreferences().getAdminEmail(), user.getEmail() };
+            String from = XDAT.getSiteConfigPreferences().getAdminEmail();
             String subject = system + " update: Archiving Complete.";
             if (errors.size()>0)
                 subject += errors.size() + " errors";

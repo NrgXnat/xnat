@@ -12,7 +12,7 @@ package org.nrg.xnat.security;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
-import org.nrg.xft.XFT;
+import org.nrg.xdat.XDAT;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.web.authentication.AbstractAuthenticationTargetUrlRequestHandler;
 import org.springframework.security.web.authentication.logout.LogoutSuccessHandler;
@@ -39,7 +39,7 @@ public class XnatLogoutSuccessHandler extends AbstractAuthenticationTargetUrlReq
     }
 
     private String getRequiredLogoutSuccessUrl() {
-        final boolean requireLogin = XFT.GetRequireLogin();
+        final boolean requireLogin = XDAT.getSiteConfigPreferences().getRequireLogin();
         final String returnUrl = requireLogin ? _securedXnatLogoutSuccessUrl : _openXnatLogoutSuccessUrl;
 
         if (_log.isDebugEnabled()) {

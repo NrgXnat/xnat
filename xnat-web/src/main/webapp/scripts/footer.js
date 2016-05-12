@@ -534,9 +534,13 @@ $(function(){
 
     // add version to title attribute of XNAT logos
     if (typeof logged_in != 'undefined' && logged_in == true){
-        $.get(serverRoot+'/data/version',function(data){
-            XNAT_version = data.split(" ")[0];
-            $('#xnat_power').find('a').attr('title','XNAT version ' + XNAT_version).after('<small>version ' + XNAT_version + '</small>');
+        $.get(serverRoot+'/xapi/siteConfig/buildInfo',function(data){
+            XNAT_version = data.version + " build: " + data.buildNumber;
+            var isNonRelease = /.*(SNAPSHOT|BETA|RC).*/.test(data.version);
+            if (isNonRelease) {
+                XNAT_version += " (" + data.commit + ")";
+            }
+            $('#xnat_power').find('a').attr('title','XNAT version ' + XNAT_version).after('<small>version ' + XNAT_version + (isNonRelease ? "<br>" + data.buildDate : "") + '</small>');
             $('#header_logo').attr('title','XNAT version ' + XNAT_version);
             XNAT.app.version = XNAT_version ;
         });

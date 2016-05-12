@@ -477,8 +477,6 @@ public class XNATApplication extends Application {
     }
 
     private void addPublicRoutes(final Router router, List<Class<? extends Resource>> publicRoutes) {
-        attachURI(router, "/version", VersionRepresentation.class);
-
         if (publicRoutes == null) {
             return;
         }

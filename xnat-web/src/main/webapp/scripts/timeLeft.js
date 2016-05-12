@@ -180,7 +180,7 @@ if (typeof XNAT.app.timeout == 'undefined'){ XNAT.app.timeout={} }
     timeout.handleOk = function () {
         timeout.hideWarningDialog(timeout.warningDialog);
         timeout.touchCallback.startTime = new Date().getTime();
-        XNAT.xhr.get(XNAT.url.restUrl('/data/version'), timeout.touchCallback);
+        XNAT.xhr.get(XNAT.url.restUrl('/xapi/siteConfig/buildInfo'), timeout.touchCallback);
         $('applet').css('visibility', 'visible');
     };
 

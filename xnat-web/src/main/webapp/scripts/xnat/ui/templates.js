@@ -200,7 +200,7 @@ var XNAT = getObject(XNAT);
         // look up a namespaced object value if the value starts with '??'
         var doLookup = '??';
         if (opts.value && opts.value.toString().indexOf(doLookup) === 0) {
-            element.value = lookupObjectValue(opts.value.split(doLookup)[1]);
+            element.value = lookupValue(opts.value.split(doLookup)[1]);
         }
         
         if (opts.load) {

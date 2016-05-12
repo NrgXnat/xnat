@@ -76,12 +76,12 @@ var XNAT = getObject(XNAT);
         // lookup a value if it starts with '??'
         var doLookup = '??';
         if (config.value && config.value.toString().indexOf(doLookup) === 0) {
-            config.value = lookupObjectValue(config.value.split(doLookup)[1])
+            config.value = lookupValue(config.value.split(doLookup)[1])
         }
         // lookup a value from a namespaced object
         // if no value is given
         if (!config.value && config.data && config.data.lookup) {
-            config.value = lookupObjectValue(config.data.lookup)
+            config.value = lookupValue(config.data.lookup)
         }
         var spawned = spawn('input', config);
         return {
@@ -141,7 +141,7 @@ var XNAT = getObject(XNAT);
     $(window).load(function(){
         $(':input[data-lookup]').each(function(){
             var $input = $(this);
-            var val = lookupObjectValue($input.dataAttr('lookup'));
+            var val = lookupValue($input.dataAttr('lookup'));
             $input.changeVal(val);
         });
     });

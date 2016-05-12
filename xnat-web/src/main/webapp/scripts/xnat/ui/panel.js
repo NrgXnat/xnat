@@ -129,7 +129,7 @@ var XNAT = getObject(XNAT || {});
 
             _formPanel = spawn('form.xnat-form-panel.panel.panel-default', {
                 method: opts.method || 'POST',
-                action: XNAT.url.rootUrl(opts.action || '') || '#'
+                action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!'
             }, [
                 ['div.panel-heading', [
                     ['h3.panel-title', opts.title || opts.label]
@@ -355,7 +355,7 @@ var XNAT = getObject(XNAT || {});
             }
         }
     };
-    
+
     // creates a panel that submits all forms contained within
     panel.multiForm = function(opts){
 
@@ -371,7 +371,7 @@ var XNAT = getObject(XNAT || {});
                 classes: 'btn btn-sm btn-primary save pull-right',
                 html: 'Save All'
             }),
-            
+
             resetBtn  = spawn('button', {
                 type: 'button',
                 classes: 'btn btn-sm btn-default revert pull-right',
@@ -384,7 +384,7 @@ var XNAT = getObject(XNAT || {});
                     return false;
                 }
             }),
-            
+
             defaults = spawn('button', {
                 type: 'button',
                 classes: 'btn btn-sm btn-link defaults pull-left',
@@ -400,9 +400,9 @@ var XNAT = getObject(XNAT || {});
             ],
 
             multiForm = spawn('form', {
-                classes: 'xnat-form-panel multi-form panel panel-default', 
+                classes: 'xnat-form-panel multi-form panel panel-default',
                 method: opts.method || 'POST',
-                action: opts.action || '#',
+                action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
                 onsubmit: function(e){
                     e.preventDefault();
                     // submit all enclosed forms
@@ -417,11 +417,11 @@ var XNAT = getObject(XNAT || {});
                     ['h3.panel-title', opts.title || opts.label]
                 ]],
 
-                
+
                 // 'inner' is where the next spawned item will render
                 inner,
 
-                
+
                 (hideFooter ? ['div.hidden'] : ['div.panel-footer', opts.footer || footer])
 
             ]);
@@ -430,7 +430,7 @@ var XNAT = getObject(XNAT || {});
         if (opts.id || opts.element.id) {
             multiForm.id = opts.id || (opts.element.id + '-panel');
         }
-        
+
         return {
             target: inner,
             element: multiForm,
@@ -527,7 +527,7 @@ var XNAT = getObject(XNAT || {});
     panel.display = function(opts){
         return XNAT.ui.template.panelDisplay(opts).spawned;
     };
-    
+
     panel.input.text = function(opts){
         return XNAT.ui.template.panelInput(opts).spawned;
     };
@@ -567,7 +567,7 @@ var XNAT = getObject(XNAT || {});
         var form = ['form', {
             id: opts.id + '-form',
             method: opts.method || 'POST',
-            action: opts.action || '#',
+            action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
             className: addClassName(opts, 'file-upload')
         }, [
             ['input', {

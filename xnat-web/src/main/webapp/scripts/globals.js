@@ -270,7 +270,7 @@ function extendCopyDeep(){
 
 // return a cloned copy of a single 'obj'
 function cloneObject(obj){
-    return extend(true, {}, obj);
+    return extend(true, {}, obj || {});
 }
 
 // add child objects to 'obj' object from string

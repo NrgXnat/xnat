@@ -29,15 +29,38 @@ var XNAT = getObject(XNAT);
     input_ = XNAT.ui.input || {};
 
     function lookupValue(el, lookup){
+        var val = '';
         try {
-            el.value = eval(lookup)
+            val = eval(lookup.trim())
         }
         catch (e) {
-            el.value = '';
+            val = '';
             console.log(e);
         }
-        return el.value;
+        el.value = val;
+        return val;
     }
+
+    function lookupObjectValue(root, objStr){
+        var val = '';
+        if (!objStr) {
+            objStr = root;
+            root = window;
+        }
+        root = root || window;
+        objStr.toString().trim().split('.').forEach(function(part, i){
+            part = part.trim();
+            // start at the root object
+            if (i === 0) {
+                val = root[part] || {};
+            }
+            else {
+                val = val[part];
+            }
+        });
+        return val;
+    }
+
 
     // ========================================
     // MAIN FUNCTION
@@ -53,12 +76,12 @@ var XNAT = getObject(XNAT);
         // lookup a value if it starts with '??'
         var doLookup = '??';
         if (config.value && config.value.toString().indexOf(doLookup) === 0) {
-            lookupValue(config, config.value.split(doLookup)[1])
+            config.value = lookupObjectValue(config.value.split(doLookup)[1])
         }
         // lookup a value from a namespaced object
         // if no value is given
         if (!config.value && config.data && config.data.lookup) {
-            lookupValue(config, config.data.lookup)
+            config.value = lookupObjectValue(config.data.lookup)
         }
         var spawned = spawn('input', config);
         return {
@@ -118,7 +141,7 @@ var XNAT = getObject(XNAT);
     $(window).load(function(){
         $(':input[data-lookup]').each(function(){
             var $input = $(this);
-            var val = lookupValue(this, $input.dataAttr('lookup'));
+            var val = lookupObjectValue($input.dataAttr('lookup'));
             $input.changeVal(val);
         });
     });

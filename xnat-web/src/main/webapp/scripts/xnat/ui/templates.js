@@ -42,7 +42,7 @@ var XNAT = getObject(XNAT);
     function lookupValue(el, lookup){
         var val = '';
         try {
-            val = eval(lookup);
+            val = eval(lookup.trim());
         }
         catch (e) {
             val = '';
@@ -65,10 +65,10 @@ var XNAT = getObject(XNAT);
             root = window;
         }
         root = root || window;
-        objStr.toString().split('.').forEach(function(part, i){
+        objStr.toString().trim().split('.').forEach(function(part, i){
             // start at the root object
             if (i === 0) {
-                val = root[part];
+                val = root[part] || {};
             }
             else {
                 val = val[part];
@@ -82,7 +82,7 @@ var XNAT = getObject(XNAT);
     // subhead element to segment panels
     template.panelSubhead = function(opts){
         var _templ, _spawn, _html;
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         _templ = ['h4.panel-subhead', opts];
         _spawn = function(){
             return spawn.apply(null, _templ);
@@ -103,7 +103,7 @@ var XNAT = getObject(XNAT);
     // generic panel element
     template.panelElement = function(opts, content){
         var _templ, _spawn, _html;
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         addClassName(opts, 'panel-element');
         _templ = [
             'div|data-name='+(opts.name||''),
@@ -131,18 +131,26 @@ var XNAT = getObject(XNAT);
     // ========================================
     // display only element for form panels
     template.panelDisplay = function(opts, element){
-        opts = getObject(opts);
+        
+        opts = cloneObject(opts);
         opts.id = opts.id||toDashed(opts.name||'');
         opts.label = opts.label||opts.title||opts.name||'';
+        
+        // pass in an element or create a new 'div' element
+        element = 
+            element || spawn('div', {
+                id: opts.id,
+                className: opts.className||'',
+                title: opts.title||opts.name||opts.id,
+                html: opts.value||opts.html||opts.text||opts.body||''
+            });
+        
         return template.panelElement(opts, [
-            ['label.element-label|for='+opts.id, opts.label],
+            ['label.element-label|for='+element.id||opts.id, opts.label],
             ['div.element-wrapper', [
-                element || ['div', {
-                    id: opts.id,
-                    className: opts.className||'',
-                    title: opts.title||opts.name||opts.id,
-                    html: opts.value||opts.html||opts.text||opts.body||''
-                }],
+                
+                element ,
+                
                 ['div.description', opts.description]
             ]]
         ]);
@@ -153,7 +161,7 @@ var XNAT = getObject(XNAT);
     // ========================================
     // input element for form panels
     template.panelInput = function(opts, element){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.name = opts.name || opts.id || randomID('input-', false);
         opts.id = opts.id||toDashed(opts.name||'');
         opts.label = opts.label||opts.title||opts.name||'';
@@ -192,7 +200,7 @@ var XNAT = getObject(XNAT);
         // look up a namespaced object value if the value starts with '??'
         var doLookup = '??';
         if (opts.value && opts.value.toString().indexOf(doLookup) === 0) {
-            lookupValue(element, opts.value.split(doLookup)[1]);
+            element.value = lookupObjectValue(opts.value.split(doLookup)[1]);
         }
         
         if (opts.load) {
@@ -233,7 +241,7 @@ var XNAT = getObject(XNAT);
     // ========================================
     // select element for form panels
     template.panelSelect = function(opts){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         opts.name = opts.name || opts.id || randomID('select-', false);
         opts.id = opts.id || toDashed(opts.name||'');
         opts.element = extend({
@@ -265,7 +273,7 @@ var XNAT = getObject(XNAT);
 
 
     template.panelElementGroup = function(opts, elements){
-        opts = getObject(opts);
+        opts = cloneObject(opts);
         return template.panelElement(opts, [
             ['label.element-label|for='+opts.id, opts.label||opts.title||opts.name],
             ['div.element-wrapper', elements]

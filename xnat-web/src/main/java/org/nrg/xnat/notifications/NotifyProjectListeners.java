@@ -83,13 +83,13 @@ public class NotifyProjectListeners implements Callable<Boolean> {
 				Context context =new VelocityContext(_params);
 				
 				
-				String from = AdminUtils.getAdminEmailId();
+				String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 				context.put("user", _user);
 				context.put("expt", _expt);
 				context.put("username", _user.getUsername());
 				context.put("server", TurbineUtils.GetFullServerPath());
 				context.put("system", TurbineUtils.GetSystemName());
-				context.put("admin_email", AdminUtils.getAdminEmailId());
+				context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
 				context.put("params", _params);
 				if(_params.get("justification")!=null){
 					context.put("justification",_params.get("justification"));

@@ -18,11 +18,14 @@ def vGroovy = '2.4.6'
 def vJython = '2.7.0'
 
 group 'org.nrg.xnat'
-version vXnat
 
 buildscript {
     repositories {
         mavenLocal()
+        jcenter()
+        maven {
+            url "https://plugins.gradle.org/m2/"
+        }
         maven {
             url 'https://nrgxnat.artifactoryonline.com/nrgxnat/libs-release'
             name 'XNAT Release Repository'
@@ -31,11 +34,11 @@ buildscript {
             url 'https://nrgxnat.artifactoryonline.com/nrgxnat/libs-snapshot'
             name 'XNAT Snapshot Repository'
         }
-        jcenter()
     }
     dependencies {
         classpath "com.bmuschko:gradle-cargo-plugin:2.2.2"
         classpath "com.bmuschko:gradle-tomcat-plugin:2.2.4"
+        classpath "gradle.plugin.com.zoltu.gradle.plugin:git-versioning:2.0.19"
     }
 }
 
@@ -46,6 +49,7 @@ apply plugin: 'maven'
 apply plugin: 'maven-publish'
 apply plugin: 'com.bmuschko.tomcat'
 apply plugin: 'com.bmuschko.cargo'
+apply plugin: "com.zoltu.git-versioning"
 apply plugin: 'idea'
 apply plugin: 'eclipse'
 
@@ -132,6 +136,26 @@ if (JavaVersion.current().isJava8Compatible()) {
         tasks.withType(Javadoc) {
             options.addStringOption('Xdoclint:none', '-quiet')
         }
+    }
+}
+
+// Pulls in the Jenkins BUILD_NUMBER environment variable if available.
+def buildNumber = hasProperty("BUILD_NUMBER") ? getProperty("BUILD_NUMBER") : "Manual"
+def buildDate = new Date()
+
+jar {
+    manifest {
+        attributes 'Build-Number': buildNumber,
+                'Build-Date': buildDate,
+                'Application-Name': 'XNAT'
+    }
+}
+
+war {
+    manifest {
+        attributes 'Build-Number': buildNumber,
+                'Build-Date': buildDate,
+                'Application-Name': 'XNAT'
     }
 }
 

@@ -17,7 +17,6 @@ import org.nrg.xdat.security.Authenticator;
 import org.nrg.xdat.security.helpers.Users;
 import org.nrg.xdat.services.AliasTokenService;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
-import org.nrg.xft.XFT;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.representations.RESTLoginRepresentation;
 import org.nrg.xnat.restlet.util.BrowserDetector;
@@ -114,7 +113,7 @@ public class XnatSecureGuard extends Filter {
 					return true;
 				}
 			}
-			else if (!XFT.GetRequireLogin()) {
+			else if (!XDAT.getSiteConfigPreferences().getRequireLogin()) {
 				try {
 					HttpSession session = httpRequest.getSession();
 					session.removeAttribute("loggedin");

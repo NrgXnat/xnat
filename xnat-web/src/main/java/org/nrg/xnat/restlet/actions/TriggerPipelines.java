@@ -10,16 +10,16 @@
  */
 package org.nrg.xnat.restlet.actions;
 
-import java.util.concurrent.Callable;
-
 import org.apache.log4j.Logger;
 import org.nrg.pipeline.XnatPipelineLauncher;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.restlet.util.XNATRestConstants;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+
+import java.util.concurrent.Callable;
 
 /**
  * @author Timothy R. Olsen <olsent@wustl.edu>
@@ -27,7 +27,6 @@ import org.nrg.xnat.turbine.utils.ArcSpecManager;
  */
 
 public class TriggerPipelines implements Callable<Boolean> {
-	static Logger logger = Logger.getLogger(TriggerPipelines.class);
 	private static final String XNAT_TOOLS_AUTO_RUN_XML = "xnat_tools/AutoRun.xml";
 
 	private final XnatExperimentdata expt;
@@ -48,7 +47,7 @@ public class TriggerPipelines implements Callable<Boolean> {
 
 	public Boolean call() {
 		XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(user);
-        xnatPipelineLauncher.setAdmin_email(AdminUtils.getAdminEmailId());
+        xnatPipelineLauncher.setAdmin_email(XDAT.getSiteConfigPreferences().getAdminEmail());
         xnatPipelineLauncher.setAlwaysEmailAdmin(ArcSpecManager.GetInstance().getEmailspecifications_pipeline());
         String pipelineName = XNAT_TOOLS_AUTO_RUN_XML;
         xnatPipelineLauncher.setPipelineName(pipelineName);
@@ -59,14 +58,14 @@ public class TriggerPipelines implements Callable<Boolean> {
         xnatPipelineLauncher.setDataType(expt.getXSIType());
         xnatPipelineLauncher.setExternalId(expt.getProject());
         xnatPipelineLauncher.setWaitFor(this.waitFor);
-        xnatPipelineLauncher.setParameter(XNATRestConstants.SUPRESS_EMAIL, (new Boolean(supressEmail)).toString());
+        xnatPipelineLauncher.setParameter(XNATRestConstants.SUPRESS_EMAIL, (Boolean.valueOf(supressEmail)).toString());
         xnatPipelineLauncher.setParameter("session", expt.getId());
         xnatPipelineLauncher.setParameter("sessionLabel", expt.getLabel());
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());
         xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
-        xnatPipelineLauncher.setParameter("adminemail", AdminUtils.getAdminEmailId());
+        xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
-        xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
         xnatPipelineLauncher.setParameter("sessionType", expt.getXSIType());
         xnatPipelineLauncher.setParameter("xnat_project", expt.getProject());
 

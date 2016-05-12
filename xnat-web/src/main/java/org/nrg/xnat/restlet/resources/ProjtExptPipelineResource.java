@@ -11,14 +11,6 @@
 
 package org.nrg.xnat.restlet.resources;
 
-import java.io.File;
-import java.text.SimpleDateFormat;
-import java.util.ArrayList;
-import java.util.Date;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-
 import org.apache.commons.lang3.StringUtils;
 import org.apache.xmlbeans.XmlOptions;
 import org.nrg.pipeline.XnatPipelineLauncher;
@@ -27,15 +19,11 @@ import org.nrg.pipeline.xmlbeans.ParameterData;
 import org.nrg.pipeline.xmlbeans.ParameterData.Values;
 import org.nrg.pipeline.xmlbeans.ParametersDocument;
 import org.nrg.pipeline.xmlbeans.ParametersDocument.Parameters;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.model.ArcPipelinedataI;
 import org.nrg.xdat.model.ArcPipelineparameterdataI;
-import org.nrg.xdat.om.ArcPipelinedata;
-import org.nrg.xdat.om.ArcProject;
-import org.nrg.xdat.om.XnatExperimentdata;
-import org.nrg.xdat.om.XnatImagesessiondata;
-import org.nrg.xdat.om.XnatProjectdata;
+import org.nrg.xdat.om.*;
 import org.nrg.xdat.security.helpers.Permissions;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.XFTItem;
 import org.nrg.xft.event.EventMetaI;
@@ -57,6 +45,10 @@ import org.restlet.data.Status;
 import org.restlet.resource.Representation;
 import org.restlet.resource.Variant;
 import org.xml.sax.SAXException;
+
+import java.io.File;
+import java.text.SimpleDateFormat;
+import java.util.*;
 
 public class ProjtExptPipelineResource extends SecureResource {
 	XnatProjectdata proj=null;
@@ -282,9 +274,9 @@ public class ProjtExptPipelineResource extends SecureResource {
         hasParams.add("useremail");
         xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
         hasParams.add("userfullname");
-        xnatPipelineLauncher.setParameter("adminemail", AdminUtils.getAdminEmailId());
+        xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
         hasParams.add("adminemail");
-        xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
+        xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
         hasParams.add("mailhost");
         xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
         hasParams.add("xnatserver");
@@ -396,8 +388,8 @@ public class ProjtExptPipelineResource extends SecureResource {
 		xnatPipelineLauncher.setSupressNotification(true);
         xnatPipelineLauncher.setParameter("useremail", user.getEmail());
 	    xnatPipelineLauncher.setParameter("userfullname", XnatPipelineLauncher.getUserName(user));
-	    xnatPipelineLauncher.setParameter("adminemail", AdminUtils.getAdminEmailId());
-	    xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
+	    xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
+	    xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
 	    xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
 
 

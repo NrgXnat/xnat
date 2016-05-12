@@ -111,8 +111,6 @@
                 <value>/app/template/VerificationSent.vm*</value>
                 <value>/app/template/VerifyEmail.vm*</value>
                 <value>/favicon.ico</value>
-                <value>/data/version</value>
-                <value>/REST/version</value>
                 <value>/data/JSESSION</value>
                 <value>/REST/JSESSION</value>
                 <value>/data/services/auth*</value>

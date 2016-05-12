@@ -14,7 +14,6 @@ import org.apache.commons.lang3.StringUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.nrg.xdat.XDAT;
-import org.nrg.xft.XFT;
 import org.nrg.xnat.restlet.XnatRestlet;
 import org.nrg.xnat.security.XnatProviderManager;
 import org.restlet.Context;
@@ -76,7 +75,7 @@ public class AuthenticationRestlet extends Resource {
             _log.debug("Passing a representation of the verify extensions restlet.");
         }
 
-        if (XFT.GetRequireLogin() && (StringUtils.isBlank(_username) || StringUtils.isBlank(_password))) {
+        if (XDAT.getSiteConfigPreferences().getRequireLogin() && (StringUtils.isBlank(_username) || StringUtils.isBlank(_password))) {
             fail();
             return;
         }

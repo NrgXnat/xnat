@@ -11,24 +11,22 @@
 
 package org.nrg.viewer;
 
-import java.io.File;
-
-import org.apache.log4j.Logger;
 import org.nrg.pipeline.XnatPipelineLauncher;
 import org.nrg.plexiViewer.lite.xml.PlexiViewerSpecForSession;
 import org.nrg.plexiViewer.manager.PlexiSpecDocReader;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatMrsessiondata;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
+
+import java.io.File;
 
 public class QCImageCreator {
 
     XnatMrsessiondata mrSession;
     UserI user;
-    static Logger logger = Logger.getLogger(QCImageCreator.class);
-    
+
     public QCImageCreator(XnatMrsessiondata mrSession, UserI user) {
         this.mrSession = mrSession;
         this.user = user;
@@ -38,7 +36,7 @@ public class QCImageCreator {
     public boolean createQCImagesForScans() throws Exception {
 
         XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(user);
-        xnatPipelineLauncher.setAdmin_email(AdminUtils.getAdminEmailId());
+        xnatPipelineLauncher.setAdmin_email(XDAT.getSiteConfigPreferences().getAdminEmail());
         xnatPipelineLauncher.setAlwaysEmailAdmin(ArcSpecManager.GetInstance().getEmailspecifications_pipeline());
         xnatPipelineLauncher.setWaitFor(true);
         String pipelineName = "images/WebBasedQCImageCreator.xml";
@@ -53,9 +51,9 @@ public class QCImageCreator {
         xnatPipelineLauncher.setParameter("session", mrSession.getId() );
         xnatPipelineLauncher.setParameter("notify", "0" );
 	    xnatPipelineLauncher.setParameter("xnatserver", TurbineUtils.GetSystemName());
-	    xnatPipelineLauncher.setParameter("mailhost", AdminUtils.getMailServer());
+	    xnatPipelineLauncher.setParameter("mailhost", XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
 	    xnatPipelineLauncher.setParameter("useremail", user.getEmail());
-	    xnatPipelineLauncher.setParameter("adminemail", AdminUtils.getAdminEmailId());
+	    xnatPipelineLauncher.setParameter("adminemail", XDAT.getSiteConfigPreferences().getAdminEmail());
 
 
         return xnatPipelineLauncher.launch(null);
@@ -68,8 +66,7 @@ public class QCImageCreator {
 
     public static String GetPathToQCFile(XnatMrsessiondata mrSession, String mrScanId) {
         PlexiViewerSpecForSession viewerSpec = PlexiSpecDocReader.GetInstance().getSpecDoc(mrSession.getSessionType());
-        String rtn =  viewerSpec.getThumbnailArchiveLocation() + File.separator + mrSession.getId() +"_" + mrScanId + "_qc.gif";
-        return rtn;
+        return viewerSpec.getThumbnailArchiveLocation() + File.separator + mrSession.getId() + "_" + mrScanId + "_qc.gif";
     }
     
     
@@ -79,18 +76,17 @@ public class QCImageCreator {
     
     
     public static String getQCThumbnailPathForSession(String project) {
-    	String path = null;
+    	String path;
     	if (project!=null){
             path= ArcSpecManager.GetInstance().getCachePathForProject(project);
          }else{
             path= ArcSpecManager.GetInstance().getGlobalCachePath();
          }
-    	 String thumb_path = path +"Thumbnail/";
-    	return thumb_path;
+        return path + "Thumbnail/";
     }
     
     public static String getQCCachePathForSession(String project) {
-    	String path = null;
+    	String path;
     	if (project!=null){
             path= ArcSpecManager.GetInstance().getCachePathForProject(project);
          }else{

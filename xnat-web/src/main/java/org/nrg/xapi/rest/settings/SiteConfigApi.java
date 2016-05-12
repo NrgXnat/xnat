@@ -21,11 +21,40 @@ import org.springframework.web.bind.annotation.RequestMethod;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
+import java.util.jar.Attributes;
+import java.util.jar.Manifest;
 
 @Api(description = "Site Configuration Management API")
 @XapiRestController
 @RequestMapping(value = "/siteConfig")
 public class SiteConfigApi extends AbstractXnatRestApi {
+    @ApiOperation(value = "Returns a map of application build properties.", notes = "This includes the implementation version, Git commit hash, and build number and number.", response = Properties.class)
+    @ApiResponses({@ApiResponse(code = 200, message = "Application build properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 500, message = "Unexpected error")})
+    @RequestMapping(value = "buildInfo", produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
+    public ResponseEntity<Properties> getBuildInfo() {
+        if (_log.isDebugEnabled()) {
+            _log.debug("User " + getSessionUser().getUsername() + " requested the application build information.");
+        }
+
+        if (_properties.size() == 0) {
+            final Attributes attributes  = _manifest.getMainAttributes();
+            _properties.setProperty("buildNumber",  attributes.getValue("Build-Number"));
+            _properties.setProperty("buildDate", attributes.getValue("Build-Date"));
+            _properties.setProperty("version", attributes.getValue("Implementation-Version"));
+            _properties.setProperty("commit", attributes.getValue("Implementation-Sha"));
+            if (_log.isDebugEnabled()) {
+                _log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}",
+                           _properties.getProperty("version"),
+                           _properties.getProperty("buildNumber"),
+                           _properties.getProperty("buildDate"),
+                           _properties.getProperty("commit"));
+            }
+        }
+
+        return new ResponseEntity<>(_properties, HttpStatus.OK);
+    }
+
     @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = SiteConfigPreferences.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
@@ -134,4 +163,10 @@ public class SiteConfigApi extends AbstractXnatRestApi {
     @Autowired
     @Lazy
     private SiteConfigPreferences _preferences;
+
+    @Autowired
+    @Lazy
+    private Manifest _manifest;
+
+    private Properties _properties = new Properties();
 }

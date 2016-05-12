@@ -24,9 +24,13 @@ import org.springframework.http.converter.json.MappingJackson2HttpMessageConvert
 import org.springframework.http.converter.xml.MarshallingHttpMessageConverter;
 import org.springframework.oxm.jaxb.Jaxb2Marshaller;
 
+import javax.servlet.ServletContext;
 import javax.xml.bind.Marshaller;
+import java.io.IOException;
+import java.io.InputStream;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.jar.Manifest;
 
 /**
  * Configuration for the XNAT root application context. This contains all of the basic infrastructure for initializing
@@ -40,6 +44,13 @@ import java.util.Map;
 @Import({PropertiesConfig.class, DatabaseConfig.class})
 @ImportResource("WEB-INF/conf/xnat-security.xml")
 public class RootConfig {
+    @Bean
+    public Manifest applicationManifest(final ServletContext context) throws IOException {
+        try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
+            return new Manifest(input);
+        }
+    }
+
     @Bean
     public InitializerSiteConfiguration initializerSiteConfiguration() {
         return new InitializerSiteConfiguration();

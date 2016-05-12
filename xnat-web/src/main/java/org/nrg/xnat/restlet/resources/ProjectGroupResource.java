@@ -8,6 +8,7 @@ import java.util.Map;
 import org.apache.commons.lang3.math.NumberUtils;
 import org.apache.commons.lang3.StringUtils;
 import org.apache.log4j.Logger;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatProjectdata;
 import org.nrg.xdat.security.ElementSecurity;
 import org.nrg.xdat.security.PermissionCriteria;
@@ -261,7 +262,7 @@ public class ProjectGroupResource extends SecureResource {
 
 					if(props.containsKey("src")){
 						this.getResponse().setStatus(Status.REDIRECTION_SEE_OTHER);
-						this.getResponse().redirectSeeOther(XFT.GetSiteURL()+"/data/projects/"+group.getTag() + "?format=html");
+						this.getResponse().redirectSeeOther(XDAT.getSiteConfigPreferences().getSiteUrl() + "/data/projects/" + group.getTag() + "?format=html");
 					}else{
 						returnDefaultRepresentation();
 					}
@@ -279,7 +280,7 @@ public class ProjectGroupResource extends SecureResource {
 	
 
 	@Override
-	public Representation getRepresentation(Variant variant) {	
+	public Representation represent(Variant variant) {
 		XFTTable table=null;
 		if(proj!=null){
 			if(group==null){

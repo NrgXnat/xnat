@@ -75,21 +75,21 @@ public class NotifyProjectPipelineListeners extends NotifyProjectListeners {
                     email.add(e);
                 }
             }
-            if(!email.contains(AdminUtils.getAdminEmailId())){
-                email.add(AdminUtils.getAdminEmailId());
+            if(!email.contains(XDAT.getSiteConfigPreferences().getAdminEmail())){
+                email.add(XDAT.getSiteConfigPreferences().getAdminEmail());
             }
 
             if(email.size()>0){
                 Context context =new VelocityContext(Maps.newHashMap());
 
 
-                String from = AdminUtils.getAdminEmailId();
+                String from = XDAT.getSiteConfigPreferences().getAdminEmail();
                 context.put("user", _user);
                 context.put("expt", _expt);
                 context.put("username", _user.getUsername());
                 context.put("server", TurbineUtils.GetFullServerPath());
                 context.put("system", TurbineUtils.GetSystemName());
-                context.put("admin_email", AdminUtils.getAdminEmailId());
+                context.put("admin_email", XDAT.getSiteConfigPreferences().getAdminEmail());
                 context.put("workflow",_workflow);
                 context.put("params", _params);
                 for(Map.Entry<String,Object> entry : _params.entrySet()) {

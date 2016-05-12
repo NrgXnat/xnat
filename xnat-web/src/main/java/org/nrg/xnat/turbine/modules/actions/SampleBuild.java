@@ -15,9 +15,9 @@ import org.apache.log4j.Logger;
 import org.apache.turbine.util.RunData;
 import org.apache.velocity.context.Context;
 import org.nrg.pipeline.XnatPipelineLauncher;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.XnatMrsessiondata;
 import org.nrg.xdat.turbine.modules.actions.SecureAction;
-import org.nrg.xdat.turbine.utils.AdminUtils;
 import org.nrg.xdat.turbine.utils.TurbineUtils;
 import org.nrg.xft.ItemI;
 import org.nrg.xnat.turbine.utils.ArcSpecManager;
@@ -37,17 +37,18 @@ public class SampleBuild extends SecureAction
                 }
                 String xnat = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("xnat",data));
                 XnatPipelineLauncher pipelineLauncher = new XnatPipelineLauncher(data,context);
-                pipelineLauncher.setAdmin_email(AdminUtils.getAdminEmailId());
+                pipelineLauncher.setAdmin_email(XDAT.getSiteConfigPreferences().getAdminEmail());
                 pipelineLauncher.setAlwaysEmailAdmin(ArcSpecManager.GetInstance().getEmailspecifications_pipeline());
                 pipelineLauncher.setId(mr.getId());
                 pipelineLauncher.setDataType("xnat:mrSessionData");
                 pipelineLauncher.setPipelineName(pipelineName);
                 pipelineLauncher.setParameter("sessionId",mr.getId());
                 pipelineLauncher.setParameter("xnat",xnat);
-                String emailsStr = TurbineUtils.getUser(data).getEmail() + "," + ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("emailField",data));
+                String emailsStr = XDAT.getUserDetails().getEmail() + "," + TurbineUtils.GetPassedParameter("emailField", data);
                 String[] emails = emailsStr.trim().split(",");
-                for (int i = 0 ; i < emails.length; i++)
-                     pipelineLauncher.notify(emails[i]);
+                for (final String email : emails) {
+                    pipelineLauncher.notify(email);
+                }
                 boolean success = pipelineLauncher.launch();
                 if (success) {
                     data.setMessage("Build was launched successfully");

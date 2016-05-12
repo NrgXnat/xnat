@@ -55,7 +55,7 @@ public class GrantProjectAccess {
             context.put("process","Transfer to the archive.");
             context.put("system",TurbineUtils.GetSystemName());
             context.put("access_level",level);
-            context.put("admin_email",AdminUtils.getAdminEmailId());
+            context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());
             context.put("projectOM",project);
             //SEND email to user
 	    ProjectAccessRequest.InviteUser(context, email, user, user.getFirstname() + " " + user.getLastname()

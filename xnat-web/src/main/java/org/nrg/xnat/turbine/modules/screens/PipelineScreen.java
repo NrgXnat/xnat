@@ -16,6 +16,7 @@ import org.apache.turbine.util.RunData;
 import org.apache.velocity.app.FieldMethodizer;
 import org.apache.velocity.context.Context;
 import org.nrg.pipeline.PipelineManager;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.base.BaseElement;
 import org.nrg.xdat.model.ArcProjectPipelineI;
 import org.nrg.xdat.model.WrkAbstractexecutionenvironmentI;
@@ -252,7 +253,7 @@ public abstract class PipelineScreen extends SecureReport {
             }
         }        
         if (rtn == null) {
-            message = "Pipeline with step id " + pipeline_step + " is not defined. Please contact your site administrator <a href=\"mailto:" +XFT.GetAdminEmail() +"?subject=Invalid Pipeline Step " + pipeline_step + " for " + item.getXSIType() + "\">Report problem</A>";
+            message = "Pipeline with step id " + pipeline_step + " is not defined. Please contact your site administrator <a href=\"mailto:" + XDAT.getSiteConfigPreferences().getAdminEmail() + "?subject=Invalid Pipeline Step " + pipeline_step + " for " + item.getXSIType() + "\">Report problem</A>";
         }
         return rtn;
     }

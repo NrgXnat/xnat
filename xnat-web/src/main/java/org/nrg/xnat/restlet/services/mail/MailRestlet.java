@@ -78,7 +78,7 @@ public class MailRestlet extends SecureResource {
             MailMessage message = new MailMessage();
 
             // When receiving email send requests through the REST service, the from address is always the admin, with the mail sent on behalf of the validating user.
-            message.setFrom(AdminUtils.getAdminEmailId());
+            message.setFrom(XDAT.getSiteConfigPreferences().getAdminEmail());
             message.setOnBehalfOf(user.getEmail());
 
             // Handle all the addresses.

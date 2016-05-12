@@ -89,18 +89,18 @@ public class ProcessAccessRequest extends SecureAction {
 		    context.put("user",user);
 		    context.put("server",TurbineUtils.GetFullServerPath());
 		    context.put("system",TurbineUtils.GetSystemName());
-		    context.put("admin_email",AdminUtils.getAdminEmailId());
+		    context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());
 		    context.put("projectOM",project);
 		    StringWriter sw = new StringWriter();
 		    Template template =Velocity.getTemplate("/screens/RequestProjectAccessDenialEmail.vm");
 		    template.merge(context,sw);
 		    String message= sw.toString();
 
-		    String from = AdminUtils.getAdminEmailId();
+		    String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 		    String subject = TurbineUtils.GetSystemName() + " Access Request for " + project.getName() + " Denied";
 
 		    try {
-            	XDAT.getMailService().sendHtmlMessage(from, other.getEmail(), user.getEmail(), AdminUtils.getAdminEmailId(), subject, message);
+            	XDAT.getMailService().sendHtmlMessage(from, other.getEmail(), user.getEmail(), XDAT.getSiteConfigPreferences().getAdminEmail(), subject, message);
 		    } catch (Exception e) {
 		        logger.error("Unable to send mail",e);
 		        throw e;
@@ -174,11 +174,11 @@ public class ProcessAccessRequest extends SecureAction {
             context.put("process","Transfer to the archive.");
             context.put("system",TurbineUtils.GetSystemName());
             context.put("access_level",access_level);
-            context.put("admin_email",AdminUtils.getAdminEmailId());
+            context.put("admin_email",XDAT.getSiteConfigPreferences().getAdminEmail());
             context.put("projectOM",project);
             final ArrayList<String> ownerEmails = project.getOwnerEmails();
             String[] projectOwnerEmails = ownerEmails.toArray(new String[ownerEmails.size()]);
-            SendAccessApprovalEmail(context,AdminUtils.getAdminEmailId(),new String[]{other.getEmail()},projectOwnerEmails,new String[]{AdminUtils.getAdminEmailId()},TurbineUtils.GetSystemName() + " Access Request for " + project.getName() + " Approved");
+            SendAccessApprovalEmail(context,XDAT.getSiteConfigPreferences().getAdminEmail(),new String[]{other.getEmail()},projectOwnerEmails,new String[]{XDAT.getSiteConfigPreferences().getAdminEmail()},TurbineUtils.GetSystemName() + " Access Request for " + project.getName() + " Approved");
         }      
         //data.setScreenTemplate("XDATScreen_manage_xnat_projectData.vm");
         //data.setScreenTemplate("/xnat_projectData/xnat_projectData_summary_management.vm");
@@ -188,7 +188,7 @@ public class ProcessAccessRequest extends SecureAction {
     }
     
     public static void SendAccessApprovalEmail(Context context, String otherEmail, UserI user, String subject) throws Exception {
-	String admin = AdminUtils.getAdminEmailId();
+	String admin = XDAT.getSiteConfigPreferences().getAdminEmail();
         SendAccessApprovalEmail(context, admin, new String[]{otherEmail}, new String[]{user.getEmail()}, new String[]{admin}, subject);
     }
 

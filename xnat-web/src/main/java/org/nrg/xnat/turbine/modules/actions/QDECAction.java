@@ -32,6 +32,7 @@ import org.nrg.pipeline.xmlbeans.ParameterData;
 import org.nrg.pipeline.xmlbeans.ParameterData.Values;
 import org.nrg.pipeline.xmlbeans.ParametersDocument;
 import org.nrg.pipeline.xmlbeans.ParametersDocument.Parameters;
+import org.nrg.xdat.XDAT;
 import org.nrg.xdat.search.DisplaySearch;
 import org.nrg.xdat.turbine.modules.actions.ListingAction;
 import org.nrg.xdat.turbine.utils.AdminUtils;
@@ -106,7 +107,7 @@ public class QDECAction extends ListingAction{
         //Launch the job
 		String pipelineName = ((String)org.nrg.xdat.turbine.utils.TurbineUtils.GetPassedParameter("hdn_pipelinename",data));
         XnatPipelineLauncher xnatPipelineLauncher = new XnatPipelineLauncher(data,context);
-        xnatPipelineLauncher.setAdmin_email(AdminUtils.getAdminEmailId());
+        xnatPipelineLauncher.setAdmin_email(XDAT.getSiteConfigPreferences().getAdminEmail());
         xnatPipelineLauncher.setAlwaysEmailAdmin(ArcSpecManager.GetInstance().getEmailspecifications_pipeline());
         xnatPipelineLauncher.setPipelineName(pipelineName);
         xnatPipelineLauncher.setId(id);
@@ -122,13 +123,13 @@ public class QDECAction extends ListingAction{
             data.setMessage( "<p><b>Your QDEC analysis was successfully launched.  Status email will be sent to you upon its completion.</b></p>");
             data.setScreenTemplate("ClosePage.vm");
         }catch(Exception e) {
-            data.setMessage("<p><b>The QDEC Analysis process could not be launched.  Please contact <A HREF=\"mailto:"+AdminUtils.getAdminEmailId()+"?subject=Error: Performing QDEC Group Analysis" + "\">Report Error to" +TurbineUtils.GetSystemName() + "  Techdesk</A></b></p>");
+            data.setMessage("<p><b>The QDEC Analysis process could not be launched.  Please contact <A HREF=\"mailto:"+XDAT.getSiteConfigPreferences().getAdminEmail()+"?subject=Error: Performing QDEC Group Analysis" + "\">Report Error to" +TurbineUtils.GetSystemName() + "  Techdesk</A></b></p>");
             data.setScreenTemplate("Error.vm");
         }   
 	}
 	
 	private ArrayList<String> removeSpaces(ArrayList<String> inList) {
-		ArrayList<String> rtn = new ArrayList<String>();
+		ArrayList<String> rtn = new ArrayList<>();
 		for (String aStr: inList) {
 			rtn.add(StringUtils.deleteWhitespace(aStr));
 		}
@@ -200,7 +201,7 @@ public class QDECAction extends ListingAction{
 
         param = parameters.addNewParameter();
         param.setName("adminemail");
-        param.addNewValues().setUnique(AdminUtils.getAdminEmailId());
+        param.addNewValues().setUnique(XDAT.getSiteConfigPreferences().getAdminEmail());
 
         param = parameters.addNewParameter();
         param.setName("xnatserver");
@@ -209,7 +210,7 @@ public class QDECAction extends ListingAction{
         
         param = parameters.addNewParameter();
         param.setName("mailhost");
-        param.addNewValues().setUnique( AdminUtils.getMailServer());
+        param.addNewValues().setUnique( XDAT.getSiteConfigPreferences().getSmtpServer().get("host"));
         
         return parameters;
         

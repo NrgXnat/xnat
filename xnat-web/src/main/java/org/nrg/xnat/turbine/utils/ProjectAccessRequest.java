@@ -486,10 +486,10 @@ public class ProjectAccessRequest {
 
         String bcc = null;
         if (ArcSpecManager.GetInstance().getEmailspecifications_projectAccess()) {
-	        bcc = AdminUtils.getAdminEmailId();
+	        bcc = XDAT.getSiteConfigPreferences().getAdminEmail();
         }
 
-        String from = AdminUtils.getAdminEmailId();
+        String from = XDAT.getSiteConfigPreferences().getAdminEmail();
 
         try {
             XDAT.getMailService().sendHtmlMessage(from, invitee, user.getEmail(), bcc, subject, writer.toString());

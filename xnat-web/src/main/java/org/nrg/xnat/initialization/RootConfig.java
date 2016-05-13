@@ -14,7 +14,9 @@ import org.nrg.framework.services.SerializerService;
 import org.nrg.prefs.beans.PreferenceBeanMixIn;
 import org.nrg.xdat.preferences.InitializerSiteConfiguration;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
+import org.nrg.xnat.configuration.ApplicationConfig;
 import org.nrg.xnat.helpers.prearchive.PrearcConfig;
+import org.nrg.xnat.services.XnatAppInfo;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.annotation.Import;
@@ -38,17 +40,15 @@ import java.util.jar.Manifest;
  * configuration preferences.
  *
  * <b>NOTE:</b> If you are adding code to this class, please be sure you know what you're doing! Most configuration code
- * for standard XNAT components should be added in {@link org.nrg.xnat.configuration.ApplicationConfig}
+ * for standard XNAT components should be added in the {@link ApplicationConfig application configuration class}.
  */
 @Configuration
 @Import({PropertiesConfig.class, DatabaseConfig.class})
 @ImportResource("WEB-INF/conf/xnat-security.xml")
 public class RootConfig {
     @Bean
-    public Manifest applicationManifest(final ServletContext context) throws IOException {
-        try (final InputStream input = context.getResourceAsStream("/META-INF/MANIFEST.MF")) {
-            return new Manifest(input);
-        }
+    public XnatAppInfo appInfo(final ServletContext context) throws IOException {
+        return new XnatAppInfo(context);
     }
 
     @Bean

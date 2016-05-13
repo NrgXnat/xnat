@@ -10,15 +10,12 @@
  */
 package org.nrg.xnat.turbine.utils;
 
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.xdat.XDAT;
 import org.nrg.xdat.om.ArcArchivespecification;
-import org.nrg.xdat.turbine.utils.AdminUtils;
-import org.nrg.xft.XFT;
+import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xft.event.EventDetails;
-import org.nrg.xft.exception.ElementNotFoundException;
-import org.nrg.xft.exception.FieldNotFoundException;
-import org.nrg.xft.exception.InvalidValueException;
-import org.nrg.xft.exception.XFTInitException;
+import org.nrg.xft.event.EventUtils;
 import org.nrg.xft.security.UserI;
 import org.nrg.xft.utils.SaveItemHelper;
 import org.nrg.xnat.helpers.prearchive.PrearcConfig;
@@ -31,6 +28,7 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Map;
 
 /**
  * @author timo
@@ -39,16 +37,14 @@ import java.util.ArrayList;
 public class ArcSpecManager {
     private static final Logger logger = LoggerFactory.getLogger(ArcSpecManager.class);
     private static ArcArchivespecification arcSpec = null;
-    private static boolean _hasPersisted = false;
 
-	public synchronized static ArcArchivespecification GetFreshInstance() {
+    public synchronized static ArcArchivespecification GetFreshInstance() {
 		ArcArchivespecification arcSpec = null;
         logger.warn("Getting Fresh ArcSpec...");
 		ArrayList<ArcArchivespecification> allSpecs = ArcArchivespecification.getAllArcArchivespecifications(null,false);
 	    if (allSpecs.size()>0) {
 	        arcSpec = allSpecs.get(0);
-            _hasPersisted = true;
-	    }
+        }
 	    return arcSpec;
 	}
     
@@ -216,56 +212,60 @@ public class ArcSpecManager {
         return arcSpec;
     }
 
-    public synchronized static Boolean HasPersisted() {
-        return _hasPersisted;
-    }
-
     public synchronized static  void Reset(){
         arcSpec=null;
     }
 
-    public synchronized static ArcArchivespecification initialize(UserI user) throws XFTInitException, ElementNotFoundException, FieldNotFoundException, InvalidValueException {
+    public synchronized static ArcArchivespecification initialize(final UserI user) throws Exception {
         arcSpec = new ArcArchivespecification(user);
-        if (XDAT.getSiteConfigPreferences().getAdminEmail()!=null && !XDAT.getSiteConfigPreferences().getAdminEmail().equals("")) {
-            arcSpec.setSiteAdminEmail(XDAT.getSiteConfigPreferences().getAdminEmail());
+        final SiteConfigPreferences preferences = XDAT.getSiteConfigPreferences();
+        if (StringUtils.isNotBlank(preferences.getAdminEmail())) {
+            arcSpec.setSiteAdminEmail(preferences.getAdminEmail());
         }
 
-        if (XDAT.getSiteConfigPreferences().getSiteUrl()!=null && !XDAT.getSiteConfigPreferences().getSiteUrl().equals("")) {
-            arcSpec.setSiteUrl(XDAT.getSiteConfigPreferences().getSiteUrl());
+        if (StringUtils.isNotBlank(preferences.getSiteId())) {
+            arcSpec.setSiteId(preferences.getSiteId());
         }
 
-//        if (XFT.GetAdminEmailHost()!=null && !XFT.GetAdminEmailHost().equals("")) {
-//            arcSpec.setSmtpHost(XFT.GetAdminEmailHost());
-//        }
-//
-//        arcSpec.setEnableNewRegistrations(XDAT.getSiteConfigPreferences().getUserRegistration());
-//
-//        arcSpec.setRequireLogin(XDAT.getSiteConfigPreferences().getRequireLogin());
-//        if (XDAT.getSiteConfigPreferences().getAdminEmail()!=null && !XDAT.getSiteConfigPreferences().getAdminEmail().equals("")) {
-//            arcSpec.setProperty("globalPaths/pipelinePath", XDAT.getSiteConfigPreferences().getAdminEmail());
-//        }
-//
-//        if (XFT.GetArchiveRootPath()!=null && !XFT.GetArchiveRootPath().equals("")) {
-//            arcSpec.setProperty("globalPaths/archivePath", XFT.GetArchiveRootPath());
-//        }
-//
-//        if (XFT.GetPrearchivePath()!=null && !XFT.GetPrearchivePath().equals("")) {
-//            arcSpec.setProperty("globalPaths/prearchivePath", XFT.GetPrearchivePath());
-//        }
-//
-//        if (XDAT.getSiteConfigPreferences().getCachePath()!=null && !XDAT.getSiteConfigPreferences().getCachePath().equals("")) {
-//            arcSpec.setProperty("globalPaths/cachePath", XDAT.getSiteConfigPreferences().getCachePath());
-//        }
-//
-//        if (XFT.getFtpPath()!=null && !XFT.getFtpPath().equals("")) {
-//            arcSpec.setProperty("globalPaths/ftpPath", XFT.getFtpPath());
-//        }
-//
-//        if (XFT.getBuildPath()!=null && !XFT.getBuildPath().equals("")) {
-//            arcSpec.setProperty("globalPaths/buildPath", XFT.getBuildPath());
-//        }
-//        arcSpec.setEnableCsrfToken(XFT.GetEnableCsrfToken());
-        
+        if (StringUtils.isNotBlank(preferences.getSiteUrl())) {
+            arcSpec.setSiteUrl(preferences.getSiteUrl());
+        }
+
+        final Map<String, String> smtpServer = preferences.getSmtpServer();
+        if (smtpServer != null && smtpServer.containsKey("host")) {
+            arcSpec.setSmtpHost(smtpServer.get("host"));
+        }
+
+        arcSpec.setEnableNewRegistrations(preferences.getUserRegistration());
+
+        arcSpec.setRequireLogin(preferences.getRequireLogin());
+        if (StringUtils.isNotBlank(preferences.getAdminEmail())) {
+            arcSpec.setProperty("globalPaths/pipelinePath", preferences.getPipelinePath());
+        }
+
+        if (StringUtils.isNotBlank(preferences.getArchivePath())) {
+            arcSpec.setProperty("globalPaths/archivePath", preferences.getArchivePath());
+        }
+
+        if (StringUtils.isNotBlank(preferences.getPrearchivePath())) {
+            arcSpec.setProperty("globalPaths/prearchivePath", preferences.getPrearchivePath());
+        }
+
+        if (StringUtils.isNotBlank(preferences.getCachePath())) {
+            arcSpec.setProperty("globalPaths/cachePath", preferences.getCachePath());
+        }
+
+        if (StringUtils.isNotBlank(preferences.getFtpPath())) {
+            arcSpec.setProperty("globalPaths/ftpPath", preferences.getFtpPath());
+        }
+
+        if (StringUtils.isNotBlank(preferences.getBuildPath())) {
+            arcSpec.setProperty("globalPaths/buildPath", preferences.getBuildPath());
+        }
+
+        arcSpec.setEnableCsrfToken(preferences.getEnableCsrfToken());
+
+        save(arcSpec, user, EventUtils.newEventInstance(EventUtils.CATEGORY.SIDE_ADMIN, EventUtils.TYPE.PROCESS, "Initialized archive specifications."));
         return arcSpec;
     }
 
@@ -280,6 +280,5 @@ public class ArcSpecManager {
     public static synchronized void save(ArcArchivespecification arcSpec, UserI user, EventDetails event) throws Exception {
         SaveItemHelper.unauthorizedSave(arcSpec, user, false, false, event);
         ArcSpecManager.Reset();
-        _hasPersisted = true;
     }
 }

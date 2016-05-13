@@ -77,7 +77,7 @@ initialSetup:
 
                 archiveRootPath:
                     kind: panel.input.text
-                    name: archiveRootPath
+                    name: archivePath
                     label: Archive Location
                     size: 50
                     value: ''
@@ -169,29 +169,3 @@ initialSetup:
                     name: protocol
                     label: Protocol
                     value: ?? XNAT.data.siteConfig.smtpServer.protocol
-
-                mailServerProperties:
-                    kind: panel.section
-                    name: mailServerProperties
-                    label: Mail Server Settings
-                    contents:
-
-                        smtpAuth:
-                            kind: panel.input.checkbox
-                            name: mail.smtp.auth
-                            label: SMTP Auth?
-                            value: true
-#                            checked: true
-
-                        smtpStartTls:
-                            kind: panel.input.checkbox
-                            name: mail.smtp.starttls.enable
-                            label: Smart TLS?
-                            value: true
-#                            checked: true
-
-                        smtpSSLTrust:
-                            kind: panel.input.text
-                            name: mail.smtp.ssl.trust
-                            label: SSL Trust
-                            value: ?? XNAT.data.siteConfig.smtpServer['mail.smtp.ssl.trust']

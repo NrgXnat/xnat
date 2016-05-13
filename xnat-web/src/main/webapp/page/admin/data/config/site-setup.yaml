@@ -2,8 +2,12 @@ initialSetup:
     kind: panel.multiForm
     name: initialSetup
     label: XNAT Initial Setup
-    #method: POST
-    action: '#!'
+    method: POST
+    action: /xapi/siteConfig/batch
+    contentType: json
+    load:
+        lookup: XNAT.data.siteConfig
+        refresh: /xapi/siteConfig
     contents:
 
         setupMessage:
@@ -48,7 +52,11 @@ initialSetup:
                     label: Site URL
                     value: ''
                     placeholder: localhost
-                    description: ''
+                    description: >
+                        The address you want visible to users in emails, and other external links. This should be a
+                        functional address (i.e. if the user pasted this address in their web browser, they should
+                        come to the site). localhost only works if the web browser is located on the same machine.
+                        You are required to guarantee that this address is functional for reaching the site.
                     validation: required url
 
                 adminEmail:
@@ -144,6 +152,7 @@ initialSetup:
                     label: Host
                     value: ?? XNAT.data.siteConfig.smtpServer.host
                     placeholder: localhost
+                    validation: required
 
                 port:
                     kind: panel.input.number
@@ -151,6 +160,7 @@ initialSetup:
                     label: Port
                     value: ?? XNAT.data.siteConfig.smtpServer.port
                     placeholder: 25
+                    validation: required number
 
                 username:
                     kind: panel.input.text
@@ -171,27 +181,23 @@ initialSetup:
                     value: ?? XNAT.data.siteConfig.smtpServer.protocol
 
                 mailServerProperties:
-                    kind: panel.section
-                    name: mailServerProperties
-                    label: Mail Server Settings
-                    contents:
+                    kind: panel.subhead
+                    text: Mail Server Settings
 
-                        smtpAuth:
-                            kind: panel.input.checkbox
-                            name: mail.smtp.auth
-                            label: SMTP Auth?
-                            value: true
-#                            checked: true
+                smtpAuth:
+                    kind: panel.input.checkbox
+                    name: mail.smtp.auth
+                    label: SMTP Auth?
+                    value: ?? XNAT.data.siteConfig.smtpServer['mail.smtp.auth']
 
-                        smtpStartTls:
-                            kind: panel.input.checkbox
-                            name: mail.smtp.starttls.enable
-                            label: Smart TLS?
-                            value: true
-#                            checked: true
+                smtpStartTls:
+                    kind: panel.input.checkbox
+                    name: mail.smtp.starttls.enable
+                    label: Smart TLS?
+                    value: ?? XNAT.data.siteConfig.smtpServer['mail.smtp.starttls.enable']
 
-                        smtpSSLTrust:
-                            kind: panel.input.text
-                            name: mail.smtp.ssl.trust
-                            label: SSL Trust
-                            value: ?? XNAT.data.siteConfig.smtpServer['mail.smtp.ssl.trust']
+                smtpSSLTrust:
+                    kind: panel.input.text
+                    name: mail.smtp.ssl.trust
+                    label: SSL Trust
+                    value: ?? XNAT.data.siteConfig.smtpServer['mail.smtp.ssl.trust']

@@ -27,7 +27,7 @@ $!template.setLayoutTemplate("DefaultExptList.vm")
 
     <div id="more-options">
 
-        <a href="$link.setPage("Configuration.vm")">Configuration</a>
+        <a href="/page/admin/">Configuration</a>
 
         <a href="$link.setPage("XDATScreen_EditScript.vm").addPathInfo("user","Test")">View Edit Script</a>
 

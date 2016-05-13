@@ -29,9 +29,13 @@ var XNAT = getObject(XNAT);
     input_ = XNAT.ui.input || {};
 
     function lookupValue(el, lookup){
+        if (!lookup) {
+            lookup = el;
+            el = {};
+        }
         var val = '';
         try {
-            val = eval(lookup.trim())
+            val = eval((lookup||'').trim()) || ''
         }
         catch (e) {
             val = '';
@@ -96,10 +100,10 @@ var XNAT = getObject(XNAT);
 
 
     function setupType(type, className, opts){
-        opts = getObject(opts);
-        var config = getObject(opts.config || opts.element || {});
+        var config = cloneObject(opts);
+        // var config = getObject(opts.config || opts.element || {});
         config.addClass = className;
-        config.data = extend({validate: className}, config.data);
+        config.data = extend({validate: opts.validation||opts.validate}, config.data);
         if (!config.data.validate) delete config.data.validate;
         return input(type, config);
     }
@@ -124,14 +128,25 @@ var XNAT = getObject(XNAT);
     });
 
     otherTypes = [
-        'password', 'date', 'checkbox',
-        'radio', 'button', 'hidden', 'file'
+        'password', 'date', 'file',
+        'radio', 'button', 'hidden'
     ];
     otherTypes.forEach(function(type){
         input[type] = function(config){
             return setupType(type, type, config);
         }
     });
+
+    // checkboxes are special
+    input.checkbox = function(config){
+        otherTypes.push('checkbox');
+        config = getObject(config);
+        config = config.element || config || {};
+        config.onchange = function(){
+            this.value = this.checked;
+        };
+        return setupType('checkbox', '', config);
+    };
 
     // save a list of all available input types
     input.types = [].concat(textTypes, numberTypes, otherTypes);

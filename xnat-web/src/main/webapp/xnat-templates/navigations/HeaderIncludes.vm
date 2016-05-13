@@ -218,7 +218,7 @@ $navigation.setTemplate("/BaseJS.vm")
 </script>
 
 <!-- YUI css -->
-<link rel="stylesheet" type="text/css" href="$content.getURI('scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1')">
+<link rel="stylesheet" type="text/css" href="$content.getURI('scripts/yui/build/assets/skins/xnat/xnat.css?v=1.7.0a1')">
 
 <!-- date input stuff -->
 <link type="text/css" rel="stylesheet" href="$content.getURI('scripts/yui/build/calendar/assets/skins/sam/calendar.css?v=1.7.0a1')">

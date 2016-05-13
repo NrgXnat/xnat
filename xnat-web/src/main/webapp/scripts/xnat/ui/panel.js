@@ -8,7 +8,11 @@ var XNAT = getObject(XNAT || {});
 
     var panel,
         spawn   = window.spawn,
-        element = XNAT.element;
+        element = XNAT.element,
+        multiform = {
+            count: 0,
+            errors: 0
+        };
 
 
     XNAT.ui =
@@ -235,6 +239,7 @@ var XNAT = getObject(XNAT || {});
                         prop = prop[part];
                     });
                 }
+                $(obj.form).dataAttr('status', 'clean');
                 setValues(prop);
             };
 
@@ -247,7 +252,14 @@ var XNAT = getObject(XNAT || {});
         //    loadData(opts.load);
         //}
 
-        $(_formPanel).on('reload-data', function(){
+        var $formPanel = $(_formPanel);
+
+        // keep an eye on the inputs
+        $formPanel.find(':input').on('change', function(){
+            $formPanel.dataAttr('status', 'dirty');
+        });
+
+        $formPanel.on('reload-data', function(){
             xmodal.loading.open();
             opts.load.url = opts.load.url || opts.load.refresh;
             loadData(opts.load);
@@ -255,33 +267,62 @@ var XNAT = getObject(XNAT || {});
 
         // click 'Discard Changes' button to reload data
         _resetBtn.onclick = function(){
-            $(_formPanel).triggerHandler('reload-data');
+            $formPanel.triggerHandler('reload-data');
         };
 
         // intercept the form submit to do it via REST instead
-        $(_formPanel).on('submit', function(e){
+        $formPanel.on('submit', function(e){
 
             e.preventDefault();
 
-            xmodal.loading.open();
+            var $form = $(this),
+                errors = 0,
+                valid = true;
 
-            var ajaxSubmitOpts = {
+            $form.dataAttr('errors', 0);
 
-                target:        '#server-response',  // target element(s) to be updated with server response
-                beforeSubmit:  function(){},  // pre-submit callback
-                success:       function(){},  // post-submit callback
+            // validate inputs before moving on
+            $form.find(':input.required').each(function(){
+                $(this).removeClass('invalid');
+                if (this.value.toString() === '') {
+                    errors++;
+                    valid = false;
+                    $(this).addClass('invalid');
+                }
+            });
 
-                // other available options:
-                url:       '/url/for/submit', // override for form's 'action' attribute
-                type:      'get or post (or put?)', // 'get' or 'post', override for form's 'method' attribute
-                dataType:  null,        // 'xml', 'script', or 'json' (expected server response type)
-                clearForm: true,        // clear all form fields after successful submit
-                resetForm: true,        // reset the form after successful submit
+            $form.dataAttr('errors', errors);
 
-                // $.ajax options can be used here too, for example:
-                timeout:   3000
+            if (!valid) {
+                if (!multiform.count) {
+                    xmodal.message('Error','Please enter values for the required items and re-submit the form.');
+                }
+                multiform.errors++; // keep track of errors for multi-form submission
+                return false;
+            }
 
-            };
+            // don't open loading dialog for multiform submit
+            if (!multiform.count){
+                xmodal.loading.open('#form-save');
+            }
+
+            // var ajaxSubmitOpts = {
+            //
+            //     target:        '#server-response',  // target element(s) to be updated with server response
+            //     beforeSubmit:  function(){},  // pre-submit callback
+            //     success:       function(){},  // post-submit callback
+            //
+            //     // other available options:
+            //     url:       '/url/for/submit', // override for form's 'action' attribute
+            //     type:      'get or post (or put?)', // 'get' or 'post', override for form's 'method' attribute
+            //     dataType:  null,        // 'xml', 'script', or 'json' (expected server response type)
+            //     clearForm: true,        // clear all form fields after successful submit
+            //     resetForm: true,        // reset the form after successful submit
+            //
+            //     // $.ajax options can be used here too, for example:
+            //     timeout:   3000
+            //
+            // };
 
             function formToJSON(form){
                 var json = {};
@@ -304,6 +345,7 @@ var XNAT = getObject(XNAT || {});
                     // if a data object is returned,
                     // just use that
                     if (data) {
+                        // HACK!
                         // wrap the returned data in an array so the
                         // loadData() function handles it properly
                         obj.lookup = [data];
@@ -311,19 +353,18 @@ var XNAT = getObject(XNAT || {});
                     else {
                         obj.url = opts.refresh;
                     }
-                    xmodal.loading.close();
-                    xmodal.message('Data saved successfully.', {
-                        action: function(){
-                            xmodal.closeAll();
-                            loadData(obj);
-                        }
-                    });
+
+                    // don't mess with modals for multiforms
+                    if (!multiform.count){
+                        xmodal.loading.close('#form-save');
+                        xmodal.message('Data saved successfully.', {
+                            action: function(){
+                                loadData(obj);
+                            }
+                        });
+                    }
                 }
             };
-
-            // if (!/form/i.test(opts.contentType||'')) {
-            //     ajaxConfig.contentType = opts.contentType;
-            // }
 
             if (/json/i.test(opts.contentType||'')){
                 ajaxConfig.data = JSON.stringify(formToJSON(this));
@@ -332,12 +373,8 @@ var XNAT = getObject(XNAT || {});
                 $.ajax(ajaxConfig);
             }
             else {
-                // ajaxConfig.data =  $(this).serialize();
-                // $.ajax(ajaxConfig);
                 $(this).ajaxSubmit(ajaxConfig);
             }
-
-            // $.ajax(ajaxConfig);
 
             return false;
 
@@ -404,13 +441,46 @@ var XNAT = getObject(XNAT || {});
                 method: opts.method || 'POST',
                 action: opts.action ? XNAT.url.rootUrl(opts.action) : '#!',
                 onsubmit: function(e){
+
                     e.preventDefault();
-                    // submit all enclosed forms
-                    $(this).find('form').each(function(){
-                        xmodal.closeAll();
-                        $(this).trigger('submit');
+                    var $forms = $(this).find('form');
+
+                    var loader = xmodal.loading.open('#multi-save');
+
+                    // reset error count on new submission
+                    multiform.errors = 0;
+
+                    // how many child forms are there?
+                    multiform.count = $forms.length;
+
+                    // submit ALL enclosed forms
+                    $forms.each(function(){
+                        //if (!multiform.errors) {
+                            $(this).trigger('submit');
+                        //}
                     });
+
+                    if (multiform.errors) {
+                        xmodal.closeAll();
+                        xmodal.message('Error', 'Please correct the highlighted errors and re-submit the form.');
+                        return false;
+                    }
+
+                    multiform.errors = 0;
+                    multiform.count = 0;
+
+                    xmodal.loading.close(loader.$modal);
+                    xmodal.message({
+                        title: 'Setup Complete',
+                        content: 'Your XNAT site is ready to use. Click "OK" to continue to the home page.',
+                        action: function(){
+                            window.location.href = XNAT.url.rootUrl('/');
+                            //$forms.each.triggerHandler('reload-data');
+                        }
+                    });
+
                     return false;
+
                 }
             }, [
                 ['div.panel-heading', [
@@ -555,7 +625,6 @@ var XNAT = getObject(XNAT || {});
     panel.input.checkbox = function panelInputCheckbox(opts){
         opts = cloneObject(opts);
         opts.type = 'checkbox';
-        //addClassName(opts, 'checkbox');
         return XNAT.ui.template.panelInput(opts).spawned;
     };
 

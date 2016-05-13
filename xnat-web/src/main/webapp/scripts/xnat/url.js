@@ -532,3 +532,11 @@ var XNAT = getObject(XNAT||{});
 
 
 })(XNAT);
+
+$(function(){
+    // re-write links that start with '/'
+    // to make sure they go to the site root
+    $('a[href^="/"]').attr('href', function(){
+        return XNAT.url.rootUrl($(this).attr('href'));
+    });
+});

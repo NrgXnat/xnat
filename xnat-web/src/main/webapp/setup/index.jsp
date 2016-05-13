@@ -2,7 +2,7 @@
 <%@ taglib prefix="c" uri="http://java.sun.com/jsp/jstl/core" %>
 <%@ taglib prefix="pg" tagdir="/WEB-INF/tags/page" %>
 
-<pg:xnat page="setup">
+<pg:xnat page="setup" title="XNAT Setup">
 
     <div id="page-body">
         <div class="pad">
@@ -30,7 +30,6 @@
                         // get rid of the 'targetSource' property
                         delete XNAT.data.siteConfig.targetSource;
                     </script>
-                    <script src="${sessionScope.siteRoot}/scripts/xnat/spawner.js"></script>
 
                     <header id="content-header">
                         <h2 class="pull-left">XNAT Site Setup</h2>

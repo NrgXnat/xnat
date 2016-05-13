@@ -1,5 +1,7 @@
 ## Main JavaScript and CSS files for XNAT
 
+#set ($SITE_ROOT = $content.getURI(''))
+
 ## only load once
 #if (!$appJS)
 
@@ -13,11 +15,21 @@
     <script src="$content.getURI('scripts/xmodal-v1/xmodal-migrate.js')"></script>
 
     <!-- XNAT JLAPI scripts -->
-    <script src="$content.getURI('scripts/xnat/url.js')"></script>
-    <script src="$content.getURI('scripts/xnat/xhr.js')"></script>
-    ##<script src="$content.getURI('scripts/xnat/widget.js')"></script>
-    <script src="$content.getURI('scripts/xnat/ui/popup.js')"></script>
-    <script src="$content.getURI('scripts/xnat/ui/dialog.js')"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/xhr.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/event.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/element.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/templates.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/input.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/select.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/table.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/panel.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/tabs.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/popup.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/dialog.js"></script>
+
+    <!-- The Spawner! -->
+    <script src="${SITE_ROOT}/scripts/xnat/spawner.js"></script>
 
     #set ($appJS = true)
 

@@ -214,7 +214,7 @@
     </script>
 
     <!-- YUI css -->
-    <link rel="stylesheet" type="text/css" href="/scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1">
+    <link rel="stylesheet" type="text/css" href="/scripts/yui/build/assets/skins/xnat/xnat.css?v=1.7.0a1">
 
     <!-- xdat.css and xnat.css loaded last to override YUI styles -->
     <link rel="stylesheet" type="text/css" href="/style/app.css?v=1.7.0a1">

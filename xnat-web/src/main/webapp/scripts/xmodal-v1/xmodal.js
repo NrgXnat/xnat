@@ -1323,7 +1323,12 @@ if (typeof jQuery == 'undefined') {
                     $.extend(true, opts, arg1);
                 }
                 else if (typeof arg1 == 'string'){
-                    opts.title = arg1;
+                    if (/^#/.test(arg1)) {
+                        opts.id = arg1.split('#')[1] || '';
+                    }
+                    else {
+                        opts.title = arg1;
+                    }
                 }
             }
             else if (args === 2){
@@ -1341,7 +1346,7 @@ if (typeof jQuery == 'undefined') {
                 opts.id = arg3.id || arg2;
             }
 
-            xmodal.open(opts);
+            return xmodal.open(opts);
 
         };
         //

@@ -4,6 +4,8 @@
 
 <pg:restricted>
 
+    <link rel="stylesheet" type="text/css" href="${sessionScope.siteRoot}/page/admin/style.css">
+
     <div id="page-body">
         <div class="pad">
 
@@ -30,22 +32,46 @@
 
                 </div>
 
-                <script src="${sessionScope.siteRoot}/scripts/lib/jquery-plugins/jquery.form.js"></script>
-                <script src="${sessionScope.siteRoot}/scripts/lib/yamljs/dist/yaml.js"></script>
+                <%--<script src="${sessionScope.siteRoot}/scripts/lib/jquery-plugins/jquery.form.js"></script>--%>
+                <%--<script src="${sessionScope.siteRoot}/scripts/lib/yamljs/dist/yaml.js"></script>--%>
 
                 <c:import url="/xapi/siteConfig" var="siteConfig"/>
 
                 <script>
-                    XNAT.data = extend({}, XNAT.data, {
-                        siteConfig: ${siteConfig}
-                    });
-                    // get rid of the 'targetSource' property
-                    delete XNAT.data.siteConfig.targetSource;
-                </script>
+                    (function(){
 
-                <script src="${sessionScope.siteRoot}/scripts/xnat/ui/templates.js"></script>
-                <script src="${sessionScope.siteRoot}/scripts/xnat/spawner.js"></script>
-                <script src="${sessionScope.siteRoot}/page/admin/tabs.js"></script>
+                        XNAT.data = extend({}, XNAT.data, {
+                            siteConfig: ${siteConfig}
+                        });
+                        // get rid of the 'targetSource' property
+                        delete XNAT.data.siteConfig.targetSource;
+
+
+                        var jsonUrl = XNAT.url.rootUrl('/page/admin/data/config/site-admin-sample-new.yaml');
+                        // var jsonUrl = XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteAdmin');
+
+                        $.get({
+                            url: jsonUrl,
+                            // dataType: 'text',
+                            success: function(data){
+
+                                if (typeof data === 'string') {
+                                    data = YAML.parse(data);
+                                }
+
+                                // console.log(JSON.stringify(data, ' ', 1));
+
+                                var adminTabs = XNAT.spawner.spawn(data);
+                                adminTabs.render('#admin-config-tabs > .xnat-tab-content');
+                                XNAT.app.adminTabs = adminTabs;
+
+                                // xmodal.loading.closeAll();
+
+                            }
+                        });
+
+                    })();
+                </script>
 
             </div>
 

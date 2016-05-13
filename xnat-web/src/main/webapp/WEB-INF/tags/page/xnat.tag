@@ -23,10 +23,10 @@
 
     <title>${title}</title>
 
-    <c:set var="_siteRoot" value="${sessionScope.siteRoot}"/>
-    <%--<c:set var="_scripts" value="${_siteRoot}/scripts"/>--%>
-    <%--<c:set var="_scriptsLib" value="${_siteRoot}/scripts/lib"/>--%>
-    <c:set var="_csrfToken" value="${sessionScope.csrfToken}"/>
+    <c:set var="SITE_ROOT" value="${sessionScope.siteRoot}"/>
+    <%--<c:set var="_scripts" value="${SITE_ROOT}/scripts"/>--%>
+    <%--<c:set var="_scriptsLib" value="${SITE_ROOT}/scripts/lib"/>--%>
+    <c:set var="csrfToken" value="${sessionScope.csrfToken}"/>
     <c:set var="_user" value="${sessionScope.username}"/>
     <c:set var="versionString" value="v=1.7.0a2"/>
 
@@ -38,69 +38,69 @@
     <meta http-equiv="expires" content="Tue, 01 Jan 1980 1:00:00 GMT">
 
     <!-- load polyfills before ANY other JavaScript -->
-    <script src="${_siteRoot}/scripts/polyfills.js"></script>
+    <script src="${SITE_ROOT}/scripts/polyfills.js"></script>
 
     <!-- set global vars that are used often -->
     <script type="text/javascript">
 
         var XNAT = {};
-        var serverRoot = '${_siteRoot}';
-        var csrfToken = '${_csrfToken}';
+        var serverRoot = '${SITE_ROOT}';
+        var csrfToken = '${csrfToken}';
         //var showReason = typeof false != 'undefined' ? false : null;
         //var requireReason = typeof false != 'undefined' ? false : null;
 
     </script>
 
     <!-- XNAT global functions (no dependencies) -->
-    <script src="${_siteRoot}/scripts/globals.js"></script>
+    <script src="${SITE_ROOT}/scripts/globals.js"></script>
 
     <!-- required libraries -->
-    <script src="${_siteRoot}/scripts/lib/loadjs/loadjs.js"></script>
-    <script src="${_siteRoot}/scripts/lib/jquery/jquery.min.js"></script>
-    <script src="${_siteRoot}/scripts/lib/jquery/jquery-migrate-1.2.1.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/loadjs/loadjs.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery/jquery-migrate-1.2.1.min.js"></script>
     <script type="text/javascript">
         // use 'jq' to avoid _possible_ conflicts with Velocity
         var jq = jQuery;
     </script>
 
     <!-- jQuery plugins -->
-    <link rel="stylesheet" type="text/css" href="${_siteRoot}/scripts/lib/jquery-plugins/chosen/chosen.min.css?${versionString}">
-    <script src="${_siteRoot}/scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js"></script>
-    <script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.maskedinput.min.js"></script>
-    <script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
-    <script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.form.js"></script>
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.min.css?${versionString}">
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/chosen/chosen.jquery.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.maskedinput.min.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.dataAttr.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.form.js"></script>
 
     <%-- probably not going to use the jquery spawner --%>
-    <%--<script src="${_siteRoot}/scripts/lib/jquery-plugins/jquery.spawn.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/lib/jquery-plugins/jquery.spawn.js"></script>--%>
 
     <!-- other libraries -->
-    <script src="${_siteRoot}/scripts/lib/spawn/spawn.js"></script>
-    <script src="${_siteRoot}/scripts/lib/js.cookie.js"></script>
-    <script src="${_siteRoot}/scripts/lib/yamljs/dist/yaml.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/spawn/spawn.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/js.cookie.js"></script>
+    <script src="${SITE_ROOT}/scripts/lib/yamljs/dist/yaml.js"></script>
 
 
-    <%--<script src="${_siteRoot}/scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/event/event-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/container/container-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/menu/menu-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/element/element-beta-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/button/button-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/connection/connection-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/treeview/treeview-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/cookie/cookie-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/tabview/tabview-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/datasource/datasource-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/resize/resize-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/dragdrop/dragdrop-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/datatable/datatable-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/paginator/paginator-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/json/json-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/yui/xnat_loader.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/LeftBarTreeView.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/justification/justification.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/yahoo-dom-event/yahoo-dom-event.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/event/event-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/container/container-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/menu/menu-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/element/element-beta-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/button/button-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/connection/connection-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/treeview/treeview-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/cookie/cookie-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/tabview/tabview-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/datasource/datasource-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/resize/resize-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/dragdrop/dragdrop-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/datatable/datatable-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/paginator/paginator-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/json/json-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/xnat_loader.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/LeftBarTreeView.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/justification/justification.js"></script>--%>
 
     <!-- XNAT utility functions -->
-    <script src="${_siteRoot}/scripts/utils.js"></script>
+    <script src="${SITE_ROOT}/scripts/utils.js"></script>
 
     <script type="text/javascript">
 
@@ -170,46 +170,46 @@
     </script>
 
     <!-- YUI css -->
-    <%--<link rel="stylesheet" type="text/css" href="${_siteRoot}/scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1">--%>
+    <%--<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/yui/build/assets/skins/sam/skin.css?v=1.7.0a1">--%>
 
     <!-- xdat.css and xnat.css loaded last to override YUI styles -->
-    <link rel="stylesheet" type="text/css" href="${_siteRoot}/style/app.css?${versionString}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/style/app.css?${versionString}">
 
     <%-- styles for tabbed interface --%>
     <%-- TODO: rename and move file or integrate it into app.css --%>
-    <link rel="stylesheet" type="text/css" href="${_siteRoot}/page/admin/style.css?${versionString}">
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/page/admin/style.css?${versionString}">
 
 
     <!-- legacy XNAT scripts -->
-    <link rel="stylesheet" type="text/css" href="${_siteRoot}/scripts/xmodal-v1/xmodal.css?${versionString}">
-    <script src="${_siteRoot}/scripts/xmodal-v1/xmodal.js"></script>
-    <script src="${_siteRoot}/scripts/xmodal-v1/xmodal-migrate.js"></script>
+    <link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/xmodal-v1/xmodal.css?${versionString}">
+    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal.js"></script>
+    <script src="${SITE_ROOT}/scripts/xmodal-v1/xmodal-migrate.js"></script>
 
-    <%--<link rel="stylesheet" type="text/css" href="${_siteRoot}/scripts/tabWrangler/tabWrangler.css?${versionString}1">--%>
-    <%--<script src="${_siteRoot}/scripts/tabWrangler/tabWrangler.js"></script>--%>
+    <%--<link rel="stylesheet" type="text/css" href="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.css?${versionString}1">--%>
+    <%--<script src="${SITE_ROOT}/scripts/tabWrangler/tabWrangler.js"></script>--%>
 
     <!-- date input stuff -->
-    <%--<link type="text/css" rel="stylesheet" href="${_siteRoot}/scripts/yui/build/calendar/assets/skins/sam/calendar.css?${versionString}">--%>
-    <%--<script src="${_siteRoot}/scripts/yui/build/calendar/calendar-min.js"></script>--%>
-    <%--<script src="${_siteRoot}/scripts/ezCalendar.js"></script>--%>
+    <%--<link type="text/css" rel="stylesheet" href="${SITE_ROOT}/scripts/yui/build/calendar/assets/skins/sam/calendar.css?${versionString}">--%>
+    <%--<script src="${SITE_ROOT}/scripts/yui/build/calendar/calendar-min.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/ezCalendar.js"></script>--%>
 
     <!-- XNAT JLAPI scripts -->
-    <script src="${_siteRoot}/scripts/xnat/url.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/xhr.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/event.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/element.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/ui/templates.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/ui/input.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/ui/select.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/ui/table.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/ui/panel.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/ui/tabs.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/ui/popup.js"></script>
-    <script src="${_siteRoot}/scripts/xnat/ui/dialog.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/url.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/xhr.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/event.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/element.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/templates.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/input.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/select.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/table.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/panel.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/tabs.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/popup.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/dialog.js"></script>
 
-    <script src="${_siteRoot}/scripts/xnat/spawner.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/spawner.js"></script>
 
-    <%--<script src="${_siteRoot}/scripts/timeLeft.js"></script>--%>
+    <%--<script src="${SITE_ROOT}/scripts/timeLeft.js"></script>--%>
 
     ${headBottom}
 
@@ -223,8 +223,8 @@ ${bodyTop}
 
         <c:if test="${_user != '-'}">
 
-            <img id="attention_icon" src="${_siteRoot}/images/attention.png" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
-            <span id="user_info">Logged in as: &nbsp;<a href="${_siteRoot}/app/template/XDATScreen_UpdateUser.vm">${_user}</a> <b>|</b>
+            <img id="attention_icon" src="${SITE_ROOT}/images/attention.png" style="display:none;" alt="attention needed - click for more info" title="attention needed - click for more info">
+            <span id="user_info">Logged in as: &nbsp;<a href="${SITE_ROOT}/app/template/XDATScreen_UpdateUser.vm">${_user}</a> <b>|</b>
                 <span class="tip_icon" style="margin-right:3px;left:2px;top:3px;">
                     <span class="tip shadowed" style="top:20px;z-index:10000;white-space:normal;left:-150px;width:300px;background-color:#ffc;">
                         Your XNAT session will auto-logout after a certain period of inactivity.
@@ -235,7 +235,7 @@ ${bodyTop}
                 <b id="timeLeft">-:--:--</b> -
                 <a id="timeLeftRenew" href="#!">renew</a>
                 <b>|</b>
-                <a id="logout_user" href="${_siteRoot}/app/action/LogoutUser">Logout</a>
+                <a id="logout_user" href="${SITE_ROOT}/app/action/LogoutUser">Logout</a>
             </span>
             <%--<script type="text/javascript">--%>
             <%--$('#timeLeftRenew').click(XNAT.app.timeout.handleOk);--%>
@@ -257,11 +257,11 @@ ${bodyTop}
                 <!-- Sequence: 10 -->
                 <!-- allowGuest: true -->
                 <li>
-                    <a id="nav-home" title="Home" href="${_siteRoot}/">&nbsp;</a>
+                    <a id="nav-home" title="Home" href="${SITE_ROOT}/">&nbsp;</a>
                     <script>
                         $('#nav-home').css({
                             width: '30px',
-                            backgroundImage: "url('${_siteRoot}/images/xnat-nav-logo-white-lg.png')",
+                            backgroundImage: "url('${SITE_ROOT}/images/xnat-nav-logo-white-lg.png')",
                             backgroundRepeat: 'no-repeat',
                             backgroundSize: '32px',
                             backgroundPosition: 'center'
@@ -272,11 +272,11 @@ ${bodyTop}
                 <li class="more"><a href="#new">New</a>
                     <ul class="" style="display: none;">
                         <!-- Sequence: 10 -->
-                        <li><a href="${_siteRoot}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
+                        <li><a href="${SITE_ROOT}/app/template/XDATScreen_add_xnat_projectData.vm">Project</a></li>
                         <li>
-                            <a href="${_siteRoot}/app/action/XDATActionRouter/xdataction/edit/search_element/xnat:subjectData">Subject</a>
+                            <a href="${SITE_ROOT}/app/action/XDATActionRouter/xdataction/edit/search_element/xnat:subjectData">Subject</a>
                         </li>
-                        <li><a href="${_siteRoot}/app/template/XDATScreen_add_experiment.vm">Experiment</a></li>
+                        <li><a href="${SITE_ROOT}/app/template/XDATScreen_add_experiment.vm">Experiment</a></li>
                     </ul>
                 </li>
                 <!-- Sequence: 30 -->
@@ -284,10 +284,10 @@ ${bodyTop}
                     <ul>
                         <!-- Sequence: 10 -->
                         <!-- Upload/Default -->
-                        <li><a href="${_siteRoot}/app/template/LaunchUploadApplet.vm">Images</a></li>
-                        <li><a href="${_siteRoot}/app/template/XMLUpload.vm">XML</a></li>
-                        <li><a href="${_siteRoot}/app/template/XDATScreen_uploadCSV.vm">Spreadsheet</a></li>
-                        <li><a href="${_siteRoot}/app/template/XDATScreen_prearchives.vm">Go to prearchive</a></li>
+                        <li><a href="${SITE_ROOT}/app/template/LaunchUploadApplet.vm">Images</a></li>
+                        <li><a href="${SITE_ROOT}/app/template/XMLUpload.vm">XML</a></li>
+                        <li><a href="${SITE_ROOT}/app/template/XDATScreen_uploadCSV.vm">Spreadsheet</a></li>
+                        <li><a href="${SITE_ROOT}/app/template/XDATScreen_prearchives.vm">Go to prearchive</a></li>
                     </ul>
                 </li>
 
@@ -297,14 +297,14 @@ ${bodyTop}
                     <li class="more"><a href="#adminbox">Administer</a>
                         <ul>
                             <!-- Sequence: 10 -->
-                            <li><a href="${_siteRoot}/app/template/XDATScreen_admin.vm">Users</a></li>
-                            <li><a href="${_siteRoot}/app/template/XDATScreen_groups.vm">Groups</a></li>
-                            <li><a href="${_siteRoot}/app/template/XDATScreen_dataTypes.vm">Data Types</a></li>
-                            <li><a href="${_siteRoot}/app/template/XDATScreen_email.vm">Email</a></li>
-                            <li><a href="${_siteRoot}/app/template/XDATScreen_manage_pipeline.vm">Pipelines</a></li>
-                            <li><a href="${_siteRoot}/app/template/Configuration.vm">Configuration</a></li>
-                            <li><a href="${_siteRoot}/app/template/Scripts.vm">Automation</a></li>
-                            <li><a href="${_siteRoot}/app/template/XDATScreen_admin_options.vm">More...</a></li>
+                            <li><a href="${SITE_ROOT}/app/template/XDATScreen_admin.vm">Users</a></li>
+                            <li><a href="${SITE_ROOT}/app/template/XDATScreen_groups.vm">Groups</a></li>
+                            <li><a href="${SITE_ROOT}/app/template/XDATScreen_dataTypes.vm">Data Types</a></li>
+                            <li><a href="${SITE_ROOT}/app/template/XDATScreen_email.vm">Email</a></li>
+                            <li><a href="${SITE_ROOT}/app/template/XDATScreen_manage_pipeline.vm">Pipelines</a></li>
+                            <li><a href="${SITE_ROOT}/page/admin/">Configuration</a></li>
+                            <li><a href="${SITE_ROOT}/app/template/Scripts.vm">Automation</a></li>
+                            <li><a href="${SITE_ROOT}/app/template/XDATScreen_admin_options.vm">More...</a></li>
                         </ul>
                     </li>
                 </c:if>
@@ -334,7 +334,7 @@ ${bodyTop}
                     <ul class="" style="display: none;">
                         <!-- Sequence: 10 -->
                         <!-- Home/Default -->
-                        <li><a href="${_siteRoot}/app/template/ReportIssue.vm">Report a Problem</a></li>
+                        <li><a href="${SITE_ROOT}/app/template/ReportIssue.vm">Report a Problem</a></li>
                         <li><a href="http://wiki.xnat.org/display/XNAT16/Home" target="_blank">Documentation</a></li>
                     </ul>
                 </li>
@@ -397,11 +397,11 @@ ${bodyTop}
                 }
             </style>
 
-            <form id="quickSearchForm" method="post" action="${_siteRoot}/app/action/QuickSearchAction">
+            <form id="quickSearchForm" method="post" action="${SITE_ROOT}/app/action/QuickSearchAction">
                 <select id="stored-searches" data-placeholder="Stored Searches" style="display: none;">
                     <option></option>
                     <optgroup>
-                        <option value="${_siteRoot}/app/template/XDATScreen_search_wizard1.vm">Advanced Search…</option>
+                        <option value="${SITE_ROOT}/app/template/XDATScreen_search_wizard1.vm">Advanced Search…</option>
                     </optgroup>
                     <optgroup class="stored-search-list">
                         <option disabled="">(no stored searches)</option>
@@ -544,8 +544,8 @@ ${bodyTop}
 
     <div id="header" class="main_header">
         <div class="pad">
-            <a id="header_logo" href="${_siteRoot}/" style="display: none;" title="XNAT version Unknown">
-                <img class="logo_img" src="${_siteRoot}/images/logo.png" style="border:none;">
+            <a id="header_logo" href="${SITE_ROOT}/" style="display: none;" title="XNAT version Unknown">
+                <img class="logo_img" src="${SITE_ROOT}/images/logo.png" style="border:none;">
             </a>
         </div>
     </div>
@@ -624,7 +624,7 @@ ${bodyTop}
     <div id="tp_fm"></div>
 
     <div id="breadcrumbs"></div>
-    <script src="${_siteRoot}/scripts/xnat/ui/breadcrumbs.js"></script>
+    <script src="${SITE_ROOT}/scripts/xnat/ui/breadcrumbs.js"></script>
     <script language="javascript">
         window.isProjectPage = (XNAT.data.context.xsiType === 'xnat:projectData');
         // wrap it up to keep things
@@ -639,7 +639,7 @@ ${bodyTop}
     <div id="layout_content">
         <!--BEGIN SCREEN CONTENT -->
         <!-- start xnat-templates/screens/Page.vm -->
-        <script src="${_siteRoot}/scripts/xnat/app/customPage.js"></script>
+        <script src="${SITE_ROOT}/scripts/xnat/app/customPage.js"></script>
 
         <div id="view-page">
             <!--   BODY START   -->
@@ -661,7 +661,7 @@ ${bodyTop}
 
 <div id="xnat_power">
     <a target="_blank" href="http://www.xnat.org/" style="" title="XNAT Version 1.7"><img
-            src="${_siteRoot}/images/xnat_power_small.png"></a>
+            src="${SITE_ROOT}/images/xnat_power_small.png"></a>
     <small>version 1.7</small>
 </div>
 
@@ -669,32 +669,31 @@ ${bodyTop}
 
     loadjs(scriptUrl('xnat/event.js'), function(){
 
-        // shift-click the header or footer XNAT logo to ENABLE debug mode
-        // alt-shift-click to DISABLE debug mode
-        // ctrl-alt-click to open the Swagger page in a new window
+        // shift-click the header or footer XNAT logo to TOGGLE debug mode on/off
+        // alt-shift-click to open the Swagger page in a new window
         XNAT.event.click('#header_logo, #xnat_power > a')
             .shiftKey(function(e){
                 e.preventDefault();
-                window.location.hash = 'debug=on';
+                if (Cookies.get('debug') === 'on'){
+                    window.location.hash = 'debug=off';
+                }
+                else {
+                    window.location.hash = 'debug=on';
+                }
                 window.location.reload();
             })
             .altShift(function(e){
                 e.preventDefault();
-                window.location.hash = 'debug=off';
-                window.location.reload();
-            })
-            .ctrlAlt(function(e){
-                e.preventDefault();
-                XNAT.ui.popup('/xapi/swagger-ui.html');
+                XNAT.ui.popup(XNAT.url.rootUrl('/xapi/swagger-ui.html'));
             });
 
     })
 
 </script>
-<%--<script src="${_siteRoot}/scripts/footer.js"></script>--%>
+<%--<script src="${SITE_ROOT}/scripts/footer.js"></script>--%>
 
 <div id="xmodal-loading" style="position:fixed;left:-9999px;top:-9999px;">
-    <img src="${_siteRoot}/scripts/xmodal-v1/loading_bar.gif" alt="loading">
+    <img src="${SITE_ROOT}/scripts/xmodal-v1/loading_bar.gif" alt="loading">
 </div>
 
 ${bodyBottom}

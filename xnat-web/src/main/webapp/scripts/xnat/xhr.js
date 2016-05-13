@@ -348,12 +348,144 @@ var XNAT = getObject(XNAT||{}),
     // XNAT.xhr.getHTML()
     // XNAT.xhr.getXML()
     // XNAT.xhr.getText()
+    // XNAT.xhr.putJSON()
+    // XNAT.xhr.postJSON()
     // >>>
     forOwn(xhr.shorthands, function(type, opts){
         xhr[type] = function(/* url, data/null, opts_or_callback, callback */){
             var req = new RequestOfType(opts.method, arguments);
             return xhr.request(extendDeep(req, opts));
         };
+    });
+
+    function processJSON(data, stringify){
+        var output = {};
+        $.each(data, function(prop, val){
+            prop = val.name || prop;
+            val  = (val.value || val) || '';
+            if (typeof output[prop] == 'undefined') {
+                output[prop] = val;
+            }
+            else {
+                output[prop] = [].concat(output[prop], val) ;
+            }
+        });
+        if (stringify) {
+            return JSON.stringify(output);
+        }
+        return output;
+    }
+
+    function formToJSON(form, stringify){
+        return processJSON($$(form).serializeArray(), stringify);
+    }
+
+    // expose to
+    // XNAT.xhr.formToJSON(form, true)
+    xhr.formToJSON = formToJSON;
+
+    $.fn.toJSON = function(stringify){
+        return formToJSON(this, stringify);
+    };
+
+    // helper function to fire $.fn.changeVal() if available
+    function changeValue(el, val){
+        var $el = $$(el);
+        if ($.isFunction($.fn.changeVal)) {
+            $el.changeVal(val);
+        }
+        else {
+            $el.val(val).trigger('change');
+        }
+        return $el;
+    }
+
+    // set form element values from an object map
+    function setValues(form, dataObj){
+        // cache and check if form exists
+        var $form = $$(form);
+        if (!$form.length) return;
+        // find all input and select elements with a name attribute
+        $form.find('input[name], select[name]').each(function(){
+            var val = '';
+            if (Array.isArray(dataObj)) {
+                val = dataObj.join(', ');
+            }
+            else {
+                val = /string|number/i.test(typeof dataObj) ? dataObj+'' : dataObj[this.name] || '';
+            }
+            changeValue(this, val);
+        });
+        // set textarea innerText from a 'value' property
+        $form.find('textarea[name]').each(function(){
+            var $textarea = $(this);
+            $textarea.innerText =  (function(){
+                var val = dataObj[this.name];
+                return /string|number/i.test(typeof val) ? val+'' : JSON.stringify(val);
+            })();
+        });
+        return $form;
+    }
+
+    // this could be a handy jQuery method
+    $.fn.setValues = function(dataObj){
+        // only run on form or div elements
+        // (gotta draw the line somewhere)
+        if (/form|div/i.test(this.tagName||'')) {
+            setValues(this, dataObj);
+        }
+        return this;
+    };
+
+    xhr.form = function(form, opts){
+
+        var $form = $$(form),
+            _form = $form[0], // raw DOM element
+            callback = diddly;
+
+        opts = cloneObject(opts);
+        opts.url = XNAT.url.restUrl(opts.url || _form.action);
+        opts.method = opts.method || _form.method || 'GET';
+
+        // set opts.callback:false to prevent the
+        // 'standard' method callback from running
+        if (opts.callback !== false) {
+            callback = opts.success || opts.done || diddly;
+        }
+        // don't pass 'callback' property into the AJAX request
+        delete opts.callback;
+
+        if (/POST|PUT/i.test(opts.method)) {
+            if ($form.hasClass('json') || /json/i.test(opts.contentType||'')){
+                opts.data = formToJSON($form, true);
+                opts.processData = false;
+                opts.contentType = 'application/json';
+            }
+            opts.success = function(data){
+                callback.apply($form, arguments);
+                // repopulate 'real' data after success
+                setValues($form, data);
+            }
+        }
+        // populate form fields from returned
+        // json data for 'GET' method
+        else if (/GET/i.test(opts.method)){
+            opts.success = function(data){
+                callback.apply($form, arguments);
+                setValues($form, data);
+            };
+        }
+
+        // return the ajax thing for method chaining
+        return xhr.request(opts);
+
+    };
+
+    // intercept form submissions with 'ajax' or 'json' class
+    $('body').on('submit', 'form.ajax, form.json', function(e){
+        e.preventDefault();
+        xhr.form(this);
+        return false;
     });
 
     // special case for YUI 'GET' request

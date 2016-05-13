@@ -270,11 +270,12 @@ div.mainContainer {
 
 div.containerTitle {
     border-bottom: 1px solid #ccc;
-    font-size: 13px;
-    font-weight: 500;
-    line-height: 23px;
-    padding-left: 7px !important;
-    padding-right: 7px !important;
+    font-size: 14px;
+    font-weight: normal;
+    letter-spacing: 0.02em;
+    line-height: 30px;
+    padding-left: 15px !important;
+    padding-right: 15px !important;
 }
 
 div.containerBody {
@@ -963,6 +964,12 @@ input {
     font-size: 12px;
 }
 
+/* 'required' items */
+.required i {
+    font-style: normal;
+    color: #c00;
+}
+
 /* base button style */
 .btn1,
 .btn2,
@@ -971,20 +978,13 @@ body input[type="button"],
 body input[type="submit"],
 body input[type="reset"] {
     display: inline-block;
-    padding: 4px 9px;
-    max-height: 28px;
-    background-position: center top;
-    background-repeat: repeat-x;
+    padding: 6px 12px;
+    /*max-height: 28px;*/
     border-radius: 3px;
     font-family: Arial, Helvetica, sans-serif;
     font-size: 13px;
+    letter-spacing: 0.02em;
     text-decoration: none;
-}
-
-/* 'required' items */
-.required i {
-    font-style: normal;
-    color: #c00;
 }
 
 /* style for button hover */
@@ -999,31 +999,50 @@ body input[type="reset"]:hover {
 
 /* btn1 gets blue background - gradient image and base color to match the bottom of the background image */
 .btn1,
+.btn.primary,
+.btn.submit,
 body input.btn1,
 body input.btn1[type="button"],
 body input.btn1[type="submit"] {
     color: #fff;
-    background-color: #07428d;
-    background-image: url('../images/btn1_30px.png');
-    border: 1px solid /* #508ad0 */ /* #243356 */ #293d66;
-    font-weight: bold;
+    background: #1A75BB;
+    border: 1px solid #096BB7;
+}
+
+.btn1:hover,
+.btn.primary:hover,
+.btn.submit:hover,
+body input.btn1:hover,
+body input.btn1[type="button"]:hover,
+body input.btn1[type="submit"]:hover {
+    background: #096BB7;
 }
 
 /* btn2 gets gray background */
+.btn,
 .btn2,
 body button,
 body input[type="button"],
 body input[type="submit"],
 body input[type="reset"] {
-    background-image: url('../images/btn2_30px.png');
-    border: 1px solid /* #a8a8a8 */ #a0a0a0;
+    background: #f0f0f0 linear-gradient( #ffffff, #f0f0f0 );
+    border: 1px solid #c0c0c0;
+}
+
+.btn:hover,
+.btn2:hover,
+body button:hover,
+body input[type="button"]:hover,
+body input[type="submit"]:hover,
+body input[type="reset"]:hover {
+   background: #f0f0f0;
 }
 
 /* smaller btn */
 .btn1.btn-sm,
 .btn2.btn-sm {
     font-size: 11px !important;
-    padding: 3px 6px !important;
+    padding: 4px 8px !important;
 }
 
 .btn-inline {
@@ -1036,6 +1055,7 @@ body input[type="reset"] {
 }
 
 /* <button> or button-like elements that are disabled or have class="disabled" will LOOK like they're disabled */
+.btn.disabled,
 .btn1.disabled,
 .btn2.disabled,
 body button.disabled,
@@ -1043,9 +1063,10 @@ body button:disabled,
 body input[type="button"]:disabled,
 body input[type="submit"]:disabled,
 body input[type="reset"]:disabled {
-    color: #a0a0a0;
-    border-color: #c0c0c0;
-    background: #e0e0e0;
+    opacity: 0.6;
+    /*color: #a0a0a0;*/
+    /*border-color: #c0c0c0;*/
+    /*background: #e0e0e0;*/
     cursor: default !important;
 }
 
@@ -1627,8 +1648,8 @@ body.xmodal-popup #xnat_power {
 }
 
 div.containerTitle.withColor {
-    font-weight: bold;
-    background: #04519b;
+    font-weight: normal;
+    background: #1A75BB;
 }
 
 .leftBar a.ygtvlabel {

@@ -40,17 +40,19 @@ var XNAT = getObject(XNAT);
     }
 
     function lookupValue(el, lookup){
+        if (!lookup) {
+            lookup = el;
+            el = {};
+        }
         var val = '';
         try {
-            val = eval(lookup.trim());
+            val = eval((lookup||'').trim()) || ''
         }
         catch (e) {
             val = '';
             console.log(e);
         }
-        // changeVal() changes the value and triggers
-        // the 'onchange' event
-        $(el).changeVal(val).dataAttr('value', val);
+        el.value = val;
         return val;
     }
 
@@ -181,6 +183,11 @@ var XNAT = getObject(XNAT);
             opts.data.value = opts.data.value || opts.value;
         }
 
+        if (opts.validation || opts.validate) {
+            opts.data.validate = opts.validation || opts.validate;
+            addClassName(opts.element, opts.data.validate);
+        }
+
         addDataObjects(opts.element, opts.data||{});
         
         if (opts.placeholder) {
@@ -191,16 +198,12 @@ var XNAT = getObject(XNAT);
         // or spawn a new one
         element = element || spawn('input', opts.element);
 
-        if (/checkbox|radio/i.test(opts.type||'') && opts.checked) {
-            element.checked = true;
-        }
-
         // set the value of individual form elements
         
         // look up a namespaced object value if the value starts with '??'
         var doLookup = '??';
         if (opts.value && opts.value.toString().indexOf(doLookup) === 0) {
-            element.value = lookupObjectValue(opts.value.split(doLookup)[1]);
+            element.value = lookupValue(opts.value.split(doLookup)[1]);
         }
         
         if (opts.load) {
@@ -222,6 +225,15 @@ var XNAT = getObject(XNAT);
                         $(element).changeVal(data).dataAttr('value', data);
                     }
                 })
+            }
+        }
+
+        // check buttons if value is true
+        if (/checkbox|radio/i.test(opts.type||'')) {
+            element.checked = /true|checked/i.test((opts.checked || element.value).toString());
+            element.onclick = function(){
+                this.value = this.checked.toString();
+                console.log('clicked');
             }
         }
 

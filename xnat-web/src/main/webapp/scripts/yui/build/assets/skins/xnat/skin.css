@@ -43,7 +43,7 @@ version: 2.5.1
 
 .yui-button a { text-decoration: none ; }
 
-.yui-skin-sam .yui-button { border-width: 1px 0 ; border-style: solid ; border-color: #808080 ; background: url(xnat-sprite.png) repeat-x 0 0 ; margin: auto .25em ; }
+.yui-skin-sam .yui-button { border-width: 1px 0 ; border-style: solid ; border-color: #808080 ; background: url(../images/xnat-sprite.png) repeat-x 0 0 ; margin: auto .25em ; }
 
 .yui-skin-sam .yui-button .first-child { border-width: 0 1px ; border-style: solid ; border-color: #808080 ; margin: 0 -1px ; *position: relative ; *left: -1px ; }
 
@@ -53,9 +53,9 @@ version: 2.5.1
 
 .yui-skin-sam .yui-split-button button, .yui-skin-sam .yui-menu-button button { padding-right: 20px ; background-position: right center ; background-repeat: no-repeat ; }
 
-.yui-skin-sam .yui-menu-button button { background-image: url(menu-button-arrow.png) ; }
+.yui-skin-sam .yui-menu-button button { background-image: url(../images/menu-button-arrow.png) ; }
 
-.yui-skin-sam .yui-split-button button { background-image: url(split-button-arrow.png) ; }
+.yui-skin-sam .yui-split-button button { background-image: url(../images/split-button-arrow.png) ; }
 
 .yui-skin-sam .yui-button-focus { border-color: #7D98B8 ; background-position: 0 -1300px ; }
 
@@ -63,7 +63,7 @@ version: 2.5.1
 
 .yui-skin-sam .yui-button-focus button, .yui-skin-sam .yui-button-focus a { color: #000 ; }
 
-.yui-skin-sam .yui-split-button-focus button { background-image: url(split-button-arrow-focus.png) ; }
+.yui-skin-sam .yui-split-button-focus button { background-image: url(../images/split-button-arrow-focus.png) ; }
 
 .yui-skin-sam .yui-button-hover { border-color: #7D98B8 ; background-position: 0 -1300px ; }
 
@@ -71,7 +71,7 @@ version: 2.5.1
 
 .yui-skin-sam .yui-button-hover button, .yui-skin-sam .yui-button-hover a { color: #000 ; }
 
-.yui-skin-sam .yui-split-button-hover button { background-image: url(split-button-arrow-hover.png) ; }
+.yui-skin-sam .yui-split-button-hover button { background-image: url(../images/split-button-arrow-hover.png) ; }
 
 .yui-skin-sam .yui-button-active { border-color: #7D98B8 ; background-position: 0 -1700px ; }
 
@@ -83,7 +83,7 @@ version: 2.5.1
 
 .yui-skin-sam .yui-split-button-activeoption .first-child { border-color: #808080 ; }
 
-.yui-skin-sam .yui-split-button-activeoption button { background-image: url(split-button-arrow-active.png) ; }
+.yui-skin-sam .yui-split-button-activeoption button { background-image: url(../images/split-button-arrow-active.png) ; }
 
 .yui-skin-sam .yui-radio-button-checked, .yui-skin-sam .yui-checkbox-button-checked { border-color: #304369 ; background-position: 0 -1400px ; }
 
@@ -97,9 +97,9 @@ version: 2.5.1
 
 .yui-skin-sam .yui-button-disabled button, .yui-skin-sam .yui-button-disabled a { color: #A6A6A6 ; cursor: default ; }
 
-.yui-skin-sam .yui-menu-button-disabled button { background-image: url(menu-button-arrow-disabled.png) ; }
+.yui-skin-sam .yui-menu-button-disabled button { background-image: url(../images/menu-button-arrow-disabled.png) ; }
 
-.yui-skin-sam .yui-split-button-disabled button { background-image: url(split-button-arrow-disabled.png) ; }
+.yui-skin-sam .yui-split-button-disabled button { background-image: url(../images/split-button-arrow-disabled.png) ; }
 
 .yui-calcontainer { position: relative ; float: left ; _overflow: hidden ; }
 
@@ -139,13 +139,13 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-calcontainer.multi .groupcal { background-color: transparent ; border: none ; padding: 10px 5px 10px 5px ; margin: 0 ; }
 
-.yui-skin-sam .yui-calcontainer .title { background: url(xnat-sprite.png) repeat-x 0 0 ; border-bottom: 1px solid #cccccc ; font: 100% sans-serif ; color: #000 ; font-weight: bold ; height: auto ; padding: .4em ; margin: 0 -10px 10px -10px ; top: 0 ; left: 0 ; text-align: left ; }
+.yui-skin-sam .yui-calcontainer .title { background: url(../images/xnat-sprite.png) repeat-x 0 0 ; border-bottom: 1px solid #cccccc ; font: 100% sans-serif ; color: #000 ; font-weight: bold ; height: auto ; padding: .4em ; margin: 0 -10px 10px -10px ; top: 0 ; left: 0 ; text-align: left ; }
 
 .yui-skin-sam .yui-calcontainer.multi .title { margin: 0 -5px 0 -5px ; }
 
 .yui-skin-sam .yui-calcontainer.withtitle { padding-top: 0 ; }
 
-.yui-skin-sam .yui-calcontainer .calclose { background: url(xnat-sprite.png) no-repeat 0 -300px ; width: 25px ; height: 15px ; top: .4em ; right: .4em ; cursor: pointer ; }
+.yui-skin-sam .yui-calcontainer .calclose { background: url(../images/xnat-sprite.png) no-repeat 0 -300px ; width: 25px ; height: 15px ; top: .4em ; right: .4em ; cursor: pointer ; }
 
 .yui-skin-sam .yui-calendar { border-spacing: 0 ; border-collapse: collapse ; font: 100% sans-serif ; text-align: center ; margin: 0 ; }
 
@@ -155,9 +155,9 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-calendar .calheader img { border: none ; }
 
-.yui-skin-sam .yui-calendar .calnavleft { background: url(xnat-sprite.png) no-repeat 0 -450px ; width: 25px ; height: 15px ; top: 0 ; bottom: 0 ; left: -10px ; margin-left: .4em ; cursor: pointer ; }
+.yui-skin-sam .yui-calendar .calnavleft { background: url(../images/xnat-sprite.png) no-repeat 0 -450px ; width: 25px ; height: 15px ; top: 0 ; bottom: 0 ; left: -10px ; margin-left: .4em ; cursor: pointer ; }
 
-.yui-skin-sam .yui-calendar .calnavright { background: url(xnat-sprite.png) no-repeat 0 -500px ; width: 25px ; height: 15px ; top: 0 ; bottom: 0 ; right: -10px ; margin-right: .4em ; cursor: pointer ; }
+.yui-skin-sam .yui-calendar .calnavright { background: url(../images/xnat-sprite.png) no-repeat 0 -500px ; width: 25px ; height: 15px ; top: 0 ; bottom: 0 ; right: -10px ; margin-right: .4em ; cursor: pointer ; }
 
 .yui-skin-sam .yui-calendar .calweekdayrow { height: 2em ; }
 
@@ -205,7 +205,7 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-calendar a.calnav { border: 1px solid #f2f2f2 ; padding: 0 4px ; text-decoration: none ; color: #000 ; zoom: 1 ; }
 
-.yui-skin-sam .yui-calendar a.calnav:hover { background: url(xnat-sprite.png) repeat-x 0 0 ; border-color: #A0A0A0 ; cursor: pointer ; }
+.yui-skin-sam .yui-calendar a.calnav:hover { background: url(../images/xnat-sprite.png) repeat-x 0 0 ; border-color: #A0A0A0 ; cursor: pointer ; }
 
 .yui-skin-sam .yui-calcontainer .yui-cal-nav-mask { background-color: #000 ; opacity: 0.25 ; *filter: alpha(opacity=25) ; }
 
@@ -229,11 +229,11 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-calcontainer .yui-cal-nav-yc { width: 4em ; }
 
-.yui-skin-sam .yui-calcontainer .yui-cal-nav .yui-cal-nav-btn { border: 1px solid #808080 ; background: url(xnat-sprite.png) repeat-x 0 0 ; background-color: #ccc ; margin: auto .15em ; }
+.yui-skin-sam .yui-calcontainer .yui-cal-nav .yui-cal-nav-btn { border: 1px solid #808080 ; background: url(../images/xnat-sprite.png) repeat-x 0 0 ; background-color: #ccc ; margin: auto .15em ; }
 
 .yui-skin-sam .yui-calcontainer .yui-cal-nav .yui-cal-nav-btn button { padding: 0 8px ; font-size: 93% ; line-height: 2 ; *line-height: 1.7 ; min-height: 2em ; *min-height: auto ; color: #000 ; }
 
-.yui-skin-sam .yui-calcontainer .yui-cal-nav .yui-cal-nav-btn.yui-default { border: 1px solid #304369 ; background-color: #426fd9 ; background: url(xnat-sprite.png) repeat-x 0 -1400px ; }
+.yui-skin-sam .yui-calcontainer .yui-cal-nav .yui-cal-nav-btn.yui-default { border: 1px solid #304369 ; background-color: #426fd9 ; background: url(../images/xnat-sprite.png) repeat-x 0 -1400px ; }
 
 .yui-skin-sam .yui-calcontainer .yui-cal-nav .yui-cal-nav-btn.yui-default button { color: #fff ; }
 
@@ -249,9 +249,9 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-picker-hue-thumb { cursor: default ; width: 18px ; height: 18px ; top: -8px ; left: -2px ; z-index: 9 ; position: absolute ; }
 
-.yui-picker-hue-bg { -moz-outline: none ; outline: 0px none ; position: absolute ; left: 200px ; height: 183px ; width: 14px ; background: url(hue_bg.png) no-repeat ; top: 4px ; }
+.yui-picker-hue-bg { -moz-outline: none ; outline: 0px none ; position: absolute ; left: 200px ; height: 183px ; width: 14px ; background: url(../images/hue_bg.png) no-repeat ; top: 4px ; }
 
-.yui-picker-bg { -moz-outline: none ; outline: 0px none ; position: absolute ; top: 4px ; left: 4px ; height: 182px ; width: 182px ; background-color: #F00 ; background-image: url(picker_mask.png) ; }
+.yui-picker-bg { -moz-outline: none ; outline: 0px none ; position: absolute ; top: 4px ; left: 4px ; height: 182px ; width: 182px ; background-color: #F00 ; background-image: url(../images/picker_mask.png) ; }
 
 *html .yui-picker-bg { background-image: none ; filter: progid:DXImageTransform.Microsoft.AlphaImageLoader(src='../../build/colorpicker/assets/picker_mask.png',sizingMethod='scale') ; }
 
@@ -321,7 +321,7 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-panel .bd, .yui-skin-sam .yui-panel .ft { background-color: #F2F2F2 ; }
 
-.yui-skin-sam .yui-panel .hd { padding: 0 10px ; font-size: 93% ; line-height: 2 ; *line-height: 1.9 ; font-weight: bold ; color: #000 ; background: url(xnat-sprite.png) repeat-x 0 -200px ; }
+.yui-skin-sam .yui-panel .hd { padding: 0 10px ; font-size: 93% ; line-height: 2 ; *line-height: 1.9 ; font-weight: bold ; color: #000 ; background: url(../images/xnat-sprite.png) repeat-x 0 -200px ; }
 
 .yui-skin-sam .yui-panel .bd { padding: 10px ; }
 
@@ -329,7 +329,7 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-panel-container.focused .yui-panel .hd {  }
 
-.yui-skin-sam .container-close { position: absolute ; top: 5px ; right: 6px ; width: 25px ; height: 15px ; background: url(xnat-sprite.png) no-repeat 0 -300px ; cursor: pointer ; }
+.yui-skin-sam .container-close { position: absolute ; top: 5px ; right: 6px ; width: 25px ; height: 15px ; background: url(../images/xnat-sprite.png) no-repeat 0 -300px ; cursor: pointer ; }
 
 .yui-skin-sam .yui-panel-container .underlay { right: -1px ; left: -1px ; }
 
@@ -351,7 +351,7 @@ p#clear { clear: left ; padding-top: 10px ; }
 
 .yui-skin-sam .yui-dialog .ft span.default button { color: #fff ; }
 
-.yui-skin-sam .yui-simple-dialog .bd .yui-icon { background: url(xnat-sprite.png) no-repeat 0 0 ; width: 16px ; height: 16px ; margin-right: 10px ; float: left ; }
+.yui-skin-sam .yui-simple-dialog .bd .yui-icon { background: url(../images/xnat-sprite.png) no-repeat 0 0 ; width: 16px ; height: 16px ; margin-right: 10px ; float: left ; }
 
 .yui-skin-sam .yui-simple-dialog .bd span.blckicon { background-position: 0 -1100px ; }
 
@@ -423,7 +423,7 @@ th.yui-dt-resizeable .yui-dt-liner { position: relative ; }
 
 .yui-skin-sam .yui-dt-scrollable .yui-dt-bd { border-left: 1px solid #7F7F7F ; border-bottom: 1px solid #7F7F7F ; border-right: 1px solid #7F7F7F ; }
 
-.yui-skin-sam .yui-dt th { background: #D8D8DA url(xnat-sprite.png) repeat-x 0 0 ; }
+.yui-skin-sam .yui-dt th { background: #D8D8DA url(../images/xnat-sprite.png) repeat-x 0 0 ; }
 
 .yui-skin-sam .yui-dt th, .yui-skin-sam .yui-dt th a { font-weight: normal ; text-decoration: none ; color: #000 ; vertical-align: bottom ; }
 
@@ -447,13 +447,13 @@ th.yui-dt-resizeable .yui-dt-liner { position: relative ; }
 
 .yui-skin-sam thead .yui-dt-sortable { cursor: pointer ; }
 
-.yui-skin-sam th.yui-dt-asc, .yui-skin-sam th.yui-dt-desc { background: url(xnat-sprite.png) repeat-x 0 -100px ; }
+.yui-skin-sam th.yui-dt-asc, .yui-skin-sam th.yui-dt-desc { background: url(../images/xnat-sprite.png) repeat-x 0 -100px ; }
 
 .yui-skin-sam th.yui-dt-sortable .yui-dt-label { margin-right: 10px ; }
 
-.yui-skin-sam th.yui-dt-asc .yui-dt-liner { background: url(dt-arrow-up.png) no-repeat right ; }
+.yui-skin-sam th.yui-dt-asc .yui-dt-liner { background: url(../images/dt-arrow-up.png) no-repeat right ; }
 
-.yui-skin-sam th.yui-dt-desc .yui-dt-liner { background: url(dt-arrow-dn.png) no-repeat right ; }
+.yui-skin-sam th.yui-dt-desc .yui-dt-liner { background: url(../images/dt-arrow-dn.png) no-repeat right ; }
 
 .yui-dt-editable { cursor: pointer ; }
 
@@ -463,13 +463,13 @@ th.yui-dt-resizeable .yui-dt-liner { position: relative ; }
 
 .yui-dt-editor .yui-dt-button { padding-top: 6px ; text-align: right ; }
 
-.yui-dt-editor .yui-dt-button button { background: url(xnat-sprite.png) repeat-x 0 0 ; border: 1px solid #999 ; width: 4em ; height: 1.8em ; margin-left: 6px ; }
+.yui-dt-editor .yui-dt-button button { background: url(../images/xnat-sprite.png) repeat-x 0 0 ; border: 1px solid #999 ; width: 4em ; height: 1.8em ; margin-left: 6px ; }
 
-.yui-dt-editor .yui-dt-button button.yui-dt-default { background: url(xnat-sprite.png) repeat-x 0 -1400px ; background-color: #5584E0 ; border: 1px solid #304369 ; color: #FFF }
+.yui-dt-editor .yui-dt-button button.yui-dt-default { background: url(../images/xnat-sprite.png) repeat-x 0 -1400px ; background-color: #5584E0 ; border: 1px solid #304369 ; color: #FFF }
 
-.yui-dt-editor .yui-dt-button button:hover { background: url(xnat-sprite.png) repeat-x 0 -1300px ; color: #000 ; }
+.yui-dt-editor .yui-dt-button button:hover { background: url(../images/xnat-sprite.png) repeat-x 0 -1300px ; color: #000 ; }
 
-.yui-dt-editor .yui-dt-button button:active { background: url(xnat-sprite.png) repeat-x 0 -1700px ; color: #000 ; }
+.yui-dt-editor .yui-dt-button button:active { background: url(../images/xnat-sprite.png) repeat-x 0 -1700px ; color: #000 ; }
 
 .yui-skin-sam tr.yui-dt-even { background-color: #FFF ; }
 
@@ -733,7 +733,7 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-toolbar-container { zoom: 1 ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-toolbar-titlebar { background: url(xnat-sprite.png) repeat-x 0 -200px ; position: relative ; }
+.yui-skin-sam .yui-toolbar-container .yui-toolbar-titlebar { background: url(../images/xnat-sprite.png) repeat-x 0 -200px ; position: relative ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-titlebar h2 { color: #000000 ; font-weight: bold ; margin: 0 ; padding: 0.3em 1em ; font-size: 100% ; text-align: left ; }
 
@@ -757,11 +757,11 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-editor-container .dompath { background-color: #F2F2F2 ; border-top: 1px solid #808080 ; color: #999 ; text-align: left ; padding: 0.25em ; }
 
-.yui-skin-sam .yui-toolbar-container .collapse { background: url(xnat-sprite.png) no-repeat 0 -400px ; }
+.yui-skin-sam .yui-toolbar-container .collapse { background: url(../images/xnat-sprite.png) no-repeat 0 -400px ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-titlebar span.collapse { cursor: pointer ; position: absolute ; top: 4px ; right: 2px ; display: block ; overflow: hidden ; height: 15px ; width: 15px ; text-indent: 9999px ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-push-button, .yui-skin-sam .yui-toolbar-container .yui-color-button, .yui-skin-sam .yui-toolbar-container .yui-menu-button { background: url(xnat-sprite.png) repeat-x 0 0 ; position: relative ; display: block ; height: 22px ; width: 30px ; margin: 0 ; border-color: #808080 ; border-style: solid ; border-width: 1px 0 ; }
+.yui-skin-sam .yui-toolbar-container .yui-push-button, .yui-skin-sam .yui-toolbar-container .yui-color-button, .yui-skin-sam .yui-toolbar-container .yui-menu-button { background: url(../images/xnat-sprite.png) repeat-x 0 0 ; position: relative ; display: block ; height: 22px ; width: 30px ; margin: 0 ; border-color: #808080 ; border-style: solid ; border-width: 1px 0 ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-push-button a, .yui-skin-sam .yui-toolbar-container .yui-color-button a, .yui-skin-sam .yui-toolbar-container .yui-menu-button a { padding-left: 35px ; height: 20px ; text-decoration: none ; font-size: 93% ; line-height: 2 ; display: block ; color: #000000 ; overflow: hidden ; }
 
@@ -779,17 +779,17 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-heading { width: 92px ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-button-hover { background: url(xnat-sprite.png) repeat-x 0 -1300px ; border-color: #808080 ; }
+.yui-skin-sam .yui-toolbar-container .yui-button-hover { background: url(../images/xnat-sprite.png) repeat-x 0 -1300px ; border-color: #808080 ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-button-selected { background: url(xnat-sprite.png) repeat-x 0 -1700px ; border-color: #808080 ; }
+.yui-skin-sam .yui-toolbar-container .yui-button-selected { background: url(../images/xnat-sprite.png) repeat-x 0 -1700px ; border-color: #808080 ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-nogrouplabels h3 { display: none ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-nogrouplabels .yui-toolbar-group { margin-top: .75em ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-push-button span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-color-button span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-menu-button span.yui-toolbar-icon { display: block ; position: absolute ; top: 2px ; height: 18px ; width: 18px ; overflow: hidden ; background: url(editor-sprite.gif) no-repeat 30px 30px ; }
+.yui-skin-sam .yui-toolbar-container .yui-push-button span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-color-button span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-menu-button span.yui-toolbar-icon { display: block ; position: absolute ; top: 2px ; height: 18px ; width: 18px ; overflow: hidden ; background: url(../images/editor-sprite.gif) no-repeat 30px 30px ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-button-selected span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-button-hover span.yui-toolbar-icon { background-image: url(editor-sprite-active.gif) ; }
+.yui-skin-sam .yui-toolbar-container .yui-button-selected span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-button-hover span.yui-toolbar-icon { background-image: url(../images/editor-sprite-active.gif) ; }
 
 .yui-skin-sam .yui-toolbar-container .visible .yuimenuitemlabel { cursor: pointer ; color: #000 ; *position: relative ; }
 
@@ -853,7 +853,7 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton span.yui-toolbar-icon { display: none ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.up, .yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.down { right: 2px ; background: url(editor-sprite.gif) no-repeat 0 -1222px ; overflow: hidden ; height: 6px ; width: 7px ; min-height: 0 ; padding: 0 ; }
+.yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.up, .yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.down { right: 2px ; background: url(../images/editor-sprite.gif) no-repeat 0 -1222px ; overflow: hidden ; height: 6px ; width: 7px ; min-height: 0 ; padding: 0 ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.up { top: 2px ; background-position: 0 -1222px ; }
 
@@ -863,7 +863,7 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-select .first-child a { padding-left: 5px ; text-align: left ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-toolbar-select span.yui-toolbar-icon { background: url( editor-sprite.gif ) no-repeat 0 -1144px ; overflow: hidden ; right: -2px ; top: 0px ; height: 20px ; }
+.yui-skin-sam .yui-toolbar-container .yui-toolbar-select span.yui-toolbar-icon { background: url(../images/ editor-sprite.gif ) no-repeat 0 -1144px ; overflow: hidden ; right: -2px ; top: 0px ; height: 20px ; }
 
 .yui-skin-sam .yui-editor-panel .yui-color-button-menu .bd { background-color: transparent ; border: none ; width: 135px ; }
 
@@ -873,7 +873,7 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-editor-panel .hd { margin: 10px 0 0 ; padding: 0 ; border: none ; }
 
-.yui-skin-sam .yui-editor-panel .hd h3 { color: #000 ; border: 1px solid #808080 ; background: url(xnat-sprite.png) repeat-x 0 -200px ; width: 99% ; position: relative ; margin: 0 ; padding: 3px 0 0 0 ; font-size: 93% ; text-indent: 5px ; height: 20px ; }
+.yui-skin-sam .yui-editor-panel .hd h3 { color: #000 ; border: 1px solid #808080 ; background: url(../images/xnat-sprite.png) repeat-x 0 -200px ; width: 99% ; position: relative ; margin: 0 ; padding: 3px 0 0 0 ; font-size: 93% ; text-indent: 5px ; height: 20px ; }
 
 .yui-skin-sam .yui-editor-panel .bd { background-color: #F2F2F2 ; border-left: 1px solid #808080 ; border-right: 1px solid #808080 ; width: 99% ; margin: 0 ; padding: 0 ; overflow: visible ; }
 
@@ -921,25 +921,25 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-editor-panel .ft { background-color: #F2F2F2 ; border: 1px solid #808080 ; border-top: none ; padding: 0 ; margin: 0 0 2px 0 ; }
 
-.yui-skin-sam .yui-editor-panel .hd span.close { background: url(xnat-sprite.png) no-repeat 0 -300px ; cursor: pointer ; display: block ; height: 16px ; overflow: hidden ; position: absolute ; right: 5px ; text-indent: 500px ; top: 2px ; width: 26px ; }
+.yui-skin-sam .yui-editor-panel .hd span.close { background: url(../images/xnat-sprite.png) no-repeat 0 -300px ; cursor: pointer ; display: block ; height: 16px ; overflow: hidden ; position: absolute ; right: 5px ; text-indent: 500px ; top: 2px ; width: 26px ; }
 
 .yui-skin-sam .yui-editor-panel .ft span.tip { background-color: #FFFFCC ; border-top: 1px solid #808080 ; font-size: 85% ; }
 
 .yui-skin-sam .yui-editor-panel .ft span.tip strong { display: block ; float: left ; margin: 0 2px 8px 0 ; }
 
-.yui-skin-sam .yui-editor-panel .ft span.tip span.icon { background: url( editor-sprite.gif ) no-repeat 0 -1260px ; display: block ; height: 20px ; left: 2px ; position: absolute ; top: 8px ; width: 20px ; }
+.yui-skin-sam .yui-editor-panel .ft span.tip span.icon { background: url(../images/ editor-sprite.gif ) no-repeat 0 -1260px ; display: block ; height: 20px ; left: 2px ; position: absolute ; top: 8px ; width: 20px ; }
 
 .yui-skin-sam .yui-editor-panel .ft span.tip span.icon-info { background-position: 2px -1260px ; }
 
 .yui-skin-sam .yui-editor-panel .ft span.tip span.icon-warn { background-position: 2px -1296px ; }
 
-.yui-skin-sam .yui-editor-panel .hd span.knob { position: absolute ; height: 10px ; width: 28px ; top: -10px ; left: 25px ; text-indent: 9999px ; overflow: hidden ; background: url( editor-knob.gif ) no-repeat 0 0 ; }
+.yui-skin-sam .yui-editor-panel .hd span.knob { position: absolute ; height: 10px ; width: 28px ; top: -10px ; left: 25px ; text-indent: 9999px ; overflow: hidden ; background: url(../images/ editor-knob.gif ) no-repeat 0 0 ; }
 
 .yui-skin-sam .yui-editor-panel .yui-toolbar-container { float: left ; width: 100% ; background-image: none ; border: none ; }
 
 .yui-skin-sam .yui-editor-panel .yui-toolbar-container .bd { background-color: #ffffff ; }
 
-.yui-editor-blankimage { background-image: url( blankimage.png ) ; }
+.yui-editor-blankimage { background-image: url(../images/ blankimage.png ) ; }
 
 .yui-crop { position: relative ; }
 
@@ -1013,25 +1013,25 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yui-layout .yui-resize-proxy .yui-layout-handle-t { width: 100% ; top: 0 ; left: 0 ; height: 5px ; }
 
-.yui-skin-sam .yui-layout .yui-layout-unit-left div.yui-layout-hd .collapse { background: transparent url(layout_xnat-sprite.png) no-repeat -20px -160px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-unit-left div.yui-layout-hd .collapse { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px -160px ; border: 1px solid #808080 ; }
 
-.yui-skin-sam .yui-layout .yui-layout-clip-left .collapse { background: transparent url(layout_xnat-sprite.png) no-repeat -20px -140px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-clip-left .collapse { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px -140px ; border: 1px solid #808080 ; }
 
-.yui-skin-sam .yui-layout .yui-layout-unit-right div.yui-layout-hd .collapse { background: transparent url(layout_xnat-sprite.png) no-repeat -20px -200px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-unit-right div.yui-layout-hd .collapse { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px -200px ; border: 1px solid #808080 ; }
 
-.yui-skin-sam .yui-layout .yui-layout-clip-right .collapse { background: transparent url(layout_xnat-sprite.png) no-repeat -20px -120px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-clip-right .collapse { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px -120px ; border: 1px solid #808080 ; }
 
-.yui-skin-sam .yui-layout .yui-layout-unit-top div.yui-layout-hd .collapse { background: transparent url(layout_xnat-sprite.png) no-repeat -20px -220px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-unit-top div.yui-layout-hd .collapse { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px -220px ; border: 1px solid #808080 ; }
 
-.yui-skin-sam .yui-layout .yui-layout-clip-top .collapse { background: transparent url(layout_xnat-sprite.png) no-repeat -20px -240px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-clip-top .collapse { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px -240px ; border: 1px solid #808080 ; }
 
-.yui-skin-sam .yui-layout .yui-layout-unit-bottom div.yui-layout-hd .collapse { background: transparent url(layout_xnat-sprite.png) no-repeat -20px -260px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-unit-bottom div.yui-layout-hd .collapse { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px -260px ; border: 1px solid #808080 ; }
 
-.yui-skin-sam .yui-layout .yui-layout-clip-bottom .collapse { background: transparent url(layout_xnat-sprite.png) no-repeat -20px -180px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-clip-bottom .collapse { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px -180px ; border: 1px solid #808080 ; }
 
-.yui-skin-sam .yui-layout .yui-layout-unit div.yui-layout-hd .close { background: transparent url(layout_xnat-sprite.png) no-repeat -20px -100px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-unit div.yui-layout-hd .close { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px -100px ; border: 1px solid #808080 ; }
 
-.yui-skin-sam .yui-layout .yui-layout-hd { background: url(xnat-sprite.png) repeat-x 0 -1400px ; border: 1px solid #808080 ; }
+.yui-skin-sam .yui-layout .yui-layout-hd { background: url(../images/xnat-sprite.png) repeat-x 0 -1400px ; border: 1px solid #808080 ; }
 
 .yui-skin-sam .yui-layout { background-color: #FFFFCC ; }
 
@@ -1057,9 +1057,9 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yui-layout-unit .yui-resize-handle-t { right: 0 ; top: 0 ; background-image: none ; }
 
-.yui-skin-sam .yui-layout-unit .yui-resize-handle-r .yui-layout-resize-knob, .yui-skin-sam .yui-layout-unit .yui-resize-handle-l .yui-layout-resize-knob { position: absolute ; height: 16px ; width: 6px ; top: 45% ; left: 0px ; background: transparent url(layout_xnat-sprite.png) no-repeat 0 -5px ; }
+.yui-skin-sam .yui-layout-unit .yui-resize-handle-r .yui-layout-resize-knob, .yui-skin-sam .yui-layout-unit .yui-resize-handle-l .yui-layout-resize-knob { position: absolute ; height: 16px ; width: 6px ; top: 45% ; left: 0px ; background: transparent url(../images/layout_xnat-sprite.png) no-repeat 0 -5px ; }
 
-.yui-skin-sam .yui-layout-unit .yui-resize-handle-t .yui-layout-resize-knob, .yui-skin-sam .yui-layout-unit .yui-resize-handle-b .yui-layout-resize-knob { position: absolute ; height: 6px ; width: 16px ; left: 45% ; background: transparent url(layout_xnat-sprite.png) no-repeat -20px 0 ; }
+.yui-skin-sam .yui-layout-unit .yui-resize-handle-t .yui-layout-resize-knob, .yui-skin-sam .yui-layout-unit .yui-resize-handle-b .yui-layout-resize-knob { position: absolute ; height: 6px ; width: 16px ; left: 45% ; background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px 0 ; }
 
 .yui-skin-sam .yui-log { padding: 1em ; width: 31em ; background-color: #AAA ; color: #000 ; border: 1px solid black ; font-family: monospace ; font-size: 77% ; text-align: left ; z-index: 9000 ; }
 
@@ -1135,7 +1135,7 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yuimenu.show-scrollbars .yui-menu-shadow, .yuimenubar.show-scrollbars .yui-menu-shadow { overflow: auto ; }
 
-.yui-skin-sam .yuimenubar { font-size: 93% ; line-height: 2 ; *line-height: 1.9 ; border: solid 1px #808080 ; background: url(xnat-sprite.png) repeat-x 0 0 ; }
+.yui-skin-sam .yuimenubar { font-size: 93% ; line-height: 2 ; *line-height: 1.9 ; border: solid 1px #808080 ; background: url(../images/xnat-sprite.png) repeat-x 0 0 ; }
 
 .yui-skin-sam .yuimenubarnav .yuimenubaritem { border-right: solid 1px #ccc ; }
 
@@ -1143,9 +1143,9 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yuimenubarnav .yuimenubaritemlabel { padding-right: 20px ; *display: inline-block ; }
 
-.yui-skin-sam .yuimenubarnav .yuimenubaritemlabel-hassubmenu { background: url(menubaritem_submenuindicator.png) right center no-repeat ; }
+.yui-skin-sam .yuimenubarnav .yuimenubaritemlabel-hassubmenu { background: url(../images/menubaritem_submenuindicator.png) right center no-repeat ; }
 
-.yui-skin-sam .yuimenubaritem-selected { background: url(xnat-sprite.png) repeat-x 0 -1700px ; }
+.yui-skin-sam .yuimenubaritem-selected { background: url(../images/xnat-sprite.png) repeat-x 0 -1700px ; }
 
 .yui-skin-sam .yuimenubaritemlabel-selected { border-color: #7D98B8 ; }
 
@@ -1153,7 +1153,7 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yuimenubaritemlabel-disabled { cursor: default ; color: #A6A6A6 ; }
 
-.yui-skin-sam .yuimenubarnav .yuimenubaritemlabel-hassubmenu-disabled { background-image: url(menubaritem_submenuindicator_disabled.png) ; }
+.yui-skin-sam .yuimenubarnav .yuimenubaritemlabel-hassubmenu-disabled { background-image: url(../images/menubaritem_submenuindicator_disabled.png) ; }
 
 .yui-skin-sam .yuimenu { font-size: 93% ; line-height: 1.5 ; *line-height: 1.45 ; }
 
@@ -1171,7 +1171,7 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yuimenu .yui-menu-body-scrolled { border-color: #ccc #808080 ; overflow: hidden ; }
 
-.yui-skin-sam .yuimenu .topscrollbar, .yui-skin-sam .yuimenu .bottomscrollbar { height: 16px ; border: solid 1px #808080 ; background: #fff url(xnat-sprite.png) no-repeat 0 0 ; }
+.yui-skin-sam .yuimenu .topscrollbar, .yui-skin-sam .yuimenu .bottomscrollbar { height: 16px ; border: solid 1px #808080 ; background: #fff url(../images/xnat-sprite.png) no-repeat 0 0 ; }
 
 .yui-skin-sam .yuimenu .topscrollbar { border-bottom-width: 0 ; background-position: center -950px ; }
 
@@ -1187,9 +1187,9 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yuimenuitemlabel .helptext { margin-top: -1.5em ; *margin-top: -1.45em ; }
 
-.yui-skin-sam .yuimenuitem-hassubmenu { background-image: url(menuitem_submenuindicator.png) ; background-position: right center ; background-repeat: no-repeat ; }
+.yui-skin-sam .yuimenuitem-hassubmenu { background-image: url(../images/menuitem_submenuindicator.png) ; background-position: right center ; background-repeat: no-repeat ; }
 
-.yui-skin-sam .yuimenuitem-checked { background-image: url(menuitem_checkbox.png) ; background-position: left center ; background-repeat: no-repeat ; }
+.yui-skin-sam .yuimenuitem-checked { background-image: url(../images/menuitem_checkbox.png) ; background-position: left center ; background-repeat: no-repeat ; }
 
 .yui-skin-sam .yui-menu-shadow-visible { background-color: #000 ; opacity: .12 ; *filter: alpha(opacity=12) ; }
 
@@ -1197,13 +1197,13 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yuimenuitemlabel-disabled { cursor: default ; color: #A6A6A6 ; }
 
-.yui-skin-sam .yuimenuitem-hassubmenu-disabled { background-image: url(menuitem_submenuindicator_disabled.png) ; }
+.yui-skin-sam .yuimenuitem-hassubmenu-disabled { background-image: url(../images/menuitem_submenuindicator_disabled.png) ; }
 
-.yui-skin-sam .yuimenuitem-checked-disabled { background-image: url(menuitem_checkbox_disabled.png) ; }
+.yui-skin-sam .yuimenuitem-checked-disabled { background-image: url(../images/menuitem_checkbox_disabled.png) ; }
 
 .yui-skin-sam .yui-pv { background-color: #4a4a4a ; font: arial ; position: relative ; width: 99% ; z-index: 1000 ; margin-bottom: 1em ; overflow: hidden ; }
 
-.yui-skin-sam .yui-pv .hd { background: url(header_background.png) repeat-x ; min-height: 30px ; overflow: hidden ; zoom: 1 ; padding: 2px 0 ; }
+.yui-skin-sam .yui-pv .hd { background: url(../images/header_background.png) repeat-x ; min-height: 30px ; overflow: hidden ; zoom: 1 ; padding: 2px 0 ; }
 
 .yui-skin-sam .yui-pv .hd h4 { padding: 8px 10px ; margin: 0 ; font: bold 14px arial ; color: #fff ; }
 
@@ -1211,7 +1211,7 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yui-pv .hd span { display: none ; }
 
-.yui-skin-sam .yui-pv .hd span.yui-pv-busy { height: 18px ; width: 18px ; background: url(wait.gif) no-repeat ; overflow: hidden ; display: block ; float: right ; margin: 4px 10px 0 0 ; }
+.yui-skin-sam .yui-pv .hd span.yui-pv-busy { height: 18px ; width: 18px ; background: url(../images/wait.gif) no-repeat ; overflow: hidden ; display: block ; float: right ; margin: 4px 10px 0 0 ; }
 
 .yui-skin-sam .yui-pv .hd:after, .yui-pv .bd:after, .yui-skin-sam .yui-pv-chartlegend dl:after { content: '.' ; visibility: hidden ; clear: left ; height: 0 ; display: block ; }
 
@@ -1231,9 +1231,9 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yui-pv .yui-pv-table .yui-dt-hd th { background-image: none ; background: #2E2D2D ; }
 
-.yui-skin-sam .yui-pv th.yui-dt-asc .yui-dt-liner { background: transparent url(asc.gif) no-repeat scroll right center ; }
+.yui-skin-sam .yui-pv th.yui-dt-asc .yui-dt-liner { background: transparent url(../images/asc.gif) no-repeat scroll right center ; }
 
-.yui-skin-sam .yui-pv th.yui-dt-desc .yui-dt-liner { background: transparent url(desc.gif) no-repeat scroll right center ; }
+.yui-skin-sam .yui-pv th.yui-dt-desc .yui-dt-liner { background: transparent url(../images/desc.gif) no-repeat scroll right center ; }
 
 .yui-skin-sam .yui-pv .yui-pv-table .yui-dt-hd th a { color: #fff ; font: bold 12px arial ; }
 
@@ -1325,17 +1325,17 @@ body.yui-layout { overflow: hidden ; position: relative ; padding: 0 ; margin: 0
 
 .yui-skin-sam .yui-resize-status strong, .yui-skin-sam .yui-resize-status em { float: left ; display: block ; clear: both ; padding: 1px ; text-align: center ; }
 
-.yui-skin-sam .yui-resize .yui-resize-handle-inner-r, .yui-skin-sam .yui-resize .yui-resize-handle-inner-l { background: transparent url( layout_xnat-sprite.png) no-repeat 0 -5px ; height: 16px ; width: 5px ; position: absolute ; top: 45% ; }
+.yui-skin-sam .yui-resize .yui-resize-handle-inner-r, .yui-skin-sam .yui-resize .yui-resize-handle-inner-l { background: transparent url(../images/ layout_xnat-sprite.png) no-repeat 0 -5px ; height: 16px ; width: 5px ; position: absolute ; top: 45% ; }
 
-.yui-skin-sam .yui-resize .yui-resize-handle-inner-t, .yui-skin-sam .yui-resize .yui-resize-handle-inner-b { background: transparent url(layout_xnat-sprite.png) no-repeat -20px 0 ; height: 5px ; width: 16px ; position: absolute ; left: 50% ; }
+.yui-skin-sam .yui-resize .yui-resize-handle-inner-t, .yui-skin-sam .yui-resize .yui-resize-handle-inner-b { background: transparent url(../images/layout_xnat-sprite.png) no-repeat -20px 0 ; height: 5px ; width: 16px ; position: absolute ; left: 50% ; }
 
-.yui-skin-sam .yui-resize .yui-resize-handle-br { background-image: url( layout_xnat-sprite.png ) ; background-repeat: no-repeat ; background-position: -22px -62px ; }
+.yui-skin-sam .yui-resize .yui-resize-handle-br { background-image: url(../images/ layout_xnat-sprite.png ) ; background-repeat: no-repeat ; background-position: -22px -62px ; }
 
-.yui-skin-sam .yui-resize .yui-resize-handle-tr { background-image: url( layout_xnat-sprite.png ) ; background-repeat: no-repeat ; background-position: -22px -42px ; }
+.yui-skin-sam .yui-resize .yui-resize-handle-tr { background-image: url(../images/ layout_xnat-sprite.png ) ; background-repeat: no-repeat ; background-position: -22px -42px ; }
 
-.yui-skin-sam .yui-resize .yui-resize-handle-tl { background-image: url( layout_xnat-sprite.png ) ; background-repeat: no-repeat ; background-position: -22px -82px ; }
+.yui-skin-sam .yui-resize .yui-resize-handle-tl { background-image: url(../images/ layout_xnat-sprite.png ) ; background-repeat: no-repeat ; background-position: -22px -82px ; }
 
-.yui-skin-sam .yui-resize .yui-resize-handle-bl { background-image: url( layout_xnat-sprite.png ) ; background-repeat: no-repeat ; background-position: -22px -23px ; }
+.yui-skin-sam .yui-resize .yui-resize-handle-bl { background-image: url(../images/ layout_xnat-sprite.png ) ; background-repeat: no-repeat ; background-position: -22px -23px ; }
 
 .yui-skin-sam .yui-resize-knob .yui-resize-handle-t, .yui-skin-sam .yui-resize-knob .yui-resize-handle-r, .yui-skin-sam .yui-resize-knob .yui-resize-handle-b, .yui-skin-sam .yui-resize-knob .yui-resize-handle-l, .yui-skin-sam .yui-resize-knob .yui-resize-handle-tl, .yui-skin-sam .yui-resize-knob .yui-resize-handle-tr, .yui-skin-sam .yui-resize-knob .yui-resize-handle-bl, .yui-skin-sam .yui-resize-knob .yui-resize-handle-br, .yui-skin-sam .yui-resize-knob .yui-resize-handle-inner-t, .yui-skin-sam .yui-resize-knob .yui-resize-handle-inner-r, .yui-skin-sam .yui-resize-knob .yui-resize-handle-inner-b, .yui-skin-sam .yui-resize-knob .yui-resize-handle-inner-l, .yui-skin-sam .yui-resize-knob .yui-resize-handle-inner-tl, .yui-skin-sam .yui-resize-knob .yui-resize-handle-inner-tr, .yui-skin-sam .yui-resize-knob .yui-resize-handle-inner-bl, .yui-skin-sam .yui-resize-knob .yui-resize-handle-inner-br { background-image: none ; }
 
@@ -1545,7 +1545,7 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-toolbar-container { zoom: 1 ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-toolbar-titlebar { background: url(xnat-sprite.png) repeat-x 0 -200px ; position: relative ; }
+.yui-skin-sam .yui-toolbar-container .yui-toolbar-titlebar { background: url(../images/xnat-sprite.png) repeat-x 0 -200px ; position: relative ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-titlebar h2 { color: #000000 ; font-weight: bold ; margin: 0 ; padding: 0.3em 1em ; font-size: 100% ; text-align: left ; }
 
@@ -1569,11 +1569,11 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-editor-container .dompath { background-color: #F2F2F2 ; border-top: 1px solid #808080 ; color: #999 ; text-align: left ; padding: 0.25em ; }
 
-.yui-skin-sam .yui-toolbar-container .collapse { background: url(xnat-sprite.png) no-repeat 0 -400px ; }
+.yui-skin-sam .yui-toolbar-container .collapse { background: url(../images/xnat-sprite.png) no-repeat 0 -400px ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-titlebar span.collapse { cursor: pointer ; position: absolute ; top: 4px ; right: 2px ; display: block ; overflow: hidden ; height: 15px ; width: 15px ; text-indent: 9999px ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-push-button, .yui-skin-sam .yui-toolbar-container .yui-color-button, .yui-skin-sam .yui-toolbar-container .yui-menu-button { background: url(xnat-sprite.png) repeat-x 0 0 ; position: relative ; display: block ; height: 22px ; width: 30px ; margin: 0 ; border-color: #808080 ; border-style: solid ; border-width: 1px 0 ; }
+.yui-skin-sam .yui-toolbar-container .yui-push-button, .yui-skin-sam .yui-toolbar-container .yui-color-button, .yui-skin-sam .yui-toolbar-container .yui-menu-button { background: url(../images/xnat-sprite.png) repeat-x 0 0 ; position: relative ; display: block ; height: 22px ; width: 30px ; margin: 0 ; border-color: #808080 ; border-style: solid ; border-width: 1px 0 ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-push-button a, .yui-skin-sam .yui-toolbar-container .yui-color-button a, .yui-skin-sam .yui-toolbar-container .yui-menu-button a { padding-left: 35px ; height: 20px ; text-decoration: none ; font-size: 93% ; line-height: 2 ; display: block ; color: #000000 ; overflow: hidden ; }
 
@@ -1591,17 +1591,17 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-heading { width: 92px ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-button-hover { background: url(xnat-sprite.png) repeat-x 0 -1300px ; border-color: #808080 ; }
+.yui-skin-sam .yui-toolbar-container .yui-button-hover { background: url(../images/xnat-sprite.png) repeat-x 0 -1300px ; border-color: #808080 ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-button-selected { background: url(xnat-sprite.png) repeat-x 0 -1700px ; border-color: #808080 ; }
+.yui-skin-sam .yui-toolbar-container .yui-button-selected { background: url(../images/xnat-sprite.png) repeat-x 0 -1700px ; border-color: #808080 ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-nogrouplabels h3 { display: none ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-nogrouplabels .yui-toolbar-group { margin-top: .75em ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-push-button span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-color-button span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-menu-button span.yui-toolbar-icon { display: block ; position: absolute ; top: 2px ; height: 18px ; width: 18px ; overflow: hidden ; background: url(editor-sprite.gif) no-repeat 30px 30px ; }
+.yui-skin-sam .yui-toolbar-container .yui-push-button span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-color-button span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-menu-button span.yui-toolbar-icon { display: block ; position: absolute ; top: 2px ; height: 18px ; width: 18px ; overflow: hidden ; background: url(../images/editor-sprite.gif) no-repeat 30px 30px ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-button-selected span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-button-hover span.yui-toolbar-icon { background-image: url(editor-sprite-active.gif) ; }
+.yui-skin-sam .yui-toolbar-container .yui-button-selected span.yui-toolbar-icon, .yui-skin-sam .yui-toolbar-container .yui-button-hover span.yui-toolbar-icon { background-image: url(../images/editor-sprite-active.gif) ; }
 
 .yui-skin-sam .yui-toolbar-container .visible .yuimenuitemlabel { cursor: pointer ; color: #000 ; *position: relative ; }
 
@@ -1665,7 +1665,7 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton span.yui-toolbar-icon { display: none ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.up, .yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.down { right: 2px ; background: url(editor-sprite.gif) no-repeat 0 -1222px ; overflow: hidden ; height: 6px ; width: 7px ; min-height: 0 ; padding: 0 ; }
+.yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.up, .yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.down { right: 2px ; background: url(../images/editor-sprite.gif) no-repeat 0 -1222px ; overflow: hidden ; height: 6px ; width: 7px ; min-height: 0 ; padding: 0 ; }
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-spinbutton a.up { top: 2px ; background-position: 0 -1222px ; }
 
@@ -1675,7 +1675,7 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-toolbar-container .yui-toolbar-select .first-child a { padding-left: 5px ; text-align: left ; }
 
-.yui-skin-sam .yui-toolbar-container .yui-toolbar-select span.yui-toolbar-icon { background: url( editor-sprite.gif ) no-repeat 0 -1144px ; overflow: hidden ; right: -2px ; top: 0px ; height: 20px ; }
+.yui-skin-sam .yui-toolbar-container .yui-toolbar-select span.yui-toolbar-icon { background: url(../images/ editor-sprite.gif ) no-repeat 0 -1144px ; overflow: hidden ; right: -2px ; top: 0px ; height: 20px ; }
 
 .yui-skin-sam .yui-editor-panel .yui-color-button-menu .bd { background-color: transparent ; border: none ; width: 135px ; }
 
@@ -1685,7 +1685,7 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-editor-panel .hd { margin: 10px 0 0 ; padding: 0 ; border: none ; }
 
-.yui-skin-sam .yui-editor-panel .hd h3 { color: #000 ; border: 1px solid #808080 ; background: url(xnat-sprite.png) repeat-x 0 -200px ; width: 99% ; position: relative ; margin: 0 ; padding: 3px 0 0 0 ; font-size: 93% ; text-indent: 5px ; height: 20px ; }
+.yui-skin-sam .yui-editor-panel .hd h3 { color: #000 ; border: 1px solid #808080 ; background: url(../images/xnat-sprite.png) repeat-x 0 -200px ; width: 99% ; position: relative ; margin: 0 ; padding: 3px 0 0 0 ; font-size: 93% ; text-indent: 5px ; height: 20px ; }
 
 .yui-skin-sam .yui-editor-panel .bd { background-color: #F2F2F2 ; border-left: 1px solid #808080 ; border-right: 1px solid #808080 ; width: 99% ; margin: 0 ; padding: 0 ; overflow: visible ; }
 
@@ -1733,25 +1733,25 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-editor-panel .ft { background-color: #F2F2F2 ; border: 1px solid #808080 ; border-top: none ; padding: 0 ; margin: 0 0 2px 0 ; }
 
-.yui-skin-sam .yui-editor-panel .hd span.close { background: url(xnat-sprite.png) no-repeat 0 -300px ; cursor: pointer ; display: block ; height: 16px ; overflow: hidden ; position: absolute ; right: 5px ; text-indent: 500px ; top: 2px ; width: 26px ; }
+.yui-skin-sam .yui-editor-panel .hd span.close { background: url(../images/xnat-sprite.png) no-repeat 0 -300px ; cursor: pointer ; display: block ; height: 16px ; overflow: hidden ; position: absolute ; right: 5px ; text-indent: 500px ; top: 2px ; width: 26px ; }
 
 .yui-skin-sam .yui-editor-panel .ft span.tip { background-color: #FFFFCC ; border-top: 1px solid #808080 ; font-size: 85% ; }
 
 .yui-skin-sam .yui-editor-panel .ft span.tip strong { display: block ; float: left ; margin: 0 2px 8px 0 ; }
 
-.yui-skin-sam .yui-editor-panel .ft span.tip span.icon { background: url( editor-sprite.gif ) no-repeat 0 -1260px ; display: block ; height: 20px ; left: 2px ; position: absolute ; top: 8px ; width: 20px ; }
+.yui-skin-sam .yui-editor-panel .ft span.tip span.icon { background: url(../images/ editor-sprite.gif ) no-repeat 0 -1260px ; display: block ; height: 20px ; left: 2px ; position: absolute ; top: 8px ; width: 20px ; }
 
 .yui-skin-sam .yui-editor-panel .ft span.tip span.icon-info { background-position: 2px -1260px ; }
 
 .yui-skin-sam .yui-editor-panel .ft span.tip span.icon-warn { background-position: 2px -1296px ; }
 
-.yui-skin-sam .yui-editor-panel .hd span.knob { position: absolute ; height: 10px ; width: 28px ; top: -10px ; left: 25px ; text-indent: 9999px ; overflow: hidden ; background: url( editor-knob.gif ) no-repeat 0 0 ; }
+.yui-skin-sam .yui-editor-panel .hd span.knob { position: absolute ; height: 10px ; width: 28px ; top: -10px ; left: 25px ; text-indent: 9999px ; overflow: hidden ; background: url(../images/ editor-knob.gif ) no-repeat 0 0 ; }
 
 .yui-skin-sam .yui-editor-panel .yui-toolbar-container { float: left ; width: 100% ; background-image: none ; border: none ; }
 
 .yui-skin-sam .yui-editor-panel .yui-toolbar-container .bd { background-color: #ffffff ; }
 
-.yui-editor-blankimage { background-image: url( blankimage.png ) ; }
+.yui-editor-blankimage { background-image: url(../images/ blankimage.png ) ; }
 
 .yui-navset .yui-nav li, .yui-navset .yui-navset-top .yui-nav li, .yui-navset .yui-navset-bottom .yui-nav li { margin: 0 0.5em 0 0 ; }
 
@@ -1803,13 +1803,13 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-navset .yui-nav .selected, .yui-skin-sam .yui-navset .yui-navset-top .yui-nav .selected { margin: 0 0.16em -1px 0 ; }
 
-.yui-skin-sam .yui-navset .yui-nav a, .yui-skin-sam .yui-navset .yui-navset-top .yui-nav a { background: #d8d8d8 url(xnat-sprite.png) repeat-x ; border: solid #a3a3a3 ; border-width: 0 1px ; color: #000 ; position: relative ; text-decoration: none ; }
+.yui-skin-sam .yui-navset .yui-nav a, .yui-skin-sam .yui-navset .yui-navset-top .yui-nav a { background: #d8d8d8 url(../images/xnat-sprite.png) repeat-x ; border: solid #a3a3a3 ; border-width: 0 1px ; color: #000 ; position: relative ; text-decoration: none ; }
 
 .yui-skin-sam .yui-navset .yui-nav a em, .yui-skin-sam .yui-navset .yui-navset-top .yui-nav a em { border: solid #a3a3a3 ; border-width: 1px 0 0 ; cursor: hand ; padding: 0.25em .75em ; left: 0 ; right: 0 ; bottom: 0 ; top: -1px ; position: relative ; }
 
-.yui-skin-sam .yui-navset .yui-nav .selected a, .yui-skin-sam .yui-navset .yui-nav .selected a:focus, .yui-skin-sam .yui-navset .yui-nav .selected a:hover { background: #996633 url(xnat-sprite.png) repeat-x left -1400px ; color: #fff ; }
+.yui-skin-sam .yui-navset .yui-nav .selected a, .yui-skin-sam .yui-navset .yui-nav .selected a:focus, .yui-skin-sam .yui-navset .yui-nav .selected a:hover { background: #996633 url(../images/xnat-sprite.png) repeat-x left -1400px ; color: #fff ; }
 
-.yui-skin-sam .yui-navset .yui-nav a:hover, .yui-skin-sam .yui-navset .yui-nav a:focus { background: #bfdaff url(xnat-sprite.png) repeat-x left -1300px ; outline: 0 ; }
+.yui-skin-sam .yui-navset .yui-nav a:hover, .yui-skin-sam .yui-navset .yui-nav a:focus { background: #bfdaff url(../images/xnat-sprite.png) repeat-x left -1300px ; outline: 0 ; }
 
 .yui-skin-sam .yui-navset .yui-nav .selected a em { padding: 0.35em 0.75em ; }
 
@@ -1853,29 +1853,29 @@ h2.yui-editor-skipheader,h3.yui-editor-skipheader { height: 0 ; margin: 0 ; padd
 
 .yui-skin-sam .yui-navset-bottom .yui-content, .yui-skin-sam .yui-navset .yui-navset-bottom .yui-content { border: 1px solid #808080 ; border-bottom-color: #243356 ; }
 
-.ygtvtn { width: 9px ; height: 22px ; background: url(treeview-sprite.gif) 0 -5600px no-repeat ; }
+.ygtvtn { width: 9px ; height: 22px ; background: url(../images/treeview-sprite.gif) 0 -5600px no-repeat ; }
 
-.ygtvtm { width: 9px ; height: 22px ; cursor: pointer ; background: url(treeview-sprite.gif) 0 -4000px no-repeat ; }
+.ygtvtm { width: 9px ; height: 22px ; cursor: pointer ; background: url(../images/treeview-sprite.gif) 0 -4000px no-repeat ; }
 
-.ygtvtmh { width: 9px ; height: 22px ; cursor: pointer ; background: url(treeview-sprite.gif) 0 -4800px no-repeat ; }
+.ygtvtmh { width: 9px ; height: 22px ; cursor: pointer ; background: url(../images/treeview-sprite.gif) 0 -4800px no-repeat ; }
 
-.ygtvtp { width: 9px ; height: 22px ; cursor: pointer ; background: url(treeview-sprite.gif) 0 -6400px no-repeat ; }
+.ygtvtp { width: 9px ; height: 22px ; cursor: pointer ; background: url(../images/treeview-sprite.gif) 0 -6400px no-repeat ; }
 
-.ygtvtph { width: 9px ; height: 22px ; cursor: pointer ; background: url(treeview-sprite.gif) 0 -7200px no-repeat ; }
+.ygtvtph { width: 9px ; height: 22px ; cursor: pointer ; background: url(../images/treeview-sprite.gif) 0 -7200px no-repeat ; }
 
-.ygtvln { width: 9px ; height: 22px ; background: url(treeview-sprite.gif) 0 -1600px no-repeat ; }
+.ygtvln { width: 9px ; height: 22px ; background: url(../images/treeview-sprite.gif) 0 -1600px no-repeat ; }
 
-.ygtvlm { width: 9px ; height: 22px ; cursor: pointer ; background: url(treeview-sprite.gif) 0 0px no-repeat ; }
+.ygtvlm { width: 9px ; height: 22px ; cursor: pointer ; background: url(../images/treeview-sprite.gif) 0 0px no-repeat ; }
 
-.ygtvlmh { width: 9px ; height: 22px ; cursor: pointer ; background: url(treeview-sprite.gif) 0 -800px no-repeat ; }
+.ygtvlmh { width: 9px ; height: 22px ; cursor: pointer ; background: url(../images/treeview-sprite.gif) 0 -800px no-repeat ; }
 
-.ygtvlp { width: 9px ; height: 22px ; cursor: pointer ; background: url(treeview-sprite.gif) 0 -2400px no-repeat ; }
+.ygtvlp { width: 9px ; height: 22px ; cursor: pointer ; background: url(../images/treeview-sprite.gif) 0 -2400px no-repeat ; }
 
-.ygtvlph { width: 9px ; height: 22px ; cursor: pointer ; background: url(treeview-sprite.gif) 0 -3200px no-repeat ; }
+.ygtvlph { width: 9px ; height: 22px ; cursor: pointer ; background: url(../images/treeview-sprite.gif) 0 -3200px no-repeat ; }
 
-.ygtvloading { width: 9px ; height: 22px ; background: url(treeview-loading.gif) 0 0 no-repeat ; }
+.ygtvloading { width: 9px ; height: 22px ; background: url(../images/treeview-loading.gif) 0 0 no-repeat ; }
 
-.ygtvdepthcell { width: 9px ; height: 22px ; background: url(treeview-sprite.gif) 0 -8000px no-repeat ; }
+.ygtvdepthcell { width: 9px ; height: 22px ; background: url(../images/treeview-sprite.gif) 0 -8000px no-repeat ; }
 
 .ygtvblankdepthcell { width: 9px ; height: 22px ; }
 

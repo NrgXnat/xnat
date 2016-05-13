@@ -16,11 +16,11 @@ public interface PreferenceBean {
 
     Set<String> getPreferenceKeys();
 
-    Properties getPreferencesAsProperties();
+    Map<String, Object> getPreferenceMap();
 
-    Properties getPreferencesAsProperties(final String... preferenceNames);
+    Map<String, Object> getPreferenceMap(final String... preferenceNames);
 
-    Properties getPreferencesAsProperties(final List<String> preferenceNames);
+    Map<String, Object> getPreferenceMap(final Set<String> preferenceNames);
 
     Class<? extends PreferenceEntityResolver> getResolver();
 

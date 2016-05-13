@@ -44,6 +44,8 @@ public class NrgPrefsServiceTests {
         _basicPrefsTool.setPrefB("valueBMod");
         assertEquals("valueAMod", _basicPrefsTool.getPrefA());
         assertEquals("valueBMod", _basicPrefsTool.getPrefB());
+        final Map<String, Object> preferences = _basicPrefsTool.getPreferenceMap();
+        assertEquals(2, preferences.size());
     }
 
     @Test
@@ -55,6 +57,8 @@ public class NrgPrefsServiceTests {
         _propertiesPrefsTool.setPropertyB("valueBMod");
         assertEquals("valueAMod", _propertiesPrefsTool.getPropertyA());
         assertEquals("valueBMod", _propertiesPrefsTool.getPropertyB());
+        final Map<String, Object> preferences = _propertiesPrefsTool.getPreferenceMap();
+        assertEquals(2, preferences.size());
     }
 
     @Test
@@ -76,6 +80,8 @@ public class NrgPrefsServiceTests {
         assertEquals("valueCMod", _relaxedPrefsTool.getRelaxedPrefC());
         _relaxedPrefsTool.setRelaxedWhatever("freeForm", "This can be anything!");
         assertEquals("This can be anything!", _relaxedPrefsTool.getRelaxedWhatever("freeForm"));
+        final Map<String, Object> preferences = _relaxedPrefsTool.getPreferenceMap();
+        assertEquals(4, preferences.size());
     }
 
     @Test(expected = InvalidPreferenceName.class)
@@ -89,6 +95,9 @@ public class NrgPrefsServiceTests {
         assertEquals("strictValueBMod", _strictPrefsTool.getStrictPrefB());
         final String prefC = _strictPrefsTool.getStrictPrefC();
         assertNull(prefC);
+
+        final Map<String, Object> preferences = _strictPrefsTool.getPreferenceMap();
+        assertEquals(2, preferences.size());
 
         // This will throw the InvalidPreferenceName exception.
         _strictPrefsTool.setStrictPrefC("defaultC");
@@ -186,6 +195,8 @@ public class NrgPrefsServiceTests {
         assertTrue(prefEs.containsKey("CCIR"));
         assertEquals("XNAT", prefEs.get("XNAT").getAeTitle());
         assertEquals("CCIR", prefEs.get("CCIR").getAeTitle());
+        final Map<String, Object> preferences = _beanPrefsTool.getPreferenceMap();
+        assertEquals(5, preferences.size());
     }
 
     @Ignore

@@ -12,6 +12,7 @@ import com.fasterxml.jackson.databind.type.MapType;
 import com.fasterxml.jackson.databind.type.TypeFactory;
 import com.google.common.base.Joiner;
 import com.google.common.collect.Lists;
+import com.google.common.collect.Maps;
 import com.google.common.collect.Sets;
 import org.apache.commons.lang3.NotImplementedException;
 import org.apache.commons.lang3.StringUtils;
@@ -75,25 +76,53 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
     @JsonIgnore
     @Override
     public Set<String> getPreferenceKeys() {
-        return _service.getToolPropertyNames(getToolId());
+        final Set<String> primaryKeys = new TreeSet<>();
+        final Set<String> rawKeys = _service.getToolPropertyNames(getToolId());
+        for (final String rawKey : rawKeys) {
+            primaryKeys.add(getPreferencePrimaryKey(rawKey));
+        }
+        return primaryKeys;
     }
 
     @JsonIgnore
     @Override
-    public Properties getPreferencesAsProperties() {
-        return _service.getToolProperties(getToolId());
+    public Map<String, Object> getPreferenceMap() {
+        return getPreferenceMap((Set<String>) null);
     }
 
     @JsonIgnore
     @Override
-    public Properties getPreferencesAsProperties(final String... preferenceNames) {
-        return getPreferencesAsProperties(Arrays.asList(new String[preferenceNames.length]));
+    public Map<String, Object> getPreferenceMap(final String... preferenceNames) {
+        return getPreferenceMap(Sets.newHashSet(new String[preferenceNames.length]));
     }
 
     @JsonIgnore
     @Override
-    public Properties getPreferencesAsProperties(final List<String> preferenceNames) {
-        return _service.getToolProperties(getToolId(), preferenceNames);
+    public Map<String, Object> getPreferenceMap(final Set<String> preferenceNames) {
+        final boolean isFiltered = preferenceNames != null && preferenceNames.size() > 0;
+        final Set<String> allKeys = getPreferenceKeys();
+        final Map<String, Object> preferences = Maps.newHashMap();
+        for (final String preferenceName : _preferences.keySet()) {
+            if (!isFiltered || preferenceNames.contains(preferenceName)) {
+                final PreferenceInfo info = _preferences.get(preferenceName);
+                if (info != null) {
+                    allKeys.remove(preferenceName);
+                    try {
+                        preferences.put(preferenceName, info.getGetter().invoke(this));
+                    } catch (IllegalAccessException e) {
+                        _log.error("An error occurred trying to access the value for the preference " + preferenceName + " in the tool " + getToolId(), e);
+                    } catch (InvocationTargetException e) {
+                        _log.error("An error occurred trying to access the getter method for the preference " + preferenceName + " in the tool " + getToolId(), e);
+                    }
+                }
+            }
+        }
+        if (allKeys.size() > 0) {
+            for (final String preferenceName : allKeys) {
+                preferences.put(preferenceName, getValue(preferenceName));
+            }
+        }
+        return preferences;
     }
 
     @JsonIgnore
@@ -654,6 +683,14 @@ public abstract class AbstractPreferenceBean implements PreferenceBean {
 
     protected String getNamespacedPropertyId(final String key, final String... names) {
         return Joiner.on(NAMESPACE_DELIMITER).join(Lists.asList(key, names));
+    }
+
+    private static String getPreferencePrimaryKey(final String preferenceName) {
+        if (StringUtils.isBlank(preferenceName)) {
+            return "";
+        }
+        final String[] atoms = preferenceName.split(NAMESPACE_DELIMITER, 2);
+        return atoms[0];
     }
 
     private static String getPreferenceSubkey(final String preferenceName) {

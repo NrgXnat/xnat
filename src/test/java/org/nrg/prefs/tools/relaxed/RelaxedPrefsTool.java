@@ -4,6 +4,8 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class RelaxedPrefsTool {
     public String getRelaxedPrefA() {
@@ -36,6 +38,10 @@ public class RelaxedPrefsTool {
 
     public void setRelaxedWhatever(final String preference, final String value) throws InvalidPreferenceName {
         _preferences.set(value, preference);
+    }
+
+    public Map<String, Object> getPreferenceMap() {
+        return _preferences.getPreferenceMap();
     }
 
     @Autowired

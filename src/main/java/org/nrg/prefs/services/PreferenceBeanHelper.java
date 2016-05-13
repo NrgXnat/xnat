@@ -1,6 +1,8 @@
 package org.nrg.prefs.services;
 
 import org.apache.commons.lang3.StringUtils;
+import org.nrg.framework.exceptions.NotConcreteTypeException;
+import org.nrg.framework.exceptions.NotParameterizedTypeException;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceRuntimeException;
 import org.nrg.framework.utilities.BasicXnatResourceLocator;
@@ -9,8 +11,6 @@ import org.nrg.prefs.annotations.NrgPreference;
 import org.nrg.prefs.annotations.NrgPreferenceBean;
 import org.nrg.prefs.beans.AbstractPreferenceBean;
 import org.nrg.prefs.entities.PreferenceInfo;
-import org.nrg.framework.exceptions.NotConcreteTypeException;
-import org.nrg.framework.exceptions.NotParameterizedTypeException;
 import org.reflections.ReflectionUtils;
 import org.springframework.beans.BeanUtils;
 import org.springframework.core.io.Resource;
@@ -21,7 +21,7 @@ import java.lang.reflect.Method;
 import java.lang.reflect.Type;
 import java.util.*;
 
-import static org.reflections.ReflectionUtils.withAnnotation;
+import static org.reflections.ReflectionUtils.*;
 
 /**
  * Utility methods for working with preference beans.
@@ -31,12 +31,13 @@ public class PreferenceBeanHelper {
      * Returns all of the {@link NrgPreference}-annotated properties on the submitted class along with the default
      * values for each property. This uses the {@link #getPreferenceInfoMap(Class)} call to extract each property's
      * {@link PreferenceInfo} bean.
-     * @param clazz    The {@link AbstractPreferenceBean preference bean class} to process.
+     *
+     * @param clazz The {@link AbstractPreferenceBean preference bean class} to process.
      * @return The properties and their default values found on the submitted bean.
      */
     public static Properties getPreferenceBeanProperties(final Class<? extends AbstractPreferenceBean> clazz) {
         final Map<String, PreferenceInfo> preferences = getPreferenceInfoMap(clazz);
-        final Properties properties = new Properties();
+        final Properties                  properties  = new Properties();
         for (final String preference : preferences.keySet()) {
             properties.setProperty(preference, preferences.get(preference).getDefaultValue());
         }
@@ -47,12 +48,11 @@ public class PreferenceBeanHelper {
      * Walks the methods on the submitted class annotated with {@link NrgPreference} and extracts {@link PreferenceInfo}
      * objects for each preference setting.
      *
-     * @param clazz    The {@link AbstractPreferenceBean preference bean class} to process.
-     *
+     * @param clazz The {@link AbstractPreferenceBean preference bean class} to process.
      * @return The preferences found on the class, stored by the preference property or name.
      */
     public static Map<String, PreferenceInfo> getPreferenceInfoMap(final Class<? extends AbstractPreferenceBean> clazz) {
-        final String uri = clazz.getAnnotation(NrgPreferenceBean.class).properties();
+        final String     uri      = clazz.getAnnotation(NrgPreferenceBean.class).properties();
         final Properties defaults = new Properties();
         if (StringUtils.isNotBlank(uri)) {
             try {
@@ -65,19 +65,23 @@ public class PreferenceBeanHelper {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "Unable to load the properties bundle specified by the URI " + uri + " on the class " + clazz.getName(), e);
             }
         }
-        final Map<String, PreferenceInfo> preferences = new HashMap<>();
-        @SuppressWarnings("unchecked") final Set<Method> properties = ReflectionUtils.getAllMethods(clazz, withAnnotation(NrgPreference.class));
+        final Map<String, PreferenceInfo>                preferences = new HashMap<>();
+        @SuppressWarnings("unchecked") final Set<Method> properties  = ReflectionUtils.getAllMethods(clazz, withAnnotation(NrgPreference.class));
         for (final Method method : properties) {
             final NrgPreference annotation = method.getAnnotation(NrgPreference.class);
-            final String name;
-            final String property;
-            final Class<?> type;
-            final Type genericType;
+            final String        name;
+            final String        property;
+            final Class<?>      type;
+            final Type          genericType;
+            final Method        getter;
+            final Method        setter;
             if (Reflection.isGetter(method)) {
                 name = propertize(method.getName(), "get");
                 property = annotation.property();
                 type = method.getReturnType();
                 genericType = method.getGenericReturnType();
+                getter = method;
+                setter = getPropertyMethod(clazz, "set", name);
             } else if (Reflection.isSetter(method)) {
                 final Class<?>[] parameterTypes = method.getParameterTypes();
                 if (parameterTypes.length != 1) {
@@ -87,13 +91,15 @@ public class PreferenceBeanHelper {
                 property = annotation.property();
                 type = parameterTypes[0];
                 genericType = method.getGenericParameterTypes()[0];
+                setter = method;
+                getter = getPropertyMethod(clazz, "get", name);
             } else {
                 throw new NrgServiceRuntimeException(NrgServiceError.ConfigurationError, "The " + method.getName() + "() method doesn't appear to be a getter or a setter, but is annotated anyway. Only getter and setter methods should be annotated.");
             }
 
             final boolean isArray = type.isArray();
-            final boolean isList = List.class.isAssignableFrom(type);
-            final boolean isMap = Map.class.isAssignableFrom(type);
+            final boolean isList  = List.class.isAssignableFrom(type);
+            final boolean isMap   = Map.class.isAssignableFrom(type);
 
             // If this is a list or a map, then the type should be the type of map and the generic type should be the
             // parameterized type. If they're equal, that means it's just a List or Map with no type set, which means we
@@ -108,7 +114,7 @@ public class PreferenceBeanHelper {
             // Here we get the default value, favoring the property value over the annotated value.
             final String defaultValue = defaults.getProperty(propertyName, annotation.defaultValue());
 
-            final PreferenceInfo info = new PreferenceInfo(name, property, defaultValue, annotation.key(), type);
+            final PreferenceInfo info = new PreferenceInfo(name, property, defaultValue, annotation.key(), type, getter, setter);
 
             if (isArray || isList) {
                 final Class<?> itemType;
@@ -154,5 +160,12 @@ public class PreferenceBeanHelper {
             prefix = type;
         }
         return StringUtils.uncapitalize(name.replace(prefix, ""));
+    }
+
+    private static Method getPropertyMethod(final Class<?> clazz, final String type, final String name) {
+        final int typeArgsCount = StringUtils.equals("get", type) ? 0 : 1;
+        @SuppressWarnings("unchecked")
+        final Set<Method> methods = ReflectionUtils.getAllMethods(clazz, withName(type + StringUtils.capitalize(name)), withParametersCount(typeArgsCount));
+        return methods.size() > 0 ? methods.toArray(new Method[methods.size()])[0] : null;
     }
 }

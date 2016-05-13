@@ -4,6 +4,8 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class StrictPrefsTool {
     public String getStrictPrefA() {
@@ -28,6 +30,10 @@ public class StrictPrefsTool {
 
     public void setStrictPrefC(final String strictPrefC) throws InvalidPreferenceName {
         _preferences.setStrictPrefC(strictPrefC);
+    }
+
+    public Map<String, Object> getPreferenceMap() {
+        return _preferences.getPreferenceMap();
     }
 
     @Autowired

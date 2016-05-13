@@ -87,6 +87,10 @@ public class BeanPrefsTool {
         _bean.deletePrefE(prefE);
     }
 
+    public Map<String, Object> getPreferenceMap() {
+        return _bean.getPreferenceMap();
+    }
+
     @Inject
     private BeanPrefsToolPreferenceBean _bean;
 }

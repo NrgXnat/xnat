@@ -4,6 +4,8 @@ import org.nrg.prefs.exceptions.InvalidPreferenceName;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import java.util.Map;
+
 @Component
 public class PropertiesPrefsTool {
     public String getPropertyA() {
@@ -20,6 +22,10 @@ public class PropertiesPrefsTool {
 
     public void setPropertyB(final String prefB) throws InvalidPreferenceName {
         _preferences.setPropertyB(prefB);
+    }
+
+    public Map<String, Object> getPreferenceMap() {
+        return _preferences.getPreferenceMap();
     }
 
     @Autowired

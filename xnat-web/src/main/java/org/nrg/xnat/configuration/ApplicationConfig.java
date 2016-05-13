@@ -14,6 +14,7 @@ import org.nrg.xdat.services.impl.ThemeServiceImpl;
 import org.nrg.xnat.initialization.InitializingTasksExecutor;
 import org.nrg.xnat.restlet.XnatRestletExtensions;
 import org.nrg.xnat.restlet.actions.importer.ImporterHandlerPackages;
+import org.nrg.xnat.services.PETTracerUtils;
 import org.nrg.xnat.utils.XnatUserProvider;
 import org.springframework.context.annotation.*;
 
@@ -29,11 +30,10 @@ import java.util.List;
                 "org.nrg.prefs.repositories", "org.nrg.xdat.daos", "org.nrg.xdat.services.impl.hibernate", "org.nrg.xft.daos",
                 "org.nrg.xft.event.listeners", "org.nrg.xft.services", "org.nrg.xnat.configuration", "org.nrg.xnat.daos",
                 "org.nrg.xnat.event.listeners", "org.nrg.xnat.helpers.merge", "org.nrg.xnat.initialization.tasks",
-                "org.nrg.xnat.services", "org.nrg.xnat.services.impl.hibernate", "org.nrg.xnat.spawner.repositories"})
+                "org.nrg.xnat.services.impl.hibernate", "org.nrg.xnat.spawner.repositories"})
 @Import({FeaturesConfig.class, ReactorConfig.class})
 @ImportResource("WEB-INF/conf/mq-context.xml")
 public class ApplicationConfig {
-
     @Bean
     public ThemeService themeService() {
         return new ThemeServiceImpl();
@@ -53,6 +53,11 @@ public class ApplicationConfig {
     @Bean
     public SiteConfigPreferences siteConfigPreferences() {
         return new SiteConfigPreferences();
+    }
+
+    @Bean
+    public PETTracerUtils petTracerUtils() throws Exception {
+        return new PETTracerUtils();
     }
 
     @Bean

@@ -2,10 +2,15 @@ package org.nrg.xapi.rest.settings;
 
 import com.google.common.base.Joiner;
 import io.swagger.annotations.*;
+import org.apache.commons.lang3.StringUtils;
 import org.nrg.framework.annotations.XapiRestController;
 import org.nrg.prefs.exceptions.InvalidPreferenceName;
+import org.nrg.xapi.exceptions.InitializationException;
 import org.nrg.xdat.preferences.SiteConfigPreferences;
 import org.nrg.xdat.rest.AbstractXnatRestApi;
+import org.nrg.xnat.services.XnatAppInfo;
+import org.nrg.xnat.turbine.utils.ArcSpecManager;
+import org.nrg.xnat.utils.XnatHttpUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -18,12 +23,11 @@ import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 
+import javax.servlet.http.HttpServletRequest;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Properties;
-import java.util.jar.Attributes;
-import java.util.jar.Manifest;
 
 @Api(description = "Site Configuration Management API")
 @XapiRestController
@@ -37,36 +41,32 @@ public class SiteConfigApi extends AbstractXnatRestApi {
             _log.debug("User " + getSessionUser().getUsername() + " requested the application build information.");
         }
 
-        if (_properties.size() == 0) {
-            final Attributes attributes  = _manifest.getMainAttributes();
-            _properties.setProperty("buildNumber",  attributes.getValue("Build-Number"));
-            _properties.setProperty("buildDate", attributes.getValue("Build-Date"));
-            _properties.setProperty("version", attributes.getValue("Implementation-Version"));
-            _properties.setProperty("commit", attributes.getValue("Implementation-Sha"));
-            if (_log.isDebugEnabled()) {
-                _log.debug("Initialized application build information:\n * Version: {}\n * Build number: {}\n * Build Date: {}\n * Commit: {}",
-                           _properties.getProperty("version"),
-                           _properties.getProperty("buildNumber"),
-                           _properties.getProperty("buildDate"),
-                           _properties.getProperty("commit"));
-            }
-        }
-
-        return new ResponseEntity<>(_properties, HttpStatus.OK);
+        return new ResponseEntity<>(_appInfo.getSystemProperties(), HttpStatus.OK);
     }
 
-    @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = SiteConfigPreferences.class)
+    @ApiOperation(value = "Returns the full map of site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully retrieved."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.GET})
-    public ResponseEntity<SiteConfigPreferences> getAllSiteConfigProperties() {
+    public ResponseEntity<Map<String, Object>> getAllSiteConfigProperties(final HttpServletRequest request) {
         final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
         }
+        final String username = getSessionUser().getUsername();
         if (_log.isDebugEnabled()) {
-            _log.debug("User " + getSessionUser().getUsername() + " requested the site configuration.");
+            _log.debug("User " + username + " requested the site configuration.");
         }
-        return new ResponseEntity<>(_preferences, HttpStatus.OK);
+
+        final Map<String, Object> preferences = _preferences.getPreferenceMap();
+
+        if (!_appInfo.isInitialized()) {
+            if (_log.isInfoEnabled()) {
+                _log.info("The site is being initialized by user {}. Setting default values from context.", username);
+            }
+            preferences.put("siteUrl", XnatHttpUtils.getServerRoot(request));
+        }
+
+        return new ResponseEntity<>(preferences, HttpStatus.OK);
     }
 
     @ApiOperation(value = "Returns a map of the selected site configuration properties.", notes = "Complex objects may be returned as encapsulated JSON strings.", response = String.class, responseContainer = "Map")
@@ -110,8 +110,8 @@ public class SiteConfigApi extends AbstractXnatRestApi {
     @ApiOperation(value = "Sets a map of site configuration properties.", notes = "Sets the site configuration properties specified in the map.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = "batch", consumes = {MediaType.APPLICATION_FORM_URLENCODED_VALUE, MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
-    public ResponseEntity<Void> setBatchSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, String> properties) {
-        HttpStatus status = isPermitted();
+    public ResponseEntity<Void> setBatchSiteConfigProperties(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @RequestBody final Map<String, String> properties) throws InitializationException {
+        final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
         }
@@ -132,14 +132,18 @@ public class SiteConfigApi extends AbstractXnatRestApi {
             }
         }
 
+        if (properties.containsKey("initialized") && StringUtils.equals("true", properties.get("initialized"))) {
+            initialize();
+        }
+
         return new ResponseEntity<>(HttpStatus.OK);
     }
 
     @ApiOperation(value = "Sets a single site configuration property.", notes = "Sets the site configuration property specified in the URL to the value set in the body.", response = Void.class)
     @ApiResponses({@ApiResponse(code = 200, message = "Site configuration properties successfully set."), @ApiResponse(code = 401, message = "Must be authenticated to access the XNAT REST API."), @ApiResponse(code = 403, message = "Not authorized to set site configuration properties."), @ApiResponse(code = 500, message = "Unexpected error")})
     @RequestMapping(value = {"/{property}"}, consumes = {MediaType.APPLICATION_JSON_VALUE}, produces = {MediaType.APPLICATION_JSON_VALUE}, method = {RequestMethod.POST})
-    public ResponseEntity<Void> setSiteConfigProperty(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @PathVariable("property") final String property, @RequestBody final String value) {
-        HttpStatus status = isPermitted();
+    public ResponseEntity<Void> setSiteConfigProperty(@ApiParam(value = "The map of site configuration properties to be set.", required = true) @PathVariable("property") final String property, @RequestBody final String value) throws InitializationException {
+        final HttpStatus status = isPermitted();
         if (status != null) {
             return new ResponseEntity<>(status);
         }
@@ -155,7 +159,22 @@ public class SiteConfigApi extends AbstractXnatRestApi {
             return new ResponseEntity<>(HttpStatus.INTERNAL_SERVER_ERROR);
         }
 
+        if (StringUtils.equals("initialized", property) && StringUtils.equals("true", value)) {
+            initialize();
+        }
+
         return new ResponseEntity<>(HttpStatus.OK);
+    }
+
+    private void initialize() throws InitializationException {
+        // In the case where the application hasn't yet been initialized, this operation should mean that the system is
+        // being initialized from the set-up page. In that case, we need to propagate a few properties to the arc-spec
+        // persistence to support
+        try {
+            ArcSpecManager.initialize(getSessionUser());
+        } catch (Exception e) {
+            throw new InitializationException(e);
+        }
     }
 
     private static final Logger _log = LoggerFactory.getLogger(SiteConfigApi.class);
@@ -166,7 +185,5 @@ public class SiteConfigApi extends AbstractXnatRestApi {
 
     @Autowired
     @Lazy
-    private Manifest _manifest;
-
-    private Properties _properties = new Properties();
+    private XnatAppInfo _appInfo;
 }

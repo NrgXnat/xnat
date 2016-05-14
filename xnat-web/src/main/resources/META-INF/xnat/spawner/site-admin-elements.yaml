@@ -102,14 +102,14 @@ fileSystemSettingsWarning:
             style:
                 fontWeight: bold
 
-archiveRootPath:
+archivePath:
     kind: panel.input.text
-    id: archiveRootPath
-    name: archiveRootPath
-    label: Archive Root Path
+    id: archivePath
+    name: archivePath
+    label: Archive Path
     validation: required path
     description: ""
-    value: ?? XNAT.data.siteConfig.archiveRootPath
+    value: ?? XNAT.data.siteConfig.archivePath
 
 cachePath:
     kind: panel.input.text
@@ -999,7 +999,7 @@ fileSystem:
         lookup: XNAT.data.siteConfig
     contentType: json
     contents:
-        ${archiveRootPath}
+        ${archivePath}
         ${cachePath}
         ${prearchivePath}
         ${ftpPath}
@@ -1185,7 +1185,7 @@ sitePaths:
     name: sitePaths
     label: Site Paths
     contents:
-#        ${archiveRootPath}
+#        ${archivePath}
 #        ${cachePath}
 #        ${prearchivePath}
 #        ${ftpPath}

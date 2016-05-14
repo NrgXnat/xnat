@@ -83,9 +83,9 @@ initialSetup:
                 refresh: /xapi/siteConfig
             contents:
 
-                archiveRootPath:
+                archivePath:
                     kind: panel.input.text
-                    name: archiveRootPath
+                    name: archivePath
                     label: Archive Location
                     size: 50
                     value: ''

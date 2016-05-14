@@ -37,10 +37,22 @@
 
     // boolean element attributes
     var boolAttrs = [
-        'disabled',
-        'selected',
         'checked',
-        'multiple'
+        'selected',
+        'disabled',
+        'hidden',
+        'multiple',
+        'readonly',
+        'async',
+        'autofocus',
+        'autoplay',
+        'controls',
+        'defer',
+        'ismap',
+        'loop',
+        'open',
+        'required',
+        'scoped'
     ];
 
     // which "type" values create an <input> element?
@@ -63,6 +75,12 @@
     var inputTags = inputTypes.map(function(type){
         return 'input|' + type;
     });
+
+
+    // can the value be reasonably used as a string?
+    function stringable(val){
+        return /string|number|boolean/.test(typeof val);
+    }
 
 
     function parseAttrs(el, attrs){
@@ -93,7 +111,7 @@
                 el.appendChild(fn.apply(el, child));
             }
             // ...or an HTML string (or number)...
-            else if (/(string|number)/.test(typeof child)){
+            else if (stringable(child)){
                 el.innerHTML += child;
             }
             // ...or 'appendable' nodes
@@ -128,9 +146,11 @@
     function spawn(tag, opts, children){
 
         var el, $el, parts, id, classes, tagParts, attrs, isVoid,
-        // property names to skip later
-            skip = ['innerHTML', 'html', 'append', 'appendTo',
-                'classes', 'className', 'attr', 'style', 'data', 'fn'],
+            // property names to skip later
+            skip = [
+                'innerHTML', 'html', 'attr', 'append', 'appendTo',
+                'classes', 'className', 'style', 'data', 'fn'
+            ],
             errors = []; // collect errors
 
         // deal with passing an array as the only argument
@@ -207,7 +227,7 @@
             // if 'opts' is a string,
             // set el's innerHTML and
             // return the element
-            if (/(string|number)/.test(typeof opts)){
+            if (stringable(opts)){
                 el.innerHTML += opts;
                 return el;
             }
@@ -220,7 +240,7 @@
             }
             // or if 'children' is a string
             // set THAT to the innerHTML
-            else if (/(string|number)/.test(typeof children)){
+            else if (stringable(children)){
                 el.innerHTML += children;
                 children = null;
             }
@@ -438,7 +458,7 @@
 
         // allow use of only 2 arguments
         // with the HTML text being the second
-        if (/(string|number)/.test(typeof opts)){
+        if (stringable(opts)){
             el.innerHTML += (opts+'');
             return el;
         }

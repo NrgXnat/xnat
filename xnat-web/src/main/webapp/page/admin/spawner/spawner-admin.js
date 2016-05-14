@@ -13,7 +13,7 @@
     spawn('button|type=button', {
         html: 'View JSON',
         onclick: function(){
-            XNAT.xhr.get(XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/siteAdmin'), function(data){
+            XNAT.xhr.get(XNAT.url.rootUrl('/xapi/spawner/resolve/siteAdmin/adminPage'), function(data){
                 showJSON(data);
             });
         },
@@ -73,7 +73,7 @@ XNAT.xhr.getJSON({
             ]]);
 
             var idsMenu = spawn('select#spawner-ns-ids', [['option|value=!', 'Select an Element']]);
-
+            
             tds.push(['td', [
 
                 idsMenu,
@@ -91,22 +91,22 @@ XNAT.xhr.getJSON({
                         }
                         var elementUrl = XNAT.url.rootUrl('/xapi/spawner/element/' + NS + '/' + getId);
                         $.get(elementUrl, function(data){
-                            var _textarea = spawn('textarea.mono', {
+                            var _textarea = spawn('textarea.yaml.mono', {
                                 name: getId,
                                 html: data.yaml,
                                 style: { width: '500px', height: '250px' }
                             });
                             _textarea.innerHTML = (data.yaml);
                             var _table = XNAT.table({className: 'xnat-table borderless'}).init([
+                                // [ [['b.label', 'Label: ']], data.label ],
+                                // we could use spawn arg arrays (above), but HTML (below) is fine
                                 ['<b class="label">Namespace:</b> ', data.namespace],
                                 ['<b class="label">Element ID:</b> ', data.elementId],
-                                [ [['b.label', 'Label: ']], data.label ],
-                                //['<b class="label">Label:</b> ', data.label],
-                                [ [['b.label', 'Created: ']], new Date(data.created).toString() ],
-                                // ['<b class="label">Created:</b> ', new Date(data.created).toString()],
+                                ['<b class="label">Label:</b> ', data.label],
+                                ['<b class="label">Created:</b> ', new Date(data.created).toString()],
                                 ['<b class="label">Modified:</b> ', new Date(data.timestamp).toString()]
                             ]);
-                            // anothe way to add a row of data
+                            // another way to add a row of data
                             _table.tr().td([['b.label', 'YAML: ']]).td([_textarea]);
                             //_table.tr().td('<b>YAML:</b> ').td([_textarea]);
                             xmodal.open({
@@ -114,25 +114,20 @@ XNAT.xhr.getJSON({
                                 width: 700,
                                 height: 550,
                                 maximize: true,
+                                enter: false,
+                                esc: false,
                                 title: 'Element ID: ' + getId,
                                 content: _table.get().outerHTML,
                                 beforeShow: function(obj){
                                     console.log(obj)
                                 },
                                 okLabel: 'Save Changes',
-                                okAction: function(){
+                                okAction: function(obj){
                                     XNAT.xhr.put({
-                                        // url: XNAT.url.csrfUrl(elementUrl),
-                                        url: (elementUrl),
-                                        data: {
-                                            // namespace: data.namespace,
-                                            // elementId: data.elementId,
-                                            yaml: _textarea.value
-                                        },
-                                        //dataType: 'text/x-yaml',
-                                        //contentType: 'application/json',
+                                        url: elementUrl,
+                                        data: obj.$modal.find('textarea.yaml').val(),
                                         contentType: 'text/x-yaml',
-                                        processData:  false,
+                                        // processData:  false,
                                         success: function(){
                                             xmodal.message('Data saved.')
                                         },
@@ -150,14 +145,14 @@ XNAT.xhr.getJSON({
             // spawn and push the row
             items.push(spawn('tr', tds));
 
-            (function(){
-                XNAT.xhr.get(XNAT.url.rootUrl('/xapi/spawner/ids/' + NS), function(ids){
-                    $.each(ids, function(){
-                        var id = this;
-                        idsMenu.appendChild(spawn('option', { value: id, html: id }))
-                    });
+            // populate menu with spawner elements for 'NS' namespace
+            XNAT.xhr.get(XNAT.url.rootUrl('/xapi/spawner/ids/' + NS), function(ids){
+                $.each(ids, function(){
+                    var id = this;
+                    idsMenu.appendChild(spawn('option', { value: id, html: id }))
                 });
-            })()
+                chosenInit(idsMenu, { width: '250px' });
+            });
 
         });
 
@@ -165,3 +160,4 @@ XNAT.xhr.getJSON({
 
     }
 });
+

@@ -19,7 +19,7 @@
 
             <div class="panel-body">
 
-            <div data-name="spawnerElements" class="panel-element">
+            <div data-name="spawnerElements" class="panel-element" style="overflow:visible;">
 
             <%--<label class="element-label" for="!?"></label>--%>
             <%--<div class="element-wrapper">--%>

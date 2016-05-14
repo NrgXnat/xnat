@@ -1,5 +1,6 @@
 package org.nrg.xnat.initialization;
 
+import org.apache.commons.dbcp2.BasicDataSource;
 import org.nrg.framework.exceptions.NrgServiceError;
 import org.nrg.framework.exceptions.NrgServiceException;
 import org.nrg.framework.utilities.Beans;
@@ -10,7 +11,6 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.jdbc.core.JdbcTemplate;
-import org.springframework.jdbc.datasource.SimpleDriverDataSource;
 
 import javax.inject.Inject;
 import javax.sql.DataSource;
@@ -26,7 +26,7 @@ public class DatabaseConfig {
     public static final String DEFAULT_DATASOURCE_URL      = "jdbc:postgresql://localhost/xnat";
     public static final String DEFAULT_DATASOURCE_USERNAME = "xnat";
     public static final String DEFAULT_DATASOURCE_PASSWORD = "xnat";
-    public static final String DEFAULT_DATASOURCE_CLASS    = SimpleDriverDataSource.class.getName();
+    public static final String DEFAULT_DATASOURCE_CLASS    = BasicDataSource.class.getName();
     public static final String DEFAULT_DATASOURCE_DRIVER   = Driver.class.getName();
 
     @Bean
